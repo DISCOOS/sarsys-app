@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../Widgets/AppDrawer.dart';
-import '../Widgets/SampleMap.dart';
+import '../Widgets/IncidentMap.dart';
 import '../Services/LocationService.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong/latlong.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -27,7 +28,7 @@ class MapScreenState extends State<MapScreen> {
     //getPosition();
   }
 
-  void getPosition () async {
+  void getPosition() async {
     LocationReport location = await locationService.getLocation();
     // Move map to position - testing only on initState, should be triggered when user activates GPS.
   }
@@ -67,7 +68,7 @@ class MapScreenState extends State<MapScreen> {
               color: Colors.white,
               onPressed: () {
                 setState(() {
-                  mapZoom = mapZoom +1;
+                  mapController.move(mapController.center, mapController.zoom + 1);
                 });
               },
             ),
@@ -75,9 +76,7 @@ class MapScreenState extends State<MapScreen> {
               icon: Icon(Icons.remove),
               color: Colors.white,
               onPressed: () {
-                setState(() {
-                  mapZoom = mapZoom -1;
-                });
+                mapController.move(mapController.center, mapController.zoom - 1);
               },
             )
           ],
@@ -86,10 +85,19 @@ class MapScreenState extends State<MapScreen> {
         color: Colors.grey[850],
       ),
       body: Stack(children: [
-        IncidentMap(
-          url: currentBaseMap,
-          offline: offlineBaseMap,
-          zoom: mapZoom,
+        FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            center: new LatLng(59.5, 10.09),
+            zoom: 13,
+          ),
+          layers: [
+            new TileLayerOptions(
+              urlTemplate: currentBaseMap,
+              offlineMode: false,
+              fromAssets: false,
+            ),
+          ],
         ),
         Positioned(
           top: 0.0,
@@ -116,28 +124,28 @@ class MapScreenState extends State<MapScreen> {
 
   void _settingModalBottomSheet(context) {
     showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return Container(
-          child: new Wrap(
-            children: <Widget>[
-              new ListTile(
-                  leading: new Icon(Icons.warning),
-                  title: new Text('Spor'),
+        context: context,
+        builder: (BuildContext bc) {
+          return Container(
+            child: new Wrap(
+              children: <Widget>[
+                new ListTile(
+                    leading: new Icon(Icons.warning),
+                    title: new Text('Spor'),
+                    onTap: () {
+                      Navigator.pop(context);
+                    }),
+                new ListTile(
+                  leading: new Icon(Icons.golf_course),
+                  title: new Text('Markering'),
                   onTap: () {
                     Navigator.pop(context);
-                  }),
-              new ListTile(
-                leading: new Icon(Icons.golf_course),
-                title: new Text('Markering'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      });
+                  },
+                ),
+              ],
+            ),
+          );
+        });
   }
 
   // TODO: Quick demo - make widget that iterates over maps from MaptileService
@@ -183,7 +191,7 @@ class MapScreenState extends State<MapScreen> {
                     onTap: () {
                       setState(() {
                         currentBaseMap =
-                        "http://maptiles2.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png";
+                            "http://maptiles2.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png";
                         offlineBaseMap = false;
                       });
                       Navigator.pop(context);
@@ -196,7 +204,7 @@ class MapScreenState extends State<MapScreen> {
                     onTap: () {
                       setState(() {
                         currentBaseMap =
-                        "/storage/0123-4567/Maps/toporaster3/{z}/{x}/{y}.png";
+                            "/storage/0123-4567/Maps/toporaster3/{z}/{x}/{y}.png";
                         offlineBaseMap = true;
                       });
                       Navigator.pop(context);
