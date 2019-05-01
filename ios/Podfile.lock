@@ -8,11 +8,11 @@ PODS:
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
-  - geolocator (4.0.1):
+  - geolocator (4.0.2):
     - Flutter
   - google_api_availability (2.0.0):
     - Flutter
-  - location_permissions (1.1.0):
+  - location_permissions (2.0.0):
     - Flutter
   - path_provider (0.0.1):
     - Flutter
@@ -27,7 +27,7 @@ PODS:
 
 DEPENDENCIES:
   - connectivity (from `.symlinks/plugins/connectivity/ios`)
-  - Flutter (from `.symlinks/flutter/ios-release`)
+  - Flutter (from `.symlinks/flutter/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - geolocator (from `.symlinks/plugins/geolocator/ios`)
   - google_api_availability (from `.symlinks/plugins/google_api_availability/ios`)
@@ -46,7 +46,7 @@ EXTERNAL SOURCES:
   connectivity:
     :path: ".symlinks/plugins/connectivity/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios-release"
+    :path: ".symlinks/flutter/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   geolocator:
@@ -69,9 +69,9 @@ SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
   flutter_secure_storage: dbcc8ff35d99569c3a4d3b483afa3339416c1a78
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
-  geolocator: a5a2961293df87dcfb6b720c82f67decf95c1b1b
+  geolocator: 231864600d38a4c570e747fefec755a478ee60ee
   google_api_availability: 80c105ad2c0ed01c18cf779653da2cb939518192
-  location_permissions: 6e3af9804db1f8f1f2ff7133779a224431072666
+  location_permissions: e887f37f31e947f676351c7d0363ec6de6ca31f5
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
