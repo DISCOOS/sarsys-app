@@ -71,13 +71,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.14.11"
-  connectivity:
-    dependency: "direct dev"
-    description:
-      name: connectivity
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.4.3+1"
   console_log_handler:
     dependency: transitive
     description:
@@ -259,7 +252,7 @@ packages:
     source: hosted
     version: "1.1.6"
   path:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: path
       url: "https://pub.dartlang.org"

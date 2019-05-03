@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "discoos.org.sarsys"
+        applicationId "org.discoos.sarsys"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode flutterVersionCode.toInteger()

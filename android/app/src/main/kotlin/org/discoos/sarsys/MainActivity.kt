@@ -1,4 +1,4 @@
-package discoos.org.sarsys
+package org.discoos.sarsys
 
 import android.os.Bundle
 
