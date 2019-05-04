@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 
 class MaptileService {
   static final MaptileService _singleton = new MaptileService._internal();

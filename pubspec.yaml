@@ -40,6 +40,7 @@ dev_dependencies:
   path_provider: ^0.5.0+1
   protobuf: ^0.13.11
   web_socket_channel: ^1.0.12
+  rxdart: ^0.22.0
 
 
 flutter_icons:

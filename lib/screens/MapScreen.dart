@@ -16,7 +16,6 @@ class MapScreenState extends State<MapScreen> {
   // TODO: move the baseMap to MapService
   String currentBaseMap;
   bool offlineBaseMap;
-  double mapZoom = 13;
   MapController mapController;
   LocationService locationService = new LocationService();
   MaptileService maptileService = new MaptileService();
@@ -25,6 +24,7 @@ class MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    // Dont bother fixing this now, moving to BLoC/Streamcontroller later
     currentBaseMap =
         "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
     offlineBaseMap = false;
@@ -34,6 +34,7 @@ class MapScreenState extends State<MapScreen> {
 
   void initMaps() async {
     baseMaps = await maptileService.fetchMaps();
+
   }
 
   void getPosition() async {
@@ -56,7 +57,7 @@ class MapScreenState extends State<MapScreen> {
         child: Icon(Icons.add),
         elevation: 2.0,
       ),
-      bottomNavigationBar: BottomAppBar(
+      bottomNavigationBar: BottomAppBar(    // TODO: Move to stack to fix map behind navbar
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -174,7 +175,6 @@ class MapScreenState extends State<MapScreen> {
       _mapCards.add(GestureDetector(
         child: new BaseMapCard(map: map),
         onTap: () {
-          print("Basemap: ${map.url}");
           setState(() {
             currentBaseMap = map.url;
           });
