@@ -4,7 +4,7 @@ class IncidentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Icon(Icons.directions_car),
+      child: Icon(Icons.warning),
     );
   }
 }
