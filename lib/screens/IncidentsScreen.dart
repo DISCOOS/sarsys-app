@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class IncidentlistScreen extends StatefulWidget {
+class IncidentsScreen extends StatefulWidget {
   //modified
   @override //new
-  IncidentlistScreenState createState() => new IncidentlistScreenState(); //new
+  IncidentsScreenState createState() => new IncidentsScreenState(); //new
 }
 
 // Add the ChatScreenState class definition in main.dart.
 
-class IncidentlistScreenState extends State<IncidentlistScreen> {
+class IncidentsScreenState extends State<IncidentsScreen> {
   //new
   @override //new
   Widget build(BuildContext context) {

@@ -1,5 +1,6 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:path/path.dart';
 
 class MaptileService {
@@ -10,7 +11,7 @@ class MaptileService {
     return _singleton;
   }
 
-  MaptileService._internal(){
+  MaptileService._internal() {
     initMaps();
   }
 
@@ -30,8 +31,7 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url:
-          "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+      url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     ));
     _maps.add(BaseMap(
       name: 'toporaster3',
@@ -40,8 +40,7 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url:
-          "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
+      url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
     ));
     _maps.add(BaseMap(
       name: 'norortho',
@@ -50,8 +49,7 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url:
-          "https://maptiles1.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
+      url: "https://maptiles1.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
     ));
     _maps.add(BaseMap(
       name: 'sjokart',
@@ -60,8 +58,7 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url:
-      "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=sjokartraster&zoom={z}&x={x}&y={y}",
+      url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=sjokartraster&zoom={z}&x={x}&y={y}",
     ));
 
     return _maps;
@@ -84,28 +81,20 @@ class MaptileService {
     if (true) {
       Directory baseDir = Directory("/storage");
       // Root
-      await for (FileSystemEntity entity
-          in baseDir.list(recursive: false, followLinks: false)) {
-        if (basename(entity.path) != "emulated" &&
-            basename(entity.path) != "self" &&
-            entity is Directory) {
+      await for (FileSystemEntity entity in baseDir.list(recursive: false, followLinks: false)) {
+        if (basename(entity.path) != "emulated" && basename(entity.path) != "self" && entity is Directory) {
           // Second lenvel, search for folder containing "maps" folder
-          await for (FileSystemEntity entity
-              in entity.list(recursive: false, followLinks: false)) {
-            if (entity is Directory &&
-                basename(entity.path).toLowerCase() == "maps") {
+          await for (FileSystemEntity entity in entity.list(recursive: false, followLinks: false)) {
+            if (entity is Directory && basename(entity.path).toLowerCase() == "maps") {
               // Search for subfolders in "maos" containing metadata file
-              await for (FileSystemEntity entity
-                  in entity.list(recursive: false, followLinks: false)) {
+              await for (FileSystemEntity entity in entity.list(recursive: false, followLinks: false)) {
                 if (entity is Directory) {
-                  final File metadataFile =
-                      File("${entity.path}/metadata.json");
+                  final File metadataFile = File("${entity.path}/metadata.json");
                   final File previewFile = File("${entity.path}/preview.png");
                   if (metadataFile.existsSync()) {
                     try {
                       // TODO: Validate metadata (in class named constructor?)
-                      var mapMetadata =
-                      jsonDecode(metadataFile.readAsStringSync());
+                      var mapMetadata = jsonDecode(metadataFile.readAsStringSync());
                       BaseMap _baseMap = new BaseMap(
                           name: mapMetadata["name"],
                           description: mapMetadata["description"],
@@ -129,7 +118,6 @@ class MaptileService {
               }
             }
           }
-
         }
       }
     }
@@ -144,7 +132,7 @@ class MaptileService {
 //    }
 //    _maps.addAll(await fetchOnlineMaps());
 //    return _maps;
-  return _baseMaps;
+    return _baseMaps;
   }
 }
 

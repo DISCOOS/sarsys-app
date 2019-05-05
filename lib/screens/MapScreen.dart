@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
-import '../Widgets/AppDrawer.dart';
-import '../Services/LocationService.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
-import 'package:geolocator/geolocator.dart';
-import '../services/MaptileService.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong/latlong.dart';
+
+import '../Services/LocationService.dart';
+import '../Widgets/AppDrawer.dart';
+import '../services/MaptileService.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -24,9 +26,8 @@ class MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    // Dont bother fixing this now, moving to BLoC/Streamcontroller later
-    currentBaseMap =
-        "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+    // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
+    currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
     offlineBaseMap = false;
     mapController = MapController();
     initMaps();
@@ -34,15 +35,12 @@ class MapScreenState extends State<MapScreen> {
 
   void initMaps() async {
     baseMaps = await maptileService.fetchMaps();
-
   }
 
   void getPosition() async {
-    Position location = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     // Move map to position - testing only on initState, should be triggered when user activates GPS.
-    mapController.move(
-        new LatLng(location.latitude, location.longitude), mapController.zoom);
+    mapController.move(new LatLng(location.latitude, location.longitude), mapController.zoom);
   }
 
   @override
@@ -57,7 +55,8 @@ class MapScreenState extends State<MapScreen> {
         child: Icon(Icons.add),
         elevation: 2.0,
       ),
-      bottomNavigationBar: BottomAppBar(    // TODO: Move to stack to fix map behind navbar
+      bottomNavigationBar: BottomAppBar(
+        // TODO: Move to stack to fix map behind navbar
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -87,16 +86,14 @@ class MapScreenState extends State<MapScreen> {
               icon: Icon(Icons.add),
               color: Colors.white,
               onPressed: () {
-                mapController.move(
-                    mapController.center, mapController.zoom + 1);
+                mapController.move(mapController.center, mapController.zoom + 1);
               },
             ),
             IconButton(
               icon: Icon(Icons.remove),
               color: Colors.white,
               onPressed: () {
-                mapController.move(
-                    mapController.center, mapController.zoom - 1);
+                mapController.move(mapController.center, mapController.zoom - 1);
               },
             )
           ],
@@ -234,9 +231,7 @@ class BaseMapCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.max,
             children: [
-              ClipRRect(
-                  borderRadius: new BorderRadius.circular(8.0),
-                  child: previewImage()),
+              ClipRRect(borderRadius: new BorderRadius.circular(8.0), child: previewImage()),
               Text(map.description)
             ]),
       ),

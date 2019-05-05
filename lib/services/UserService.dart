@@ -27,8 +27,7 @@ class UserService {
 
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
-    var response = await http
-        .post(url, body: {'username': username, 'password': password});
+    var response = await http.post(url, body: {'username': username, 'password': password});
 
     // Save to token and other userdata to Secure Storage
     if (response.statusCode == 200) {
@@ -44,7 +43,6 @@ class UserService {
       throw new Exception("Feil brukernavn/passord");
     } else if (response.statusCode == 403) {
       // Forbidden
-
       throw new Exception("Du har ikke tilgang til denne applikasjonen");
     }
     return false;
