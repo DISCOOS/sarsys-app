@@ -14,19 +14,12 @@ description: SarSys
 version: 0.1.1+1
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.2
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_map: ^0.5.0+1
   flutter_secure_storage: ^3.2.1+1
   jose: ^0.1.2
@@ -41,7 +34,21 @@ dev_dependencies:
   protobuf: ^0.13.11
   web_socket_channel: ^1.0.12
   rxdart: ^0.22.0
+  json_annotation: ^2.0.0
+  bloc: ^0.13.0
+  flutter_bloc: ^0.13.0
+  random_string: ^0.0.2
+  equatable: ^0.2.3
 
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^0.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^1.0.0
+  json_serializable: ^2.0.0
 
 flutter_icons:
   android: true #"launcher_icon"

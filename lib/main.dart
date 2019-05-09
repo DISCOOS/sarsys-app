@@ -1,32 +1,40 @@
+import 'package:SarSys/blocs/IncidentBloc.dart';
+import 'package:SarSys/services/IncidentService.dart';
 import 'package:flutter/material.dart';
 
-import 'Services/UserService.dart';
+import 'services/UserService.dart';
 import 'screens/CommandScreen.dart';
 import 'screens/IncidentsScreen.dart';
 import 'screens/LoginScreen.dart';
 import 'screens/MapScreen.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 void main() async {
+  IncidentBloc incidentBloc = IncidentBloc(IncidentService());
   Widget homepage = await getHome(false);
 
-  runApp(MaterialApp(
-    //debugShowCheckedModeBanner: false,
-    title: 'SarSys',
-    theme: new ThemeData(
-      primaryColor: Colors.grey[850],
-      buttonTheme: ButtonThemeData(
-        textTheme: ButtonTextTheme.primary,
+  runApp(BlocProvider(
+    bloc: incidentBloc,
+    child: MaterialApp(
+      //debugShowCheckedModeBanner: false,
+      title: 'SarSys',
+      theme: new ThemeData(
+        primaryColor: Colors.grey[850],
+        buttonTheme: ButtonThemeData(
+          textTheme: ButtonTextTheme.primary,
+        ),
+        //accentColor: Colors.cyan[600],
       ),
-      //accentColor: Colors.cyan[600],
+      home: homepage,
+      routes: <String, WidgetBuilder>{
+        'login': (BuildContext context) => LoginScreen(),
+        'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
+        'plan': (BuildContext context) => CommandScreen(tabIndex: 1),
+        'incidentlist': (BuildContext context) => IncidentsScreen(),
+        'map': (BuildContext context) => MapScreen(),
+      },
     ),
-    home: homepage,
-    routes: <String, WidgetBuilder>{
-      'login': (BuildContext context) => LoginScreen(),
-      'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-      'plan': (BuildContext context) => CommandScreen(tabIndex: 0),
-      'incidentlist': (BuildContext context) => IncidentsScreen(),
-      'map': (BuildContext context) => MapScreen(),
-    },
   ));
 }
 

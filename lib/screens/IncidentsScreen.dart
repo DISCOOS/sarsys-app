@@ -1,4 +1,7 @@
+import 'package:SarSys/blocs/IncidentBloc.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class IncidentsScreen extends StatefulWidget {
   //modified
@@ -6,67 +9,65 @@ class IncidentsScreen extends StatefulWidget {
   IncidentsScreenState createState() => new IncidentsScreenState(); //new
 }
 
-// Add the ChatScreenState class definition in main.dart.
+// TODO: Add the ChatScreenState class definition in main.dart.
 
 class IncidentsScreenState extends State<IncidentsScreen> {
-  //new
   @override //new
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text("Velg hendelse"),
-        leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          print("New Incident");
-        },
-        tooltip: 'Ny hendelse',
-        child: Icon(Icons.add),
-        elevation: 2.0,
-      ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.sort),
-              color: Colors.white,
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Icon(Icons.search),
-              color: Colors.white,
-              onPressed: () {},
-            )
-          ],
-        ),
-        shape: CircularNotchedRectangle(),
-        color: Colors.grey[850],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(children: [
-          _buildCard(
-            context,
-            Incident(
-                id: "1",
-                name: "Savnet person (øvelse)",
-                reference: "EX-201901",
-                description: "Mann, 32 år, økt selvmordsfare.",
-                occurred: DateTime.now().subtract(Duration(hours: 2))),
+    IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints viewportConstraints) {
+        return new Scaffold(
+          appBar: new AppBar(
+            title: new Text("Velg hendelse"),
           ),
-        ]),
+          body: _buildBody(bloc, context, viewportConstraints),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              print("New Incident");
+            },
+            tooltip: 'Ny hendelse',
+            child: Icon(Icons.add),
+            elevation: 2.0,
+          ),
+          bottomNavigationBar: _buildBottomAppBar(),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await bloc.fetch();
+        setState(() {});
+      },
+      child: AnimatedCrossFade(
+        duration: Duration(milliseconds: 300),
+        crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+        firstChild: Center(
+          child: CircularProgressIndicator(),
+        ),
+        secondChild: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: viewportConstraints.maxHeight,
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Column(
+                children: bloc.incidents.map((incident) => _buildCard(context, bloc, incident)).toList(),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Card _buildCard(BuildContext context, Incident incident) {
+  Card _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
     return Card(
       child: Column(
         children: <Widget>[
@@ -86,7 +87,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               style: TextStyle(fontSize: 20.0),
             ),
             subtitle: Text(
-              incident.reference,
+              incident.reference ?? 'ingen',
               style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
             ),
           ),
@@ -101,7 +102,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               children: [
                 Wrap(
                   children: [
-                    Text(incident.description),
+                    Text(incident.justification),
                   ],
                 )
               ],
@@ -119,7 +120,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                   padding: EdgeInsets.only(left: 16.0, right: 16.0),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   onPressed: () {
-                    // TODO Set appstate current incident
+                    bloc.select(incident.id);
                     Navigator.pushReplacementNamed(context, 'incident');
                   },
                 ),
@@ -131,23 +132,31 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     );
   }
 
+  BottomAppBar _buildBottomAppBar() {
+    return BottomAppBar(
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          IconButton(
+            icon: Icon(Icons.sort),
+            color: Colors.white,
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Icon(Icons.search),
+            color: Colors.white,
+            onPressed: () {},
+          )
+        ],
+      ),
+      shape: CircularNotchedRectangle(),
+      color: Colors.grey[850],
+    );
+  }
+
   String _formatSince(DateTime timestamp) {
     Duration delta = DateTime.now().difference(timestamp);
     return delta.inHours > 99 ? "${delta.inDays}d" : delta.inHours > 0 ? "${delta.inHours}h" : "${delta.inSeconds}h";
   }
-}
-
-class Incident {
-  final String id, name, reference;
-  final DateTime occurred;
-
-  var description;
-
-  Incident({
-    @required this.id,
-    this.name,
-    this.reference,
-    this.description,
-    this.occurred,
-  });
 }
