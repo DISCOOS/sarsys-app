@@ -1,7 +1,9 @@
 import 'package:SarSys/blocs/IncidentBloc.dart';
 import 'package:SarSys/services/IncidentService.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'mock/incidents.dart';
 import 'services/UserService.dart';
 import 'screens/CommandScreen.dart';
 import 'screens/IncidentsScreen.dart';
@@ -11,8 +13,13 @@ import 'screens/MapScreen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
-  IncidentBloc incidentBloc = IncidentBloc(IncidentService());
-  Widget homepage = await getHome(false);
+  final baseUrl = 'https://sporing.rodekors.no';
+  final apiUrl = '$baseUrl/api/';
+
+  final IncidentService service = kReleaseMode ? IncidentService(apiUrl) : IncidentServiceMock.build(2);
+  final IncidentBloc incidentBloc = IncidentBloc(service);
+
+  final Widget homepage = await getHome(false);
 
   runApp(BlocProvider(
     bloc: incidentBloc,

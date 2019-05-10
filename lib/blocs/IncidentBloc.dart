@@ -33,8 +33,11 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   List<Incident> get incidents => _incidents.values.toList();
 
   /// Stream of switched between given incidents
-  Stream<Incident> get switches =>
-      state.where((state) => state is IncidentSelected && state.data.id != _given).map((state) => state.data);
+  Stream<Incident> get switches => state
+      .where(
+        (state) => state is IncidentSelected && state.data.id != _given,
+      )
+      .map((state) => state.data);
 
   /// Initialize if empty
   IncidentBloc init(FetchCallback onFetch) {
@@ -54,14 +57,14 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   /// Fetch incidents from [service]
   Future<List<Incident>> fetch() async {
-    this._incidents.clear();
-    this._incidents.addEntries((await service.fetchIncidents()).map(
-          (incident) => MapEntry(incident.id, incident),
-        ));
-    if (this._incidents.containsKey(this._given)) {
-      this.dispatch(SelectIncident(this._given));
+    _incidents.clear();
+    _incidents.addEntries((await service.fetch()).map(
+      (incident) => MapEntry(incident.id, incident),
+    ));
+    if (_incidents.containsKey(_given)) {
+      this.dispatch(SelectIncident(_given));
     }
-    return UnmodifiableListView<Incident>(this._incidents.values);
+    return UnmodifiableListView<Incident>(_incidents.values);
   }
 
   @override
@@ -73,16 +76,16 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       }
     } else if (event is UpdateIncident) {
       Incident data = _update(event);
-      if (event.selected || data.id == this._given) {
+      if (event.selected || data.id == _given) {
         yield _set(data);
       }
     } else if (event is SelectIncident) {
-      if (event.data != this._given && _incidents.containsKey(event.data)) {
+      if (event.data != _given && _incidents.containsKey(event.data)) {
         yield _set(_incidents[event.data]);
       }
     } else if (event is DeleteIncident) {
       Incident data = _delete(event);
-      if (data.id == this._given) {
+      if (data.id == _given) {
         yield _unset();
       }
     } else {
@@ -93,21 +96,21 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Incident _create(CreateIncident event) {
     //TODO: Implement call to backend
 
-    var data = this._incidents.putIfAbsent(
-          event.data.id,
-          () => event.data,
-        );
+    var data = _incidents.putIfAbsent(
+      event.data.id,
+      () => event.data,
+    );
     return data;
   }
 
   Incident _update(UpdateIncident event) {
     //TODO: Implement call to backend
 
-    var data = this._incidents.update(
-          event.data.id,
-          (incident) => event.data,
-          ifAbsent: () => event.data,
-        );
+    var data = _incidents.update(
+      event.data.id,
+      (incident) => event.data,
+      ifAbsent: () => event.data,
+    );
     return data;
   }
 
@@ -120,12 +123,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   IncidentSelected _set(Incident data) {
-    this._given = data.id;
+    _given = data.id;
     return IncidentSelected(data);
   }
 
   IncidentUnset _unset() {
-    this._given = null;
+    _given = null;
     return IncidentUnset();
   }
 

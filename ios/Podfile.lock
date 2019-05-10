@@ -5,11 +5,11 @@ PODS:
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
-  - geolocator (4.0.2):
+  - geolocator (4.0.3):
     - Flutter
   - google_api_availability (2.0.0):
     - Flutter
-  - location_permissions (2.0.0):
+  - location_permissions (2.0.1):
     - Flutter
   - path_provider (0.0.1):
     - Flutter
@@ -60,9 +60,9 @@ SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
   flutter_secure_storage: dbcc8ff35d99569c3a4d3b483afa3339416c1a78
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
-  geolocator: 231864600d38a4c570e747fefec755a478ee60ee
+  geolocator: 191e1ae5853d9d142e9c3c71fe79eb9ff154cf24
   google_api_availability: 80c105ad2c0ed01c18cf779653da2cb939518192
-  location_permissions: e887f37f31e947f676351c7d0363ec6de6ca31f5
+  location_permissions: 37b923ed4b9df9dfe9edb109fb4298f7b182047b
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
   sqflite: d1612813fa7db7c667bed9f1d1b508deffc56999

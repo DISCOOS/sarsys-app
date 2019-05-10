@@ -14,7 +14,7 @@ class IncidentsScreen extends StatefulWidget {
 class IncidentsScreenState extends State<IncidentsScreen> {
   @override //new
   Widget build(BuildContext context) {
-    IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
+    final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return new Scaffold(

@@ -14,7 +14,7 @@ class CommandScreen extends StatelessWidget {
   //new
   @override //new
   Widget build(BuildContext context) {
-    IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
+    final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
     return DefaultTabController(
       length: 2,
       initialIndex: this.tabIndex,
