@@ -12,16 +12,58 @@ void main() {
 
   setUp(() => {bloc = IncidentBloc(service)});
 
+  tearDown(() => bloc.dispose());
+
   test('Incident bloc should be empty and unset', () async {
-    expect(bloc.isEmpty, true, reason: "Incident bloc should be empty");
-    expect(bloc.isUnset, true, reason: "Incident bloc should be unset");
+    expect(bloc.isEmpty, isTrue, reason: "Incident bloc should be empty");
+    expect(bloc.isUnset, isTrue, reason: "Incident bloc should be unset");
     expect(bloc.initialState, TypeMatcher<IncidentUnset>(), reason: "Unexpected incident state");
+    expect(
+      bloc.state,
+      emitsInOrder([emits(TypeMatcher<IncidentUnset>())]),
+      reason: "First state is not IncidentUnset",
+    );
+    bloc.state.listen(expectAsync1(
+      (state) {
+        expect(true, isTrue);
+      },
+      reason: "Bloc contained more states than expected",
+    ));
   });
 
   test('Incident bloc should contain two incidents', () async {
     List<Incident> incidents = await bloc.fetch();
     expect(incidents.length, 2, reason: "Bloc should return two incidents");
-    expect(bloc.isEmpty, false, reason: "Bloc should not be empty");
-    expect(bloc.isUnset, true, reason: "Bloc should be unset");
+    expect(bloc.isEmpty, isFalse, reason: "Bloc should not be empty");
+    expect(bloc.isUnset, isTrue, reason: "Bloc should be unset");
+  });
+
+  test('Incident bloc should be in selected state', () async {
+    var count = 0;
+    List<Incident> incidents = await bloc.fetch();
+    bloc.select(incidents.first.id);
+    bloc.state.listen(expectAsync1(
+      (state) {
+        count++;
+      },
+      count: 2,
+      reason: "Bloc contained ${count + 1} states, expected 2",
+    ));
+    expect(
+      bloc.state,
+      emitsInOrder([
+        emits(TypeMatcher<IncidentUnset>()),
+        emits(TypeMatcher<IncidentSelected>()),
+      ]),
+      reason: "Bloc contained unexpected stream of events",
+    );
+  });
+
+  test('First incident should be selected in last state', () async {
+    List<Incident> incidents = await bloc.fetch();
+    bloc.select(incidents.first.id);
+    var last = await bloc.state.elementAt(1);
+    expect(last.data, incidents.first, reason: "First incident was not selected");
+    expect(bloc.current, last.data, reason: "Selected incident is different than last incident");
   });
 }
