@@ -1,17 +1,20 @@
 import 'dart:convert';
+import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/IncidentService.dart';
+import 'package:SarSys/services/UserService.dart';
+import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
 
 class IncidentBuilder {
-  static createIncident(int since) {
-    return json.decode(createIncidentAsJson(since));
+  static createIncident(int since, String token) {
+    return json.decode(createIncidentAsJson(since, token));
   }
 
-  static createIncidentAsJson(int since) {
+  static createIncidentAsJson(int since, String token) {
     return '{'
         '"id": "${randomAlphaNumeric(16)}",'
         '"name": "Savnet person",'
@@ -24,7 +27,9 @@ class IncidentBuilder {
         '"talkgroups": ['
         '{"name": "RK-RIKS-1", "type": "Tetra"}'
         '],'
-        '"passcodes": ${createPasscodesAsJson()}'
+        '"passcodes": ${createPasscodesAsJson()},'
+        '"created": ${createAuthor(token)},'
+        '"changed": ${createAuthor(token)}'
         '}';
   }
 
@@ -35,15 +40,23 @@ class IncidentBuilder {
   static createPasscodesAsJson() {
     return json.encode(Passcodes.random(6).toJson());
   }
+
+  static createAuthor(String token) {
+    var jwt = new JsonWebToken.unverified(token);
+    return json.encode(Author.now(jwt.claims.subject));
+  }
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
   static IncidentService build(final int count) {
+    UserService service = UserService();
     IncidentServiceMock mock = IncidentServiceMock();
-    when(mock.fetch()).thenAnswer((_) => Future.delayed(
-          Duration(microseconds: 1),
-          () => [for (var i = 1; i <= count; i++) Incident.fromJson(IncidentBuilder.createIncident(i))],
-        ));
+    service.getToken().then((token) {
+      when(mock.fetch()).thenAnswer((_) => Future.delayed(
+            Duration(microseconds: 1),
+            () => [for (var i = 1; i <= count; i++) Incident.fromJson(IncidentBuilder.createIncident(i, token))],
+          ));
+    });
     return mock;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
@@ -18,8 +19,9 @@ class Incident extends Equatable {
   final List<TalkGroup> talkgroups;
   final Point ipp;
   final Passcodes passcodes;
-
   final String reference;
+  final Author created;
+  final Author changed;
 
   Incident({
     @required this.id,
@@ -31,6 +33,8 @@ class Incident extends Equatable {
     @required this.justification,
     @required this.ipp,
     @required this.passcodes,
+    @required this.created,
+    @required this.changed,
     this.reference,
   }) : super([
           id,
@@ -42,10 +46,12 @@ class Incident extends Equatable {
           justification,
           ipp,
           passcodes,
+          created,
+          changed,
           reference,
         ]);
 
-  /// Factory constructor for creating a new `Incident?  instance
+  /// Factory constructor for creating a new `Incident`  instance
   factory Incident.fromJson(Map<String, dynamic> json) => _$IncidentFromJson(json);
 
   /// Declare support for serialization to JSON

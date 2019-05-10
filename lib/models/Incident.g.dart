@@ -26,6 +26,12 @@ Incident _$IncidentFromJson(Map<String, dynamic> json) {
       passcodes: json['passcodes'] == null
           ? null
           : Passcodes.fromJson(json['passcodes'] as Map<String, dynamic>),
+      created: json['created'] == null
+          ? null
+          : Author.fromJson(json['created'] as Map<String, dynamic>),
+      changed: json['changed'] == null
+          ? null
+          : Author.fromJson(json['changed'] as Map<String, dynamic>),
       reference: json['reference'] as String);
 }
 
@@ -39,7 +45,9 @@ Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
       'talkgroups': instance.talkgroups,
       'ipp': instance.ipp,
       'passcodes': instance.passcodes,
-      'reference': instance.reference
+      'reference': instance.reference,
+      'created': instance.created,
+      'changed': instance.changed
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
