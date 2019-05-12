@@ -1,5 +1,7 @@
 import 'package:SarSys/blocs/IncidentBloc.dart';
+import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/widgets/PasscodePopup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,6 +14,11 @@ class IncidentsScreen extends StatefulWidget {
 // TODO: Add the ChatScreenState class definition in main.dart.
 
 class IncidentsScreenState extends State<IncidentsScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override //new
   Widget build(BuildContext context) {
     final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
@@ -68,6 +75,9 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   }
 
   Card _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
+    var userBloc = BlocProvider.of<UserBloc>(context);
+    var authz = userBloc.getAuthorization(incident);
+
     return Card(
       child: Column(
         children: <Widget>[
@@ -108,24 +118,46 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               ],
             ),
           ),
-          ButtonTheme.bar(
-            layoutBehavior: ButtonBarLayoutBehavior.constrained,
-            padding: EdgeInsets.only(right: 0.0),
-            // make buttons use the appropriate styles for cards
-            child: ButtonBar(
-              alignment: MainAxisAlignment.start,
-              children: <Widget>[
-                FlatButton(
-                  child: const Text('VELG', style: TextStyle(fontSize: 14.0)),
-                  padding: EdgeInsets.only(left: 16.0, right: 16.0),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onPressed: () {
-                    bloc.select(incident.id);
-                    Navigator.pushReplacementNamed(context, 'incident');
-                  },
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              ButtonTheme.bar(
+                layoutBehavior: ButtonBarLayoutBehavior.constrained,
+                padding: EdgeInsets.only(right: 0.0),
+                // make buttons use the appropriate styles for cards
+                child: ButtonBar(
+                  alignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    FlatButton(
+                      child: const Text('VELG', style: TextStyle(fontSize: 14.0)),
+                      padding: EdgeInsets.only(left: 16.0, right: 16.0),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onPressed: () {
+                        // TODO: Implement passcode validation
+                        if (false && authz == null) {
+                          Navigator.push(context, PasscodeRoute(incident));
+                        } else {
+                          bloc.select(incident.id);
+                          Navigator.pushReplacementNamed(context, 'incident');
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      authz == null ? Icons.lock : Icons.lock_open,
+                      color: authz == null ? Colors.red.withOpacity(0.7) : Colors.green.withOpacity(0.7),
+                      size: 24.0,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

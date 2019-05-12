@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:jose/jose.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -12,8 +13,8 @@ class User extends Equatable {
 
   User({
     @required this.userId,
-    @required this.firstName,
-    @required this.lastName,
+    this.firstName,
+    this.lastName,
   }) : super([
           userId,
           firstName,
@@ -25,4 +26,10 @@ class User extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$UserToJson(this);
+
+  /// Create user from token
+  factory User.fromToken(String token) {
+    var jwt = new JsonWebToken.unverified(token);
+    return User(userId: jwt.claims.subject);
+  }
 }

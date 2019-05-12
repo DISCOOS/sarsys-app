@@ -1,5 +1,8 @@
+import 'dart:async';
+
+import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:flutter/material.dart';
-import '../services/UserService.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -8,12 +11,10 @@ class LoginScreen extends StatefulWidget {
 
 class LoginScreenState extends State<LoginScreen> {
   final _formKey = new GlobalKey<FormState>();
-  UserService userService = UserService();
 
   String _username = "";
   String _password = "";
-  String _errorMessage = "";
-  bool _isLoading = false;
+  StreamSubscription<bool> subscription;
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
@@ -24,49 +25,53 @@ class LoginScreenState extends State<LoginScreen> {
     return false;
   }
 
-  void _validateAndSubmit() async {
-    setState(() {
-      _errorMessage = "";
-      _isLoading = true;
-    });
-    if (_validateAndSave()) {
-      try {
-        if (await userService.login(_username, _password)) {
-          Navigator.pushReplacementNamed(context, 'incidentlist');
-          _isLoading = false;
-        } else {
-          setState(() {
-            _errorMessage = "Feil ved innlogging - tjeneste ikke tilgjengelig";
-          });
-        }
-      } catch (error) {
-        setState(() {
-          _errorMessage = error.message;
-        });
+  UserBloc _handle(BuildContext context) {
+    final bloc = BlocProvider.of<UserBloc>(context);
+    if (subscription != null) {
+      subscription.cancel();
+    }
+    subscription = bloc.authenticated.listen((isAuthenticated) {
+      if (isAuthenticated) {
+        Navigator.pushReplacementNamed(context, 'incidents');
       }
-    }
-    setState(() {
-      _isLoading = false;
     });
+    return bloc;
   }
 
-  Widget _showCircularProgress() {
-    if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+  @override
+  void dispose() {
+    super.dispose();
+    if (subscription != null) {
+      subscription.cancel();
     }
-    return Container(
-      height: 0.0,
-      width: 0.0,
-    );
   }
 
-  Widget _showEmailInput() {
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+        body: Center(
+      child: Container(
+        color: Colors.grey,
+        alignment: AlignmentDirectional(0.0, 0.0),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 400.0),
+          child: Card(
+            elevation: 10.0,
+            child: _buildBody(context),
+          ),
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildEmailInput() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 30.0, 0.0, 0.0),
       child: new TextFormField(
         maxLines: 1,
         keyboardType: TextInputType.emailAddress,
         autofocus: false,
+        textCapitalization: TextCapitalization.none,
         decoration: new InputDecoration(
             hintText: 'Brukernavn',
             icon: new Icon(
@@ -79,7 +84,7 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _showPasswordInput() {
+  Widget _buildPasswordInput() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
       child: new TextFormField(
@@ -98,7 +103,7 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _showPrimaryButton() {
+  Widget _buildPrimaryButton(UserBloc bloc) {
     return new Padding(
         padding: EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
         child: SizedBox(
@@ -106,73 +111,79 @@ class LoginScreenState extends State<LoginScreen> {
           width: 60.0,
           child: new RaisedButton(
             elevation: 5.0,
-            shape: new RoundedRectangleBorder(
-                borderRadius: new BorderRadius.circular(10.0)),
+            shape: new RoundedRectangleBorder(borderRadius: new BorderRadius.circular(10.0)),
             color: Color.fromRGBO(00, 41, 73, 1),
-            child: new Text('Logg inn',
-                style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+            child: new Text('Logg inn', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
             onPressed: () {
-              _validateAndSubmit();
+              if (_validateAndSave()) {
+                bloc.login(_username, _password);
+              }
             },
           ),
         ));
   }
 
-  Widget _showBody() {
-    return new Container(
-        padding: EdgeInsets.all(16.0),
-        child: new Form(
-          key: _formKey,
-          child: new ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              // Logo
-              Padding(
-                padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 50),
-                child: CircleAvatar(
-                  backgroundColor: Colors.transparent,
-                  radius: 80.0,
-                  child: Image.asset('assets/logo.png'),
-                ),
+  Widget _buildBody(BuildContext context) {
+    UserBloc bloc = _handle(context);
+    return StreamBuilder<UserState>(
+        stream: bloc.state,
+        builder: (context, snapshot) {
+          return AnimatedCrossFade(
+            duration: Duration(microseconds: 300),
+            crossFadeState: snapshot.hasData && snapshot.data.isAuthenticating()
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Container(
+              padding: EdgeInsets.all(16.0),
+              child: ListView(
+                shrinkWrap: true,
+                children: <Widget>[
+                  Center(child: CircularProgressIndicator()),
+                  // Logo
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 50),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.transparent,
+                      radius: 80.0,
+                      child: Image.asset('assets/logo.png'),
+                    ),
+                  ),
+                  Center(
+                    child: Text("Logger inn, vennligst vent"),
+                  )
+                ],
               ),
-              // Errormessage
-              Center(
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(
-                      color: Colors.red,
-                      height: 1.0,
-                      fontWeight: FontWeight.w300),
-                ),
-              ),
-              _showEmailInput(),
-              _showPasswordInput(),
-              _showPrimaryButton(),
-            ],
-          ),
-        ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(
-        body: Center(
-      child: Container(
-        color: Colors.grey,
-        alignment: AlignmentDirectional(0.0, 0.0),
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 400.0),
-          child: Card(
-            elevation: 10.0,
-            child: Stack(
-              children: <Widget>[
-                _showBody(),
-                _showCircularProgress(),
-              ],
             ),
-          ),
-        ),
-      ),
-    ));
+            secondChild: Container(
+                padding: EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: <Widget>[
+                      // Logo
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 50),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.transparent,
+                          radius: 80.0,
+                          child: Image.asset('assets/logo.png'),
+                        ),
+                      ),
+                      if (snapshot.hasData && snapshot.data is UserException)
+                        Center(
+                          child: Text(
+                            snapshot.data.data,
+                            style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w300),
+                          ),
+                        ),
+                      _buildEmailInput(),
+                      _buildPasswordInput(),
+                      _buildPrimaryButton(bloc),
+                    ],
+                  ),
+                )),
+          );
+        });
   }
 }

@@ -1,10 +1,12 @@
+import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/services/UserService.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final UserService userService = UserService();
+    final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     return Drawer(
         child: ListView(
             // Important: Remove any padding from the ListView.
@@ -54,8 +56,11 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.lock),
             title: Text('Logg ut', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              await userService.logout();
-              Navigator.pushReplacementNamed(context, 'login');
+              userBloc
+                  .logout()
+                  .state
+                  .where((state) => state is UserUnset)
+                  .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
             },
           ),
         ]));

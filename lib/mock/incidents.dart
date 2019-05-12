@@ -48,14 +48,12 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static IncidentService build(final int count) {
-    UserService service = UserService();
+  static IncidentService build(UserService service, final int count) {
     IncidentServiceMock mock = IncidentServiceMock();
-    service.getToken().then((token) {
-      when(mock.fetch()).thenAnswer((_) => Future.delayed(
-            Duration(microseconds: 1),
-            () => [for (var i = 1; i <= count; i++) Incident.fromJson(IncidentBuilder.createIncident(i, token))],
-          ));
+    when(mock.fetch()).thenAnswer((_) async {
+      var token = await service.getToken();
+      return Future.value(
+          [for (var i = 1; i <= count; i++) Incident.fromJson(IncidentBuilder.createIncident(i, token))]);
     });
     return mock;
   }

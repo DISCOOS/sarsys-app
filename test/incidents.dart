@@ -2,15 +2,20 @@ import 'package:SarSys/blocs/IncidentBloc.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/IncidentService.dart';
+import 'package:SarSys/services/UserService.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:matcher/matcher.dart';
 
 void main() {
-  final IncidentService service = IncidentServiceMock.build(2);
+  /// TODO: Mock UserService
+  final baseUrl = 'https://sporing.rodekors.no';
+  final UserService userService = UserService('$baseUrl/auth/login');
+
+  final IncidentService incidentService = IncidentServiceMock.build(userService, 2);
 
   IncidentBloc bloc;
 
-  setUp(() => {bloc = IncidentBloc(service)});
+  setUp(() => {bloc = IncidentBloc(incidentService)});
 
   tearDown(() => bloc.dispose());
 

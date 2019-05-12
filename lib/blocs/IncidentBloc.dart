@@ -4,9 +4,9 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/IncidentService.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
 
-typedef void FetchCallback(VoidCallback fn);
+typedef void IncidentCallback(VoidCallback fn);
 
 class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   final IncidentService service;
@@ -40,9 +40,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       .map((state) => state.data);
 
   /// Initialize if empty
-  IncidentBloc init(FetchCallback onFetch) {
+  IncidentBloc init(IncidentCallback onInit) {
     if (isEmpty) {
-      fetch().then((_) => onFetch(() {}));
+      fetch().then((_) => onInit(() {}));
     }
     return this;
   }
@@ -68,28 +68,30 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   @override
-  Stream<IncidentState> mapEventToState(IncidentCommand event) async* {
-    if (event is CreateIncident) {
-      Incident data = _create(event);
-      if (event.selected) {
+  Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
+    if (command is CreateIncident) {
+      Incident data = _create(command);
+      if (command.selected) {
         yield _set(data);
       }
-    } else if (event is UpdateIncident) {
-      Incident data = _update(event);
-      if (event.selected || data.id == _given) {
+    } else if (command is UpdateIncident) {
+      Incident data = _update(command);
+      if (command.selected || data.id == _given) {
         yield _set(data);
       }
-    } else if (event is SelectIncident) {
-      if (event.data != _given && _incidents.containsKey(event.data)) {
-        yield _set(_incidents[event.data]);
+    } else if (command is SelectIncident) {
+      if (command.data != _given && _incidents.containsKey(command.data)) {
+        yield _set(_incidents[command.data]);
       }
-    } else if (event is DeleteIncident) {
-      Incident data = _delete(event);
+    } else if (command is DeleteIncident) {
+      Incident data = _delete(command);
       if (data.id == _given) {
         yield _unset();
       }
+    } else if (command is RaiseIncidentError) {
+      yield command.data;
     } else {
-      throw "Unsupported $event";
+      yield IncidentError("Unsupported $command");
     }
   }
 
@@ -120,6 +122,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     if (this.incidents.remove(event.data.id)) {
       throw "Failed to delete ${event.data.id}";
     }
+    return event.data;
   }
 
   IncidentSelected _set(Incident data) {
@@ -134,17 +137,18 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   @override
   void onEvent(IncidentCommand event) {
-    print("Command $event");
+    if (!kReleaseMode) print("Command $event");
   }
 
   @override
   void onTransition(Transition<IncidentCommand, IncidentState> transition) {
-    print("$transition");
+    if (!kReleaseMode) print("$transition");
   }
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    print("Error $error, stacktrace: $stacktrace");
+    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
+    dispatch(RaiseIncidentError(IncidentError(error, trace: stacktrace)));
   }
 }
 
@@ -154,7 +158,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 abstract class IncidentCommand<T> extends Equatable {
   final T data;
 
-  IncidentCommand(this.data) : super();
+  IncidentCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
 class CreateIncident extends IncidentCommand<Incident> {
@@ -187,20 +191,31 @@ class DeleteIncident extends IncidentCommand<Incident> {
   String toString() => 'DeleteIncident';
 }
 
+class RaiseIncidentError extends IncidentCommand<IncidentError> {
+  RaiseIncidentError(data) : super(data);
+
+  @override
+  String toString() => 'RaiseIncidentError';
+}
+
 /// ---------------------
-/// States
+/// Normal States
 /// ---------------------
 abstract class IncidentState<T> extends Equatable {
   final T data;
 
   IncidentState(this.data, [props = const []]) : super([data, ...props]);
 
-  isUnset() => this.data is IncidentUnset;
-  isError() => this.data is IncidentError;
-  isSelected() => this.data is IncidentSelected;
+  isUnset() => this is IncidentUnset;
+  isCreated() => this is IncidentCreated;
+  isUpdated() => this is IncidentUpdated;
+  isSelected() => this is IncidentSelected;
+  isDeleted() => this is IncidentDeleted;
+  isException() => this is IncidentException;
+  isError() => this is IncidentError;
 }
 
-class IncidentUnset extends IncidentState<Incident> {
+class IncidentUnset extends IncidentState<Null> {
   IncidentUnset() : super(null);
 
   @override
@@ -237,11 +252,22 @@ class IncidentDeleted extends IncidentState<Incident> {
   String toString() => 'IncidentDeleted';
 }
 
-/// Incident error state
-class IncidentError extends IncidentState<Object> {
-  final StackTrace stackTrace;
-  IncidentError(Object error, this.stackTrace) : super(error, stackTrace);
+/// ---------------------
+/// Exceptional States
+/// ---------------------
+abstract class IncidentException extends IncidentState<Object> {
+  final StackTrace trace;
+  IncidentException(Object error, {this.trace}) : super(error, trace);
 
   @override
-  String toString() => 'IncidentError';
+  String toString() => 'IncidentException {data: $data}';
+}
+
+/// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
+class IncidentError extends IncidentException {
+  final StackTrace trace;
+  IncidentError(Object error, {this.trace}) : super(error, trace: trace);
+
+  @override
+  String toString() => 'IncidentError {data: $data}';
 }

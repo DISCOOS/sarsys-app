@@ -5,11 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:jose/jose.dart';
 
 class UserService {
+  final String url;
+
   // TODO: Take into account that several users may use the app and handle token storage accordingly
   // TODO: Hash the password and save after successful authentication (for offline login to app)? Possible as long as token is valid?
 
   // static final UserService _singleton = new UserService();
   static final storage = new FlutterSecureStorage();
+
+  UserService(this.url);
 
   //  factory UserService() {
   //    return _singleton;
@@ -22,9 +26,6 @@ class UserService {
 
   // Log in to backed to get token
   Future<bool> login(String username, String password) async {
-    // TODO: Move url to (downloadable) config service/model
-    var url = 'https://sporing.rodekors.no/auth/login';
-
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
     var response = await http.post(url, body: {'username': username, 'password': password});
@@ -36,22 +37,22 @@ class UserService {
 
       await storage.write(key: 'token', value: responseObject['token']);
       // TODO: Save other userdata in User object with data from token
-      var jwt = new JsonWebToken.unverified(responseObject['token']);
+      var jwt = JsonWebToken.unverified(responseObject['token']);
       return true;
     } else if (response.statusCode == 401) {
       // wrong credentials
-      throw new Exception("Feil brukernavn/passord");
+      throw "Feil brukernavn/passord";
     } else if (response.statusCode == 403) {
       // Forbidden
-      throw new Exception("Du har ikke tilgang til denne applikasjonen");
+      throw "Du har ikke tilgang";
     }
-    return false;
+    throw "${response.statusCode}: ${response.reasonPhrase}";
   }
 
   Future<String> getToken() async {
     String _tokenFromStorage = await storage.read(key: "token");
     if (_tokenFromStorage != null) {
-      // Validate token (checks only for expired, should probably do a bit more...
+      // TODO: Validate token (checks only for expired, should probably do a bit more)
       try {
         var jwt = new JsonWebToken.unverified(_tokenFromStorage);
         print("claims: ${jwt.claims}");
