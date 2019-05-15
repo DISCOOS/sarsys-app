@@ -74,98 +74,99 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     );
   }
 
-  Card _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
-    var userBloc = BlocProvider.of<UserBloc>(context);
-    var isAuthorized = userBloc.isAuthorized(incident);
+  Widget _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
+    final userBloc = BlocProvider.of<UserBloc>(context);
 
-    return Card(
-      child: Column(
-        children: <Widget>[
-          ListTile(
-            leading: CircleAvatar(
-              child: Text(
-                "${_formatSince(incident.occurred)}",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+    return StreamBuilder(
+        stream: userBloc.state,
+        builder: (context, snapshot) {
+          final isAuthorized = userBloc.isAuthorized(incident);
+          return Card(
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      "${_formatSince(incident.occurred)}",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  title: Text(
+                    incident.name,
+                    style: TextStyle(fontSize: 20.0),
+                  ),
+                  subtitle: Text(
+                    incident.reference ?? 'ingen',
+                    style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
+                  ),
                 ),
-              ),
-              backgroundColor: Colors.redAccent,
-            ),
-            title: Text(
-              incident.name,
-              style: TextStyle(fontSize: 20.0),
-            ),
-            subtitle: Text(
-              incident.reference ?? 'ingen',
-              style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
-            ),
-          ),
-          Container(
-            height: 240.0,
-            child: Center(child: Text('Kart')),
-            decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
-            child: Row(
-              children: [
-                Wrap(
-                  children: [
-                    Text(incident.justification),
+                if (isAuthorized)
+                  Container(
+                    height: 240.0,
+                    child: Center(child: Text('Kart')),
+                    decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
+                  ),
+                if (isAuthorized)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+                    child: Row(
+                      children: [
+                        Wrap(
+                          children: [
+                            Text(incident.justification),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    ButtonTheme.bar(
+                      layoutBehavior: ButtonBarLayoutBehavior.constrained,
+                      padding: EdgeInsets.only(right: 0.0),
+                      // make buttons use the appropriate styles for cards
+                      child: ButtonBar(
+                        alignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          FlatButton(
+                            child: Text(isAuthorized ? 'VELG' : 'LÅS OPP', style: TextStyle(fontSize: 14.0)),
+                            padding: EdgeInsets.only(left: 16.0, right: 16.0),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onPressed: () {
+                              if (isAuthorized) {
+                                bloc.select(incident.id);
+                                Navigator.pushReplacementNamed(context, 'incident');
+                              } else {
+                                Navigator.push(context, PasscodeRoute(incident));
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            isAuthorized ? Icons.lock_open : Icons.lock,
+                            color: isAuthorized ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
+                            size: 24.0,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
-                )
+                ),
               ],
             ),
-          ),
-          StreamBuilder(
-            stream: userBloc.state,
-            builder: (context, snapshot) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  ButtonTheme.bar(
-                    layoutBehavior: ButtonBarLayoutBehavior.constrained,
-                    padding: EdgeInsets.only(right: 0.0),
-                    // make buttons use the appropriate styles for cards
-                    child: ButtonBar(
-                      alignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        FlatButton(
-                          child: Text(isAuthorized ? 'VELG' : 'LÅS OPP', style: TextStyle(fontSize: 14.0)),
-                          padding: EdgeInsets.only(left: 16.0, right: 16.0),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          onPressed: () {
-                            if (isAuthorized) {
-                              bloc.select(incident.id);
-                              Navigator.pushReplacementNamed(context, 'incident');
-                            } else {
-                              Navigator.push(context, PasscodeRoute(incident));
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          isAuthorized ? Icons.lock_open : Icons.lock,
-                          color: isAuthorized ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
-                          size: 24.0,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
+          );
+        });
   }
 
   BottomAppBar _buildBottomAppBar() {
