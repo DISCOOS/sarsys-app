@@ -11,7 +11,7 @@ void main() {
   final baseUrl = 'https://sporing.rodekors.no';
   final UserService userService = UserService('$baseUrl/auth/login');
 
-  final IncidentService incidentService = IncidentServiceMock.build(userService, 2);
+  final IncidentService incidentService = IncidentServiceMock.build(userService, 2, "T123");
 
   IncidentBloc bloc;
 

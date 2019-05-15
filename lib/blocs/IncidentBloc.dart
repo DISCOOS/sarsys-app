@@ -58,6 +58,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Fetch incidents from [service]
   Future<List<Incident>> fetch() async {
     _incidents.clear();
+    var items = await service.fetch();
     _incidents.addEntries((await service.fetch()).map(
       (incident) => MapEntry(incident.id, incident),
     ));
@@ -163,7 +164,7 @@ abstract class IncidentCommand<T> extends Equatable {
 
 class CreateIncident extends IncidentCommand<Incident> {
   final bool selected;
-  CreateIncident(Incident data, {this.selected = true}) : super(data);
+  CreateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
   String toString() => 'CreateIncident';
@@ -171,7 +172,7 @@ class CreateIncident extends IncidentCommand<Incident> {
 
 class UpdateIncident extends IncidentCommand<Incident> {
   final bool selected;
-  UpdateIncident(Incident data, {this.selected = true}) : super(data);
+  UpdateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
   String toString() => 'UpdateIncident';
@@ -224,7 +225,7 @@ class IncidentUnset extends IncidentState<Null> {
 
 class IncidentCreated extends IncidentState<Incident> {
   final bool selected;
-  IncidentCreated(Incident data, {this.selected = true}) : super(data, selected);
+  IncidentCreated(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
   String toString() => 'IncidentCreated';
@@ -232,7 +233,7 @@ class IncidentCreated extends IncidentState<Incident> {
 
 class IncidentUpdated extends IncidentState<Incident> {
   final bool selected;
-  IncidentUpdated(Incident data, {this.selected = true}) : super(data, selected);
+  IncidentUpdated(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
   String toString() => 'IncidentUpdated';
@@ -257,7 +258,7 @@ class IncidentDeleted extends IncidentState<Incident> {
 /// ---------------------
 abstract class IncidentException extends IncidentState<Object> {
   final StackTrace trace;
-  IncidentException(Object error, {this.trace}) : super(error, trace);
+  IncidentException(Object error, {this.trace}) : super(error, [trace]);
 
   @override
   String toString() => 'IncidentException {data: $data}';

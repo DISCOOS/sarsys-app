@@ -76,7 +76,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
 
   Card _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
     var userBloc = BlocProvider.of<UserBloc>(context);
-    var authz = userBloc.getAuthorization(incident);
+    var isAuthorized = userBloc.isAuthorized(incident);
 
     return Card(
       child: Column(
@@ -118,46 +118,50 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               ],
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              ButtonTheme.bar(
-                layoutBehavior: ButtonBarLayoutBehavior.constrained,
-                padding: EdgeInsets.only(right: 0.0),
-                // make buttons use the appropriate styles for cards
-                child: ButtonBar(
-                  alignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    FlatButton(
-                      child: const Text('VELG', style: TextStyle(fontSize: 14.0)),
-                      padding: EdgeInsets.only(left: 16.0, right: 16.0),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      onPressed: () {
-                        // TODO: Implement passcode validation
-                        if (false && authz == null) {
-                          Navigator.push(context, PasscodeRoute(incident));
-                        } else {
-                          bloc.select(incident.id);
-                          Navigator.pushReplacementNamed(context, 'incident');
-                        }
-                      },
+          StreamBuilder(
+            stream: userBloc.state,
+            builder: (context, snapshot) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  ButtonTheme.bar(
+                    layoutBehavior: ButtonBarLayoutBehavior.constrained,
+                    padding: EdgeInsets.only(right: 0.0),
+                    // make buttons use the appropriate styles for cards
+                    child: ButtonBar(
+                      alignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        FlatButton(
+                          child: Text(isAuthorized ? 'VELG' : 'LÅS OPP', style: TextStyle(fontSize: 14.0)),
+                          padding: EdgeInsets.only(left: 16.0, right: 16.0),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          onPressed: () {
+                            if (isAuthorized) {
+                              bloc.select(incident.id);
+                              Navigator.pushReplacementNamed(context, 'incident');
+                            } else {
+                              Navigator.push(context, PasscodeRoute(incident));
+                            }
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      authz == null ? Icons.lock : Icons.lock_open,
-                      color: authz == null ? Colors.red.withOpacity(0.7) : Colors.green.withOpacity(0.7),
-                      size: 24.0,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          isAuthorized ? Icons.lock_open : Icons.lock,
+                          color: isAuthorized ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
+                          size: 24.0,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

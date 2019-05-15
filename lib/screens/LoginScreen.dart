@@ -109,9 +109,9 @@ class LoginScreenState extends State<LoginScreen> {
         child: SizedBox(
           height: 40.0,
           width: 60.0,
-          child: new RaisedButton(
-            elevation: 5.0,
-            shape: new RoundedRectangleBorder(borderRadius: new BorderRadius.circular(10.0)),
+          child: RaisedButton(
+            elevation: 2.0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
             color: Color.fromRGBO(00, 41, 73, 1),
             child: new Text('Logg inn', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
             onPressed: () {

@@ -28,21 +28,28 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated && _authorized.containsKey(data.id);
+    return isAuthenticated && (_authorized.containsKey(data.id) || _user?.userId == data.created.userId);
   }
 
   /// Check if current user is authorized to access given [Incident]
   UserAuthorized getAuthorization(Incident data) {
-    return isAuthorized(data) ? _authorized[data.id] : null;
+    if (isAuthenticated) {
+      if (_authorized.containsKey(data.id)) return _authorized[data.id];
+      if (_user?.userId == data.created.userId) return UserAuthorized(_user, data, true, true);
+    }
+    return null;
   }
+
+  /// Stream of authorization state changes
+  Stream<bool> authorized(Incident incident) =>
+      state.map((state) => state is UserAuthorized && state.incident == incident);
 
   /// Initialize from service
   Future<bool> init() async {
     var token = await service.getToken();
     if (token != null) {
-      print("Token from User service $token");
-      _user = User.fromToken(token);
-      print("User $_user");
+      print("Init from token f$token");
+      dispatch(InitUser(User.fromToken(token)));
     }
     return Future.value(isAuthenticated);
   }
@@ -72,7 +79,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
-    if (command is AuthenticateUser) {
+    if (command is InitUser) {
+      yield _init(command);
+    } else if (command is AuthenticateUser) {
       yield UserAuthenticating(command.data);
       yield await _authenticate(command);
     } else if (command is UnsetUser) {
@@ -88,6 +97,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     } else {
       yield UserError("Unsupported $command");
     }
+  }
+
+  UserState _init(InitUser command) {
+    _user = command.data;
+    return UserAuthenticated(_user);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
@@ -113,7 +127,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       _authorized.putIfAbsent(data.id, () => state);
       return state;
     }
-    return UserForbidden("Feil kode");
+    return UserForbidden("Feil kode: $passcode");
   }
 
   @override
@@ -148,6 +162,13 @@ class UnsetUser extends UserCommand<Null> {
 
   @override
   String toString() => 'UnsetUser';
+}
+
+class InitUser extends UserCommand<User> {
+  InitUser(User user) : super(user);
+
+  @override
+  String toString() => 'InitUser';
 }
 
 class AuthenticateUser extends UserCommand<String> {
@@ -220,7 +241,7 @@ class UserAuthorized extends UserState<User> {
     this.incident,
     this.command,
     this.personnel,
-  ) : super(user, incident);
+  ) : super(user, [incident]);
   @override
   String toString() => 'UserAuthorized';
 }

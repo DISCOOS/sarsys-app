@@ -7,7 +7,7 @@ class UserServiceMock extends Mock implements UserService {
   static UserService build(String username, String password) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(username, password)).thenAnswer((_) async {
-      var token = _createToken(username);
+      var token = createToken(username);
       await UserService.storage.write(key: 'test_token', value: token);
       return Future.value(true);
     });
@@ -24,7 +24,7 @@ class UserServiceMock extends Mock implements UserService {
   static UserService buildAny() {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(any, any)).thenAnswer((username) async {
-      var token = _createToken(username.namedArguments['username']);
+      var token = createToken(username.positionalArguments[0]);
       await UserService.storage.write(key: 'test_token', value: token);
       return Future.value(true);
     });
@@ -36,7 +36,7 @@ class UserServiceMock extends Mock implements UserService {
     return mock;
   }
 
-  static String _createToken(String username) {
+  static String createToken(String username) {
     final key = 's3cr3t';
     final claimSet = new JwtClaim(
         subject: username,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Passcodes.dart';
@@ -7,16 +8,15 @@ import 'package:SarSys/services/IncidentService.dart';
 import 'package:SarSys/services/UserService.dart';
 import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
-import 'package:random_string/random_string.dart';
 
 class IncidentBuilder {
-  static createIncident(int since, String token) {
-    return json.decode(createIncidentAsJson(since, token));
+  static createIncidentFromToken(String id, int since, String token, String passcode) {
+    return json.decode(createIncidentAsJson(id, since, token, passcode));
   }
 
-  static createIncidentAsJson(int since, String token) {
+  static createIncidentAsJson(String id, int since, String token, String passcode) {
     return '{'
-        '"id": "${randomAlphaNumeric(16)}",'
+        '"id": "$id",'
         '"name": "Savnet person",'
         '"type": "Lost",'
         '"status": "Handling",'
@@ -27,7 +27,7 @@ class IncidentBuilder {
         '"talkgroups": ['
         '{"name": "RK-RIKS-1", "type": "Tetra"}'
         '],'
-        '"passcodes": ${createPasscodesAsJson()},'
+        '"passcodes": ${createPasscodesAsJson(passcode)},'
         '"created": ${createAuthor(token)},'
         '"changed": ${createAuthor(token)}'
         '}';
@@ -37,8 +37,12 @@ class IncidentBuilder {
     return json.encode(Point.now(0, 0).toJson());
   }
 
-  static createPasscodesAsJson() {
+  static createRandomPasscodesAsJson() {
     return json.encode(Passcodes.random(6).toJson());
+  }
+
+  static createPasscodesAsJson(String passcode) {
+    return json.encode(Passcodes(command: passcode, personnel: passcode).toJson());
   }
 
   static createAuthor(String token) {
@@ -48,12 +52,17 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static IncidentService build(UserService service, final int count) {
-    IncidentServiceMock mock = IncidentServiceMock();
+  static IncidentService build(UserService service, final int count, final String passcode) {
+    final IncidentServiceMock mock = IncidentServiceMock();
+    final unauthorized = UserServiceMock.createToken("unauthorized");
     when(mock.fetch()).thenAnswer((_) async {
-      var token = await service.getToken();
-      return Future.value(
-          [for (var i = 1; i <= count; i++) Incident.fromJson(IncidentBuilder.createIncident(i, token))]);
+      var authorized = await service.getToken();
+      return Future.value([
+        for (var i = 1; i <= count ~/ 2; i++)
+          Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, authorized, passcode)),
+        for (var i = count ~/ 2 + 1; i <= count; i++)
+          Incident.fromJson(IncidentBuilder.createIncidentFromToken("By$i", i, unauthorized, passcode)),
+      ]);
     });
     return mock;
   }

@@ -25,7 +25,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.format_list_bulleted),
             title: Text('Velg hendelse', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushNamed(context, 'incidentlist');
+              Navigator.pushNamed(context, 'incidents');
             },
           ),
           Divider(),

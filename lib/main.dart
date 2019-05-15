@@ -25,7 +25,7 @@ void main() async {
 
   // Configure Incident service
   final IncidentService incidentService =
-      kReleaseMode ? IncidentService(apiUrl) : IncidentServiceMock.build(userService, 2);
+      kReleaseMode ? IncidentService(apiUrl) : IncidentServiceMock.build(userService, 2, "T123");
   final IncidentBloc incidentBloc = IncidentBloc(incidentService);
 
   final Widget homepage = await getHome(userBloc);
@@ -41,6 +41,7 @@ void main() async {
       theme: new ThemeData(
         primaryColor: Colors.grey[850],
         buttonTheme: ButtonThemeData(
+          height: 36.0,
           textTheme: ButtonTextTheme.primary,
         ),
         //accentColor: Colors.cyan[600],
