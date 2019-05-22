@@ -1,7 +1,8 @@
 import 'package:SarSys/blocs/IncidentBloc.dart';
 import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/widgets/PasscodePopup.dart';
+import 'package:SarSys/editors/IncidentEditor.dart';
+import 'package:SarSys/popups/PasscodePopup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,6 +34,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               print("New Incident");
+              showDialog(context: context, builder: (context) => IncidentEditor());
             },
             tooltip: 'Ny hendelse',
             child: Icon(Icons.add),

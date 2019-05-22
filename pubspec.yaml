@@ -40,6 +40,7 @@ dependencies:
   random_string: ^0.0.2
   equatable: ^0.2.3
   jaguar_jwt: ^2.1.6
+  flutter_form_builder: ^3.1.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

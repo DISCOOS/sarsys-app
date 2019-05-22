@@ -58,7 +58,6 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Fetch incidents from [service]
   Future<List<Incident>> fetch() async {
     _incidents.clear();
-    var items = await service.fetch();
     _incidents.addEntries((await service.fetch()).map(
       (incident) => MapEntry(incident.id, incident),
     ));

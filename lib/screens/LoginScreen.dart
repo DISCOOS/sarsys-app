@@ -92,11 +92,12 @@ class LoginScreenState extends State<LoginScreen> {
         obscureText: true,
         autofocus: false,
         decoration: new InputDecoration(
-            hintText: 'Passord',
-            icon: new Icon(
-              Icons.lock,
-              color: Colors.grey,
-            )),
+          hintText: 'Passord',
+          icon: new Icon(
+            Icons.lock,
+            color: Colors.grey,
+          ),
+        ),
         validator: (value) => value.isEmpty ? 'Passord må fylles ut' : null,
         onSaved: (value) => _password = value,
       ),
