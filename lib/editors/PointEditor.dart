@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:SarSys/models/Point.dart';
@@ -35,19 +36,21 @@ class PointEditor extends StatefulWidget {
 
 class _PointEditorState extends State<PointEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _controller = TextEditingController();
 
+  bool _init;
   Point _current;
-  bool _init = false;
-  String currentBaseMap;
-  MapController mapController;
+  String _currentBaseMap;
+  MapController _mapController;
 
   @override
   void initState() {
     super.initState();
     // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
-    currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
-    mapController = MapController();
+    _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+    _mapController = MapController();
     // TODO: Use device location as default location
+    _init = false;
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
   }
 
@@ -76,45 +79,86 @@ class _PointEditorState extends State<PointEditor> {
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              center: LatLng(_current.lat, _current.lon),
-              zoom: 13,
-              onPositionChanged: (point, hasGesture) => _updatePoint(point, hasGesture),
-            ),
-            layers: [
-              TileLayerOptions(
-                urlTemplate: currentBaseMap,
-                offlineMode: false,
-                fromAssets: false,
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              margin: EdgeInsets.all(8.0),
-              padding: EdgeInsets.all(16.0),
-              height: 104.0,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.5)),
-              child: Column(
-                children: <Widget>[
-                  if (_current != null) Text(PointEditor.toDD(_current)),
-                  if (_current != null) Text(PointEditor.toUTM(_current)),
-                ],
-              ),
-            ),
-          ),
-          Center(
-            child: SizedBox(
-                width: 56,
-                height: 56,
-                child: CustomPaint(
-                  painter: CrossPainter(),
-                )),
-          ),
+          _buildMap(),
+          _buildCenterMark(),
+          _buildSearchField(),
+          _buildCoordsPanel(),
         ],
+      ),
+    );
+  }
+
+  FlutterMap _buildMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        center: LatLng(_current.lat, _current.lon),
+        zoom: 13,
+        onPositionChanged: (point, hasGesture) => _updatePoint(point, hasGesture),
+      ),
+      layers: [
+        TileLayerOptions(
+          urlTemplate: _currentBaseMap,
+          offlineMode: false,
+          fromAssets: false,
+        ),
+      ],
+    );
+  }
+
+  Center _buildCenterMark() {
+    return Center(
+      child: SizedBox(
+          width: 56,
+          height: 56,
+          child: CustomPaint(
+            painter: CrossPainter(),
+          )),
+    );
+  }
+
+  Align _buildSearchField() {
+    return Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          margin: EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(0.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: SizedBox(
+            child: TextField(
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintMaxLines: 1,
+                hintText: "Skriv inn posisjon eller adresse",
+                contentPadding: EdgeInsets.all(16.0),
+                suffixIcon: Icon(Icons.search),
+              ),
+              controller: _controller,
+              enableInteractiveSelection: true,
+              onSubmitted: (value) => _search(value),
+            ),
+          ),
+        ));
+  }
+
+  Align _buildCoordsPanel() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        margin: EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(16.0),
+        height: 72.0,
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.6)),
+        child: Column(
+          children: <Widget>[
+            if (_current != null) Text(PointEditor.toDD(_current)),
+            if (_current != null) Text(PointEditor.toUTM(_current)),
+          ],
+        ),
       ),
     );
   }
@@ -123,6 +167,122 @@ class _PointEditorState extends State<PointEditor> {
     _current = Point.now(point.center.latitude, point.center.longitude);
     if (_init) setState(() {});
     _init = true;
+  }
+
+  // TODO: Move coordinate format parsing to CoordinateFormat class.
+  static const EASTING = "EW";
+  static const NORTHTING = "NS";
+  final RegExp utm = RegExp(
+    r"([1-6]\d)([C-X]+)\s*([NSWE]?\d{1,7}[.]?\d*[NSWE]?\s+[NSWE]?\d{1,7}[.]?\d*[NSWE]?)",
+    caseSensitive: false,
+  );
+  final RegExp ordinate = RegExp(
+    r"([NSWE]?)([-]?\d+[.]?\d?)([NSWE]?)",
+    caseSensitive: false,
+  );
+
+  void _search(String value) {
+    print("Search: $value");
+    var row;
+    var zone = -1;
+    var isSouth = false;
+    var isDefault = false;
+    var matches = List<Match>();
+    var ordinals = HashMap<String, Match>();
+
+    // Is utm?
+    var match = utm.firstMatch(value);
+    if (match != null) {
+      zone = int.parse(match.group(1));
+      row = match.group(2).toUpperCase();
+      isSouth = 'N'.compareTo(row) > 0;
+      value = match.group(3);
+      print("Found UTM coordinate in grid '$zone$row'");
+    }
+
+    // Attempt to map each match to an axis
+    value.split(" ").forEach((value) {
+      var match = ordinate.firstMatch(value);
+      if (match != null) {
+        matches.add(match);
+        var axis = _axis(_labels(match));
+        // Preserve order
+        if (axis != null) {
+          if (ordinals.containsKey(axis)) {
+            print('Found same axis label on both ordinals');
+            ordinals.clear();
+          } else {
+            ordinals[axis] = match;
+          }
+        }
+      }
+    });
+
+    // No axis labels found?
+    if (ordinals.length == 0 && matches.length == 2) {
+      // Assume default order {lat, lon} is entered
+      isDefault = true;
+      ordinals['lat'] = matches.first;
+      ordinals['lon'] = matches.last;
+      print("Assumed default order {'lat', 'lon'} ");
+    } else if (ordinals.length == 1) {
+      // One axis label found, try to infer the other
+      matches.forEach((match) {
+        if (!ordinals.containsValue(match)) {
+          // Infer missing axis
+          var first = ordinals.values.first;
+          var axis = ('lat' == ordinals.keys.first ? 'lon' : 'lat');
+          ordinals[axis] = match;
+          print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
+        }
+      });
+    }
+
+    if (ordinals.length == 2) {
+      double lat = double.tryParse(_trim(ordinals['lat'].group(2)));
+      double lon = double.tryParse(_trim(ordinals['lon'].group(2)));
+      if (zone > 0) {
+        var proj = TransverseMercatorProjection.utm(zone, isSouth);
+        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
+        lon = dst.x;
+        lat = dst.y;
+      }
+      if (lat != null && lon != null) {
+        var point = LatLng(lat, lon);
+        print("Move to: $point");
+        _mapController.move(point, _mapController.zoom);
+      }
+    }
+  }
+
+  String _trim(String value) {
+    return value.replaceFirst(RegExp(r'^0+'), '');
+  }
+
+  String _axis(List<String> labels) {
+    var axis;
+    if (_isNorthing(labels)) {
+      axis = 'lat';
+    } else if (_isEasting(labels)) {
+      axis = 'lon';
+    }
+    return axis;
+  }
+
+  List<String> _labels(Match match) {
+    var values = match.groups([1, 3]).toSet().toList();
+    values.retainWhere((test) => test.isNotEmpty);
+    return values;
+  }
+
+  bool _isEasting(List<String> values) {
+    var found = values.where((test) => test.isNotEmpty && EASTING.contains(test));
+    return found.isNotEmpty;
+  }
+
+  bool _isNorthing(List<String> values) {
+    var found = values.where((test) => test.isNotEmpty && NORTHTING.contains(test));
+    return found.isNotEmpty;
   }
 }
 
