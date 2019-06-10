@@ -96,13 +96,11 @@ class _PointEditorState extends State<PointEditor> {
       options: MapOptions(
           center: LatLng(_current.lat, _current.lon),
           zoom: 13,
-          onPositionChanged: (point, hasGesture) => _updatePoint(point, hasGesture),
+          onPositionChanged: (point, hasGesture, isUserGesture) => _updatePoint(point, hasGesture),
           onTap: (_) => _hideSearchResults()),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
-          offlineMode: false,
-          fromAssets: false,
         ),
       ],
     );

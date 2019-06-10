@@ -9,12 +9,12 @@ PODS:
     - Flutter
   - geolocator (4.0.3):
     - Flutter
-  - google_api_availability (2.0.0):
+  - google_api_availability (2.0.1):
     - Flutter
   - keyboard_visibility (0.5.0):
     - Flutter
     - Reachability
-  - location_permissions (2.0.1):
+  - location_permissions (2.0.2):
     - Flutter
   - path_provider (0.0.1):
     - Flutter
@@ -75,9 +75,9 @@ SPEC CHECKSUMS:
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   geocoder: 333b5c474623c8223f367b6ac4846b5f9ea72e85
   geolocator: 191e1ae5853d9d142e9c3c71fe79eb9ff154cf24
-  google_api_availability: 80c105ad2c0ed01c18cf779653da2cb939518192
+  google_api_availability: cd29400b9c6eb73b0978f609f0ad66f41dfa90b4
   keyboard_visibility: 091164adbb54829fcee802523daff9e64a7d8023
-  location_permissions: 37b923ed4b9df9dfe9edb109fb4298f7b182047b
+  location_permissions: 974d8fbc3ec5fed16908492a5e03bcb3372fcfd9
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53

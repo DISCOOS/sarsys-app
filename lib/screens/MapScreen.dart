@@ -111,8 +111,6 @@ class MapScreenState extends State<MapScreen> {
           layers: [
             new TileLayerOptions(
               urlTemplate: currentBaseMap,
-              offlineMode: false,
-              fromAssets: false,
             ),
           ],
         ),

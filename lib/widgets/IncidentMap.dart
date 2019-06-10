@@ -18,8 +18,6 @@ class IncidentMap extends StatelessWidget {
       layers: [
         new TileLayerOptions(
           urlTemplate: url,
-          offlineMode: offline,
-          fromAssets: false,
         ),
       ],
     );
