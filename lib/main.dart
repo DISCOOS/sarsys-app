@@ -3,6 +3,7 @@ import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/services/IncidentService.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'mock/incidents.dart';
 import 'mock/users.dart';
@@ -36,25 +37,32 @@ void main() async {
       BlocProvider<IncidentBloc>(bloc: incidentBloc),
     ],
     child: MaterialApp(
-      //debugShowCheckedModeBanner: false,
-      title: 'SarSys',
-      theme: new ThemeData(
-        primaryColor: Colors.grey[850],
-        buttonTheme: ButtonThemeData(
-          height: 36.0,
-          textTheme: ButtonTextTheme.primary,
+        debugShowCheckedModeBanner: false,
+        title: 'SarSys',
+        theme: new ThemeData(
+          primaryColor: Colors.grey[850],
+          buttonTheme: ButtonThemeData(
+            height: 36.0,
+            textTheme: ButtonTextTheme.primary,
+          ),
+          //accentColor: Colors.cyan[600],
         ),
-        //accentColor: Colors.cyan[600],
-      ),
-      home: homepage,
-      routes: <String, WidgetBuilder>{
-        'login': (BuildContext context) => LoginScreen(),
-        'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-        'plan': (BuildContext context) => CommandScreen(tabIndex: 1),
-        'incidents': (BuildContext context) => IncidentsScreen(),
-        'map': (BuildContext context) => MapScreen(),
-      },
-    ),
+        home: homepage,
+        routes: <String, WidgetBuilder>{
+          'login': (BuildContext context) => LoginScreen(),
+          'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
+          'plan': (BuildContext context) => CommandScreen(tabIndex: 1),
+          'incidents': (BuildContext context) => IncidentsScreen(),
+          'map': (BuildContext context) => MapScreen(),
+        },
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('en'), // English
+          const Locale('nb'), // English
+        ]),
   ));
 }
 
