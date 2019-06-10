@@ -35,10 +35,9 @@ class PasscodeRoute extends PopupRoute {
     UserBloc bloc = _handle(context);
     return Center(
       child: Material(
-        child: DecoratedBox(
-          child: _buildBody(context, bloc),
-          decoration: BoxDecoration(color: Colors.white),
-        ),
+        elevation: 4.0,
+        borderRadius: BorderRadius.circular(8.0),
+        child: _buildBody(context, bloc),
       ),
     );
   }
@@ -62,7 +61,7 @@ class PasscodeRoute extends PopupRoute {
                     child: Text(
                       forbidden
                           ? "Feil tilgangskode, forsøk igjen"
-                          : "Skriv inn tilgangskode for ${incident.reference ?? incident.name}",
+                          : "${incident.reference ?? incident.name} krever tilgangskode",
                       style: TextStyle(fontSize: 16.0, color: forbidden ? Colors.red : Colors.black),
                     ),
                   );
@@ -78,30 +77,32 @@ class PasscodeRoute extends PopupRoute {
   }
 
   Widget _buildPasscodeInput() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
-      child: TextFormField(
-        maxLines: 1,
-        obscureText: true,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Tilgangscode',
-          icon: Icon(
-            Icons.lock,
-            color: Colors.grey,
+    return Align(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+        child: TextFormField(
+          maxLines: 1,
+          obscureText: true,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Tilgangskode',
+            filled: true,
+            icon: Icon(
+              Icons.lock,
+              color: Colors.grey,
+            ),
           ),
+          validator: (value) => value.isEmpty ? 'Tilgangskode må fylles ut' : null,
+          onSaved: (value) => _passcode = value,
         ),
-        validator: (value) => value.isEmpty ? 'Tilgangskode må fylles ut' : null,
-        onSaved: (value) => _passcode = value,
       ),
     );
   }
 
   Widget _buildPrimaryButton(UserBloc bloc) {
-    return Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
-        child: SizedBox(
-          width: 88.0,
+    return Align(
+      child: Padding(
+          padding: EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
           child: RaisedButton(
             elevation: 2.0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
@@ -112,8 +113,8 @@ class PasscodeRoute extends PopupRoute {
                 bloc.authorize(incident, _passcode);
               }
             },
-          ),
-        ));
+          )),
+    );
   }
 
   UserBloc _handle(BuildContext context) {
