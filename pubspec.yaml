@@ -19,6 +19,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   flutter_map: ^0.5.0+1
   flutter_secure_storage: ^3.2.1+1
@@ -40,7 +42,9 @@ dependencies:
   random_string: ^0.0.2
   equatable: ^0.2.3
   jaguar_jwt: ^2.1.6
-  flutter_form_builder: ^3.1.1
+  flutter_form_builder: ^3.2.0
+  flutter_chips_input: ^1.2.0
+  geocoder: ^0.1.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

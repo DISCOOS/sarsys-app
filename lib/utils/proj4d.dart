@@ -953,3 +953,67 @@ class TransverseMercatorProjection extends Projection {
     );
   }
 }
+
+/// Performs coordinate formatting
+class CoordinateFormat {
+  static const EASTING = "EW";
+  static const NORTHTING = "NS";
+
+  /// UTM coordinate pattern
+  static final RegExp utm = RegExp(
+    r"^([1-6]\d)([C-X]+)\s*([NSWE]?\d{1,7}[.]?\d*[NSWE]?\s+[NSWE]?\d{1,7}[.]?\d*[NSWE]?)$",
+    caseSensitive: false,
+  );
+
+  /// Coordinate ordinate pattern
+  static final RegExp ordinate = RegExp(
+    r"^([NSWE]?)([-]?\d+[.]?\d?)([NSWE]?)$",
+    caseSensitive: false,
+  );
+
+  /// Trim '0' from beginning of string and whitespaces on both sides
+  static String trim(String value) {
+    return value.replaceFirst(RegExp(r'^0+'), '').trim();
+  }
+
+  /// Get axis from given labels. Returns 'lat' for northing and 'lon' for easting.
+  static String axis(List<String> labels) {
+    var axis;
+    if (isNorthing(labels)) {
+      axis = NORTHTING;
+    } else if (isEasting(labels)) {
+      axis = EASTING;
+    }
+    return axis;
+  }
+
+  static List<String> labels(Match match) {
+    var values = match.groups([1, 3]).toSet().toList();
+    values.retainWhere((test) => test.isNotEmpty);
+    return values;
+  }
+
+  static bool isEasting(List<String> labels) {
+    var found = labels.where((test) => test.isNotEmpty && EASTING.contains(test));
+    return found.isNotEmpty;
+  }
+
+  static bool isNorthing(List<String> labels) {
+    var found = labels.where((test) => test.isNotEmpty && NORTHTING.contains(test));
+    return found.isNotEmpty;
+  }
+
+  static final ddOrdinalFormat = NumberFormat("###.000000")..maximumFractionDigits = 6;
+  static String toDD(ProjCoordinate from, [bool withLabels = false]) {
+    final northing = ddOrdinalFormat.format(from.y);
+    final easting = ddOrdinalFormat.format(from.x);
+    return withLabels ? "DD $northing $easting" : "DD N$northing E$easting";
+  }
+
+  static final utmOrdinalFormat = NumberFormat("0000000")..maximumFractionDigits = 0;
+  static String toUTM(ProjCoordinate from, [bool withLabels = false]) {
+    final northing = utmOrdinalFormat.format(from.y);
+    final easting = utmOrdinalFormat.format(from.x);
+    return withLabels ? "UTM 32V E$easting N$northing" : "UTM 32V $easting $northing";
+  }
+}

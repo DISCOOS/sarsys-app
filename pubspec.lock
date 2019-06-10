@@ -205,7 +205,7 @@ packages:
       name: datetime_picker_formfield
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.8"
+    version: "0.2.0"
   equatable:
     dependency: "direct main"
     description:
@@ -240,7 +240,7 @@ packages:
     source: hosted
     version: "0.3.2"
   flutter_chips_input:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_chips_input
       url: "https://pub.dartlang.org"
@@ -252,7 +252,7 @@ packages:
       name: flutter_form_builder
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.1.1"
+    version: "3.2.0"
   flutter_image:
     dependency: transitive
     description:
@@ -267,6 +267,11 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.7.0"
+  flutter_localizations:
+    dependency: "direct main"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_map:
     dependency: "direct main"
     description:
@@ -292,7 +297,7 @@ packages:
       name: flutter_typeahead
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.5.0"
+    version: "1.6.1"
   front_end:
     dependency: transitive
     description:
@@ -300,6 +305,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.18"
+  geocoder:
+    dependency: "direct main"
+    description:
+      name: geocoder
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.2"
   geolocator:
     dependency: "direct main"
     description:

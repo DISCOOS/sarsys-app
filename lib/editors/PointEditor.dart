@@ -5,8 +5,8 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
+import 'package:geocoder/geocoder.dart';
 
 class PointEditor extends StatefulWidget {
   final Point point;
@@ -17,30 +17,29 @@ class PointEditor extends StatefulWidget {
   @override
   _PointEditorState createState() => _PointEditorState();
 
-  static final utm = TransverseMercatorProjection.utm(32, false);
-
   static String toDD(Point point) {
-    final f = new NumberFormat("###.000000");
-    f.maximumFractionDigits = 6;
-    return point == null ? "Velg" : "DD ${f.format(point.lat)} ${f.format(point.lon)}";
+    return CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat));
   }
 
+  /// TODO: Make UTM zone and northing configurable
+  static final utmProj = TransverseMercatorProjection.utm(32, false);
   static String toUTM(Point point) {
-    final f = new NumberFormat("0000000");
-    f.maximumFractionDigits = 0;
+    if (point == null) return "Velg";
     var src = ProjCoordinate.from2D(point.lon, point.lat);
-    var dst = utm.project(src);
-    return point == null ? "Velg" : "UTM 32V ${f.format(dst.x)} ${f.format(dst.y)}";
+    var dst = utmProj.project(src);
+    return CoordinateFormat.toUTM(dst);
   }
 }
 
 class _PointEditorState extends State<PointEditor> {
+  final _searchKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _controller = TextEditingController();
 
   bool _init;
   Point _current;
   String _currentBaseMap;
+  OverlayEntry _overlayEntry;
   MapController _mapController;
 
   @override
@@ -77,13 +76,16 @@ class _PointEditorState extends State<PointEditor> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          _buildMap(),
-          _buildCenterMark(),
-          _buildSearchField(),
-          _buildCoordsPanel(),
-        ],
+      body: GestureDetector(
+        child: Stack(
+          children: [
+            _buildMap(),
+            _buildCenterMark(),
+            _buildSearchField(),
+            _buildCoordsPanel(),
+          ],
+        ),
+        onTapDown: (_) => _hideSearchResults(),
       ),
     );
   }
@@ -92,10 +94,10 @@ class _PointEditorState extends State<PointEditor> {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: LatLng(_current.lat, _current.lon),
-        zoom: 13,
-        onPositionChanged: (point, hasGesture) => _updatePoint(point, hasGesture),
-      ),
+          center: LatLng(_current.lat, _current.lon),
+          zoom: 13,
+          onPositionChanged: (point, hasGesture) => _updatePoint(point, hasGesture),
+          onTap: (_) => _hideSearchResults()),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
@@ -130,6 +132,7 @@ class _PointEditorState extends State<PointEditor> {
           ),
           child: SizedBox(
             child: TextField(
+              key: _searchKey,
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintMaxLines: 1,
@@ -152,7 +155,7 @@ class _PointEditorState extends State<PointEditor> {
         margin: EdgeInsets.all(8.0),
         padding: EdgeInsets.all(16.0),
         height: 72.0,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.6)),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8.0)),
         child: Column(
           children: <Widget>[
             if (_current != null) Text(PointEditor.toDD(_current)),
@@ -169,29 +172,60 @@ class _PointEditorState extends State<PointEditor> {
     _init = true;
   }
 
-  // TODO: Move coordinate format parsing to CoordinateFormat class.
-  static const EASTING = "EW";
-  static const NORTHTING = "NS";
-  final RegExp utm = RegExp(
-    r"([1-6]\d)([C-X]+)\s*([NSWE]?\d{1,7}[.]?\d*[NSWE]?\s+[NSWE]?\d{1,7}[.]?\d*[NSWE]?)",
-    caseSensitive: false,
-  );
-  final RegExp ordinate = RegExp(
-    r"([NSWE]?)([-]?\d+[.]?\d?)([NSWE]?)",
-    caseSensitive: false,
-  );
+  void _showResults(List<Address> addresses) {
+    RenderBox renderBox = _searchKey.currentContext.findRenderObject();
+    var size = renderBox.size;
+    var offset = renderBox.localToGlobal(Offset.zero);
 
-  void _search(String value) {
+    _hideSearchResults();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+            left: offset.dx,
+            top: offset.dy + size.height + 5.0,
+            width: size.width,
+            child: Material(
+              elevation: 4.0,
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: addresses
+                    .map(
+                      (address) => ListTile(
+                            title: Text(address.featureName),
+                            subtitle: Text(address.addressLine),
+                            onTap: () {
+                              _hideSearchResults();
+                              _goto(address.coordinates.latitude, address.coordinates.longitude);
+                            },
+                          ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
+    );
+    Overlay.of(context).insert(this._overlayEntry);
+  }
+
+  void _hideSearchResults() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  Future _search(String value) async {
     print("Search: $value");
     var row;
-    var zone = -1;
+    var zone = -1, lat, lon;
     var isSouth = false;
     var isDefault = false;
     var matches = List<Match>();
     var ordinals = HashMap<String, Match>();
 
+    value = value.trim();
+
     // Is utm?
-    var match = utm.firstMatch(value);
+    var match = CoordinateFormat.utm.firstMatch(value);
     if (match != null) {
       zone = int.parse(match.group(1));
       row = match.group(2).toUpperCase();
@@ -202,10 +236,10 @@ class _PointEditorState extends State<PointEditor> {
 
     // Attempt to map each match to an axis
     value.split(" ").forEach((value) {
-      var match = ordinate.firstMatch(value);
+      var match = CoordinateFormat.ordinate.firstMatch(value);
       if (match != null) {
         matches.add(match);
-        var axis = _axis(_labels(match));
+        var axis = CoordinateFormat.axis(CoordinateFormat.labels(match));
         // Preserve order
         if (axis != null) {
           if (ordinals.containsKey(axis)) {
@@ -222,67 +256,64 @@ class _PointEditorState extends State<PointEditor> {
     if (ordinals.length == 0 && matches.length == 2) {
       // Assume default order {lat, lon} is entered
       isDefault = true;
-      ordinals['lat'] = matches.first;
-      ordinals['lon'] = matches.last;
-      print("Assumed default order {'lat', 'lon'} ");
+      ordinals[CoordinateFormat.NORTHTING] = matches.first;
+      ordinals[CoordinateFormat.EASTING] = matches.last;
+      print("Assumed default order {NORTHING, EASTING} ");
     } else if (ordinals.length == 1) {
       // One axis label found, try to infer the other
       matches.forEach((match) {
         if (!ordinals.containsValue(match)) {
           // Infer missing axis
           var first = ordinals.values.first;
-          var axis = ('lat' == ordinals.keys.first ? 'lon' : 'lat');
+          var axis = (CoordinateFormat.NORTHTING == ordinals.keys.first
+              ? CoordinateFormat.EASTING
+              : CoordinateFormat.NORTHTING);
           ordinals[axis] = match;
           print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
         }
       });
     }
 
-    if (ordinals.length == 2) {
-      double lat = double.tryParse(_trim(ordinals['lat'].group(2)));
-      double lon = double.tryParse(_trim(ordinals['lon'].group(2)));
+    // Search for address?
+    if (ordinals.length != 2) {
+      try {
+        var addresses = await Geocoder.local.findAddressesFromQuery(value);
+        if (addresses.length > 1) {
+          _showResults(addresses);
+        } else {
+          var first = addresses.first;
+          lat = first.coordinates.latitude;
+          lon = first.coordinates.longitude;
+        }
+      } catch (e) {
+        final snackbar = SnackBar(
+          duration: Duration(seconds: 1),
+          content: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('Addresse ikke funnet'),
+          ),
+        );
+        _scaffoldKey.currentState.showSnackBar(snackbar);
+      }
+    } else {
+      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
+      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
       if (zone > 0) {
         var proj = TransverseMercatorProjection.utm(zone, isSouth);
         var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
         lon = dst.x;
         lat = dst.y;
       }
-      if (lat != null && lon != null) {
-        var point = LatLng(lat, lon);
-        print("Move to: $point");
-        _mapController.move(point, _mapController.zoom);
-      }
+    }
+    if (lat != null && lon != null) {
+      _goto(lat, lon);
     }
   }
 
-  String _trim(String value) {
-    return value.replaceFirst(RegExp(r'^0+'), '');
-  }
-
-  String _axis(List<String> labels) {
-    var axis;
-    if (_isNorthing(labels)) {
-      axis = 'lat';
-    } else if (_isEasting(labels)) {
-      axis = 'lon';
-    }
-    return axis;
-  }
-
-  List<String> _labels(Match match) {
-    var values = match.groups([1, 3]).toSet().toList();
-    values.retainWhere((test) => test.isNotEmpty);
-    return values;
-  }
-
-  bool _isEasting(List<String> values) {
-    var found = values.where((test) => test.isNotEmpty && EASTING.contains(test));
-    return found.isNotEmpty;
-  }
-
-  bool _isNorthing(List<String> values) {
-    var found = values.where((test) => test.isNotEmpty && NORTHTING.contains(test));
-    return found.isNotEmpty;
+  void _goto(lat, lon) {
+    var point = LatLng(lat, lon);
+    print("Goto: $point");
+    _mapController.move(point, _mapController.zoom);
   }
 }
 
@@ -293,7 +324,7 @@ class CrossPainter extends CustomPainter {
 
   CrossPainter() {
     _paint = Paint()
-      ..color = Colors.red.withOpacity(0.4)
+      ..color = Colors.red.withOpacity(0.6)
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
   }
