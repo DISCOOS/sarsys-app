@@ -44,7 +44,7 @@ class PasscodeRoute extends PopupRoute {
 
   Widget _buildBody(BuildContext context, UserBloc bloc) {
     return FractionallySizedBox(
-      widthFactor: 0.9,
+      widthFactor: 0.8,
       alignment: Alignment.topCenter,
       child: Container(
         padding: EdgeInsets.all(16.0),
@@ -62,7 +62,11 @@ class PasscodeRoute extends PopupRoute {
                       forbidden
                           ? "Feil tilgangskode, forsøk igjen"
                           : "${incident.reference ?? incident.name} krever tilgangskode",
-                      style: TextStyle(fontSize: 16.0, color: forbidden ? Colors.red : Colors.black),
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                        color: forbidden ? Colors.red : Colors.black,
+                      ),
                     ),
                   );
                 },
