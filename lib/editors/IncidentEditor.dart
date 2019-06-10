@@ -18,10 +18,14 @@ class _IncidentEditorState extends State<IncidentEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
 
+  int _currentStep = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: true,
+      primary: false,
       appBar: AppBar(
         title: Text("Ny hendelse"),
         centerTitle: false,
@@ -39,6 +43,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
                 print(_formKey.currentState.value);
+                Navigator.pop(context, _formKey.currentState.value);
+              } else {
+                setState(() {});
               }
             },
           ),
@@ -48,46 +55,71 @@ class _IncidentEditorState extends State<IncidentEditor> {
         child: FormBuilder(
           key: _formKey,
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildNameField(),
-                SizedBox(height: 16.0),
-                _buildJustificationField(),
-                SizedBox(height: 16.0),
-                _buildTypeField(),
-                SizedBox(height: 16.0),
-                _buildStatusField(),
-                SizedBox(height: 16.0),
-                Divider(),
-                _buildSubheader(context, 'Plassering'),
-                SizedBox(height: 16.0),
-                _buildLocationField(),
-                SizedBox(height: 16.0),
-                Divider(),
-                _buildSubheader(context, 'Talegrupper'),
-                SizedBox(height: 16.0),
-//              _buildTGField(),
-//              _buildTGField(),
+            padding: const EdgeInsets.all(0.0),
+            child: Stepper(
+              type: StepperType.vertical,
+              currentStep: _currentStep,
+              onStepTapped: (int step) => setState(() => _currentStep = step),
+              onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
+              onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
+              controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
+                return Container();
+              },
+              steps: [
+                Step(
+                  title: Text('Generelt'),
+                  subtitle: Text('Oppgi navn og begrunnelse'),
+                  content: Column(
+                    children: [
+                      _buildNameField(),
+                      SizedBox(height: 16.0),
+                      _buildJustificationField(),
+                      SizedBox(height: 16.0),
+                      _buildReferenceField(),
+                    ],
+                  ),
+                  isActive: _currentStep >= 0,
+                  state: _isValid(['name', 'justification', 'reference'])
+                      ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
+                      : StepState.error,
+                ),
+                Step(
+                  title: Text('Klassifisering'),
+                  subtitle: Text('Oppgi type og status'),
+                  content: Column(
+                    children: [
+                      _buildTypeField(),
+                      SizedBox(height: 16.0),
+                      _buildStatusField(),
+                    ],
+                  ),
+                  isActive: _currentStep >= 0,
+                  state: _isValid(['type', 'status'])
+                      ? (_currentStep > 1 ? StepState.complete : StepState.indexed)
+                      : StepState.error,
+                ),
+                Step(
+                  title: Text('Plassering'),
+                  subtitle: Text('Oppgi hendelsens plassering'),
+                  content: _buildLocationField(),
+                  isActive: _currentStep >= 0,
+                  state:
+                      _isValid(['ipp']) ? (_currentStep > 2 ? StepState.complete : StepState.indexed) : StepState.error,
+                ),
+                Step(
+                  title: Text('Talegrupper'),
+                  subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
+                  content: _buildTGField(),
+                  isActive: _currentStep >= 0,
+                  state: _isValid(['talkgroups'])
+                      ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
+                      : StepState.error,
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  _buildSubheader(BuildContext context, String label) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          label,
-          style: Theme.of(context).textTheme.subhead,
-        ),
-      ],
     );
   }
 
@@ -100,10 +132,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
       decoration: new InputDecoration(
         hintText: 'Navn',
         filled: true,
-        icon: new Icon(
-          Icons.announcement,
-          color: Colors.grey,
-        ),
       ),
       validators: [
         FormBuilderValidators.required(errorText: 'Navn må fylles inn'),
@@ -113,17 +141,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildJustificationField() {
     return FormBuilderTextField(
-      maxLines: 5,
+      maxLines: 3,
       autofocus: false,
       attribute: 'justification',
       initialValue: widget?.incident?.justification,
       decoration: new InputDecoration(
         hintText: 'Begrunnelse',
         filled: true,
-        icon: new Icon(
-          Icons.chat,
-          color: Colors.grey,
-        ),
       ),
       validators: [
         FormBuilderValidators.required(errorText: 'Begrunnelse må fylles inn'),
@@ -131,11 +155,23 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
+  Widget _buildReferenceField() {
+    return FormBuilderTextField(
+      maxLines: 1,
+      autofocus: true,
+      attribute: 'reference',
+      initialValue: widget?.incident?.name,
+      decoration: new InputDecoration(
+        hintText: 'Referanse',
+        filled: true,
+      ),
+    );
+  }
+
   Widget _buildTypeField() {
     return _buildDropDownField(
       attribute: 'type',
       label: 'Type hendelse',
-      icon: SizedBox(width: 24, height: 24),
       initialValue: widget?.incident?.type ?? IncidentType.Lost,
       items: [
         [IncidentType.Lost, 'Savnet'],
@@ -152,7 +188,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      icon: SizedBox(width: 24, height: 24),
       initialValue: widget?.incident?.status ?? IncidentStatus.Registered,
       items: [
         [IncidentStatus.Registered, 'Registrert'],
@@ -167,7 +202,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildDropDownField<T>({
     @required String attribute,
-    @required Widget icon,
     @required String label,
     @required T initialValue,
     @required List<DropdownMenuItem<T>> items,
@@ -180,7 +214,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
           initialValue: initialValue,
           builder: (FormFieldState<T> field) => _buildDropdown<T>(
                 field: field,
-                icon: icon,
                 label: label,
                 items: items,
               ),
@@ -190,14 +223,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildDropdown<T>({
     @required FormFieldState<T> field,
-    @required Widget icon,
     @required String label,
     @required List<DropdownMenuItem<T>> items,
   }) =>
       InputDecorator(
         decoration: InputDecoration(
           hasFloatingPlaceholder: true,
-          icon: icon,
           errorText: field.hasError ? field.errorText : null,
           filled: true,
           labelText: label,
@@ -225,13 +256,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
           builder: (FormFieldState<Point> field) => GestureDetector(
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    hasFloatingPlaceholder: true,
-                    icon: SizedBox(width: 24, height: 24),
-                    errorText: field.hasError ? field.errorText : null,
                     filled: true,
                     suffixIcon: Icon(Icons.map),
+                    contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
+                    errorText: field.hasError ? field.errorText : null,
                   ),
-                  child: Text(field.value == null ? 'Velg posisjon' : PointEditor.toDD(field.value),
+                  child: Text(field.value == null ? 'Velg posisjon' : PointEditor.toUTM(field.value),
                       style: Theme.of(context).textTheme.subhead),
                 ),
                 onTap: () => _selectLocation(context, field),
@@ -242,54 +272,85 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ],
       );
 
-  _selectLocation(BuildContext context, FormFieldState<Point> field) async {
+  void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
       builder: (context) => PointEditor(field.value, 'Velg plassering'),
     );
     if (selected != field.value) {
       field.didChange(selected);
+      setState(() {});
     }
   }
 
-//  Widget _buildTGField() {
-//    final List<TalkGroup> groups = widget?.incident?.talkgroups ?? [];
-//    return FormBuilderCustomField(
-//      attribute: "talkgroup",
-//      formField: FormField<List<TalkGroup>>(
-//        enabled: true,
-//        initialValue: groups,
-//        builder: (FormFieldState<dynamic> field) {
-//          return InputDecorator(
-//            decoration: InputDecoration(
-//                hasFloatingPlaceholder: true,
-//                icon: SizedBox(width: 24, height: 24),
-//                errorText: field.hasError ? field.errorText : null,
-//                filled: true,
-//                labelText: "Talkgroups",
-//                prefixIcon: GestureDetector(
-//                  child: Icon(Icons.delete),
-//                  onTap: () => {},
-//                )),
-//            child: DropdownButtonHideUnderline(
-//              child: ButtonTheme(
-//                alignedDropdown: false,
-//                child: DropdownButton<TalkGroup>(
-//                  value: field.value,
-//                  isDense: true,
-//                  onChanged: (TalkGroup newValue) {
-//                    field.didChange(newValue);
-//                  },
-//                  items: items,
-//                ),
-//              ),
-//            ),
-//          );
-//        },
-//      ),
-//      validators: [
-//        FormBuilderValidators.required(errorText: 'Status må velges'),
-//      ],
-//    );
-//  }
+  Widget _buildTGField() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 72.0),
+        child: Center(
+          child: FormBuilderChipsInput(
+            decoration: InputDecoration(
+              filled: true,
+              contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
+            ),
+            attribute: 'talkgroups',
+            maxChips: 5,
+            findSuggestions: (String query) {
+              if (query.length != 0) {
+                var lowercaseQuery = query.toLowerCase();
+                return mockResults.where((tg) {
+                  return tg.name.toLowerCase().contains(query.toLowerCase()) ||
+                      tg.type.toString().toLowerCase().contains(query.toLowerCase());
+                }).toList(growable: false)
+                  ..sort((a, b) => a.name
+                      .toLowerCase()
+                      .indexOf(lowercaseQuery)
+                      .compareTo(b.name.toLowerCase().indexOf(lowercaseQuery)));
+              } else {
+                return const <TalkGroup>[];
+              }
+            },
+            chipBuilder: (context, state, tg) {
+              return InputChip(
+                key: ObjectKey(tg),
+                label: Text(tg.name),
+                avatar: CircleAvatar(
+                  child: Text(enumName(tg.type).substring(0, 1)),
+                ),
+                onDeleted: () => state.deleteChip(tg),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            },
+            suggestionBuilder: (context, state, tg) {
+              return ListTile(
+                key: ObjectKey(tg),
+                leading: CircleAvatar(
+                  child: Text(enumName(tg.type).substring(0, 1)),
+                ),
+                title: Text(tg.name),
+                onTap: () => state.selectSuggestion(tg),
+              );
+            },
+            validators: [
+              FormBuilderValidators.required(errorText: 'Talegruppe(r) må oppgis'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  _isValid(List<String> fields) {
+    return _formKey.currentState == null ||
+        fields.where((name) => !_formKey.currentState.fields[name].currentState.hasError).length == fields.length;
+  }
 }
+
+String enumName(Object o) => o.toString().split('.').last;
+
+var mockResults = <TalkGroup>[
+  TalkGroup(name: "01-SAR-1", type: TalkGroupType.Tetra),
+  TalkGroup(name: "01-SAR-2", type: TalkGroupType.Tetra),
+  TalkGroup(name: "01-SAR-3", type: TalkGroupType.Tetra),
+  TalkGroup(name: "01-SAR-4", type: TalkGroupType.Tetra),
+];
