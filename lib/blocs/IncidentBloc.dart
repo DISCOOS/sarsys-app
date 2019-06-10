@@ -55,6 +55,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return this;
   }
 
+  /// Create given incident
+  IncidentBloc create(Incident incident, [bool selected = true]) {
+    dispatch(CreateIncident(incident, selected: selected));
+    return this;
+  }
+
   /// Fetch incidents from [service]
   Future<List<Incident>> fetch() async {
     _incidents.clear();
@@ -70,12 +76,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   @override
   Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
     if (command is CreateIncident) {
-      Incident data = _create(command);
+      Incident data = await _create(command);
       if (command.selected) {
         yield _set(data);
       }
     } else if (command is UpdateIncident) {
-      Incident data = _update(command);
+      Incident data = await _update(command);
       if (command.selected || data.id == _given) {
         yield _set(data);
       }
@@ -84,7 +90,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         yield _set(_incidents[command.data]);
       }
     } else if (command is DeleteIncident) {
-      Incident data = _delete(command);
+      Incident data = await _delete(command);
       if (data.id == _given) {
         yield _unset();
       }
@@ -95,17 +101,17 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     }
   }
 
-  Incident _create(CreateIncident event) {
+  Future<Incident> _create(CreateIncident event) async {
     //TODO: Implement call to backend
 
     var data = _incidents.putIfAbsent(
       event.data.id,
       () => event.data,
     );
-    return data;
+    return Future.value(data);
   }
 
-  Incident _update(UpdateIncident event) {
+  Future<Incident> _update(UpdateIncident event) async {
     //TODO: Implement call to backend
 
     var data = _incidents.update(
@@ -113,16 +119,16 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       (incident) => event.data,
       ifAbsent: () => event.data,
     );
-    return data;
+    return Future.value(data);
   }
 
-  _delete(DeleteIncident event) {
+  Future<Incident> _delete(DeleteIncident event) {
     //TODO: Implement call to backend
 
     if (this.incidents.remove(event.data.id)) {
       throw "Failed to delete ${event.data.id}";
     }
-    return event.data;
+    return Future.value(event.data);
   }
 
   IncidentSelected _set(Incident data) {

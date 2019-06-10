@@ -56,6 +56,24 @@ class Incident extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$IncidentToJson(this);
+
+  /// Clone with author
+  Incident withAuthor(String userId) {
+    var now = DateTime.now();
+    return Incident(
+      id: this.id,
+      name: this.name,
+      type: this.type,
+      status: this.status,
+      changed: Author(userId: userId, timestamp: now),
+      created: this.created ?? Author(userId: userId, timestamp: now),
+      occurred: this.occurred,
+      justification: this.justification,
+      passcodes: this.passcodes,
+      ipp: this.ipp,
+      talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+    );
+  }
 }
 
 enum IncidentType { Lost, Distress, Other }

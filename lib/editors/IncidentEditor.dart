@@ -1,9 +1,13 @@
+import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/editors/PointEditor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
+import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:intl/intl.dart';
 
 class IncidentEditor extends StatefulWidget {
   final Incident incident;
@@ -39,15 +43,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
           FlatButton(
             child: Text('OPPRETT', style: TextStyle(fontSize: 14.0, color: Colors.white)),
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () {
-              if (_formKey.currentState.validate()) {
-                _formKey.currentState.save();
-                print(_formKey.currentState.value);
-                Navigator.pop(context, _formKey.currentState.value);
-              } else {
-                setState(() {});
-              }
-            },
+            onPressed: () => _submit(context),
           ),
         ],
       ),
@@ -75,11 +71,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       SizedBox(height: 16.0),
                       _buildJustificationField(),
                       SizedBox(height: 16.0),
-                      _buildReferenceField(),
+                      _buildOccurredField(),
                     ],
                   ),
                   isActive: _currentStep >= 0,
-                  state: _isValid(['name', 'justification', 'reference'])
+                  state: _isValid(['name', 'justification', 'occurred'])
                       ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
                       : StepState.error,
                 ),
@@ -115,12 +111,57 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
                       : StepState.error,
                 ),
+                Step(
+                  title: Text('Referanser'),
+                  subtitle: Text('Oppgi hendelsesnummer oppgitt fra rekvirent'),
+                  content: _buildReferenceField(),
+                  isActive: _currentStep >= 0,
+                  state: _isValid(['reference'])
+                      ? (_currentStep > 4 ? StepState.complete : StepState.indexed)
+                      : StepState.error,
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  FormBuilderDateTimePicker _buildOccurredField() {
+    return FormBuilderDateTimePicker(
+      attribute: "occurred",
+      initialTime: null,
+      initialValue: widget?.incident?.occurred ?? DateTime.now(),
+      inputType: InputType.both,
+      format: DateFormat("yyyy-MM-dd HH:mm"),
+      resetIcon: null,
+      autocorrect: true,
+      autovalidate: true,
+      editable: false,
+      decoration: InputDecoration(
+        labelText: "Hendelsestidspunkt",
+        isDense: true,
+        contentPadding: EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
+        hasFloatingPlaceholder: false,
+        filled: true,
+      ),
+      keyboardType: TextInputType.datetime,
+      valueTransformer: (dt) => dt.toString(),
+    );
+  }
+
+  void _submit(BuildContext context) {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      print(_formKey.currentState.value);
+      var userId = BlocProvider.of<UserBloc>(context).user?.userId;
+      var incident = Incident.fromJson(_formKey.currentState.value).withAuthor(userId);
+      Navigator.pop(context, incident);
+    } else {
+      // Show errors
+      setState(() {});
+    }
   }
 
   Widget _buildNameField() {
@@ -160,9 +201,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
       maxLines: 1,
       autofocus: true,
       attribute: 'reference',
-      initialValue: widget?.incident?.name,
+      initialValue: widget?.incident?.reference,
       decoration: new InputDecoration(
-        hintText: 'Referanse',
+        hintText: 'SAR- eller AMIS-nummer',
         filled: true,
       ),
     );
@@ -172,11 +213,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _buildDropDownField(
       attribute: 'type',
       label: 'Type hendelse',
-      initialValue: widget?.incident?.type ?? IncidentType.Lost,
+      initialValue: widget?.incident?.type ?? enumName(IncidentType.Lost),
       items: [
-        [IncidentType.Lost, 'Savnet'],
-        [IncidentType.Distress, 'Nødstedt'],
-        [IncidentType.Other, 'Annet'],
+        [enumName(IncidentType.Lost), 'Savnet'],
+        [enumName(IncidentType.Distress), 'Nødstedt'],
+        [enumName(IncidentType.Other), 'Annet'],
       ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
@@ -188,11 +229,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      initialValue: widget?.incident?.status ?? IncidentStatus.Registered,
+      initialValue: widget?.incident?.status ?? enumName(IncidentStatus.Registered),
       items: [
-        [IncidentStatus.Registered, 'Registrert'],
-        [IncidentStatus.Handling, 'Håndteres'],
-        [IncidentStatus.Other, 'Annet'],
+        [enumName(IncidentStatus.Registered), 'Registrert'],
+        [enumName(IncidentStatus.Handling), 'Håndteres'],
+        [enumName(IncidentStatus.Other), 'Annet'],
       ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Status må velges'),
@@ -261,12 +302,17 @@ class _IncidentEditorState extends State<IncidentEditor> {
                     contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
                     errorText: field.hasError ? field.errorText : null,
                   ),
-                  child: Text(field.value == null ? 'Velg posisjon' : PointEditor.toUTM(field.value),
-                      style: Theme.of(context).textTheme.subhead),
+                  child: field.value == null
+                      ? Text('Velg posisjon', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                      : Text(
+                          PointEditor.toUTM(field.value),
+                          style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
+                        ),
                 ),
                 onTap: () => _selectLocation(context, field),
               ),
         ),
+        valueTransformer: (point) => point.toJson(),
         validators: [
           FormBuilderValidators.required(errorText: 'Plassering må oppgis'),
         ],
@@ -286,15 +332,17 @@ class _IncidentEditorState extends State<IncidentEditor> {
   Widget _buildTGField() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 72.0),
+        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
         child: Center(
           child: FormBuilderChipsInput(
+            attribute: 'talkgroups',
+            maxChips: 5,
+            initialValue: widget?.incident?.talkgroups,
             decoration: InputDecoration(
+              hintText: "Søk etter talegrupper",
               filled: true,
               contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
             ),
-            attribute: 'talkgroups',
-            maxChips: 5,
             findSuggestions: (String query) {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
@@ -331,6 +379,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 onTap: () => state.selectSuggestion(tg),
               );
             },
+            valueTransformer: (values) => values.map((tg) => tg.toJson()).toList(),
             validators: [
               FormBuilderValidators.required(errorText: 'Talegruppe(r) må oppgis'),
             ],

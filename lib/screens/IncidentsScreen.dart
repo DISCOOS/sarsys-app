@@ -32,9 +32,15 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           body: _buildBody(bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              print("New Incident");
-              showDialog(context: context, builder: (context) => IncidentEditor());
+            onPressed: () async {
+              var incident = await showDialog(
+                context: context,
+                builder: (context) => IncidentEditor(),
+              );
+              if (incident != null) {
+                print("New Incident $incident");
+                bloc.create(incident);
+              }
             },
             tooltip: 'Ny hendelse',
             child: Icon(Icons.add),
@@ -66,8 +72,13 @@ class IncidentsScreenState extends State<IncidentsScreen> {
             ),
             child: Padding(
               padding: EdgeInsets.all(8.0),
-              child: Column(
-                children: bloc.incidents.map((incident) => _buildCard(context, bloc, incident)).toList(),
+              child: StreamBuilder(
+                stream: bloc.state,
+                builder: (context, snapshot) {
+                  return Column(
+                    children: bloc.incidents.map((incident) => _buildCard(context, bloc, incident)).toList(),
+                  );
+                },
               ),
             ),
           ),
@@ -102,7 +113,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     style: TextStyle(fontSize: 20.0),
                   ),
                   subtitle: Text(
-                    incident.reference ?? 'ingen',
+                    incident.reference ?? 'Ingen referanse',
                     style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
                   ),
                 ),
@@ -195,6 +206,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   }
 
   String _formatSince(DateTime timestamp) {
+    if (timestamp == null) return "-";
     Duration delta = DateTime.now().difference(timestamp);
     return delta.inHours > 99 ? "${delta.inDays}d" : delta.inHours > 0 ? "${delta.inHours}h" : "${delta.inSeconds}h";
   }
