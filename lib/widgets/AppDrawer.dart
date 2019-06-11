@@ -1,5 +1,4 @@
 import 'package:SarSys/blocs/UserBloc.dart';
-import 'package:SarSys/services/UserService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,10 +7,10 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     return Drawer(
-        child: ListView(
-            // Important: Remove any padding from the ListView.
-            padding: EdgeInsets.zero,
-            children: <Widget>[
+      child: ListView(
+        // Important: Remove any padding from the ListView.
+        padding: EdgeInsets.zero,
+        children: <Widget>[
           SizedBox(
             height: 120.0,
             child: DrawerHeader(
@@ -39,7 +38,7 @@ class AppDrawer extends StatelessWidget {
           Divider(),
           ListTile(
             leading: const Icon(Icons.warning),
-            title: Text('Incident', style: TextStyle(fontSize: 14)),
+            title: Text('Hendelse', style: TextStyle(fontSize: 14)),
             onTap: () {
               Navigator.pushReplacementNamed(context, 'incident');
             },
@@ -63,6 +62,8 @@ class AppDrawer extends StatelessWidget {
                   .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
             },
           ),
-        ]));
+        ],
+      ),
+    );
   }
 }
