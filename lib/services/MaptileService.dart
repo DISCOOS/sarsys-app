@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 class MaptileService {
   static final MaptileService _singleton = new MaptileService._internal();
@@ -76,10 +77,11 @@ class MaptileService {
     // Get permission
 //    Map<PermissionGroup, PermissionStatus> permissions =
 //        await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-    // Plugin seems to fail on iOS, remove for now and ivestigate alternatives
+    // Plugin seems to fail on iOS, remove for now and investigate alternatives
 
     if (true) {
-      Directory baseDir = Directory("/storage");
+      Directory baseDir =
+          Platform.isIOS ? await getApplicationDocumentsDirectory() : await getExternalStorageDirectory();
       // Root
       await for (FileSystemEntity entity in baseDir.list(recursive: false, followLinks: false)) {
         if (basename(entity.path) != "emulated" && basename(entity.path) != "self" && entity is Directory) {
@@ -124,7 +126,7 @@ class MaptileService {
     return _maps;
   }
 
-  List<BaseMap> fetchMaps() {
+  Future<List<BaseMap>> fetchMaps() async {
 //    List<BaseMap> _maps = [];
 //    // Locally stored maps on SDCard only on Android - maybe downloadable maps in iOS later
 //    if (Platform.isAndroid) {
