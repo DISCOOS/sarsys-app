@@ -153,7 +153,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             onPressed: () {
                               if (isAuthorized) {
                                 bloc.select(incident.id);
-                                Navigator.pushReplacementNamed(context, 'incident');
+                                Navigator.pushReplacementNamed(context, 'map');
                               } else {
                                 Navigator.push(context, PasscodeRoute(incident));
                               }
@@ -189,7 +189,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           IconButton(
-            icon: Icon(Icons.sort),
+            icon: Icon(Icons.filter_list),
             color: Colors.white,
             onPressed: () {},
           ),
