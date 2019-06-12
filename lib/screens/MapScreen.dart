@@ -1,13 +1,14 @@
 import 'dart:io';
 
+import 'package:SarSys/widgets/MapSearchField.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
-import '../Services/LocationService.dart';
-import '../Widgets/AppDrawer.dart';
-import '../services/MaptileService.dart';
+import 'package:SarSys/Services/LocationService.dart';
+import 'package:SarSys/Widgets/AppDrawer.dart';
+import 'package:SarSys/services/MaptileService.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -15,38 +16,49 @@ class MapScreen extends StatefulWidget {
 }
 
 class MapScreenState extends State<MapScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _searchFieldKey = GlobalKey<MapSearchFieldState>();
+
   // TODO: move the baseMap to MapService
-  String currentBaseMap;
-  bool offlineBaseMap;
-  MapController mapController;
-  LocationService locationService = new LocationService();
-  MaptileService maptileService = new MaptileService();
-  List<BaseMap> baseMaps;
+  String _currentBaseMap;
+  bool _offlineBaseMap;
+  MapController _mapController;
+  LocationService _locationService = new LocationService();
+  MaptileService _maptileService = new MaptileService();
+  List<BaseMap> _baseMaps;
+  MapSearchField _searchField;
 
   @override
   void initState() {
     super.initState();
     // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
-    currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
-    offlineBaseMap = false;
-    mapController = MapController();
+    _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+    _offlineBaseMap = false;
+    _mapController = MapController();
+    _searchField = MapSearchField(
+      key: _searchFieldKey,
+      controller: _mapController,
+      onError: _onError,
+    );
     initMaps();
   }
 
   void initMaps() async {
-    baseMaps = await maptileService.fetchMaps();
+    _baseMaps = await _maptileService.fetchMaps();
   }
 
   void getPosition() async {
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     // Move map to position - testing only on initState, should be triggered when user activates GPS.
-    mapController.move(new LatLng(location.latitude, location.longitude), mapController.zoom);
+    _mapController.move(new LatLng(location.latitude, location.longitude), _mapController.zoom);
   }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
+      key: _scaffoldKey,
       drawer: AppDrawer(),
+      extendBody: true,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -55,85 +67,91 @@ class MapScreenState extends State<MapScreen> {
         child: Icon(Icons.add),
         elevation: 2.0,
       ),
-      bottomNavigationBar: BottomAppBar(
-        // TODO: Move to stack to fix map behind navbar
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.sort),
-              color: Colors.white,
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Icon(Icons.map),
-              color: Colors.white,
-              onPressed: () {
-                _selectBaseMapBottomSheet(context);
-              },
-            ),
-            Spacer(),
-            Spacer(),
-            IconButton(
-              icon: Icon(Icons.gps_fixed),
-              color: Colors.white,
-              onPressed: () {
-                getPosition();
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.add),
-              color: Colors.white,
-              onPressed: () {
-                mapController.move(mapController.center, mapController.zoom + 1);
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.remove),
-              color: Colors.white,
-              onPressed: () {
-                mapController.move(mapController.center, mapController.zoom - 1);
-              },
-            )
-          ],
-        ),
-        shape: CircularNotchedRectangle(),
-        color: Colors.grey[850],
+      body: _buildBody(),
+      bottomNavigationBar: _buildBottomAppBar(context),
+      resizeToAvoidBottomInset: false,
+    );
+  }
+
+  Stack _buildBody() {
+    return Stack(
+      children: [
+        _buildMap(),
+        _buildSearchBar(),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: _searchField,
       ),
-      body: Stack(children: [
-        FlutterMap(
-          mapController: mapController,
-          options: MapOptions(
-            center: new LatLng(59.5, 10.09),
-            zoom: 13,
-          ),
-          layers: [
-            new TileLayerOptions(
-              urlTemplate: currentBaseMap,
-            ),
-          ],
+    );
+  }
+
+  FlutterMap _buildMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        center: new LatLng(59.5, 10.09),
+        zoom: 13,
+        onTap: (_) => _clearSearchField(),
+      ),
+      layers: [
+        new TileLayerOptions(
+          urlTemplate: _currentBaseMap,
         ),
-        Positioned(
-          top: 0.0,
-          left: 0.0,
-          right: 0.0,
-          child: Opacity(
-            opacity: 0.4,
-            child: AppBar(
-              title: new Text(""),
-              actions: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: () {},
-                ),
-              ],
-              //toolbarOpacity: 0.5,
-              //bottomOpacity: 0.5,
-            ),
+      ],
+    );
+  }
+
+  BottomAppBar _buildBottomAppBar(BuildContext context) {
+    return BottomAppBar(
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            color: Colors.white,
+            onPressed: () {},
           ),
-        )
-      ]),
+          IconButton(
+            icon: Icon(Icons.map),
+            color: Colors.white,
+            onPressed: () {
+              _selectBaseMapBottomSheet(context);
+            },
+          ),
+          Spacer(),
+          Spacer(),
+          IconButton(
+            icon: Icon(Icons.gps_fixed),
+            color: Colors.white,
+            onPressed: () {
+              getPosition();
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.add),
+            color: Colors.white,
+            onPressed: () {
+              _mapController.move(_mapController.center, _mapController.zoom + 1);
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.remove),
+            color: Colors.white,
+            onPressed: () {
+              _mapController.move(_mapController.center, _mapController.zoom - 1);
+            },
+          )
+        ],
+      ),
+      shape: CircularNotchedRectangle(),
+      color: Colors.grey[850],
     );
   }
 
@@ -163,15 +181,15 @@ class MapScreenState extends State<MapScreen> {
         });
   }
 
-  List<Widget> mapBottomSheetCards() {
+  List<Widget> _mapBottomSheetCards() {
     List<Widget> _mapCards = [];
 
-    for (BaseMap map in baseMaps) {
+    for (BaseMap map in _baseMaps) {
       _mapCards.add(GestureDetector(
         child: new BaseMapCard(map: map),
         onTap: () {
           setState(() {
-            currentBaseMap = map.url;
+            _currentBaseMap = map.url;
           });
           Navigator.pop(context);
         },
@@ -187,12 +205,28 @@ class MapScreenState extends State<MapScreen> {
         context: context,
         builder: (BuildContext bc) {
           return Container(
+            padding: EdgeInsets.all(24.0),
             child: GridView.count(
               crossAxisCount: 2,
-              children: mapBottomSheetCards(),
+              children: _mapBottomSheetCards(),
             ),
           );
         });
+  }
+
+  void _onError(String message) {
+    final snackbar = SnackBar(
+      duration: Duration(seconds: 1),
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(message),
+      ),
+    );
+    _scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
+  void _clearSearchField() {
+    _searchFieldKey?.currentState?.clear();
   }
 }
 
@@ -229,8 +263,21 @@ class BaseMapCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.max,
             children: [
-              ClipRRect(borderRadius: new BorderRadius.circular(8.0), child: previewImage()),
-              Text(map.description)
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: previewImage(),
+                ),
+              ),
+              Text(
+                map.description,
+                softWrap: true,
+                textAlign: TextAlign.center,
+              ),
             ]),
       ),
     );
