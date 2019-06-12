@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/widgets/CrossPainter.dart';
 import 'package:SarSys/widgets/MapSearchField.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -166,35 +167,5 @@ class _PointEditorState extends State<PointEditor> {
 
   void _clearSearchField() {
     _searchFieldKey?.currentState?.clear();
-  }
-}
-
-class CrossPainter extends CustomPainter {
-  Paint _paint;
-  final _gap = 15.0;
-  final _length = 40.0;
-
-  CrossPainter() {
-    _paint = Paint()
-      ..color = Colors.red.withOpacity(0.6)
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.width / 2);
-    canvas.drawCircle(center, 2.0, _paint);
-    canvas.drawLine(center.translate(-_gap, 0), center.translate(-_length, 0), _paint);
-    canvas.drawLine(center.translate(_gap, 0), center.translate(_length, 0), _paint);
-    canvas.drawLine(center.translate(0, _gap), center.translate(0, _length), _paint);
-    canvas.drawLine(center.translate(0, -_gap), center.translate(0, -_length), _paint);
-//
-//    canvas.drawLine(Offset(size.width, 0.0), Offset(0.0, size.height), _paint);
-  }
-
-  @override
-  bool shouldRepaint(CrossPainter oldDelegate) {
-    return false;
   }
 }
