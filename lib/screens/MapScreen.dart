@@ -39,6 +39,10 @@ class MapScreenState extends State<MapScreen> {
       key: _searchFieldKey,
       controller: _mapController,
       onError: _onError,
+      prefixIcon: GestureDetector(
+        child: Icon(Icons.menu),
+        onTap: () => _scaffoldKey.currentState.openDrawer(),
+      ),
     );
     initMaps();
   }
@@ -59,7 +63,7 @@ class MapScreenState extends State<MapScreen> {
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _settingModalBottomSheet(context);
@@ -68,7 +72,7 @@ class MapScreenState extends State<MapScreen> {
         elevation: 2.0,
       ),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomAppBar(context),
+//      bottomNavigationBar: _buildBottomAppBar(context),
       resizeToAvoidBottomInset: false,
     );
   }
@@ -113,11 +117,11 @@ class MapScreenState extends State<MapScreen> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            color: Colors.white,
-            onPressed: () {},
-          ),
+//          IconButton(
+//            icon: Icon(Icons.filter_list),
+//            color: Colors.white,
+//            onPressed: () {},
+//          ),
           IconButton(
             icon: Icon(Icons.map),
             color: Colors.white,

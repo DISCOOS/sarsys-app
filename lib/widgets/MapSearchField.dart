@@ -12,10 +12,13 @@ class MapSearchField extends StatefulWidget {
   final ErrorCallback onError;
   final MapController controller;
 
+  final Widget prefixIcon;
+
   const MapSearchField({
     Key key,
     @required this.onError,
     @required this.controller,
+    this.prefixIcon,
   }) : super(key: key);
 
   @override
@@ -56,6 +59,7 @@ class MapSearchFieldState extends State<MapSearchField> {
             hintMaxLines: 1,
             hintText: "Skriv inn posisjon eller adresse",
             contentPadding: EdgeInsets.all(16.0),
+            prefixIcon: widget.prefixIcon,
             suffixIcon: _focusNode.hasFocus
                 ? GestureDetector(
                     child: Icon(Icons.close),
