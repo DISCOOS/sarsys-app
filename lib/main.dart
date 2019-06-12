@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/IncidentBloc.dart';
 import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:SarSys/services/IncidentService.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -58,6 +59,8 @@ void main() async {
         localizationsDelegates: [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
+          DefaultMaterialLocalizations.delegate,
+          DefaultCupertinoLocalizations.delegate,
         ],
         supportedLocales: [
           const Locale('en'), // English
