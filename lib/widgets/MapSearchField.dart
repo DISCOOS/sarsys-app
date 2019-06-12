@@ -7,9 +7,14 @@ import 'package:geocoder/geocoder.dart';
 import 'package:latlong/latlong.dart';
 
 typedef ErrorCallback = void Function(String message);
+typedef MatchCallback = void Function(LatLng point);
 
 class MapSearchField extends StatefulWidget {
+  final double zoom;
+  final String hintText;
   final ErrorCallback onError;
+  final MatchCallback onMatch;
+  final VoidCallback onCleared;
   final MapController controller;
 
   final Widget prefixIcon;
@@ -18,7 +23,11 @@ class MapSearchField extends StatefulWidget {
     Key key,
     @required this.onError,
     @required this.controller,
+    this.onMatch,
+    this.onCleared,
     this.prefixIcon,
+    this.zoom,
+    this.hintText,
   }) : super(key: key);
 
   @override
@@ -30,6 +39,7 @@ class MapSearchFieldState extends State<MapSearchField> {
   final _focusNode = FocusNode();
   final _controller = TextEditingController();
 
+  LatLng _match;
   OverlayEntry _overlayEntry;
 
   @override
@@ -57,10 +67,10 @@ class MapSearchFieldState extends State<MapSearchField> {
           decoration: InputDecoration(
             border: InputBorder.none,
             hintMaxLines: 1,
-            hintText: "Skriv inn posisjon eller adresse",
+            hintText: widget.hintText ?? "Skriv inn posisjon eller adresse",
             contentPadding: EdgeInsets.all(16.0),
             prefixIcon: widget.prefixIcon,
-            suffixIcon: _focusNode.hasFocus
+            suffixIcon: _focusNode.hasFocus || _match != null
                 ? GestureDetector(
                     child: Icon(Icons.close),
                     onTap: () => clear(),
@@ -78,9 +88,11 @@ class MapSearchFieldState extends State<MapSearchField> {
   /// Hide overlay with results if shown, clear content and unfocus textfield
   void clear() {
     setState(() {
+      _match = null;
       _controller.clear();
       _focusNode?.unfocus();
       _hideResults();
+      widget?.onCleared();
     });
   }
 
@@ -112,7 +124,7 @@ class MapSearchFieldState extends State<MapSearchField> {
                             title: Text(address.featureName),
                             subtitle: Text(address.addressLine),
                             onTap: () {
-                              clear();
+                              _hideResults();
                               _goto(address.coordinates.latitude, address.coordinates.longitude);
                             },
                           ),
@@ -216,8 +228,11 @@ class MapSearchFieldState extends State<MapSearchField> {
   }
 
   void _goto(lat, lon) {
-    var point = LatLng(lat, lon);
-    print("Goto: $point");
-    widget.controller.move(point, widget.controller.zoom);
+    setState(() {
+      _match = LatLng(lat, lon);
+      print("Goto: $_match");
+      widget.controller.move(_match, widget.zoom ?? widget.controller.zoom);
+      widget?.onMatch(_match);
+    });
   }
 }
