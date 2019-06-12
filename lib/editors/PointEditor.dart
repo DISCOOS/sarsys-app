@@ -1,12 +1,11 @@
-import 'dart:collection';
 import 'dart:ui';
 
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/widgets/MapSearchField.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
-import 'package:geocoder/geocoder.dart';
 
 class PointEditor extends StatefulWidget {
   final Point point;
@@ -32,15 +31,14 @@ class PointEditor extends StatefulWidget {
 }
 
 class _PointEditorState extends State<PointEditor> {
-  final _searchKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _controller = TextEditingController();
+  final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   bool _init;
   Point _current;
   String _currentBaseMap;
-  OverlayEntry _overlayEntry;
   MapController _mapController;
+  MapSearchField _searchField;
 
   @override
   void initState() {
@@ -51,6 +49,11 @@ class _PointEditorState extends State<PointEditor> {
     // TODO: Use device location as default location
     _init = false;
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
+    _searchField = MapSearchField(
+      key: _searchFieldKey,
+      controller: _mapController,
+      onError: _onError,
+    );
   }
 
   @override
@@ -85,8 +88,9 @@ class _PointEditorState extends State<PointEditor> {
             _buildCoordsPanel(),
           ],
         ),
-        onTapDown: (_) => _hideSearchResults(),
+        onTapDown: (_) => _clearSearchField(),
       ),
+      resizeToAvoidBottomInset: false,
     );
   }
 
@@ -94,10 +98,11 @@ class _PointEditorState extends State<PointEditor> {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-          center: LatLng(_current.lat, _current.lon),
-          zoom: 13,
-          onPositionChanged: (point, hasGesture, isUserGesture) => _updatePoint(point, hasGesture),
-          onTap: (_) => _hideSearchResults()),
+        center: LatLng(_current.lat, _current.lon),
+        zoom: 13,
+        onPositionChanged: (point, hasGesture, isUserGesture) => _updatePoint(point, hasGesture),
+        onTap: (_) => _clearSearchField(),
+      ),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
@@ -119,31 +124,9 @@ class _PointEditorState extends State<PointEditor> {
 
   Align _buildSearchField() {
     return Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          margin: EdgeInsets.all(8.0),
-          padding: EdgeInsets.all(0.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: SizedBox(
-            child: TextField(
-              key: _searchKey,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintMaxLines: 1,
-                hintText: "Skriv inn posisjon eller adresse",
-                contentPadding: EdgeInsets.all(16.0),
-                suffixIcon: Icon(Icons.search),
-              ),
-              controller: _controller,
-              enableInteractiveSelection: true,
-              onSubmitted: (value) => _search(value),
-            ),
-          ),
-        ));
+      alignment: Alignment.topCenter,
+      child: _searchField,
+    );
   }
 
   Align _buildCoordsPanel() {
@@ -170,148 +153,19 @@ class _PointEditorState extends State<PointEditor> {
     _init = true;
   }
 
-  void _showResults(List<Address> addresses) {
-    RenderBox renderBox = _searchKey.currentContext.findRenderObject();
-    var size = renderBox.size;
-    var offset = renderBox.localToGlobal(Offset.zero);
-
-    _hideSearchResults();
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-            left: offset.dx,
-            top: offset.dy + size.height + 5.0,
-            width: size.width,
-            child: Material(
-              elevation: 4.0,
-              child: ListView(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                children: addresses
-                    .map(
-                      (address) => ListTile(
-                            title: Text(address.featureName),
-                            subtitle: Text(address.addressLine),
-                            onTap: () {
-                              _hideSearchResults();
-                              _goto(address.coordinates.latitude, address.coordinates.longitude);
-                            },
-                          ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ),
+  void _onError(String message) {
+    final snackbar = SnackBar(
+      duration: Duration(seconds: 1),
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(message),
+      ),
     );
-    Overlay.of(context).insert(this._overlayEntry);
+    _scaffoldKey.currentState.showSnackBar(snackbar);
   }
 
-  void _hideSearchResults() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  Future _search(String value) async {
-    print("Search: $value");
-    var row;
-    var zone = -1, lat, lon;
-    var isSouth = false;
-    var isDefault = false;
-    var matches = List<Match>();
-    var ordinals = HashMap<String, Match>();
-
-    value = value.trim();
-
-    // Is utm?
-    var match = CoordinateFormat.utm.firstMatch(value);
-    if (match != null) {
-      zone = int.parse(match.group(1));
-      row = match.group(2).toUpperCase();
-      isSouth = 'N'.compareTo(row) > 0;
-      value = match.group(3);
-      print("Found UTM coordinate in grid '$zone$row'");
-    }
-
-    // Attempt to map each match to an axis
-    value.split(" ").forEach((value) {
-      var match = CoordinateFormat.ordinate.firstMatch(value);
-      if (match != null) {
-        matches.add(match);
-        var axis = CoordinateFormat.axis(CoordinateFormat.labels(match));
-        // Preserve order
-        if (axis != null) {
-          if (ordinals.containsKey(axis)) {
-            print('Found same axis label on both ordinals');
-            ordinals.clear();
-          } else {
-            ordinals[axis] = match;
-          }
-        }
-      }
-    });
-
-    // No axis labels found?
-    if (ordinals.length == 0 && matches.length == 2) {
-      // Assume default order {lat, lon} is entered
-      isDefault = true;
-      ordinals[CoordinateFormat.NORTHTING] = matches.first;
-      ordinals[CoordinateFormat.EASTING] = matches.last;
-      print("Assumed default order {NORTHING, EASTING} ");
-    } else if (ordinals.length == 1) {
-      // One axis label found, try to infer the other
-      matches.forEach((match) {
-        if (!ordinals.containsValue(match)) {
-          // Infer missing axis
-          var first = ordinals.values.first;
-          var axis = (CoordinateFormat.NORTHTING == ordinals.keys.first
-              ? CoordinateFormat.EASTING
-              : CoordinateFormat.NORTHTING);
-          ordinals[axis] = match;
-          print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
-        }
-      });
-    }
-
-    // Search for address?
-    if (ordinals.length != 2) {
-      try {
-        var addresses = await Geocoder.local.findAddressesFromQuery(value);
-        if (addresses.length > 1) {
-          _showResults(addresses);
-        } else {
-          var first = addresses.first;
-          lat = first.coordinates.latitude;
-          lon = first.coordinates.longitude;
-        }
-      } catch (e) {
-        final snackbar = SnackBar(
-          duration: Duration(seconds: 1),
-          content: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text('Addresse ikke funnet'),
-          ),
-        );
-        _scaffoldKey.currentState.showSnackBar(snackbar);
-      }
-    } else {
-      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
-      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
-      if (zone > 0) {
-        var proj = TransverseMercatorProjection.utm(zone, isSouth);
-        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
-        lon = dst.x;
-        lat = dst.y;
-      }
-    }
-    if (lat != null && lon != null) {
-      _goto(lat, lon);
-    }
-  }
-
-  void _goto(lat, lon) {
-    var point = LatLng(lat, lon);
-    print("Goto: $point");
-    _mapController.move(point, _mapController.zoom);
+  void _clearSearchField() {
+    _searchFieldKey?.currentState?.clear();
   }
 }
 
