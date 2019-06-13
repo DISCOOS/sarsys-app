@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class IncidentsScreen extends StatefulWidget {
   //modified
   @override //new
-  IncidentsScreenState createState() => new IncidentsScreenState(); //new
+  IncidentsScreenState createState() => IncidentsScreenState(); //new
 }
 
 // TODO: Add the ChatScreenState class definition in main.dart.
@@ -25,10 +25,8 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
-        return new Scaffold(
-          appBar: new AppBar(
-            title: new Text("Velg hendelse"),
-          ),
+        return Scaffold(
+          appBar: _buildAppBar(context, bloc.isUnset),
           body: _buildBody(bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
@@ -38,7 +36,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                 builder: (context) => IncidentEditor(),
               );
               if (incident != null) {
-                print("New Incident $incident");
+                print("Incident $incident");
                 bloc.create(incident);
               }
             },
@@ -49,6 +47,27 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           bottomNavigationBar: _buildBottomAppBar(),
         );
       },
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context, bool isUnset) {
+    final bloc = BlocProvider.of<UserBloc>(context);
+    return AppBar(
+      title: Text("Velg hendelse"),
+      actions: <Widget>[
+        if (isUnset)
+          FlatButton(
+            child: Text('LOGG UT', style: TextStyle(fontSize: 14.0, color: Colors.white)),
+            padding: EdgeInsets.only(left: 16.0, right: 16.0),
+            onPressed: () async {
+              bloc
+                  .logout()
+                  .state
+                  .where((state) => state is UserUnset)
+                  .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
+            },
+          ),
+      ],
     );
   }
 
