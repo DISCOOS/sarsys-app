@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geocoder/geocoder.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
 typedef ErrorCallback = void Function(String message);
@@ -101,7 +101,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     _overlayEntry = null;
   }
 
-  void _showResults(List<Address> addresses) {
+  void _showResults(List<Placemark> placemarks) {
     RenderBox renderBox = _searchKey.currentContext.findRenderObject();
     var size = renderBox.size;
     var offset = renderBox.localToGlobal(Offset.zero);
@@ -118,14 +118,14 @@ class MapSearchFieldState extends State<MapSearchField> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
-                children: addresses
+                children: placemarks
                     .map(
-                      (address) => ListTile(
-                            title: Text(address.featureName),
-                            subtitle: Text(address.addressLine),
+                      (placemark) => ListTile(
+                            title: Text(placemark.name),
+                            subtitle: Text(placemark.country),
                             onTap: () {
                               _hideResults();
-                              _goto(address.coordinates.latitude, address.coordinates.longitude);
+                              _goto(placemark.position.latitude, placemark.position.longitude);
                             },
                           ),
                     )
@@ -201,13 +201,16 @@ class MapSearchFieldState extends State<MapSearchField> {
     // Search for address?
     if (ordinals.length != 2) {
       try {
-        var addresses = await Geocoder.local.findAddressesFromQuery(value);
-        if (addresses.length > 1) {
-          _showResults(addresses);
+        Locale locale = Localizations.localeOf(context);
+        var identifier = "${locale.languageCode}_${locale.countryCode}";
+        var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: identifier);
+//        var addresses = await Geocoder.local.findAddressesFromQuery(value);
+        if (placemarks.length > 1) {
+          _showResults(placemarks);
         } else {
-          var first = addresses.first;
-          lat = first.coordinates.latitude;
-          lon = first.coordinates.longitude;
+          var first = placemarks.first;
+          lat = first.position.latitude;
+          lon = first.position.longitude;
         }
       } catch (e) {
         widget.onError('Addresse "$value" ikke funnet');
