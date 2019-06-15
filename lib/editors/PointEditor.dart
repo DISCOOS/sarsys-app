@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:SarSys/widgets/CrossPainter.dart';
+import 'package:SarSys/widgets/LocationController.dart';
 import 'package:SarSys/widgets/MapSearchField.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -40,6 +41,7 @@ class _PointEditorState extends State<PointEditor> {
   String _currentBaseMap;
   MapController _mapController;
   MapSearchField _searchField;
+  LocationController _locationController;
 
   @override
   void initState() {
@@ -55,6 +57,17 @@ class _PointEditorState extends State<PointEditor> {
       controller: _mapController,
       onError: _onError,
     );
+    _locationController = LocationController(
+        mapController: _mapController,
+        onMessage: _showMessage,
+        onPrompt: _prompt,
+        onLocationChanged: (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _locationController.dispose();
   }
 
   @override
@@ -86,6 +99,7 @@ class _PointEditorState extends State<PointEditor> {
             _buildMap(),
             _buildCenterMark(),
             _buildSearchField(),
+            _buildControls(),
             _buildCoordsPanel(),
           ],
         ),
@@ -101,7 +115,7 @@ class _PointEditorState extends State<PointEditor> {
       options: MapOptions(
         center: LatLng(_current.lat, _current.lon),
         zoom: 13,
-        onPositionChanged: (point, hasGesture, isUserGesture) => _updatePoint(point, hasGesture),
+        onPositionChanged: _onPositionChanged,
         onTap: (_) => _clearSearchField(),
       ),
       layers: [
@@ -127,6 +141,96 @@ class _PointEditorState extends State<PointEditor> {
     return Align(
       alignment: Alignment.topCenter,
       child: _searchField,
+    );
+  }
+
+  Widget _buildControls() {
+    Size size = Size(42.0, 42.0);
+    return Positioned(
+      top: 100.0,
+      right: 8.0,
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.filter_list),
+                  onPressed: () {},
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: () {
+                    _mapController.move(_mapController.center, _mapController.zoom + 1);
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.remove),
+                  onPressed: () {
+                    _mapController.move(_mapController.center, _mapController.zoom - 1);
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  color: _locationController.isTracking ? Colors.green : Colors.black,
+                  icon: Icon(Icons.gps_fixed),
+                  onPressed: () {
+                    _locationController.toggle();
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -167,5 +271,62 @@ class _PointEditorState extends State<PointEditor> {
 
   void _clearSearchField() {
     _searchFieldKey?.currentState?.clear();
+  }
+
+  void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
+    if (isUserGesture && _locationController.isTracking) {
+      _locationController.toggle();
+    }
+    _updatePoint(position, hasGesture);
+  }
+
+  void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {
+    final snackbar = SnackBar(
+      duration: Duration(seconds: 2),
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(message),
+      ),
+      action: _buildAction(action, () {
+        if (onPressed != null) onPressed();
+        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+      }),
+    );
+    _scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
+  Widget _buildAction(String label, VoidCallback onPressed) {
+    return SnackBarAction(
+      label: label,
+      onPressed: onPressed,
+    );
+  }
+
+  Future<bool> _prompt(String title, String message) async {
+    // flutter defined function
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text(title),
+          content: new Text(message),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("CANCEL"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            new FlatButton(
+              child: new Text("FORTSETT"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

@@ -79,7 +79,7 @@ class LocationController {
 
       // Full refresh of map needed?
       if (force || _tracking && _isMoved(center)) {
-        _options.point = center;
+        _options?.point = center;
         if (onLocationChanged != null) onLocationChanged(center);
         mapController.move(center, mapController.zoom);
       }

@@ -92,7 +92,7 @@ class MapSearchFieldState extends State<MapSearchField> {
       _controller.clear();
       _focusNode?.unfocus();
       _hideResults();
-      widget?.onCleared();
+      if (widget.onCleared != null) widget.onCleared();
     });
   }
 

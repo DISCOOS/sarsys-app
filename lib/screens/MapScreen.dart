@@ -21,7 +21,6 @@ class MapScreen extends StatefulWidget {
 class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
-  LocationController _locationController;
 
   // TODO: move the baseMap to MapService
   String _currentBaseMap;
@@ -31,6 +30,7 @@ class MapScreenState extends State<MapScreen> {
   List<BaseMap> _baseMaps;
   LatLng _match;
   MapSearchField _searchField;
+  LocationController _locationController;
 
   @override
   void initState() {
