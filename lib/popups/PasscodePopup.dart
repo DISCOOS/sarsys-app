@@ -47,7 +47,7 @@ class PasscodeRoute extends PopupRoute {
       widthFactor: 0.8,
       alignment: Alignment.topCenter,
       child: Container(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(8.0),
         child: Form(
           key: _formKey,
           child: ListView(
@@ -67,11 +67,15 @@ class PasscodeRoute extends PopupRoute {
                         fontWeight: FontWeight.bold,
                         color: forbidden ? Colors.red : Colors.black,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   );
                 },
               ),
               _buildPasscodeInput(),
+              SizedBox(
+                height: 16,
+              ),
               _buildPrimaryButton(bloc),
             ],
           ),
@@ -104,20 +108,16 @@ class PasscodeRoute extends PopupRoute {
   }
 
   Widget _buildPrimaryButton(UserBloc bloc) {
-    return Align(
-      child: Padding(
-          padding: EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
-          child: RaisedButton(
-            elevation: 2.0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-            color: Color.fromRGBO(00, 41, 73, 1),
-            child: Text('LÅS OPP', style: TextStyle(fontSize: 20.0, color: Colors.white)),
-            onPressed: () {
-              if (_validateAndSave()) {
-                bloc.authorize(incident, _passcode);
-              }
-            },
-          )),
+    return RaisedButton(
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+      color: Color.fromRGBO(00, 41, 73, 1),
+      child: Text('LÅS OPP', style: TextStyle(fontSize: 20.0, color: Colors.white)),
+      onPressed: () {
+        if (_validateAndSave()) {
+          bloc.authorize(incident, _passcode);
+        }
+      },
     );
   }
 

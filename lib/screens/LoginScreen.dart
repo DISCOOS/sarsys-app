@@ -51,9 +51,10 @@ class LoginScreenState extends State<LoginScreen> {
     return new Scaffold(
         body: Center(
       child: Container(
-        color: Colors.grey,
+        color: Theme.of(context).primaryColor,
         alignment: AlignmentDirectional(0.0, 0.0),
         child: Container(
+          padding: EdgeInsets.all(24.0),
           constraints: BoxConstraints(maxWidth: 400.0),
           child: Card(
             elevation: 10.0,
