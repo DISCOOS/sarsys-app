@@ -49,25 +49,26 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        body: Center(
-      child: Container(
-        color: Theme.of(context).primaryColor,
-        alignment: AlignmentDirectional(0.0, 0.0),
+      body: Center(
         child: Container(
-          padding: EdgeInsets.all(24.0),
-          constraints: BoxConstraints(maxWidth: 400.0),
-          child: Card(
-            elevation: 10.0,
-            child: _buildBody(context),
+          color: Theme.of(context).primaryColor,
+          alignment: AlignmentDirectional(0.0, 0.0),
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            constraints: BoxConstraints(maxWidth: 400.0),
+            child: Card(
+              elevation: 10.0,
+              child: _buildBody(context),
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildEmailInput() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 30.0, 0.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
       child: new TextFormField(
         maxLines: 1,
         keyboardType: TextInputType.emailAddress,
@@ -87,7 +88,7 @@ class LoginScreenState extends State<LoginScreen> {
 
   Widget _buildPasswordInput() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+      padding: const EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
       child: new TextFormField(
         maxLines: 1,
         obscureText: true,
@@ -107,7 +108,7 @@ class LoginScreenState extends State<LoginScreen> {
 
   Widget _buildPrimaryButton(UserBloc bloc) {
     return new Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
+        padding: EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
         child: SizedBox(
           height: 40.0,
           width: 60.0,
@@ -143,7 +144,7 @@ class LoginScreenState extends State<LoginScreen> {
                   Center(child: CircularProgressIndicator()),
                   // Logo
                   Padding(
-                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 50),
+                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8),
                     child: CircleAvatar(
                       backgroundColor: Colors.transparent,
                       radius: 80.0,
@@ -165,10 +166,10 @@ class LoginScreenState extends State<LoginScreen> {
                     children: <Widget>[
                       // Logo
                       Padding(
-                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 50),
+                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
                         child: CircleAvatar(
                           backgroundColor: Colors.transparent,
-                          radius: 80.0,
+                          radius: 60.0,
                           child: Image.asset('assets/logo.png'),
                         ),
                       ),
