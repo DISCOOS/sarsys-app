@@ -26,10 +26,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   @override
   Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      resizeToAvoidBottomInset: true,
-      primary: false,
       appBar: AppBar(
         title: Text("Ny hendelse"),
         centerTitle: false,
@@ -50,78 +49,84 @@ class _IncidentEditorState extends State<IncidentEditor> {
       body: SingleChildScrollView(
         child: FormBuilder(
           key: _formKey,
-          child: Padding(
-            padding: const EdgeInsets.all(0.0),
-            child: Stepper(
-              type: StepperType.vertical,
-              currentStep: _currentStep,
-              onStepTapped: (int step) => setState(() => _currentStep = step),
-              onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
-              onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
-              controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
-                return Container();
-              },
-              steps: [
-                Step(
-                  title: Text('Generelt'),
-                  subtitle: Text('Oppgi navn og begrunnelse'),
-                  content: Column(
-                    children: [
-                      _buildNameField(),
-                      SizedBox(height: 16.0),
-                      _buildJustificationField(),
-                      SizedBox(height: 16.0),
-                      _buildOccurredField(),
-                    ],
+          child: Column(
+            children: <Widget>[
+              Stepper(
+                type: StepperType.vertical,
+                currentStep: _currentStep,
+                physics: ClampingScrollPhysics(),
+                onStepTapped: (int step) => setState(() => _currentStep = step),
+                onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
+                onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
+                controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
+                  return Container();
+                },
+                steps: [
+                  Step(
+                    title: Text('Generelt'),
+                    subtitle: Text('Oppgi navn og begrunnelse'),
+                    content: Column(
+                      children: [
+                        _buildNameField(),
+                        SizedBox(height: 16.0),
+                        _buildJustificationField(),
+                        SizedBox(height: 16.0),
+                        _buildOccurredField(),
+                      ],
+                    ),
+                    isActive: _currentStep >= 0,
+                    state: _isValid(['name', 'justification', 'occurred'])
+                        ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
+                        : StepState.error,
                   ),
-                  isActive: _currentStep >= 0,
-                  state: _isValid(['name', 'justification', 'occurred'])
-                      ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
-                      : StepState.error,
-                ),
-                Step(
-                  title: Text('Klassifisering'),
-                  subtitle: Text('Oppgi type og status'),
-                  content: Column(
-                    children: [
-                      _buildTypeField(),
-                      SizedBox(height: 16.0),
-                      _buildStatusField(),
-                    ],
+                  Step(
+                    title: Text('Klassifisering'),
+                    subtitle: Text('Oppgi type og status'),
+                    content: Column(
+                      children: [
+                        _buildTypeField(),
+                        SizedBox(height: 16.0),
+                        _buildStatusField(),
+                      ],
+                    ),
+                    isActive: _currentStep >= 0,
+                    state: _isValid(['type', 'status'])
+                        ? (_currentStep > 1 ? StepState.complete : StepState.indexed)
+                        : StepState.error,
                   ),
-                  isActive: _currentStep >= 0,
-                  state: _isValid(['type', 'status'])
-                      ? (_currentStep > 1 ? StepState.complete : StepState.indexed)
-                      : StepState.error,
-                ),
-                Step(
-                  title: Text('Plassering'),
-                  subtitle: Text('Oppgi hendelsens plassering'),
-                  content: _buildLocationField(),
-                  isActive: _currentStep >= 0,
-                  state:
-                      _isValid(['ipp']) ? (_currentStep > 2 ? StepState.complete : StepState.indexed) : StepState.error,
-                ),
-                Step(
-                  title: Text('Talegrupper'),
-                  subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
-                  content: _buildTGField(),
-                  isActive: _currentStep >= 0,
-                  state: _isValid(['talkgroups'])
-                      ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
-                      : StepState.error,
-                ),
-                Step(
-                  title: Text('Referanser'),
-                  subtitle: Text('Oppgi hendelsesnummer oppgitt fra rekvirent'),
-                  content: _buildReferenceField(),
-                  isActive: _currentStep >= 0,
-                  state: _isValid(['reference'])
-                      ? (_currentStep > 4 ? StepState.complete : StepState.indexed)
-                      : StepState.error,
-                ),
-              ],
-            ),
+                  Step(
+                    title: Text('Plassering'),
+                    subtitle: Text('Oppgi hendelsens plassering'),
+                    content: _buildLocationField(),
+                    isActive: _currentStep >= 0,
+                    state: _isValid(['ipp'])
+                        ? (_currentStep > 2 ? StepState.complete : StepState.indexed)
+                        : StepState.error,
+                  ),
+                  Step(
+                    title: Text('Talegrupper'),
+                    subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
+                    content: _buildTGField(),
+                    isActive: _currentStep >= 0,
+                    state: _isValid(['talkgroups'])
+                        ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
+                        : StepState.error,
+                  ),
+                  Step(
+                    title: Text('Referanser'),
+                    subtitle: Text('Oppgi hendelsesnummer oppgitt fra rekvirent'),
+                    content: _buildReferenceField(),
+                    isActive: _currentStep >= 0,
+                    state: _isValid(['reference'])
+                        ? (_currentStep > 4 ? StepState.complete : StepState.indexed)
+                        : StepState.error,
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+              ),
+            ],
           ),
         ),
       ),
@@ -330,6 +335,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   Widget _buildTGField() {
+    final style = Theme.of(context).textTheme.caption;
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
@@ -361,10 +367,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
             chipBuilder: (context, state, tg) {
               return InputChip(
                 key: ObjectKey(tg),
-                label: Text(tg.name),
-                avatar: CircleAvatar(
-                  child: Text(enumName(tg.type).substring(0, 1)),
-                ),
+                label: Text(tg.name, style: style),
                 onDeleted: () => state.deleteChip(tg),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               );
@@ -390,8 +393,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   _isValid(List<String> fields) {
+    var state = _formKey.currentState;
     return _formKey.currentState == null ||
-        fields.where((name) => !_formKey.currentState.fields[name].currentState.hasError).length == fields.length;
+        fields.where((name) => state.fields[name] == null || !state.fields[name].currentState.hasError).length ==
+            fields.length;
   }
 }
 
