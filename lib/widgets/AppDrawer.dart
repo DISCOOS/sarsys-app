@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/UserBloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -60,6 +61,14 @@ class AppDrawer extends StatelessWidget {
                   .state
                   .where((state) => state is UserUnset)
                   .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
+            },
+          ),
+          Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: Text('Systeminnstillinger', style: TextStyle(fontSize: 14)),
+            onTap: () async {
+              PermissionHandler().openAppSettings();
             },
           ),
         ],
