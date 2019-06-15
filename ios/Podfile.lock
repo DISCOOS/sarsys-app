@@ -5,9 +5,7 @@ PODS:
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
-  - geocoder (0.0.1):
-    - Flutter
-  - geolocator (4.0.3):
+  - geolocator (5.0.1):
     - Flutter
   - google_api_availability (2.0.1):
     - Flutter
@@ -17,6 +15,8 @@ PODS:
   - location_permissions (2.0.2):
     - Flutter
   - path_provider (0.0.1):
+    - Flutter
+  - permission_handler (3.1.0):
     - Flutter
   - Reachability (3.2)
   - shared_preferences (0.0.1):
@@ -30,12 +30,12 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `.symlinks/flutter/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
-  - geocoder (from `.symlinks/plugins/geocoder/ios`)
   - geolocator (from `.symlinks/plugins/geolocator/ios`)
   - google_api_availability (from `.symlinks/plugins/google_api_availability/ios`)
   - keyboard_visibility (from `.symlinks/plugins/keyboard_visibility/ios`)
   - location_permissions (from `.symlinks/plugins/location_permissions/ios`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
+  - permission_handler (from `.symlinks/plugins/permission_handler/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
   - uni_links (from `.symlinks/plugins/uni_links/ios`)
@@ -50,8 +50,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/flutter/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
-  geocoder:
-    :path: ".symlinks/plugins/geocoder/ios"
   geolocator:
     :path: ".symlinks/plugins/geolocator/ios"
   google_api_availability:
@@ -62,6 +60,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/location_permissions/ios"
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
+  permission_handler:
+    :path: ".symlinks/plugins/permission_handler/ios"
   shared_preferences:
     :path: ".symlinks/plugins/shared_preferences/ios"
   sqflite:
@@ -73,12 +73,12 @@ SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
   flutter_secure_storage: dbcc8ff35d99569c3a4d3b483afa3339416c1a78
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
-  geocoder: 333b5c474623c8223f367b6ac4846b5f9ea72e85
-  geolocator: 191e1ae5853d9d142e9c3c71fe79eb9ff154cf24
+  geolocator: ac98a5fcdddd7fcbae404b136ab9c33bf08739c7
   google_api_availability: cd29400b9c6eb73b0978f609f0ad66f41dfa90b4
   keyboard_visibility: 091164adbb54829fcee802523daff9e64a7d8023
   location_permissions: 974d8fbc3ec5fed16908492a5e03bcb3372fcfd9
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
+  permission_handler: a1b8c0f8c83b4e7201f9c04b9aef09979cc97f60
   Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
   sqflite: d1612813fa7db7c667bed9f1d1b508deffc56999

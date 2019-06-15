@@ -1,31 +1,35 @@
-import 'dart:io';
+import 'dart:async';
 
+import 'package:SarSys/plugins/MyLocation.dart';
+import 'package:SarSys/widgets/BaseMapCard.dart';
+import 'package:SarSys/widgets/CrossPainter.dart';
+import 'package:SarSys/widgets/LocationController.dart';
 import 'package:SarSys/widgets/MapSearchField.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
-import 'package:SarSys/Services/LocationService.dart';
 import 'package:SarSys/Widgets/AppDrawer.dart';
 import 'package:SarSys/services/MaptileService.dart';
 
 class MapScreen extends StatefulWidget {
   @override
-  MapScreenState createState() => new MapScreenState();
+  MapScreenState createState() => MapScreenState();
 }
 
 class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
+  LocationController _locationController;
 
   // TODO: move the baseMap to MapService
   String _currentBaseMap;
   bool _offlineBaseMap;
   MapController _mapController;
-  LocationService _locationService = new LocationService();
-  MaptileService _maptileService = new MaptileService();
+  MaptileService _maptileService = MaptileService();
   List<BaseMap> _baseMaps;
+  LatLng _match;
   MapSearchField _searchField;
 
   @override
@@ -38,32 +42,40 @@ class MapScreenState extends State<MapScreen> {
     _searchField = MapSearchField(
       key: _searchFieldKey,
       controller: _mapController,
-      onError: _onError,
+      zoom: 18,
+      onError: _showMessage,
+      onMatch: _onSearchMatch,
+      onCleared: _onSearchCleared,
       prefixIcon: GestureDetector(
         child: Icon(Icons.menu),
         onTap: () => _scaffoldKey.currentState.openDrawer(),
       ),
     );
+    _locationController = LocationController(
+        mapController: _mapController,
+        onMessage: _showMessage,
+        onPrompt: _prompt,
+        onLocationChanged: (_) => setState(() {}));
     initMaps();
   }
 
   void initMaps() async {
     _baseMaps = await _maptileService.fetchMaps();
+    _locationController.init();
   }
 
-  void getPosition() async {
-    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    // Move map to position - testing only on initState, should be triggered when user activates GPS.
-    _mapController.move(new LatLng(location.latitude, location.longitude), _mapController.zoom);
+  @override
+  void dispose() {
+    super.dispose();
+    _locationController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
+    return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _settingModalBottomSheet(context);
@@ -72,7 +84,6 @@ class MapScreenState extends State<MapScreen> {
         elevation: 2.0,
       ),
       body: _buildBody(),
-//      bottomNavigationBar: _buildBottomAppBar(context),
       resizeToAvoidBottomInset: false,
     );
   }
@@ -81,6 +92,7 @@ class MapScreenState extends State<MapScreen> {
     return Stack(
       children: [
         _buildMap(),
+        _buildControls(),
         _buildSearchBar(),
       ],
     );
@@ -95,86 +107,185 @@ class MapScreenState extends State<MapScreen> {
     );
   }
 
+  Widget _buildControls() {
+    Size size = Size(42.0, 42.0);
+    return Positioned(
+      top: 100.0,
+      right: 8.0,
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.filter_list),
+                  onPressed: () {},
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.map),
+                  onPressed: () {
+                    _selectBaseMapBottomSheet(context);
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: () {
+                    _mapController.move(_mapController.center, _mapController.zoom + 1);
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.remove),
+                  onPressed: () {
+                    _mapController.move(_mapController.center, _mapController.zoom - 1);
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  color: _locationController.isTracking ? Colors.green : Colors.black,
+                  icon: Icon(Icons.gps_fixed),
+                  onPressed: () {
+                    _locationController.toggle();
+                  },
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   FlutterMap _buildMap() {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: new LatLng(59.5, 10.09),
-        zoom: 13,
-        onTap: (_) => _clearSearchField(),
-      ),
+          center: LatLng(59.5, 10.09),
+          zoom: 13,
+          onTap: _onTap,
+          onPositionChanged: _onPositionChanged,
+          plugins: [
+            MyLocation(),
+          ]),
       layers: [
-        new TileLayerOptions(
+        TileLayerOptions(
           urlTemplate: _currentBaseMap,
+        ),
+        if (_match != null) _buildMarker(_match),
+        if (_locationController.isReady) _locationController.options,
+      ],
+    );
+  }
+
+  void _onTap(LatLng point) {
+    if (_match == null) _clearSearchField();
+  }
+
+  void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
+    if (isUserGesture && _locationController.isTracking) {
+      _locationController.toggle();
+    }
+  }
+
+  MarkerLayerOptions _buildMarker(LatLng point) {
+    return MarkerLayerOptions(
+      markers: [
+        Marker(
+          width: 80.0,
+          height: 80.0,
+          point: point,
+          builder: (_) => SizedBox(
+              width: 56,
+              height: 56,
+              child: CustomPaint(
+                painter: CrossPainter(),
+              )),
         ),
       ],
     );
   }
 
-  BottomAppBar _buildBottomAppBar(BuildContext context) {
-    return BottomAppBar(
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-//          IconButton(
-//            icon: Icon(Icons.filter_list),
-//            color: Colors.white,
-//            onPressed: () {},
-//          ),
-          IconButton(
-            icon: Icon(Icons.map),
-            color: Colors.white,
-            onPressed: () {
-              _selectBaseMapBottomSheet(context);
-            },
-          ),
-          Spacer(),
-          Spacer(),
-          IconButton(
-            icon: Icon(Icons.gps_fixed),
-            color: Colors.white,
-            onPressed: () {
-              getPosition();
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.add),
-            color: Colors.white,
-            onPressed: () {
-              _mapController.move(_mapController.center, _mapController.zoom + 1);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.remove),
-            color: Colors.white,
-            onPressed: () {
-              _mapController.move(_mapController.center, _mapController.zoom - 1);
-            },
-          )
-        ],
-      ),
-      shape: CircularNotchedRectangle(),
-      color: Colors.grey[850],
-    );
-  }
-
   void _settingModalBottomSheet(context) {
+    final style = Theme.of(context).textTheme.title;
     showModalBottomSheet(
         context: context,
         builder: (BuildContext bc) {
           return Container(
-            child: new Wrap(
+            padding: EdgeInsets.only(bottom: 56.0),
+            child: Wrap(
               children: <Widget>[
-                new ListTile(
-                    leading: new Icon(Icons.warning),
-                    title: new Text('Spor'),
+                ListTile(title: Text("Opprett", style: style)),
+                Divider(),
+                ListTile(
+                    leading: Icon(Icons.timeline),
+                    title: Text('Spor', style: style),
                     onTap: () {
                       Navigator.pop(context);
                     }),
-                new ListTile(
-                  leading: new Icon(Icons.golf_course),
-                  title: new Text('Markering'),
+                ListTile(
+                  leading: Icon(Icons.add_location),
+                  title: Text('Markering', style: style),
                   onTap: () {
                     Navigator.pop(context);
                   },
@@ -190,7 +301,7 @@ class MapScreenState extends State<MapScreen> {
 
     for (BaseMap map in _baseMaps) {
       _mapCards.add(GestureDetector(
-        child: new BaseMapCard(map: map),
+        child: BaseMapCard(map: map),
         onTap: () {
           setState(() {
             _currentBaseMap = map.url;
@@ -218,72 +329,69 @@ class MapScreenState extends State<MapScreen> {
         });
   }
 
-  void _onError(String message) {
+  void _clearSearchField() {
+    _searchFieldKey?.currentState?.clear();
+  }
+
+  void _onSearchMatch(LatLng point) {
+    setState(() {
+      _match = point;
+    });
+  }
+
+  void _onSearchCleared() {
+    setState(() {
+      _match = null;
+    });
+  }
+
+  void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {
     final snackbar = SnackBar(
-      duration: Duration(seconds: 1),
+      duration: Duration(seconds: 2),
       content: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Text(message),
       ),
+      action: _buildAction(action, () {
+        if (onPressed != null) onPressed();
+        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+      }),
     );
     _scaffoldKey.currentState.showSnackBar(snackbar);
   }
 
-  void _clearSearchField() {
-    _searchFieldKey?.currentState?.clear();
-  }
-}
-
-class BaseMapCard extends StatelessWidget {
-  final BaseMap map;
-
-  BaseMapCard({this.map});
-
-  Image previewImage() {
-    String basePath = "assets/mapspreview";
-    // TODO: Check if file exists in filesystem before returning
-    if (map.previewFile != null && !map.offline) {
-      // Online maps preview image is distributed in assets
-      // Should be moved to documents folder if list of online maps is a downloadable config
-      return Image(image: AssetImage("$basePath/${map.previewFile}"));
-    } else if (map.previewFile != null && map.offline) {
-      // Offline maps must be read from SDCard
-      return Image.file(new File(map.previewFile));
-    } else {
-      return Image(image: AssetImage("$basePath/missing.png"));
-    }
+  Widget _buildAction(String label, VoidCallback onPressed) {
+    return SnackBarAction(
+      label: label,
+      onPressed: onPressed,
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      //clipBehavior: Clip.antiAlias,
-      margin: EdgeInsets.all(2.0),
-      //elevation: 4.0,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: previewImage(),
-                ),
-              ),
-              Text(
-                map.description,
-                softWrap: true,
-                textAlign: TextAlign.center,
-              ),
-            ]),
-      ),
+  Future<bool> _prompt(String title, String message) async {
+    // flutter defined function
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text(title),
+          content: new Text(message),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("CANCEL"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            new FlatButton(
+              child: new Text("FORTSETT"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
