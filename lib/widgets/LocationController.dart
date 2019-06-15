@@ -29,7 +29,7 @@ class LocationController {
   LocationService _service = LocationService();
 
   bool get isTracking => _tracking;
-  bool get isReady => _service.isReady.value;
+  bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
 
   LocationController({
