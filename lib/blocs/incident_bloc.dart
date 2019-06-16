@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/services/IncidentService.dart';
+import 'package:SarSys/services/incident_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;

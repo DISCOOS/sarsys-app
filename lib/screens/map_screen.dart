@@ -1,45 +1,34 @@
-import 'dart:ui';
+import 'dart:async';
 
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/proj4d.dart';
-import 'package:SarSys/widgets/CrossPainter.dart';
-import 'package:SarSys/widgets/LocationController.dart';
-import 'package:SarSys/widgets/MapSearchField.dart';
+import 'package:SarSys/plugins/my_location.dart';
+import 'package:SarSys/widgets/basemap_card.dart';
+import 'package:SarSys/widgets/cross_painter.dart';
+import 'package:SarSys/widgets/location_controller.dart';
+import 'package:SarSys/widgets/map_search_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
-class PointEditor extends StatefulWidget {
-  final Point point;
-  final String title;
+import 'package:SarSys/Widgets/app_drawer.dart';
+import 'package:SarSys/services/maptile_service.dart';
 
-  const PointEditor(this.point, this.title, {Key key}) : super(key: key);
-
+class MapScreen extends StatefulWidget {
   @override
-  _PointEditorState createState() => _PointEditorState();
-
-  static String toDD(Point point) {
-    return CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat));
-  }
-
-  /// TODO: Make UTM zone and northing configurable
-  static final utmProj = TransverseMercatorProjection.utm(32, false);
-  static String toUTM(Point point) {
-    if (point == null) return "Velg";
-    var src = ProjCoordinate.from2D(point.lon, point.lat);
-    var dst = utmProj.project(src);
-    return CoordinateFormat.toUTM(dst);
-  }
+  MapScreenState createState() => MapScreenState();
 }
 
-class _PointEditorState extends State<PointEditor> {
+class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  bool _init;
-  Point _current;
+  // TODO: move the baseMap to MapService
   String _currentBaseMap;
+  bool _offlineBaseMap;
   MapController _mapController;
+  MaptileService _maptileService = MaptileService();
+  List<BaseMap> _baseMaps;
+  LatLng _match;
   MapSearchField _searchField;
   LocationController _locationController;
 
@@ -48,20 +37,31 @@ class _PointEditorState extends State<PointEditor> {
     super.initState();
     // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
     _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+    _offlineBaseMap = false;
     _mapController = MapController();
-    // TODO: Use device location as default location
-    _init = false;
-    _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
       controller: _mapController,
-      onError: _onError,
+      zoom: 18,
+      onError: _showMessage,
+      onMatch: _onSearchMatch,
+      onCleared: _onSearchCleared,
+      prefixIcon: GestureDetector(
+        child: Icon(Icons.menu),
+        onTap: () => _scaffoldKey.currentState.openDrawer(),
+      ),
     );
     _locationController = LocationController(
         mapController: _mapController,
         onMessage: _showMessage,
         onPrompt: _prompt,
         onLocationChanged: (_) => setState(() {}));
+    initMaps();
+  }
+
+  void initMaps() async {
+    _baseMaps = await _maptileService.fetchMaps();
+    _locationController.init();
   }
 
   @override
@@ -74,73 +74,36 @@ class _PointEditorState extends State<PointEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(widget.title),
-        centerTitle: false,
-        leading: GestureDetector(
-          child: Icon(Icons.close),
-          onTap: () {
-            Navigator.pop(context, widget.point);
-          },
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('FERDIG', style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () {
-              Navigator.pop(context, _current);
-            },
-          ),
-        ],
+      drawer: AppDrawer(),
+      extendBody: true,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _settingModalBottomSheet(context);
+        },
+        child: Icon(Icons.add),
+        elevation: 2.0,
       ),
-      body: GestureDetector(
-        child: Stack(
-          children: [
-            _buildMap(),
-            _buildCenterMark(),
-            _buildSearchField(),
-            _buildControls(),
-            _buildCoordsPanel(),
-          ],
-        ),
-        onTapDown: (_) => _clearSearchField(),
-      ),
+      body: _buildBody(),
       resizeToAvoidBottomInset: false,
     );
   }
 
-  FlutterMap _buildMap() {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        center: LatLng(_current.lat, _current.lon),
-        zoom: 13,
-        onPositionChanged: _onPositionChanged,
-        onTap: (_) => _clearSearchField(),
-      ),
-      layers: [
-        TileLayerOptions(
-          urlTemplate: _currentBaseMap,
-        ),
+  Stack _buildBody() {
+    return Stack(
+      children: [
+        _buildMap(),
+        _buildControls(),
+        _buildSearchBar(),
       ],
     );
   }
 
-  Center _buildCenterMark() {
-    return Center(
-      child: SizedBox(
-          width: 56,
-          height: 56,
-          child: CustomPaint(
-            painter: CrossPainter(),
-          )),
-    );
-  }
-
-  Align _buildSearchField() {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: _searchField,
+  Widget _buildSearchBar() {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: _searchField,
+      ),
     );
   }
 
@@ -159,6 +122,26 @@ class _PointEditorState extends State<PointEditor> {
                 child: IconButton(
                   icon: Icon(Icons.filter_list),
                   onPressed: () {},
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 4.0,
+            ),
+            SizedBox(
+              width: size.width,
+              height: size.height,
+              child: Container(
+                child: IconButton(
+                  icon: Icon(Icons.map),
+                  onPressed: () {
+                    _selectBaseMapBottomSheet(context);
+                  },
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6),
@@ -234,50 +217,132 @@ class _PointEditorState extends State<PointEditor> {
     );
   }
 
-  Align _buildCoordsPanel() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: EdgeInsets.all(8.0),
-        padding: EdgeInsets.all(16.0),
-        height: 72.0,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8.0)),
-        child: Column(
-          children: <Widget>[
-            if (_current != null) Text(PointEditor.toDD(_current)),
-            if (_current != null) Text(PointEditor.toUTM(_current)),
-          ],
+  FlutterMap _buildMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+          center: LatLng(59.5, 10.09),
+          zoom: 13,
+          onTap: _onTap,
+          onPositionChanged: _onPositionChanged,
+          plugins: [
+            MyLocation(),
+          ]),
+      layers: [
+        TileLayerOptions(
+          urlTemplate: _currentBaseMap,
         ),
-      ),
+        if (_match != null) _buildMarker(_match),
+        if (_locationController.isReady) _locationController.options,
+      ],
     );
   }
 
-  void _updatePoint(MapPosition point, bool hasGesture) {
-    _current = Point.now(point.center.latitude, point.center.longitude);
-    if (_init) setState(() {});
-    _init = true;
-  }
-
-  void _onError(String message) {
-    final snackbar = SnackBar(
-      duration: Duration(seconds: 1),
-      content: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(message),
-      ),
-    );
-    _scaffoldKey.currentState.showSnackBar(snackbar);
-  }
-
-  void _clearSearchField() {
-    _searchFieldKey?.currentState?.clear();
+  void _onTap(LatLng point) {
+    if (_match == null) _clearSearchField();
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
     if (isUserGesture && _locationController.isTracking) {
       _locationController.toggle();
     }
-    _updatePoint(position, hasGesture);
+  }
+
+  MarkerLayerOptions _buildMarker(LatLng point) {
+    return MarkerLayerOptions(
+      markers: [
+        Marker(
+          width: 80.0,
+          height: 80.0,
+          point: point,
+          builder: (_) => SizedBox(
+              width: 56,
+              height: 56,
+              child: CustomPaint(
+                painter: CrossPainter(),
+              )),
+        ),
+      ],
+    );
+  }
+
+  void _settingModalBottomSheet(context) {
+    final style = Theme.of(context).textTheme.title;
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return Container(
+            padding: EdgeInsets.only(bottom: 56.0),
+            child: Wrap(
+              children: <Widget>[
+                ListTile(title: Text("Opprett", style: style)),
+                Divider(),
+                ListTile(
+                    leading: Icon(Icons.timeline),
+                    title: Text('Spor', style: style),
+                    onTap: () {
+                      Navigator.pop(context);
+                    }),
+                ListTile(
+                  leading: Icon(Icons.add_location),
+                  title: Text('Markering', style: style),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
+  List<Widget> _mapBottomSheetCards() {
+    List<Widget> _mapCards = [];
+
+    for (BaseMap map in _baseMaps) {
+      _mapCards.add(GestureDetector(
+        child: BaseMapCard(map: map),
+        onTap: () {
+          setState(() {
+            _currentBaseMap = map.url;
+          });
+          Navigator.pop(context);
+        },
+      ));
+    }
+    return _mapCards;
+  }
+
+  // TODO: Quick demo - make widget that iterates over maps from MaptileService
+  // TODO: Change from simple list to card showing map name, offline icon, sample image etc. (IRMA)
+  void _selectBaseMapBottomSheet(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return Container(
+            padding: EdgeInsets.all(24.0),
+            child: GridView.count(
+              crossAxisCount: 2,
+              children: _mapBottomSheetCards(),
+            ),
+          );
+        });
+  }
+
+  void _clearSearchField() {
+    _searchFieldKey?.currentState?.clear();
+  }
+
+  void _onSearchMatch(LatLng point) {
+    setState(() {
+      _match = point;
+    });
+  }
+
+  void _onSearchCleared() {
+    setState(() {
+      _match = null;
+    });
   }
 
   void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {

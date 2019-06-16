@@ -1,4 +1,4 @@
-import 'package:SarSys/services/UserService.dart';
+import 'package:SarSys/services/user_service.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';

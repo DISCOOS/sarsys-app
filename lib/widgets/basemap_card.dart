@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/services/MaptileService.dart';
+import 'package:SarSys/services/maptile_service.dart';
 import 'package:flutter/material.dart';
 
 class BaseMapCard extends StatelessWidget {

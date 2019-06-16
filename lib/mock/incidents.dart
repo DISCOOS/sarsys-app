@@ -4,8 +4,8 @@ import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/services/IncidentService.dart';
-import 'package:SarSys/services/UserService.dart';
+import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/services/user_service.dart';
 import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
 

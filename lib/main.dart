@@ -1,6 +1,6 @@
-import 'package:SarSys/blocs/IncidentBloc.dart';
-import 'package:SarSys/blocs/UserBloc.dart';
-import 'package:SarSys/services/IncidentService.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/services/incident_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +8,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'mock/incidents.dart';
 import 'mock/users.dart';
-import 'services/UserService.dart';
-import 'screens/CommandScreen.dart';
-import 'screens/IncidentsScreen.dart';
-import 'screens/LoginScreen.dart';
-import 'screens/MapScreen.dart';
+import 'services/user_service.dart';
+import 'screens/command_screen.dart';
+import 'screens/incidents_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/map_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

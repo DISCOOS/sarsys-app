@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:SarSys/Services/LocationService.dart';
-import 'package:SarSys/plugins/MyLocation.dart';
+import 'package:SarSys/Services/location_service.dart';
+import 'package:SarSys/plugins/my_location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';

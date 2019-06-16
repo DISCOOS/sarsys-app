@@ -1,8 +1,8 @@
-import 'package:SarSys/blocs/IncidentBloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/services/IncidentService.dart';
-import 'package:SarSys/services/UserService.dart';
+import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/services/user_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:matcher/matcher.dart';
 

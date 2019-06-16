@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/IncidentBloc.dart';
-import 'package:SarSys/blocs/UserBloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

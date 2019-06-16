@@ -1,8 +1,8 @@
-import 'package:SarSys/blocs/IncidentBloc.dart';
-import 'package:SarSys/blocs/UserBloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/editors/IncidentEditor.dart';
-import 'package:SarSys/popups/PasscodePopup.dart';
+import 'package:SarSys/editors/incident_editor.dart';
+import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

@@ -2,7 +2,7 @@ import 'dart:collection';
 
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/services/UserService.dart';
+import 'package:SarSys/services/user_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 

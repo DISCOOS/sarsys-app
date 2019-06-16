@@ -1,8 +1,8 @@
-import 'package:SarSys/blocs/IncidentBloc.dart';
-import 'package:SarSys/pages/IncidentPage.dart';
-import 'package:SarSys/pages/PlanPage.dart';
-import 'package:SarSys/widgets/AppDrawer.dart';
-import 'package:SarSys/widgets/ColoredTabBar.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/pages/incident_page.dart';
+import 'package:SarSys/pages/plan_page.dart';
+import 'package:SarSys/widgets/app_drawer.dart';
+import 'package:SarSys/widgets/colored_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
