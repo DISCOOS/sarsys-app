@@ -3,6 +3,7 @@ import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
+import 'package:SarSys/services/talk_group_service.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,18 @@ class _IncidentEditorState extends State<IncidentEditor> {
   final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
 
   int _currentStep = 0;
+
+  ValueNotifier<List<String>> _affiliations = ValueNotifier([]);
+
+  @override
+  void initState() {
+    super.initState();
+    _initTalkGroups();
+  }
+
+  void _initTalkGroups() async {
+    _affiliations.value = await TalkGroupService().fetchCatalogs();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +119,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
                   Step(
                     title: Text('Talegrupper'),
                     subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
-                    content: _buildTGField(),
+                    content: Column(
+                      children: <Widget>[_buildTGField(), SizedBox(height: 16.0), _buildAffiliationField()],
+                    ),
                     isActive: _currentStep >= 0,
                     state: _isValid(['talkgroups'])
                         ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
@@ -336,6 +351,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildTGField() {
     final style = Theme.of(context).textTheme.caption;
+    final service = TalkGroupService();
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
@@ -349,17 +365,14 @@ class _IncidentEditorState extends State<IncidentEditor> {
               filled: true,
               contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
             ),
-            findSuggestions: (String query) {
+            findSuggestions: (String query) async {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
-                return mockResults.where((tg) {
+                var affiliation = _formKey.currentState.fields["affiliation"].currentState.value;
+                return (await service.fetchTalkGroups(affiliation)).where((tg) {
                   return tg.name.toLowerCase().contains(query.toLowerCase()) ||
                       tg.type.toString().toLowerCase().contains(query.toLowerCase());
-                }).toList(growable: false)
-                  ..sort((a, b) => a.name
-                      .toLowerCase()
-                      .indexOf(lowercaseQuery)
-                      .compareTo(b.name.toLowerCase().indexOf(lowercaseQuery)));
+                }).toList(growable: false);
               } else {
                 return const <TalkGroup>[];
               }
@@ -397,6 +410,23 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _formKey.currentState == null ||
         fields.where((name) => state.fields[name] == null || !state.fields[name].currentState.hasError).length ==
             fields.length;
+  }
+
+  Widget _buildAffiliationField() {
+    return ValueListenableBuilder(
+      valueListenable: _affiliations,
+      builder: (BuildContext context, List value, Widget child) {
+        return _buildDropDownField(
+          attribute: 'affiliation',
+          label: 'Tilhørighet',
+          initialValue: "Nasjonal",
+          items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
+          validators: [
+            FormBuilderValidators.required(errorText: 'Type må velges'),
+          ],
+        );
+      },
+    );
   }
 }
 

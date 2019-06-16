@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 
 class LocationService {
   static final _singleton = LocationService._internal();
-  final _handler = PermissionHandler();
   final _isReady = ValueNotifier(false);
 
   String _serverUrl = "https://sporing.rodekors.no/locationtest"; // For testing simple tracking with POST messages

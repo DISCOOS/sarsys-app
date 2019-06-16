@@ -85,6 +85,7 @@ flutter:
     - assets/mapspreview/toporaster3.png
     - assets/mapspreview/ortofoto.png
     - assets/mapspreview/sjokart.png
+    - assets/config/talk_groups.json
 
 
   # To add custom fonts to your application, add a fonts section here,
