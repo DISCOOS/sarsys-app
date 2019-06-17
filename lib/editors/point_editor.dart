@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/cross_painter.dart';
 import 'package:SarSys/widgets/location_controller.dart';
 import 'package:SarSys/widgets/map_search_field.dart';
@@ -17,19 +17,6 @@ class PointEditor extends StatefulWidget {
 
   @override
   _PointEditorState createState() => _PointEditorState();
-
-  static String toDD(Point point) {
-    return CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat));
-  }
-
-  /// TODO: Make UTM zone and northing configurable
-  static final utmProj = TransverseMercatorProjection.utm(32, false);
-  static String toUTM(Point point) {
-    if (point == null) return "Velg";
-    var src = ProjCoordinate.from2D(point.lon, point.lat);
-    var dst = utmProj.project(src);
-    return CoordinateFormat.toUTM(dst);
-  }
 }
 
 class _PointEditorState extends State<PointEditor> {
@@ -244,8 +231,8 @@ class _PointEditorState extends State<PointEditor> {
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8.0)),
         child: Column(
           children: <Widget>[
-            if (_current != null) Text(PointEditor.toDD(_current)),
-            if (_current != null) Text(PointEditor.toUTM(_current)),
+            if (_current != null) Text(toDD(_current)),
+            if (_current != null) Text(toUTM(_current)),
           ],
         ),
       ),

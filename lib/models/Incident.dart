@@ -57,6 +57,28 @@ class Incident extends Equatable {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$IncidentToJson(this);
 
+  /// Clone with json
+  Incident withJson(Map<String, dynamic> json, {String userId}) {
+    var clone = Incident.fromJson(json);
+    var now = DateTime.now();
+    return Incident(
+      id: clone.id ?? this.id,
+      name: clone.name ?? this.name,
+      type: clone.type ?? this.type,
+      status: clone.status ?? this.status,
+      changed: userId != null
+          ? Author(userId: userId, timestamp: now)
+          : clone.changed ?? Author.fromJson(this.changed.toJson()),
+      created: clone.created ?? Author.fromJson(this.created.toJson()),
+      occurred: clone.occurred ?? this.occurred,
+      justification: clone.justification ?? this.justification,
+      reference: clone.reference ?? this.reference,
+      passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes.toJson()),
+      ipp: clone.ipp ?? Point.fromJson(this.ipp.toJson()),
+      talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+    );
+  }
+
   /// Clone with author
   Incident withAuthor(String userId) {
     var now = DateTime.now();
@@ -69,6 +91,7 @@ class Incident extends Equatable {
       created: this.created ?? Author(userId: userId, timestamp: now),
       occurred: this.occurred,
       justification: this.justification,
+      reference: this.reference,
       passcodes: this.passcodes,
       ipp: this.ipp,
       talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),

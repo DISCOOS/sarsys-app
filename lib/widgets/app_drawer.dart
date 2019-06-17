@@ -45,10 +45,17 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.assignment),
-            title: Text('Plan', style: TextStyle(fontSize: 14)),
+            leading: const Icon(Icons.people),
+            title: Text('Enheter', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'plan');
+              Navigator.pushReplacementNamed(context, 'units');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.device_unknown),
+            title: Text('Terminaler', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, 'terminals');
             },
           ),
           Divider(),

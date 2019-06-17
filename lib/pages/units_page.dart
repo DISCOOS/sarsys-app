@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class PlanPage extends StatelessWidget {
+class UnitsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Icon(Icons.assessment),
+      child: Icon(Icons.people),
     );
   }
 }

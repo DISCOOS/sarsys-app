@@ -26,6 +26,8 @@ class Point extends Equatable {
           acc,
         ]);
 
+  bool get isEmpty => lat == 0 && lon == 0;
+
   /// Factory constructor for empty `Point`
   factory Point.now(double lat, double lon) {
     return Point(

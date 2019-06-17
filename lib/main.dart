@@ -52,7 +52,8 @@ void main() async {
         routes: <String, WidgetBuilder>{
           'login': (BuildContext context) => LoginScreen(),
           'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-          'plan': (BuildContext context) => CommandScreen(tabIndex: 1),
+          'units': (BuildContext context) => CommandScreen(tabIndex: 1),
+          'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
           'incidents': (BuildContext context) => IncidentsScreen(),
           'map': (BuildContext context) => MapScreen(),
         },

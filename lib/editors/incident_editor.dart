@@ -4,6 +4,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/services/talk_group_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,7 +44,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Ny hendelse"),
+        title: Text(widget.incident == null ? 'Ny hendelse' : 'Endre hendelse'),
         centerTitle: false,
         leading: GestureDetector(
           child: Icon(Icons.close),
@@ -53,7 +54,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ),
         actions: <Widget>[
           FlatButton(
-            child: Text('OPPRETT', style: TextStyle(fontSize: 14.0, color: Colors.white)),
+            child: Text(widget.incident == null ? 'OPPRETT' : 'OPPDATER',
+                style: TextStyle(fontSize: 14.0, color: Colors.white)),
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             onPressed: () => _submit(context),
           ),
@@ -176,7 +178,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
       _formKey.currentState.save();
       print(_formKey.currentState.value);
       var userId = BlocProvider.of<UserBloc>(context).user?.userId;
-      var incident = Incident.fromJson(_formKey.currentState.value).withAuthor(userId);
+      var incident = Incident.fromJson(_formKey.currentState.value);
+      if (widget.incident == null) {
+        incident = incident.withAuthor(userId);
+      } else {
+        incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
+      }
       Navigator.pop(context, incident);
     } else {
       // Show errors
@@ -233,7 +240,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _buildDropDownField(
       attribute: 'type',
       label: 'Type hendelse',
-      initialValue: widget?.incident?.type ?? enumName(IncidentType.Lost),
+      initialValue: enumName(widget?.incident?.type ?? IncidentType.Lost),
       items: [
         [enumName(IncidentType.Lost), 'Savnet'],
         [enumName(IncidentType.Distress), 'Nødstedt'],
@@ -249,7 +256,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return _buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      initialValue: widget?.incident?.status ?? enumName(IncidentStatus.Registered),
+      initialValue: enumName(widget?.incident?.status ?? IncidentStatus.Registered),
       items: [
         [enumName(IncidentStatus.Registered), 'Registrert'],
         [enumName(IncidentStatus.Handling), 'Håndteres'],
@@ -325,7 +332,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                   child: field.value == null
                       ? Text('Velg posisjon', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
                       : Text(
-                          PointEditor.toUTM(field.value),
+                          toUTM(field.value),
                           style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
                         ),
                 ),
@@ -370,8 +377,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 var lowercaseQuery = query.toLowerCase();
                 var affiliation = _formKey.currentState.fields["affiliation"].currentState.value;
                 return (await service.fetchTalkGroups(affiliation)).where((tg) {
-                  return tg.name.toLowerCase().contains(query.toLowerCase()) ||
-                      tg.type.toString().toLowerCase().contains(query.toLowerCase());
+                  return tg.name.toLowerCase().contains(lowercaseQuery) ||
+                      tg.type.toString().toLowerCase().contains(lowercaseQuery);
                 }).toList(growable: false);
               } else {
                 return const <TalkGroup>[];
@@ -429,12 +436,3 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 }
-
-String enumName(Object o) => o.toString().split('.').last;
-
-var mockResults = <TalkGroup>[
-  TalkGroup(name: "01-SAR-1", type: TalkGroupType.Tetra),
-  TalkGroup(name: "01-SAR-2", type: TalkGroupType.Tetra),
-  TalkGroup(name: "01-SAR-3", type: TalkGroupType.Tetra),
-  TalkGroup(name: "01-SAR-4", type: TalkGroupType.Tetra),
-];

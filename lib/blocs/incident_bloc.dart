@@ -39,6 +39,13 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       )
       .map((state) => state.data);
 
+  /// Stream of incident changes
+  Stream<Incident> get updates => state
+      .where(
+        (state) => state is IncidentUpdated,
+      )
+      .map((state) => state.data);
+
   /// Initialize if empty
   IncidentBloc init(IncidentCallback onInit) {
     if (isEmpty) {
@@ -58,6 +65,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Create given incident
   IncidentBloc create(Incident incident, [bool selected = true]) {
     dispatch(CreateIncident(incident, selected: selected));
+    return this;
+  }
+
+  /// Update given incident
+  IncidentBloc update(Incident incident, [bool selected = true]) {
+    dispatch(UpdateIncident(incident, selected: selected));
     return this;
   }
 
@@ -82,7 +95,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       }
     } else if (command is UpdateIncident) {
       Incident data = await _update(command);
-      if (command.selected || data.id == _given) {
+      var select = command.selected && data.id != _given;
+      yield IncidentUpdated(data, selected: (data.id == _given || select));
+      if (select) {
         yield _set(data);
       }
     } else if (command is SelectIncident) {

@@ -2,14 +2,17 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/editors/incident_editor.dart';
+import 'package:SarSys/plugins/icon_layer.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong/latlong.dart';
 
 class IncidentsScreen extends StatefulWidget {
-  //modified
-  @override //new
-  IncidentsScreenState createState() => IncidentsScreenState(); //new
+  @override
+  IncidentsScreenState createState() => IncidentsScreenState();
 }
 
 // TODO: Add the ChatScreenState class definition in main.dart.
@@ -45,6 +48,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
             elevation: 2.0,
           ),
           bottomNavigationBar: _buildBottomAppBar(),
+          extendBody: true,
         );
       },
     );
@@ -77,27 +81,30 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         await bloc.fetch();
         setState(() {});
       },
-      child: AnimatedCrossFade(
-        duration: Duration(milliseconds: 300),
-        crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-        firstChild: Center(
-          child: CircularProgressIndicator(),
-        ),
-        secondChild: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: viewportConstraints.maxHeight,
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: StreamBuilder(
-                stream: bloc.state,
-                builder: (context, snapshot) {
-                  return Column(
-                    children: bloc.incidents.map((incident) => _buildCard(context, bloc, incident)).toList(),
-                  );
-                },
+      child: Container(
+        color: Color.fromRGBO(168, 168, 168, 0.6),
+        child: AnimatedCrossFade(
+          duration: Duration(milliseconds: 300),
+          crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+          firstChild: Center(
+            child: CircularProgressIndicator(),
+          ),
+          secondChild: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: viewportConstraints.maxHeight,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: StreamBuilder(
+                  stream: bloc.state,
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: bloc.incidents.map((incident) => _buildCard(context, bloc, incident)).toList(),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -119,7 +126,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                 ListTile(
                   leading: CircleAvatar(
                     child: Text(
-                      "${_formatSince(incident.occurred)}",
+                      "${formatSince(incident.occurred)}",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -136,12 +143,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
                   ),
                 ),
-                if (isAuthorized)
-                  Container(
-                    height: 240.0,
-                    child: Center(child: Text('Kart')),
-                    decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
-                  ),
+                if (isAuthorized) _buildMapTile(incident),
                 if (isAuthorized)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
@@ -201,6 +203,47 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         });
   }
 
+  static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+
+  Widget _buildMapTile(Incident incident) {
+    if (incident.ipp == null || incident.ipp.isEmpty) {
+      return Container(
+        height: 240.0,
+        child: Center(child: Text('Kart')),
+        decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
+      );
+    }
+
+    final point = LatLng(incident.ipp.lat, incident.ipp.lon);
+    return Container(
+      height: 240.0,
+      child: FlutterMap(
+        key: ObjectKey(incident),
+        options: MapOptions(
+          center: point,
+          zoom: 13,
+          interactive: false,
+          plugins: [
+            IconLayer(),
+          ],
+        ),
+        layers: [
+          TileLayerOptions(
+            urlTemplate: BASEMAP,
+          ),
+          IconLayerOptions(
+            point,
+            Icon(
+              Icons.location_on,
+              size: 30,
+              color: Colors.red,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   BottomAppBar _buildBottomAppBar() {
     return BottomAppBar(
       child: Row(
@@ -222,11 +265,5 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       shape: CircularNotchedRectangle(),
       color: Colors.grey[850],
     );
-  }
-
-  String _formatSince(DateTime timestamp) {
-    if (timestamp == null) return "-";
-    Duration delta = DateTime.now().difference(timestamp);
-    return delta.inHours > 99 ? "${delta.inDays}d" : delta.inHours > 0 ? "${delta.inHours}h" : "${delta.inSeconds}h";
   }
 }

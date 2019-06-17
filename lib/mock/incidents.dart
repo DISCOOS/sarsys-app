@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -15,6 +16,7 @@ class IncidentBuilder {
   }
 
   static createIncidentAsJson(String id, int since, String token, String passcode) {
+    final rnd = math.Random();
     return '{'
         '"id": "$id",'
         '"name": "Savnet person",'
@@ -23,7 +25,7 @@ class IncidentBuilder {
         '"reference": "2019-RKH-245$since",'
         '"occurred": "${DateTime.now().subtract(Duration(hours: since)).toIso8601String()}",'
         '"justification": "Mann, 32 år, økt selvmordsfare.",'
-        '"ipp": ${createEmptyPointAsJson()},'
+        '"ipp": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
         '"talkgroups": ['
         '{"name": "RK-RIKS-1", "type": "Tetra"}'
         '],'
@@ -31,6 +33,10 @@ class IncidentBuilder {
         '"created": ${createAuthor(token)},'
         '"changed": ${createAuthor(token)}'
         '}';
+  }
+
+  static createPointAsJson(double lat, double lon) {
+    return json.encode(Point.now(lat, lon).toJson());
   }
 
   static createEmptyPointAsJson() {
