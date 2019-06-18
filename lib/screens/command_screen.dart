@@ -9,17 +9,24 @@ import 'package:SarSys/widgets/colored_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class CommandScreen extends StatelessWidget {
+class CommandScreen extends StatefulWidget {
   final int tabIndex;
 
   CommandScreen({Key key, @required this.tabIndex}) : super(key: key);
+
+  @override
+  _CommandScreenState createState() => _CommandScreenState();
+}
+
+class _CommandScreenState extends State<CommandScreen> {
+  var current;
 
   @override
   Widget build(BuildContext context) {
     final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
     return DefaultTabController(
       length: 3,
-      initialIndex: this.tabIndex,
+      initialIndex: current,
       child: StreamBuilder(
         stream: bloc.updates,
         initialData: bloc.current,
@@ -52,15 +59,20 @@ class CommandScreen extends StatelessWidget {
                     Tab(text: "Enheter", icon: Icon(Icons.people)),
                     Tab(text: "Terminaler", icon: Icon(Icons.device_unknown)),
                   ],
+                  onTap: (index) => setState(() {
+                        current = index;
+                      }),
                 ),
               ),
               title: Tab(text: title),
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {},
-              child: Icon(Icons.add),
-              elevation: 2.0,
-            ),
+            floatingActionButton: current > 0
+                ? FloatingActionButton(
+                    onPressed: () {},
+                    child: Icon(Icons.add),
+                    elevation: 2.0,
+                  )
+                : Container(),
             body: TabBarView(
               children: [
                 IncidentPage(incident),
@@ -72,5 +84,11 @@ class CommandScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    current = widget.tabIndex;
   }
 }
