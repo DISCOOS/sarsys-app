@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/plugins/my_location.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/basemap_card.dart';
 import 'package:SarSys/widgets/cross_painter.dart';
 import 'package:SarSys/widgets/location_controller.dart';
@@ -10,7 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
-import 'package:SarSys/Widgets/app_drawer.dart';
+import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:SarSys/services/maptile_service.dart';
 
 class MapScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class MapScreenState extends State<MapScreen> {
     _locationController = LocationController(
         mapController: _mapController,
         onMessage: _showMessage,
-        onPrompt: _prompt,
+        onPrompt: (title, message) => prompt(context, title, message),
         onLocationChanged: (_) => setState(() {}));
     initMaps();
   }
@@ -364,34 +365,6 @@ class MapScreenState extends State<MapScreen> {
     return SnackBarAction(
       label: label,
       onPressed: onPressed,
-    );
-  }
-
-  Future<bool> _prompt(String title, String message) async {
-    // flutter defined function
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        // return object of type Dialog
-        return AlertDialog(
-          title: new Text(title),
-          content: new Text(message),
-          actions: <Widget>[
-            new FlatButton(
-              child: new Text("CANCEL"),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            new FlatButton(
-              child: new Text("FORTSETT"),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }
