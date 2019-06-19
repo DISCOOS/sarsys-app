@@ -40,7 +40,7 @@ void main() async {
     child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'SarSys',
-        theme: new ThemeData(
+        theme: ThemeData(
           primaryColor: Colors.grey[850],
           buttonTheme: ButtonThemeData(
             height: 36.0,

@@ -70,7 +70,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 type: StepperType.vertical,
                 currentStep: _currentStep,
                 physics: ClampingScrollPhysics(),
-                onStepTapped: (int step) => setState(() => _currentStep = step),
+                onStepTapped: (int step) {
+                  setState(() => _currentStep = step);
+                  FocusScope.of(context).requestFocus(new FocusNode());
+                },
                 onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
                 onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
                 controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
@@ -242,9 +245,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
       label: 'Type hendelse',
       initialValue: enumName(widget?.incident?.type ?? IncidentType.Lost),
       items: [
-        [enumName(IncidentType.Lost), 'Savnet'],
-        [enumName(IncidentType.Distress), 'Nødstedt'],
-        [enumName(IncidentType.Other), 'Annet'],
+        [enumName(IncidentType.Lost), translateIncidentType(IncidentType.Lost)],
+        [enumName(IncidentType.Distress), translateIncidentType(IncidentType.Distress)],
+        [enumName(IncidentType.Other), translateIncidentType(IncidentType.Other)],
       ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
@@ -258,9 +261,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
       label: 'Status',
       initialValue: enumName(widget?.incident?.status ?? IncidentStatus.Registered),
       items: [
-        [enumName(IncidentStatus.Registered), 'Registrert'],
-        [enumName(IncidentStatus.Handling), 'Håndteres'],
-        [enumName(IncidentStatus.Other), 'Annet'],
+        [enumName(IncidentStatus.Registered), translateIncidentStatus(IncidentStatus.Registered)],
+        [enumName(IncidentStatus.Handling), translateIncidentStatus(IncidentStatus.Handling)],
+        [enumName(IncidentStatus.Other), translateIncidentStatus(IncidentStatus.Other)],
       ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Status må velges'),

@@ -11,7 +11,7 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
         content: Text(message),
         actions: <Widget>[
           FlatButton(
-            child: Text("CANCEL"),
+            child: Text("AVBRYT"),
             onPressed: () {
               Navigator.of(context).pop(false);
             },

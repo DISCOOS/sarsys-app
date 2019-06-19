@@ -1,7 +1,11 @@
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/plugins/icon_layer.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
@@ -27,17 +31,24 @@ class IncidentPage extends StatelessWidget {
       color: Color.fromRGBO(168, 168, 168, 0.6),
       child: Padding(
         padding: const EdgeInsets.all(SPACING),
-        child: ListView(
+        child: Stack(
           children: [
-            _buildMapTile(incident),
-            SizedBox(height: SPACING),
-            _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
-            SizedBox(height: SPACING),
-            _buildJustification(incident, labelStyle, messageStyle, unitStyle),
-            SizedBox(height: SPACING),
-            _buildIPP(incident, labelStyle, messageStyle, unitStyle),
-            SizedBox(height: SPACING),
-            _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
+            ListView(
+              physics: NeverScrollableScrollPhysics(),
+              children: [
+                _buildMapTile(incident),
+                SizedBox(height: SPACING),
+                _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
+                SizedBox(height: SPACING),
+                _buildJustification(incident, labelStyle, messageStyle, unitStyle),
+                SizedBox(height: SPACING),
+                _buildIPP(incident, labelStyle, messageStyle, unitStyle),
+                SizedBox(height: SPACING),
+                _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
+                SizedBox(height: SPACING * 2),
+              ],
+            ),
+            SafeArea(child: Align(alignment: Alignment.bottomCenter, child: _buildActions(context))),
           ],
         ),
       ),
@@ -151,6 +162,44 @@ class IncidentPage extends StatelessWidget {
     );
   }
 
+  Widget _buildActions(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Expanded(
+          child: SizedBox(
+            height: 56,
+            child: RaisedButton(
+              elevation: ELEVATION,
+              child: Text(
+                "KANSELLER",
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: () => _onCancel(context),
+              color: Colors.white,
+              textTheme: ButtonTextTheme.normal,
+            ),
+          ),
+        ),
+        SizedBox(width: SPACING),
+        Expanded(
+          child: SizedBox(
+            height: 56,
+            child: RaisedButton(
+              elevation: ELEVATION,
+              child: Text(
+                "FULLFØRT",
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: () => _onFinish(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Material _buildValueTile(
     String label,
     String value,
@@ -178,5 +227,36 @@ class IncidentPage extends StatelessWidget {
       elevation: ELEVATION,
       borderRadius: BorderRadius.circular(CORNER),
     );
+  }
+
+  void _onCancel(BuildContext context) async {
+    var cancel = await prompt(
+      context,
+      "Bekreft kansellering",
+      "Dette vil stoppe alle sporinger og sette status til Kansellert",
+    );
+    if (cancel) {
+      _setIncidentStatus(context, IncidentStatus.Cancelled);
+      Navigator.pushReplacementNamed(context, "incidents");
+    }
+  }
+
+  void _onFinish(BuildContext context) async {
+    var finish = await prompt(
+      context,
+      "Bekreft fullføring",
+      "Dette vil stoppe alle sporinger og sette status til Løst",
+    );
+    if (finish) {
+      _setIncidentStatus(context, IncidentStatus.Resolved);
+      Navigator.pushReplacementNamed(context, "incidents");
+    }
+  }
+
+  void _setIncidentStatus(BuildContext context, IncidentStatus status) {
+    var bloc = BlocProvider.of<IncidentBloc>(context);
+    var userId = BlocProvider.of<UserBloc>(context).user?.userId;
+    var incident = bloc.current.withJson({"status": enumName(status)}, userId: userId);
+    bloc.update(incident);
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:SarSys/plugins/my_location.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/basemap_card.dart';

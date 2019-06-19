@@ -79,5 +79,7 @@ const _$IncidentTypeEnumMap = <IncidentType, dynamic>{
 const _$IncidentStatusEnumMap = <IncidentStatus, dynamic>{
   IncidentStatus.Registered: 'Registered',
   IncidentStatus.Handling: 'Handling',
+  IncidentStatus.Cancelled: 'Cancelled',
+  IncidentStatus.Resolved: 'Resolved',
   IncidentStatus.Other: 'Other'
 };

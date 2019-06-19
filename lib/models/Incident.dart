@@ -101,4 +101,32 @@ class Incident extends Equatable {
 
 enum IncidentType { Lost, Distress, Other }
 
-enum IncidentStatus { Registered, Handling, Other }
+enum IncidentStatus { Registered, Handling, Cancelled, Resolved, Other }
+
+String translateIncidentType(IncidentType type) {
+  switch (type) {
+    case IncidentType.Lost:
+      return "Savnet";
+    case IncidentType.Distress:
+      return "Nødstedt";
+    case IncidentType.Other:
+    default:
+      return "Annet";
+  }
+}
+
+String translateIncidentStatus(IncidentStatus status) {
+  switch (status) {
+    case IncidentStatus.Registered:
+      return "Registrert";
+    case IncidentStatus.Handling:
+      return "Håndteres";
+    case IncidentStatus.Cancelled:
+      return "Kansellert";
+    case IncidentStatus.Resolved:
+      return "Løst";
+    case IncidentStatus.Other:
+    default:
+      return "Annet";
+  }
+}
