@@ -62,6 +62,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   AppBar _buildAppBar(BuildContext context, bool isUnset) {
     return AppBar(
       title: Text("Velg hendelse"),
+      centerTitle: false,
       actions: <Widget>[
         if (isUnset)
           FlatButton(
