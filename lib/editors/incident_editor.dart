@@ -5,6 +5,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/services/talk_group_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -178,20 +179,44 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   void _submit(BuildContext context) {
     if (_formKey.currentState.validate()) {
+      const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
+      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
+      final current = widget.incident.status;
+      var incident;
       _formKey.currentState.save();
-      print(_formKey.currentState.value);
-      var userId = BlocProvider.of<UserBloc>(context).user?.userId;
-      var incident = Incident.fromJson(_formKey.currentState.value);
       if (widget.incident == null) {
-        incident = incident.withAuthor(userId);
+        Navigator.pop(context, Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
       } else {
         incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
+        if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
+          _promptAndUpdate(
+            context,
+            "Bekreft kansellering",
+            "Dette vil stoppe alle sporinger og sette status til Kansellert",
+            incident,
+          );
+        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident.status) {
+          _promptAndUpdate(
+            context,
+            "Bekreft løsning",
+            "Dette vil stoppe alle sporinger og sette status til Løst",
+            incident,
+          );
+        } else {
+          Navigator.pop(context, incident);
+        }
       }
-      Navigator.pop(context, incident);
     } else {
       // Show errors
       setState(() {});
     }
+  }
+
+  bool _promptAndUpdate(BuildContext context, String title, String message, Incident incident) {
+    prompt(context, title, message).then((proceed) {
+      if (proceed) Navigator.pop(context, incident);
+    });
+    return true;
   }
 
   Widget _buildNameField() {
@@ -263,6 +288,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
       items: [
         [enumName(IncidentStatus.Registered), translateIncidentStatus(IncidentStatus.Registered)],
         [enumName(IncidentStatus.Handling), translateIncidentStatus(IncidentStatus.Handling)],
+        if (widget.incident != null)
+          [enumName(IncidentStatus.Cancelled), translateIncidentStatus(IncidentStatus.Cancelled)],
+        if (widget.incident != null)
+          [enumName(IncidentStatus.Resolved), translateIncidentStatus(IncidentStatus.Resolved)],
         [enumName(IncidentStatus.Other), translateIncidentStatus(IncidentStatus.Other)],
       ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
       validators: [

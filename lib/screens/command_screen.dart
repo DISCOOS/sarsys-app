@@ -24,65 +24,60 @@ class _CommandScreenState extends State<CommandScreen> {
   @override
   Widget build(BuildContext context) {
     final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
-    return DefaultTabController(
-      length: 3,
-      initialIndex: current,
-      child: StreamBuilder(
-        stream: bloc.updates,
-        initialData: bloc.current,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          var incident = snapshot.data is Incident ? snapshot.data : null;
-          String title = incident?.reference ?? (incident?.name ?? "Hendelse");
-          return Scaffold(
-            drawer: AppDrawer(),
-            appBar: AppBar(
-              actions: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.more_vert),
-                  onPressed: () async {
-                    var response = await showDialog(
-                      context: context,
-                      builder: (context) => IncidentEditor(incident: incident),
-                    );
-                    if (response != null) {
-                      bloc.update(response);
-                    }
-                  },
-                ),
-              ],
-              bottom: ColoredTabBar(
-                Colors.white,
-                TabBar(
-                  labelColor: Colors.black,
-                  tabs: [
-                    Tab(text: "Hendelse", icon: Icon(Icons.warning)),
-                    Tab(text: "Enheter", icon: Icon(Icons.people)),
-                    Tab(text: "Terminaler", icon: Icon(Icons.device_unknown)),
-                  ],
-                  onTap: (index) => setState(() {
-                        current = index;
-                      }),
-                ),
+    return StreamBuilder(
+      stream: bloc.updates,
+      initialData: bloc.current,
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        final incident = snapshot.data is Incident ? snapshot.data : null;
+        final title = incident?.reference ?? (incident?.name ?? "Hendelse");
+        final tabs = [
+          IncidentPage(incident),
+          UnitsPage(),
+          TerminalsPage(),
+        ];
+        return Scaffold(
+          drawer: AppDrawer(),
+          appBar: AppBar(
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.more_vert),
+                onPressed: () async {
+                  var response = await showDialog(
+                    context: context,
+                    builder: (context) => IncidentEditor(incident: incident),
+                  );
+                  if (response != null) {
+                    bloc.update(response);
+                  }
+                },
               ),
-              title: Tab(text: title),
-            ),
-            floatingActionButton: current > 0
-                ? FloatingActionButton(
-                    onPressed: () {},
-                    child: Icon(Icons.add),
-                    elevation: 2.0,
-                  )
-                : Container(),
-            body: TabBarView(
-              children: [
-                IncidentPage(incident),
-                UnitsPage(),
-                TerminalsPage(),
-              ],
-            ),
-          );
-        },
-      ),
+            ],
+            title: Tab(text: title),
+          ),
+          floatingActionButton: current > 0
+              ? FloatingActionButton(
+                  onPressed: () {},
+                  child: Icon(Icons.add),
+                  elevation: 2.0,
+                )
+              : Container(),
+          body: tabs[current],
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: current,
+            elevation: 4.0,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
+            type: BottomNavigationBarType.fixed,
+            items: [
+              BottomNavigationBarItem(title: Text("Hendelse"), icon: Icon(Icons.warning)),
+              BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
+              BottomNavigationBarItem(title: Text("Terminaler"), icon: Icon(Icons.device_unknown)),
+            ],
+            onTap: (index) => setState(() {
+                  current = index;
+                }),
+          ),
+        );
+      },
     );
   }
 

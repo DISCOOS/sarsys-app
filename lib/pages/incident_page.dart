@@ -244,7 +244,7 @@ class IncidentPage extends StatelessWidget {
   void _onFinish(BuildContext context) async {
     var finish = await prompt(
       context,
-      "Bekreft fullføring",
+      "Bekreft løsning",
       "Dette vil stoppe alle sporinger og sette status til Løst",
     );
     if (finish) {
