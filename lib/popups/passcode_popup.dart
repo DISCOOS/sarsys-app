@@ -50,28 +50,32 @@ class PasscodeRoute extends PopupRoute {
         padding: EdgeInsets.all(8.0),
         child: Form(
           key: _formKey,
-          child: ListView(
-            shrinkWrap: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               StreamBuilder<UserState>(
                 stream: bloc.state,
                 builder: (context, snapshot) {
                   var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data is UserException;
-                  return Center(
-                    child: Text(
-                      forbidden
-                          ? "Feil tilgangskode, forsøk igjen"
-                          : "${incident.reference ?? incident.name} krever tilgangskode",
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        color: forbidden ? Colors.red : Colors.black,
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Center(
+                      child: Text(
+                        forbidden
+                            ? "Feil tilgangskode, forsøk igjen"
+                            : "${incident.reference ?? incident.name} krever tilgangskode",
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          color: forbidden ? Colors.red : Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   );
                 },
               ),
+              Divider(),
               _buildPasscodeInput(),
               SizedBox(
                 height: 16,
@@ -92,6 +96,7 @@ class PasscodeRoute extends PopupRoute {
           maxLines: 1,
           obscureText: true,
           autofocus: true,
+          enableInteractiveSelection: false,
           decoration: InputDecoration(
             hintText: 'Tilgangskode',
             filled: true,
