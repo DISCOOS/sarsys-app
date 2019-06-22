@@ -2,10 +2,9 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/pages/incident_page.dart';
-import 'package:SarSys/pages/terminals_page.dart';
+import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
-import 'package:SarSys/widgets/colored_tabbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,7 +32,7 @@ class _CommandScreenState extends State<CommandScreen> {
         final tabs = [
           IncidentPage(incident),
           UnitsPage(),
-          TerminalsPage(),
+          DevicesPage(),
         ];
         return Scaffold(
           drawer: AppDrawer(),
@@ -54,7 +53,7 @@ class _CommandScreenState extends State<CommandScreen> {
             ],
             title: Tab(text: title),
           ),
-          floatingActionButton: current > 0
+          floatingActionButton: current == 1
               ? FloatingActionButton(
                   onPressed: () {},
                   child: Icon(Icons.add),
