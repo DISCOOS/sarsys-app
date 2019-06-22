@@ -105,6 +105,12 @@ class _UnitsPageState extends State<UnitsPage> {
               icon: Icons.gps_fixed,
               onTap: () => {},
             ),
+            IconSlideAction(
+              caption: 'SPOR',
+              color: Theme.of(context).colorScheme.primary,
+              icon: Icons.play_arrow,
+              onTap: () => {},
+            ),
           ],
         );
       },

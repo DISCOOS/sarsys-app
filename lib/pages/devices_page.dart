@@ -86,23 +86,23 @@ class _DevicesPageState extends State<DevicesPage> {
           ),
           actions: <Widget>[
             IconSlideAction(
-              caption: 'VIS',
+              caption: 'KNYTT',
               color: Theme.of(context).buttonColor,
-              icon: Icons.gps_fixed,
+              icon: Icons.people,
               onTap: () => {},
             ),
           ],
           secondaryActions: <Widget>[
             IconSlideAction(
-              caption: 'ENDRE',
+              caption: 'VIS',
               color: Theme.of(context).buttonColor,
-              icon: Icons.more_horiz,
+              icon: Icons.gps_fixed,
               onTap: () => {},
             ),
             IconSlideAction(
-              caption: 'OPPLØS',
-              color: Colors.red,
-              icon: Icons.delete,
+              caption: 'SPOR',
+              color: Theme.of(context).colorScheme.primary,
+              icon: Icons.play_arrow,
               onTap: () => {},
             ),
           ],

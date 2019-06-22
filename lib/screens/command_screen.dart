@@ -53,13 +53,6 @@ class _CommandScreenState extends State<CommandScreen> {
             ],
             title: Tab(text: title),
           ),
-          floatingActionButton: current == 1
-              ? FloatingActionButton(
-                  onPressed: () {},
-                  child: Icon(Icons.add),
-                  elevation: 2.0,
-                )
-              : Container(),
           body: tabs[current],
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: current,
