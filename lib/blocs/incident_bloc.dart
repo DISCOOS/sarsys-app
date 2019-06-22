@@ -30,7 +30,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Incident get current => _incidents[this._given];
 
   /// Get incidents
-  List<Incident> get incidents => _incidents.values.toList();
+  List<Incident> get incidents => UnmodifiableListView<Incident>(_incidents.values);
 
   /// Stream of switched between given incidents
   Stream<Incident> get switches => state
