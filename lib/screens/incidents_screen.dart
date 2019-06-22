@@ -18,7 +18,7 @@ class IncidentsScreen extends StatefulWidget {
 class IncidentsScreenState extends State<IncidentsScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  var bloc;
+  IncidentBloc bloc;
   Set<IncidentStatus> filters;
 
   @override
@@ -60,6 +60,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   }
 
   AppBar _buildAppBar(BuildContext context, bool isUnset) {
+    final userBloc = BlocProvider.of<UserBloc>(context);
     return AppBar(
       title: Text("Velg hendelse"),
       centerTitle: false,
@@ -69,7 +70,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
             child: Text('LOGG UT', style: TextStyle(fontSize: 14.0, color: Colors.white)),
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             onPressed: () async {
-              bloc
+              userBloc
                   .logout()
                   .state
                   .where((state) => state is UserUnset)
@@ -139,6 +140,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           final isAuthorized = userBloc.isAuthorized(incident);
           return Card(
             child: Column(
+              key: ObjectKey(incident.id),
               children: <Widget>[
                 ListTile(
                   leading: CircleAvatar(
