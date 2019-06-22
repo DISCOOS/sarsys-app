@@ -1,11 +1,14 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/services/unit_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'blocs/unit_bloc.dart';
 import 'mock/incidents.dart';
 import 'mock/users.dart';
 import 'services/user_service.dart';
@@ -30,12 +33,17 @@ void main() async {
       kReleaseMode ? IncidentService(apiUrl) : IncidentServiceMock.build(userService, 2, "T123");
   final IncidentBloc incidentBloc = IncidentBloc(incidentService);
 
+  // Configure Unit service
+  final UnitService unitService = kReleaseMode ? UnitService(apiUrl) : UnitServiceMock.build(15);
+  final UnitBloc unitBloc = UnitBloc(unitService);
+
   final Widget homepage = await getHome(userBloc);
 
   runApp(BlocProviderTree(
     blocProviders: [
       BlocProvider<UserBloc>(bloc: userBloc),
       BlocProvider<IncidentBloc>(bloc: incidentBloc),
+      BlocProvider<UnitBloc>(bloc: unitBloc),
     ],
     child: MaterialApp(
         debugShowCheckedModeBanner: false,
