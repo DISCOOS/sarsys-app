@@ -205,7 +205,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             onPressed: () {
                               if (isAuthorized) {
                                 bloc.select(incident.id);
-                                Navigator.pushReplacementNamed(context, 'map');
+                                Navigator.pushReplacementNamed(context, 'incident');
                               } else {
                                 Navigator.push(context, PasscodeRoute(incident));
                               }
