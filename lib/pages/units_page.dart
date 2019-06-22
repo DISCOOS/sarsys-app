@@ -70,11 +70,11 @@ class _UnitsPageState extends State<UnitsPage> {
               key: ObjectKey(units[index].id),
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Text('$index'),
+                child: Text('${index + 1}'),
                 foregroundColor: Colors.white,
               ),
               title: Text(units[index].name),
-              subtitle: Text('SlidableDrawerDelegate'),
+              subtitle: Text("Ingen posisjon"),
               trailing: RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -86,23 +86,23 @@ class _UnitsPageState extends State<UnitsPage> {
           ),
           actions: <Widget>[
             IconSlideAction(
-              caption: 'VIS',
-              color: Theme.of(context).buttonColor,
-              icon: Icons.gps_fixed,
+              caption: 'OPPLØS',
+              color: Colors.red,
+              icon: Icons.delete,
               onTap: () => {},
             ),
-          ],
-          secondaryActions: <Widget>[
             IconSlideAction(
               caption: 'ENDRE',
               color: Theme.of(context).buttonColor,
               icon: Icons.more_horiz,
               onTap: () => {},
             ),
+          ],
+          secondaryActions: <Widget>[
             IconSlideAction(
-              caption: 'OPPLØS',
-              color: Colors.red,
-              icon: Icons.delete,
+              caption: 'VIS',
+              color: Theme.of(context).buttonColor,
+              icon: Icons.gps_fixed,
               onTap: () => {},
             ),
           ],
