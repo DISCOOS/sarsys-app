@@ -36,7 +36,7 @@ class IncidentPage extends StatelessWidget {
             ListView(
               physics: NeverScrollableScrollPhysics(),
               children: [
-                _buildMapTile(incident),
+                _buildMapTile(context, incident),
                 SizedBox(height: SPACING),
                 _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
                 SizedBox(height: SPACING),
@@ -57,7 +57,7 @@ class IncidentPage extends StatelessWidget {
 
   static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
-  Widget _buildMapTile(Incident incident) {
+  Widget _buildMapTile(BuildContext context, Incident incident) {
     if (incident == null || incident.ipp == null || incident.ipp.isEmpty) {
       return Container(
         height: 240.0,
@@ -75,13 +75,13 @@ class IncidentPage extends StatelessWidget {
           child: FlutterMap(
             key: ObjectKey(incident),
             options: MapOptions(
-              center: point,
-              zoom: 13,
-              interactive: false,
-              plugins: [
-                IconLayer(),
-              ],
-            ),
+                center: point,
+                zoom: 13,
+                interactive: true,
+                plugins: [
+                  IconLayer(),
+                ],
+                onTap: (_) => Navigator.pushReplacementNamed(context, 'map')),
             layers: [
               TileLayerOptions(
                 urlTemplate: BASEMAP,
