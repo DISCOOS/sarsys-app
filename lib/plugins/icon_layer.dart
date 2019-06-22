@@ -12,7 +12,7 @@ class IconLayerOptions extends LayerOptions {
   double bearing;
   double opacity;
   Icon icon;
-  final Anchor _anchor;
+  Anchor anchor;
 
   IconLayerOptions(
     this.point,
@@ -20,7 +20,7 @@ class IconLayerOptions extends LayerOptions {
     Stream<void> rebuild,
     this.bearing,
     this.opacity = 1.0,
-  })  : this._anchor = Anchor(icon.size, icon.size),
+  })  : this.anchor = Anchor.forPos(AnchorPos.align(AnchorAlign.center), icon.size, icon.size),
         super(rebuild: rebuild);
 }
 
@@ -38,15 +38,17 @@ class IconLayer implements MapPlugin {
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         var widget;
         if (map.bounds.contains(params.point)) {
+          var size = params.icon.size;
+          var anchor = params.anchor;
           var pos = map.project(params.point);
           pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
-          var pixelPosX = (pos.x - (params.icon.size - params._anchor.left)).toDouble();
-          var pixelPosY = (pos.y - (params.icon.size - params._anchor.top)).toDouble();
+          var pixelPosX = (pos.x - (size - anchor.left)).toDouble();
+          var pixelPosY = (pos.y - (size - anchor.top)).toDouble();
 
           widget = Positioned(
-            width: params.icon.size,
-            height: params.icon.size,
+            width: size,
+            height: size,
             left: pixelPosX,
             top: pixelPosY,
             child: Stack(
@@ -62,7 +64,7 @@ class IconLayer implements MapPlugin {
                     opacity: 0.54,
                     child: CustomPaint(
                       painter: BearingPainter(params.bearing),
-                      size: Size(params.icon.size, params.icon.size),
+                      size: Size(size, size),
                     ),
                   ),
               ],
