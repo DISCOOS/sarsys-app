@@ -41,7 +41,7 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
 
 const _$DeviceTypeEnumMap = <DeviceType, dynamic>{
   DeviceType.Tetra: 'Tetra',
-  DeviceType.Phone: 'Phone',
+  DeviceType.Mobile: 'Mobile',
   DeviceType.APRS: 'APRS',
   DeviceType.AIS: 'AIS'
 };

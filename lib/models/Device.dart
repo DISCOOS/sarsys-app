@@ -24,13 +24,13 @@ class Device extends Equatable {
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
 }
 
-enum DeviceType { Tetra, Phone, APRS, AIS }
+enum DeviceType { Tetra, Mobile, APRS, AIS }
 
 String translateDeviceType(DeviceType type) {
   switch (type) {
     case DeviceType.Tetra:
       return "Nødnett";
-    case DeviceType.Phone:
+    case DeviceType.Mobile:
       return "Mobiltelefon";
     default:
       return enumName(type);
