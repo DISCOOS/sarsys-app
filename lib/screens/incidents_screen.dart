@@ -1,14 +1,13 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/editors/incident_editor.dart';
-import 'package:SarSys/map/icon_layer.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
 
 class IncidentsScreen extends StatefulWidget {
   @override
@@ -253,42 +252,14 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
   Widget _buildMapTile(Incident incident) {
-    if (incident.ipp == null || incident.ipp.isEmpty) {
-      return Container(
-        height: 240.0,
-        child: Center(child: Text('Kart')),
-        decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
-      );
-    }
-
-    final point = LatLng(incident.ipp.lat, incident.ipp.lon);
+    final point = incident.ipp != null ? toLatLng(incident.ipp) : Defaults.origo;
     return Container(
-      height: 240.0,
-      child: FlutterMap(
-        key: ObjectKey(incident),
-        options: MapOptions(
+        height: 240.0,
+        child: IncidentMap(
           center: point,
-          zoom: 13,
+          incident: incident,
           interactive: false,
-          plugins: [
-            IconLayer(),
-          ],
-        ),
-        layers: [
-          TileLayerOptions(
-            urlTemplate: BASEMAP,
-          ),
-          IconLayerOptions(
-            point,
-            Icon(
-              Icons.location_on,
-              size: 30,
-              color: Colors.red,
-            ),
-          )
-        ],
-      ),
-    );
+        ));
   }
 
   BottomAppBar _buildBottomAppBar() {

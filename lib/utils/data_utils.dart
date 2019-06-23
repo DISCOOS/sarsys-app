@@ -38,5 +38,5 @@ String formatSince(DateTime timestamp) {
 }
 
 LatLng toLatLng(Point point) {
-  return LatLng(point.lat, point.lon);
+  return LatLng(point?.lat, point?.lon);
 }

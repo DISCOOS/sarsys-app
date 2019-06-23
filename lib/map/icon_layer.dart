@@ -8,14 +8,14 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart' hide Path;
 
 class IconLayerOptions extends LayerOptions {
-  LatLng point;
+  List<LatLng> points;
   double bearing;
   double opacity;
   Icon icon;
   Anchor anchor;
 
   IconLayerOptions(
-    this.point,
+    this.points,
     this.icon, {
     Stream<void> rebuild,
     this.bearing,
@@ -36,46 +36,51 @@ class IconLayer implements MapPlugin {
     return StreamBuilder<void>(
       stream: stream, // a Stream<int> or null
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-        var widget;
-        if (map.bounds.contains(params.point)) {
-          var size = params.icon.size;
-          var anchor = params.anchor;
-          var pos = map.project(params.point);
-          pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-
-          var pixelPosX = (pos.x - (size - anchor.left)).toDouble();
-          var pixelPosY = (pos.y - (size - anchor.top)).toDouble();
-
-          widget = Positioned(
-            width: size,
-            height: size,
-            left: pixelPosX,
-            top: pixelPosY,
-            child: Stack(
-              children: [
-                Container(
-                  child: Opacity(
-                    opacity: params.opacity,
-                    child: params.icon,
-                  ),
-                ),
-                if (params.bearing != null)
-                  Opacity(
-                    opacity: 0.54,
-                    child: CustomPaint(
-                      painter: BearingPainter(params.bearing),
-                      size: Size(size, size),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }
-
-        return Container(
-          child: widget,
-        );
+        List<Widget> icons = params.points
+            .where((point) => map.bounds.contains(point))
+            .map((point) => _buildIcon(map, params, point))
+            .toList();
+        return icons.isEmpty
+            ? Container()
+            : Stack(
+                children: icons,
+              );
       },
+    );
+  }
+
+  Widget _buildIcon(MapState map, IconLayerOptions params, LatLng point) {
+    var size = params.icon.size;
+    var anchor = params.anchor;
+    var pos = map.project(point);
+    pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+
+    var pixelPosX = (pos.x - (size - anchor.left)).toDouble();
+    var pixelPosY = (pos.y - (size - anchor.top)).toDouble();
+
+    return Positioned(
+      width: size,
+      height: size,
+      left: pixelPosX,
+      top: pixelPosY,
+      child: Stack(
+        children: [
+          Container(
+            child: Opacity(
+              opacity: params.opacity,
+              child: params.icon,
+            ),
+          ),
+          if (params.bearing != null)
+            Opacity(
+              opacity: 0.54,
+              child: CustomPaint(
+                painter: BearingPainter(params.bearing),
+                size: Size(size, size),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

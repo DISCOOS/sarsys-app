@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/mock/tracking.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/incident_service.dart';
@@ -10,10 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'blocs/device_bloc.dart';
+import 'blocs/tracking_bloc.dart';
 import 'blocs/unit_bloc.dart';
 import 'mock/devices.dart';
 import 'mock/incidents.dart';
 import 'mock/users.dart';
+import 'services/tracking_service.dart';
 import 'services/user_service.dart';
 import 'screens/command_screen.dart';
 import 'screens/incidents_screen.dart';
@@ -44,6 +47,11 @@ void main() async {
   final DeviceService deviceService = kReleaseMode ? DeviceService(apiUrl) : DeviceServiceMock.build(30);
   final DeviceBloc deviceBloc = DeviceBloc(deviceService);
 
+  // Configure Tracking service
+  final TrackingService trackingService =
+      kReleaseMode ? TrackingService(apiUrl) : TrackingServiceMock.build(incidentBloc, 30);
+  final TrackingBloc trackingBloc = TrackingBloc(trackingService);
+
   final Widget homepage = await getHome(userBloc);
 
   runApp(BlocProviderTree(
@@ -52,6 +60,7 @@ void main() async {
       BlocProvider<IncidentBloc>(bloc: incidentBloc),
       BlocProvider<UnitBloc>(bloc: unitBloc),
       BlocProvider<DeviceBloc>(bloc: deviceBloc),
+      BlocProvider<TrackingBloc>(bloc: trackingBloc),
     ],
     child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -71,7 +80,7 @@ void main() async {
           'units': (BuildContext context) => CommandScreen(tabIndex: 1),
           'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
           'incidents': (BuildContext context) => IncidentsScreen(),
-          'map': (BuildContext context) => MapScreen(),
+          'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
         },
         localizationsDelegates: [
           GlobalMaterialLocalizations.delegate,

@@ -1,13 +1,12 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/map/icon_layer.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
 
 class IncidentPage extends StatelessWidget {
   static const HEIGHT = 82.0;
@@ -58,43 +57,18 @@ class IncidentPage extends StatelessWidget {
   static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
   Widget _buildMapTile(BuildContext context, Incident incident) {
-    if (incident == null || incident.ipp == null || incident.ipp.isEmpty) {
-      return Container(
-        height: 240.0,
-        child: Center(child: Text('Kart')),
-        decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.5)),
-      );
-    }
-
-    final point = LatLng(incident.ipp.lat, incident.ipp.lon);
+    final point =
+        incident == null || incident.ipp == null || incident.ipp.isEmpty ? Defaults.origo : toLatLng(incident.ipp);
     return Container(
       height: 240.0,
       child: Material(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(CORNER),
-          child: FlutterMap(
-            key: ObjectKey(incident),
-            options: MapOptions(
-                center: point,
-                zoom: 13,
-                interactive: true,
-                plugins: [
-                  IconLayer(),
-                ],
-                onTap: (_) => Navigator.pushReplacementNamed(context, 'map')),
-            layers: [
-              TileLayerOptions(
-                urlTemplate: BASEMAP,
-              ),
-              IconLayerOptions(
-                point,
-                Icon(
-                  Icons.location_on,
-                  size: 30,
-                  color: Colors.red,
-                ),
-              )
-            ],
+          child: IncidentMap(
+            center: point,
+            incident: incident,
+            interactive: true,
+            onTap: (_) => Navigator.pushReplacementNamed(context, 'map', arguments: point),
           ),
         ),
         elevation: ELEVATION,
