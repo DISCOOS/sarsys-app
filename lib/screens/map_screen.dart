@@ -21,8 +21,10 @@ class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  // TODO: move the baseMap to MapService
   String _currentBaseMap;
+
+  // TODO: move the baseMap to MapService
+  LatLng _center = LatLng(59.5, 10.09);
   bool _offlineBaseMap;
   MapController _mapController;
   MaptileService _maptileService = MaptileService();
@@ -61,6 +63,8 @@ class MapScreenState extends State<MapScreen> {
   void initMaps() async {
     _baseMaps = await _maptileService.fetchMaps();
     _locationController.init();
+    final center = ModalRoute.of(context).settings.arguments;
+    _center = center ?? _center;
   }
 
   @override
@@ -219,14 +223,9 @@ class MapScreenState extends State<MapScreen> {
   FlutterMap _buildMap() {
     return FlutterMap(
       mapController: _mapController,
-      options: MapOptions(
-          center: LatLng(59.5, 10.09),
-          zoom: 13,
-          onTap: _onTap,
-          onPositionChanged: _onPositionChanged,
-          plugins: [
-            MyLocation(),
-          ]),
+      options: MapOptions(center: _center, zoom: 13, onTap: _onTap, onPositionChanged: _onPositionChanged, plugins: [
+        MyLocation(),
+      ]),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
