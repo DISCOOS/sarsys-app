@@ -1,4 +1,3 @@
-import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
@@ -13,7 +12,7 @@ class Tracking extends Equatable {
   final TrackingState state;
   final Point location;
   final double distance;
-  final List<Device> devices;
+  final List<String> devices;
   final List<Point> track;
 
   Tracking({

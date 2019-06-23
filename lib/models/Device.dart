@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -10,11 +11,13 @@ class Device extends Equatable {
   final String id;
   final DeviceType type;
   final String number;
+  final Point location;
 
   Device({
     @required this.id,
     @required this.type,
     this.number,
+    this.location,
   }) : super([id, type, number]);
 
   /// Factory constructor for creating a new `Device` instance

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
@@ -37,16 +39,13 @@ class IncidentMap extends StatefulWidget {
   final MessageCallback onMessage;
   final GestureTapCallback onOpenDrawer;
 
-  final PositionCallback onPositionChanged;
-  final LocationCallback onLocationChanged;
-
   IncidentMap({
     Key key,
     this.center,
     this.url = BASEMAP,
     this.incident,
     this.offline = false,
-    this.interactive = false,
+    this.interactive = true,
     this.withSearch = false,
     this.withControls = false,
     this.withLocation = false,
@@ -54,8 +53,6 @@ class IncidentMap extends StatefulWidget {
     this.onPrompt,
     this.onMessage,
     this.onOpenDrawer,
-    this.onPositionChanged,
-    this.onLocationChanged,
     MapController mapController,
   })  : this.mapController = mapController ?? MapController(),
         super(key: key);
@@ -74,6 +71,10 @@ class _IncidentMapState extends State<IncidentMap> {
   LocationController _locationController;
   LatLng _searchMatch;
   TrackingBloc _trackingBloc;
+  LatLng _center;
+  double _zoom = Defaults.zoom;
+
+  ValueNotifier<bool> _isLocating = ValueNotifier(false);
 
   @override
   void initState() {
@@ -84,10 +85,12 @@ class _IncidentMapState extends State<IncidentMap> {
         mapController: widget.mapController,
         onMessage: widget.onMessage,
         onPrompt: widget.onPrompt,
+        onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
     }
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    _center = widget.center ?? Defaults.origo;
     init();
   }
 
@@ -120,8 +123,10 @@ class _IncidentMapState extends State<IncidentMap> {
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
       mapController: widget.mapController,
       options: MapOptions(
-        center: widget.center ?? Defaults.origo,
-        zoom: Defaults.zoom,
+        center: _center,
+        zoom: _zoom,
+        maxZoom: Defaults.maxZoom,
+        minZoom: Defaults.minZoom,
         interactive: widget.interactive,
         onTap: _onTap,
         onPositionChanged: _onPositionChanged,
@@ -249,7 +254,9 @@ class _IncidentMapState extends State<IncidentMap> {
       child: IconButton(
         icon: Icon(Icons.add),
         onPressed: () {
-          widget.mapController.move(widget.mapController.center, widget.mapController.zoom + 1);
+          setState(() {
+            _zoom = math.min(_zoom + 1, Defaults.maxZoom);
+          });
         },
       ),
       decoration: BoxDecoration(
@@ -265,7 +272,9 @@ class _IncidentMapState extends State<IncidentMap> {
       child: IconButton(
         icon: Icon(Icons.remove),
         onPressed: () {
-          widget.mapController.move(widget.mapController.center, widget.mapController.zoom - 1);
+          setState(() {
+            _zoom = math.max(_zoom - 1, Defaults.minZoom);
+          });
         },
       ),
       decoration: BoxDecoration(
@@ -277,20 +286,24 @@ class _IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildLocateAction(Size size) {
-    return Container(
-      child: IconButton(
-        color: _locationController.isTracking ? Colors.green : Colors.black,
-        icon: Icon(Icons.gps_fixed),
-        onPressed: () {
-          _locationController.toggle();
-        },
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-    );
+    return ValueListenableBuilder(
+        valueListenable: _isLocating,
+        builder: (BuildContext context, bool value, Widget child) {
+          return Container(
+            child: IconButton(
+              color: value ? Colors.green : Colors.black,
+              icon: Icon(Icons.gps_fixed),
+              onPressed: () {
+                _locationController.toggle();
+              },
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.6),
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(30.0),
+            ),
+          );
+        });
   }
 
   IconLayerOptions _buildPoiOptions(List<Point> points) {
@@ -336,10 +349,10 @@ class _IncidentMapState extends State<IncidentMap> {
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
+    _center = position.center;
     if (isUserGesture && widget.withLocation && _locationController.isTracking) {
       _locationController.toggle();
     }
-    if (widget.onPositionChanged != null) widget.onPositionChanged(position, hasGesture, isUserGesture);
   }
 
   void _clearSearchField() {
@@ -348,6 +361,7 @@ class _IncidentMapState extends State<IncidentMap> {
 
   void _onSearchMatch(LatLng point) {
     setState(() {
+      _center = point;
       _searchMatch = point;
     });
   }
@@ -389,9 +403,13 @@ class _IncidentMapState extends State<IncidentMap> {
     return _mapCards;
   }
 
+  void _onTrackingChanged(bool isTracking) {
+    _isLocating.value = isTracking;
+  }
+
   void _onLocationChanged(LatLng point) {
     setState(() {
-      widget?.onLocationChanged(point);
+      _center = point;
     });
   }
 }

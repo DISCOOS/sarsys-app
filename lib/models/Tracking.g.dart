@@ -14,10 +14,7 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
           ? null
           : Point.fromJson(json['location'] as Map<String, dynamic>),
       distance: (json['distance'] as num)?.toDouble(),
-      devices: (json['devices'] as List)
-          ?.map((e) =>
-              e == null ? null : Device.fromJson(e as Map<String, dynamic>))
-          ?.toList(),
+      devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
       track: (json['track'] as List)
           ?.map((e) =>
               e == null ? null : Point.fromJson(e as Map<String, dynamic>))

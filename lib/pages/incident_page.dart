@@ -67,7 +67,6 @@ class IncidentPage extends StatelessWidget {
           child: IncidentMap(
             center: point,
             incident: incident,
-            interactive: true,
             onTap: (_) => Navigator.pushReplacementNamed(context, 'map', arguments: point),
           ),
         ),

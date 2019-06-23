@@ -10,13 +10,17 @@ Device _$DeviceFromJson(Map<String, dynamic> json) {
   return Device(
       id: json['id'] as String,
       type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
-      number: json['number'] as String);
+      number: json['number'] as String,
+      location: json['location'] == null
+          ? null
+          : Point.fromJson(json['location'] as Map<String, dynamic>));
 }
 
 Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'id': instance.id,
       'type': _$DeviceTypeEnumMap[instance.type],
-      'number': instance.number
+      'number': instance.number,
+      'location': instance.location
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

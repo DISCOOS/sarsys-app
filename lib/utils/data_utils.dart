@@ -40,3 +40,7 @@ String formatSince(DateTime timestamp) {
 LatLng toLatLng(Point point) {
   return LatLng(point?.lat, point?.lon);
 }
+
+Point toPoint(LatLng point) {
+  return Point.now(point?.latitude, point?.longitude);
+}

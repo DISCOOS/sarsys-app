@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/map/my_location.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -64,7 +65,7 @@ class LocationController {
     if (old != _tracking) {
       if (onTrackingChanged != null) onTrackingChanged(_tracking);
     }
-    _updateLocation(_service.current, true);
+    _updateLocation(_service.current, _tracking);
     return _tracking;
   }
 
@@ -81,7 +82,7 @@ class LocationController {
       if (force || _tracking && _isMoved(center)) {
         _options?.point = center;
         if (onLocationChanged != null) onLocationChanged(center);
-        mapController.move(center, mapController.zoom);
+        mapController.move(center, mapController.zoom ?? Defaults.zoom);
       }
     }
   }

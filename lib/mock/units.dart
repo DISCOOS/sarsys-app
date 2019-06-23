@@ -5,7 +5,7 @@ import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
 
-class UnitsBuilder {
+class UnitBuilder {
   static createUnitAsJson(String id, UnitType type, String name, String tracking) {
     return json.decode('{'
         '"id": "$id",'
@@ -23,7 +23,7 @@ class UnitServiceMock extends Mock implements UnitService {
       return Future.value([
         for (var i = 1; i <= count; i++)
           Unit.fromJson(
-            UnitsBuilder.createUnitAsJson("u$i", UnitType.Team, "${translateDeviceType(UnitType.Team)} $i", "t$i"),
+            UnitBuilder.createUnitAsJson("u$i", UnitType.Team, "${translateDeviceType(UnitType.Team)} $i", "t$i"),
           ),
       ]);
     });

@@ -44,7 +44,7 @@ void main() async {
   final UnitBloc unitBloc = UnitBloc(unitService);
 
   // Configure Device service
-  final DeviceService deviceService = kReleaseMode ? DeviceService(apiUrl) : DeviceServiceMock.build(30);
+  final DeviceService deviceService = kReleaseMode ? DeviceService(apiUrl) : DeviceServiceMock.build(incidentBloc, 30);
   final DeviceBloc deviceBloc = DeviceBloc(deviceService);
 
   // Configure Tracking service
