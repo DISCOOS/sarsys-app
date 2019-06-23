@@ -1,4 +1,4 @@
-import 'package:SarSys/plugins/my_location.dart';
+import 'package:SarSys/map/my_location.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/basemap_card.dart';
 import 'package:SarSys/widgets/cross_painter.dart';
