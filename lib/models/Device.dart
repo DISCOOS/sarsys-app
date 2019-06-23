@@ -15,7 +15,7 @@ class Device extends Equatable {
     @required this.id,
     @required this.type,
     this.number,
-  }) : super([id, type]);
+  }) : super([id, type, number]);
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
