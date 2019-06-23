@@ -34,7 +34,7 @@ class IncidentPage extends StatelessWidget {
         child: Stack(
           children: [
             ListView(
-              physics: NeverScrollableScrollPhysics(),
+              physics: ClampingScrollPhysics(),
               children: [
                 _buildMapTile(context, incident),
                 SizedBox(height: SPACING),
@@ -45,7 +45,7 @@ class IncidentPage extends StatelessWidget {
                 _buildIPP(incident, labelStyle, messageStyle, unitStyle),
                 SizedBox(height: SPACING),
                 _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
-                SizedBox(height: SPACING * 2),
+                SizedBox(height: SPACING * 10),
               ],
             ),
             SafeArea(child: Align(alignment: Alignment.bottomCenter, child: _buildActions(context))),
