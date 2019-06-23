@@ -109,7 +109,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<Unit> _delete(DeleteUnit event) {
     //TODO: Implement call to backend
 
-    if (this.units.remove(event.data.id)) {
+    if (_units.remove(event.data.id) == null) {
       throw "Failed to delete unit ${event.data.id}";
     }
     return Future.value(event.data);

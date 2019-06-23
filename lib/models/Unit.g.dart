@@ -10,13 +10,15 @@ Unit _$UnitFromJson(Map<String, dynamic> json) {
   return Unit(
       id: json['id'] as String,
       type: _$enumDecodeNullable(_$UnitTypeEnumMap, json['type']),
-      name: json['name'] as String);
+      name: json['name'] as String,
+      tracking: json['tracking'] as String);
 }
 
 Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
       'id': instance.id,
       'type': _$UnitTypeEnumMap[instance.type],
-      'name': instance.name
+      'name': instance.name,
+      'tracking': instance.tracking
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

@@ -10,12 +10,14 @@ class Unit extends Equatable {
   final String id;
   final UnitType type;
   final String name;
+  final String tracking;
 
   Unit({
     @required this.id,
     @required this.type,
     @required this.name,
-  }) : super([id, name]);
+    this.tracking,
+  }) : super([id, type, name, tracking]);
 
   /// Factory constructor for creating a new `Unit` instance
   factory Unit.fromJson(Map<String, dynamic> json) => _$UnitFromJson(json);
