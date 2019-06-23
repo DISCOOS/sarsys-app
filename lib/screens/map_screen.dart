@@ -1,9 +1,9 @@
 import 'package:SarSys/map/my_location.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/basemap_card.dart';
-import 'package:SarSys/widgets/cross_painter.dart';
-import 'package:SarSys/widgets/location_controller.dart';
-import 'package:SarSys/widgets/map_search_field.dart';
+import 'package:SarSys/map/basemap_card.dart';
+import 'package:SarSys/map/cross_painter.dart';
+import 'package:SarSys/map/location_controller.dart';
+import 'package:SarSys/map/map_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';

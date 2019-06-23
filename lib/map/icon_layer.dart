@@ -78,10 +78,6 @@ class IconLayer implements MapPlugin {
       },
     );
   }
-
-  /*
-
-   */
 }
 
 class BearingPainter extends CustomPainter {
