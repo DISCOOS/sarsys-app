@@ -14,6 +14,8 @@ PODS:
     - Reachability
   - location_permissions (2.0.2):
     - Flutter
+  - package_info (0.0.1):
+    - Flutter
   - path_provider (0.0.1):
     - Flutter
   - permission_handler (3.1.0):
@@ -36,6 +38,7 @@ DEPENDENCIES:
   - google_api_availability (from `.symlinks/plugins/google_api_availability/ios`)
   - keyboard_visibility (from `.symlinks/plugins/keyboard_visibility/ios`)
   - location_permissions (from `.symlinks/plugins/location_permissions/ios`)
+  - package_info (from `.symlinks/plugins/package_info/ios`)
   - path_provider (from `.symlinks/plugins/path_provider/ios`)
   - permission_handler (from `.symlinks/plugins/permission_handler/ios`)
   - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
@@ -61,6 +64,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/keyboard_visibility/ios"
   location_permissions:
     :path: ".symlinks/plugins/location_permissions/ios"
+  package_info:
+    :path: ".symlinks/plugins/package_info/ios"
   path_provider:
     :path: ".symlinks/plugins/path_provider/ios"
   permission_handler:
@@ -82,6 +87,7 @@ SPEC CHECKSUMS:
   google_api_availability: cd29400b9c6eb73b0978f609f0ad66f41dfa90b4
   keyboard_visibility: 091164adbb54829fcee802523daff9e64a7d8023
   location_permissions: 974d8fbc3ec5fed16908492a5e03bcb3372fcfd9
+  package_info: d7c98b64f60add4c2908b9d94d82a45d3c8827ad
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   permission_handler: a1b8c0f8c83b4e7201f9c04b9aef09979cc97f60
   Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96

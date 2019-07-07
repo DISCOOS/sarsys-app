@@ -8,6 +8,7 @@ import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/services/app_config_service.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   final Client client = Client();
-  final baseUrl = 'https://sporing.rodekors.no';
+  final baseUrl = Defaults.baseUrl;
   final assetConfig = 'assets/config/app_config.json';
   final AppConfigService configService = kReleaseMode
       ? AppConfigService(assetConfig, '$baseUrl/api', client)

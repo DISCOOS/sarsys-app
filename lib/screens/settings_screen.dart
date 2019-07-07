@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/services/talk_group_service.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
@@ -114,9 +115,22 @@ class SettingsScreenState extends State<SettingsScreen> {
                           Divider(),
                           ListTile(
                             title: Text(
-                              "Systeminnstillinger",
+                              "System",
                               style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
                             ),
+                          ),
+                          GestureDetector(
+                            child: ListTile(
+                              title: Text(
+                                "Om SarSys",
+                                style: Theme.of(context).textTheme.body1,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+                                return AboutScreen();
+                              }));
+                            },
                           ),
                           GestureDetector(
                             child: ListTile(
