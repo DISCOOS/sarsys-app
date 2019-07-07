@@ -36,7 +36,7 @@ void main() async {
   final baseUrl = Defaults.baseUrl;
   final assetConfig = 'assets/config/app_config.json';
   final AppConfigService configService = kReleaseMode
-      ? AppConfigService(assetConfig, '$baseUrl/api', client)
+      ? AppConfigService(assetConfig, '$baseUrl/api/app-config', client)
       : AppConfigServiceMock.build(assetConfig, '$baseUrl/api', client);
   final AppConfigBloc configBloc = AppConfigBloc(configService);
 
