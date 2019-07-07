@@ -34,22 +34,19 @@ class _DevicesPageState extends State<DevicesPage> {
             firstChild: Center(
               child: CircularProgressIndicator(),
             ),
-            secondChild: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
-              child: StreamBuilder(
-                stream: bloc.state,
-                builder: (context, snapshot) {
-                  var devices = bloc.devices;
-                  return devices.isNotEmpty
-                      ? _buildList(devices)
-                      : Center(
-                          child: Text(
-                            "Ingen terminaler innen rekkevidde",
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        );
-                },
-              ),
+            secondChild: StreamBuilder(
+              stream: bloc.state,
+              builder: (context, snapshot) {
+                var devices = bloc.devices;
+                return devices.isNotEmpty
+                    ? _buildList(devices)
+                    : Center(
+                        child: Text(
+                          "Ingen terminaler innen rekkevidde",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      );
+              },
             ),
           ),
         ),

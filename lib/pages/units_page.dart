@@ -50,12 +50,9 @@ class _UnitsPageState extends State<UnitsPage> {
             firstChild: Center(
               child: CircularProgressIndicator(),
             ),
-            secondChild: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
-              child: StreamBuilder(
-                stream: group.stream,
-                builder: _buildList,
-              ),
+            secondChild: StreamBuilder(
+              stream: group.stream,
+              builder: _buildList,
             ),
           ),
         ),
