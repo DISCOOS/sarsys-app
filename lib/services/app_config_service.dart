@@ -5,6 +5,8 @@ import 'package:http/http.dart' show Client;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// TODO: Add dependency 'flutter_udid' for unique appId
+
 class AppConfigService {
   final Client client;
   final String asset;

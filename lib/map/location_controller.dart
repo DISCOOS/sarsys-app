@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/Services/location_service.dart';
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/map/my_location.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ typedef TrackingCallback = void Function(bool isTracking);
 typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
+  final AppConfigBloc appConfigBloc;
   final MapController mapController;
   final MessageCallback onMessage;
   final PromptCallback onPrompt;
@@ -34,6 +36,7 @@ class LocationController {
   MyLocationOptions get options => _options;
 
   LocationController({
+    @required this.appConfigBloc,
     @required this.mapController,
     @required this.onMessage,
     @required this.onPrompt,
@@ -99,11 +102,11 @@ class LocationController {
     var isReady = false;
     switch (status) {
       case GeolocationStatus.granted:
-        onMessage("Stedstjenester er tilgjengelig");
+        if (_updateConfig(true)) onMessage("Stedstjenester er tilgjengelig");
         isReady = true;
         break;
       case GeolocationStatus.restricted:
-        onMessage("Tilgang til stedstjenester er begrenset");
+        if (_updateConfig(true)) onMessage("Tilgang til stedstjenester er begrenset");
         isReady = true;
         break;
       case GeolocationStatus.denied:
@@ -128,6 +131,16 @@ class LocationController {
     }
 
     _resolving = false;
+  }
+
+  bool _updateConfig(bool locationWhenInUse) {
+    var notify = true;
+    if (appConfigBloc.isReady) {
+      if (notify = appConfigBloc.config.locationWhenInUse != locationWhenInUse) {
+        appConfigBloc.update(locationWhenInUse: locationWhenInUse);
+      }
+    }
+    return notify;
   }
 
   void _handlePermissions(String message) async {

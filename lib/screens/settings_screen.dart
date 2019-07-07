@@ -20,7 +20,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    bloc = BlocProvider.of<AppConfigBloc>(context).init(setState);
+    bloc = BlocProvider.of<AppConfigBloc>(context).init(onInit: setState);
   }
 
   @override //new

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
@@ -82,6 +83,7 @@ class _IncidentMapState extends State<IncidentMap> {
     _currentBaseMap = widget.url;
     if (widget.withLocation) {
       _locationController = LocationController(
+        appConfigBloc: BlocProvider.of<AppConfigBloc>(context),
         mapController: widget.mapController,
         onMessage: widget.onMessage,
         onPrompt: widget.onPrompt,

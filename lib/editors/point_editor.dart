@@ -1,11 +1,13 @@
 import 'dart:ui';
 
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_search_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
@@ -45,6 +47,7 @@ class _PointEditorState extends State<PointEditor> {
       onError: _onError,
     );
     _locationController = LocationController(
+        appConfigBloc: BlocProvider.of<AppConfigBloc>(context),
         mapController: _mapController,
         onMessage: _showMessage,
         onPrompt: _prompt,

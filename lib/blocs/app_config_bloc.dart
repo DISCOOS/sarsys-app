@@ -24,11 +24,11 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   AppConfig get config => _config;
 
   /// Initialize if empty
-  AppConfigBloc init(AppConfigCallback onInit) {
+  AppConfigBloc init({AppConfigCallback onInit}) {
     if (!isReady) {
       service.init().then((config) {
         dispatch(InitAppConfig(config));
-        onInit(() {});
+        if (onInit != null) onInit(() {});
       });
     }
     return this;
