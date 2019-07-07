@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -5,6 +6,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/services/talk_group_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
@@ -23,20 +25,24 @@ class IncidentEditor extends StatefulWidget {
 
 class _IncidentEditorState extends State<IncidentEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
+  final _formKey = GlobalKey<FormBuilderState>();
+  final _affiliations = ValueNotifier(<String>[]);
 
+  AppConfigBloc _bloc;
   int _currentStep = 0;
-
-  ValueNotifier<List<String>> _affiliations = ValueNotifier([]);
 
   @override
   void initState() {
     super.initState();
-    _initTalkGroups();
+    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _init();
   }
 
-  void _initTalkGroups() async {
-    _affiliations.value = await TalkGroupService().fetchCatalogs();
+  void _init() async {
+    await _bloc.fetch();
+    var catalogs = await TalkGroupService().fetchCatalogs();
+    catalogs.sort();
+    _affiliations.value = catalogs;
   }
 
   @override
@@ -458,7 +464,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         return _buildDropDownField(
           attribute: 'affiliation',
           label: 'Tilhørighet',
-          initialValue: "Nasjonal",
+          initialValue: _bloc?.config?.affiliation ?? Defaults.affiliation,
           items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Type må velges'),

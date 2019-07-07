@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/mock/incidents.dart';
+import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/user_service.dart';
@@ -7,10 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:matcher/matcher.dart';
 
 void main() {
-  /// TODO: Mock UserService
-  final baseUrl = 'https://sporing.rodekors.no';
-  final UserService userService = UserService('$baseUrl/auth/login');
-
+  final UserService userService = UserServiceMock.build('test@local', 'password');
   final IncidentService incidentService = IncidentServiceMock.build(userService, 2, "T123");
 
   IncidentBloc bloc;

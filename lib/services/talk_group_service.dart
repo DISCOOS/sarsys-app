@@ -20,7 +20,7 @@ class TalkGroupService {
     init();
   }
 
-  void init() async {
+  Future<void> init() async {
     _talkGroups.clear();
     final Map<String, dynamic> assets = json.decode(await rootBundle.loadString(TALKGROUP));
     assets.forEach((catalog, groups) {
@@ -33,15 +33,15 @@ class TalkGroupService {
   }
 
   Future<List<TalkGroup>> fetchTalkGroups(String catalog) async {
-    if (_talkGroups == null) {
-      init();
+    if (_talkGroups.isEmpty) {
+      await init();
     }
     return _talkGroups[catalog];
   }
 
   Future<List<String>> fetchCatalogs() async {
-    if (_talkGroups == null) {
-      init();
+    if (_talkGroups.isEmpty) {
+      await init();
     }
     return _talkGroups.keys.toList();
   }

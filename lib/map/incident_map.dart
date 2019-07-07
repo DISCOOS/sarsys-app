@@ -139,6 +139,7 @@ class _IncidentMapState extends State<IncidentMap> {
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
+          tileProvider: NetworkTileProvider(),
         ),
         _buildTrackingOptions(),
         if (ipp != null) _buildPoiOptions([ipp]),
@@ -254,9 +255,11 @@ class _IncidentMapState extends State<IncidentMap> {
       child: IconButton(
         icon: Icon(Icons.add),
         onPressed: () {
-          setState(() {
-            _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-          });
+          _zoom = math.min(_zoom + 1, Defaults.maxZoom);
+          widget.mapController.move(_center, _zoom);
+//          setState(() {
+//            _zoom = math.min(_zoom + 1, Defaults.maxZoom);
+//          });
         },
       ),
       decoration: BoxDecoration(
@@ -272,9 +275,11 @@ class _IncidentMapState extends State<IncidentMap> {
       child: IconButton(
         icon: Icon(Icons.remove),
         onPressed: () {
-          setState(() {
-            _zoom = math.max(_zoom - 1, Defaults.minZoom);
-          });
+          _zoom = math.max(_zoom - 1, Defaults.minZoom);
+          widget.mapController.move(_center, _zoom);
+//          setState(() {
+//            _zoom = math.max(_zoom - 1, Defaults.minZoom);
+//          });
         },
       ),
       decoration: BoxDecoration(

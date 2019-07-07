@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:jose/jose.dart';
 
 class UserService {
   final String url;
+  final Client client;
 
   // TODO: Take into account that several users may use the app and handle token storage accordingly
   // TODO: Hash the password and save after successful authentication (for offline login to app)? Possible as long as token is valid?
@@ -13,7 +15,7 @@ class UserService {
   // static final UserService _singleton = new UserService();
   static final storage = new FlutterSecureStorage();
 
-  UserService(this.url);
+  UserService(this.url, this.client);
 
   //  factory UserService() {
   //    return _singleton;

@@ -73,9 +73,10 @@ class AppDrawer extends StatelessWidget {
           Divider(),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: Text('Systeminnstillinger', style: TextStyle(fontSize: 14)),
-            onTap: () async {
-              PermissionHandler().openAppSettings();
+            title: Text('Innstillinger', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, 'settings');
             },
           ),
         ],

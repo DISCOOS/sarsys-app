@@ -6,7 +6,7 @@ class TrackingService {
   final String url;
   final Client client;
 
-  TrackingService(this.url, [Client client]) : this.client = client ?? Client();
+  TrackingService(this.url, this.client);
 
   /// GET ../tracking
   Future<List<Tracking>> fetch() async {

@@ -6,7 +6,7 @@ class IncidentService {
   final String url;
   final Client client;
 
-  IncidentService(this.url, [Client client]) : this.client = client ?? Client();
+  IncidentService(this.url, this.client);
 
   /// GET ../incidents
   Future<List<Incident>> fetch() async {

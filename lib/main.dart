@@ -1,18 +1,23 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/mock/tracking.dart';
 import 'package:SarSys/mock/units.dart';
+import 'package:SarSys/screens/settings_screen.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/unit_service.dart';
+import 'package:SarSys/services/app_config_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:http/http.dart';
 
 import 'blocs/device_bloc.dart';
 import 'blocs/tracking_bloc.dart';
 import 'blocs/unit_bloc.dart';
+import 'mock/app_config.dart';
 import 'mock/devices.dart';
 import 'mock/incidents.dart';
 import 'mock/users.dart';
@@ -26,36 +31,44 @@ import 'screens/map_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
-  // TODO: Move url to (downloadable) config service/model
+  final Client client = Client();
   final baseUrl = 'https://sporing.rodekors.no';
-  final apiUrl = '$baseUrl/api';
+  final assetConfig = 'assets/config/app_config.json';
+  final AppConfigService configService = kReleaseMode
+      ? AppConfigService(assetConfig, '$baseUrl/api', client)
+      : AppConfigServiceMock.build(assetConfig, '$baseUrl/api', client);
+  final AppConfigBloc configBloc = AppConfigBloc(configService);
 
   // Configure user service
-  final UserService userService = kReleaseMode ? UserService('$baseUrl/auth/login') : UserServiceMock.buildAny();
+  final UserService userService =
+      kReleaseMode ? UserService('$baseUrl/auth/login', client) : UserServiceMock.buildAny();
   final UserBloc userBloc = UserBloc(userService);
 
   // Configure Incident service
-  final IncidentService incidentService =
-      kReleaseMode ? IncidentService(apiUrl) : IncidentServiceMock.build(userService, 2, "T123");
+  final IncidentService incidentService = kReleaseMode
+      ? IncidentService('$baseUrl/api/incidents', client)
+      : IncidentServiceMock.build(userService, 2, "T123");
   final IncidentBloc incidentBloc = IncidentBloc(incidentService);
 
   // Configure Unit service
-  final UnitService unitService = kReleaseMode ? UnitService(apiUrl) : UnitServiceMock.build(15);
+  final UnitService unitService = kReleaseMode ? UnitService('$baseUrl/api/units', client) : UnitServiceMock.build(15);
   final UnitBloc unitBloc = UnitBloc(unitService);
 
   // Configure Device service
-  final DeviceService deviceService = kReleaseMode ? DeviceService(apiUrl) : DeviceServiceMock.build(incidentBloc, 30);
+  final DeviceService deviceService =
+      kReleaseMode ? DeviceService('$baseUrl/api/devices') : DeviceServiceMock.build(incidentBloc, 30);
   final DeviceBloc deviceBloc = DeviceBloc(deviceService);
 
   // Configure Tracking service
   final TrackingService trackingService =
-      kReleaseMode ? TrackingService(apiUrl) : TrackingServiceMock.build(incidentBloc, 30);
+      kReleaseMode ? TrackingService('$baseUrl/api/tracking', client) : TrackingServiceMock.build(incidentBloc, 30);
   final TrackingBloc trackingBloc = TrackingBloc(trackingService);
 
   final Widget homepage = await getHome(userBloc);
 
   runApp(BlocProviderTree(
     blocProviders: [
+      BlocProvider<AppConfigBloc>(bloc: configBloc),
       BlocProvider<UserBloc>(bloc: userBloc),
       BlocProvider<IncidentBloc>(bloc: incidentBloc),
       BlocProvider<UnitBloc>(bloc: unitBloc),
@@ -80,6 +93,7 @@ void main() async {
           'units': (BuildContext context) => CommandScreen(tabIndex: 1),
           'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
           'incidents': (BuildContext context) => IncidentsScreen(),
+          'settings': (BuildContext context) => SettingsScreen(),
           'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
         },
         localizationsDelegates: [
