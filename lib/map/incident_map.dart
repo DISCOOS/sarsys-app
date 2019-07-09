@@ -63,19 +63,25 @@ class IncidentMap extends StatefulWidget {
 }
 
 class _IncidentMapState extends State<IncidentMap> {
+  static const POI_LAYER = "Interessepunkt";
+  static const TRACKING_LAYER = "Sporing";
+  static const LAYERS = [POI_LAYER, TRACKING_LAYER];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   String _currentBaseMap;
   List<BaseMap> _baseMaps;
   MaptileService _maptileService = MaptileService();
 
-  LocationController _locationController;
-  LatLng _searchMatch;
-  TrackingBloc _trackingBloc;
   LatLng _center;
+  LatLng _searchMatch;
   double _zoom = Defaults.zoom;
 
+  LocationController _locationController;
   ValueNotifier<bool> _isLocating = ValueNotifier(false);
+
+  TrackingBloc _trackingBloc;
+
+  Set<String> _layers;
 
   @override
   void initState() {
@@ -93,6 +99,8 @@ class _IncidentMapState extends State<IncidentMap> {
     }
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _center = widget.center ?? Defaults.origo;
+    _layers = Set.of(LAYERS);
+
     init();
   }
 
@@ -143,8 +151,8 @@ class _IncidentMapState extends State<IncidentMap> {
           urlTemplate: _currentBaseMap,
           tileProvider: NetworkTileProvider(),
         ),
-        _buildTrackingOptions(),
-        if (ipp != null) _buildPoiOptions([ipp]),
+        if (_layers.contains(TRACKING_LAYER)) _buildTrackingOptions(),
+        if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
       ],
@@ -226,7 +234,7 @@ class _IncidentMapState extends State<IncidentMap> {
     return Container(
       child: IconButton(
         icon: Icon(Icons.filter_list),
-        onPressed: () {},
+        onPressed: () => _showLayerSheet(context),
       ),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.6),
@@ -241,7 +249,7 @@ class _IncidentMapState extends State<IncidentMap> {
       child: IconButton(
         icon: Icon(Icons.map),
         onPressed: () {
-          _selectBaseMapBottomSheet(context);
+          _showBaseMapBottomSheet(context);
         },
       ),
       decoration: BoxDecoration(
@@ -328,7 +336,7 @@ class _IncidentMapState extends State<IncidentMap> {
     final bloc = BlocProvider.of<TrackingBloc>(context);
     return TrackingLayerOptions(
       bloc.tracks.values.toList(),
-      color: Colors.blue[800].withOpacity(0.9),
+      color: Colors.red[800].withOpacity(0.9),
     );
   }
 
@@ -379,7 +387,7 @@ class _IncidentMapState extends State<IncidentMap> {
     });
   }
 
-  void _selectBaseMapBottomSheet(context) {
+  void _showBaseMapBottomSheet(context) {
     showModalBottomSheet(
         context: context,
         builder: (BuildContext bc) {
@@ -417,6 +425,54 @@ class _IncidentMapState extends State<IncidentMap> {
   void _onLocationChanged(LatLng point) {
     setState(() {
       _center = point;
+    });
+  }
+
+  void _showLayerSheet(context) {
+    final style = Theme.of(context).textTheme.title;
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return StatefulBuilder(builder: (context, state) {
+            return Container(
+              padding: EdgeInsets.only(bottom: 56.0),
+              child: Wrap(
+                children: <Widget>[
+                  ListTile(
+                    contentPadding: EdgeInsets.only(left: 16.0, right: 0),
+                    title: Text("Vis", style: style),
+                    trailing: FlatButton(
+                      child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                      onPressed: () => setState(
+                            () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                    ),
+                  ),
+                  Divider(),
+                  ...LAYERS
+                      .map((layer) => ListTile(
+                          title: Text(layer, style: style),
+                          trailing: Switch(
+                            value: _layers.contains(layer),
+                            onChanged: (value) => _onFilterChanged(layer, value, state),
+                          )))
+                      .toList(),
+                ],
+              ),
+            );
+          });
+        });
+  }
+
+  void _onFilterChanged(String layer, bool value, StateSetter update) {
+    update(() {
+      if (value) {
+        _layers.add(layer);
+      } else {
+        _layers.remove(layer);
+      }
     });
   }
 }

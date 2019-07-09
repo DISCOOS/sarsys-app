@@ -20,7 +20,8 @@ class IconLayerOptions extends LayerOptions {
     Stream<void> rebuild,
     this.bearing,
     this.opacity = 1.0,
-  })  : this.anchor = Anchor.forPos(AnchorPos.align(AnchorAlign.center), icon.size, icon.size),
+    AnchorAlign align = AnchorAlign.center,
+  })  : this.anchor = Anchor.forPos(AnchorPos.align(align), icon.size, icon.size),
         super(rebuild: rebuild);
 }
 

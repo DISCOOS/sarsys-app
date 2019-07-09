@@ -41,10 +41,11 @@ class TrackingLayer extends IconLayer {
             .map((tracking) => toLatLng(tracking.location))
             .toList(),
         Icon(
-          Icons.perm_device_information,
+          Icons.person_pin,
           size: params.size,
           color: params.color,
         ),
+        align: AnchorAlign.bottom,
         rebuild: params.rebuild,
         bearing: params.bearing,
         opacity: params.opacity,
