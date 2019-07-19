@@ -35,34 +35,36 @@ void main() async {
   final Client client = Client();
   final baseUrl = Defaults.baseUrl;
   final assetConfig = 'assets/config/app_config.json';
-  final AppConfigService configService = kReleaseMode
+  final AppConfigService configService = kReleaseMode && false
       ? AppConfigService(assetConfig, '$baseUrl/api/app-config', client)
       : AppConfigServiceMock.build(assetConfig, '$baseUrl/api', client);
   final AppConfigBloc configBloc = AppConfigBloc(configService);
 
   // Configure user service
   final UserService userService =
-      kReleaseMode ? UserService('$baseUrl/auth/login', client) : UserServiceMock.buildAny();
+      kReleaseMode && false ? UserService('$baseUrl/auth/login', client) : UserServiceMock.buildAny();
   final UserBloc userBloc = UserBloc(userService);
 
   // Configure Incident service
-  final IncidentService incidentService = kReleaseMode
+  final IncidentService incidentService = kReleaseMode && false
       ? IncidentService('$baseUrl/api/incidents', client)
       : IncidentServiceMock.build(userService, 2, "T123");
   final IncidentBloc incidentBloc = IncidentBloc(incidentService);
 
   // Configure Unit service
-  final UnitService unitService = kReleaseMode ? UnitService('$baseUrl/api/units', client) : UnitServiceMock.build(15);
+  final UnitService unitService =
+      kReleaseMode && false ? UnitService('$baseUrl/api/units', client) : UnitServiceMock.build(15);
   final UnitBloc unitBloc = UnitBloc(unitService);
 
   // Configure Device service
   final DeviceService deviceService =
-      kReleaseMode ? DeviceService('$baseUrl/api/devices') : DeviceServiceMock.build(incidentBloc, 30);
+      kReleaseMode && false ? DeviceService('$baseUrl/api/devices') : DeviceServiceMock.build(incidentBloc, 30);
   final DeviceBloc deviceBloc = DeviceBloc(deviceService);
 
   // Configure Tracking service
-  final TrackingService trackingService =
-      kReleaseMode ? TrackingService('$baseUrl/api/tracking', client) : TrackingServiceMock.build(incidentBloc, 30);
+  final TrackingService trackingService = kReleaseMode && false
+      ? TrackingService('$baseUrl/api/tracking', client)
+      : TrackingServiceMock.build(incidentBloc, 30);
   final TrackingBloc trackingBloc = TrackingBloc(trackingService);
 
   final Widget homepage = await getHome(userBloc);
@@ -105,7 +107,7 @@ void main() async {
         ],
         supportedLocales: [
           const Locale('en'), // English
-          const Locale('nb'), // English
+          const Locale('nb'), // Norwegian
         ]),
   ));
 }
