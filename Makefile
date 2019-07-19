@@ -15,11 +15,11 @@ endif
 storeFile = "$$(grep "storeFile" android/key.properties | cut -d'=' -f2)"
 
 .PHONY: \
-	doctor init configure build install clean toolchain-init \
-	android-init android-build android-install android-release-internal android-clean
+	doctor toolchain configure build install clean \
+	android-configure android-build android-install android-release-internal android-clean
 .SILENT: \
-	doctor init configure build install clean toolchain-init \
-	android-init android-build android-install android-release-internal android-clean
+	doctor toolchain configure build install clean \
+	android-configure android-build android-install android-release-internal android-clean
 
 doctor:
 	echo "Doctor summary"
@@ -49,9 +49,7 @@ endif
 		then echo "[✓] Upload key $(storeFile) found."; \
 		else echo >&2 "[x] Upload key $(storeFile) NOT found > run 'make android-init'"; fi; \
 
-init: toolchain-init android-init
-
-toolchain-init:
+toolchain:
 	echo "Initialize toolchain"
 	echo "$(OSNAME) detected"
 ifeq ($(OSNAME),WIN32)
@@ -75,7 +73,9 @@ else ifeq ($(OSNAME),OSX)
 		else echo "[!] Installing bundler"; sudo gem install bundler; fi
 endif
 
-android-init:
+configure: android-configure
+
+android-configure:
 	echo "Initialize Android configuration..."; \
 	read -p "> Enter path to upload key: " path; \
 	if [ -f $$path ]; then \
