@@ -1,83 +1,26 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/mock/tracking.dart';
-import 'package:SarSys/mock/units.dart';
+import 'package:SarSys/providers.dart';
 import 'package:SarSys/screens/settings_screen.dart';
-import 'package:SarSys/services/device_service.dart';
-import 'package:SarSys/services/incident_service.dart';
-import 'package:SarSys/services/unit_service.dart';
-import 'package:SarSys/services/app_config_service.dart';
-import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart';
 
-import 'blocs/device_bloc.dart';
-import 'blocs/tracking_bloc.dart';
-import 'blocs/unit_bloc.dart';
-import 'mock/app_config.dart';
-import 'mock/devices.dart';
-import 'mock/incidents.dart';
-import 'mock/users.dart';
-import 'services/tracking_service.dart';
-import 'services/user_service.dart';
-import 'screens/command_screen.dart';
-import 'screens/incidents_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/map_screen.dart';
+import 'package:SarSys/screens/command_screen.dart';
+import 'package:SarSys/screens/incidents_screen.dart';
+import 'package:SarSys/screens/login_screen.dart';
+import 'package:SarSys/screens/map_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   final Client client = Client();
-  final baseUrl = Defaults.baseUrl;
-  final assetConfig = 'assets/config/app_config.json';
-  final AppConfigService configService = kReleaseMode && false
-      ? AppConfigService(assetConfig, '$baseUrl/api/app-config', client)
-      : AppConfigServiceMock.build(assetConfig, '$baseUrl/api', client);
-  final AppConfigBloc configBloc = AppConfigBloc(configService);
+  final providers = Providers.build(client, mock: true);
 
-  // Configure user service
-  final UserService userService =
-      kReleaseMode && false ? UserService('$baseUrl/auth/login', client) : UserServiceMock.buildAny();
-  final UserBloc userBloc = UserBloc(userService);
-
-  // Configure Incident service
-  final IncidentService incidentService = kReleaseMode && false
-      ? IncidentService('$baseUrl/api/incidents', client)
-      : IncidentServiceMock.build(userService, 2, "T123");
-  final IncidentBloc incidentBloc = IncidentBloc(incidentService);
-
-  // Configure Unit service
-  final UnitService unitService =
-      kReleaseMode && false ? UnitService('$baseUrl/api/units', client) : UnitServiceMock.build(15);
-  final UnitBloc unitBloc = UnitBloc(unitService);
-
-  // Configure Device service
-  final DeviceService deviceService =
-      kReleaseMode && false ? DeviceService('$baseUrl/api/devices') : DeviceServiceMock.build(incidentBloc, 30);
-  final DeviceBloc deviceBloc = DeviceBloc(deviceService);
-
-  // Configure Tracking service
-  final TrackingService trackingService = kReleaseMode && false
-      ? TrackingService('$baseUrl/api/tracking', client)
-      : TrackingServiceMock.build(incidentBloc, 30);
-  final TrackingBloc trackingBloc = TrackingBloc(trackingService);
-
-  final Widget homepage = await getHome(userBloc);
+  final Widget homepage = await getHome(providers.userProvider.bloc);
 
   runApp(BlocProviderTree(
-    blocProviders: [
-      BlocProvider<AppConfigBloc>(bloc: configBloc),
-      BlocProvider<UserBloc>(bloc: userBloc),
-      BlocProvider<IncidentBloc>(bloc: incidentBloc),
-      BlocProvider<UnitBloc>(bloc: unitBloc),
-      BlocProvider<DeviceBloc>(bloc: deviceBloc),
-      BlocProvider<TrackingBloc>(bloc: trackingBloc),
-    ],
+    blocProviders: providers.all,
     child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'SarSys',
