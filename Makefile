@@ -11,8 +11,15 @@ else
 	endif
 endif
 
-.PHONY: doctor init configure build install clean toolchain-init android-init android-build android-install android-internal android-clean
-.SILENT: doctor init configure build install clean toolchain-init android-init android-build android-install android-internal android-clean
+# Utility functions
+storeFile = "$$(grep "storeFile" android/key.properties | cut -d'=' -f2)"
+
+.PHONY: \
+	doctor init configure build install clean toolchain-init \
+	android-init android-build android-install android-release-internal android-clean
+.SILENT: \
+	doctor init configure build install clean toolchain-init \
+	android-init android-build android-install android-release-internal android-clean
 
 doctor:
 	echo "Doctor summary"
@@ -23,15 +30,24 @@ ifeq ($(OSNAME),WIN32)
 	echo "TODO: [!] Check if https://bundler.io is installed"
 else
 	echo "$(OSNAME) detected, checking dependencies..."
-	if hash bundletool 2>/dev/null; then echo "  [✓] bundletool is installed."; else echo >&2 "  [x] bundletool is NOT installed."; fi
-	if hash fastlane 2>/dev/null; then echo "  [✓] fastlane is installed."; else echo >&2 "  [x] fastelane is NOT installed."; fi
-	if hash bundle 2>/dev/null; then echo "  [✓] bundler is installed."; else echo >&2 "  [x] bundler is NOT installed."; fi
+	if hash bundletool 2>/dev/null; \
+		then echo "[✓] bundletool is installed."; \
+		else echo >&2 "[x] bundletool is NOT installed."; fi
+	if hash fastlane 2>/dev/null; \
+		then echo "[✓] fastlane is installed."; \
+		else echo >&2 "[x] fastelane is NOT installed."; fi
+	if hash bundle 2>/dev/null; \
+		then echo "[✓] bundler is installed."; \
+		else echo >&2 "[x] bundler is NOT installed."; fi
 
 endif
 	echo "Android, checking configuration..."; \
-	if [ -f  "android/key.properties" ]; then echo "  [✓] Signing properties found."; else echo >&2 " > Signing properties NOT found."; fi; \
-	if [ -f  "android/app/key.jks" ]; then echo "  [✓] Signing key found."; else echo >&2 " > Signing key NOT found."; fi; \
-	if [ -f  "android/app/key.pwd" ]; then echo "  [✓] Password file found."; else echo >&2 " > Password file NOT found."; fi;
+	if [ -f  "android/key.properties" ]; \
+		then echo "[✓] Signing properties found."; \
+		else echo >&2 "[x] Signing properties NOT found > run 'make android-init'"; fi; \
+	if [ -f $(storeFile) ]; \
+		then echo "[✓] Upload key $(storeFile) found."; \
+		else echo >&2 "[x] Upload key $(storeFile) NOT found > run 'make android-init'"; fi; \
 
 init: toolchain-init android-init
 
@@ -48,60 +64,69 @@ else ifeq ($(OSNAME),LINUX)
 	echo "TODO: [!] Install https://bundler.io"
 else ifeq ($(OSNAME),OSX)
 	echo "Installing dependencies..."
-	if hash bundletool 2>/dev/null; then echo "  [✓] bundletool is installed."; else echo "  [!] Installing bundletool"; brew install bundletool; fi
-	if hash fastlane 2>/dev/null; then echo "  [✓] fastlane is installed."; else echo "  [!] Installing fastlane"; brew cask install fastlane; fi
-	if hash bundle 2>/dev/null; then echo "  [✓] bundler is installed."; else echo "  [!] Installing bundler"; sudo gem install bundler; fi
+	if hash bundletool 2>/dev/null; \
+		then echo "[✓] bundletool is installed."; \
+		else echo "[!] Installing bundletool"; brew itall bundletool; fi
+	if hash fastlane 2>/dev/null; \
+		then echo "[✓] fastlane is installed."; \
+		else echo "[!] Installing fastlane"; brew cask install fastlane; fi
+	if hash bundle 2>/dev/null; \
+		then echo "[✓] bundler is installed."; \
+		else echo "[!] Installing bundler"; sudo gem install bundler; fi
 endif
 
 android-init:
-	echo "Init Android app..."
-	if [ -f android/app/key.jks ]; then \
-		echo "  [!] Android signing key exist, Skipping."; \
-	else \
-		read -p "  > Enter signing key and store password: " pwd; \
-		echo "$$pwd" > android/app/key.pwd; \
+	echo "Initialize Android configuration..."; \
+	read -p "> Enter path to upload key: " path; \
+	if [ -f $$path ]; then \
+		read -p "> Enter upload keystore password: " pwd; \
 		echo "storePassword=$$pwd" > android/key.properties; \
 		echo "keyPassword=$$pwd" >> android/key.properties; \
 		echo "keyAlias=upload" >> android/key.properties; \
-		echo "storeFile=key.jks" >> android/key.properties; \
-		keytool -genkey -v -keystore android/app/key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass $$pwd; \
-		echo "  [✓] Android app configured"; \
+		echo "storeFile=$$path" >> android/key.properties; \
+		echo "> Initializing fastlane..."; cd android; fastlane init; \
+	else \
+		echo "[x] Android upload key $$path NOT FOUND, Skipping."; \
 	fi
-	echo "  > Initializing fastlane...; cd android; fastlane init;
 
 build: android-build
+	echo "[✓] Build complete."
 
 android-build:
-	test ! -f "android/app/key.jks" && { echo "Android signing key does not exist > run 'make android-init'";  exit 0; }; \
+	test ! -f "$(storeFile)" && \
+		{ echo "Android upload key $(storeFile) does not exist > run 'make android-init'";  exit 0; }; \
 	echo "Building Android app bundle..."; \
 	flutter build appbundle
-	echo "Building Android APK set archive..."; \
-	echo "  > output: build/app/outputs/sarsys.apks"
-	bundletool build-apks \
-		--bundle=build/app/outputs/bundle/release/app.aab \
-		--output=build/app/outputs/sarsys.apks \
-		--ks=android/app/key.jks \
-		--ks-pass=file:android/app/key.pwd \
-		--ks-key-alias=upload \
-		--overwrite; \
+	echo "[✓] Android build complete."
 
 install: android-install
 
-android-install:
+android-install: android-build
+	echo "Building Android APK set archive..."; \
+	echo "> output: build/app/outputs/sarsys.apks"
+	bundletool build-apks \
+		--bundle=build/app/outputs/bundle/release/app.aab \
+		--output=build/app/outputs/sarsys.apks \
+		--ks=$(storeFile) \
+		--ks-pass=pass:$(android/key.properties,storePassword)\
+		--ks-key-alias=upload \
+		--overwrite; \
 	echo "Deploy to connected android devices"; \
 	bundletool install-apks --apks=build/app/outputs/sarsys.apks
 
-android-internal: android-build
-	echo "Release to 'internal test' on to Google Play with fastlane..."
+android-release-internal: android-build
+	echo "Release to 'internal test' to Google Play with fastlane..."
 	cd android; \
 	bundle exec fastlane supply --aab ../build/app/outputs/bundle/release/app.aab --track internal
-
+	echo "[✓] Release to 'internal test' complete."
 
 clean: android-clean
+	echo "[✓] Clean complete."
 
 android-clean:
-	echo "Clean signing for android"; \
-	if [ -f  "android/key.properties" ] ; then { echo "  [✓] Signing properties found"; rm "android/key.properties"; } else echo " [x] Signing properties not found"; fi; \
-    if [ -f  "android/app/key.jks" ] ; then { echo "  [✓] Signing key found"; rm "android/app/key.jks"; } else echo " [x] Signing key not found"; fi; \
-    if [ -f  "android/app/key.pwd" ] ; then { echo "  [✓] Password file found"; rm "android/app/key.pwd"; } else echo " [x] Password file not found"; fi;
+	echo "Clean Android signing properties"; \
+	if [ -f  "android/key.properties" ] ; \
+		then { echo "[✓] Signing properties found"; rm "android/key.properties"; } \
+		else echo "[x] Signing properties not found"; fi; \
 	# TODO: Delete android/Gemfile and android/fastlane
+	echo "[✓] Android clean complete."
