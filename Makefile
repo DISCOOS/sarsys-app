@@ -15,12 +15,17 @@ endif
 storeFile = "$$(grep "storeFile" android/key.properties | cut -d'=' -f2)"
 storePassword = "$$(grep "storePassword" android/key.properties | cut -d'=' -f2)"
 
+# Global values
+ios_certificate = "XKXT735ZZ4"
+
 .PHONY: \
 	doctor toolchain configure build install clean \
-	android-configure android-build android-install android-release-internal android-clean
+	android-configure android-build android-install android-release-internal android-clean \
+	ios-configure ios-build ios-release-beta ios-clean
 .SILENT: \
 	doctor toolchain configure build install clean \
-	android-configure android-build android-install android-release-internal android-clean
+	android-configure android-build android-install android-release-internal android-clean \
+	ios-configure ios-build ios-release-beta ios-clean
 
 doctor:
 	echo "Doctor summary"
@@ -74,7 +79,7 @@ else ifeq ($(OSNAME),OSX)
 		else echo "[!] Installing bundler"; sudo gem install bundler; fi
 endif
 
-configure: android-configure
+configure: android-configure ios-configure
 
 android-configure:
 	echo "Initialize Android configuration..."; \
@@ -86,19 +91,50 @@ android-configure:
 		echo "keyAlias=upload" >> android/key.properties; \
 		echo "storeFile=$$path" >> android/key.properties; \
 		echo "> Initializing fastlane..."; cd android; fastlane init; \
+		echp "[✓] Android configuration complete."
 	else \
 		echo "[x] Android upload key $$path NOT FOUND, Skipping."; \
 	fi
 
-build: android-build
-	echo "[✓] Build complete."
+ios-configure:
+	echo "Initialize iOS configuration..."; \
+	echo "> Download iOS Distribution certificate:"; \
+	echo "1. Open https://developer.apple.com/account/resources/certificates/download/$(ios_certificate)"; \
+	echo "2. Download certificate to local machine"; \
+	echo "3. Install sertificate (double click)"; \
+	read -n 1 -s -r -p "Press any key to continue"; echo;\
+	echo "open https://developer.apple.com/account/resources/certificates/download/$(ios_certificate)";
+	open "https://developer.apple.com/account/resources/certificates/download/$(ios_certificate)"; \
+	read -n 1 -p "Ready to continue (y/n)? " answer; \
+	if [ "$$answer" == "" ] || [ "$$answer" == "y" ] || [ "$$answer" == "Y" ]; then \
+		echo "> Configure signing releases with distribution certificate" ; \
+		echo "1. Open ios/Runner.xcodeproj with XCode"; \
+		echo "2. Goto TARGEST > Runner > Signing > Code Signing Identify > Release"; \
+		echo "3. Change signing of 'Any iOS SDK' to 'iPhone Distribution: DISCO Open Source (G2C47B233E)'"; \
+		read -n 1 -s -r -p "Press any key to continue"; echo; \
+		echo "open ios/Runner.xcodeproj"; \
+		open ios/Runner.xcodeproj; \
+		read -n 1 -p "Ready to continue (y/n)? " answer; \
+		if [ "$$answer" == "" ] || [ "$$answer" == "y" ] || [ "$$answer" == "Y" ]; then \
+			echo "> Initializing fastlane..."; cd ios; fastlane init; \
+			echo "[✓] iOS configuration complete."; \
+		else echo; echo "[!] iOS configuration aborted."; fi \
+	else echo; echo "[!] Initialize iOS configuration aborted."; fi \
+
+build: android-build ios-build
+	echo "[✓] Flutter build complete."
 
 android-build:
 	test ! -f "$(storeFile)" && \
 		{ echo "Android upload key $(storeFile) does not exist > run 'make android-init'";  exit 0; }; \
 	echo "Building Android app bundle..."; \
 	flutter build appbundle
-	echo "[✓] Android build complete."
+	echo "[✓] Flutter build for Android complete."
+
+ios-build:
+	echo "Building iOS app runner..."; \
+	flutter build ios --release --no-codesign; \
+	echo "[✓] Flutter build for iOS complete."
 
 install: android-install
 
@@ -116,18 +152,29 @@ android-install: android-build
 	bundletool install-apks --apks=build/app/outputs/sarsys.apks
 
 android-release-internal: android-build
-	echo "Release to 'internal test' to Google Play with fastlane..."
+	echo "Release to Google Play 'internal test' with fastlane..."
 	cd android; \
 	bundle exec fastlane supply --aab ../build/app/outputs/bundle/release/app.aab --track internal
-	echo "[✓] Release to 'internal test' complete."
+	echo "[✓] Release to Google Play 'internal test' complete."
 
-clean: android-clean
-	echo "[✓] Clean complete."
+ios-release-beta: ios-build
+	echo "Release to Apple Store 'testfligh' with fastlane..."
+	cd ios; \
+	bundle exec fastlane beta
+	echo "[✓] Release to Apple Store 'testflight' complete."
+
+clean: android-clean ios-clean
+	echo "[✓] Clean all configurations. Complete."
 
 android-clean:
-	echo "Clean Android signing properties"; \
+	echo "Clean Android app configuration"; \
 	if [ -f  "android/key.properties" ] ; \
 		then { echo "[✓] Signing properties found"; rm "android/key.properties"; } \
 		else echo "[x] Signing properties not found"; fi; \
-	# TODO: Delete android/Gemfile and android/fastlane
-	echo "[✓] Android clean complete."
+	# TODO: Delete android/Gemfile* and android/fastlane
+	echo "[✓] Android clean configuration. Complete."
+
+ios-clean:
+	echo "Clean iOS app configuration"; \
+	# TODO: Delete ios/Gemfile* and ios/fastlane
+	echo "[✓] iOS clean configuration complete."
