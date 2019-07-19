@@ -1,0 +1,5 @@
+Knowing where every search and rescue resource is and has been is a critical part of search and rescue management. 
+
+This app implements an incident-based approach to real-time tracking where privacy by design is a primary concern. It is compliant with fundamental privacy law principles like fair use, data minimization and right to delete. Only authenticated and authorized users are able to see any locations.
+
+Locations are only visible in context of an incident, which is defined by an initial planning point and a radius managed globally.
