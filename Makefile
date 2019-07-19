@@ -13,6 +13,7 @@ endif
 
 # Utility functions
 storeFile = "$$(grep "storeFile" android/key.properties | cut -d'=' -f2)"
+storePassword = "$$(grep "storePassword" android/key.properties | cut -d'=' -f2)"
 
 .PHONY: \
 	doctor toolchain configure build install clean \
@@ -108,7 +109,7 @@ android-install: android-build
 		--bundle=build/app/outputs/bundle/release/app.aab \
 		--output=build/app/outputs/sarsys.apks \
 		--ks=$(storeFile) \
-		--ks-pass=pass:$(android/key.properties,storePassword)\
+		--ks-pass=pass:$(storePassword)\
 		--ks-key-alias=upload \
 		--overwrite; \
 	echo "Deploy to connected android devices"; \
