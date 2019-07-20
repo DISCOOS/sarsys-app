@@ -50,5 +50,20 @@
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
     <string>Your location is required to center the map where you are</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Not in use</string>
+    <key>NSContactsUsageDescription</key>
+    <string>Not in use</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Not in use</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>Not in use</string>
+    <key>NSMotionUsageDescription</key>
+    <string>Not in use</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Not in use</string>
+
+
+
 </dict>
 </plist>
