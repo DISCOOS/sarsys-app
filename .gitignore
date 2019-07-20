@@ -1,6 +1,7 @@
 # Project related
 android/key.properties
 */fastlane/report.xml
+ios/Runner.*
 
 # Miscellaneous
 *.class
