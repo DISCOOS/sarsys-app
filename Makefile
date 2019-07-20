@@ -158,7 +158,7 @@ android-release-internal: android-build
 	echo "[✓] Release to Google Play 'internal test' complete."
 
 ios-release-beta: ios-build
-	echo "Release to Apple Store 'testfligh' with fastlane..."
+	echo "Release to Apple Store 'testflight' with fastlane..."
 	cd ios; \
 	bundle exec fastlane beta
 	echo "[✓] Release to Apple Store 'testflight' complete."
