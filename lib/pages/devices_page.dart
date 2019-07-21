@@ -15,7 +15,7 @@ class _DevicesPageState extends State<DevicesPage> {
   @override
   void initState() {
     super.initState();
-    bloc = BlocProvider.of<DeviceBloc>(context).init(setState);
+    bloc = BlocProvider.of<DeviceBloc>(context);
   }
 
   @override

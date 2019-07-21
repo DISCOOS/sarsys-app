@@ -19,7 +19,7 @@ class UnitBuilder {
 class UnitServiceMock extends Mock implements UnitService {
   static UnitService build(final int count) {
     final UnitServiceMock mock = UnitServiceMock();
-    when(mock.fetch()).thenAnswer((_) async {
+    when(mock.fetch(any)).thenAnswer((id) async {
       return Future.value([
         for (var i = 1; i <= count; i++)
           Unit.fromJson(

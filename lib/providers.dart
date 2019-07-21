@@ -56,7 +56,7 @@ class Providers {
         this.trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
 
   /// Create providers for mocking
-  factory Providers.build(Client client, {bool mock = false}) {
+  factory Providers.build(Client client, {bool mock = false, int units = 15, int devices = 30}) {
     final baseUrl = Defaults.baseUrl;
     final assetConfig = 'assets/config/app_config.json';
     final AppConfigService configService = !mock
@@ -74,18 +74,19 @@ class Providers {
     final IncidentBloc incidentBloc = IncidentBloc(incidentService);
 
     // Configure Unit service
-    final UnitService unitService = !mock ? UnitService('$baseUrl/api/units', client) : UnitServiceMock.build(15);
-    final UnitBloc unitBloc = UnitBloc(unitService);
+    final UnitService unitService =
+        !mock ? UnitService('$baseUrl/api/incidents', client) : UnitServiceMock.build(units);
+    final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
 
     // Configure Device service
     final DeviceService deviceService =
-        !mock ? DeviceService('$baseUrl/api/devices') : DeviceServiceMock.build(incidentBloc, 30);
-    final DeviceBloc deviceBloc = DeviceBloc(deviceService);
+        !mock ? DeviceService('$baseUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, devices);
+    final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
 
     // Configure Tracking service
     final TrackingService trackingService =
-        !mock ? TrackingService('$baseUrl/api/tracking', client) : TrackingServiceMock.build(incidentBloc, 30);
-    final TrackingBloc trackingBloc = TrackingBloc(trackingService);
+        !mock ? TrackingService('$baseUrl/api/incidents', client) : TrackingServiceMock.build(incidentBloc, devices);
+    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc);
 
     return Providers._internal(
       configBloc,
@@ -95,5 +96,10 @@ class Providers {
       deviceBloc,
       trackingBloc,
     );
+  }
+
+  Future<Providers> init() async {
+    await incidentProvider.bloc.fetch();
+    return this;
   }
 }

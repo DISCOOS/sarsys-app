@@ -35,7 +35,7 @@ class TracksBuilder {
 class TrackingServiceMock extends Mock implements TrackingService {
   static TrackingService build(final IncidentBloc bloc, final count) {
     final TrackingServiceMock mock = TrackingServiceMock();
-    when(mock.fetch()).thenAnswer((_) async {
+    when(mock.fetch(any)).thenAnswer((_) async {
       Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
       return Future.value([
         for (var i = 1; i <= count; i++)

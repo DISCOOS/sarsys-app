@@ -9,7 +9,7 @@ class UnitService {
   UnitService(this.url, this.client);
 
   /// GET ../units
-  Future<List<Unit>> fetch() async {
+  Future<List<Unit>> fetch(String incidentId) async {
     // TODO: Implement fetch units
     throw "Not implemented";
   }

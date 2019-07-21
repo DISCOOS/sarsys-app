@@ -8,8 +8,8 @@ class TrackingService {
 
   TrackingService(this.url, this.client);
 
-  /// GET ../tracking
-  Future<List<Tracking>> fetch() async {
+  /// GET ../api/incident/{incidentId}/tracking
+  Future<List<Tracking>> fetch(incidentId) async {
     // TODO: Implement fetch tracking
     throw "Not implemented";
   }

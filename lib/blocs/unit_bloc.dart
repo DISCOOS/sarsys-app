@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:bloc/bloc.dart';
@@ -10,10 +11,21 @@ typedef void UnitCallback(VoidCallback fn);
 
 class UnitBloc extends Bloc<UnitCommand, UnitState> {
   final UnitService service;
+  final IncidentBloc incidentBloc;
 
   final LinkedHashMap<String, Unit> _units = LinkedHashMap();
 
-  UnitBloc(this.service);
+  UnitBloc(this.service, this.incidentBloc) {
+    assert(this.service != null, "service can not be null");
+    assert(this.incidentBloc != null, "incidentBloc can not be null");
+    incidentBloc.state.listen(_init);
+  }
+
+  void _init(IncidentState state) {
+    if (state.isUnset() || state.isCreated() || state.isDeleted())
+      dispatch(ClearUnits(_units.keys.toList()));
+    else if (state.isSelected()) _fetch(state.data.id);
+  }
 
   @override
   UnitState get initialState => UnitsEmpty();
@@ -23,14 +35,6 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   /// Get units
   List<Unit> get units => UnmodifiableListView<Unit>(_units.values);
-
-  /// Initialize if empty
-  UnitBloc init(UnitCallback onInit) {
-    if (isEmpty) {
-      fetch().then((_) => onInit(() {}));
-    }
-    return this;
-  }
 
   /// Create given unit
   UnitBloc create(Unit unit) {
@@ -46,8 +50,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   /// Fetch units from [service]
   Future<List<Unit>> fetch() async {
+    if (incidentBloc.isUnset) {
+      return Future.error(
+        "No incident selected. "
+        "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.fetch()'",
+      );
+    }
+    return _fetch(incidentBloc.current.id);
+  }
+
+  Future<UnmodifiableListView<Unit>> _fetch(String id) async {
     dispatch(ClearUnits(_units.keys.toList()));
-    var units = await service.fetch();
+    var units = await service.fetch(id);
     dispatch(LoadUnits(units));
     return UnmodifiableListView<Unit>(units);
   }

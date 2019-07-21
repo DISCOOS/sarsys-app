@@ -79,8 +79,6 @@ class _IncidentMapState extends State<IncidentMap> {
   LocationController _locationController;
   ValueNotifier<bool> _isLocating = ValueNotifier(false);
 
-  TrackingBloc _trackingBloc;
-
   Set<String> _layers;
 
   @override
@@ -97,7 +95,6 @@ class _IncidentMapState extends State<IncidentMap> {
         onLocationChanged: _onLocationChanged,
       );
     }
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _center = widget.center ?? Defaults.origo;
     _layers = Set.of(LAYERS);
 
@@ -107,7 +104,6 @@ class _IncidentMapState extends State<IncidentMap> {
   void init() async {
     _baseMaps = await _maptileService.fetchMaps();
     _locationController?.init();
-    _trackingBloc.init(setState);
   }
 
   @override
@@ -444,10 +440,10 @@ class _IncidentMapState extends State<IncidentMap> {
                     trailing: FlatButton(
                       child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                       onPressed: () => setState(
-                            () {
-                              Navigator.pop(context);
-                            },
-                          ),
+                        () {
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
                   ),
                   Divider(),

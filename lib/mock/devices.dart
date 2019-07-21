@@ -35,7 +35,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   static DeviceService build(final IncidentBloc bloc, final int count) {
     final DeviceServiceMock mock = DeviceServiceMock();
     final issi = NumberFormat("##");
-    when(mock.fetch()).thenAnswer((_) async {
+    when(mock.fetch(any)).thenAnswer((_) async {
       Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
       return Future.value([
         for (var i = 1; i <= count; i++)

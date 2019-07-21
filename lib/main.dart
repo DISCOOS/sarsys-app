@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/providers.dart';
 import 'package:SarSys/screens/settings_screen.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,9 +14,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   final Client client = Client();
-  final providers = Providers.build(client, mock: true);
+  final providers = Providers.build(client, mock: true, units: 15, devices: 30);
+  final Widget homepage = await getHome(providers);
 
-  final Widget homepage = await getHome(providers.userProvider.bloc);
+  providers.init();
 
   runApp(BlocProviderTree(
     blocProviders: providers.all,
@@ -55,8 +55,8 @@ void main() async {
   ));
 }
 
-Future<Widget> getHome(UserBloc bloc) async {
-  if (await bloc.init()) {
+Future<Widget> getHome(Providers providers) async {
+  if (await providers.userProvider.bloc.init()) {
     return IncidentsScreen();
   } else {
     return LoginScreen();

@@ -9,7 +9,7 @@ class DeviceService {
   DeviceService(this.url, [Client client]) : this.client = client ?? Client();
 
   /// GET ../devices
-  Future<List<Device>> fetch() async {
+  Future<List<Device>> fetch(String incidentId) async {
     // TODO: Implement fetch devices
     throw "Not implemented";
   }

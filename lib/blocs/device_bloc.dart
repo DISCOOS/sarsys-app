@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:bloc/bloc.dart';
@@ -10,10 +11,21 @@ typedef void DeviceCallback(VoidCallback fn);
 
 class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   final DeviceService service;
+  final IncidentBloc incidentBloc;
 
   final LinkedHashMap<String, Device> _devices = LinkedHashMap();
 
-  DeviceBloc(this.service);
+  DeviceBloc(this.service, this.incidentBloc) {
+    assert(this.service != null, "service can not be null");
+    assert(this.incidentBloc != null, "incidentBloc can not be null");
+    incidentBloc.state.listen(_init);
+  }
+
+  void _init(IncidentState state) {
+    if (state.isUnset() || state.isCreated() || state.isDeleted())
+      dispatch(ClearDevices(_devices.keys.toList()));
+    else if (state.isSelected()) _fetch(state.data.id);
+  }
 
   @override
   DeviceState get initialState => DevicesEmpty();
@@ -24,18 +36,20 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   /// Get devices
   List<Device> get devices => UnmodifiableListView<Device>(_devices.values);
 
-  /// Initialize if empty
-  DeviceBloc init(DeviceCallback onInit) {
-    if (isEmpty) {
-      fetch().then((_) => onInit(() {}));
-    }
-    return this;
-  }
-
   /// Fetch devices from [service]
   Future<List<Device>> fetch() async {
+    if (incidentBloc.isUnset) {
+      return Future.error(
+        "No incident selected. "
+        "Ensure that 'IncidentBloc.select(String id)' is called before 'DeviceBloc.fetch()'",
+      );
+    }
+    return _fetch(incidentBloc.current.id);
+  }
+
+  Future<UnmodifiableListView<Device>> _fetch(String id) async {
     dispatch(ClearDevices(_devices.keys.toList()));
-    var devices = await service.fetch();
+    var devices = await service.fetch(id);
     dispatch(LoadDevices(devices));
     return UnmodifiableListView<Device>(devices);
   }

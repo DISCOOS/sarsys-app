@@ -20,8 +20,8 @@ class _UnitsPageState extends State<UnitsPage> {
   @override
   void initState() {
     super.initState();
-    unitBloc = BlocProvider.of<UnitBloc>(context).init(setState);
-    trackingBloc = BlocProvider.of<TrackingBloc>(context).init(setState);
+    unitBloc = BlocProvider.of<UnitBloc>(context);
+    trackingBloc = BlocProvider.of<TrackingBloc>(context);
     group = StreamGroup.broadcast();
     group.add(unitBloc.state);
     group.add(trackingBloc.state);

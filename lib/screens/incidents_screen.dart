@@ -24,7 +24,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   void initState() {
     super.initState();
     filters = Set.of([IncidentStatus.Registered, IncidentStatus.Handling, IncidentStatus.Other]);
-    bloc = BlocProvider.of<IncidentBloc>(context).init(setState);
+    bloc = BlocProvider.of<IncidentBloc>(context);
   }
 
   @override //new
@@ -142,6 +142,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               key: ObjectKey(incident.id),
               children: <Widget>[
                 ListTile(
+                  selected: bloc.current == incident,
                   leading: CircleAvatar(
                     child: Text(
                       "${formatSince(incident.occurred)}",
@@ -301,10 +302,10 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     trailing: FlatButton(
                       child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                       onPressed: () => setState(
-                            () {
-                              Navigator.pop(context);
-                            },
-                          ),
+                        () {
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
                   ),
                   Divider(),

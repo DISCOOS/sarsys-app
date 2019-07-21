@@ -4,9 +4,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
-
-typedef void IncidentCallback(VoidCallback fn);
+import 'package:flutter/foundation.dart' show kReleaseMode;
 
 class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   final IncidentService service;
@@ -45,14 +43,6 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         (state) => state is IncidentUpdated,
       )
       .map((state) => state.data);
-
-  /// Initialize if empty
-  IncidentBloc init(IncidentCallback onInit) {
-    if (isEmpty) {
-      fetch().then((_) => onInit(() {}));
-    }
-    return this;
-  }
 
   /// Select given id
   IncidentBloc select(String id) {

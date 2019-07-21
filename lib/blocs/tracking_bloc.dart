@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:bloc/bloc.dart';
@@ -10,10 +11,21 @@ typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   final TrackingService service;
+  final IncidentBloc incidentBloc;
 
   final LinkedHashMap<String, Tracking> _tracks = LinkedHashMap();
 
-  TrackingBloc(this.service);
+  TrackingBloc(this.service, this.incidentBloc) {
+    assert(this.service != null, "service can not be null");
+    assert(this.incidentBloc != null, "incidentBloc can not be null");
+    incidentBloc.state.listen(_init);
+  }
+
+  void _init(IncidentState state) {
+    if (state.isUnset() || state.isCreated() || state.isDeleted())
+      dispatch(ClearTracks(_tracks.keys.toList()));
+    else if (state.isSelected()) _fetch(state.data.id);
+  }
 
   @override
   TrackingState get initialState => TracksEmpty();
@@ -23,14 +35,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   /// Get tracks
   Map<String, Tracking> get tracks => UnmodifiableMapView<String, Tracking>(_tracks);
-
-  /// Initialize if empty
-  TrackingBloc init(TrackingCallback onInit) {
-    if (isEmpty) {
-      fetch().then((_) => onInit(() {}));
-    }
-    return this;
-  }
 
   /// Create given tracking
   TrackingBloc create(Tracking tracking) {
@@ -46,8 +50,18 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   /// Fetch tracks from [service]
   Future<List<Tracking>> fetch() async {
+    if (incidentBloc.isUnset) {
+      return Future.error(
+        "No incident selected. "
+        "Ensure that 'IncidentBloc.select(String id)' is called before 'TrackingBloc.fetch()'",
+      );
+    }
+    return _fetch(incidentBloc.current.id);
+  }
+
+  Future<UnmodifiableListView<Tracking>> _fetch(String id) async {
     dispatch(ClearTracks(_tracks.keys.toList()));
-    var tracks = await service.fetch();
+    var tracks = await service.fetch(id);
     dispatch(LoadTracks(tracks));
     return UnmodifiableListView<Tracking>(tracks);
   }
