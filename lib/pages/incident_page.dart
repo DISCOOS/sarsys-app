@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -6,18 +7,32 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class IncidentPage extends StatelessWidget {
+class IncidentPage extends StatefulWidget {
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
   static const ELEVATION = 4.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
-  final Incident incident;
+  const IncidentPage({Key key}) : super(key: key);
 
-  const IncidentPage(this.incident, {Key key}) : super(key: key);
+  @override
+  _IncidentPageState createState() => _IncidentPageState();
+}
+
+class _IncidentPageState extends State<IncidentPage> {
+  final _controller = ScrollController();
+
+  bool _showHint = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_toggleHint);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,32 +44,59 @@ class IncidentPage extends StatelessWidget {
     return Container(
       color: Color.fromRGBO(168, 168, 168, 0.6),
       child: Padding(
-        padding: const EdgeInsets.all(SPACING),
+        padding: const EdgeInsets.all(0),
         child: Stack(
           children: [
-            ListView(
-              physics: ClampingScrollPhysics(),
-              children: [
-                _buildMapTile(context, incident),
-                SizedBox(height: SPACING),
-                _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
-                SizedBox(height: SPACING),
-                _buildJustification(incident, labelStyle, messageStyle, unitStyle),
-                SizedBox(height: SPACING),
-                _buildIPP(incident, labelStyle, messageStyle, unitStyle),
-                SizedBox(height: SPACING),
-                _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
-                SizedBox(height: SPACING * 10),
-              ],
+            StreamBuilder<Incident>(
+              stream: BlocProvider.of<IncidentBloc>(context).changes,
+              builder: (context, snapshot) {
+                var incident = snapshot.data;
+                return snapshot.hasData
+                    ? ListView(
+                        controller: _controller,
+                        padding: const EdgeInsets.all(IncidentPage.SPACING),
+                        physics: ClampingScrollPhysics(),
+                        children: [
+                          _buildMapTile(context, snapshot.data),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildTitle(incident, labelStyle, valueStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildGeneral(context, incident, labelStyle, valueStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildJustification(incident, labelStyle, messageStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildIPP(incident, labelStyle, messageStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildActions(context),
+                        ],
+                      )
+                    : Container();
+              },
             ),
-            SafeArea(child: Align(alignment: Alignment.bottomCenter, child: _buildActions(context))),
+            if (_showHint)
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: FloatingActionButton.extended(
+                        icon: Icon(Icons.arrow_downward),
+                        label: Text("Gå til bunn"),
+                        onPressed: () => _controller.animateTo(
+                          _controller.position.maxScrollExtent,
+                          curve: Curves.easeOut,
+                          duration: const Duration(milliseconds: 250),
+                        ),
+                      )),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
-
-  static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
   Widget _buildMapTile(BuildContext context, Incident incident) {
     final point =
@@ -63,33 +105,55 @@ class IncidentPage extends StatelessWidget {
       height: 240.0,
       child: Material(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(CORNER),
+          borderRadius: BorderRadius.circular(IncidentPage.CORNER),
           child: IncidentMap(
             center: point,
             incident: incident,
             onTap: (_) => Navigator.pushReplacementNamed(context, 'map', arguments: point),
           ),
         ),
-        elevation: ELEVATION,
-        borderRadius: BorderRadius.circular(CORNER),
+        elevation: IncidentPage.ELEVATION,
+        borderRadius: BorderRadius.circular(IncidentPage.CORNER),
       ),
     );
   }
 
-  Row _buildGeneral(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildTitle(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 5,
+          child: _buildValueTile("Hendelse", incident.name, "", valueStyle, unitStyle, unitStyle),
+        ),
+      ],
+    );
+  }
+
+  Row _buildGeneral(
+      BuildContext context, Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+    final bloc = BlocProvider.of<UnitBloc>(context);
     return Row(
       children: <Widget>[
         Expanded(
           flex: 3,
-          child: _buildValueTile("Hendelse", enumDescription(incident.type), "", valueStyle, unitStyle, unitStyle),
+          child: _buildValueTile("Type", enumDescription(incident.type), "", valueStyle, unitStyle, unitStyle),
         ),
-        SizedBox(width: SPACING),
+        SizedBox(width: IncidentPage.SPACING),
         Expanded(
-          child: _buildValueTile("Innsats", "${formatSince(incident.occurred)}", "", valueStyle, unitStyle, unitStyle),
+          child: StreamBuilder<int>(
+              stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
+              builder: (context, snapshot) {
+                return _buildValueTile(
+                    "Innsats", "${formatSince(incident.occurred)}", "", valueStyle, unitStyle, unitStyle);
+              }),
         ),
-        SizedBox(width: SPACING),
+        SizedBox(width: IncidentPage.SPACING),
         Expanded(
-          child: _buildValueTile("Enheter", "0", "", valueStyle, unitStyle, unitStyle),
+          child: StreamBuilder<UnitState>(
+              stream: bloc.state,
+              builder: (context, snapshot) {
+                return _buildValueTile("Enheter", "${bloc.count}", "", valueStyle, unitStyle, unitStyle);
+              }),
         ),
       ],
     );
@@ -125,7 +189,7 @@ class IncidentPage extends StatelessWidget {
           child: _buildValueTile(
               "Kode for aksjonsledelse", "${incident.passcodes.command}", "", valueStyle, unitStyle, unitStyle),
         ),
-        SizedBox(width: SPACING),
+        SizedBox(width: IncidentPage.SPACING),
         Expanded(
           flex: 2,
           child: _buildValueTile(
@@ -144,7 +208,7 @@ class IncidentPage extends StatelessWidget {
           child: SizedBox(
             height: 56,
             child: RaisedButton(
-              elevation: ELEVATION,
+              elevation: IncidentPage.ELEVATION,
               child: Text(
                 "KANSELLER",
                 style: TextStyle(fontSize: 20),
@@ -155,12 +219,12 @@ class IncidentPage extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: SPACING),
+        SizedBox(width: IncidentPage.SPACING),
         Expanded(
           child: SizedBox(
             height: 56,
             child: RaisedButton(
-              elevation: ELEVATION,
+              elevation: IncidentPage.ELEVATION,
               child: Text(
                 "FULLFØRT",
                 style: TextStyle(fontSize: 20),
@@ -183,13 +247,13 @@ class IncidentPage extends StatelessWidget {
   ) {
     return Material(
       child: Container(
-        height: HEIGHT,
-        padding: PADDING,
+        height: IncidentPage.HEIGHT,
+        padding: IncidentPage.PADDING,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: labelStyle),
-            Spacer(),
+            if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
+            if (label != null && label.isNotEmpty) Spacer(),
             Wrap(children: [
               Text(value, style: valueStyle),
               Text(unit, style: unitStyle),
@@ -197,8 +261,8 @@ class IncidentPage extends StatelessWidget {
           ],
         ),
       ),
-      elevation: ELEVATION,
-      borderRadius: BorderRadius.circular(CORNER),
+      elevation: IncidentPage.ELEVATION,
+      borderRadius: BorderRadius.circular(IncidentPage.CORNER),
     );
   }
 
@@ -231,5 +295,10 @@ class IncidentPage extends StatelessWidget {
     var userId = BlocProvider.of<UserBloc>(context).user?.userId;
     var incident = bloc.current.withJson({"status": enumName(status)}, userId: userId);
     bloc.update(incident);
+  }
+
+  void _toggleHint() {
+    _showHint = _controller.position.extentAfter > IncidentPage.HEIGHT / 2;
+    setState(() {});
   }
 }

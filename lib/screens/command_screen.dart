@@ -24,13 +24,13 @@ class _CommandScreenState extends State<CommandScreen> {
   Widget build(BuildContext context) {
     final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
     return StreamBuilder(
-      stream: bloc.updates,
+      stream: bloc.changes,
       initialData: bloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = snapshot.data is Incident ? snapshot.data : null;
         final title = incident?.reference ?? (incident?.name ?? "Hendelse");
         final tabs = [
-          IncidentPage(incident),
+          IncidentPage(),
           UnitsPage(),
           DevicesPage(),
         ];
@@ -65,8 +65,8 @@ class _CommandScreenState extends State<CommandScreen> {
               BottomNavigationBarItem(title: Text("Terminaler"), icon: Icon(Icons.device_unknown)),
             ],
             onTap: (index) => setState(() {
-                  current = index;
-                }),
+              current = index;
+            }),
           ),
         );
       },

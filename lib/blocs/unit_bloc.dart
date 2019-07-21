@@ -33,6 +33,9 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   /// Check if [units] is empty
   bool get isEmpty => units.isEmpty;
 
+  /// Get count
+  int get count => _units.length;
+
   /// Get units
   List<Unit> get units => UnmodifiableListView<Unit>(_units.values);
 
