@@ -78,7 +78,7 @@ class _IncidentPageState extends State<IncidentPage> {
             if (_showHint)
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Align(
                       alignment: Alignment.bottomRight,
                       child: FloatingActionButton.extended(
