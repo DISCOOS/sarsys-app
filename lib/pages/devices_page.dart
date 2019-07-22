@@ -3,6 +3,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DevicesPage extends StatefulWidget {
   @override
@@ -67,7 +68,7 @@ class _DevicesPageState extends State<DevicesPage> {
               key: ObjectKey(devices[index].id),
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Text('${index + 1}'),
+                child: Icon(FontAwesomeIcons.mobileAlt),
                 foregroundColor: Colors.white,
               ),
               title: Text("ISSI: ${devices[index].number}"),
