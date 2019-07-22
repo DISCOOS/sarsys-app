@@ -39,43 +39,43 @@ class _UnitsPageState extends State<UnitsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
-      return RefreshIndicator(
-        onRefresh: () async {
-          unitBloc.fetch();
-          trackingBloc.fetch();
-        },
-        child: Container(
-          color: Color.fromRGBO(168, 168, 168, 0.6),
-          child: AnimatedCrossFade(
-            duration: Duration(milliseconds: 300),
-            crossFadeState: unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Center(
-              child: CircularProgressIndicator(),
-            ),
-            secondChild: StreamBuilder(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints viewportConstraints) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            unitBloc.fetch();
+            trackingBloc.fetch();
+          },
+          child: Container(
+            color: Color.fromRGBO(168, 168, 168, 0.6),
+            child: StreamBuilder(
               stream: group.stream,
-              builder: _buildList,
+              builder: (context, snapshot) {
+                return AnimatedCrossFade(
+                  duration: Duration(milliseconds: 300),
+                  crossFadeState: unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  firstChild: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  secondChild: unitBloc.units.isEmpty || snapshot.hasError
+                      ? Center(
+                          child: Text(
+                          snapshot.hasError ? snapshot.error : "Legg til en enhet",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ))
+                      : ListView.builder(
+                          itemCount: unitBloc.units.length + 1,
+                          itemBuilder: (context, index) {
+                            return _buildUnit(context, index);
+                          },
+                        ),
+                );
+              },
             ),
           ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildList(BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-    return unitBloc.units.isEmpty || snapshot.hasError
-        ? Center(
-            child: Text(
-            snapshot.hasError ? snapshot.error : "Legg til en enhet",
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ))
-        : ListView.builder(
-            itemCount: unitBloc.units.length + 1,
-            itemBuilder: (context, index) {
-              return _buildUnit(context, index);
-            },
-          );
+        );
+      },
+    );
   }
 
   Widget _buildUnit(BuildContext context, int index) {

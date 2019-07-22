@@ -21,38 +21,40 @@ class _DevicesPageState extends State<DevicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
-      return RefreshIndicator(
-        onRefresh: () async {
-          await bloc.fetch();
-          setState(() {});
-        },
-        child: Container(
-          color: Color.fromRGBO(168, 168, 168, 0.6),
-          child: AnimatedCrossFade(
-            duration: Duration(milliseconds: 300),
-            crossFadeState: bloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Center(
-              child: CircularProgressIndicator(),
-            ),
-            secondChild: StreamBuilder(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints viewportConstraints) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            await bloc.fetch();
+            setState(() {});
+          },
+          child: Container(
+            color: Color.fromRGBO(168, 168, 168, 0.6),
+            child: StreamBuilder(
               stream: bloc.state,
               builder: (context, snapshot) {
                 var devices = bloc.devices;
-                return devices.isNotEmpty
-                    ? _buildList(devices)
-                    : Center(
-                        child: Text(
-                          "Ingen terminaler innen rekkevidde",
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                return AnimatedCrossFade(
+                  duration: Duration(milliseconds: 300),
+                  crossFadeState: bloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  firstChild: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  secondChild: devices.isNotEmpty
+                      ? _buildList(devices)
+                      : Center(
+                          child: Text(
+                            "Ingen terminaler innen rekkevidde",
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
-                      );
+                );
               },
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
   ListView _buildList(List<Device> devices) {

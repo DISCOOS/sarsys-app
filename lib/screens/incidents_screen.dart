@@ -88,29 +88,28 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       },
       child: Container(
         color: Color.fromRGBO(168, 168, 168, 0.6),
-        child: AnimatedCrossFade(
-          duration: Duration(milliseconds: 300),
-          crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-          firstChild: Center(
-            child: CircularProgressIndicator(),
-          ),
-          secondChild: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: viewportConstraints.maxHeight,
+        child: StreamBuilder(
+          stream: bloc.state,
+          builder: (context, snapshot) {
+            var cards = bloc.incidents
+                .where((incident) => filters.contains(incident.status))
+                .map((incident) => _buildCard(context, bloc, incident))
+                .toList();
+            return AnimatedCrossFade(
+              duration: Duration(milliseconds: 300),
+              crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              firstChild: Center(
+                child: CircularProgressIndicator(),
               ),
-              child: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: StreamBuilder(
-                  stream: bloc.state,
-                  builder: (context, snapshot) {
-                    var cards = bloc.incidents
-                        .where((incident) => filters.contains(incident.status))
-                        .map((incident) => _buildCard(context, bloc, incident))
-                        .toList();
-
-                    return cards.isNotEmpty
+              secondChild: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: viewportConstraints.maxHeight,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: cards.isNotEmpty
                         ? Column(
                             children: cards,
                           )
@@ -119,12 +118,12 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                               "0 av ${bloc.incidents.length} hendelser vises",
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
-                          );
-                  },
+                          ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
