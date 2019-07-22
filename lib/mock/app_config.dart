@@ -19,12 +19,11 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
     when(mock.config).thenAnswer((_) async {
       return config;
     });
-    when(mock.init()).thenAnswer((_) async {
+    when(mock.fetch()).thenAnswer((_) async {
       final Map<String, dynamic> assets = json.decode(await rootBundle.loadString(asset));
       prefs = await SharedPreferences.getInstance();
       return (config = AppConfig.fromJson(assets));
     });
-    when(mock.fetch()).thenAnswer((_) async => Future.value(config));
     when(mock.save(any)).thenAnswer((c) async => Future.value(config = c.positionalArguments[0]));
     return mock;
   }

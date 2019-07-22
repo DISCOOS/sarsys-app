@@ -23,17 +23,6 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   /// Get config
   AppConfig get config => _config;
 
-  /// Initialize if empty
-  AppConfigBloc init({AppConfigCallback onInit}) {
-    if (!isReady) {
-      service.init().then((config) {
-        dispatch(InitAppConfig(config));
-        if (onInit != null) onInit(() {});
-      });
-    }
-    return this;
-  }
-
   /// Fetch config from [service]
   Future<AppConfig> fetch() async {
     var config = await service.fetch();
@@ -61,10 +50,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   @override
   Stream<AppConfigState> mapEventToState(AppConfigCommand command) async* {
-    if (command is InitAppConfig) {
-      _config = command.data;
-      yield AppConfigInit(_config);
-    } else if (command is FetchAppConfig || command is UpdateAppConfig) {
+    if (command is FetchAppConfig || command is UpdateAppConfig) {
       _config = command.data;
       yield AppConfigLoaded(_config);
     } else if (command is RaiseAppConfigError) {
@@ -98,13 +84,6 @@ abstract class AppConfigCommand<T> extends Equatable {
   final T data;
 
   AppConfigCommand(this.data, [props = const []]) : super([data, ...props]);
-}
-
-class InitAppConfig extends AppConfigCommand<AppConfig> {
-  InitAppConfig(AppConfig data) : super(data);
-
-  @override
-  String toString() => 'InitAppConfig';
 }
 
 class FetchAppConfig extends AppConfigCommand<AppConfig> {

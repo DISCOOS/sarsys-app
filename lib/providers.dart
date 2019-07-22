@@ -99,6 +99,7 @@ class Providers {
   }
 
   Future<Providers> init() async {
+    await configProvider.bloc.fetch();
     await incidentProvider.bloc.fetch();
     return this;
   }
