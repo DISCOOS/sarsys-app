@@ -23,7 +23,7 @@ class UnitServiceMock extends Mock implements UnitService {
       return Future.value([
         for (var i = 1; i <= count; i++)
           Unit.fromJson(
-            UnitBuilder.createUnitAsJson("u$i", UnitType.Team, "${translateDeviceType(UnitType.Team)} $i", "t$i"),
+            UnitBuilder.createUnitAsJson("u$i", UnitType.Team, "${translateUnitType(UnitType.Team)} $i", "t$i"),
           ),
       ]);
     });

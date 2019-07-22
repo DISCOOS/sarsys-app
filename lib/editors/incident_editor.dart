@@ -40,8 +40,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   void _init() async {
     await _bloc.fetch();
-    var catalogs = await TalkGroupService().fetchCatalogs();
-    catalogs.sort();
+    var catalogs = await TalkGroupService().fetchCatalogs()
+      ..sort();
     _affiliations.value = catalogs;
   }
 
@@ -271,15 +271,14 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   Widget _buildTypeField() {
-    return _buildDropDownField(
+    return buildDropDownField(
       attribute: 'type',
       label: 'Type hendelse',
       initialValue: enumName(widget?.incident?.type ?? IncidentType.Lost),
-      items: [
-        [enumName(IncidentType.Lost), translateIncidentType(IncidentType.Lost)],
-        [enumName(IncidentType.Distress), translateIncidentType(IncidentType.Distress)],
-        [enumName(IncidentType.Other), translateIncidentType(IncidentType.Other)],
-      ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
+      items: IncidentType.values
+          .map((type) => [enumName(type), translateIncidentType(type)])
+          .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
+          .toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
@@ -287,72 +286,19 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   Widget _buildStatusField() {
-    return _buildDropDownField(
+    return buildDropDownField(
       attribute: 'status',
       label: 'Status',
       initialValue: enumName(widget?.incident?.status ?? IncidentStatus.Registered),
-      items: [
-        [enumName(IncidentStatus.Registered), translateIncidentStatus(IncidentStatus.Registered)],
-        [enumName(IncidentStatus.Handling), translateIncidentStatus(IncidentStatus.Handling)],
-        if (widget.incident != null)
-          [enumName(IncidentStatus.Cancelled), translateIncidentStatus(IncidentStatus.Cancelled)],
-        if (widget.incident != null)
-          [enumName(IncidentStatus.Resolved), translateIncidentStatus(IncidentStatus.Resolved)],
-        [enumName(IncidentStatus.Other), translateIncidentStatus(IncidentStatus.Other)],
-      ].map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}"))).toList(),
+      items: IncidentStatus.values
+          .map((status) => [enumName(status), translateIncidentStatus(status)])
+          .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
+          .toList(),
       validators: [
         FormBuilderValidators.required(errorText: 'Status må velges'),
       ],
     );
   }
-
-  Widget _buildDropDownField<T>({
-    @required String attribute,
-    @required String label,
-    @required T initialValue,
-    @required List<DropdownMenuItem<T>> items,
-    @required List<FormFieldValidator> validators,
-  }) =>
-      FormBuilderCustomField(
-        attribute: attribute,
-        formField: FormField<T>(
-          enabled: true,
-          initialValue: initialValue,
-          builder: (FormFieldState<T> field) => _buildDropdown<T>(
-                field: field,
-                label: label,
-                items: items,
-              ),
-        ),
-        validators: validators,
-      );
-
-  Widget _buildDropdown<T>({
-    @required FormFieldState<T> field,
-    @required String label,
-    @required List<DropdownMenuItem<T>> items,
-  }) =>
-      InputDecorator(
-        decoration: InputDecoration(
-          hasFloatingPlaceholder: true,
-          errorText: field.hasError ? field.errorText : null,
-          filled: true,
-          labelText: label,
-        ),
-        child: DropdownButtonHideUnderline(
-          child: ButtonTheme(
-            alignedDropdown: false,
-            child: DropdownButton<T>(
-              value: field.value,
-              isDense: true,
-              onChanged: (T newValue) {
-                field.didChange(newValue);
-              },
-              items: items,
-            ),
-          ),
-        ),
-      );
 
   Widget _buildLocationField() => FormBuilderCustomField(
         attribute: 'ipp',
@@ -360,22 +306,22 @@ class _IncidentEditorState extends State<IncidentEditor> {
           enabled: true,
           initialValue: widget?.incident?.ipp,
           builder: (FormFieldState<Point> field) => GestureDetector(
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    filled: true,
-                    suffixIcon: Icon(Icons.map),
-                    contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
-                    errorText: field.hasError ? field.errorText : null,
-                  ),
-                  child: field.value == null
-                      ? Text('Velg posisjon', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
-                      : Text(
-                          toUTM(field.value),
-                          style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
-                        ),
-                ),
-                onTap: () => _selectLocation(context, field),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                filled: true,
+                suffixIcon: Icon(Icons.map),
+                contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
+                errorText: field.hasError ? field.errorText : null,
               ),
+              child: field.value == null
+                  ? Text('Velg posisjon', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                  : Text(
+                      toUTM(field.value),
+                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
+                    ),
+            ),
+            onTap: () => _selectLocation(context, field),
+          ),
         ),
         valueTransformer: (point) => point.toJson(),
         validators: [
@@ -461,7 +407,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return ValueListenableBuilder(
       valueListenable: _affiliations,
       builder: (BuildContext context, List value, Widget child) {
-        return _buildDropDownField(
+        return buildDropDownField(
           attribute: 'affiliation',
           label: 'Tilhørighet',
           initialValue: _bloc?.config?.affiliation ?? Defaults.affiliation,

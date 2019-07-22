@@ -1,6 +1,9 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
@@ -22,10 +25,10 @@ class _CommandScreenState extends State<CommandScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final IncidentBloc bloc = BlocProvider.of<IncidentBloc>(context);
+    final IncidentBloc incidentBloc = BlocProvider.of<IncidentBloc>(context);
     return StreamBuilder(
-      stream: bloc.changes,
-      initialData: bloc.current,
+      stream: incidentBloc.changes,
+      initialData: incidentBloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = snapshot.data is Incident ? snapshot.data : null;
         final title = incident?.reference ?? (incident?.name ?? "Hendelse");
@@ -46,7 +49,7 @@ class _CommandScreenState extends State<CommandScreen> {
                     builder: (context) => IncidentEditor(incident: incident),
                   );
                   if (response != null) {
-                    bloc.update(response);
+                    incidentBloc.update(response);
                   }
                 },
               ),
@@ -68,6 +71,20 @@ class _CommandScreenState extends State<CommandScreen> {
               current = index;
             }),
           ),
+          floatingActionButton: current == 1
+              ? FloatingActionButton(
+                  child: Icon(Icons.add),
+                  onPressed: () async {
+                    var response = await showDialog<Unit>(
+                      context: context,
+                      builder: (context) => UnitEditor(),
+                    );
+                    if (response != null) {
+                      BlocProvider.of<UnitBloc>(context).update(response);
+                    }
+                  },
+                )
+              : Container(),
         );
       },
     );

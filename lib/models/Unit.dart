@@ -24,11 +24,22 @@ class Unit extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$UnitToJson(this);
+
+  /// Clone with json
+  Unit withJson(Map<String, dynamic> json) {
+    var clone = Unit.fromJson(json);
+    return Unit(
+      id: clone.id ?? this.id,
+      name: clone.name ?? this.name,
+      type: clone.type ?? this.type,
+      tracking: clone.tracking ?? this.tracking,
+    );
+  }
 }
 
 enum UnitType { Team, K9, Boat, Vehicle, Snowmobile, ATV, Other }
 
-String translateDeviceType(UnitType type) {
+String translateUnitType(UnitType type) {
   switch (type) {
     case UnitType.Team:
       return "Lag";

@@ -1,6 +1,8 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -88,7 +90,7 @@ class _UnitsPageState extends State<UnitsPage> {
             key: ObjectKey(unit.id),
             leading: CircleAvatar(
               backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text('${index + 1}'),
+              child: Icon(Icons.people),
               foregroundColor: Colors.white,
             ),
             title: Text(unit.name),
@@ -113,7 +115,9 @@ class _UnitsPageState extends State<UnitsPage> {
             caption: 'ENDRE',
             color: Theme.of(context).buttonColor,
             icon: Icons.more_horiz,
-            onTap: () => {},
+            onTap: () async {
+              _showEditor(context, unit);
+            },
           ),
         ],
         secondaryActions: <Widget>[
@@ -121,7 +125,7 @@ class _UnitsPageState extends State<UnitsPage> {
             caption: 'VIS',
             color: Theme.of(context).buttonColor,
             icon: Icons.gps_fixed,
-            onTap: () => _gotoUnit(context, tracking),
+            onTap: () => _jumpTo(context, tracking),
           ),
           IconSlideAction(
             caption: 'SPOR',
@@ -131,11 +135,20 @@ class _UnitsPageState extends State<UnitsPage> {
           ),
         ],
       ),
-      onTap: () => _gotoUnit(context, tracking),
     );
   }
 
-  void _gotoUnit(BuildContext context, Tracking tracking) {
+  Future _showEditor(BuildContext context, Unit unit) async {
+    var response = await showDialog<Unit>(
+      context: context,
+      builder: (context) => UnitEditor(unit: unit),
+    );
+    if (response != null) {
+      BlocProvider.of<UnitBloc>(context).update(response);
+    }
+  }
+
+  void _jumpTo(BuildContext context, Tracking tracking) {
     if (tracking?.location != null) {
       Navigator.pushReplacementNamed(context, "map", arguments: toLatLng(tracking.location));
     }
