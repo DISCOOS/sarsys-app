@@ -96,7 +96,6 @@ class PasscodeRoute extends PopupRoute {
           maxLines: 1,
           obscureText: true,
           autofocus: true,
-          enableInteractiveSelection: false,
           decoration: InputDecoration(
             hintText: 'Tilgangskode',
             filled: true,

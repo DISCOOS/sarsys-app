@@ -43,9 +43,10 @@ void main() async {
           'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
         },
         localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
           DefaultMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
           DefaultCupertinoLocalizations.delegate,
         ],
         supportedLocales: [

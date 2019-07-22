@@ -79,7 +79,6 @@ class MapSearchFieldState extends State<MapSearchField> {
           ),
           controller: _controller,
           onSubmitted: (value) => _search(value),
-          enableInteractiveSelection: false,
         ),
       ),
     );
