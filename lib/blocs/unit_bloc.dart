@@ -51,6 +51,12 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     return this;
   }
 
+  /// Delete given unit
+  UnitBloc delete(Unit unit) {
+    dispatch(DeleteUnit(unit));
+    return this;
+  }
+
   /// Fetch units from [service]
   Future<List<Unit>> fetch() async {
     if (incidentBloc.isUnset) {

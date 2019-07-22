@@ -4,6 +4,7 @@ import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -138,7 +139,16 @@ class _UnitsPageState extends State<UnitsPage> {
             caption: 'OPPLØS',
             color: Colors.red,
             icon: Icons.delete,
-            onTap: () => {},
+            onTap: () async {
+              var response = await prompt(
+                context,
+                "Oppløs ${unit.name}",
+                "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
+              );
+              if (response) {
+                unitBloc.delete(unit);
+              }
+            },
           ),
         ],
       ),
