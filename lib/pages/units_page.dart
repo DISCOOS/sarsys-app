@@ -70,7 +70,7 @@ class _UnitsPageState extends State<UnitsPage> {
             style: TextStyle(fontWeight: FontWeight.w600),
           ))
         : ListView.builder(
-            itemCount: unitBloc.units.length,
+            itemCount: unitBloc.units.length + 1,
             itemBuilder: (context, index) {
               return _buildUnit(context, index);
             },
@@ -78,6 +78,14 @@ class _UnitsPageState extends State<UnitsPage> {
   }
 
   Widget _buildUnit(BuildContext context, int index) {
+    if (index == unitBloc.units.length) {
+      return SizedBox(
+        height: 88,
+        child: Center(
+          child: Text("Antall enheter: $index"),
+        ),
+      );
+    }
     var unit = unitBloc.units[index];
     var tracking = unit.tracking == null ? null : trackingBloc.tracks[unit.tracking];
     return GestureDetector(
@@ -104,13 +112,20 @@ class _UnitsPageState extends State<UnitsPage> {
             ),
           ),
         ),
-        actions: <Widget>[
+        secondaryActions: <Widget>[
           IconSlideAction(
-            caption: 'OPPLØS',
-            color: Colors.red,
-            icon: Icons.delete,
-            onTap: () => {},
+            caption: 'VIS',
+            color: Theme.of(context).buttonColor,
+            icon: Icons.gps_fixed,
+            onTap: () => _jumpTo(context, tracking),
           ),
+          if (tracking?.location != null)
+            IconSlideAction(
+              caption: 'SPOR',
+              color: Theme.of(context).buttonColor,
+              icon: Icons.play_arrow,
+              onTap: () => {},
+            ),
           IconSlideAction(
             caption: 'ENDRE',
             color: Theme.of(context).buttonColor,
@@ -119,18 +134,10 @@ class _UnitsPageState extends State<UnitsPage> {
               _showEditor(context, unit);
             },
           ),
-        ],
-        secondaryActions: <Widget>[
           IconSlideAction(
-            caption: 'VIS',
-            color: Theme.of(context).buttonColor,
-            icon: Icons.gps_fixed,
-            onTap: () => _jumpTo(context, tracking),
-          ),
-          IconSlideAction(
-            caption: 'SPOR',
-            color: Theme.of(context).colorScheme.primary,
-            icon: Icons.play_arrow,
+            caption: 'OPPLØS',
+            color: Colors.red,
+            icon: Icons.delete,
             onTap: () => {},
           ),
         ],
