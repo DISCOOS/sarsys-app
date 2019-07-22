@@ -147,24 +147,6 @@ class _PointEditorState extends State<PointEditor> {
               height: size.height,
               child: Container(
                 child: IconButton(
-                  icon: Icon(Icons.filter_list),
-                  onPressed: () {},
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 4.0,
-            ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: Container(
-                child: IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
                     _mapController.move(_mapController.center, _mapController.zoom + 1);
