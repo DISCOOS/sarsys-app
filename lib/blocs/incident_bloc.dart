@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:bloc/bloc.dart';
@@ -8,12 +9,23 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 
 class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   final IncidentService service;
+  final UserBloc userBloc;
 
   final LinkedHashMap<String, Incident> _incidents = LinkedHashMap();
 
   String _given;
 
-  IncidentBloc(this.service);
+  IncidentBloc(this.service, this.userBloc) {
+    assert(this.service != null, "service can not be null");
+    assert(this.userBloc != null, "userBloc can not be null");
+    userBloc.state.listen(_init);
+  }
+
+  void _init(UserState state) {
+    if (state.isUnset() || state.isForbidden() || state.isUnauthorized())
+      dispatch(ClearIncidents(_incidents.keys.toList()));
+    else if (state.isAuthenticated()) fetch();
+  }
 
   @override
   IncidentState get initialState => IncidentUnset();
@@ -44,6 +56,14 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       )
       .map((state) => state.data);
 
+  /// Fetch incidents from [service]
+  Future<List<Incident>> fetch() async {
+    dispatch(ClearIncidents(_incidents.keys.toList()));
+    var incidents = await service.fetch();
+    dispatch(LoadIncidents(incidents));
+    return UnmodifiableListView<Incident>(incidents);
+  }
+
   /// Select given id
   IncidentBloc select(String id) {
     if (_given != id && _incidents.containsKey(id)) {
@@ -64,21 +84,16 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return this;
   }
 
-  /// Fetch incidents from [service]
-  Future<List<Incident>> fetch() async {
-    _incidents.clear();
-    _incidents.addEntries((await service.fetch()).map(
-      (incident) => MapEntry(incident.id, incident),
-    ));
-    if (_incidents.containsKey(_given)) {
-      this.dispatch(SelectIncident(_given));
-    }
-    return UnmodifiableListView<Incident>(_incidents.values);
-  }
-
   @override
   Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
-    if (command is CreateIncident) {
+    if (command is LoadIncidents) {
+      List<String> ids = _load(command);
+      yield IncidentsLoaded(ids);
+      // Currently selected incident not found?
+      if (_given != null && _given.isNotEmpty && !_incidents.containsKey(_given)) {
+        yield _unset();
+      }
+    } else if (command is CreateIncident) {
       Incident data = await _create(command);
       if (command.selected) {
         yield _set(data);
@@ -99,11 +114,21 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       if (data.id == _given) {
         yield _unset();
       }
+    } else if (command is ClearIncidents) {
+      List<Incident> incidents = _clear(command);
+      yield IncidentsCleared(incidents);
     } else if (command is RaiseIncidentError) {
       yield command.data;
     } else {
       yield IncidentError("Unsupported $command");
     }
+  }
+
+  List<String> _load(LoadIncidents command) {
+    _incidents.addEntries((command.data).map(
+      (incident) => MapEntry(incident.id, incident),
+    ));
+    return _incidents.keys.toList();
   }
 
   Future<Incident> _create(CreateIncident event) async {
@@ -146,6 +171,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return IncidentUnset();
   }
 
+  List<Incident> _clear(ClearIncidents command) {
+    List<Incident> cleared = [];
+    command.data.forEach((id) => {if (_incidents.containsKey(id)) cleared.add(_incidents.remove(id))});
+    return cleared;
+  }
+
   @override
   void onEvent(IncidentCommand event) {
     if (!kReleaseMode) print("Command $event");
@@ -170,6 +201,13 @@ abstract class IncidentCommand<T> extends Equatable {
   final T data;
 
   IncidentCommand(this.data, [props = const []]) : super([data, ...props]);
+}
+
+class LoadIncidents extends IncidentCommand<List<Incident>> {
+  LoadIncidents(List<Incident> data) : super(data);
+
+  @override
+  String toString() => 'LoadIncidents';
 }
 
 class CreateIncident extends IncidentCommand<Incident> {
@@ -202,6 +240,13 @@ class DeleteIncident extends IncidentCommand<Incident> {
   String toString() => 'DeleteIncident';
 }
 
+class ClearIncidents extends IncidentCommand<List<String>> {
+  ClearIncidents(List<String> data) : super(data);
+
+  @override
+  String toString() => 'ClearIncidents';
+}
+
 class RaiseIncidentError extends IncidentCommand<IncidentError> {
   RaiseIncidentError(data) : super(data);
 
@@ -218,6 +263,7 @@ abstract class IncidentState<T> extends Equatable {
   IncidentState(this.data, [props = const []]) : super([data, ...props]);
 
   isUnset() => this is IncidentUnset;
+  isLoaded() => this is IncidentsLoaded;
   isCreated() => this is IncidentCreated;
   isUpdated() => this is IncidentUpdated;
   isSelected() => this is IncidentSelected;
@@ -231,6 +277,13 @@ class IncidentUnset extends IncidentState<Null> {
 
   @override
   String toString() => 'IncidentUnset';
+}
+
+class IncidentsLoaded extends IncidentState<List<String>> {
+  IncidentsLoaded(List<String> data) : super(data);
+
+  @override
+  String toString() => 'IncidentsLoaded';
 }
 
 class IncidentCreated extends IncidentState<Incident> {
@@ -261,6 +314,13 @@ class IncidentDeleted extends IncidentState<Incident> {
 
   @override
   String toString() => 'IncidentDeleted';
+}
+
+class IncidentsCleared extends IncidentState<List<Incident>> {
+  IncidentsCleared(List<Incident> incidents) : super(incidents);
+
+  @override
+  String toString() => 'IncidentsCleared';
 }
 
 /// ---------------------

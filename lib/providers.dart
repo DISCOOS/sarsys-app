@@ -71,7 +71,7 @@ class Providers {
     // Configure Incident service
     final IncidentService incidentService =
         !mock ? IncidentService('$baseUrl/api/incidents', client) : IncidentServiceMock.build(userService, 2, "T123");
-    final IncidentBloc incidentBloc = IncidentBloc(incidentService);
+    final IncidentBloc incidentBloc = IncidentBloc(incidentService, userBloc);
 
     // Configure Unit service
     final UnitService unitService =
@@ -100,7 +100,7 @@ class Providers {
 
   Future<Providers> init() async {
     await configProvider.bloc.fetch();
-    await incidentProvider.bloc.fetch();
+    await userProvider.bloc.init();
     return this;
   }
 }

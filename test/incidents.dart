@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -11,22 +12,26 @@ void main() {
   final UserService userService = UserServiceMock.build('test@local', 'password');
   final IncidentService incidentService = IncidentServiceMock.build(userService, 2, "T123");
 
-  IncidentBloc bloc;
+  UserBloc userBloc;
+  IncidentBloc incidentBloc;
 
-  setUp(() => {bloc = IncidentBloc(incidentService)});
+  setUp(() {
+    userBloc = UserBloc(userService);
+    incidentBloc = IncidentBloc(incidentService, userBloc);
+  });
 
-  tearDown(() => bloc.dispose());
+  tearDown(() => incidentBloc.dispose());
 
   test('Incident bloc should be empty and unset', () async {
-    expect(bloc.isEmpty, isTrue, reason: "Incident bloc should be empty");
-    expect(bloc.isUnset, isTrue, reason: "Incident bloc should be unset");
-    expect(bloc.initialState, TypeMatcher<IncidentUnset>(), reason: "Unexpected incident state");
+    expect(incidentBloc.isEmpty, isTrue, reason: "Incident bloc should be empty");
+    expect(incidentBloc.isUnset, isTrue, reason: "Incident bloc should be unset");
+    expect(incidentBloc.initialState, TypeMatcher<IncidentUnset>(), reason: "Unexpected incident state");
     expect(
-      bloc.state,
+      incidentBloc.state,
       emitsInOrder([emits(TypeMatcher<IncidentUnset>())]),
       reason: "First state is not IncidentUnset",
     );
-    bloc.state.listen(expectAsync1(
+    incidentBloc.state.listen(expectAsync1(
       (state) {
         expect(true, isTrue);
       },
@@ -35,17 +40,17 @@ void main() {
   });
 
   test('Incident bloc should contain two incidents', () async {
-    List<Incident> incidents = await bloc.fetch();
+    List<Incident> incidents = await incidentBloc.fetch();
     expect(incidents.length, 2, reason: "Bloc should return two incidents");
-    expect(bloc.isEmpty, isFalse, reason: "Bloc should not be empty");
-    expect(bloc.isUnset, isTrue, reason: "Bloc should be unset");
+    expect(incidentBloc.isEmpty, isFalse, reason: "Bloc should not be empty");
+    expect(incidentBloc.isUnset, isTrue, reason: "Bloc should be unset");
   });
 
   test('Incident bloc should be in selected state', () async {
     var count = 0;
-    List<Incident> incidents = await bloc.fetch();
-    bloc.select(incidents.first.id);
-    bloc.state.listen(expectAsync1(
+    List<Incident> incidents = await incidentBloc.fetch();
+    incidentBloc.select(incidents.first.id);
+    incidentBloc.state.listen(expectAsync1(
       (state) {
         count++;
       },
@@ -53,7 +58,7 @@ void main() {
       reason: "Bloc contained ${count + 1} states, expected 2",
     ));
     expect(
-      bloc.state,
+      incidentBloc.state,
       emitsInOrder([
         emits(TypeMatcher<IncidentUnset>()),
         emits(TypeMatcher<IncidentSelected>()),
@@ -63,10 +68,10 @@ void main() {
   });
 
   test('First incident should be selected in last state', () async {
-    List<Incident> incidents = await bloc.fetch();
-    bloc.select(incidents.first.id);
-    var last = await bloc.state.elementAt(1);
+    List<Incident> incidents = await incidentBloc.fetch();
+    incidentBloc.select(incidents.first.id);
+    var last = await incidentBloc.state.elementAt(1);
     expect(last.data, incidents.first, reason: "First incident was not selected");
-    expect(bloc.current, last.data, reason: "Selected incident is different than last incident");
+    expect(incidentBloc.current, last.data, reason: "Selected incident is different than last incident");
   });
 }

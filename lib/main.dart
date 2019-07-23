@@ -17,7 +17,8 @@ void main() async {
   final providers = Providers.build(client, mock: true, units: 15, devices: 30);
   final Widget homepage = await getHome(providers);
 
-  providers.init();
+  // Initialize app-config
+  providers.configProvider.bloc.fetch();
 
   runApp(BlocProviderTree(
     blocProviders: providers.all,
