@@ -22,11 +22,20 @@ class _UnitEditorState extends State<UnitEditor> {
   final _formKey = GlobalKey<FormBuilderState>();
 
   UnitBloc bloc;
+  TextEditingController _nameController;
 
   @override
   void initState() {
     super.initState();
     bloc = BlocProvider.of<UnitBloc>(context);
+    _nameController = TextEditingController(
+        text: widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${bloc.units.length + 1}");
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _nameController.dispose();
   }
 
   @override
@@ -55,6 +64,9 @@ class _UnitEditorState extends State<UnitEditor> {
         padding: const EdgeInsets.all(24.0),
         child: FormBuilder(
           key: _formKey,
+          onChanged: (values) {
+            print("onChanged:$values");
+          },
           child: ListView(
             children: <Widget>[
               _buildNameField(),
@@ -72,10 +84,17 @@ class _UnitEditorState extends State<UnitEditor> {
       maxLines: 1,
       autofocus: true,
       attribute: 'name',
+      controller: _nameController,
       initialValue: widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${bloc.units.length + 1}",
       decoration: InputDecoration(
         hintText: 'Navn',
         filled: true,
+        suffixIcon: IconButton(
+            icon: Icon(Icons.cancel),
+            onPressed: () {
+              _nameController.text =
+                  widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${bloc.units.length + 1}";
+            }),
       ),
       validators: [
         FormBuilderValidators.required(errorText: 'Navn må fylles inn'),
