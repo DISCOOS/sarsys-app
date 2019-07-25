@@ -136,7 +136,7 @@ class _IncidentPageState extends State<IncidentPage> {
       children: <Widget>[
         Expanded(
           flex: 3,
-          child: _buildValueTile("Type", enumDescription(incident.type), "", valueStyle, unitStyle, unitStyle),
+          child: _buildValueTile("Type", translateIncidentType(incident.type), "", valueStyle, unitStyle, unitStyle),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(

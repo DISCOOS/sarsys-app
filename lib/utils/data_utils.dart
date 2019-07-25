@@ -1,22 +1,8 @@
-import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:latlong/latlong.dart';
 
 String enumName(Object o) => o.toString().split('.').last;
-String enumDescription(Object o) {
-  if (o is IncidentType) {
-    switch (o) {
-      case IncidentType.Lost:
-        return "Savnet person";
-      case IncidentType.Distress:
-        return "Nødstedt";
-      case IncidentType.Other:
-        return "Annet";
-    }
-  }
-  return "Ukjent";
-}
 
 String toDD(Point point) {
   return CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat));
