@@ -11,30 +11,33 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class UnitsPage extends StatefulWidget {
+  const UnitsPage({Key key}) : super(key: key);
+
   @override
-  _UnitsPageState createState() => _UnitsPageState();
+  UnitsPageState createState() => UnitsPageState();
 }
 
-class _UnitsPageState extends State<UnitsPage> {
-  UnitBloc unitBloc;
-  TrackingBloc trackingBloc;
-  StreamGroup<dynamic> group;
+class UnitsPageState extends State<UnitsPage> {
+  UnitBloc _unitBloc;
+  TrackingBloc _trackingBloc;
+  StreamGroup<dynamic> _group;
+  List<UnitStatus> _filter = UnitStatus.values.toList()..remove(UnitStatus.Retired);
 
   @override
   void initState() {
     super.initState();
-    unitBloc = BlocProvider.of<UnitBloc>(context);
-    trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    group = StreamGroup.broadcast();
-    group.add(unitBloc.state);
-    group.add(trackingBloc.state);
+    _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    _group = StreamGroup.broadcast();
+    _group.add(_unitBloc.state);
+    _group.add(_trackingBloc.state);
   }
 
   @override
   void dispose() {
     super.dispose();
-    group.close();
-    group = null;
+    _group.close();
+    _group = null;
   }
 
   @override
@@ -43,30 +46,34 @@ class _UnitsPageState extends State<UnitsPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            unitBloc.fetch();
-            trackingBloc.fetch();
+            _unitBloc.fetch();
+            _trackingBloc.fetch();
           },
           child: Container(
             color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
-              stream: group.stream,
+              stream: _group.stream,
               builder: (context, snapshot) {
+                var units = _unitBloc.units.isEmpty || snapshot.hasError
+                    ? []
+                    : _unitBloc.units.where((unit) => _filter.contains(unit.status)).toList();
+
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
-                  crossFadeState: unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  crossFadeState: _unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
                   firstChild: Center(
                     child: CircularProgressIndicator(),
                   ),
-                  secondChild: unitBloc.units.isEmpty || snapshot.hasError
+                  secondChild: _unitBloc.units.isEmpty || snapshot.hasError
                       ? Center(
                           child: Text(
                           snapshot.hasError ? snapshot.error : "Legg til en enhet",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ))
                       : ListView.builder(
-                          itemCount: unitBloc.units.length + 1,
+                          itemCount: units.length + 1,
                           itemBuilder: (context, index) {
-                            return _buildUnit(context, index);
+                            return _buildUnit(context, units, index);
                           },
                         ),
                 );
@@ -78,8 +85,8 @@ class _UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  Widget _buildUnit(BuildContext context, int index) {
-    if (index == unitBloc.units.length) {
+  Widget _buildUnit(BuildContext context, List<Unit> units, int index) {
+    if (index == units.length) {
       return SizedBox(
         height: 88,
         child: Center(
@@ -87,8 +94,8 @@ class _UnitsPageState extends State<UnitsPage> {
         ),
       );
     }
-    var unit = unitBloc.units[index];
-    var tracking = unit.tracking == null ? null : trackingBloc.tracks[unit.tracking];
+    var unit = units[index];
+    var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
     return GestureDetector(
       child: Slidable(
         actionPane: SlidableScrollActionPane(),
@@ -131,9 +138,10 @@ class _UnitsPageState extends State<UnitsPage> {
             caption: 'ENDRE',
             color: Theme.of(context).buttonColor,
             icon: Icons.more_horiz,
-            onTap: () async {
-              _showEditor(context, unit);
-            },
+            onTap: () => showDialog(
+              context: context,
+              builder: (context) => UnitEditor(unit: unit),
+            ),
           ),
           IconSlideAction(
             caption: 'OPPLØS',
@@ -146,7 +154,7 @@ class _UnitsPageState extends State<UnitsPage> {
                 "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
               );
               if (response) {
-                unitBloc.delete(unit);
+                _unitBloc.update(unit.cloneWith(status: UnitStatus.Retired));
               }
             },
           ),
@@ -155,19 +163,57 @@ class _UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  Future _showEditor(BuildContext context, Unit unit) async {
-    var response = await showDialog<Unit>(
-      context: context,
-      builder: (context) => UnitEditor(unit: unit),
-    );
-    if (response != null) {
-      BlocProvider.of<UnitBloc>(context).update(response);
-    }
-  }
-
   void _jumpTo(BuildContext context, Tracking tracking) {
     if (tracking?.location != null) {
       Navigator.pushReplacementNamed(context, "map", arguments: toLatLng(tracking.location));
     }
+  }
+
+  void showFilterSheet(context) {
+    final style = Theme.of(context).textTheme.title;
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return StatefulBuilder(builder: (context, state) {
+            return Container(
+              padding: EdgeInsets.only(bottom: 56.0),
+              child: Wrap(
+                children: <Widget>[
+                  ListTile(
+                    contentPadding: EdgeInsets.only(left: 16.0, right: 0),
+                    title: Text("Vis", style: style),
+                    trailing: FlatButton(
+                      child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                      onPressed: () => setState(
+                        () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                  ),
+                  Divider(),
+                  ...UnitStatus.values
+                      .map((status) => ListTile(
+                          title: Text(translateUnitStatus(status), style: style),
+                          trailing: Switch(
+                            value: _filter.contains(status),
+                            onChanged: (value) => _onFilterChanged(status, value, state),
+                          )))
+                      .toList(),
+                ],
+              ),
+            );
+          });
+        });
+  }
+
+  void _onFilterChanged(UnitStatus status, bool value, StateSetter update) {
+    update(() {
+      if (value) {
+        _filter.add(status);
+      } else {
+        _filter.remove(status);
+      }
+    });
   }
 }

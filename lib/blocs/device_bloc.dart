@@ -34,7 +34,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   bool get isEmpty => devices.isEmpty;
 
   /// Get devices
-  List<Device> get devices => UnmodifiableListView<Device>(_devices.values);
+  Map<String, Device> get devices => UnmodifiableMapView<String, Device>(_devices);
 
   /// Fetch devices from [service]
   Future<List<Device>> fetch() async {

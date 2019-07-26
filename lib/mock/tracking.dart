@@ -8,17 +8,18 @@ import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:mockito/mockito.dart';
+import 'package:uuid/uuid.dart';
 
 class TracksBuilder {
-  static createTrackingAsJson(String id, int index, Point center, TrackingState state) {
+  static createTrackingAsJson(String id, List<String> devices, Point center, TrackingStatus status) {
     final rnd = math.Random();
     final location = createPointAsJson(center.lat + nextDouble(rnd, 0.03), center.lon + nextDouble(rnd, 0.03));
     return json.decode('{'
         '"id": "$id",'
-        '"state": "${enumName(state)}",'
+        '"status": "${enumName(status)}",'
         '"location": $location,'
         '"distance": 0,'
-        '"devices": ["d$index"],'
+        '"devices": ["${devices.join(",")}"],'
         '"track": [$location]'
         '}');
   }
@@ -35,12 +36,46 @@ class TracksBuilder {
 class TrackingServiceMock extends Mock implements TrackingService {
   static TrackingService build(final IncidentBloc bloc, final count) {
     final TrackingServiceMock mock = TrackingServiceMock();
+    final Map<String, Tracking> tracks = {};
     when(mock.fetch(any)).thenAnswer((_) async {
       Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
-      return Future.value([
-        for (var i = 1; i <= count; i++)
-          Tracking.fromJson(TracksBuilder.createTrackingAsJson("t$i", i, center, TrackingState.Created)),
-      ]);
+      tracks
+        ..clear()
+        ..addEntries([
+          for (var i = 1; i <= count; i++)
+            Tracking.fromJson(
+              TracksBuilder.createTrackingAsJson("t$i", List.from(["d$i"]), center, TrackingStatus.Created),
+            ),
+        ].map((tracking) => MapEntry(tracking.id, tracking)));
+      return Future.value(tracks.values.toList());
+    });
+    when(mock.create(any, any)).thenAnswer((_) async {
+      var unit = _.positionalArguments[0];
+      if (tracks.containsKey(unit.tracking)) {
+        var devices = _.positionalArguments[1];
+        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+        return Future.value(
+          TracksBuilder.createTrackingAsJson(
+            Uuid().v1(),
+            devices,
+            center,
+            TrackingStatus.Created,
+          ),
+        );
+      }
+      return Future.error("409 Conflict. Tracking already exists for unit ${unit.id}");
+    });
+    when(mock.update(any)).thenAnswer((_) async {
+      var tracking = _.positionalArguments[0];
+      if (tracks.containsKey(tracking.id)) {
+        tracks.update(
+          tracking.id,
+          (_) => tracking,
+          ifAbsent: () => tracking,
+        );
+        return Future.value(tracking);
+      }
+      return Future.error("404 Not found. Tracking ${tracking.id}");
     });
     return mock;
   }

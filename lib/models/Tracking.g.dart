@@ -9,7 +9,7 @@ part of 'Tracking.dart';
 Tracking _$TrackingFromJson(Map<String, dynamic> json) {
   return Tracking(
       id: json['id'] as String,
-      state: _$enumDecodeNullable(_$TrackingStateEnumMap, json['state']),
+      status: _$enumDecodeNullable(_$TrackingStatusEnumMap, json['status']),
       location: json['location'] == null
           ? null
           : Point.fromJson(json['location'] as Map<String, dynamic>),
@@ -23,7 +23,7 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
       'id': instance.id,
-      'state': _$TrackingStateEnumMap[instance.state],
+      'status': _$TrackingStatusEnumMap[instance.status],
       'location': instance.location,
       'distance': instance.distance,
       'devices': instance.devices,
@@ -50,9 +50,9 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
   return _$enumDecode<T>(enumValues, source);
 }
 
-const _$TrackingStateEnumMap = <TrackingState, dynamic>{
-  TrackingState.Created: 'Created',
-  TrackingState.Tracking: 'Tracking',
-  TrackingState.Paused: 'Paused',
-  TrackingState.Ended: 'Ended'
+const _$TrackingStatusEnumMap = <TrackingStatus, dynamic>{
+  TrackingStatus.Created: 'Created',
+  TrackingStatus.Tracking: 'Tracking',
+  TrackingStatus.Paused: 'Paused',
+  TrackingStatus.Ended: 'Ended'
 };

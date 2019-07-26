@@ -1,9 +1,7 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
@@ -21,6 +19,8 @@ class CommandScreen extends StatefulWidget {
 }
 
 class _CommandScreenState extends State<CommandScreen> {
+  final _unitsKey = GlobalKey<UnitsPageState>();
+
   var current;
 
   @override
@@ -34,25 +34,14 @@ class _CommandScreenState extends State<CommandScreen> {
         final title = incident?.reference ?? (incident?.name ?? "Hendelse");
         final tabs = [
           IncidentPage(),
-          UnitsPage(),
+          UnitsPage(key: _unitsKey),
           DevicesPage(),
         ];
         return Scaffold(
           drawer: AppDrawer(),
           appBar: AppBar(
             actions: <Widget>[
-              IconButton(
-                icon: Icon(Icons.more_vert),
-                onPressed: () async {
-                  var response = await showDialog(
-                    context: context,
-                    builder: (context) => IncidentEditor(incident: incident),
-                  );
-                  if (response != null) {
-                    incidentBloc.update(response);
-                  }
-                },
-              ),
+              _buildAction(context, incident, incidentBloc),
             ],
             title: Tab(text: title),
           ),
@@ -71,23 +60,51 @@ class _CommandScreenState extends State<CommandScreen> {
               current = index;
             }),
           ),
-          floatingActionButton: current == 1
-              ? FloatingActionButton(
-                  child: Icon(Icons.add),
-                  onPressed: () async {
-                    var response = await showDialog<Unit>(
-                      context: context,
-                      builder: (context) => UnitEditor(),
-                    );
-                    if (response != null) {
-                      BlocProvider.of<UnitBloc>(context).update(response);
-                    }
-                  },
-                )
-              : Container(),
+          floatingActionButton: _buildFAB(context),
         );
       },
     );
+  }
+
+  Widget _buildAction(BuildContext context, incident, IncidentBloc incidentBloc) {
+    switch (current) {
+      case 0:
+        return IconButton(
+          icon: Icon(Icons.more_vert),
+          onPressed: () => showDialog(
+            context: context,
+            builder: (context) => IncidentEditor(incident: incident),
+          ),
+        );
+      case 1:
+        return IconButton(
+          icon: Icon(Icons.filter_list),
+          onPressed: () async {
+            _unitsKey.currentState.showFilterSheet(context);
+          },
+        );
+      case 2:
+        return IconButton(
+          icon: Icon(Icons.filter_list),
+          onPressed: () async {
+            // TODO: Apply device filter
+          },
+        );
+      default:
+        return Container();
+    }
+  }
+
+  StatelessWidget _buildFAB(BuildContext context) {
+    return current == 1
+        ? FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => UnitEditor(),
+            ),
+          )
+        : Container();
   }
 
   @override

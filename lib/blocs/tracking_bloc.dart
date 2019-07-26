@@ -1,7 +1,10 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -11,11 +14,12 @@ typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   final TrackingService service;
+  final DeviceBloc deviceBloc;
   final IncidentBloc incidentBloc;
 
   final LinkedHashMap<String, Tracking> _tracks = LinkedHashMap();
 
-  TrackingBloc(this.service, this.incidentBloc) {
+  TrackingBloc(this.service, this.incidentBloc, this.deviceBloc) {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
     incidentBloc.state.listen(_init);
@@ -31,22 +35,22 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   TrackingState get initialState => TracksEmpty();
 
   /// Check if [tracks] is empty
-  bool get isEmpty => tracks.isEmpty;
+  bool get isEmpty => _tracks.isEmpty;
 
   /// Get tracks
   Map<String, Tracking> get tracks => UnmodifiableMapView<String, Tracking>(_tracks);
 
-  /// Create given tracking
-  TrackingBloc create(Tracking tracking) {
-    dispatch(CreateTracking(tracking));
-    return this;
-  }
+  /// Test if unit is being tracked
+  bool isTracking(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
 
-  /// Update given tracking
-  TrackingBloc update(Tracking tracking) {
-    dispatch(UpdateTracking(tracking));
-    return this;
-  }
+  /// Get devices
+  List<Device> devices(String id) => _tracks.containsKey(id)
+      ? _tracks[id]
+          .devices
+          .where((id) => deviceBloc.devices.containsKey(id))
+          .map((id) => deviceBloc.devices[id])
+          .toList()
+      : [];
 
   /// Fetch tracks from [service]
   Future<List<Tracking>> fetch() async {
@@ -64,6 +68,21 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     var tracks = await service.fetch(id);
     dispatch(LoadTracks(tracks));
     return UnmodifiableListView<Tracking>(tracks);
+  }
+
+  /// Create tracking for given Unit
+  TrackingBloc create(Unit unit, List<Device> devices) {
+    dispatch(CreateTracking(unit.id, devices.map((device) => device.id).toList()));
+    return this;
+  }
+
+  /// Update given tracking
+  TrackingBloc update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
+    dispatch(UpdateTracking(tracking.cloneWith(
+      status: status,
+      devices: devices.map((device) => device.id).toList(),
+    )));
+    return this;
   }
 
   @override
@@ -100,24 +119,24 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Future<Tracking> _create(CreateTracking event) async {
-    //TODO: Implement call to backend
+    var tracking = await service.create(event.unitId, event.data);
 
-    var data = _tracks.putIfAbsent(
-      event.data.id,
-      () => event.data,
+    _tracks.putIfAbsent(
+      tracking.id,
+      () => tracking,
     );
-    return Future.value(data);
+    return Future.value(tracking);
   }
 
   Future<Tracking> _update(UpdateTracking event) async {
-    //TODO: Implement call to backend
+    var tracking = await service.update(event.data);
 
-    var data = _tracks.update(
-      event.data.id,
-      (tracking) => event.data,
-      ifAbsent: () => event.data,
+    _tracks.update(
+      tracking.id,
+      (_) => tracking,
+      ifAbsent: () => tracking,
     );
-    return Future.value(data);
+    return Future.value(tracking);
   }
 
   Future<Tracking> _delete(DeleteTracking event) {
@@ -168,8 +187,9 @@ class LoadTracks extends TrackingCommand<List<Tracking>> {
   String toString() => 'LoadTracks';
 }
 
-class CreateTracking extends TrackingCommand<Tracking> {
-  CreateTracking(Tracking data) : super(data);
+class CreateTracking extends TrackingCommand<List<String>> {
+  final String unitId;
+  CreateTracking(this.unitId, List<String> devices) : super(devices);
 
   @override
   String toString() => 'CreateTracking';

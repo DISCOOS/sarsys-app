@@ -5,7 +5,7 @@ SarSys Mobile is dependent on SarSys API.
 ## Build models
 
 ```bash
-> flutter pub run build_runner build
+> flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ## Prepare release toolchain

@@ -33,7 +33,7 @@ class _DevicesPageState extends State<DevicesPage> {
             child: StreamBuilder(
               stream: bloc.state,
               builder: (context, snapshot) {
-                var devices = bloc.devices;
+                var devices = bloc.devices.values.toList();
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
                   crossFadeState: bloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,

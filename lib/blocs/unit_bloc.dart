@@ -123,7 +123,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
     var data = _units.update(
       event.data.id,
-      (unit) => event.data,
+      (_) => event.data,
       ifAbsent: () => event.data,
     );
     return Future.value(data);

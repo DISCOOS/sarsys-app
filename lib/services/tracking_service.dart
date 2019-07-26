@@ -13,4 +13,14 @@ class TrackingService {
     // TODO: Implement fetch tracking
     throw "Not implemented";
   }
+
+  Future<Tracking> create(String unitId, List<String> devices) async {
+    // TODO: Implement create tracking
+    throw "Not implemented";
+  }
+
+  Future<Tracking> update(Tracking tracking) async {
+    // TODO: Implement update tracking
+    throw "Not implemented";
+  }
 }

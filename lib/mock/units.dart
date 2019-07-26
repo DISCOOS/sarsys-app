@@ -9,8 +9,9 @@ class UnitBuilder {
   static createUnitAsJson(String id, UnitType type, String name, String tracking) {
     return json.decode('{'
         '"id": "$id",'
-        '"type": "${enumName(type)}",'
         '"name": "$name",'
+        '"type": "${enumName(type)}",'
+        '"status": "${enumName(UnitStatus.Mobilized)}",'
         '"tracking": "$tracking"'
         '}');
   }

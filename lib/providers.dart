@@ -86,7 +86,7 @@ class Providers {
     // Configure Tracking service
     final TrackingService trackingService =
         !mock ? TrackingService('$baseUrl/api/incidents', client) : TrackingServiceMock.build(incidentBloc, devices);
-    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc);
+    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, deviceBloc);
 
     return Providers._internal(
       configBloc,

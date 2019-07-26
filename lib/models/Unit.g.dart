@@ -10,6 +10,7 @@ Unit _$UnitFromJson(Map<String, dynamic> json) {
   return Unit(
       id: json['id'] as String,
       type: _$enumDecodeNullable(_$UnitTypeEnumMap, json['type']),
+      status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
       name: json['name'] as String,
       tracking: json['tracking'] as String);
 }
@@ -17,6 +18,7 @@ Unit _$UnitFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
       'id': instance.id,
       'type': _$UnitTypeEnumMap[instance.type],
+      'status': _$UnitStatusEnumMap[instance.status],
       'name': instance.name,
       'tracking': instance.tracking
     };
@@ -49,4 +51,11 @@ const _$UnitTypeEnumMap = <UnitType, dynamic>{
   UnitType.Snowmobile: 'Snowmobile',
   UnitType.ATV: 'ATV',
   UnitType.Other: 'Other'
+};
+
+const _$UnitStatusEnumMap = <UnitStatus, dynamic>{
+  UnitStatus.Mobilized: 'Mobilized',
+  UnitStatus.Deployed: 'Deployed',
+  UnitStatus.Paused: 'Paused',
+  UnitStatus.Retired: 'Retired'
 };

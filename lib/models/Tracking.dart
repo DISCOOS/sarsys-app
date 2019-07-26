@@ -9,7 +9,7 @@ part 'Tracking.g.dart';
 @JsonSerializable()
 class Tracking extends Equatable {
   final String id;
-  final TrackingState state;
+  final TrackingStatus status;
   final Point location;
   final double distance;
   final List<String> devices;
@@ -17,31 +17,43 @@ class Tracking extends Equatable {
 
   Tracking({
     @required this.id,
-    @required this.state,
+    @required this.status,
     this.location,
     this.distance,
     this.devices,
     this.track,
-  }) : super([id, state, location, distance, devices, track]);
+  }) : super([id, status, location, distance, devices, track]);
 
   /// Factory constructor for creating a new `Tracking` instance
   factory Tracking.fromJson(Map<String, dynamic> json) => _$TrackingFromJson(json);
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$TrackingToJson(this);
+
+  /// Clone with given devices and state
+  Tracking cloneWith({List<String> devices, TrackingStatus status}) {
+    return Tracking(
+      id: this.id,
+      track: this.track,
+      location: this.location,
+      distance: this.distance,
+      status: status ?? this.status,
+      devices: devices ?? this.devices,
+    );
+  }
 }
 
-enum TrackingState { Created, Tracking, Paused, Ended }
+enum TrackingStatus { Created, Tracking, Paused, Ended }
 
-String translateTrackingState(TrackingState state) {
-  switch (state) {
-    case TrackingState.Created:
+String translateTrackingStatus(TrackingStatus status) {
+  switch (status) {
+    case TrackingStatus.Created:
       return "Opprettet";
-    case TrackingState.Paused:
+    case TrackingStatus.Paused:
       return "Pauset";
-    case TrackingState.Ended:
+    case TrackingStatus.Ended:
       return "Avsluttet";
     default:
-      return enumName(state);
+      return enumName(status);
   }
 }
