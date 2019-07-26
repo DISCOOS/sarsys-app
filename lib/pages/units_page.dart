@@ -121,12 +121,6 @@ class UnitsPageState extends State<UnitsPage> {
           ),
         ),
         secondaryActions: <Widget>[
-          IconSlideAction(
-            caption: 'VIS',
-            color: Theme.of(context).buttonColor,
-            icon: Icons.gps_fixed,
-            onTap: () => _jumpTo(context, tracking),
-          ),
           if (tracking?.location != null)
             IconSlideAction(
               caption: 'SPOR',
@@ -160,6 +154,7 @@ class UnitsPageState extends State<UnitsPage> {
           ),
         ],
       ),
+      onTap: () => _jumpTo(context, tracking),
     );
   }
 
