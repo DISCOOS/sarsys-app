@@ -352,9 +352,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
             maxChips: 5,
             initialValue: widget?.incident?.talkgroups,
             decoration: InputDecoration(
+              labelText: "Talegrupper",
               hintText: "Søk etter talegrupper",
               filled: true,
-              contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0),
+              contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
             ),
             findSuggestions: (String query) async {
               if (query.length != 0) {
