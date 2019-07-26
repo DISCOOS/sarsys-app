@@ -146,7 +146,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
     var data = _incidents.update(
       event.data.id,
-      (incident) => event.data,
+      (_) => event.data,
       ifAbsent: () => event.data,
     );
     return Future.value(data);

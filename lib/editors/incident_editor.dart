@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -28,18 +29,20 @@ class _IncidentEditorState extends State<IncidentEditor> {
   final _formKey = GlobalKey<FormBuilderState>();
   final _affiliations = ValueNotifier(<String>[]);
 
-  AppConfigBloc _bloc;
   int _currentStep = 0;
+  AppConfigBloc _configBloc;
+  IncidentBloc _incidentBloc;
 
   @override
   void initState() {
     super.initState();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _configBloc = BlocProvider.of<AppConfigBloc>(context);
+    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _init();
   }
 
   void _init() async {
-    await _bloc.fetch();
+    await _configBloc.fetch();
     var catalogs = await TalkGroupService().fetchCatalogs()
       ..sort();
     _affiliations.value = catalogs;
@@ -181,48 +184,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
       keyboardType: TextInputType.datetime,
       valueTransformer: (dt) => dt.toString(),
     );
-  }
-
-  void _submit(BuildContext context) {
-    if (_formKey.currentState.validate()) {
-      const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
-      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
-      final current = widget.incident.status;
-      var incident;
-      _formKey.currentState.save();
-      if (widget.incident == null) {
-        Navigator.pop(context, Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
-      } else {
-        incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
-        if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
-          _promptAndUpdate(
-            context,
-            "Bekreft kansellering",
-            "Dette vil stoppe alle sporinger og sette status til Kansellert",
-            incident,
-          );
-        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident.status) {
-          _promptAndUpdate(
-            context,
-            "Bekreft løsning",
-            "Dette vil stoppe alle sporinger og sette status til Løst",
-            incident,
-          );
-        } else {
-          Navigator.pop(context, incident);
-        }
-      }
-    } else {
-      // Show errors
-      setState(() {});
-    }
-  }
-
-  bool _promptAndUpdate(BuildContext context, String title, String message, Incident incident) {
-    prompt(context, title, message).then((proceed) {
-      if (proceed) Navigator.pop(context, incident);
-    });
-    return true;
   }
 
   Widget _buildNameField() {
@@ -411,7 +372,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         return buildDropDownField(
           attribute: 'affiliation',
           label: 'Tilhørighet',
-          initialValue: _bloc?.config?.affiliation ?? Defaults.affiliation,
+          initialValue: _configBloc?.config?.affiliation ?? Defaults.affiliation,
           items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Type må velges'),
@@ -419,5 +380,52 @@ class _IncidentEditorState extends State<IncidentEditor> {
         );
       },
     );
+  }
+
+  void _submit(BuildContext context) {
+    if (_formKey.currentState.validate()) {
+      const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
+      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
+      final current = widget.incident.status;
+      var incident;
+      _formKey.currentState.save();
+      if (widget.incident == null) {
+        _create(Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
+      } else {
+        incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
+        if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
+          prompt(
+            context,
+            "Bekreft kansellering",
+            "Dette vil stoppe alle sporinger og sette status til Kansellert",
+          ).then(
+            (proceed) => proceed ? _update(incident) : Navigator.pop(context),
+          );
+        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident.status) {
+          prompt(
+            context,
+            "Bekreft løsning",
+            "Dette vil stoppe alle sporinger og sette status til Løst",
+          ).then(
+            (proceed) => proceed ? _update(incident) : Navigator.pop(context),
+          );
+        } else {
+          _update(incident);
+        }
+      }
+    } else {
+      // Show errors
+      setState(() {});
+    }
+  }
+
+  void _create(Incident incident) {
+    _incidentBloc.create(incident);
+    Navigator.pop(context, incident);
+  }
+
+  void _update(Incident incident) {
+    _incidentBloc.update(incident);
+    Navigator.pop(context, incident);
   }
 }

@@ -17,9 +17,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
-import 'icon_layer.dart';
-import 'map_search_field.dart';
-import 'my_location.dart';
+import 'package:SarSys/map/icon_layer.dart';
+import 'package:SarSys/map/map_search_field.dart';
+import 'package:SarSys/map/my_location.dart';
 
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
 

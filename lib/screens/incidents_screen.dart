@@ -37,16 +37,10 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           body: _buildBody(bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              var incident = await showDialog(
-                context: context,
-                builder: (context) => IncidentEditor(),
-              );
-              if (incident != null) {
-                print("Incident $incident");
-                bloc.create(incident);
-              }
-            },
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => IncidentEditor(),
+            ),
             tooltip: 'Ny hendelse',
             child: Icon(Icons.add),
             elevation: 2.0,
@@ -215,15 +209,10 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             padding: EdgeInsets.only(left: 16.0, right: 16.0),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onPressed: isAuthorized
-                                ? () async {
-                                    var response = await showDialog(
+                                ? () => showDialog(
                                       context: context,
                                       builder: (context) => IncidentEditor(incident: incident),
-                                    );
-                                    if (response != null) {
-                                      bloc.update(response);
-                                    }
-                                  }
+                                    )
                                 : null,
                           ),
                         ],
