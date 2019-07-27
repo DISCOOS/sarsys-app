@@ -20,10 +20,12 @@ ios_certificate = "XKXT735ZZ4"
 
 .PHONY: \
 	doctor toolchain configure build install clean \
+	model-build \
 	android-configure android-build android-install android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 .SILENT: \
 	doctor toolchain configure build install clean \
+	model-build \
 	android-configure android-build android-install android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 
@@ -121,8 +123,13 @@ ios-configure:
 		else echo; echo "[!] iOS configuration aborted."; fi \
 	else echo; echo "[!] Initialize iOS configuration aborted."; fi \
 
-build: android-build ios-build
+build: model-build android-build ios-build
 	echo "[✓] Flutter build complete."
+
+model-build:
+	echo "Generating models..."; \
+	flutter pub run build_runner build --delete-conflicting-outputs; \
+	echo "[✓] Generating models complete."
 
 android-build:
 	test ! -f "$(storeFile)" && \
