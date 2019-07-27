@@ -6,6 +6,7 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -96,65 +97,120 @@ class UnitsPageState extends State<UnitsPage> {
     }
     var unit = units[index];
     var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
-    return GestureDetector(
-      child: Slidable(
-        actionPane: SlidableScrollActionPane(),
-        actionExtentRatio: 0.2,
-        child: Container(
-          color: Colors.white,
-          child: ListTile(
-            key: ObjectKey(unit.id),
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Icon(Icons.people),
-              foregroundColor: Colors.white,
-            ),
-            title: Text(unit.name),
-            subtitle: Text(toUTM(tracking?.location, "Ingen posisjon")),
-            trailing: RotatedBox(
-              quarterTurns: 1,
-              child: Icon(
-                Icons.drag_handle,
-                color: Colors.grey.withOpacity(0.2),
-              ),
+    var status = tracking.status ?? TrackingStatus.None;
+    return Slidable(
+      actionPane: SlidableScrollActionPane(),
+      actionExtentRatio: 0.2,
+      child: Container(
+        color: Colors.white,
+        child: ListTile(
+          key: ObjectKey(unit.id),
+          leading: CircleAvatar(
+            backgroundColor: _toTrackingStatusColor(context, status),
+            child: Icon(Icons.people),
+            foregroundColor: Colors.white,
+          ),
+          title: Text(unit.name),
+          subtitle: Text(toUTM(tracking?.location, "Ingen posisjon")),
+          dense: true,
+          trailing: RotatedBox(
+            quarterTurns: 1,
+            child: Icon(
+              Icons.drag_handle,
+              color: Colors.grey.withOpacity(0.2),
             ),
           ),
+          onTap: () => _jumpTo(context, tracking),
         ),
-        secondaryActions: <Widget>[
-          if (tracking?.location != null)
-            IconSlideAction(
-              caption: 'SPOR',
-              color: Theme.of(context).buttonColor,
-              icon: Icons.play_arrow,
-              onTap: () => {},
-            ),
-          IconSlideAction(
-            caption: 'ENDRE',
-            color: Theme.of(context).buttonColor,
-            icon: Icons.more_horiz,
-            onTap: () => showDialog(
-              context: context,
-              builder: (context) => UnitEditor(unit: unit),
-            ),
-          ),
-          IconSlideAction(
-            caption: 'OPPLØS',
-            color: Colors.red,
-            icon: Icons.delete,
-            onTap: () async {
-              var response = await prompt(
-                context,
-                "Oppløs ${unit.name}",
-                "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
-              );
-              if (response) {
-                _unitBloc.update(unit.cloneWith(status: UnitStatus.Retired));
-              }
-            },
-          ),
-        ],
       ),
-      onTap: () => _jumpTo(context, tracking),
+      secondaryActions: <Widget>[
+        if (tracking?.location != null) _buildTrackingAction(context, status, tracking),
+        _buildEditAction(context, unit),
+        _buildCloseAction(context, unit),
+      ],
+    );
+  }
+
+  IconSlideAction _buildTrackingAction(BuildContext context, TrackingStatus status, Tracking tracking) {
+    return IconSlideAction(
+      caption: 'SPORING',
+      color: _toTrackingStatusColor(context, status),
+      icon: _toTrackingIcon(context, status),
+      onTap: () => _transition(context, tracking),
+    );
+  }
+
+  IconData _toTrackingIcon(BuildContext context, TrackingStatus status) {
+    switch (status) {
+      case TrackingStatus.Created:
+      case TrackingStatus.Paused:
+      case TrackingStatus.Closed:
+        return Icons.play_arrow;
+      case TrackingStatus.Tracking:
+      default:
+        return Icons.pause;
+    }
+  }
+
+  Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {
+    switch (status) {
+      case TrackingStatus.None:
+        return Colors.grey;
+      case TrackingStatus.Created:
+        return Theme.of(context).buttonColor;
+      case TrackingStatus.Tracking:
+        return Colors.green;
+      case TrackingStatus.Paused:
+        return Colors.orange;
+      case TrackingStatus.Closed:
+        return Colors.red;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
+  _transition(BuildContext context, Tracking tracking) {
+    switch (tracking.status) {
+      case TrackingStatus.Created:
+      case TrackingStatus.Paused:
+      case TrackingStatus.Closed:
+        _trackingBloc.update(tracking, status: TrackingStatus.Tracking);
+        break;
+      case TrackingStatus.Tracking:
+        _trackingBloc.update(tracking, status: TrackingStatus.Paused);
+        break;
+      default:
+        break;
+    }
+  }
+
+  IconSlideAction _buildEditAction(BuildContext context, Unit unit) {
+    return IconSlideAction(
+      caption: 'ENDRE',
+      color: Theme.of(context).buttonColor,
+      icon: Icons.more_horiz,
+      onTap: () => showDialog(
+        context: context,
+        builder: (context) => UnitEditor(unit: unit),
+      ),
+    );
+  }
+
+  IconSlideAction _buildCloseAction(BuildContext context, Unit unit) {
+    return IconSlideAction(
+      caption: 'OPPLØS',
+      color: Colors.red,
+      icon: Icons.delete,
+      onTap: () async {
+        var response = await prompt(
+          context,
+          "Oppløs ${unit.name}",
+          "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
+        );
+        if (response) {
+          _unitBloc.update(unit.cloneWith(status: UnitStatus.Retired));
+        }
+      },
     );
   }
 

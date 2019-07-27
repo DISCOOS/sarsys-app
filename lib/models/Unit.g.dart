@@ -56,6 +56,5 @@ const _$UnitTypeEnumMap = <UnitType, dynamic>{
 const _$UnitStatusEnumMap = <UnitStatus, dynamic>{
   UnitStatus.Mobilized: 'Mobilized',
   UnitStatus.Deployed: 'Deployed',
-  UnitStatus.Paused: 'Paused',
   UnitStatus.Retired: 'Retired'
 };

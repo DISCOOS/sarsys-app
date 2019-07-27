@@ -43,15 +43,19 @@ class Tracking extends Equatable {
   }
 }
 
-enum TrackingStatus { Created, Tracking, Paused, Ended }
+enum TrackingStatus { None, Created, Tracking, Paused, Closed }
 
 String translateTrackingStatus(TrackingStatus status) {
   switch (status) {
+    case TrackingStatus.None:
+      return "Ingen";
     case TrackingStatus.Created:
       return "Opprettet";
+    case TrackingStatus.Tracking:
+      return "Sporer";
     case TrackingStatus.Paused:
       return "Pauset";
-    case TrackingStatus.Ended:
+    case TrackingStatus.Closed:
       return "Avsluttet";
     default:
       return enumName(status);

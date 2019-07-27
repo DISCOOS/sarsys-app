@@ -56,7 +56,7 @@ class Unit extends Equatable {
   }
 }
 
-enum UnitStatus { Mobilized, Deployed, Paused, Retired }
+enum UnitStatus { Mobilized, Deployed, Retired }
 
 enum UnitType { Team, K9, Boat, Vehicle, Snowmobile, ATV, Other }
 
@@ -83,8 +83,6 @@ String translateUnitStatus(UnitStatus status) {
       return "Mobilisert";
     case UnitStatus.Deployed:
       return "Deployert";
-    case UnitStatus.Paused:
-      return "Pauset";
     case UnitStatus.Retired:
       return "Oppløst";
     default:

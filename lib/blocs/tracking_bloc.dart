@@ -80,7 +80,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   TrackingBloc update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
     dispatch(UpdateTracking(tracking.cloneWith(
       status: status,
-      devices: devices.map((device) => device.id).toList(),
+      devices: devices == null ? tracking.devices : devices.map((device) => device.id).toList(),
     )));
     return this;
   }
