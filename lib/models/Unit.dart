@@ -68,6 +68,8 @@ String translateUnitType(UnitType type) {
       return "Hund";
     case UnitType.Vehicle:
       return "Kjøretøy";
+    case UnitType.Boat:
+      return "Båt";
     case UnitType.Snowmobile:
       return "Snøscooter";
     case UnitType.Other:
