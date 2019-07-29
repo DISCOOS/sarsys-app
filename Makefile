@@ -123,10 +123,10 @@ ios-configure:
 		else echo; echo "[!] iOS configuration aborted."; fi \
 	else echo; echo "[!] Initialize iOS configuration aborted."; fi \
 
-build: model-build android-build ios-build
+build: models android-build ios-build
 	echo "[✓] Flutter build complete."
 
-model-build:
+models:
 	echo "Generating models..."; \
 	flutter pub run build_runner build --delete-conflicting-outputs; \
 	echo "[✓] Generating models complete."
