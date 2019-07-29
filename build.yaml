@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          # Force generation of toJson methods on nested objects. Required for stable fromJson(toJson()) round-trip.
+          explicit_to_json: true
