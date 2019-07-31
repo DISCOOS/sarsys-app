@@ -1,28 +1,35 @@
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart' hide Path;
 
+typedef IconBuilder = Icon Function(BuildContext context, int index);
+
 class IconLayerOptions extends LayerOptions {
-  List<LatLng> points;
+  Iterable<LatLng> points;
   double bearing;
   double opacity;
   Icon icon;
-  Anchor anchor;
+  Text text;
+  bool showBadge;
+  AnchorAlign align;
+  IconBuilder builder;
 
   IconLayerOptions(
-    this.points,
-    this.icon, {
-    Stream<void> rebuild,
+    this.points, {
+    this.icon,
+    this.builder,
     this.bearing,
+    this.showBadge = false,
     this.opacity = 1.0,
-    AnchorAlign align = AnchorAlign.center,
-  })  : this.anchor = Anchor.forPos(AnchorPos.align(align), icon.size, icon.size),
-        super(rebuild: rebuild);
+    this.align = AnchorAlign.center,
+    Stream<void> rebuild,
+  }) : super(rebuild: rebuild);
 }
 
 class IconLayer implements MapPlugin {
@@ -33,26 +40,33 @@ class IconLayer implements MapPlugin {
 
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
-    final params = options as IconLayerOptions;
-    return StreamBuilder<void>(
-      stream: stream, // a Stream<int> or null
-      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-        List<Widget> icons = params.points
-            .where((point) => map.bounds.contains(point))
-            .map((point) => _buildIcon(map, params, point))
-            .toList();
-        return icons.isEmpty
-            ? Container()
-            : Stack(
-                children: icons,
-              );
-      },
-    );
+    return stream == null
+        ? Builder(
+            builder: (context) => _buildLayer(context, options, map),
+          )
+        : StreamBuilder<void>(
+            stream: stream, // a Stream<int> or null
+            builder: (context, snapshot) => _buildLayer(context, options, map),
+          );
   }
 
-  Widget _buildIcon(MapState map, IconLayerOptions params, LatLng point) {
-    var size = params.icon.size;
-    var anchor = params.anchor;
+  Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {
+    int index = 0;
+    List<Widget> icons = params.points
+        .where((point) => map.bounds.contains(point))
+        .map((point) => _buildIcon(context, map, params, point, index++))
+        .toList();
+    return icons.isEmpty
+        ? Container()
+        : Stack(
+            children: icons,
+          );
+  }
+
+  Widget _buildIcon(BuildContext context, MapState map, IconLayerOptions params, LatLng point, int index) {
+    var icon = params.icon ?? params.builder(context, index);
+    var size = icon.size;
+    var anchor = Anchor.forPos(AnchorPos.align(params.align), icon.size, icon.size);
     var pos = map.project(point);
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
@@ -69,7 +83,17 @@ class IconLayer implements MapPlugin {
           Container(
             child: Opacity(
               opacity: params.opacity,
-              child: params.icon,
+              child: Badge(
+                child: icon,
+                badgeColor: Colors.white70,
+                toAnimate: false,
+                showBadge: params.showBadge,
+                position: BadgePosition.bottomRight(),
+                badgeContent: Text(
+                  '${index + 1}',
+                  style: TextStyle(fontSize: 10),
+                ),
+              ),
             ),
           ),
           if (params.bearing != null)
