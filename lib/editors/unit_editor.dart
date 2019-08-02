@@ -24,19 +24,25 @@ class _UnitEditorState extends State<UnitEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
 
-  UnitBloc unitBloc;
-  DeviceBloc deviceBloc;
-  TrackingBloc trackingBloc;
-  TextEditingController _nameController;
+  String _editedName;
+  UnitBloc _unitBloc;
+  DeviceBloc _deviceBloc;
+  TrackingBloc _trackingBloc;
+  TextEditingController _numberController;
+  TextEditingController _callsignController;
 
   @override
   void initState() {
     super.initState();
-    unitBloc = BlocProvider.of<UnitBloc>(context);
-    deviceBloc = BlocProvider.of<DeviceBloc>(context);
-    trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _nameController = TextEditingController(
-        text: widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${unitBloc.units.length + 1}");
+    _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
+    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    _numberController = TextEditingController(
+      text: (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString(),
+    );
+    _callsignController = TextEditingController(
+      text: (widget?.unit?.callsign ?? "").toString(),
+    );
   }
 
   @override
@@ -69,7 +75,26 @@ class _UnitEditorState extends State<UnitEditor> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildNameField(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 6,
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: "Navn",
+                          filled: true,
+                          enabled: false,
+                        ),
+                        child: Text(_editedName ?? widget?.unit?.name),
+                      ),
+                    ),
+                    SizedBox(width: SPACING),
+                    Expanded(flex: 6, child: _buildNumberField()),
+                  ],
+                ),
+                SizedBox(height: SPACING),
+                _buildCallsignField(),
                 SizedBox(height: SPACING),
                 _buildTypeField(),
                 SizedBox(height: SPACING),
@@ -84,27 +109,69 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  FormBuilderTextField _buildNameField() {
+  FormBuilderTextField _buildNumberField() {
     return FormBuilderTextField(
       maxLines: 1,
-      autofocus: true,
-      attribute: 'name',
-      controller: _nameController,
-      initialValue: widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${unitBloc.units.length + 1}",
+      attribute: 'number',
+      controller: _numberController,
+      initialValue: (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString(),
+      onChanged: (_) => _onEdit(),
       decoration: InputDecoration(
-        hintText: 'Navn',
+        hintText: 'Skriv inn',
         filled: true,
+        labelText: 'Nummer',
         suffixIcon: IconButton(
             icon: Icon(Icons.cancel),
             onPressed: () {
-              _nameController.text =
-                  widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${unitBloc.units.length + 1}";
+              _numberController.text = (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString();
             }),
       ),
       validators: [
-        FormBuilderValidators.required(errorText: 'Navn må fylles inn'),
+        FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
+        FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
+        (value) {
+          // TODO: Check if number is unique
+          return null;
+        },
+      ],
+      valueTransformer: (value) => int.parse(value),
+    );
+  }
+
+  FormBuilderTextField _buildCallsignField() {
+    return FormBuilderTextField(
+      maxLines: 1,
+      attribute: 'callsign',
+      controller: _callsignController,
+      initialValue: (widget?.unit?.callsign ?? "").toString(),
+      decoration: InputDecoration(
+        hintText: 'Skriv inn',
+        filled: true,
+        labelText: 'Kallesignal',
+        suffixIcon: IconButton(
+            icon: Icon(Icons.cancel),
+            onPressed: () {
+              _callsignController.text = (widget?.unit?.callsign ?? "").toString();
+            }),
+      ),
+      validators: [
+        FormBuilderValidators.required(errorText: 'Kallesignal må fylles inn'),
+        FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
+        (value) {
+          // TODO: Check if callsign is unique
+          return null;
+        },
       ],
     );
+  }
+
+  void _onEdit() {
+    return setState(() {
+      _formKey.currentState.save();
+      var unit = Unit.fromJson(_formKey.currentState.value);
+      _editedName = "${translateUnitType(unit.type)} ${unit.number}";
+      print("edit: $unit");
+    });
   }
 
   Widget _buildTypeField() {
@@ -119,6 +186,7 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
+      onChanged: (_) => _onEdit(),
     );
   }
 
@@ -139,7 +207,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
-    final devices = trackingBloc.devices(widget?.unit?.tracking);
+    final devices = _trackingBloc.devices(widget?.unit?.tracking);
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
@@ -155,10 +223,13 @@ class _UnitEditorState extends State<UnitEditor> {
         findSuggestions: (String query) async {
           if (query.length != 0) {
             var lowercaseQuery = query.toLowerCase();
-            return deviceBloc.devices.values.where((device) {
-              return device.number.toLowerCase().contains(lowercaseQuery) ||
-                  device.type.toString().toLowerCase().contains(lowercaseQuery);
-            }).toList(growable: false);
+            return _deviceBloc.devices.values
+                .where((device) {
+                  return device.number.toLowerCase().contains(lowercaseQuery) ||
+                      device.type.toString().toLowerCase().contains(lowercaseQuery);
+                })
+                .take(5)
+                .toList(growable: false);
           } else {
             return const <Device>[];
           }
@@ -202,15 +273,15 @@ class _UnitEditorState extends State<UnitEditor> {
 
   UnitEditorResult _apply(Unit unit, List<Device> devices) {
     if (widget.unit == null) {
-      unitBloc.create(unit);
+      _unitBloc.create(unit);
     } else {
-      unitBloc.update(unit);
+      _unitBloc.update(unit);
     }
     if (unit.tracking == null) {
-      trackingBloc.create(unit, devices);
-    } else if (trackingBloc.tracks.containsKey(unit.tracking)) {
-      var tracking = trackingBloc.tracks[unit.tracking];
-      trackingBloc.update(tracking, devices: devices);
+      _trackingBloc.create(unit, devices);
+    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
+      var tracking = _trackingBloc.tracks[unit.tracking];
+      _trackingBloc.update(tracking, devices: devices);
     }
     return UnitEditorResult(unit, devices);
   }

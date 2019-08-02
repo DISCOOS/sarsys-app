@@ -2,7 +2,9 @@ import 'dart:collection';
 
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/tracking_service.dart';
@@ -14,15 +16,19 @@ typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   final TrackingService service;
+  final UnitBloc unitBloc;
   final DeviceBloc deviceBloc;
   final IncidentBloc incidentBloc;
 
   final LinkedHashMap<String, Tracking> _tracks = LinkedHashMap();
 
-  TrackingBloc(this.service, this.incidentBloc, this.deviceBloc) {
-    assert(this.service != null, "service can not be null");
-    assert(this.incidentBloc != null, "incidentBloc can not be null");
+  TrackingBloc(this.service, this.incidentBloc, this.unitBloc, this.deviceBloc) {
+    assert(service != null, "service can not be null");
+    assert(incidentBloc != null, "incidentBloc can not be null");
+    assert(unitBloc != null, "unitBloc can not be null");
+    assert(deviceBloc != null, "deviceBloc can not be null");
     incidentBloc.state.listen(_init);
+    service.messages.listen((event) => dispatch(HandleMessage(event)));
   }
 
   void _init(IncidentState state) {
@@ -39,6 +45,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   /// Get tracks
   Map<String, Tracking> get tracks => UnmodifiableMapView<String, Tracking>(_tracks);
+
+  /// Get units being tracked
+  Map<String, Unit> get units => UnmodifiableMapView(
+        Map.fromEntries(
+          unitBloc.units.entries.where((entry) => isTracking(entry.value)),
+        ),
+      );
 
   /// Test if unit is being tracked
   bool isTracking(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
@@ -102,6 +115,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     } else if (command is ClearTracks) {
       List<Tracking> tracks = _clear(command);
       yield TracksCleared(tracks);
+    } else if (command is HandleMessage) {
+      yield _process(command.data);
     } else if (command is RaiseTrackingError) {
       yield command.data;
     } else {
@@ -126,6 +141,26 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       () => tracking,
     );
     return Future.value(tracking);
+  }
+
+  TrackingState _process(TrackingMessage event) {
+    switch (event.type) {
+      case TrackingMessageType.TrackingChanged:
+        var tracking = Tracking.fromJson(event.json);
+        if (_tracks.containsKey(tracking.id)) {
+          return TrackingUpdated(_tracks.update(tracking.id, (_) => tracking));
+        }
+        break;
+      case TrackingMessageType.LocationChanged:
+        var id = event.json['id'];
+        if (_tracks.containsKey(id)) {
+          return TrackingUpdated(
+            _tracks.update(id, (tracking) => tracking.cloneWith(location: Point.fromJson(event.json))),
+          );
+        }
+        break;
+    }
+    return TrackingError("Tracking message not recognized: $event");
   }
 
   Future<Tracking> _update(UpdateTracking event) async {
@@ -200,6 +235,13 @@ class UpdateTracking extends TrackingCommand<Tracking> {
 
   @override
   String toString() => 'UpdateTracking';
+}
+
+class HandleMessage extends TrackingCommand<TrackingMessage> {
+  HandleMessage(TrackingMessage data) : super(data);
+
+  @override
+  String toString() => 'HandleMessage';
 }
 
 class DeleteTracking extends TrackingCommand<Tracking> {

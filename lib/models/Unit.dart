@@ -8,18 +8,22 @@ part 'Unit.g.dart';
 @JsonSerializable()
 class Unit extends Equatable {
   final String id;
+  final int number;
   final UnitType type;
   final UnitStatus status;
-  final String name;
+  final String callsign;
   final String tracking;
+
+  String get name => "${translateUnitType(type)} $number";
 
   Unit({
     @required this.id,
     @required this.type,
+    @required this.number,
     @required this.status,
-    @required this.name,
+    this.callsign,
     this.tracking,
-  }) : super([id, type, name, tracking]);
+  }) : super([id, type, number, tracking]);
 
   /// Factory constructor for creating a new `Unit` instance
   factory Unit.fromJson(Map<String, dynamic> json) => _$UnitFromJson(json);
@@ -48,8 +52,8 @@ class Unit extends Equatable {
   }) {
     return Unit(
       id: id ?? this.id,
-      name: name ?? this.name,
       type: type ?? this.type,
+      number: number ?? this.number,
       status: status ?? this.status,
       tracking: tracking ?? this.tracking,
     );

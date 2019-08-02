@@ -36,7 +36,7 @@ class MyLocation extends IconLayer {
     return super.createLayer(
       IconLayerOptions(
         [params.point],
-        Icon(
+        icon: Icon(
           Icons.my_location,
           size: params.size,
           color: params.color,

@@ -37,7 +37,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   int get count => _units.length;
 
   /// Get units
-  List<Unit> get units => UnmodifiableListView<Unit>(_units.values);
+  Map<String, Unit> get units => UnmodifiableMapView<String, Unit>(_units);
 
   /// Create given unit
   UnitBloc create(Unit unit) {

@@ -20,7 +20,7 @@ Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'id': instance.id,
       'type': _$DeviceTypeEnumMap[instance.type],
       'number': instance.number,
-      'location': instance.location
+      'location': instance.location?.toJson()
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

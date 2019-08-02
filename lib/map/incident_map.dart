@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
@@ -320,7 +321,7 @@ class _IncidentMapState extends State<IncidentMap> {
   IconLayerOptions _buildPoiOptions(List<Point> points) {
     return IconLayerOptions(
       points.map((point) => toLatLng(point)).toList(),
-      Icon(
+      icon: Icon(
         Icons.location_on,
         size: 30,
         color: Colors.red,
@@ -329,10 +330,11 @@ class _IncidentMapState extends State<IncidentMap> {
   }
 
   TrackingLayerOptions _buildTrackingOptions() {
-    final bloc = BlocProvider.of<TrackingBloc>(context);
+    final unitBloc = BlocProvider.of<UnitBloc>(context);
+    final trackingBloc = BlocProvider.of<TrackingBloc>(context);
     return TrackingLayerOptions(
-      bloc.tracks.values.toList(),
-      color: Colors.red[800].withOpacity(0.9),
+      bloc: trackingBloc,
+      rebuild: trackingBloc.state,
     );
   }
 

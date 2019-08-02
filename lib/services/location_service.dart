@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
-import 'package:sqflite/sqflite.dart';
 
 class LocationService {
   static final _singleton = LocationService._internal();

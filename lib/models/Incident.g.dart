@@ -42,12 +42,12 @@ Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
       'status': _$IncidentStatusEnumMap[instance.status],
       'occurred': instance.occurred?.toIso8601String(),
       'justification': instance.justification,
-      'talkgroups': instance.talkgroups,
-      'ipp': instance.ipp,
-      'passcodes': instance.passcodes,
+      'talkgroups': instance.talkgroups?.map((e) => e?.toJson())?.toList(),
+      'ipp': instance.ipp?.toJson(),
+      'passcodes': instance.passcodes?.toJson(),
       'reference': instance.reference,
-      'created': instance.created,
-      'changed': instance.changed
+      'created': instance.created?.toJson(),
+      'changed': instance.changed?.toJson()
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

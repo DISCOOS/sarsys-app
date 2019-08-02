@@ -57,7 +57,7 @@ class UnitsPageState extends State<UnitsPage> {
               builder: (context, snapshot) {
                 var units = _unitBloc.units.isEmpty || snapshot.hasError
                     ? []
-                    : _unitBloc.units.where((unit) => _filter.contains(unit.status)).toList();
+                    : _unitBloc.units.values.where((unit) => _filter.contains(unit.status)).toList();
 
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
@@ -135,12 +135,12 @@ class UnitsPageState extends State<UnitsPage> {
     return IconSlideAction(
       caption: 'SPORING',
       color: _toTrackingStatusColor(context, status),
-      icon: _toTrackingIcon(context, status),
+      icon: _toTrackingIconData(context, status),
       onTap: () => _transition(context, tracking),
     );
   }
 
-  IconData _toTrackingIcon(BuildContext context, TrackingStatus status) {
+  IconData _toTrackingIconData(BuildContext context, TrackingStatus status) {
     switch (status) {
       case TrackingStatus.Created:
       case TrackingStatus.Paused:

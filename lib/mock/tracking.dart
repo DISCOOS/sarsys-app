@@ -37,34 +37,18 @@ class TracksBuilder {
 }
 
 class TrackingServiceMock extends Mock implements TrackingService {
-  static TrackingService build(final IncidentBloc bloc, final count) {
-    final TrackingServiceMock mock = TrackingServiceMock();
+  final Timer simulator;
+
+  TrackingServiceMock._internal(this.simulator);
+
+  factory TrackingServiceMock.build(final IncidentBloc bloc, final count) {
     final rnd = math.Random();
     final Map<String, Tracking> tracks = {};
     final Map<String, _TrackSimulation> simulations = {};
-    final simulator = Timer.periodic(Duration(seconds: 2), (timer) {
-      simulations.forEach((id, simulation) {
-        if (tracks.containsKey(id)) {
-          var tracking = tracks[id];
-          if (TrackingStatus.Tracking == tracking.status) {
-            var location = simulation.progress();
-            tracking = Tracking(
-              id: tracking.id,
-              location: location,
-              status: tracking.status,
-              devices: tracking.devices,
-              distance: tracking.distance,
-              track: tracking.track,
-            );
-            tracks.update(
-              id,
-              (_) => tracking,
-              ifAbsent: () => tracking,
-            );
-          }
-        }
-      });
-    });
+    final StreamController<TrackingMessage> controller = StreamController.broadcast();
+    final simulator = Timer.periodic(Duration(seconds: 2), (_) => _progress(tracks, simulations, controller));
+    final mock = TrackingServiceMock._internal(simulator);
+    when(mock.messages).thenAnswer((_) => controller.stream);
     when(mock.fetch(any)).thenAnswer((_) async {
       if (tracks.isEmpty) {
         final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
@@ -117,29 +101,56 @@ class TrackingServiceMock extends Mock implements TrackingService {
   static void _simulate(rnd, Map<String, _TrackSimulation> simulations, Tracking tracking) {
     if (TrackingStatus.Tracking == tracking.status) {
       final simulation = _TrackSimulation(
-        rnd: rnd,
-        fraction: 0.02,
         id: tracking.id,
         location: tracking.location,
         steps: 16,
+        delta: TracksBuilder.nextDouble(rnd, 0.02),
       );
       simulations.update(tracking.id, (_) => simulation, ifAbsent: () => simulation);
     } else {
       simulations.remove(tracking.id);
     }
   }
+
+  static void _progress(
+    Map<String, Tracking> tracks,
+    Map<String, _TrackSimulation> simulations,
+    StreamController<TrackingMessage> controller,
+  ) {
+    simulations.forEach((id, simulation) {
+      if (tracks.containsKey(id)) {
+        var tracking = tracks[id];
+        if (TrackingStatus.Tracking == tracking.status) {
+          var location = simulation.progress();
+          tracking = Tracking(
+            id: tracking.id,
+            location: location,
+            status: tracking.status,
+            devices: tracking.devices,
+            distance: tracking.distance,
+            track: tracking.track,
+          );
+          tracks.update(
+            id,
+            (_) => tracking,
+            ifAbsent: () => tracking,
+          );
+          controller.add(TrackingMessage(TrackingMessageType.TrackingChanged, tracking.toJson()));
+        }
+      }
+    });
+  }
 }
 
 class _TrackSimulation {
   final String id;
   final int steps;
-  final double fraction;
-  final math.Random rnd;
+  final double delta;
 
   int current;
   Point location;
 
-  _TrackSimulation({this.rnd, this.fraction, this.id, this.location, this.steps}) : current = 0;
+  _TrackSimulation({this.delta, this.id, this.location, this.steps}) : current = 0;
 
   Point progress() {
     var leg = ((current / 4.0) % 4 + 1).toInt();
@@ -147,24 +158,24 @@ class _TrackSimulation {
       case 1:
         location = Point.now(
           location.lat,
-          location.lon + TracksBuilder.nextDouble(rnd, fraction, negative: false),
+          location.lon + delta / steps,
         );
         break;
       case 2:
         location = Point.now(
-          location.lat - TracksBuilder.nextDouble(rnd, fraction, negative: false),
+          location.lat - delta / steps,
           location.lon,
         );
         break;
       case 3:
         location = Point.now(
           location.lat,
-          location.lon - TracksBuilder.nextDouble(rnd, fraction, negative: false),
+          location.lon - delta / steps,
         );
         break;
       case 4:
         location = Point.now(
-          location.lat + TracksBuilder.nextDouble(rnd, fraction, negative: false),
+          location.lat + delta / steps,
           location.lon,
         );
         break;

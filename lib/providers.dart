@@ -57,36 +57,39 @@ class Providers {
 
   /// Create providers for mocking
   factory Providers.build(Client client, {bool mock = false, int units = 15, int devices = 30}) {
-    final baseUrl = Defaults.baseUrl;
+    final baseWsUrl = Defaults.baseWsUrl;
+    final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
     final AppConfigService configService = !mock
-        ? AppConfigService(assetConfig, '$baseUrl/api/app-config', client)
-        : AppConfigServiceMock.build(assetConfig, '$baseUrl/api', client);
+        ? AppConfigService(assetConfig, '$baseRestUrl/api/app-config', client)
+        : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final UserService userService = !mock ? UserService('$baseUrl/auth/login', client) : UserServiceMock.buildAny();
+    final UserService userService = !mock ? UserService('$baseRestUrl/auth/login', client) : UserServiceMock.buildAny();
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service
-    final IncidentService incidentService =
-        !mock ? IncidentService('$baseUrl/api/incidents', client) : IncidentServiceMock.build(userService, 2, "T123");
+    final IncidentService incidentService = !mock
+        ? IncidentService('$baseRestUrl/api/incidents', client)
+        : IncidentServiceMock.build(userService, 2, "T123");
     final IncidentBloc incidentBloc = IncidentBloc(incidentService, userBloc);
 
     // Configure Unit service
     final UnitService unitService =
-        !mock ? UnitService('$baseUrl/api/incidents', client) : UnitServiceMock.build(units);
+        !mock ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(units);
     final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
 
     // Configure Device service
     final DeviceService deviceService =
-        !mock ? DeviceService('$baseUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, devices);
+        !mock ? DeviceService('$baseRestUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, devices);
     final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
 
     // Configure Tracking service
-    final TrackingService trackingService =
-        !mock ? TrackingService('$baseUrl/api/incidents', client) : TrackingServiceMock.build(incidentBloc, devices);
-    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, deviceBloc);
+    final TrackingService trackingService = !mock
+        ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
+        : TrackingServiceMock.build(incidentBloc, devices);
+    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, unitBloc, deviceBloc);
 
     return Providers._internal(
       configBloc,
@@ -102,5 +105,9 @@ class Providers {
     await configProvider.bloc.fetch();
     await userProvider.bloc.init();
     return this;
+  }
+
+  void dispose() {
+    trackingProvider.bloc.dispose();
   }
 }

@@ -3,10 +3,16 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:http/http.dart' show Client;
 
 class TrackingService {
-  final String url;
+  final String wsUrl;
+  final String restUrl;
   final Client client;
 
-  TrackingService(this.url, this.client);
+  final StreamController _controller = StreamController.broadcast();
+
+  TrackingService(this.restUrl, this.wsUrl, this.client);
+
+  /// Get stream of tracking messages
+  Stream<TrackingMessage> get messages => _controller.stream;
 
   /// GET ../api/incident/{incidentId}/tracking
   Future<List<Tracking>> fetch(incidentId) async {
@@ -23,4 +29,16 @@ class TrackingService {
     // TODO: Implement update tracking
     throw "Not implemented";
   }
+
+  void dispose() {
+    _controller.close();
+  }
+}
+
+enum TrackingMessageType { TrackingChanged, LocationChanged }
+
+class TrackingMessage {
+  final TrackingMessageType type;
+  final Map<String, dynamic> json;
+  TrackingMessage(this.type, this.json);
 }

@@ -24,10 +24,10 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
       'id': instance.id,
       'status': _$TrackingStatusEnumMap[instance.status],
-      'location': instance.location,
+      'location': instance.location?.toJson(),
       'distance': instance.distance,
       'devices': instance.devices,
-      'track': instance.track
+      'track': instance.track?.map((e) => e?.toJson())?.toList()
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

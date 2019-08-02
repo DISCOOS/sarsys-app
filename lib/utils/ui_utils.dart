@@ -35,6 +35,7 @@ Widget buildDropDownField<T>({
   @required T initialValue,
   @required List<DropdownMenuItem<T>> items,
   @required List<FormFieldValidator> validators,
+  ValueChanged<T> onChanged,
 }) =>
     FormBuilderCustomField(
       attribute: attribute,
@@ -45,6 +46,7 @@ Widget buildDropDownField<T>({
           field: field,
           label: label,
           items: items,
+          onChanged: onChanged,
         ),
       ),
       validators: validators,
@@ -54,6 +56,7 @@ Widget buildDropdown<T>({
   @required FormFieldState<T> field,
   @required String label,
   @required List<DropdownMenuItem<T>> items,
+  ValueChanged<T> onChanged,
 }) =>
     InputDecorator(
       decoration: InputDecoration(
@@ -70,6 +73,7 @@ Widget buildDropdown<T>({
             isDense: true,
             onChanged: (T newValue) {
               field.didChange(newValue);
+              if (onChanged != null) onChanged(newValue);
             },
             items: items,
           ),
