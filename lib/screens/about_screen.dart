@@ -57,8 +57,12 @@ class _AboutScreenState extends State<AboutScreen> {
           subtitle: Text(data.buildNumber),
         ),
         ListTile(
-          title: Text("API"),
-          subtitle: Text(Defaults.baseUrl),
+          title: Text("REST API"),
+          subtitle: Text(Defaults.baseRestUrl),
+        ),
+        ListTile(
+          title: Text("Websocket API"),
+          subtitle: Text(Defaults.baseWsUrl),
         ),
       ],
     );
