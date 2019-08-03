@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
+import 'package:SarSys/utils/map_utils.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -120,7 +121,7 @@ class UnitsPageState extends State<UnitsPage> {
               color: Colors.grey.withOpacity(0.2),
             ),
           ),
-          onTap: () => _jumpTo(context, tracking),
+          onTap: () => jumpToPoint(context, tracking?.location),
         ),
       ),
       secondaryActions: <Widget>[
@@ -212,12 +213,6 @@ class UnitsPageState extends State<UnitsPage> {
         }
       },
     );
-  }
-
-  void _jumpTo(BuildContext context, Tracking tracking) {
-    if (tracking?.location != null) {
-      Navigator.pushReplacementNamed(context, "map", arguments: toLatLng(tracking.location));
-    }
   }
 
   void showFilterSheet(context) {

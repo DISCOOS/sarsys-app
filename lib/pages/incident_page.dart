@@ -5,6 +5,7 @@ import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/utils/map_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -175,7 +176,10 @@ class _IncidentPageState extends State<IncidentPage> {
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("IPP", toUTM(incident.ipp), "", valueStyle, unitStyle, unitStyle),
+          child: GestureDetector(
+            child: _buildValueTile("IPP", toUTM(incident.ipp), "", valueStyle, unitStyle, unitStyle),
+            onTap: () => jumpToPoint(context, incident?.ipp),
+          ),
         ),
       ],
     );

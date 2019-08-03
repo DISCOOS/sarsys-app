@@ -1,27 +1,33 @@
 import 'dart:ui' as ui;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+
+typedef MessageCallback = void Function(String message);
 
 class TrackingLayerOptions extends LayerOptions {
   double size;
   double opacity;
   bool showLabels;
   final TrackingBloc bloc;
+  final MessageCallback onMessage;
 
   TrackingLayerOptions({
     @required this.bloc,
     this.size = 24.0,
     this.opacity = 0.6,
     this.showLabels = true,
+    this.onMessage,
     Stream<void> rebuild,
   }) : super(rebuild: rebuild);
 }
@@ -49,13 +55,13 @@ class TrackingLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(children: [
-            ...units.map((unit) => _buildPoint(context, options, map, tracks[unit.tracking])).toList(),
+            ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
             if (options.showLabels)
               ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
           ]);
   }
 
-  Widget _buildPoint(BuildContext context, TrackingLayerOptions options, MapState map, Tracking tracking) {
+  Widget _buildPoint(BuildContext context, TrackingLayerOptions options, MapState map, Unit unit, Tracking tracking) {
     var size = options.size;
     var pos = map.project(toLatLng(tracking.location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
@@ -65,14 +71,18 @@ class TrackingLayer extends MapPlugin {
       height: size,
       left: pos.x - size / 2,
       top: pos.y - size / 2,
-      child: Opacity(
-        opacity: options.opacity,
-        child: CustomPaint(
-          painter: _PointPainter(
-            size: size,
-            color: _toTrackingStatusColor(context, tracking.status),
+      child: GestureDetector(
+        child: Opacity(
+          opacity: options.opacity,
+          child: CustomPaint(
+            painter: _PointPainter(
+              size: size,
+              color: _toTrackingStatusColor(context, tracking.status),
+            ),
           ),
         ),
+        //TODO: onLongPress: () => _showUnitActions(context, options, map, unit, tracking, pos),
+        onDoubleTap: () => _showUnitInfo(context, options, map, unit, tracking, pos),
       ),
     );
   }
@@ -105,6 +115,97 @@ class TrackingLayer extends MapPlugin {
       default:
         return Theme.of(context).colorScheme.primary;
     }
+  }
+
+  void _showUnitInfo(
+    BuildContext context,
+    TrackingLayerOptions options,
+    MapState map,
+    Unit unit,
+    Tracking tracking,
+    CustomPoint position,
+  ) {
+    final style = Theme.of(context).textTheme.title;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          titlePadding: EdgeInsets.only(left: 16, top: 8),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text('${unit.name}', style: style),
+              IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              )
+            ],
+          ),
+          content: SizedBox(
+            height: 320,
+            width: MediaQuery.of(context).size.width - 96,
+            child: Column(
+              children: <Widget>[
+                Divider(),
+                _buildCopyableText(
+                  context: context,
+                  label: "UTM",
+                  icon: Icon(Icons.my_location),
+                  value: toUTM(tracking.location, prefix: ""),
+                  onMessage: options.onMessage,
+                ),
+                _buildCopyableText(
+                  context: context,
+                  label: "Desimalgrader (DD)",
+                  icon: Icon(Icons.my_location),
+                  value: toDD(tracking.location, prefix: ""),
+                  onMessage: options.onMessage,
+                ),
+                Divider(),
+                _buildCopyableText(
+                  context: context,
+                  label: "Kallesignal",
+                  icon: Icon(Icons.device_unknown),
+                  value: unit.callsign,
+                  onMessage: options.onMessage,
+                ),
+              ],
+            ),
+          ),
+          contentPadding: EdgeInsets.zero,
+        );
+      },
+    );
+  }
+
+  GestureDetector _buildCopyableText({
+    BuildContext context,
+    String label,
+    Icon icon,
+    String value,
+    MessageCallback onMessage,
+  }) {
+    return GestureDetector(
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon,
+          border: InputBorder.none,
+        ),
+        child: Text(value),
+      ),
+      onLongPress: () {
+        Navigator.pop(context);
+        Clipboard.setData(ClipboardData(text: value));
+        if (onMessage != null) {
+          onMessage('Kopiert til utklippstavlen');
+        }
+      },
+    );
   }
 }
 

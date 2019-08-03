@@ -334,6 +334,7 @@ class _IncidentMapState extends State<IncidentMap> {
     final trackingBloc = BlocProvider.of<TrackingBloc>(context);
     return TrackingLayerOptions(
       bloc: trackingBloc,
+      onMessage: widget.onMessage,
       rebuild: trackingBloc.state,
     );
   }
