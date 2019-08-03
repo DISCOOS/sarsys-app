@@ -4,8 +4,14 @@ import 'package:latlong/latlong.dart';
 
 String enumName(Object o) => o.toString().split('.').last;
 
-String toDD(Point point) {
-  return CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat));
+String toDD(Point point, {String prefix = "DD", String empty = "Velg"}) {
+  if (point == null) return empty;
+  return ("$prefix ${CoordinateFormat.toDD(ProjCoordinate.from2D(point.lon, point.lat))}").trim();
+}
+
+String toDDM(Point point, {String prefix = "DDM", String empty = "Velg"}) {
+  if (point == null) return empty;
+  return ("$prefix ${CoordinateFormat.toDDM(ProjCoordinate.from2D(point.lon, point.lat))}").trim();
 }
 
 /// TODO: Make UTM zone and northing configurable

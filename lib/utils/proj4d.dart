@@ -1004,14 +1004,29 @@ class CoordinateFormat {
   }
 
   static final ddOrdinalFormat = NumberFormat("###.000000")..maximumFractionDigits = 6;
-  static String toDD(ProjCoordinate from, [bool withLabels = false]) {
+  static String toDD(ProjCoordinate from, {bool withLabels = false}) {
     final northing = ddOrdinalFormat.format(from.y);
     final easting = ddOrdinalFormat.format(from.x);
-    return withLabels ? "DD $northing $easting" : "DD N$northing E$easting";
+    return withLabels ? "N$northing E$easting" : "$northing $easting";
+  }
+
+  static String toDDM(ProjCoordinate from, {bool withLabels = false}) {
+    final northing = _coordToDDM(from.y);
+    final easting = _coordToDDM(from.x);
+    return withLabels ? "N$northing E$easting" : "$northing $easting";
+  }
+
+  static final msOrdinalFormat = NumberFormat("##.0000")..maximumFractionDigits = 6;
+  static String _coordToDDM(double coordinate) {
+    final northing = ddOrdinalFormat.format(coordinate);
+    final ncomps = northing.split('.');
+    final dnorth = int.parse(ncomps.first);
+    final mnorth = msOrdinalFormat.format((coordinate - dnorth) * 3600 / 60);
+    return "$dnorth° $mnorth";
   }
 
   static final utmOrdinalFormat = NumberFormat("0000000")..maximumFractionDigits = 0;
-  static String toUTM(ProjCoordinate from, [bool withLabels = false]) {
+  static String toUTM(ProjCoordinate from, {bool withLabels = false}) {
     final northing = utmOrdinalFormat.format(from.y);
     final easting = utmOrdinalFormat.format(from.x);
     return withLabels ? "32V E$easting N$northing" : "32V $easting $northing";
