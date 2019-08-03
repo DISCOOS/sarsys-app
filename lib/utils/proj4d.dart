@@ -1014,6 +1014,6 @@ class CoordinateFormat {
   static String toUTM(ProjCoordinate from, [bool withLabels = false]) {
     final northing = utmOrdinalFormat.format(from.y);
     final easting = utmOrdinalFormat.format(from.x);
-    return withLabels ? "UTM 32V E$easting N$northing" : "UTM 32V $easting $northing";
+    return withLabels ? "32V E$easting N$northing" : "32V $easting $northing";
   }
 }

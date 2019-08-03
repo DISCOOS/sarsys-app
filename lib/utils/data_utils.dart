@@ -10,11 +10,11 @@ String toDD(Point point) {
 
 /// TODO: Make UTM zone and northing configurable
 final _utmProj = TransverseMercatorProjection.utm(32, false);
-String toUTM(Point point, [String empty = "Velg"]) {
+String toUTM(Point point, {String prefix = "UTM", String empty = "Velg"}) {
   if (point == null) return empty;
   var src = ProjCoordinate.from2D(point.lon, point.lat);
   var dst = _utmProj.project(src);
-  return CoordinateFormat.toUTM(dst);
+  return ("$prefix ${CoordinateFormat.toUTM(dst)}").trim();
 }
 
 String formatSince(DateTime timestamp) {
