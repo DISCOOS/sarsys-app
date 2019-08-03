@@ -36,9 +36,10 @@ class Unit extends Equatable {
     var clone = Unit.fromJson(json);
     return cloneWith(
       id: clone.id,
-      name: clone.name,
       type: clone.type,
+      number: clone.number,
       status: clone.status,
+      callsign: clone.callsign,
       tracking: clone.tracking,
     );
   }
@@ -46,8 +47,9 @@ class Unit extends Equatable {
   Unit cloneWith({
     String id,
     UnitType type,
+    int number,
     UnitStatus status,
-    String name,
+    String callsign,
     String tracking,
   }) {
     return Unit(
@@ -55,6 +57,7 @@ class Unit extends Equatable {
       type: type ?? this.type,
       number: number ?? this.number,
       status: status ?? this.status,
+      callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
     );
   }

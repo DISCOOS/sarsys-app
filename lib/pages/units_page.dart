@@ -111,7 +111,7 @@ class UnitsPageState extends State<UnitsPage> {
             foregroundColor: Colors.white,
           ),
           title: Text(unit.name),
-          subtitle: Text(toUTM(tracking?.location, "Ingen posisjon")),
+          subtitle: Text(toUTM(tracking?.location, empty: "Ingen posisjon")),
           dense: true,
           trailing: RotatedBox(
             quarterTurns: 1,

@@ -156,7 +156,6 @@ class _UnitEditorState extends State<UnitEditor> {
       ),
       validators: [
         FormBuilderValidators.required(errorText: 'Kallesignal må fylles inn'),
-        FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
         (value) {
           // TODO: Check if callsign is unique
           return null;
