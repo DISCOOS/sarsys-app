@@ -28,8 +28,6 @@ class _UnitEditorState extends State<UnitEditor> {
   UnitBloc _unitBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
-  TextEditingController _numberController;
-  TextEditingController _callsignController;
 
   @override
   void initState() {
@@ -37,12 +35,6 @@ class _UnitEditorState extends State<UnitEditor> {
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _numberController = TextEditingController(
-      text: (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString(),
-    );
-    _callsignController = TextEditingController(
-      text: (widget?.unit?.callsign ?? "").toString(),
-    );
   }
 
   @override
@@ -94,9 +86,11 @@ class _UnitEditorState extends State<UnitEditor> {
                   ],
                 ),
                 SizedBox(height: SPACING),
+                _buildTypeField(),
+                SizedBox(height: SPACING),
                 _buildCallsignField(),
                 SizedBox(height: SPACING),
-                _buildTypeField(),
+                _buildPhoneField(),
                 SizedBox(height: SPACING),
                 _buildStatusField(),
                 SizedBox(height: SPACING),
@@ -113,19 +107,14 @@ class _UnitEditorState extends State<UnitEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
-      controller: _numberController,
       initialValue: (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString(),
       onChanged: (_) => _onEdit(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
         labelText: 'Nummer',
-        suffixIcon: IconButton(
-            icon: Icon(Icons.cancel),
-            onPressed: () {
-              _numberController.text = (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString();
-            }),
       ),
+      keyboardType: TextInputType.numberWithOptions(),
       validators: [
         FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
         FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
@@ -142,18 +131,13 @@ class _UnitEditorState extends State<UnitEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'callsign',
-      controller: _callsignController,
       initialValue: (widget?.unit?.callsign ?? "").toString(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
         labelText: 'Kallesignal',
-        suffixIcon: IconButton(
-            icon: Icon(Icons.cancel),
-            onPressed: () {
-              _callsignController.text = (widget?.unit?.callsign ?? "").toString();
-            }),
       ),
+      keyboardType: TextInputType.text,
       validators: [
         FormBuilderValidators.required(errorText: 'Kallesignal må fylles inn'),
         (value) {
@@ -161,6 +145,20 @@ class _UnitEditorState extends State<UnitEditor> {
           return null;
         },
       ],
+    );
+  }
+
+  FormBuilderTextField _buildPhoneField() {
+    return FormBuilderTextField(
+      maxLines: 1,
+      attribute: 'phone',
+      initialValue: (widget?.unit?.phone ?? "").toString(),
+      decoration: InputDecoration(
+        hintText: 'Skriv inn',
+        filled: true,
+        labelText: 'Mobiltelefon',
+      ),
+      keyboardType: TextInputType.phone,
     );
   }
 

@@ -13,6 +13,7 @@ Unit _$UnitFromJson(Map<String, dynamic> json) {
       number: json['number'] as int,
       status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
       callsign: json['callsign'] as String,
+      phone: json['phone'] as String,
       tracking: json['tracking'] as String);
 }
 
@@ -21,6 +22,7 @@ Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
       'number': instance.number,
       'type': _$UnitTypeEnumMap[instance.type],
       'status': _$UnitStatusEnumMap[instance.status],
+      'phone': instance.phone,
       'callsign': instance.callsign,
       'tracking': instance.tracking
     };

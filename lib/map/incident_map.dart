@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
@@ -330,7 +329,6 @@ class _IncidentMapState extends State<IncidentMap> {
   }
 
   TrackingLayerOptions _buildTrackingOptions() {
-    final unitBloc = BlocProvider.of<UnitBloc>(context);
     final trackingBloc = BlocProvider.of<TrackingBloc>(context);
     return TrackingLayerOptions(
       bloc: trackingBloc,

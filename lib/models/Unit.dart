@@ -11,6 +11,7 @@ class Unit extends Equatable {
   final int number;
   final UnitType type;
   final UnitStatus status;
+  final String phone;
   final String callsign;
   final String tracking;
 
@@ -21,9 +22,10 @@ class Unit extends Equatable {
     @required this.type,
     @required this.number,
     @required this.status,
-    this.callsign,
+    @required this.callsign,
+    this.phone,
     this.tracking,
-  }) : super([id, type, number, tracking]);
+  }) : super([id, type, number, status, phone, callsign, tracking]);
 
   /// Factory constructor for creating a new `Unit` instance
   factory Unit.fromJson(Map<String, dynamic> json) => _$UnitFromJson(json);
@@ -39,6 +41,7 @@ class Unit extends Equatable {
       type: clone.type,
       number: clone.number,
       status: clone.status,
+      phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
     );
@@ -49,6 +52,7 @@ class Unit extends Equatable {
     UnitType type,
     int number,
     UnitStatus status,
+    String phone,
     String callsign,
     String tracking,
   }) {
@@ -57,6 +61,7 @@ class Unit extends Equatable {
       type: type ?? this.type,
       number: number ?? this.number,
       status: status ?? this.status,
+      phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
     );

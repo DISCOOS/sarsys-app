@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
