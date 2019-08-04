@@ -12,7 +12,7 @@ class AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: <Widget>[
           SizedBox(
-            height: 120.0,
+            height: 80.0,
             child: DrawerHeader(
               child: Text("SarSys", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.white)),
               decoration: BoxDecoration(
