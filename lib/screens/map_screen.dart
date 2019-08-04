@@ -1,3 +1,4 @@
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -81,15 +82,11 @@ class MapScreenState extends State<MapScreen> {
                         title: Text('Enhet', style: style),
                         onTap: () {
                           Navigator.pop(context);
+                          showDialog(
+                            context: context,
+                            builder: (context) => UnitEditor(),
+                          );
                         }),
-                    ListTile(
-                      dense: landscape,
-                      leading: Icon(Icons.add_location),
-                      title: Text('Markering', style: style),
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                    ),
                   ],
                 );
               });
