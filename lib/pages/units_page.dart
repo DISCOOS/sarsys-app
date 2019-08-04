@@ -75,7 +75,7 @@ class UnitsPageState extends State<UnitsPage> {
                       : ListView.builder(
                           itemCount: units.length + 1,
                           itemBuilder: (context, index) {
-                            return _buildUnit(context, units, index);
+                            return _buildUnit(units, index);
                           },
                         ),
                 );
@@ -87,7 +87,7 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  Widget _buildUnit(BuildContext context, List<Unit> units, int index) {
+  Widget _buildUnit(List<Unit> units, int index) {
     if (index == units.length) {
       return SizedBox(
         height: 88,

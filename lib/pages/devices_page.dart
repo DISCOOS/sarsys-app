@@ -40,13 +40,17 @@ class _DevicesPageState extends State<DevicesPage> {
                   firstChild: Center(
                     child: CircularProgressIndicator(),
                   ),
-                  secondChild: devices.isNotEmpty
-                      ? _buildList(devices)
-                      : Center(
+                  secondChild: devices.isEmpty || snapshot.hasError
+                      ? Center(
                           child: Text(
-                            "Ingen terminaler innen rekkevidde",
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
+                          snapshot.hasError ? snapshot.error : "Ingen terminaler innen rekkevidde",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ))
+                      : ListView.builder(
+                          itemCount: devices.length + 1,
+                          itemBuilder: (context, index) {
+                            return _buildDevice(devices, index);
+                          },
                         ),
                 );
               },
@@ -57,57 +61,61 @@ class _DevicesPageState extends State<DevicesPage> {
     );
   }
 
-  ListView _buildList(List<Device> devices) {
-    return ListView.builder(
-      itemCount: devices.length,
-      itemBuilder: (context, index) {
-        return Slidable(
-          actionPane: SlidableScrollActionPane(),
-          actionExtentRatio: 0.2,
-          child: Container(
-            color: Colors.white,
-            child: ListTile(
-              key: ObjectKey(devices[index].id),
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Icon(FontAwesomeIcons.mobileAlt),
-                foregroundColor: Colors.white,
-              ),
-              title: Text("ISSI: ${devices[index].number}"),
-              subtitle: Text(translateDeviceType(devices[index].type)),
-              trailing: RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
+  Widget _buildDevice(List<Device> devices, int index) {
+    if (index == devices.length) {
+      return SizedBox(
+        height: 88,
+        child: Center(
+          child: Text("Antall terminaler: $index"),
+        ),
+      );
+    }
+    return Slidable(
+      actionPane: SlidableScrollActionPane(),
+      actionExtentRatio: 0.2,
+      child: Container(
+        color: Colors.white,
+        child: ListTile(
+          dense: true,
+          key: ObjectKey(devices[index].id),
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Icon(FontAwesomeIcons.mobileAlt),
+            foregroundColor: Colors.white,
+          ),
+          title: Text("ISSI: ${devices[index].number}"),
+          subtitle: Text(translateDeviceType(devices[index].type)),
+          trailing: RotatedBox(
+            quarterTurns: 1,
+            child: Icon(
+              Icons.drag_handle,
+              color: Colors.grey.withOpacity(0.2),
             ),
           ),
-          actions: <Widget>[
-            IconSlideAction(
-              caption: 'KNYTT',
-              color: Theme.of(context).buttonColor,
-              icon: Icons.people,
-              onTap: () => {},
-            ),
-          ],
-          secondaryActions: <Widget>[
-            IconSlideAction(
-              caption: 'VIS',
-              color: Theme.of(context).buttonColor,
-              icon: Icons.gps_fixed,
-              onTap: () => {},
-            ),
-            IconSlideAction(
-              caption: 'SPOR',
-              color: Theme.of(context).colorScheme.primary,
-              icon: Icons.play_arrow,
-              onTap: () => {},
-            ),
-          ],
-        );
-      },
+        ),
+      ),
+      actions: <Widget>[
+        IconSlideAction(
+          caption: 'KNYTT',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.people,
+          onTap: () => {},
+        ),
+      ],
+      secondaryActions: <Widget>[
+        IconSlideAction(
+          caption: 'VIS',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.gps_fixed,
+          onTap: () => {},
+        ),
+        IconSlideAction(
+          caption: 'SPOR',
+          color: Theme.of(context).colorScheme.primary,
+          icon: Icons.play_arrow,
+          onTap: () => {},
+        ),
+      ],
     );
   }
 }
