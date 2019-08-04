@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -89,7 +90,7 @@ class TrackingLayer extends MapPlugin {
             ),
           ),
         ),
-        //TODO: onLongPress: () => _showUnitActions(context, options, map, unit, tracking, pos),
+        onLongPress: () => _showUnitMenu(context, options, map, unit, tracking, pos),
         onDoubleTap: () => _showUnitInfo(context, options, map, unit, tracking, pos),
       ),
     );
@@ -125,6 +126,84 @@ class TrackingLayer extends MapPlugin {
     }
   }
 
+  void _showUnitMenu(
+    BuildContext context,
+    TrackingLayerOptions options,
+    MapState map,
+    Unit unit,
+    Tracking tracking,
+    CustomPoint position,
+  ) async {
+    final title = Theme.of(context).textTheme.title;
+    final action = await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          child: SizedBox(
+            height: 232,
+            width: MediaQuery.of(context).size.width - 112,
+            child: ListView(
+              children: <Widget>[
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.group),
+                  title: Text("Endre ${unit.name}", style: title),
+                  onTap: () => Navigator.pop(context, 1),
+                ),
+                Divider(),
+                ListTile(
+                  dense: true,
+                  leading: Icon(tracking.status == TrackingStatus.Tracking
+                      ? Icons.pause_circle_outline
+                      : Icons.play_circle_outline),
+                  title: Text(
+                    tracking.status == TrackingStatus.Tracking ? "Stopp sporing" : "Start sporing",
+                    style: title,
+                  ),
+                  onTap: () => Navigator.pop(context, 2),
+                ),
+                Divider(),
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.content_copy),
+                  title: Text("Kopier UTM", style: title),
+                  onTap: () => Navigator.pop(context, 3),
+                ),
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.content_copy),
+                  title: Text("Kopier desmialgrader", style: title),
+                  onTap: () => Navigator.pop(context, 4),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    switch (action) {
+      case 1:
+        showDialog(
+          context: context,
+          builder: (context) => UnitEditor(unit: unit),
+        );
+        break;
+      case 2:
+        options.bloc.transition(tracking);
+        break;
+      case 3:
+        _copy(toUTM(tracking.location, prefix: ""), options.onMessage);
+        break;
+      case 4:
+        _copy(toDD(tracking.location, prefix: ""), options.onMessage);
+        break;
+    }
+  }
+
   void _showUnitInfo(
     BuildContext context,
     TrackingLayerOptions options,
@@ -139,25 +218,27 @@ class TrackingLayer extends MapPlugin {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        return AlertDialog(
+        return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          titlePadding: EdgeInsets.only(left: 16, top: 8),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text('${unit.name}', style: style),
-              IconButton(
-                icon: Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          content: SizedBox(
-            height: 320,
+          child: SizedBox(
+            height: 380,
             width: MediaQuery.of(context).size.width - 96,
             child: Column(
               children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.only(left: 16, top: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text('${unit.name}', style: style),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ],
+                  ),
+                ),
                 Divider(),
                 _buildCopyableText(
                   context: context,
@@ -207,7 +288,6 @@ class TrackingLayer extends MapPlugin {
               ],
             ),
           ),
-          contentPadding: EdgeInsets.zero,
         );
       },
     );
@@ -231,12 +311,16 @@ class TrackingLayer extends MapPlugin {
       ),
       onLongPress: () {
         Navigator.pop(context);
-        Clipboard.setData(ClipboardData(text: value));
-        if (onMessage != null) {
-          onMessage('Kopiert til utklippstavlen');
-        }
+        _copy(value, onMessage);
       },
     );
+  }
+
+  void _copy(String value, MessageCallback onMessage) {
+    Clipboard.setData(ClipboardData(text: value));
+    if (onMessage != null) {
+      onMessage('Kopiert til utklippstavlen');
+    }
   }
 }
 

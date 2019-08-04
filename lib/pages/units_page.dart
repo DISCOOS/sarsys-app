@@ -137,7 +137,7 @@ class UnitsPageState extends State<UnitsPage> {
       caption: 'SPORING',
       color: _toTrackingStatusColor(context, status),
       icon: _toTrackingIconData(context, status),
-      onTap: () => _transition(context, tracking),
+      onTap: () => _trackingBloc.transition(tracking),
     );
   }
 
@@ -167,21 +167,6 @@ class UnitsPageState extends State<UnitsPage> {
         return Colors.red;
       default:
         return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  _transition(BuildContext context, Tracking tracking) {
-    switch (tracking.status) {
-      case TrackingStatus.Created:
-      case TrackingStatus.Paused:
-      case TrackingStatus.Closed:
-        _trackingBloc.update(tracking, status: TrackingStatus.Tracking);
-        break;
-      case TrackingStatus.Tracking:
-        _trackingBloc.update(tracking, status: TrackingStatus.Paused);
-        break;
-      default:
-        break;
     }
   }
 

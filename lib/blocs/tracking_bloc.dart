@@ -98,6 +98,23 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return this;
   }
 
+  /// Transition tracking state to next legal state
+  TrackingBloc transition(Tracking tracking) {
+    switch (tracking.status) {
+      case TrackingStatus.Created:
+      case TrackingStatus.Paused:
+      case TrackingStatus.Closed:
+        update(tracking, status: TrackingStatus.Tracking);
+        break;
+      case TrackingStatus.Tracking:
+        update(tracking, status: TrackingStatus.Paused);
+        break;
+      default:
+        break;
+    }
+    return this;
+  }
+
   @override
   Stream<TrackingState> mapEventToState(TrackingCommand command) async* {
     if (command is LoadTracks) {
