@@ -203,39 +203,46 @@ class UnitsPageState extends State<UnitsPage> {
   void showFilterSheet(context) {
     final style = Theme.of(context).textTheme.title;
     showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return StatefulBuilder(builder: (context, state) {
-            return Container(
-              padding: EdgeInsets.only(bottom: 56.0),
-              child: Wrap(
-                children: <Widget>[
-                  ListTile(
-                    contentPadding: EdgeInsets.only(left: 16.0, right: 0),
-                    title: Text("Vis", style: style),
-                    trailing: FlatButton(
-                      child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
-                      onPressed: () => setState(
-                        () {
-                          Navigator.pop(context);
-                        },
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext bc) {
+        return StatefulBuilder(builder: (context, state) {
+          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
+          return DraggableScrollableSheet(
+              expand: false,
+              builder: (context, controller) {
+                return ListView(
+                  padding: EdgeInsets.only(bottom: 56.0),
+                  children: <Widget>[
+                    ListTile(
+                      dense: landscape,
+                      contentPadding: EdgeInsets.only(left: 16.0, right: 0),
+                      title: Text("Vis", style: style),
+                      trailing: FlatButton(
+                        child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                        onPressed: () => setState(
+                          () {
+                            Navigator.pop(context);
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  Divider(),
-                  ...UnitStatus.values
-                      .map((status) => ListTile(
-                          title: Text(translateUnitStatus(status), style: style),
-                          trailing: Switch(
-                            value: _filter.contains(status),
-                            onChanged: (value) => _onFilterChanged(status, value, state),
-                          )))
-                      .toList(),
-                ],
-              ),
-            );
-          });
+                    Divider(),
+                    ...UnitStatus.values
+                        .map((status) => ListTile(
+                            dense: landscape,
+                            title: Text(translateUnitStatus(status), style: style),
+                            trailing: Switch(
+                              value: _filter.contains(status),
+                              onChanged: (value) => _onFilterChanged(status, value, state),
+                            )))
+                        .toList(),
+                  ],
+                );
+              });
         });
+      },
+    );
   }
 
   void _onFilterChanged(UnitStatus status, bool value, StateSetter update) {

@@ -36,7 +36,7 @@ class MapScreenState extends State<MapScreen> {
       extendBody: true,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _settingModalBottomSheet(context);
+          _showCreateItemSheet(context);
         },
         child: Icon(Icons.add),
         elevation: 2.0,
@@ -59,34 +59,43 @@ class MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _settingModalBottomSheet(context) {
+  void _showCreateItemSheet(context) {
     final style = Theme.of(context).textTheme.title;
     showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return Container(
-            padding: EdgeInsets.only(bottom: 56.0),
-            child: Wrap(
-              children: <Widget>[
-                ListTile(title: Text("Opprett", style: style)),
-                Divider(),
-                ListTile(
-                    leading: Icon(Icons.timeline),
-                    title: Text('Spor', style: style),
-                    onTap: () {
-                      Navigator.pop(context);
-                    }),
-                ListTile(
-                  leading: Icon(Icons.add_location),
-                  title: Text('Markering', style: style),
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          );
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext bc) {
+        return StatefulBuilder(builder: (context, state) {
+          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
+          return DraggableScrollableSheet(
+              expand: false,
+              builder: (context, controller) {
+                return ListView(
+                  padding: EdgeInsets.only(bottom: 56.0),
+                  children: <Widget>[
+                    ListTile(title: Text("Opprett", style: style)),
+                    Divider(),
+                    ListTile(
+                        dense: landscape,
+                        leading: Icon(Icons.group_add),
+                        title: Text('Enhet', style: style),
+                        onTap: () {
+                          Navigator.pop(context);
+                        }),
+                    ListTile(
+                      dense: landscape,
+                      leading: Icon(Icons.add_location),
+                      title: Text('Markering', style: style),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                );
+              });
         });
+      },
+    );
   }
 
   void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {
