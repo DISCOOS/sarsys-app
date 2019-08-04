@@ -20,6 +20,7 @@ class CommandScreen extends StatefulWidget {
 
 class _CommandScreenState extends State<CommandScreen> {
   final _unitsKey = GlobalKey<UnitsPageState>();
+  final _devicesKey = GlobalKey<DevicesPageState>();
 
   var current;
 
@@ -35,7 +36,7 @@ class _CommandScreenState extends State<CommandScreen> {
         final tabs = [
           IncidentPage(),
           UnitsPage(key: _unitsKey),
-          DevicesPage(),
+          DevicesPage(key: _devicesKey),
         ];
         return Scaffold(
           drawer: AppDrawer(),
@@ -87,7 +88,7 @@ class _CommandScreenState extends State<CommandScreen> {
         return IconButton(
           icon: Icon(Icons.filter_list),
           onPressed: () async {
-            // TODO: Apply device filter
+            _devicesKey.currentState.showFilterSheet(context);
           },
         );
       default:
@@ -109,6 +110,7 @@ class _CommandScreenState extends State<CommandScreen> {
 
   @override
   void initState() {
+    super.initState();
     super.initState();
     current = widget.tabIndex;
   }

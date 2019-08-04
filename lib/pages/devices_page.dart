@@ -6,12 +6,15 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DevicesPage extends StatefulWidget {
+  DevicesPage({Key key}) : super(key: key);
+
   @override
-  _DevicesPageState createState() => _DevicesPageState();
+  DevicesPageState createState() => DevicesPageState();
 }
 
-class _DevicesPageState extends State<DevicesPage> {
+class DevicesPageState extends State<DevicesPage> {
   DeviceBloc bloc;
+  List<DeviceType> _filter = DeviceType.values.toList();
 
   @override
   void initState() {
@@ -33,7 +36,7 @@ class _DevicesPageState extends State<DevicesPage> {
             child: StreamBuilder(
               stream: bloc.state,
               builder: (context, snapshot) {
-                var devices = bloc.devices.values.toList();
+                var devices = bloc.devices.values.where((device) => _filter.contains(device.type)).toList();
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
                   crossFadeState: bloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
@@ -117,5 +120,60 @@ class _DevicesPageState extends State<DevicesPage> {
         ),
       ],
     );
+  }
+
+  void showFilterSheet(context) {
+    final style = Theme.of(context).textTheme.title;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext bc) {
+        return StatefulBuilder(builder: (context, state) {
+          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
+          return DraggableScrollableSheet(
+              expand: false,
+              builder: (context, controller) {
+                return ListView(
+                  padding: EdgeInsets.only(bottom: 56.0),
+                  children: <Widget>[
+                    ListTile(
+                      dense: landscape,
+                      contentPadding: EdgeInsets.only(left: 16.0, right: 0),
+                      title: Text("Vis", style: style),
+                      trailing: FlatButton(
+                        child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                        onPressed: () => setState(
+                          () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ),
+                    Divider(),
+                    ...DeviceType.values
+                        .map((status) => ListTile(
+                            dense: landscape,
+                            title: Text(translateDeviceType(status), style: style),
+                            trailing: Switch(
+                              value: _filter.contains(status),
+                              onChanged: (value) => _onFilterChanged(status, value, state),
+                            )))
+                        .toList(),
+                  ],
+                );
+              });
+        });
+      },
+    );
+  }
+
+  void _onFilterChanged(DeviceType status, bool value, StateSetter update) {
+    update(() {
+      if (value) {
+        _filter.add(status);
+      } else if (_filter.length > 1) {
+        _filter.remove(status);
+      }
+    });
   }
 }

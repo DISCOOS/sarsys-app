@@ -17,14 +17,14 @@ class IncidentsScreen extends StatefulWidget {
 class IncidentsScreenState extends State<IncidentsScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  IncidentBloc bloc;
-  Set<IncidentStatus> filters;
+  IncidentBloc _bloc;
+  Set<IncidentStatus> _filter;
 
   @override
   void initState() {
     super.initState();
-    filters = Set.of([IncidentStatus.Registered, IncidentStatus.Handling, IncidentStatus.Other]);
-    bloc = BlocProvider.of<IncidentBloc>(context);
+    _filter = Set.of([IncidentStatus.Registered, IncidentStatus.Handling, IncidentStatus.Other]);
+    _bloc = BlocProvider.of<IncidentBloc>(context);
   }
 
   @override //new
@@ -33,8 +33,8 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return Scaffold(
           key: _scaffoldKey,
-          appBar: _buildAppBar(context, bloc.isUnset),
-          body: _buildBody(bloc, context, viewportConstraints),
+          appBar: _buildAppBar(context, _bloc.isUnset),
+          body: _buildBody(_bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
             onPressed: () => showDialog(
@@ -86,7 +86,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           stream: bloc.state,
           builder: (context, snapshot) {
             var cards = bloc.incidents
-                .where((incident) => filters.contains(incident.status))
+                .where((incident) => _filter.contains(incident.status))
                 .map((incident) => _buildCard(context, bloc, incident))
                 .toList();
             return AnimatedCrossFade(
@@ -307,7 +307,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             dense: landscape,
                             title: Text(translateIncidentStatus(status), style: style),
                             trailing: Switch(
-                              value: filters.contains(status),
+                              value: _filter.contains(status),
                               onChanged: (value) => _onFilterChanged(status, value, state),
                             )))
                         .toList(),
@@ -322,9 +322,9 @@ class IncidentsScreenState extends State<IncidentsScreen> {
   void _onFilterChanged(IncidentStatus status, bool value, StateSetter update) {
     update(() {
       if (value) {
-        filters.add(status);
-      } else {
-        filters.remove(status);
+        _filter.add(status);
+      } else if (_filter.length > 1) {
+        _filter.remove(status);
       }
     });
   }

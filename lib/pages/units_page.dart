@@ -249,7 +249,7 @@ class UnitsPageState extends State<UnitsPage> {
     update(() {
       if (value) {
         _filter.add(status);
-      } else {
+      } else if (_filter.length > 1) {
         _filter.remove(status);
       }
     });
