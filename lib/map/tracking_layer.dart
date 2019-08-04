@@ -55,9 +55,17 @@ class TrackingLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(children: [
-            ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
             if (options.showLabels)
-              ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
+              ...units
+                  .map(
+                    (unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location),
+                  )
+                  .toList(),
+            ...units
+                .map(
+                  (unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking]),
+                )
+                .toList(),
           ]);
   }
 

@@ -158,7 +158,7 @@ class UnitsPageState extends State<UnitsPage> {
       case TrackingStatus.None:
         return Colors.grey;
       case TrackingStatus.Created:
-        return Theme.of(context).buttonColor;
+        return Theme.of(context).colorScheme.primary;
       case TrackingStatus.Tracking:
         return Colors.green;
       case TrackingStatus.Paused:
