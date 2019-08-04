@@ -185,9 +185,10 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildControls() {
-    Size size = Size(42.0, 42.0);
+    final Size size = Size(42.0, 42.0);
+    final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
     return Positioned(
-      top: 100.0,
+      top: landscape ? 72.0 : 100.0,
       right: 8.0,
       child: SafeArea(
         child: Column(
