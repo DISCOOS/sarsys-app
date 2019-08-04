@@ -78,7 +78,9 @@ class _UnitEditorState extends State<UnitEditor> {
                           filled: true,
                           enabled: false,
                         ),
-                        child: Text(_editedName ?? widget?.unit?.name),
+                        child: Text(_editedName ??
+                            widget?.unit?.name ??
+                            "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}"),
                       ),
                     ),
                     SizedBox(width: SPACING),
