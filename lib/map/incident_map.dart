@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
+import 'package:SarSys/map/coordate_layer.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/tracking_layer.dart';
@@ -32,6 +33,8 @@ class IncidentMap extends StatefulWidget {
   final bool withSearch;
   final bool withControls;
   final bool withLocation;
+  final bool withCoordsPanel;
+
   final LatLng center;
   final Incident incident;
   final MapController mapController;
@@ -50,6 +53,7 @@ class IncidentMap extends StatefulWidget {
     this.withSearch = false,
     this.withControls = false,
     this.withLocation = false,
+    this.withCoordsPanel = false,
     this.onTap,
     this.onPrompt,
     this.onMessage,
@@ -59,13 +63,14 @@ class IncidentMap extends StatefulWidget {
         super(key: key);
 
   @override
-  _IncidentMapState createState() => _IncidentMapState();
+  IncidentMapState createState() => IncidentMapState();
 }
 
-class _IncidentMapState extends State<IncidentMap> {
+class IncidentMapState extends State<IncidentMap> {
   static const POI_LAYER = "Interessepunkt";
   static const TRACKING_LAYER = "Sporing";
-  static const LAYERS = [POI_LAYER, TRACKING_LAYER];
+  static const COORDS_LAYER = "Koordinater";
+  static const LAYERS = [POI_LAYER, TRACKING_LAYER, COORDS_LAYER];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   String _currentBaseMap;
@@ -96,7 +101,7 @@ class _IncidentMapState extends State<IncidentMap> {
       );
     }
     _center = widget.center ?? Defaults.origo;
-    _layers = Set.of(LAYERS);
+    _layers = Set.of(LAYERS)..remove(COORDS_LAYER);
 
     init();
   }
@@ -140,6 +145,7 @@ class _IncidentMapState extends State<IncidentMap> {
           MyLocation(),
           IconLayer(),
           TrackingLayer(),
+          CoordinateLayer(),
         ],
       ),
       layers: [
@@ -151,6 +157,7 @@ class _IncidentMapState extends State<IncidentMap> {
         if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
+        if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
       ],
     );
   }

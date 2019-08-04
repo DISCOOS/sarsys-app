@@ -19,6 +19,16 @@ class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
@@ -42,6 +52,7 @@ class MapScreenState extends State<MapScreen> {
       withSearch: true,
       withControls: true,
       withLocation: true,
+      withCoordsPanel: true,
       onMessage: _showMessage,
       onPrompt: (title, message) => prompt(context, title, message),
       onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),

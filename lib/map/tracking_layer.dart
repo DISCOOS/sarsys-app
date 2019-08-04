@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 typedef MessageCallback = void Function(String message);
 
@@ -165,11 +166,34 @@ class TrackingLayer extends MapPlugin {
                   onMessage: options.onMessage,
                 ),
                 Divider(),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _buildCopyableText(
+                        context: context,
+                        label: "Kallesignal",
+                        icon: Icon(Icons.headset_mic),
+                        value: unit.callsign,
+                        onMessage: options.onMessage,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildCopyableText(
+                        context: context,
+                        label: "Mobiltelefon",
+                        icon: Icon(Icons.phone),
+                        value: unit?.phone ?? "Ukjent",
+                        onMessage: options.onMessage,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(),
                 _buildCopyableText(
                   context: context,
-                  label: "Kallesignal",
-                  icon: Icon(Icons.device_unknown),
-                  value: unit.callsign,
+                  label: "Terminaler",
+                  icon: Icon(FontAwesomeIcons.mobileAlt),
+                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id].number).join(', '),
                   onMessage: options.onMessage,
                 ),
               ],
