@@ -1,7 +1,6 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
-import 'package:SarSys/utils/map_utils.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -12,8 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+typedef SelectionCallback = void Function(Unit unit);
+
 class UnitsPage extends StatefulWidget {
-  const UnitsPage({Key key}) : super(key: key);
+  final bool withActions;
+  final SelectionCallback onSelection;
+
+  const UnitsPage({Key key, this.withActions = true, this.onSelection}) : super(key: key);
 
   @override
   UnitsPageState createState() => UnitsPageState();
@@ -30,9 +34,7 @@ class UnitsPageState extends State<UnitsPage> {
     super.initState();
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _group = StreamGroup.broadcast();
-    _group.add(_unitBloc.state);
-    _group.add(_trackingBloc.state);
+    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state);
   }
 
   @override
@@ -72,17 +74,21 @@ class UnitsPageState extends State<UnitsPage> {
                           snapshot.hasError ? snapshot.error : "Legg til en enhet",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ))
-                      : ListView.builder(
-                          itemCount: units.length + 1,
-                          itemBuilder: (context, index) {
-                            return _buildUnit(units, index);
-                          },
-                        ),
+                      : _buildList(units),
                 );
               },
             ),
           ),
         );
+      },
+    );
+  }
+
+  ListView _buildList(List units) {
+    return ListView.builder(
+      itemCount: units.length + 1,
+      itemBuilder: (context, index) {
+        return _buildUnit(units, index);
       },
     );
   }
@@ -99,75 +105,62 @@ class UnitsPageState extends State<UnitsPage> {
     var unit = units[index];
     var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
     var status = tracking.status ?? TrackingStatus.None;
-    return Slidable(
-      actionPane: SlidableScrollActionPane(),
-      actionExtentRatio: 0.2,
-      child: Container(
-        color: Colors.white,
-        child: ListTile(
-          key: ObjectKey(unit.id),
-          leading: CircleAvatar(
-            backgroundColor: _toTrackingStatusColor(context, status),
-            child: Icon(Icons.people),
-            foregroundColor: Colors.white,
-          ),
-          title: Text(unit.name),
-          subtitle: Text(toUTM(tracking?.location, empty: "Ingen posisjon")),
-          dense: true,
-          trailing: RotatedBox(
-            quarterTurns: 1,
-            child: Icon(
-              Icons.drag_handle,
-              color: Colors.grey.withOpacity(0.2),
-            ),
-          ),
-          onTap: () => jumpToPoint(context, tracking?.location),
+    return widget.withActions
+        ? Slidable(
+            actionPane: SlidableScrollActionPane(),
+            actionExtentRatio: 0.2,
+            child: _buildListTile(unit, status, tracking),
+            secondaryActions: <Widget>[
+              if (tracking?.location != null) _buildTrackingAction(context, status, tracking),
+              _buildEditAction(context, unit),
+              _buildCloseAction(context, unit),
+            ],
+          )
+        : _buildListTile(unit, status, tracking);
+  }
+
+  Container _buildListTile(Unit unit, TrackingStatus status, Tracking tracking) {
+    return Container(
+      color: Colors.white,
+      child: ListTile(
+        key: ObjectKey(unit.id),
+        leading: CircleAvatar(
+          backgroundColor: toTrackingStatusColor(context, status),
+          child: Icon(Icons.people),
+          foregroundColor: Colors.white,
         ),
+        title: Text(unit.name),
+        subtitle: Text(toUTM(tracking?.location, empty: "Ingen posisjon")),
+        dense: true,
+        trailing: widget.withActions
+            ? RotatedBox(
+                quarterTurns: 1,
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+              )
+            : null,
+        onTap: () => _onTap(unit, tracking),
       ),
-      secondaryActions: <Widget>[
-        if (tracking?.location != null) _buildTrackingAction(context, status, tracking),
-        _buildEditAction(context, unit),
-        _buildCloseAction(context, unit),
-      ],
     );
+  }
+
+  _onTap(Unit unit, Tracking tracking) {
+    if (widget.onSelection == null) {
+      jumpToPoint(context, tracking?.location);
+    } else {
+      widget.onSelection(unit);
+    }
   }
 
   IconSlideAction _buildTrackingAction(BuildContext context, TrackingStatus status, Tracking tracking) {
     return IconSlideAction(
       caption: 'SPORING',
-      color: _toTrackingStatusColor(context, status),
-      icon: _toTrackingIconData(context, status),
+      color: toTrackingStatusColor(context, status),
+      icon: toTrackingIconData(context, status),
       onTap: () => _trackingBloc.transition(tracking),
     );
-  }
-
-  IconData _toTrackingIconData(BuildContext context, TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.Created:
-      case TrackingStatus.Paused:
-      case TrackingStatus.Closed:
-        return Icons.play_arrow;
-      case TrackingStatus.Tracking:
-      default:
-        return Icons.pause;
-    }
-  }
-
-  Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.None:
-        return Colors.grey;
-      case TrackingStatus.Created:
-        return Theme.of(context).colorScheme.primary;
-      case TrackingStatus.Tracking:
-        return Colors.green;
-      case TrackingStatus.Paused:
-        return Colors.orange;
-      case TrackingStatus.Closed:
-        return Colors.red;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
   }
 
   IconSlideAction _buildEditAction(BuildContext context, Unit unit) {
@@ -200,7 +193,7 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  void showFilterSheet(context) {
+  void showFilterSheet(BuildContext context) {
     final style = Theme.of(context).textTheme.title;
     showModalBottomSheet(
       context: context,

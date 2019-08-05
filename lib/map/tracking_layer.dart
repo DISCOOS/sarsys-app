@@ -269,7 +269,7 @@ class TrackingLayer extends MapPlugin {
                     Expanded(
                       child: _buildCopyableText(
                         context: context,
-                        label: "Mobiltelefon",
+                        label: "Mobil",
                         icon: Icon(Icons.phone),
                         value: unit?.phone ?? "Ukjent",
                         onMessage: options.onMessage,

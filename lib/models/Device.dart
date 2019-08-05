@@ -23,6 +23,9 @@ class Device extends Equatable {
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
 
+  /// Device name
+  get name => "${translateDeviceType(type)} $number";
+
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
 }

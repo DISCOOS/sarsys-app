@@ -1,5 +1,12 @@
 import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/utils/ui_utils.dart';
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -13,33 +20,49 @@ class DevicesPage extends StatefulWidget {
 }
 
 class DevicesPageState extends State<DevicesPage> {
-  DeviceBloc bloc;
   List<DeviceType> _filter = DeviceType.values.toList();
+
+  UnitBloc _unitBloc;
+  DeviceBloc _deviceBloc;
+  TrackingBloc _trackingBloc;
+  StreamGroup<dynamic> _group;
 
   @override
   void initState() {
     super.initState();
-    bloc = BlocProvider.of<DeviceBloc>(context);
+    _unitBloc = BlocProvider.of<UnitBloc>(context)..fetch();
+    _deviceBloc = BlocProvider.of<DeviceBloc>(context)..fetch();
+    _trackingBloc = BlocProvider.of<TrackingBloc>(context)..fetch();
+    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_deviceBloc.state)..add(_trackingBloc.state);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _group.close();
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints viewportConstraints) {
-        return RefreshIndicator(
-          onRefresh: () async {
-            await bloc.fetch();
-            setState(() {});
-          },
-          child: Container(
-            color: Color.fromRGBO(168, 168, 168, 0.6),
-            child: StreamBuilder(
-              stream: bloc.state,
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          await _unitBloc.fetch();
+          await _deviceBloc.fetch();
+          await _trackingBloc.fetch();
+          setState(() {});
+        },
+        child: Container(
+          color: Color.fromRGBO(168, 168, 168, 0.6),
+          child: StreamBuilder(
+              stream: _group.stream,
               builder: (context, snapshot) {
-                var devices = bloc.devices.values.where((device) => _filter.contains(device.type)).toList();
+                var units = _trackingBloc.getUnitsByDeviceId();
+                var tracked = _trackingBloc.getTrackingByDeviceId();
+                var devices = _deviceBloc.devices.values.where((device) => _filter.contains(device.type)).toList();
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
-                  crossFadeState: bloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                  crossFadeState: _deviceBloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
                   firstChild: Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -52,19 +75,22 @@ class DevicesPageState extends State<DevicesPage> {
                       : ListView.builder(
                           itemCount: devices.length + 1,
                           itemBuilder: (context, index) {
-                            return _buildDevice(devices, index);
+                            return _buildDevice(devices, index, units, tracked);
                           },
                         ),
                 );
-              },
-            ),
-          ),
-        );
-      },
-    );
+              }),
+        ),
+      );
+    });
   }
 
-  Widget _buildDevice(List<Device> devices, int index) {
+  Widget _buildDevice(
+    List<Device> devices,
+    int index,
+    Map<String, Set<Unit>> units,
+    Map<String, Set<Tracking>> tracked,
+  ) {
     if (index == devices.length) {
       return SizedBox(
         height: 88,
@@ -73,6 +99,9 @@ class DevicesPageState extends State<DevicesPage> {
         ),
       );
     }
+    final device = devices[index];
+    final status = tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
+        TrackingStatus.None;
     return Slidable(
       actionPane: SlidableScrollActionPane(),
       actionExtentRatio: 0.2,
@@ -80,14 +109,17 @@ class DevicesPageState extends State<DevicesPage> {
         color: Colors.white,
         child: ListTile(
           dense: true,
-          key: ObjectKey(devices[index].id),
+          key: ObjectKey(device.id),
           leading: CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: toTrackingStatusColor(context, status),
             child: Icon(FontAwesomeIcons.mobileAlt),
             foregroundColor: Colors.white,
           ),
-          title: Text("ISSI: ${devices[index].number}"),
-          subtitle: Text(translateDeviceType(devices[index].type)),
+          title: Text("ISSI: ${device.number}"),
+          subtitle: Text(
+            "${translateDeviceType(device.type)}, "
+            "${_toStatusText(device, status, units[device.id]).toLowerCase()}",
+          ),
           trailing: RotatedBox(
             quarterTurns: 1,
             child: Icon(
@@ -97,29 +129,53 @@ class DevicesPageState extends State<DevicesPage> {
           ),
         ),
       ),
-      actions: <Widget>[
-        IconSlideAction(
-          caption: 'KNYTT',
-          color: Theme.of(context).buttonColor,
-          icon: Icons.people,
-          onTap: () => {},
-        ),
-      ],
       secondaryActions: <Widget>[
-        IconSlideAction(
-          caption: 'VIS',
-          color: Theme.of(context).buttonColor,
-          icon: Icons.gps_fixed,
-          onTap: () => {},
-        ),
-        IconSlideAction(
-          caption: 'SPOR',
-          color: Theme.of(context).colorScheme.primary,
-          icon: Icons.play_arrow,
-          onTap: () => {},
-        ),
+        if (status != TrackingStatus.None)
+          IconSlideAction(
+            caption: 'FJERN',
+            color: Colors.red,
+            icon: Icons.people,
+            onTap: () => _removeFromUnits(device, units[device.id]),
+          )
+        else ...[
+          IconSlideAction(
+            caption: 'OPPRETT',
+            color: Theme.of(context).buttonColor,
+            icon: Icons.group_add,
+            onTap: () => _createUnit(device),
+          ),
+          IconSlideAction(
+            caption: 'KNYTT',
+            color: Theme.of(context).buttonColor,
+            icon: Icons.people,
+            onTap: () async => _addToUnit(device),
+          ),
+        ]
       ],
     );
+  }
+
+  void _createUnit(Device device) {
+    showDialog(
+      context: context,
+      builder: (context) => UnitEditor(devices: [device]),
+    );
+  }
+
+  String _toStatusText(Device device, TrackingStatus status, Set<Unit> unit) {
+    switch (status) {
+      case TrackingStatus.None:
+        return "Ikke knyttet til enhet";
+      case TrackingStatus.Created:
+        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}";
+      case TrackingStatus.Tracking:
+        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporer";
+      case TrackingStatus.Paused:
+        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporing pauset";
+      case TrackingStatus.Closed:
+        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporing fjernet";
+    }
+    throw "Status $status not recognized";
   }
 
   void showFilterSheet(context) {
@@ -175,5 +231,35 @@ class DevicesPageState extends State<DevicesPage> {
         _filter.remove(status);
       }
     });
+  }
+
+  _removeFromUnits(Device device, Iterable<Unit> units) async {
+    var proceed = await prompt(
+      context,
+      "Bekreft fjerning",
+      "Dette vil fjerne ${device.name} fra ${units.length > 1 ? 'enheter' : 'enheten'} "
+          "${units.map((unit) => unit.name).join(', ')}.",
+    );
+    if (proceed) {
+      final bloc = BlocProvider.of<TrackingBloc>(context);
+      units.forEach(
+        (unit) => bloc.update(
+          bloc.tracks[unit.tracking].cloneWith(
+            devices: bloc.tracks[unit.tracking].devices.where((test) => test != device.id).toList(),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _addToUnit(Device device) async {
+    var unit = await selectUnit(context);
+    if (unit.tracking == null) {
+      _trackingBloc.create(unit, [device]);
+    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
+      var tracking = _trackingBloc.tracks[unit.tracking];
+      var devices = _trackingBloc.getDevicesFromTrackingId(unit.tracking)..add(device);
+      _trackingBloc.update(tracking, devices: devices);
+    }
   }
 }

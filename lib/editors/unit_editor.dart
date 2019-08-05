@@ -11,8 +11,9 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;
+  final Iterable<Device> devices;
 
-  const UnitEditor({Key key, this.unit}) : super(key: key);
+  const UnitEditor({Key key, this.unit, this.devices = const []}) : super(key: key);
 
   @override
   _UnitEditorState createState() => _UnitEditorState();
@@ -133,6 +134,7 @@ class _UnitEditorState extends State<UnitEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'callsign',
+      autofocus: true,
       initialValue: (widget?.unit?.callsign ?? "").toString(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -206,7 +208,10 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
-    final devices = _trackingBloc.devices(widget?.unit?.tracking);
+    final devices = (widget?.unit?.tracking != null
+        ? _trackingBloc.getDevicesFromTrackingId(widget?.unit?.tracking)
+        : [])
+      ..addAll(widget.devices);
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(

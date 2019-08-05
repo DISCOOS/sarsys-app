@@ -49,21 +49,52 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   /// Get units being tracked
   Map<String, Unit> get units => UnmodifiableMapView(
         Map.fromEntries(
-          unitBloc.units.entries.where((entry) => isTracking(entry.value)),
+          unitBloc.units.entries.where((entry) => isTrackingUnit(entry.value)),
         ),
       );
 
   /// Test if unit is being tracked
-  bool isTracking(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
+  bool isTrackingUnit(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
 
-  /// Get devices
-  List<Device> devices(String id) => _tracks.containsKey(id)
+  /// Get units for all tracked devices.
+  Map<String, Set<Unit>> getUnitsByDeviceId() {
+    final Map<String, Set<Unit>> map = {};
+    units.values.forEach((unit) {
+      getDevicesFromTrackingId(unit.tracking).forEach((device) {
+        map.update(device.id, (set) {
+          set.add(unit);
+          return set;
+        }, ifAbsent: () => {unit});
+      });
+    });
+    return UnmodifiableMapView(map);
+  }
+
+  /// Get devices being tracked by given id
+  List<Device> getDevicesFromTrackingId(String id) => _tracks.containsKey(id)
       ? _tracks[id]
           .devices
           .where((id) => deviceBloc.devices.containsKey(id))
           .map((id) => deviceBloc.devices[id])
           .toList()
       : [];
+
+  /// Get tracking for all tracked devices.
+  Map<String, Set<Tracking>> getTrackingByDeviceId() {
+    final Map<String, Set<Tracking>> map = {};
+    _tracks.values.forEach((tracking) {
+      getDevicesFromTrackingId(tracking.id).forEach((device) {
+        map.update(device.id, (set) {
+          set.add(tracking);
+          return set;
+        }, ifAbsent: () => {tracking});
+      });
+    });
+    return UnmodifiableMapView(map);
+  }
+
+  /// Test if unit is being tracked
+  bool isTrackingDeviceById(String id) => getTrackingByDeviceId().containsKey(id);
 
   /// Fetch tracks from [service]
   Future<List<Tracking>> fetch() async {
