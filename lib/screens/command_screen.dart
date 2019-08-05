@@ -32,7 +32,7 @@ class _CommandScreenState extends State<CommandScreen> {
       initialData: incidentBloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = snapshot.data is Incident ? snapshot.data : null;
-        final title = incident?.reference ?? (incident?.name ?? "Hendelse");
+        final title = _toName(incident);
         final tabs = [
           IncidentPage(),
           UnitsPage(key: _unitsKey),
@@ -65,6 +65,11 @@ class _CommandScreenState extends State<CommandScreen> {
         );
       },
     );
+  }
+
+  _toName(incident, {ifEmpty: "Hendelse"}) {
+    String name = incident?.reference;
+    return name == null || name.isEmpty ? incident?.name ?? ifEmpty : name;
   }
 
   Widget _buildAction(BuildContext context, incident, IncidentBloc incidentBloc) {
