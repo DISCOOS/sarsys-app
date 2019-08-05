@@ -108,7 +108,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     minHeight: viewportConstraints.maxHeight,
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
                     child: cards.isNotEmpty
                         ? Column(
                             children: cards,
