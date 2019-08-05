@@ -132,11 +132,11 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   Future<Incident> _create(CreateIncident event) async {
-    //TODO: Implement call to backend
+    var incident = await service.create(event.data);
 
     var data = _incidents.putIfAbsent(
       event.data.id,
-      () => event.data,
+      () => incident,
     );
     return Future.value(data);
   }

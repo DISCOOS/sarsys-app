@@ -59,16 +59,42 @@ class IncidentBuilder {
 
 class IncidentServiceMock extends Mock implements IncidentService {
   static IncidentService build(UserService service, final int count, final String passcode) {
+    final List<Incident> incidents = [];
     final IncidentServiceMock mock = IncidentServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized");
     when(mock.fetch()).thenAnswer((_) async {
-      var authorized = await service.getToken();
-      return Future.value([
-        for (var i = 1; i <= count ~/ 2; i++)
-          Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, authorized, passcode)),
-        for (var i = count ~/ 2 + 1; i <= count; i++)
-          Incident.fromJson(IncidentBuilder.createIncidentFromToken("By$i", i, unauthorized, passcode)),
-      ]);
+      if (incidents.isEmpty) {
+        var authorized = await service.getToken();
+        return Future.value([
+          for (var i = 1; i <= count ~/ 2; i++)
+            Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, authorized, passcode)),
+          for (var i = count ~/ 2 + 1; i <= count; i++)
+            Incident.fromJson(IncidentBuilder.createIncidentFromToken("By$i", i, unauthorized, passcode)),
+        ]);
+      }
+      return Future.value(incidents);
+    });
+    when(mock.create(any)).thenAnswer((invocation) async {
+      final authorized = JsonWebToken.unverified(await service.getToken());
+      final Incident incident = invocation.positionalArguments[0];
+      final author = Author.now(authorized.claims.subject);
+      return Future.value(Incident(
+        id: "aZ${incidents.length}",
+        type: incident.type,
+        status: incident.status,
+        created: author,
+        changed: author,
+        occurred: incident.occurred,
+        ipp: incident.ipp,
+        name: incident.name,
+        justification: incident.justification,
+        passcodes: Passcodes(
+          command: passcode,
+          personnel: passcode,
+        ),
+        talkgroups: incident.talkgroups,
+        reference: incident.reference,
+      ));
     });
     return mock;
   }

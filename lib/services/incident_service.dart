@@ -13,4 +13,10 @@ class IncidentService {
     // TODO: Implement fetch incidents
     throw "Not implemented";
   }
+
+  /// POST ../incidents
+  Future<Incident> create(Incident incident) async {
+    // TODO: Implement create incident
+    throw "Not implemented";
+  }
 }

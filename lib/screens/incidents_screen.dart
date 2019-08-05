@@ -34,22 +34,28 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         return Scaffold(
           key: _scaffoldKey,
           appBar: _buildAppBar(context, _bloc.isUnset),
+          extendBody: true,
+          resizeToAvoidBottomInset: true,
           body: _buildBody(_bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => IncidentEditor(),
-            ),
+            onPressed: () => _create(context),
             tooltip: 'Ny hendelse',
             child: Icon(Icons.add),
             elevation: 2.0,
           ),
           bottomNavigationBar: _buildBottomAppBar(),
-          extendBody: true,
         );
       },
     );
+  }
+
+  Future _create(BuildContext context) async {
+    var incident = await showDialog<Incident>(
+      context: context,
+      builder: (context) => IncidentEditor(),
+    );
+    if (incident != null) Navigator.pushReplacementNamed(context, 'incident');
   }
 
   AppBar _buildAppBar(BuildContext context, bool isUnset) {
@@ -237,8 +243,6 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           );
         });
   }
-
-  static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
   Widget _buildMapTile(Incident incident) {
     final point = incident.ipp != null ? toLatLng(incident.ipp) : Defaults.origo;

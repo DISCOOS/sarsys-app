@@ -173,12 +173,10 @@ class IncidentMapState extends State<IncidentMap> {
           onError: widget.onMessage,
           onMatch: _onSearchMatch,
           onCleared: _onSearchCleared,
-          prefixIcon: widget.onOpenDrawer == null
-              ? Container()
-              : GestureDetector(
-                  child: Icon(Icons.menu),
-                  onTap: widget.onOpenDrawer,
-                ),
+          prefixIcon: GestureDetector(
+            child: Icon(Icons.menu),
+            onTap: widget.onOpenDrawer ?? () => Navigator.pop(context),
+          ),
         ),
       ),
     );
