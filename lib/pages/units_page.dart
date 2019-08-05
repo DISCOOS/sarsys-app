@@ -120,6 +120,7 @@ class UnitsPageState extends State<UnitsPage> {
   }
 
   Container _buildListTile(Unit unit, TrackingStatus status, Tracking tracking) {
+    final caption = Theme.of(context).textTheme.caption.copyWith(fontSize: 11);
     return Container(
       color: Colors.white,
       child: ListTile(
@@ -130,7 +131,11 @@ class UnitsPageState extends State<UnitsPage> {
           foregroundColor: Colors.white,
         ),
         title: Text(unit.name),
-        subtitle: Text(toUTM(tracking?.location, empty: "Ingen posisjon")),
+        subtitle: Text(
+          "${translateUnitStatus(unit.status)}, "
+          "${toUTM(tracking?.location, empty: "Ingen posisjon")}",
+          style: caption,
+        ),
         dense: true,
         trailing: widget.withActions
             ? RotatedBox(
