@@ -5,14 +5,15 @@ import 'dart:math' as math;
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:mockito/mockito.dart';
-import 'package:uuid/uuid.dart';
 
 class TracksBuilder {
-  static createTrackingAsJson(String id, List<String> devices, String location, TrackingStatus status) {
+  static Map<String, dynamic> createTrackingAsJson(
+      String id, List<String> devices, String location, TrackingStatus status) {
     return json.decode('{'
         '"id": "$id",'
         '"status": "${enumName(status)}",'
@@ -64,23 +65,24 @@ class TrackingServiceMock extends Mock implements TrackingService {
             ),
         ].map((tracking) => MapEntry(tracking.id, tracking)));
       }
-      return Future.value(tracks.values.toList());
+      return ServiceResponse.ok(body: tracks.values.toList());
     });
     when(mock.create(any, any)).thenAnswer((_) async {
       var unit = _.positionalArguments[0];
-      if (tracks.containsKey(unit.tracking)) {
-        var devices = _.positionalArguments[1];
-        final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
-        return Future.value(
-          TracksBuilder.createTrackingAsJson(
-            Uuid().v1(),
-            devices,
-            TracksBuilder.createRandomPointAsJson(math.Random(), center),
-            TrackingStatus.Created,
-          ),
-        );
+      var id = unit?.tracking;
+      if (tracks.containsKey(id)) {
+        return ServiceResponse.noContent();
       }
-      return Future.error("409 Conflict. Tracking already exists for unit ${unit.id}");
+      var devices = _.positionalArguments[1];
+      final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+      final tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
+        "t${tracks.length}",
+        devices,
+        TracksBuilder.createRandomPointAsJson(math.Random(), center),
+        TrackingStatus.Created,
+      ));
+      tracks.putIfAbsent(tracking.id, () => tracking);
+      return ServiceResponse.ok(body: tracks.putIfAbsent(tracking.id, () => tracking));
     });
     when(mock.update(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
@@ -91,9 +93,18 @@ class TrackingServiceMock extends Mock implements TrackingService {
           ifAbsent: () => tracking,
         );
         _simulate(rnd, simulations, tracking);
-        return Future.value(tracking);
+        return ServiceResponse.noContent();
       }
-      return Future.error("404 Not found. Tracking ${tracking.id}");
+      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
+    });
+    when(mock.delete(any)).thenAnswer((_) async {
+      var tracking = _.positionalArguments[0];
+      if (tracks.containsKey(tracking.id)) {
+        tracks.remove(tracking.id);
+        simulations.remove(tracking.id);
+        return ServiceResponse.noContent();
+      }
+      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
     });
     return mock;
   }

@@ -33,12 +33,12 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   void _init(IncidentState state) {
     if (state.isUnset() || state.isCreated() || state.isDeleted())
-      dispatch(ClearTracks(_tracks.keys.toList()));
+      dispatch(ClearTracking(_tracks.keys.toList()));
     else if (state.isSelected()) _fetch(state.data.id);
   }
 
   @override
-  TrackingState get initialState => TracksEmpty();
+  TrackingState get initialState => TrackingEmpty();
 
   /// Check if [tracks] is empty
   bool get isEmpty => _tracks.isEmpty;
@@ -55,6 +55,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   /// Test if unit is being tracked
   bool isTrackingUnit(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
+
+  /// Get units being tracked
+  Unit getUnitFromTrackingId(String id) =>
+      unitBloc.units.values.firstWhere((unit) => isTrackingUnit(unit) && id == unit?.tracking);
 
   /// Get units for all tracked devices.
   Map<String, Set<Unit>> getUnitsByDeviceId() {
@@ -107,11 +111,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return _fetch(incidentBloc.current.id);
   }
 
-  Future<UnmodifiableListView<Tracking>> _fetch(String id) async {
-    dispatch(ClearTracks(_tracks.keys.toList()));
-    var tracks = await service.fetch(id);
-    dispatch(LoadTracks(tracks));
-    return UnmodifiableListView<Tracking>(tracks);
+  Future<List<Tracking>> _fetch(String id) async {
+    var response = await service.fetch(id);
+    if (response.is200) {
+      dispatch(ClearTracking(_tracks.keys.toList()));
+      dispatch(LoadTracking(response.body));
+      return UnmodifiableListView<Tracking>(response.body);
+    }
+    dispatch(RaiseTrackingError(response));
+    return Future.error(response);
   }
 
   /// Create tracking for given Unit
@@ -148,21 +156,16 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   @override
   Stream<TrackingState> mapEventToState(TrackingCommand command) async* {
-    if (command is LoadTracks) {
-      List<String> ids = _load(command.data);
-      yield TracksLoaded(ids);
+    if (command is LoadTracking) {
+      yield _load(command.data);
     } else if (command is CreateTracking) {
-      Tracking data = await _create(command);
-      yield TrackingCreated(data);
+      yield await _create(command);
     } else if (command is UpdateTracking) {
-      Tracking data = await _update(command);
-      yield TrackingUpdated(data);
+      yield await _update(command);
     } else if (command is DeleteTracking) {
-      Tracking data = await _delete(command);
-      yield TrackingDeleted(data);
-    } else if (command is ClearTracks) {
-      List<Tracking> tracks = _clear(command);
-      yield TracksCleared(tracks);
+      yield await _delete(command);
+    } else if (command is ClearTracking) {
+      yield _clear(command);
     } else if (command is HandleMessage) {
       yield _process(command.data);
     } else if (command is RaiseTrackingError) {
@@ -172,23 +175,25 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     }
   }
 
-  List<String> _load(List<Tracking> tracks) {
-    //TODO: Implement call to backend
-
+  TrackingLoaded _load(List<Tracking> tracks) {
     _tracks.addEntries(tracks.map(
       (tracking) => MapEntry(tracking.id, tracking),
     ));
-    return _tracks.keys.toList();
+    return TrackingLoaded(_tracks.keys.toList());
   }
 
-  Future<Tracking> _create(CreateTracking event) async {
-    var tracking = await service.create(event.unitId, event.data);
-
-    _tracks.putIfAbsent(
-      tracking.id,
-      () => tracking,
-    );
-    return Future.value(tracking);
+  Future<TrackingState> _create(CreateTracking event) async {
+    var response = await service.create(event.unitId, event.data);
+    if (response.is200) {
+      unitBloc.update(
+        unitBloc.units[event.unitId].cloneWith(tracking: response.body.id),
+      );
+      return TrackingCreated(_tracks.putIfAbsent(
+        response.body.id,
+        () => response.body,
+      ));
+    }
+    return TrackingError(response);
   }
 
   TrackingState _process(TrackingMessage event) {
@@ -211,30 +216,34 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return TrackingError("Tracking message not recognized: $event");
   }
 
-  Future<Tracking> _update(UpdateTracking event) async {
-    var tracking = await service.update(event.data);
-
-    _tracks.update(
-      tracking.id,
-      (_) => tracking,
-      ifAbsent: () => tracking,
-    );
-    return Future.value(tracking);
-  }
-
-  Future<Tracking> _delete(DeleteTracking event) {
-    //TODO: Implement call to backend
-
-    if (_tracks.remove(event.data.id) == null) {
-      throw "Failed to delete tracking ${event.data.id}";
+  Future<TrackingState> _update(UpdateTracking event) async {
+    var response = await service.update(event.data);
+    if (response.is204) {
+      _tracks.update(
+        event.data.id,
+        (_) => event.data,
+        ifAbsent: () => event.data,
+      );
+      return TrackingUpdated(event.data);
     }
-    return Future.value(event.data);
+    return TrackingError(response);
   }
 
-  List<Tracking> _clear(ClearTracks command) {
+  Future<TrackingState> _delete(DeleteTracking event) async {
+    var response = await service.delete(event.data);
+    if (response.is204) {
+      if (_tracks.remove(event.data.id) == null) {
+        TrackingError("Failed to delete tracking $event, not found locally");
+      }
+      return TrackingDeleted(event.data);
+    }
+    return TrackingError(response);
+  }
+
+  TrackingCleared _clear(ClearTracking command) {
     List<Tracking> cleared = [];
     command.data.forEach((id) => {if (_tracks.containsKey(id)) cleared.add(_tracks.remove(id))});
-    return cleared;
+    return TrackingCleared(cleared);
   }
 
   @override
@@ -263,11 +272,11 @@ abstract class TrackingCommand<T> extends Equatable {
   TrackingCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadTracks extends TrackingCommand<List<Tracking>> {
-  LoadTracks(List<Tracking> data) : super(data);
+class LoadTracking extends TrackingCommand<List<Tracking>> {
+  LoadTracking(List<Tracking> data) : super(data);
 
   @override
-  String toString() => 'LoadTracks';
+  String toString() => 'LoadTracking';
 }
 
 class CreateTracking extends TrackingCommand<List<String>> {
@@ -299,11 +308,11 @@ class DeleteTracking extends TrackingCommand<Tracking> {
   String toString() => 'DeleteTracking';
 }
 
-class ClearTracks extends TrackingCommand<List<String>> {
-  ClearTracks(List<String> data) : super(data);
+class ClearTracking extends TrackingCommand<List<String>> {
+  ClearTracking(List<String> data) : super(data);
 
   @override
-  String toString() => 'ClearTracks';
+  String toString() => 'ClearTracking';
 }
 
 class RaiseTrackingError extends TrackingCommand<TrackingError> {
@@ -321,28 +330,28 @@ abstract class TrackingState<T> extends Equatable {
 
   TrackingState(this.data, [props = const []]) : super([data, ...props]);
 
-  isEmpty() => this is TracksEmpty;
-  isLoaded() => this is TracksLoaded;
+  isEmpty() => this is TrackingEmpty;
+  isLoaded() => this is TrackingLoaded;
   isCreated() => this is TrackingCreated;
   isUpdated() => this is TrackingUpdated;
   isDeleted() => this is TrackingDeleted;
-  isCleared() => this is TracksCleared;
+  isCleared() => this is TrackingCleared;
   isException() => this is TrackingException;
   isError() => this is TrackingError;
 }
 
-class TracksEmpty extends TrackingState<Null> {
-  TracksEmpty() : super(null);
+class TrackingEmpty extends TrackingState<Null> {
+  TrackingEmpty() : super(null);
 
   @override
-  String toString() => 'TracksEmpty';
+  String toString() => 'TrackingEmpty';
 }
 
-class TracksLoaded extends TrackingState<List<String>> {
-  TracksLoaded(List<String> data) : super(data);
+class TrackingLoaded extends TrackingState<List<String>> {
+  TrackingLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'TracksLoaded';
+  String toString() => 'TrackingLoaded';
 }
 
 class TrackingCreated extends TrackingState<Tracking> {
@@ -366,11 +375,11 @@ class TrackingDeleted extends TrackingState<Tracking> {
   String toString() => 'TrackingDeleted';
 }
 
-class TracksCleared extends TrackingState<List<Tracking>> {
-  TracksCleared(List<Tracking> tracks) : super(tracks);
+class TrackingCleared extends TrackingState<List<Tracking>> {
+  TrackingCleared(List<Tracking> tracks) : super(tracks);
 
   @override
-  String toString() => 'TracksCleared';
+  String toString() => 'TrackingCleared';
 }
 
 /// ---------------------

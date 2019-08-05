@@ -25,9 +25,13 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   /// Fetch config from [service]
   Future<AppConfig> fetch() async {
-    var config = await service.fetch();
-    dispatch(FetchAppConfig(config));
-    return config;
+    var response = await service.fetch();
+    if (response.is200) {
+      dispatch(FetchAppConfig(response.body));
+      return response.body;
+    }
+    dispatch(RaiseAppConfigError(response));
+    return Future.error(response);
   }
 
   /// Update given settings
@@ -37,15 +41,18 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     bool locationWhenInUse,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
-
-    var next = await service.save(config.copyWith(
-      onboarding: onboarding,
-      affiliation: affiliation,
-      locationWhenInUse: locationWhenInUse,
-    ));
-
-    dispatch(UpdateAppConfig(next));
-    return next;
+    final config = this.config.copyWith(
+          onboarding: onboarding,
+          affiliation: affiliation,
+          locationWhenInUse: locationWhenInUse,
+        );
+    var response = await service.save(config);
+    if (response.is204) {
+      dispatch(UpdateAppConfig(config));
+      return config;
+    }
+    dispatch(RaiseAppConfigError(response));
+    return Future.error(response);
   }
 
   @override

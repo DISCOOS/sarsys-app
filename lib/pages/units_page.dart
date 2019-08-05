@@ -104,7 +104,7 @@ class UnitsPageState extends State<UnitsPage> {
     }
     var unit = units[index];
     var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
-    var status = tracking.status ?? TrackingStatus.None;
+    var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions
         ? Slidable(
             actionPane: SlidableScrollActionPane(),

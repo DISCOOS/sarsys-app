@@ -155,11 +155,42 @@ class DevicesPageState extends State<DevicesPage> {
     );
   }
 
-  void _createUnit(Device device) {
-    showDialog(
+  void _createUnit(Device device) async {
+    var result = await showDialog<UnitEditorResult>(
       context: context,
       builder: (context) => UnitEditor(devices: [device]),
     );
+    if (result != null) _trackingBloc.create(result.unit, result.devices);
+  }
+
+  void _addToUnit(Device device) async {
+    var unit = await selectUnit(context);
+    if (unit.tracking == null) {
+      _trackingBloc.create(unit, [device]);
+    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
+      var tracking = _trackingBloc.tracks[unit.tracking];
+      var devices = _trackingBloc.getDevicesFromTrackingId(unit.tracking)..add(device);
+      _trackingBloc.update(tracking, devices: devices);
+    }
+  }
+
+  _removeFromUnits(Device device, Iterable<Unit> units) async {
+    var proceed = await prompt(
+      context,
+      "Bekreft fjerning",
+      "Dette vil fjerne ${device.name} fra ${units.length > 1 ? 'enheter' : 'enheten'} "
+          "${units.map((unit) => unit.name).join(', ')}.",
+    );
+    if (proceed) {
+      final bloc = BlocProvider.of<TrackingBloc>(context);
+      units.forEach(
+        (unit) => bloc.update(
+          bloc.tracks[unit.tracking].cloneWith(
+            devices: bloc.tracks[unit.tracking].devices.where((test) => test != device.id).toList(),
+          ),
+        ),
+      );
+    }
   }
 
   String _toStatusText(Device device, TrackingStatus status, Set<Unit> unit) {
@@ -231,35 +262,5 @@ class DevicesPageState extends State<DevicesPage> {
         _filter.remove(status);
       }
     });
-  }
-
-  _removeFromUnits(Device device, Iterable<Unit> units) async {
-    var proceed = await prompt(
-      context,
-      "Bekreft fjerning",
-      "Dette vil fjerne ${device.name} fra ${units.length > 1 ? 'enheter' : 'enheten'} "
-          "${units.map((unit) => unit.name).join(', ')}.",
-    );
-    if (proceed) {
-      final bloc = BlocProvider.of<TrackingBloc>(context);
-      units.forEach(
-        (unit) => bloc.update(
-          bloc.tracks[unit.tracking].cloneWith(
-            devices: bloc.tracks[unit.tracking].devices.where((test) => test != device.id).toList(),
-          ),
-        ),
-      );
-    }
-  }
-
-  void _addToUnit(Device device) async {
-    var unit = await selectUnit(context);
-    if (unit.tracking == null) {
-      _trackingBloc.create(unit, [device]);
-    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
-      var tracking = _trackingBloc.tracks[unit.tracking];
-      var devices = _trackingBloc.getDevicesFromTrackingId(unit.tracking)..add(device);
-      _trackingBloc.update(tracking, devices: devices);
-    }
   }
 }

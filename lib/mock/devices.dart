@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/device_service.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:intl/intl.dart';
@@ -33,14 +34,19 @@ class DeviceBuilder {
 
 class DeviceServiceMock extends Mock implements DeviceService {
   static DeviceService build(final IncidentBloc bloc, final int count) {
+    final List<Device> devices = [];
     final DeviceServiceMock mock = DeviceServiceMock();
     final issi = NumberFormat("##");
     when(mock.fetch(any)).thenAnswer((_) async {
       Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
-      return Future.value([
-        for (var i = 1; i <= count; i++)
-          Device.fromJson(DeviceBuilder.createDeviceAsJson("d$i", DeviceType.Tetra, "61001${issi.format(i)}", center)),
-      ]);
+      if (devices.isEmpty) {
+        devices.addAll([
+          for (var i = 1; i <= count; i++)
+            Device.fromJson(
+                DeviceBuilder.createDeviceAsJson("d$i", DeviceType.Tetra, "61001${issi.format(i)}", center)),
+        ]);
+      }
+      return ServiceResponse.ok(body: devices);
     });
     return mock;
   }

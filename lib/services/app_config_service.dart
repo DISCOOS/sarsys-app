@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async' show Future;
 import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:http/http.dart' show Client;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,12 +52,12 @@ class AppConfigService {
   }
 
   /// GET ../app-config
-  Future<AppConfig> fetch() async {
+  Future<ServiceResponse<AppConfig>> fetch() async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }
 
-  Future<AppConfig> save(AppConfig config) async {
+  Future<ServiceResponse<void>> save(AppConfig config) async {
     // TODO: Implement save app-config
     throw "Not implemented";
   }

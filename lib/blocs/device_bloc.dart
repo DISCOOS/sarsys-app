@@ -47,21 +47,23 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     return _fetch(incidentBloc.current.id);
   }
 
-  Future<UnmodifiableListView<Device>> _fetch(String id) async {
-    dispatch(ClearDevices(_devices.keys.toList()));
-    var devices = await service.fetch(id);
-    dispatch(LoadDevices(devices));
-    return UnmodifiableListView<Device>(devices);
+  Future<List<Device>> _fetch(String id) async {
+    var response = await service.fetch(id);
+    if (response.is200) {
+      dispatch(ClearDevices(_devices.keys.toList()));
+      dispatch(LoadDevices(response.body));
+      return UnmodifiableListView<Device>(response.body);
+    }
+    dispatch(RaiseDeviceError(response));
+    return Future.error(response);
   }
 
   @override
   Stream<DeviceState> mapEventToState(DeviceCommand command) async* {
     if (command is LoadDevices) {
-      List<String> ids = _load(command.data);
-      yield DevicesLoaded(ids);
+      yield _load(command.data);
     } else if (command is ClearDevices) {
-      List<Device> devices = _clear(command);
-      yield DevicesCleared(devices);
+      yield _clear(command);
     } else if (command is RaiseDeviceError) {
       yield command.data;
     } else {
@@ -69,19 +71,17 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     }
   }
 
-  List<String> _load(List<Device> devices) {
-    //TODO: Implement call to backend
-
+  DevicesLoaded _load(List<Device> devices) {
     _devices.addEntries(devices.map(
       (device) => MapEntry(device.id, device),
     ));
-    return _devices.keys.toList();
+    return DevicesLoaded(_devices.keys.toList());
   }
 
-  List<Device> _clear(ClearDevices command) {
+  DevicesCleared _clear(ClearDevices command) {
     List<Device> cleared = [];
     command.data.forEach((id) => {if (_devices.containsKey(id)) cleared.add(_devices.remove(id))});
-    return cleared;
+    return DevicesCleared(cleared);
   }
 
   @override

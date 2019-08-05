@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:http/http.dart' show Client;
 
 class TrackingService {
@@ -14,19 +15,26 @@ class TrackingService {
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  /// GET ../api/incident/{incidentId}/tracking
-  Future<List<Tracking>> fetch(incidentId) async {
+  /// GET ../incident/{incidentId}/tracking
+  Future<ServiceResponse<List<Tracking>>> fetch(incidentId) async {
     // TODO: Implement fetch tracking
     throw "Not implemented";
   }
 
-  Future<Tracking> create(String unitId, List<String> devices) async {
+  /// POST ../incident/{incidentId}/tracking
+  Future<ServiceResponse<Tracking>> create(String unitId, List<String> devices) async {
     // TODO: Implement create tracking
     throw "Not implemented";
   }
 
-  Future<Tracking> update(Tracking tracking) async {
+  Future<ServiceResponse<void>> update(Tracking tracking) async {
     // TODO: Implement update tracking
+    throw "Not implemented";
+  }
+
+  /// DELETE ../units/{unitId}
+  Future<ServiceResponse<void>> delete(Tracking unit) async {
+    // TODO: Implement delete unit
     throw "Not implemented";
   }
 

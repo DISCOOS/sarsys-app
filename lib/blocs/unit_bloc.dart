@@ -68,30 +68,29 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     return _fetch(incidentBloc.current.id);
   }
 
-  Future<UnmodifiableListView<Unit>> _fetch(String id) async {
-    dispatch(ClearUnits(_units.keys.toList()));
-    var units = await service.fetch(id);
-    dispatch(LoadUnits(units));
-    return UnmodifiableListView<Unit>(units);
+  Future<List<Unit>> _fetch(String id) async {
+    var response = await service.fetch(id);
+    if (response.is200) {
+      dispatch(ClearUnits(_units.keys.toList()));
+      dispatch(LoadUnits(response.body));
+      return UnmodifiableListView<Unit>(response.body);
+    }
+    dispatch(RaiseUnitError(response));
+    return Future.error(response);
   }
 
   @override
   Stream<UnitState> mapEventToState(UnitCommand command) async* {
     if (command is LoadUnits) {
-      List<String> ids = _load(command.data);
-      yield UnitsLoaded(ids);
+      yield _load(command.data);
     } else if (command is CreateUnit) {
-      Unit data = await _create(command);
-      yield UnitCreated(data);
+      yield await _create(command);
     } else if (command is UpdateUnit) {
-      Unit data = await _update(command);
-      yield UnitUpdated(data);
+      yield await _update(command);
     } else if (command is DeleteUnit) {
-      Unit data = await _delete(command);
-      yield UnitDeleted(data);
+      yield await _delete(command);
     } else if (command is ClearUnits) {
-      List<Unit> units = _clear(command);
-      yield UnitsCleared(units);
+      yield _clear(command);
     } else if (command is RaiseUnitError) {
       yield command.data;
     } else {
@@ -99,49 +98,54 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     }
   }
 
-  List<String> _load(List<Unit> units) {
-    //TODO: Implement call to backend
-
+  UnitsLoaded _load(List<Unit> units) {
     _units.addEntries(units.map(
       (unit) => MapEntry(unit.id, unit),
     ));
-    return _units.keys.toList();
+    return UnitsLoaded(_units.keys.toList());
   }
 
-  Future<Unit> _create(CreateUnit event) async {
-    //TODO: Implement call to backend
-
-    var data = _units.putIfAbsent(
-      event.data.id,
-      () => event.data,
-    );
-    return Future.value(data);
-  }
-
-  Future<Unit> _update(UpdateUnit event) async {
-    //TODO: Implement call to backend
-
-    var data = _units.update(
-      event.data.id,
-      (_) => event.data,
-      ifAbsent: () => event.data,
-    );
-    return Future.value(data);
-  }
-
-  Future<Unit> _delete(DeleteUnit event) {
-    //TODO: Implement call to backend
-
-    if (_units.remove(event.data.id) == null) {
-      throw "Failed to delete unit ${event.data.id}";
+  Future<UnitState> _create(CreateUnit event) async {
+    var response = await service.create(event.data);
+    if (response.is200) {
+      return UnitCreated(_units.putIfAbsent(
+        response.body.id,
+        () => response.body,
+      ));
     }
-    return Future.value(event.data);
+    return UnitError(response);
   }
 
-  List<Unit> _clear(ClearUnits command) {
+  Future<UnitState> _update(UpdateUnit event) async {
+    var response = await service.update(event.data);
+    if (response.is204) {
+      // TODO: Close tracking if Unit is retired
+      _units.update(
+        event.data.id,
+        (_) => event.data,
+        ifAbsent: () => event.data,
+      );
+      return UnitUpdated(event.data);
+    }
+    return UnitError(response);
+  }
+
+  Future<UnitState> _delete(DeleteUnit event) async {
+    var response = await service.delete(event.data);
+    if (response.is204) {
+      // TODO: Delete tracking if Unit was tracked
+      if (_units.remove(event.data.id) == null) {
+        UnitError("Failed to delete unit $event, not found locally");
+      }
+      return UnitDeleted(event.data);
+    }
+    return UnitError(response);
+  }
+
+  UnitState _clear(ClearUnits command) {
     List<Unit> cleared = [];
     command.data.forEach((id) => {if (_units.containsKey(id)) cleared.add(_units.remove(id))});
-    return cleared;
+    return UnitsCleared(cleared);
   }
 
   @override

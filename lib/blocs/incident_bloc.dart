@@ -58,10 +58,14 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   /// Fetch incidents from [service]
   Future<List<Incident>> fetch() async {
-    dispatch(ClearIncidents(_incidents.keys.toList()));
-    var incidents = await service.fetch();
-    dispatch(LoadIncidents(incidents));
-    return UnmodifiableListView<Incident>(incidents);
+    var response = await service.fetch();
+    if (response.is200) {
+      dispatch(ClearIncidents(_incidents.keys.toList()));
+      dispatch(LoadIncidents(response.body));
+      return UnmodifiableListView<Incident>(response.body);
+    }
+    dispatch(RaiseIncidentError(response));
+    return Future.error(response);
   }
 
   /// Select given id
@@ -84,39 +88,42 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return this;
   }
 
+  /// Delete given incident
+  IncidentBloc delete(Incident incident) {
+    dispatch(DeleteIncident(incident));
+    return this;
+  }
+
   @override
   Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
     if (command is LoadIncidents) {
-      List<String> ids = _load(command);
-      yield IncidentsLoaded(ids);
+      yield _load(command);
       // Currently selected incident not found?
       if (_given != null && _given.isNotEmpty && !_incidents.containsKey(_given)) {
         yield _unset();
       }
     } else if (command is CreateIncident) {
-      Incident data = await _create(command);
+      yield await _create(command);
       if (command.selected) {
-        yield _set(data);
+        yield _set(command.data);
       }
     } else if (command is UpdateIncident) {
-      Incident data = await _update(command);
-      var select = command.selected && data.id != _given;
-      yield IncidentUpdated(data, selected: (data.id == _given || select));
+      yield await _update(command);
+      var select = command.selected && command.data.id != _given;
       if (select) {
-        yield _set(data);
+        yield _set(command.data);
       }
     } else if (command is SelectIncident) {
       if (command.data != _given && _incidents.containsKey(command.data)) {
         yield _set(_incidents[command.data]);
       }
     } else if (command is DeleteIncident) {
-      Incident data = await _delete(command);
-      if (data.id == _given) {
+      yield await _delete(command);
+      if (command.data.id == _given) {
         yield _unset();
       }
     } else if (command is ClearIncidents) {
-      List<Incident> incidents = _clear(command);
-      yield IncidentsCleared(incidents);
+      yield _clear(command);
     } else if (command is RaiseIncidentError) {
       yield command.data;
     } else {
@@ -124,41 +131,48 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     }
   }
 
-  List<String> _load(LoadIncidents command) {
+  IncidentState _load(LoadIncidents command) {
     _incidents.addEntries((command.data).map(
       (incident) => MapEntry(incident.id, incident),
     ));
-    return _incidents.keys.toList();
+    return IncidentsLoaded(_incidents.keys.toList());
   }
 
-  Future<Incident> _create(CreateIncident event) async {
-    var incident = await service.create(event.data);
-
-    var data = _incidents.putIfAbsent(
-      event.data.id,
-      () => incident,
-    );
-    return Future.value(data);
-  }
-
-  Future<Incident> _update(UpdateIncident event) async {
-    //TODO: Implement call to backend
-
-    var data = _incidents.update(
-      event.data.id,
-      (_) => event.data,
-      ifAbsent: () => event.data,
-    );
-    return Future.value(data);
-  }
-
-  Future<Incident> _delete(DeleteIncident event) {
-    //TODO: Implement call to backend
-
-    if (this.incidents.remove(event.data.id)) {
-      throw "Failed to delete ${event.data.id}";
+  Future<IncidentState> _create(CreateIncident event) async {
+    var response = await service.create(event.data);
+    if (response.is200) {
+      return IncidentCreated(_incidents.putIfAbsent(
+        response.body.id,
+        () => response.body,
+      ));
     }
-    return Future.value(event.data);
+    return IncidentError(response);
+  }
+
+  Future<IncidentState> _update(UpdateIncident event) async {
+    var response = await service.update(event.data);
+    if (response.is204) {
+      // TODO: Close all tracking if Incident is closed (cancelled or resolved)
+      _incidents.update(
+        event.data.id,
+        (_) => event.data,
+        ifAbsent: () => event.data,
+      );
+      return IncidentUpdated(event.data);
+    }
+    return IncidentError(response);
+  }
+
+  Future<IncidentState> _delete(DeleteIncident event) async {
+    var response = await service.delete(event.data);
+    if (response.is204) {
+      // TODO: Delete all tracking
+      if (_incidents.remove(event.data.id) == null) {
+        IncidentError("Failed to delete incident $event, not found locally");
+      }
+      return IncidentDeleted(event.data);
+    }
+    return IncidentError(response);
   }
 
   IncidentSelected _set(Incident data) {
@@ -171,10 +185,10 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return IncidentUnset();
   }
 
-  List<Incident> _clear(ClearIncidents command) {
+  IncidentState _clear(ClearIncidents command) {
     List<Incident> cleared = [];
     command.data.forEach((id) => {if (_incidents.containsKey(id)) cleared.add(_incidents.remove(id))});
-    return cleared;
+    return IncidentsCleared(cleared);
   }
 
   @override
