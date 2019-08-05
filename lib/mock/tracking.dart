@@ -76,7 +76,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       var devices = _.positionalArguments[1];
       final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
       final tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
-        "t${tracks.length}",
+        "t${tracks.length + 1}",
         devices,
         TracksBuilder.createRandomPointAsJson(math.Random(), center),
         TrackingStatus.Created,
