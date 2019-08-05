@@ -386,7 +386,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     if (_formKey.currentState.validate()) {
       const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
       final userId = BlocProvider.of<UserBloc>(context).user?.userId;
-      final current = widget.incident.status;
+      final current = widget?.incident?.status;
       var incident;
       _formKey.currentState.save();
       if (widget.incident == null) {
