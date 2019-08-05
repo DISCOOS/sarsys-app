@@ -5,7 +5,6 @@ import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
-import 'package:SarSys/utils/map_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -40,7 +39,6 @@ class _IncidentPageState extends State<IncidentPage> {
     final labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
     final valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 22.0);
     final unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
-    final messageStyle = Theme.of(context).textTheme.title.copyWith(fontSize: 22.0);
 
     return Container(
       color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -62,11 +60,11 @@ class _IncidentPageState extends State<IncidentPage> {
                           SizedBox(height: IncidentPage.SPACING),
                           _buildTitle(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildGeneral(context, incident, labelStyle, valueStyle, unitStyle),
+                          _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildJustification(incident, labelStyle, messageStyle, unitStyle),
+                          _buildJustification(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildIPP(incident, labelStyle, messageStyle, unitStyle),
+                          _buildIPP(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
@@ -119,25 +117,24 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Row _buildTitle(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildTitle(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("Hendelse", incident.name, "", valueStyle, unitStyle, unitStyle),
+          child: _buildValueTile("Hendelse", incident.name, "", labelStyle, valueStyle, unitStyle),
         ),
       ],
     );
   }
 
-  Row _buildGeneral(
-      BuildContext context, Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildGeneral(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     final bloc = BlocProvider.of<UnitBloc>(context);
     return Row(
       children: <Widget>[
         Expanded(
-          flex: 3,
-          child: _buildValueTile("Type", translateIncidentType(incident.type), "", valueStyle, unitStyle, unitStyle),
+          flex: 2,
+          child: _buildValueTile("Type", translateIncidentType(incident.type), "", labelStyle, valueStyle, unitStyle),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
@@ -145,7 +142,7 @@ class _IncidentPageState extends State<IncidentPage> {
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
                 return _buildValueTile(
-                    "Innsats", "${formatSince(incident.occurred)}", "", valueStyle, unitStyle, unitStyle);
+                    "Innsats", "${formatSince(incident.occurred)}", "", labelStyle, valueStyle, unitStyle);
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
@@ -153,31 +150,31 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<UnitState>(
               stream: bloc.state,
               builder: (context, snapshot) {
-                return _buildValueTile("Enheter", "${bloc.count}", "", valueStyle, unitStyle, unitStyle);
+                return _buildValueTile("Enheter", "${bloc.count}", "", labelStyle, valueStyle, unitStyle);
               }),
         ),
       ],
     );
   }
 
-  Row _buildJustification(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildJustification(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("Begrunnelse", incident.justification, "", valueStyle, unitStyle, unitStyle),
+          child: _buildValueTile("Begrunnelse", incident.justification, "", labelStyle, valueStyle, unitStyle),
         ),
       ],
     );
   }
 
-  Row _buildIPP(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildIPP(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
           child: GestureDetector(
-            child: _buildValueTile("IPP", toUTM(incident.ipp), "", valueStyle, unitStyle, unitStyle),
+            child: _buildValueTile("IPP", toUTM(incident.ipp), "", labelStyle, valueStyle, unitStyle),
             onTap: () => jumpToPoint(context, incident?.ipp),
           ),
         ),
@@ -185,19 +182,19 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Row _buildPasscodes(Incident incident, TextStyle valueStyle, TextStyle unitStyle, TextStyle labelStyle) {
+  Row _buildPasscodes(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 2,
           child: _buildValueTile(
-              "Kode for aksjonsledelse", "${incident.passcodes.command}", "", valueStyle, unitStyle, unitStyle),
+              "Kode for aksjonsledelse", "${incident.passcodes?.command}", "", labelStyle, valueStyle, unitStyle),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
           flex: 2,
           child: _buildValueTile(
-              "Kode for mannskap", "${incident.passcodes.personnel}", "", valueStyle, unitStyle, unitStyle),
+              "Kode for mannskap", "${incident.passcodes?.personnel}", "", labelStyle, valueStyle, unitStyle),
         ),
       ],
     );
