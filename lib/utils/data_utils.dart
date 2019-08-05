@@ -26,7 +26,11 @@ String toUTM(Point point, {String prefix = "UTM", String empty = "Velg"}) {
 String formatSince(DateTime timestamp) {
   if (timestamp == null) return "-";
   Duration delta = DateTime.now().difference(timestamp);
-  return delta.inHours > 99 ? "${delta.inDays}d" : delta.inHours > 0 ? "${delta.inHours}h" : "${delta.inSeconds}h";
+  return delta.inHours > 99
+      ? "${delta.inDays}d"
+      : delta.inHours > 0
+          ? "${delta.inHours} h"
+          : delta.inMinutes > 0 ? "${delta.inMinutes} min" : "${delta.inSeconds} sec";
 }
 
 LatLng toLatLng(Point point) {
