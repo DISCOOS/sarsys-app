@@ -37,9 +37,9 @@ class UnitServiceMock extends Mock implements UnitService {
       return ServiceResponse.ok(body: units.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final Unit unit = _.positionalArguments[0]..cloneWith(id: "u${units.length + 1}");
-      units.putIfAbsent(unit.id, () => unit);
-      return ServiceResponse.ok(body: unit);
+      final Unit unit = _.positionalArguments[0];
+      final String id = "u${units.length + 1}";
+      return ServiceResponse.ok(body: units.putIfAbsent(id, () => unit.cloneWith(id: id)));
     });
     when(mock.update(any)).thenAnswer((_) async {
       final Unit unit = _.positionalArguments[0];

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/blocs/user_bloc.dart';
@@ -69,29 +70,25 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   /// Select given id
-  IncidentBloc select(String id) {
+  void select(String id) {
     if (_given != id && _incidents.containsKey(id)) {
       dispatch(SelectIncident(id));
     }
-    return this;
   }
 
   /// Create given incident
-  IncidentBloc create(Incident incident, [bool selected = true]) {
-    dispatch(CreateIncident(incident, selected: selected));
-    return this;
+  Future<Incident> create(Incident incident, [bool selected = true]) {
+    return _dispatch<Incident>(CreateIncident(incident, selected: selected));
   }
 
   /// Update given incident
-  IncidentBloc update(Incident incident, [bool selected = true]) {
-    dispatch(UpdateIncident(incident, selected: selected));
-    return this;
+  Future<void> update(Incident incident, [bool selected = true]) {
+    return _dispatch(UpdateIncident(incident, selected: selected));
   }
 
   /// Delete given incident
-  IncidentBloc delete(Incident incident) {
-    dispatch(DeleteIncident(incident));
-    return this;
+  Future<void> delete(Incident incident) {
+    return _dispatch(DeleteIncident(incident));
   }
 
   @override
@@ -141,12 +138,13 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Future<IncidentState> _create(CreateIncident event) async {
     var response = await service.create(event.data);
     if (response.is200) {
-      return IncidentCreated(_incidents.putIfAbsent(
+      final incident = _incidents.putIfAbsent(
         response.body.id,
         () => response.body,
-      ));
+      );
+      return _toOK(event, IncidentCreated(incident));
     }
-    return IncidentError(response);
+    return _toError(event, response);
   }
 
   Future<IncidentState> _update(UpdateIncident event) async {
@@ -158,9 +156,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         (_) => event.data,
         ifAbsent: () => event.data,
       );
-      return IncidentUpdated(event.data);
+      return _toOK(event, IncidentUpdated(event.data));
     }
-    return IncidentError(response);
+    return _toError(event, response);
   }
 
   Future<IncidentState> _delete(DeleteIncident event) async {
@@ -168,11 +166,11 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     if (response.is204) {
       // TODO: Delete all tracking
       if (_incidents.remove(event.data.id) == null) {
-        IncidentError("Failed to delete incident $event, not found locally");
+        return _toError(event, "Failed to delete incident $event, not found locally");
       }
-      return IncidentDeleted(event.data);
+      return _toOK(event, IncidentDeleted(event.data));
     }
-    return IncidentError(response);
+    return _toError(event, response);
   }
 
   IncidentSelected _set(Incident data) {
@@ -189,6 +187,28 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     List<Incident> cleared = [];
     command.data.forEach((id) => {if (_incidents.containsKey(id)) cleared.add(_incidents.remove(id))});
     return IncidentsCleared(cleared);
+  }
+
+  // Dispatch and return future
+  Future<T> _dispatch<T>(IncidentCommand<T> command) {
+    dispatch(command);
+    return command.callback.future;
+  }
+
+  // Complete request and return given state to bloc
+  Future<IncidentState> _toOK(IncidentCommand event, IncidentState state, {Incident result}) async {
+    if (result != null)
+      event.callback.complete(result);
+    else
+      event.callback.complete();
+    return state;
+  }
+
+  // Complete with error and return response as error state to bloc
+  Future<IncidentState> _toError(IncidentCommand event, Object response) async {
+    final error = IncidentError(response);
+    event.callback.completeError(error);
+    return error;
   }
 
   @override
@@ -213,6 +233,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 /// ---------------------
 abstract class IncidentCommand<T> extends Equatable {
   final T data;
+  final Completer<T> callback = Completer();
 
   IncidentCommand(this.data, [props = const []]) : super([data, ...props]);
 }

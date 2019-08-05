@@ -68,9 +68,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: tracks.values.toList());
     });
     when(mock.create(any, any)).thenAnswer((_) async {
-      var unit = _.positionalArguments[0];
-      var id = unit?.tracking;
-      if (tracks.containsKey(id)) {
+      var unitId = _.positionalArguments[0];
+      if (tracks.containsKey(unitId)) {
         return ServiceResponse.noContent();
       }
       var devices = _.positionalArguments[1];

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/blocs/device_bloc.dart';
@@ -123,35 +124,33 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Create tracking for given Unit
-  TrackingBloc create(Unit unit, List<Device> devices) {
-    dispatch(CreateTracking(unit.id, devices.map((device) => device.id).toList()));
-    return this;
+  Future<Tracking> create(Unit unit, List<Device> devices) {
+    return _dispatch<Tracking>(CreateTracking(unit, devices.map((device) => device.id).toList()));
   }
 
   /// Update given tracking
-  TrackingBloc update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
-    dispatch(UpdateTracking(tracking.cloneWith(
+  Future<void> update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
+    return _dispatch<void>(UpdateTracking(tracking.cloneWith(
       status: status,
       devices: devices == null ? tracking.devices : devices.map((device) => device.id).toList(),
     )));
-    return this;
   }
 
   /// Transition tracking state to next legal state
-  TrackingBloc transition(Tracking tracking) {
+  Future<void> transition(Tracking tracking) {
     switch (tracking.status) {
       case TrackingStatus.Created:
       case TrackingStatus.Paused:
       case TrackingStatus.Closed:
-        update(tracking, status: TrackingStatus.Tracking);
+        return update(tracking, status: TrackingStatus.Tracking);
         break;
       case TrackingStatus.Tracking:
-        update(tracking, status: TrackingStatus.Paused);
+        return update(tracking, status: TrackingStatus.Paused);
         break;
       default:
         break;
     }
-    return this;
+    return Future.value(tracking);
   }
 
   @override
@@ -183,17 +182,18 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Future<TrackingState> _create(CreateTracking event) async {
-    var response = await service.create(event.unitId, event.data);
+    var response = await service.create(event.unit.id, event.data);
     if (response.is200) {
-      unitBloc.update(
-        unitBloc.units[event.unitId].cloneWith(tracking: response.body.id),
+      await unitBloc.update(
+        event.unit.cloneWith(tracking: response.body.id),
       );
-      return TrackingCreated(_tracks.putIfAbsent(
+      final tracking = _tracks.putIfAbsent(
         response.body.id,
         () => response.body,
-      ));
+      );
+      return _toOK(event, TrackingCreated(tracking), result: tracking);
     }
-    return TrackingError(response);
+    return _toError(event, response);
   }
 
   TrackingState _process(TrackingMessage event) {
@@ -224,26 +224,48 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         (_) => event.data,
         ifAbsent: () => event.data,
       );
-      return TrackingUpdated(event.data);
+      return _toOK(event, TrackingUpdated(event.data));
     }
-    return TrackingError(response);
+    return _toError(event, response);
   }
 
   Future<TrackingState> _delete(DeleteTracking event) async {
     var response = await service.delete(event.data);
     if (response.is204) {
       if (_tracks.remove(event.data.id) == null) {
-        TrackingError("Failed to delete tracking $event, not found locally");
+        return _toError(event, "Failed to delete tracking $event, not found locally");
       }
-      return TrackingDeleted(event.data);
+      return _toOK(event, TrackingDeleted(event.data));
     }
-    return TrackingError(response);
+    return _toError(event, response);
   }
 
   TrackingCleared _clear(ClearTracking command) {
     List<Tracking> cleared = [];
     command.data.forEach((id) => {if (_tracks.containsKey(id)) cleared.add(_tracks.remove(id))});
     return TrackingCleared(cleared);
+  }
+
+// Dispatch and return future
+  Future<R> _dispatch<R>(TrackingCommand<dynamic, R> command) {
+    dispatch(command);
+    return command.callback.future;
+  }
+
+  // Complete request and return given state to bloc
+  Future<TrackingState> _toOK(TrackingCommand event, TrackingState state, {Tracking result}) async {
+    if (result != null)
+      event.callback.complete(result);
+    else
+      event.callback.complete();
+    return state;
+  }
+
+  // Complete with error and return response as error state to bloc
+  Future<TrackingState> _toError(TrackingCommand event, Object response) async {
+    final error = TrackingError(response);
+    event.callback.completeError(error);
+    return error;
   }
 
   @override
@@ -266,56 +288,57 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class TrackingCommand<T> extends Equatable {
+abstract class TrackingCommand<T, R> extends Equatable {
   final T data;
+  final Completer<R> callback = Completer();
 
   TrackingCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadTracking extends TrackingCommand<List<Tracking>> {
+class LoadTracking extends TrackingCommand<List<Tracking>, void> {
   LoadTracking(List<Tracking> data) : super(data);
 
   @override
   String toString() => 'LoadTracking';
 }
 
-class CreateTracking extends TrackingCommand<List<String>> {
-  final String unitId;
-  CreateTracking(this.unitId, List<String> devices) : super(devices);
+class CreateTracking extends TrackingCommand<List<String>, Tracking> {
+  final Unit unit;
+  CreateTracking(this.unit, List<String> devices) : super(devices);
 
   @override
   String toString() => 'CreateTracking';
 }
 
-class UpdateTracking extends TrackingCommand<Tracking> {
+class UpdateTracking extends TrackingCommand<Tracking, void> {
   UpdateTracking(Tracking data) : super(data);
 
   @override
   String toString() => 'UpdateTracking';
 }
 
-class HandleMessage extends TrackingCommand<TrackingMessage> {
+class HandleMessage extends TrackingCommand<TrackingMessage, void> {
   HandleMessage(TrackingMessage data) : super(data);
 
   @override
   String toString() => 'HandleMessage';
 }
 
-class DeleteTracking extends TrackingCommand<Tracking> {
+class DeleteTracking extends TrackingCommand<Tracking, void> {
   DeleteTracking(Tracking data) : super(data);
 
   @override
   String toString() => 'DeleteTracking';
 }
 
-class ClearTracking extends TrackingCommand<List<String>> {
+class ClearTracking extends TrackingCommand<List<String>, void> {
   ClearTracking(List<String> data) : super(data);
 
   @override
   String toString() => 'ClearTracking';
 }
 
-class RaiseTrackingError extends TrackingCommand<TrackingError> {
+class RaiseTrackingError extends TrackingCommand<TrackingError, void> {
   RaiseTrackingError(data) : super(data);
 
   @override

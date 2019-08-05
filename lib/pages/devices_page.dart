@@ -100,6 +100,7 @@ class DevicesPageState extends State<DevicesPage> {
       );
     }
     final device = devices[index];
+    tracked = _trackingBloc.getTrackingByDeviceId();
     final status = tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
         TrackingStatus.None;
     return Slidable(
@@ -156,11 +157,10 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   void _createUnit(Device device) async {
-    var result = await showDialog<UnitEditorResult>(
+    showDialog<UnitEditorResult>(
       context: context,
       builder: (context) => UnitEditor(devices: [device]),
     );
-    if (result != null) _trackingBloc.create(result.unit, result.devices);
   }
 
   void _addToUnit(Device device) async {
@@ -193,18 +193,18 @@ class DevicesPageState extends State<DevicesPage> {
     }
   }
 
-  String _toStatusText(Device device, TrackingStatus status, Set<Unit> unit) {
+  String _toStatusText(Device device, TrackingStatus status, Set<Unit> units) {
     switch (status) {
       case TrackingStatus.None:
         return "Ikke knyttet til enhet";
       case TrackingStatus.Created:
-        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}";
+        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}";
       case TrackingStatus.Tracking:
-        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporer";
+        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporer";
       case TrackingStatus.Paused:
-        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporing pauset";
+        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporing pauset";
       case TrackingStatus.Closed:
-        return "Tilknyttet ${unit.map((unit) => unit.name).join(",")}, sporing fjernet";
+        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporing fjernet";
     }
     throw "Status $status not recognized";
   }

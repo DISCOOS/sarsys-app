@@ -261,25 +261,25 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  void _submit(BuildContext context) {
+  void _submit(BuildContext context) async {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
       List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
       var unit = widget.unit == null
           ? Unit.fromJson(_formKey.currentState.value)
           : widget.unit.withJson(_formKey.currentState.value);
-      Navigator.pop(context, _apply(unit, devices));
+      Navigator.pop(context, await _apply(unit, devices));
     } else {
       // Show errors
       setState(() {});
     }
   }
 
-  UnitEditorResult _apply(Unit unit, List<Device> devices) {
+  Future<UnitEditorResult> _apply(Unit unit, List<Device> devices) async {
     if (widget.unit == null) {
-      _unitBloc.create(unit);
+      unit = await _unitBloc.create(unit);
     } else {
-      _unitBloc.update(unit);
+      await _unitBloc.update(unit);
     }
     if (unit.tracking == null) {
       _trackingBloc.create(unit, devices);

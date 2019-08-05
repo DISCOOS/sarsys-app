@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
@@ -40,21 +41,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Map<String, Unit> get units => UnmodifiableMapView<String, Unit>(_units);
 
   /// Create given unit
-  UnitBloc create(Unit unit) {
-    dispatch(CreateUnit(unit));
-    return this;
+  Future<Unit> create(Unit unit) {
+    return _dispatch<Unit>(CreateUnit(unit));
   }
 
   /// Update given unit
-  UnitBloc update(Unit unit) {
-    dispatch(UpdateUnit(unit));
-    return this;
+  Future<void> update(Unit unit) {
+    return _dispatch<void>(UpdateUnit(unit));
   }
 
   /// Delete given unit
-  UnitBloc delete(Unit unit) {
-    dispatch(DeleteUnit(unit));
-    return this;
+  Future<void> delete(Unit unit) {
+    return _dispatch<void>(DeleteUnit(unit));
   }
 
   /// Fetch units from [service]
@@ -108,12 +106,13 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<UnitState> _create(CreateUnit event) async {
     var response = await service.create(event.data);
     if (response.is200) {
-      return UnitCreated(_units.putIfAbsent(
+      var unit = _units.putIfAbsent(
         response.body.id,
         () => response.body,
-      ));
+      );
+      return _toOK(event, UnitCreated(unit), result: unit);
     }
-    return UnitError(response);
+    return _toError(event, response);
   }
 
   Future<UnitState> _update(UpdateUnit event) async {
@@ -125,9 +124,9 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         (_) => event.data,
         ifAbsent: () => event.data,
       );
-      return UnitUpdated(event.data);
+      return _toOK(event, UnitUpdated(event.data));
     }
-    return UnitError(response);
+    return _toError(event, response);
   }
 
   Future<UnitState> _delete(DeleteUnit event) async {
@@ -135,17 +134,39 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     if (response.is204) {
       // TODO: Delete tracking if Unit was tracked
       if (_units.remove(event.data.id) == null) {
-        UnitError("Failed to delete unit $event, not found locally");
+        return _toError(event, "Failed to delete unit $event, not found locally");
       }
-      return UnitDeleted(event.data);
+      return _toOK(event, UnitDeleted(event.data));
     }
-    return UnitError(response);
+    return _toError(event, response);
   }
 
   UnitState _clear(ClearUnits command) {
     List<Unit> cleared = [];
     command.data.forEach((id) => {if (_units.containsKey(id)) cleared.add(_units.remove(id))});
     return UnitsCleared(cleared);
+  }
+
+  // Dispatch and return future
+  Future<T> _dispatch<T>(UnitCommand<T> command) {
+    dispatch(command);
+    return command.callback.future;
+  }
+
+  // Complete request and return given state to bloc
+  Future<UnitState> _toOK(UnitCommand event, UnitState state, {Unit result}) async {
+    if (result != null)
+      event.callback.complete(result);
+    else
+      event.callback.complete();
+    return state;
+  }
+
+  // Complete with error and return response as error state to bloc
+  Future<UnitState> _toError(UnitCommand event, Object response) async {
+    final error = UnitError(response);
+    event.callback.completeError(error);
+    return error;
   }
 
   @override
@@ -170,6 +191,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 /// ---------------------
 abstract class UnitCommand<T> extends Equatable {
   final T data;
+  final Completer<T> callback = Completer();
 
   UnitCommand(this.data, [props = const []]) : super([data, ...props]);
 }
