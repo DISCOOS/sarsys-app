@@ -39,7 +39,6 @@ class _IncidentPageState extends State<IncidentPage> {
     final labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
     final valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 22.0);
     final unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
-
     return Container(
       color: Color.fromRGBO(168, 168, 168, 0.6),
       child: Padding(

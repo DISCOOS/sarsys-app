@@ -9,17 +9,21 @@ class AppConfig extends Equatable {
   static const ONBOARDING = 'onboarding';
   static const AFFILIATION = 'affiliation';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
+  static const SENTRY_DNS = "sentryDns";
   static const PARAMS = const {
+    SENTRY_DNS: "string",
     ONBOARDING: "bool",
     AFFILIATION: "bool",
     LOCATION_WHEN_IN_USE: "bool",
   };
 
+  final String sentryDns;
   final bool onboarding;
   final String affiliation;
   final bool locationWhenInUse;
 
   AppConfig({
+    @required this.sentryDns,
     @required this.onboarding,
     @required this.affiliation,
     @required this.locationWhenInUse,
@@ -36,11 +40,13 @@ class AppConfig extends Equatable {
   Map<String, dynamic> toJson() => _$AppConfigToJson(this);
 
   AppConfig copyWith({
+    String sentry,
     bool onboarding,
     String affiliation,
     bool locationWhenInUse,
   }) {
     return AppConfig(
+      sentryDns: sentry ?? this.sentryDns,
       onboarding: onboarding ?? this.onboarding,
       affiliation: affiliation ?? this.affiliation,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,

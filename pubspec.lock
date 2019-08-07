@@ -175,7 +175,7 @@ packages:
       name: crypto
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.6"
+    version: "2.1.1+1"
   crypto_keys:
     dependency: transitive
     description:
@@ -617,7 +617,14 @@ packages:
       name: rxdart
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.22.1"
+    version: "0.22.1+1"
+  sentry:
+    dependency: "direct main"
+    description:
+      name: sentry
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.2.0"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -763,6 +770,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.2.0"
+  usage:
+    dependency: transitive
+    description:
+      name: usage
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.4.1"
   uuid:
     dependency: "direct main"
     description:

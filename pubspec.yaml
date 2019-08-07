@@ -49,6 +49,7 @@ dependencies:
   package_info: ^0.4.0+5
   font_awesome_flutter: ^8.5.0
   badges: ^1.1.0
+  sentry: ^2.2.0
 
   # Mocking support
   uuid: ^2.0.2

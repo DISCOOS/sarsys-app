@@ -1,5 +1,6 @@
 {
   "isOnboarding": false,
   "affiliation": "Nasjonal",
-  "locationWhenInUse": false
+  "locationWhenInUse": false,
+  "sentryDns": "https://2d6130375010466b9652b9e9efc415cc@sentry.io/1523681"
 }

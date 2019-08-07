@@ -8,6 +8,7 @@ part of 'AppConfig.dart';
 
 AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
   return AppConfig(
+      sentryDns: json['sentryDns'] as String,
       onboarding: json['onboarding'] as bool,
       affiliation: json['affiliation'] as String,
       locationWhenInUse: json['locationWhenInUse'] as bool);
