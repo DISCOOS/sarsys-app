@@ -46,7 +46,8 @@ class TrackingService {
 enum TrackingMessageType { TrackingChanged, LocationChanged }
 
 class TrackingMessage {
+  final String incidentId;
   final TrackingMessageType type;
   final Map<String, dynamic> json;
-  TrackingMessage(this.type, this.json);
+  TrackingMessage(this.incidentId, this.type, this.json);
 }

@@ -81,9 +81,9 @@ class IncidentServiceMock extends Mock implements IncidentService {
       }
       return ServiceResponse.ok(body: incidents.values.toList(growable: false));
     });
-    when(mock.create(any)).thenAnswer((invocation) async {
+    when(mock.create(any)).thenAnswer((_) async {
       final authorized = JsonWebToken.unverified(await service.getToken());
-      final Incident incident = invocation.positionalArguments[0];
+      final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.claims.subject);
       final created = Incident(
         id: "aZ${incidents.length + 1}",

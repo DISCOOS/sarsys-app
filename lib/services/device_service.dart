@@ -16,7 +16,7 @@ class DeviceService {
   }
 
   /// POST ../devices
-  Future<ServiceResponse<Device>> create(Device device) async {
+  Future<ServiceResponse<Device>> create(String incidentId, Device device) async {
     // TODO: Implement create device
     throw "Not implemented";
   }

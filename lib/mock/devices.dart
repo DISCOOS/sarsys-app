@@ -34,16 +34,25 @@ class DeviceBuilder {
 
 class DeviceServiceMock extends Mock implements DeviceService {
   static DeviceService build(final IncidentBloc bloc, final int count) {
-    final List<Device> devices = [];
+    final Map<String, List<Device>> deviceRepo = {};
     final DeviceServiceMock mock = DeviceServiceMock();
     final issi = NumberFormat("##");
     when(mock.fetch(any)).thenAnswer((_) async {
-      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+      var incidentId = _.positionalArguments[0];
+      var devices = deviceRepo[incidentId];
+      if (devices == null) {
+        devices = deviceRepo.putIfAbsent(incidentId, () => []);
+      }
       if (devices.isEmpty) {
+        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
         devices.addAll([
           for (var i = 1; i <= count; i++)
-            Device.fromJson(
-                DeviceBuilder.createDeviceAsJson("d$i", DeviceType.Tetra, "61001${issi.format(i)}", center)),
+            Device.fromJson(DeviceBuilder.createDeviceAsJson(
+              "${incidentId}d$i",
+              DeviceType.Tetra,
+              "61001${issi.format(i)}",
+              center,
+            )),
         ]);
       }
       return ServiceResponse.ok(body: devices);

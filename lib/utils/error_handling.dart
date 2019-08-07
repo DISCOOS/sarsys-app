@@ -33,7 +33,7 @@ Future<Null> _reportError(final SentryClient client, dynamic error, dynamic stac
   // check if you are running in dev mode using an assertion and omit sending
   // the report.
   if (isInDebugMode) {
-    print(stackTrace);
+    if (stackTrace != null) print(stackTrace);
     print('In dev mode. Not sending report to Sentry.io.');
     return;
   }

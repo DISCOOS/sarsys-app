@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/service_response.dart';
@@ -42,50 +43,72 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   TrackingServiceMock._internal(this.simulator);
 
-  factory TrackingServiceMock.build(final IncidentBloc bloc, final count) {
+  factory TrackingServiceMock.build(final IncidentBloc incidentBloc, final UnitServiceMock unitsMock, final count) {
     final rnd = math.Random();
-    final Map<String, Tracking> tracks = {};
-    final Map<String, _TrackSimulation> simulations = {};
+    final Map<String, String> trackedUnits = {}; // unitId -> trackingId
+    final Map<String, _TrackSimulation> simulations = {}; // trackingId -> simulation
+    final Map<String, Map<String, Tracking>> tracksRepo = {}; // incidentId -> trackingId -> tracking
     final StreamController<TrackingMessage> controller = StreamController.broadcast();
-    final simulator = Timer.periodic(Duration(seconds: 2), (_) => _progress(tracks, simulations, controller));
+    final simulator = Timer.periodic(Duration(seconds: 2), (_) => _progress(tracksRepo, simulations, controller));
     final mock = TrackingServiceMock._internal(simulator);
     when(mock.messages).thenAnswer((_) => controller.stream);
     when(mock.fetch(any)).thenAnswer((_) async {
+      var incidentId = _.positionalArguments[0];
+      var tracks = tracksRepo[incidentId];
+      if (tracks == null) {
+        tracks = tracksRepo.putIfAbsent(incidentId, () => {});
+      }
       if (tracks.isEmpty) {
-        final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+        final Point center = incidentBloc.isUnset ? toPoint(Defaults.origo) : incidentBloc.current.ipp;
         tracks.addEntries([
           for (var i = 1; i <= count; i++)
             Tracking.fromJson(
               TracksBuilder.createTrackingAsJson(
-                "t$i",
-                List.from(["d$i"]),
+                "${incidentId}t$i",
+                List.from(["${incidentId}d$i"]),
                 TracksBuilder.createRandomPointAsJson(rnd, center),
                 TrackingStatus.Created,
               ),
             ),
         ].map((tracking) => MapEntry(tracking.id, tracking)));
       }
+      trackedUnits.addEntries(
+        tracks.map((trackingId, tracking) => MapEntry(tracking.devices.first, trackingId)).entries,
+      );
+      tracksRepo.putIfAbsent(incidentId, () => tracks);
       return ServiceResponse.ok(body: tracks.values.toList());
     });
     when(mock.create(any, any)).thenAnswer((_) async {
       var unitId = _.positionalArguments[0];
-      if (tracks.containsKey(unitId)) {
+      if (trackedUnits.containsKey(unitId)) {
         return ServiceResponse.noContent();
       }
       var devices = _.positionalArguments[1];
-      final Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+      final Point center = incidentBloc.isUnset ? toPoint(Defaults.origo) : incidentBloc.current.ipp;
+      final incident = unitsMock.unitsRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(unitId),
+        orElse: null,
+      );
+      if (incident == null) {
+        return ServiceResponse.notFound(message: "Not found. Unit $unitId.");
+      }
+      final tracks = tracksRepo[incident.key];
+      final trackingId = "${incident.key}t${tracks.length + 1}";
       final tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
-        "t${tracks.length + 1}",
+        trackingId,
         devices,
         TracksBuilder.createRandomPointAsJson(math.Random(), center),
         TrackingStatus.Created,
       ));
       tracks.putIfAbsent(tracking.id, () => tracking);
+      trackedUnits.putIfAbsent(unitId, () => tracking.id);
       return ServiceResponse.ok(body: tracks.putIfAbsent(tracking.id, () => tracking));
     });
     when(mock.update(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
-      if (tracks.containsKey(tracking.id)) {
+      var incident = tracksRepo.entries.firstWhere((entry) => entry.value.containsKey(tracking.id), orElse: null);
+      if (incident != null) {
+        var tracks = incident.value;
         tracks.update(
           tracking.id,
           (_) => tracking,
@@ -98,7 +121,9 @@ class TrackingServiceMock extends Mock implements TrackingService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
-      if (tracks.containsKey(tracking.id)) {
+      var incident = tracksRepo.entries.firstWhere((entry) => entry.value.containsKey(tracking.id), orElse: null);
+      if (incident != null) {
+        var tracks = incident.value;
         tracks.remove(tracking.id);
         simulations.remove(tracking.id);
         return ServiceResponse.noContent();
@@ -123,31 +148,33 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   static void _progress(
-    Map<String, Tracking> tracks,
+    Map<String, Map<String, Tracking>> tracksMap,
     Map<String, _TrackSimulation> simulations,
     StreamController<TrackingMessage> controller,
   ) {
-    simulations.forEach((id, simulation) {
-      if (tracks.containsKey(id)) {
-        var tracking = tracks[id];
+    tracksMap.forEach((incidentId, tracks) {
+      tracks.forEach((trackId, tracking) {
         if (TrackingStatus.Tracking == tracking.status) {
-          var location = simulation.progress();
-          tracking = Tracking(
-            id: tracking.id,
-            location: location,
-            status: tracking.status,
-            devices: tracking.devices,
-            distance: tracking.distance,
-            track: tracking.track,
-          );
-          tracks.update(
-            id,
-            (_) => tracking,
-            ifAbsent: () => tracking,
-          );
-          controller.add(TrackingMessage(TrackingMessageType.TrackingChanged, tracking.toJson()));
+          if (simulations.containsKey(trackId)) {
+            var simulation = simulations[trackId];
+            var location = simulation.progress();
+            tracking = Tracking(
+              id: tracking.id,
+              location: location,
+              status: tracking.status,
+              devices: tracking.devices,
+              distance: tracking.distance,
+              track: tracking.track,
+            );
+            tracks.update(
+              trackId,
+              (_) => tracking,
+              ifAbsent: () => tracking,
+            );
+            controller.add(TrackingMessage(incidentId, TrackingMessageType.TrackingChanged, tracking.toJson()));
+          }
         }
-      }
+      });
     });
   }
 }

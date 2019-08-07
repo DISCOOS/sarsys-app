@@ -104,7 +104,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _create(CreateUnit event) async {
-    var response = await service.create(event.data);
+    var response = await service.create(incidentBloc.current.id, event.data);
     if (response.is200) {
       var unit = _units.putIfAbsent(
         response.body.id,

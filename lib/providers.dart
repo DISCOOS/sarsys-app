@@ -56,7 +56,7 @@ class Providers {
         this.trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
 
   /// Create providers for mocking
-  factory Providers.build(Client client, {bool mock = false, int units = 15, int devices = 30}) {
+  factory Providers.build(Client client, {bool mock = false, int unitCount = 15, int deviceCount = 30}) {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
@@ -77,18 +77,18 @@ class Providers {
 
     // Configure Unit service
     final UnitService unitService =
-        !mock ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(units);
+        !mock ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(unitCount);
     final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
 
     // Configure Device service
     final DeviceService deviceService =
-        !mock ? DeviceService('$baseRestUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, devices);
+        !mock ? DeviceService('$baseRestUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, deviceCount);
     final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
 
     // Configure Tracking service
     final TrackingService trackingService = !mock
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
-        : TrackingServiceMock.build(incidentBloc, units);
+        : TrackingServiceMock.build(incidentBloc, unitService as UnitServiceMock, unitCount);
     final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, unitBloc, deviceBloc);
 
     return Providers._internal(

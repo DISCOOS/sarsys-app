@@ -17,7 +17,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   final Client client = Client();
-  final providers = Providers.build(client, mock: true, units: 15, devices: 30);
+  final providers = Providers.build(client, mock: true);
   final Widget homepage = await getHome(providers);
   final AppConfig config = await providers.configProvider.bloc.fetch();
 

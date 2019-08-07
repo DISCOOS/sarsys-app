@@ -16,7 +16,7 @@ class UnitService {
   }
 
   /// POST ../units
-  Future<ServiceResponse<Unit>> create(Unit unit) async {
+  Future<ServiceResponse<Unit>> create(String incidentId, Unit unit) async {
     // TODO: Implement create unit
     throw "Not implemented";
   }
