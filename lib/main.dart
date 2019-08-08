@@ -1,5 +1,7 @@
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/utils/error_handling.dart';
+import 'package:catcher/catcher_plugin.dart';
+import 'package:catcher/utils/catcher_error_widget.dart';
 import 'package:sentry/sentry.dart';
 import 'package:SarSys/providers.dart';
 import 'package:SarSys/screens/settings_screen.dart';
@@ -19,50 +21,74 @@ void main() async {
   final Client client = Client();
   final providers = Providers.build(client, mock: true);
   final Widget homepage = await getHome(providers);
-  final AppConfig config = await providers.configProvider.bloc.fetch();
-
-  final SentryClient sentry = new SentryClient(dsn: config.sentryDns);
 
   // Initialize app-config
-  providers.configProvider.bloc.fetch();
+  final AppConfig config = await providers.configProvider.bloc.fetch();
 
-  runAppWithErrorHandling(
+  final localizationOptions = LocalizationOptions("nb",
+      notificationReportModeTitle: "En feil har oppstått",
+      notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
+      dialogReportModeTitle: "Feilmelding",
+      dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
+          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+      dialogReportModeAccept: "Godta",
+      dialogReportModeCancel: "Avbryt",
+      pageReportModeTitle: "Feilmelding",
+      pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
+          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+      pageReportModeAccept: "Godta",
+      pageReportModeCancel: "Avbryt");
+
+  Catcher(
     BlocProviderTree(
       blocProviders: providers.all,
       child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'SarSys',
-          theme: ThemeData(
-            primaryColor: Colors.grey[850],
-            buttonTheme: ButtonThemeData(
-              height: 36.0,
-              textTheme: ButtonTextTheme.primary,
-            ),
-            //accentColor: Colors.cyan[600],
+        navigatorKey: Catcher.navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'SarSys',
+        theme: ThemeData(
+          primaryColor: Colors.grey[850],
+          buttonTheme: ButtonThemeData(
+            height: 36.0,
+            textTheme: ButtonTextTheme.primary,
           ),
-          home: homepage,
-          routes: <String, WidgetBuilder>{
-            'login': (BuildContext context) => LoginScreen(),
-            'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-            'units': (BuildContext context) => CommandScreen(tabIndex: 1),
-            'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
-            'incidents': (BuildContext context) => IncidentsScreen(),
-            'settings': (BuildContext context) => SettingsScreen(),
-            'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
-          },
-          localizationsDelegates: [
-            GlobalWidgetsLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            DefaultMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            DefaultCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: [
-            const Locale('en'), // English
-            const Locale('nb'), // Norwegian
-          ]),
+          //accentColor: Colors.cyan[600],
+        ),
+        home: homepage,
+        routes: <String, WidgetBuilder>{
+          'login': (BuildContext context) => LoginScreen(),
+          'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
+          'units': (BuildContext context) => CommandScreen(tabIndex: 1),
+          'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
+          'incidents': (BuildContext context) => IncidentsScreen(),
+          'settings': (BuildContext context) => SettingsScreen(),
+          'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
+        },
+        localizationsDelegates: [
+          GlobalWidgetsLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          DefaultMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          DefaultCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('en'), // English
+          const Locale('nb'), // Norwegian
+        ],
+      ),
     ),
-    sentry,
+    debugConfig: CatcherOptions(
+      PageReportMode(),
+      [ConsoleHandler(enableStackTrace: true)],
+      localizationOptions: [localizationOptions],
+    ),
+    releaseConfig: CatcherOptions(
+      PageReportMode(),
+      [SentryHandler(config.sentryDns)],
+      localizationOptions: [localizationOptions],
+    ),
   );
 }
 
