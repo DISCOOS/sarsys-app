@@ -7,7 +7,7 @@ import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/coordate_layer.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
-import 'package:SarSys/map/scale_layer.dart';
+import 'package:SarSys/map/scalebar.dart';
 import 'package:SarSys/map/tracking_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
@@ -34,6 +34,7 @@ class IncidentMap extends StatefulWidget {
   final bool withSearch;
   final bool withControls;
   final bool withLocation;
+  final bool withScaleBar;
   final bool withCoordsPanel;
 
   final LatLng center;
@@ -42,6 +43,7 @@ class IncidentMap extends StatefulWidget {
   final TapCallback onTap;
   final PromptCallback onPrompt;
   final MessageCallback onMessage;
+
   final GestureTapCallback onOpenDrawer;
 
   IncidentMap({
@@ -54,6 +56,7 @@ class IncidentMap extends StatefulWidget {
     this.withSearch = false,
     this.withControls = false,
     this.withLocation = false,
+    this.withScaleBar = false,
     this.withCoordsPanel = false,
     this.onTap,
     this.onPrompt,
@@ -103,7 +106,7 @@ class IncidentMapState extends State<IncidentMap> {
       );
     }
     _center = widget.center ?? Defaults.origo;
-    _layers = Set.of(LAYERS)..remove(COORDS_LAYER);
+    _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
 
     init();
   }
@@ -148,7 +151,7 @@ class IncidentMapState extends State<IncidentMap> {
           IconLayer(),
           TrackingLayer(),
           CoordinateLayer(),
-          ScaleLayer(),
+          ScaleBar(),
         ],
       ),
       layers: [
@@ -161,16 +164,16 @@ class IncidentMapState extends State<IncidentMap> {
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
-        if (_layers.contains(SCALE_LAYER)) _buildScaleOptions()
+        if (widget.withScaleBar && _layers.contains(SCALE_LAYER)) _buildScaleBarOptions()
       ],
     );
   }
 
-  ScaleLayerPluginOption _buildScaleOptions() {
-    return ScaleLayerPluginOption(
+  ScalebarOption _buildScaleBarOptions() {
+    return ScalebarOption(
       lineColor: Colors.black54,
       lineWidth: 2,
-      textStyle: TextStyle(color: Colors.black54, fontSize: 12),
+      textStyle: TextStyle(color: Colors.black87, fontSize: 12),
       padding: EdgeInsets.only(left: 16, top: 16),
       alignment: Alignment.bottomLeft,
     );
@@ -473,7 +476,7 @@ class IncidentMapState extends State<IncidentMap> {
                       ),
                     ),
                     Divider(),
-                    ...LAYERS
+                    ..._withLayers()
                         .map((layer) => ListTile(
                             dense: landscape,
                             title: Text(layer, style: style),
@@ -488,6 +491,13 @@ class IncidentMapState extends State<IncidentMap> {
         });
       },
     );
+  }
+
+  List<String> _withLayers() {
+    final layers = LAYERS.toList();
+    if (!widget.withScaleBar) layers.remove(SCALE_LAYER);
+    if (!widget.withCoordsPanel) layers.remove(COORDS_LAYER);
+    return layers;
   }
 
   void _onFilterChanged(String layer, bool value, StateSetter update) {

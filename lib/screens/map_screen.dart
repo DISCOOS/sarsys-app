@@ -53,6 +53,7 @@ class MapScreenState extends State<MapScreen> {
       withSearch: true,
       withControls: true,
       withLocation: true,
+      withScaleBar: true,
       withCoordsPanel: true,
       onMessage: _showMessage,
       onPrompt: (title, message) => prompt(context, title, message),

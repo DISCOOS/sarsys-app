@@ -5,7 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
-class ScaleLayerPluginOption extends LayerOptions {
+class ScalebarOption extends LayerOptions {
   TextStyle textStyle;
   Color lineColor;
   double lineWidth;
@@ -13,7 +13,7 @@ class ScaleLayerPluginOption extends LayerOptions {
   final EdgeInsets padding;
   Alignment alignment;
 
-  ScaleLayerPluginOption(
+  ScalebarOption(
       {this.textStyle,
       this.lineColor = Colors.white,
       this.lineWidth = 2,
@@ -46,10 +46,10 @@ class ScaleLayerPluginOption extends LayerOptions {
       ]});
 }
 
-class ScaleLayer implements MapPlugin {
+class ScaleBar implements MapPlugin {
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
-    if (options is ScaleLayerPluginOption) {
+    if (options is ScalebarOption) {
       return StreamBuilder<void>(
           stream: stream,
           builder: (context, snapshot) {
@@ -86,7 +86,7 @@ class ScaleLayer implements MapPlugin {
 
   @override
   bool supportsLayer(LayerOptions options) {
-    return options is ScaleLayerPluginOption;
+    return options is ScalebarOption;
   }
 }
 
