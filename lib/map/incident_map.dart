@@ -7,6 +7,7 @@ import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/coordate_layer.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
+import 'package:SarSys/map/scale_layer.dart';
 import 'package:SarSys/map/tracking_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
@@ -70,7 +71,8 @@ class IncidentMapState extends State<IncidentMap> {
   static const POI_LAYER = "Interessepunkt";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
-  static const LAYERS = [POI_LAYER, TRACKING_LAYER, COORDS_LAYER];
+  static const SCALE_LAYER = "Målestokk";
+  static const LAYERS = [POI_LAYER, TRACKING_LAYER, SCALE_LAYER, COORDS_LAYER];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   String _currentBaseMap;
@@ -146,6 +148,7 @@ class IncidentMapState extends State<IncidentMap> {
           IconLayer(),
           TrackingLayer(),
           CoordinateLayer(),
+          ScaleLayer(),
         ],
       ),
       layers: [
@@ -158,7 +161,18 @@ class IncidentMapState extends State<IncidentMap> {
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
+        if (_layers.contains(SCALE_LAYER)) _buildScaleOptions()
       ],
+    );
+  }
+
+  ScaleLayerPluginOption _buildScaleOptions() {
+    return ScaleLayerPluginOption(
+      lineColor: Colors.black54,
+      lineWidth: 2,
+      textStyle: TextStyle(color: Colors.black54, fontSize: 12),
+      padding: EdgeInsets.only(left: 16, top: 16),
+      alignment: Alignment.bottomLeft,
     );
   }
 

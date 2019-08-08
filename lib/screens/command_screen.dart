@@ -47,6 +47,7 @@ class _CommandScreenState extends State<CommandScreen> {
             title: Tab(text: title),
           ),
           body: tabs[current],
+          resizeToAvoidBottomPadding: true,
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: current,
             elevation: 4.0,
