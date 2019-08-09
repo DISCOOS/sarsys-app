@@ -9,6 +9,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -267,12 +268,18 @@ class TrackingLayer extends MapPlugin {
                       ),
                     ),
                     Expanded(
-                      child: _buildCopyableText(
-                        context: context,
-                        label: "Mobil",
-                        icon: Icon(Icons.phone),
-                        value: unit?.phone ?? "Ukjent",
-                        onMessage: options.onMessage,
+                      child: GestureDetector(
+                        child: _buildCopyableText(
+                          context: context,
+                          label: "Mobil",
+                          icon: Icon(Icons.phone),
+                          value: unit?.phone ?? "Ukjent",
+                          onMessage: options.onMessage,
+                        ),
+                        onTap: () {
+                          final number = unit?.phone ?? '';
+                          if (number.isNotEmpty) launch("tel:$number");
+                        },
                       ),
                     ),
                   ],
