@@ -53,7 +53,7 @@ class _IncidentPageState extends State<IncidentPage> {
                     ? ListView(
                         controller: _controller,
                         padding: const EdgeInsets.all(IncidentPage.SPACING),
-                        physics: ClampingScrollPhysics(),
+                        physics: AlwaysScrollableScrollPhysics(),
                         children: [
                           _buildMapTile(context, snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
