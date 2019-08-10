@@ -1,7 +1,14 @@
 import 'dart:collection';
 
+import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/proj4d.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
@@ -64,10 +71,11 @@ class MapSearchFieldState extends State<MapSearchField> {
         child: TextField(
           key: _searchKey,
           focusNode: _focusNode,
+          autofocus: false,
           decoration: InputDecoration(
             border: InputBorder.none,
             hintMaxLines: 1,
-            hintText: widget.hintText ?? "Skriv inn posisjon eller adresse",
+            hintText: widget.hintText ?? "Søk etter posisjon, adresse, enhet",
             contentPadding: EdgeInsets.all(16.0),
             prefixIcon: widget.prefixIcon,
             suffixIcon: _focusNode.hasFocus || _match != null
@@ -78,7 +86,7 @@ class MapSearchFieldState extends State<MapSearchField> {
                 : Icon(Icons.search),
           ),
           controller: _controller,
-          onSubmitted: (value) => _search(value),
+          onSubmitted: (value) => _search(context, value),
         ),
       ),
     );
@@ -100,44 +108,61 @@ class MapSearchFieldState extends State<MapSearchField> {
     _overlayEntry = null;
   }
 
-  void _showResults(List<Placemark> placemarks) {
-    RenderBox renderBox = _searchKey.currentContext.findRenderObject();
-    var size = renderBox.size;
-    var offset = renderBox.localToGlobal(Offset.zero);
+  void _showResults(List<Placemark> placemarks) async {
+    final RenderBox renderBox = _searchKey.currentContext.findRenderObject();
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
 
     _hideResults();
 
+    final choices = placemarks
+        .map(
+          (placemark) => ListTile(
+            title: Text(placemark.name ?? ''),
+            subtitle: Text(placemark.country ?? ''),
+            onTap: () {
+              _goto(placemark.position.latitude, placemark.position.longitude);
+            },
+          ),
+        )
+        .toList();
+
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-            left: offset.dx,
-            top: offset.dy + size.height + 5.0,
-            width: size.width,
-            child: Material(
-              elevation: 4.0,
-              child: ListView(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                children: placemarks
-                    .map(
-                      (placemark) => ListTile(
-                            title: Text(placemark.name),
-                            subtitle: Text(placemark.country),
-                            onTap: () {
-                              _hideResults();
-                              _goto(placemark.position.latitude, placemark.position.longitude);
-                            },
-                          ),
-                    )
-                    .toList(),
-              ),
+        left: offset.dx,
+        top: offset.dy + size.height + 5.0,
+        width: size.width,
+        height: MediaQuery.of(context).size.height - (offset.dy + size.height + 16.0),
+        child: Material(
+          elevation: 0.0,
+          borderRadius: BorderRadius.circular(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              itemExtent: 56.0,
+              itemCount: placemarks.length,
+              semanticChildCount: placemarks.length,
+              itemBuilder: (BuildContext context, int index) => choices[index],
             ),
           ),
+        ),
+      ),
     );
     Overlay.of(context).insert(this._overlayEntry);
   }
 
-  Future _search(String value) async {
-    print("Search: $value");
+  void _search(BuildContext context, String value) {
+    if (!_searchBlocs(context, value)) {
+      _searchForLocation(value, context);
+    }
+  }
+
+  void _searchForLocation(String value, BuildContext context) async {
     var row;
     var zone = -1, lat, lon;
     var isSouth = false;
@@ -146,6 +171,8 @@ class MapSearchFieldState extends State<MapSearchField> {
     var ordinals = HashMap<String, Match>();
 
     value = value.trim();
+
+    if (!kReleaseMode) print("Search: $value");
 
     // Is utm?
     var match = CoordinateFormat.utm.firstMatch(value);
@@ -166,7 +193,7 @@ class MapSearchFieldState extends State<MapSearchField> {
         // Preserve order
         if (axis != null) {
           if (ordinals.containsKey(axis)) {
-            print('Found same axis label on both ordinals');
+            if (!kReleaseMode) print('Found same axis label on both ordinals');
             ordinals.clear();
           } else {
             ordinals[axis] = match;
@@ -181,7 +208,7 @@ class MapSearchFieldState extends State<MapSearchField> {
       isDefault = true;
       ordinals[CoordinateFormat.NORTHTING] = matches.first;
       ordinals[CoordinateFormat.EASTING] = matches.last;
-      print("Assumed default order {NORTHING, EASTING} ");
+      if (!kReleaseMode) print("Assumed default order {NORTHING, EASTING} ");
     } else if (ordinals.length == 1) {
       // One axis label found, try to infer the other
       matches.forEach((match) {
@@ -192,7 +219,7 @@ class MapSearchFieldState extends State<MapSearchField> {
               ? CoordinateFormat.EASTING
               : CoordinateFormat.NORTHTING);
           ordinals[axis] = match;
-          print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
+          if (!kReleaseMode) print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
         }
       });
     }
@@ -203,7 +230,6 @@ class MapSearchFieldState extends State<MapSearchField> {
         Locale locale = Localizations.localeOf(context);
         var identifier = "${locale.languageCode}_${locale.countryCode}";
         var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: identifier);
-//        var addresses = await Geocoder.local.findAddressesFromQuery(value);
         if (placemarks.length > 1) {
           _showResults(placemarks);
         } else {
@@ -229,12 +255,56 @@ class MapSearchFieldState extends State<MapSearchField> {
     }
   }
 
+  bool _searchBlocs(BuildContext context, String value) {
+    var found = true;
+    final placemarks = <Placemark>[];
+    final match = RegExp("${_prepare(value)}");
+    final units = BlocProvider.of<TrackingBloc>(context).units;
+    final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
+    final devices = BlocProvider.of<DeviceBloc>(context).devices;
+
+    placemarks.addAll(
+      units.values
+          .where((unit) =>
+              // Search in unit
+              _prepare(unit).contains(match) ||
+              // Search in devices tracked with this unit
+              tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+          .map((unit) => _toPlacemark(tracks[unit.tracking].location, unit)),
+    );
+    if (placemarks.length == 1) {
+      final position = placemarks.first.position;
+      _goto(position.latitude, position.longitude);
+    } else if (placemarks.length > 1)
+      _showResults(placemarks);
+    else
+      found = false;
+    return found;
+  }
+
+  String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
+
+  Placemark _toPlacemark(Point point, Unit unit) {
+    return Placemark(
+        name: unit.name,
+        country: toUTM(point),
+        position: Position(
+          latitude: point.lat,
+          longitude: point.lon,
+          accuracy: point.acc,
+          altitude: point.alt,
+        ));
+  }
+
   void _goto(lat, lon) {
     setState(() {
       _match = LatLng(lat, lon);
-      print("Goto: $_match");
+      if (!kReleaseMode) print("Goto: $_match");
       widget.controller.move(_match, widget.zoom ?? widget.controller.zoom);
       widget?.onMatch(_match);
+      _controller.clear();
+      _focusNode?.unfocus();
+      _hideResults();
     });
   }
 }
