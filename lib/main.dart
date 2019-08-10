@@ -1,8 +1,5 @@
 import 'package:SarSys/models/AppConfig.dart';
-import 'package:SarSys/utils/error_handling.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:catcher/utils/catcher_error_widget.dart';
-import 'package:sentry/sentry.dart';
 import 'package:SarSys/providers.dart';
 import 'package:SarSys/screens/settings_screen.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,23 +22,9 @@ void main() async {
   // Initialize app-config
   final AppConfig config = await providers.configProvider.bloc.fetch();
 
-  final localizationOptions = LocalizationOptions("nb",
-      notificationReportModeTitle: "En feil har oppstått",
-      notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
-      dialogReportModeTitle: "Feilmelding",
-      dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
-          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-      dialogReportModeAccept: "Godta",
-      dialogReportModeCancel: "Avbryt",
-      pageReportModeTitle: "Feilmelding",
-      pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
-          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-      pageReportModeAccept: "Godta",
-      pageReportModeCancel: "Avbryt");
+  //runAppWithCatcher(app, config);
 
-  Catcher(
+  runApp(
     BlocProviderTree(
       blocProviders: providers.all,
       child: MaterialApp(
@@ -79,6 +62,36 @@ void main() async {
         ],
       ),
     ),
+  );
+}
+
+Future<Widget> getHome(Providers providers) async {
+  if (await providers.userProvider.bloc.init()) {
+    return IncidentsScreen();
+  } else {
+    return LoginScreen();
+  }
+}
+
+void runAppWithCatcher(Widget app, AppConfig config) {
+  final localizationOptions = LocalizationOptions("nb",
+      notificationReportModeTitle: "En feil har oppstått",
+      notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
+      dialogReportModeTitle: "Feilmelding",
+      dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
+          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+      dialogReportModeAccept: "Godta",
+      dialogReportModeCancel: "Avbryt",
+      pageReportModeTitle: "Feilmelding",
+      pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
+          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+      pageReportModeAccept: "Godta",
+      pageReportModeCancel: "Avbryt");
+
+  Catcher(
+    app,
     debugConfig: CatcherOptions(
       PageReportMode(),
       [ConsoleHandler(enableStackTrace: true)],
@@ -90,12 +103,4 @@ void main() async {
       localizationOptions: [localizationOptions],
     ),
   );
-}
-
-Future<Widget> getHome(Providers providers) async {
-  if (await providers.userProvider.bloc.init()) {
-    return IncidentsScreen();
-  } else {
-    return LoginScreen();
-  }
 }

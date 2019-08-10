@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/screens/about_screen.dart';
-import 'package:SarSys/services/talk_group_service.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -99,33 +99,9 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text(
-              "Tilhørighet",
-            ),
-            FutureBuilder(
-              future: TalkGroupService().fetchCatalogs(),
-              initialData: [],
-              builder: (context, snapshot) {
-                return snapshot.hasData
-                    ? DropdownButton<String>(
-                        items: _buildItems(snapshot.data),
-                        onChanged: (value) {
-                          bloc.update(affiliation: value);
-                        },
-                        value: bloc.config?.affiliation ?? Defaults.affiliation,
-                      )
-                    : [];
-              },
-            ),
-          ],
-        ),
-      ),
+      _buildDistrictField(bloc),
+      _buildDepartmentField(bloc),
+      _buildTalkGroupsField(bloc),
       Divider(),
       ListTile(
         title: Text(
@@ -160,15 +136,111 @@ class SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
-  List<DropdownMenuItem<String>> _buildItems(List<dynamic> data) {
-    data.sort();
-    return data
-        .map((affiliation) => DropdownMenuItem(
-              value: "$affiliation",
-              child: Text(
-                "$affiliation",
-              ),
-            ))
-        .toList();
+  Padding _buildDistrictField(AppConfigBloc bloc) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(child: Text("Distrikt")),
+          FutureBuilder<Map<String, dynamic>>(
+            future: AssetsService().fetchDistricts(),
+            initialData: {},
+            builder: (context, snapshot) {
+              return Expanded(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  items: snapshot.hasData
+                      ? snapshot.data.values
+                          .map((name) => DropdownMenuItem<String>(
+                                value: "$name",
+                                child: Text("$name"),
+                              ))
+                          .toList()
+                      : [],
+                  onChanged: (value) {
+                    bloc.update(district: value);
+                  },
+                  value: bloc.config?.district ?? Defaults.district,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildDepartmentField(AppConfigBloc bloc) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(child: Text("Hjelpkorps")),
+          FutureBuilder<Map<String, String>>(
+            future: AssetsService().fetchDistricts(),
+            initialData: {},
+            builder: (context, snapshot) {
+              return Expanded(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  items: snapshot.hasData
+                      ? snapshot.data.values
+                          .map((name) => DropdownMenuItem<String>(
+                                value: "$name",
+                                child: Text("$name"),
+                              ))
+                          .toList()
+                      : [],
+                  onChanged: (value) {
+                    bloc.update(talkGroups: value);
+                  },
+                  value: bloc.config?.department ?? Defaults.department,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildTalkGroupsField(AppConfigBloc bloc) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(child: Text("Nødnett")),
+          FutureBuilder<List<String>>(
+            future: AssetsService().fetchTalkGroupCatalogs(),
+            initialData: [],
+            builder: (context, snapshot) {
+              return Expanded(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  items: snapshot.hasData
+                      ? snapshot.data
+                          .map((name) => DropdownMenuItem<String>(
+                                value: "$name",
+                                child: Text("$name"),
+                              ))
+                          .toList()
+                      : [],
+                  onChanged: (value) {
+                    bloc.update(talkGroups: value);
+                  },
+                  value: bloc.config?.talkGroups ?? Defaults.talkGroups,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }

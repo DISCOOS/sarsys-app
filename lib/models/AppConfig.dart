@@ -7,29 +7,39 @@ part 'AppConfig.g.dart';
 @JsonSerializable()
 class AppConfig extends Equatable {
   static const ONBOARDING = 'onboarding';
-  static const AFFILIATION = 'affiliation';
+  static const TALK_GROUPS = 'talk_groups';
+  static const DISTRICT = 'district';
+  static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
   static const SENTRY_DNS = "sentryDns";
   static const PARAMS = const {
     SENTRY_DNS: "string",
     ONBOARDING: "bool",
-    AFFILIATION: "bool",
+    DISTRICT: "string",
+    DEPARTMENT: "string",
+    TALK_GROUPS: "string",
     LOCATION_WHEN_IN_USE: "bool",
   };
 
   final String sentryDns;
   final bool onboarding;
-  final String affiliation;
+  final String district;
+  final String department;
+  final String talkGroups;
   final bool locationWhenInUse;
 
   AppConfig({
     @required this.sentryDns,
     @required this.onboarding,
-    @required this.affiliation,
+    @required this.district,
+    @required this.department,
+    @required this.talkGroups,
     @required this.locationWhenInUse,
   }) : super([
           onboarding,
-          affiliation,
+          district,
+          department,
+          talkGroups,
           locationWhenInUse,
         ]);
 
@@ -42,13 +52,17 @@ class AppConfig extends Equatable {
   AppConfig copyWith({
     String sentry,
     bool onboarding,
-    String affiliation,
+    String district,
+    String department,
+    String talkGroups,
     bool locationWhenInUse,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
       onboarding: onboarding ?? this.onboarding,
-      affiliation: affiliation ?? this.affiliation,
+      district: district ?? this.district,
+      department: department ?? this.department,
+      talkGroups: talkGroups ?? this.talkGroups,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
     );
   }

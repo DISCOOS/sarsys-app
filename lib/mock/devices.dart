@@ -8,7 +8,6 @@ import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
-import 'package:intl/intl.dart';
 import 'package:mockito/mockito.dart';
 
 class DeviceBuilder {
@@ -36,7 +35,6 @@ class DeviceServiceMock extends Mock implements DeviceService {
   static DeviceService build(final IncidentBloc bloc, final int count) {
     final Map<String, List<Device>> deviceRepo = {};
     final DeviceServiceMock mock = DeviceServiceMock();
-    final issi = NumberFormat("##");
     when(mock.fetch(any)).thenAnswer((_) async {
       var incidentId = _.positionalArguments[0];
       var devices = deviceRepo[incidentId];
@@ -44,13 +42,14 @@ class DeviceServiceMock extends Mock implements DeviceService {
         devices = deviceRepo.putIfAbsent(incidentId, () => []);
       }
       if (devices.isEmpty) {
+        int number = 6114000;
         Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
         devices.addAll([
           for (var i = 1; i <= count; i++)
             Device.fromJson(DeviceBuilder.createDeviceAsJson(
               "${incidentId}d$i",
               DeviceType.Tetra,
-              "61001${issi.format(i)}",
+              "${++number % 10 == 0 ? ++number : number}",
               center,
             )),
         ]);

@@ -5,7 +5,7 @@ import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
-import 'package:SarSys/services/talk_group_service.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -42,7 +42,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   void _init() async {
     await _configBloc.fetch();
-    var catalogs = await TalkGroupService().fetchCatalogs()
+    var catalogs = await AssetsService().fetchTalkGroupCatalogs()
       ..sort();
     _affiliations.value = catalogs;
   }
@@ -302,7 +302,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildTGField() {
     final style = Theme.of(context).textTheme.caption;
-    final service = TalkGroupService();
+    final service = AssetsService();
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
@@ -371,7 +371,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         return buildDropDownField(
           attribute: 'affiliation',
           label: 'Tilhørighet',
-          initialValue: _configBloc?.config?.affiliation ?? Defaults.affiliation,
+          initialValue: _configBloc?.config?.talkGroups ?? Defaults.talkGroups,
           items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Type må velges'),

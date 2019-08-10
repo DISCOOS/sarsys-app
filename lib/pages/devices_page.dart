@@ -5,6 +5,7 @@ import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,9 @@ class DevicesPageState extends State<DevicesPage> {
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
+  Map<String, String> _districts;
+  Map<String, String> _functions;
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +38,12 @@ class DevicesPageState extends State<DevicesPage> {
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_deviceBloc.state)..add(_trackingBloc.state);
+    _init();
+  }
+
+  void _init() async {
+    _districts = await AssetsService().fetchDistricts();
+    _functions = await AssetsService().fetchFunctions();
   }
 
   @override
@@ -118,7 +128,8 @@ class DevicesPageState extends State<DevicesPage> {
           ),
           title: Text("ISSI: ${device.number}"),
           subtitle: Text(
-            "${translateDeviceType(device.type)}, "
+            "${_toDistrict(device.number)}, "
+            "${_toFunction(device.number)}, "
             "${_toStatusText(device, status, units[device.id]).toLowerCase()}",
           ),
           trailing: RotatedBox(
@@ -207,6 +218,15 @@ class DevicesPageState extends State<DevicesPage> {
         return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporing fjernet";
     }
     throw "Status $status not recognized";
+  }
+
+  String _toDistrict(String number) {
+    String id = number?.substring(2, 5);
+    return _districts?.entries?.firstWhere((entry) => entry.key == id, orElse: () => null)?.value;
+  }
+
+  String _toFunction(String number) {
+    return _functions?.entries?.firstWhere((entry) => RegExp(entry.key).hasMatch(number), orElse: () => null)?.value;
   }
 
   void showFilterSheet(context) {

@@ -10,12 +10,17 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
   return AppConfig(
       sentryDns: json['sentryDns'] as String,
       onboarding: json['onboarding'] as bool,
-      affiliation: json['affiliation'] as String,
+      district: json['district'] as String,
+      department: json['department'] as String,
+      talkGroups: json['talkGroups'] as String,
       locationWhenInUse: json['locationWhenInUse'] as bool);
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
+      'sentryDns': instance.sentryDns,
       'onboarding': instance.onboarding,
-      'affiliation': instance.affiliation,
+      'district': instance.district,
+      'department': instance.department,
+      'talkGroups': instance.talkGroups,
       'locationWhenInUse': instance.locationWhenInUse
     };

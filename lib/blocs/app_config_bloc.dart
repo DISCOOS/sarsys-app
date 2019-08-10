@@ -37,13 +37,17 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   /// Update given settings
   Future<AppConfig> update({
     bool onboarding,
-    String affiliation,
+    String district,
+    String department,
+    String talkGroups,
     bool locationWhenInUse,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
           onboarding: onboarding,
-          affiliation: affiliation,
+          district: district,
+          department: department,
+          talkGroups: talkGroups,
           locationWhenInUse: locationWhenInUse,
         );
     var response = await service.save(config);

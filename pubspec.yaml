@@ -91,7 +91,7 @@ flutter:
   assets:
     - logo.png
     - assets/config/app_config.json
-    - assets/config/talk_groups.json
+    - assets/config/fleet_map.json
     - assets/mapspreview/missing.png
     - assets/mapspreview/topo4.png
     - assets/mapspreview/toporaster3.png
