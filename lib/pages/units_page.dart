@@ -130,9 +130,10 @@ class UnitsPageState extends State<UnitsPage> {
           child: Icon(Icons.people),
           foregroundColor: Colors.white,
         ),
-        title: Text(unit.name),
+        title: Text(unit.callsign),
         subtitle: Text(
-          "${translateUnitStatus(unit.status)}, "
+          "${translateUnitType(unit.type)} "
+          "${translateUnitStatus(unit.status).toLowerCase()}, "
           "${toUTM(tracking?.location, empty: "Ingen posisjon")}",
           style: caption,
         ),

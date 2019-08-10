@@ -378,7 +378,7 @@ class _LabelPainter extends CustomPainter {
     var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 12.0, textAlign: TextAlign.left))
       ..pushStyle(ui.TextStyle(color: Colors.black))
       ..addText(label);
-    var p = builder.build()..layout(ui.ParagraphConstraints(width: 48));
+    var p = builder.build()..layout(ui.ParagraphConstraints(width: 120));
     var height = p.height;
     var width = p.maxIntrinsicWidth;
     var rect = RRect.fromRectAndRadius(

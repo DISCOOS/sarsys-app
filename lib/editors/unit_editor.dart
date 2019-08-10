@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
@@ -24,11 +26,13 @@ class _UnitEditorState extends State<UnitEditor> {
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
+  final _callsignController = TextEditingController();
 
   String _editedName;
   UnitBloc _unitBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
+  AppConfigBloc _appConfigBloc;
 
   @override
   void initState() {
@@ -36,6 +40,7 @@ class _UnitEditorState extends State<UnitEditor> {
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
   }
 
   @override
@@ -68,26 +73,7 @@ class _UnitEditorState extends State<UnitEditor> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Expanded(
-                      flex: 6,
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: "Navn",
-                          filled: true,
-                          enabled: false,
-                        ),
-                        child: Text(_editedName ??
-                            widget?.unit?.name ??
-                            "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}"),
-                      ),
-                    ),
-                    SizedBox(width: SPACING),
-                    Expanded(flex: 6, child: _buildNumberField()),
-                  ],
-                ),
+                _buildNameAndNumber(),
                 SizedBox(height: SPACING),
                 _buildTypeField(),
                 SizedBox(height: SPACING),
@@ -106,11 +92,38 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
+  Row _buildNameAndNumber() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          flex: 6,
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: "Navn",
+              filled: true,
+              enabled: false,
+            ),
+            child: Text(_editedName ??
+                widget?.unit?.name ??
+                "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}"),
+          ),
+        ),
+        SizedBox(width: SPACING),
+        Expanded(flex: 6, child: _buildNumberField()),
+      ],
+    );
+  }
+
   FormBuilderTextField _buildNumberField() {
+    final actualValue = widget?.unit?.number ?? _unitBloc.units.length + 1;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
-      initialValue: (widget?.unit?.number ?? "${_unitBloc.units.length + 1}").toString(),
+      maxLength: 2,
+      maxLengthEnforced: true,
+      initialValue: "$actualValue",
       onChanged: (_) => _onEdit(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -126,36 +139,57 @@ class _UnitEditorState extends State<UnitEditor> {
           return null;
         },
       ],
-      valueTransformer: (value) => int.parse(value),
+      valueTransformer: (value) => int.tryParse(value) ?? actualValue,
     );
   }
 
   FormBuilderTextField _buildCallsignField() {
+    final defaultValue = _getDefaultCallSign();
+    final actualValue = _getActualCallSign(defaultValue);
+    _callsignController.text = actualValue;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'callsign',
       autofocus: true,
-      initialValue: (widget?.unit?.callsign ?? "").toString(),
+      initialValue: actualValue,
+      controller: _callsignController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
         labelText: 'Kallesignal',
+        suffix: GestureDetector(
+          child: Icon(Icons.clear, color: Colors.grey),
+          onTap: () {
+            _callsignController.text = _getDefaultCallSign();
+            _formKey.currentState.save();
+          },
+        ),
       ),
       keyboardType: TextInputType.text,
       validators: [
         FormBuilderValidators.required(errorText: 'Kallesignal må fylles inn'),
         (value) {
-          // TODO: Check if callsign is unique
-          return null;
+          Unit unit = _unitBloc.units.values.firstWhere(
+            (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
+            orElse: () => null,
+          );
+          return unit != null ? "${unit.name} har samme kallesignal" : null;
         },
       ],
     );
+  }
+
+  bool _isSameCallsign(String callsign1, String callsign2) {
+    return callsign1.toLowerCase().replaceAll(RegExp(r'\s|-'), '') ==
+        callsign2.toLowerCase().replaceAll(RegExp(r'\s|-'), '');
   }
 
   FormBuilderTextField _buildPhoneField() {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'phone',
+      maxLength: 8,
+      maxLengthEnforced: true,
       initialValue: (widget?.unit?.phone ?? "").toString(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -171,7 +205,6 @@ class _UnitEditorState extends State<UnitEditor> {
       _formKey.currentState.save();
       var unit = Unit.fromJson(_formKey.currentState.value);
       _editedName = "${translateUnitType(unit.type)} ${unit.number}";
-      print("edit: $unit");
     });
   }
 
@@ -288,6 +321,32 @@ class _UnitEditorState extends State<UnitEditor> {
       _trackingBloc.update(tracking, devices: devices);
     }
     return UnitEditorResult(unit, devices);
+  }
+
+  final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
+
+  String _getActualCallSign(String defaultValue) {
+    final values = _formKey?.currentState?.value;
+    return (values == null ? widget?.unit?.callsign ?? defaultValue : values['callsign']) ??
+        widget?.unit?.callsign ??
+        defaultValue;
+  }
+
+  String _getDefaultCallSign() {
+    final String department = _appConfigBloc.config.department;
+    int number = _ensureCallSignSuffix();
+    final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
+    return "$department ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
+  }
+
+  int _ensureCallSignSuffix() {
+    final count = _unitBloc.units.length;
+    final values = _formKey?.currentState?.value;
+    // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
+    final number = ((values == null ? (widget?.unit?.number ?? count + 1) : values['number']) ??
+        widget?.unit?.number ??
+        count + 1);
+    return 20 + number;
   }
 }
 
