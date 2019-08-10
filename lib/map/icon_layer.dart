@@ -40,14 +40,15 @@ class IconLayer implements MapPlugin {
 
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
-    return stream == null
-        ? Builder(
-            builder: (context) => _buildLayer(context, options, map),
-          )
-        : StreamBuilder<void>(
-            stream: stream, // a Stream<int> or null
-            builder: (context, snapshot) => _buildLayer(context, options, map),
-          );
+    return IgnorePointer(
+        child: stream == null
+            ? Builder(
+                builder: (context) => _buildLayer(context, options, map),
+              )
+            : StreamBuilder<void>(
+                stream: stream, // a Stream<int> or null
+                builder: (context, snapshot) => _buildLayer(context, options, map),
+              ));
   }
 
   Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {

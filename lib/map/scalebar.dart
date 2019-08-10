@@ -50,36 +50,37 @@ class ScaleBar implements MapPlugin {
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
     if (options is ScalebarOption) {
-      return StreamBuilder<void>(
-          stream: stream,
-          builder: (context, snapshot) {
-            var zoom = map.zoom;
-            var distance = options.scales[max(0, min(21, zoom.round() + 1))].toDouble();
-            var center = map.center;
-            var start = map.project(center);
-            var targetPoint = calculateEndingGlobalCoordinates(center, 90, distance);
-            var end = map.project(targetPoint);
-            var displayDistance =
-                distance > 999 ? '${(distance / 1000).toStringAsFixed(0)} km' : '${distance.toStringAsFixed(0)} m';
-            double width = (end.x - start.x);
+      return IgnorePointer(
+          child: StreamBuilder<void>(
+              stream: stream,
+              builder: (context, snapshot) {
+                var zoom = map.zoom;
+                var distance = options.scales[max(0, min(21, zoom.round() + 1))].toDouble();
+                var center = map.center;
+                var start = map.project(center);
+                var targetPoint = calculateEndingGlobalCoordinates(center, 90, distance);
+                var end = map.project(targetPoint);
+                var displayDistance =
+                    distance > 999 ? '${(distance / 1000).toStringAsFixed(0)} km' : '${distance.toStringAsFixed(0)} m';
+                double width = (end.x - start.x);
 
-            return Align(
-              alignment: options.alignment,
-              child: SizedBox(
-                height: 48,
-                child: CustomPaint(
-                  painter: ScalePainter(
-                    width,
-                    displayDistance,
-                    lineColor: options.lineColor,
-                    lineWidth: options.lineWidth,
-                    padding: options.padding,
-                    textStyle: options.textStyle,
+                return Align(
+                  alignment: options.alignment,
+                  child: SizedBox(
+                    height: 48,
+                    child: CustomPaint(
+                      painter: ScalePainter(
+                        width,
+                        displayDistance,
+                        lineColor: options.lineColor,
+                        lineWidth: options.lineWidth,
+                        padding: options.padding,
+                        textStyle: options.textStyle,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          });
+                );
+              }));
     }
     throw Exception('Unknown options type for ScaleLayerPlugin: $options');
   }

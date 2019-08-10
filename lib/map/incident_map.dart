@@ -367,12 +367,15 @@ class IncidentMapState extends State<IncidentMap> {
           width: 80.0,
           height: 80.0,
           point: point,
-          builder: (_) => SizedBox(
+          builder: (_) => IgnorePointer(
+            child: SizedBox(
               width: 56,
               height: 56,
               child: CustomPaint(
                 painter: CrossPainter(),
-              )),
+              ),
+            ),
+          ),
         ),
       ],
     );
