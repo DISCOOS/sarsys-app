@@ -8,16 +8,27 @@ part of 'Organization.dart';
 
 Organization _$OrganizationFromJson(Map<String, dynamic> json) {
   return Organization(
-      id: json['id'] as String,
       name: json['name'] as String,
       alias: json['alias'] as String,
-      pattern: json['pattern'] as String);
+      pattern: json['pattern'] as String,
+      functions: (json['functions'] as Map<String, dynamic>)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
+      divisions: (json['divisions'] as Map<String, dynamic>)?.map(
+        (k, e) => MapEntry(
+            k, e == null ? null : Division.fromJson(e as Map<String, dynamic>)),
+      ),
+      talkGroups: (json['talk_groups'] as Map<String, dynamic>)?.map(
+        (k, e) => MapEntry(k, (e as List)?.map((e) => e as String)?.toList()),
+      ));
 }
 
 Map<String, dynamic> _$OrganizationToJson(Organization instance) =>
     <String, dynamic>{
-      'id': instance.id,
       'name': instance.name,
       'alias': instance.alias,
-      'pattern': instance.pattern
+      'pattern': instance.pattern,
+      'functions': instance.functions,
+      'divisions': instance.divisions?.map((k, e) => MapEntry(k, e?.toJson())),
+      'talk_groups': instance.talkGroups
     };

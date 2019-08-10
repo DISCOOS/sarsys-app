@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:async' show Future;
+import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -11,8 +12,7 @@ class AssetsService {
 
   static final _singleton = AssetsService._internal();
 
-  final Map<String, List<TalkGroup>> _talkGroups = LinkedHashMap();
-  final Map<String, String> _functions = LinkedHashMap();
+  final Map<String, Organization> _organizations = LinkedHashMap();
 
   Map<String, dynamic> _assets = {};
 
@@ -25,74 +25,50 @@ class AssetsService {
   }
 
   Future<void> init() async {
-    _talkGroups.clear();
-    _assets = json.decode(await rootBundle.loadString(FLEET_MAP));
-    assert(_assets.containsKey("talk_groups"), "Check fleet_map.json, 'talk_groups' is missing");
-    _assets["talk_groups"].forEach((catalog, groups) {
-      final List<TalkGroup> items = [];
-      (groups as List).forEach((name) {
-        items.add(TalkGroup(name: name as String, type: TalkGroupType.Tetra));
-      });
-      _talkGroups.putIfAbsent(catalog, () => items);
-    });
+    if (_assets.isEmpty) {
+      _assets = json.decode(await rootBundle.loadString(FLEET_MAP));
+    }
   }
 
-  Future<List<TalkGroup>> fetchTalkGroups(String catalog) async {
-    if (_assets.isEmpty) {
-      await init();
-    }
-    return _talkGroups[catalog];
+  Future _loadOrg(String orgId) async {
+    await init();
+    _organizations.putIfAbsent(orgId, () => Organization.fromJson(_assets["organizations"][orgId]));
   }
 
-  Future<List<String>> fetchTalkGroupCatalogs() async {
-    if (_assets.isEmpty) {
-      await init();
+  Future<List<TalkGroup>> fetchTalkGroups(String orgId, String catalog) async {
+    if (!_organizations.containsKey(orgId)) {
+      await _loadOrg(orgId);
     }
-    return _talkGroups.keys.toList();
+    return _organizations[orgId].talkGroups[catalog].map((name) => TalkGroup(name: name, type: TalkGroupType.Tetra));
   }
 
-  Future<Map<String, Organization>> fetchOrganizations() async {
-    if (_assets.isEmpty) {
-      await init();
+  Future<List<String>> fetchTalkGroupCatalogs(String orgId) async {
+    if (!_organizations.containsKey(orgId)) {
+      await _loadOrg(orgId);
     }
-    return (_assets["organizations"] as Map<String, Map<String, dynamic>>).map(
-      (String id, Map<String, dynamic> values) => MapEntry<String, Organization>(
-        id,
-        Organization(
-          id: id,
-          name: values["name"] as String,
-          alias: values["alias"] as String,
-          pattern: id,
-        ),
-      ),
-    );
+    return _organizations[orgId].talkGroups.keys;
   }
 
-  Future<Map<String, String>> fetchLevels() async {
-    if (_assets.isEmpty) {
-      await init();
+  Future<Map<String, Division>> fetchDivisions(String orgId) async {
+    if (!_organizations.containsKey(orgId)) {
+      await _loadOrg(orgId);
     }
-    return (_assets["levels"] as Map)?.map((id, value) => MapEntry(id as String, value as String));
+    return _organizations[orgId].divisions;
   }
 
-  Future<Map<String, String>> fetchDistricts() async {
-    if (_assets.isEmpty) {
-      await init();
+  Future<Map<String, String>> fetchAllDepartments(String orgId) async {
+    if (!_organizations.containsKey(orgId)) {
+      await _loadOrg(orgId);
     }
-    return (_assets["districts"] as Map)?.map((id, value) => MapEntry(id as String, value as String));
+    final departments = {};
+    _organizations[orgId].divisions.values.forEach((division) => departments.addAll(division.departments));
+    return departments;
   }
 
-  Future<Map<String, String>> fetchDepartments() async {
-    if (_assets.isEmpty) {
-      await init();
+  Future<Map<String, String>> fetchFunctions(String orgId) async {
+    if (!_organizations.containsKey(orgId)) {
+      await _loadOrg(orgId);
     }
-    return (_assets["departments"] as Map)?.map((id, value) => MapEntry(id as String, value as String));
-  }
-
-  Future<Map<String, String>> fetchFunctions() async {
-    if (_assets.isEmpty) {
-      await init();
-    }
-    return (_assets["functions"] as Map)?.map((id, value) => MapEntry(id as String, value as String));
+    return _organizations[orgId].functions;
   }
 }

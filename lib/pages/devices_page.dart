@@ -3,9 +3,11 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -28,8 +30,8 @@ class DevicesPageState extends State<DevicesPage> {
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
-  Map<String, String> _districts;
   Map<String, String> _functions;
+  Map<String, Division> _divisions;
 
   @override
   void initState() {
@@ -42,8 +44,9 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   void _init() async {
-    _districts = await AssetsService().fetchDistricts();
-    _functions = await AssetsService().fetchFunctions();
+    _divisions = await AssetsService().fetchDivisions(Defaults.orgId);
+    _functions = await AssetsService().fetchFunctions(Defaults.orgId);
+    setState(() {});
   }
 
   @override
@@ -222,7 +225,7 @@ class DevicesPageState extends State<DevicesPage> {
 
   String _toDistrict(String number) {
     String id = number?.substring(2, 5);
-    return _districts?.entries?.firstWhere((entry) => entry.key == id, orElse: () => null)?.value;
+    return _divisions?.entries?.firstWhere((entry) => entry.key == id, orElse: () => null)?.value?.name;
   }
 
   String _toFunction(String number) {

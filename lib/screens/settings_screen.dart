@@ -145,7 +145,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           Expanded(child: Text("Distrikt")),
           FutureBuilder<Map<String, dynamic>>(
-            future: AssetsService().fetchDistricts(),
+            future: AssetsService().fetchDivisions(Defaults.orgId),
             initialData: {},
             builder: (context, snapshot) {
               return Expanded(
@@ -181,7 +181,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           Expanded(child: Text("Hjelpkorps")),
           FutureBuilder<Map<String, String>>(
-            future: AssetsService().fetchDistricts(),
+            future: AssetsService().fetchAllDepartments(Defaults.orgId),
             initialData: {},
             builder: (context, snapshot) {
               return Expanded(
@@ -217,7 +217,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           Expanded(child: Text("Nødnett")),
           FutureBuilder<List<String>>(
-            future: AssetsService().fetchTalkGroupCatalogs(),
+            future: AssetsService().fetchTalkGroupCatalogs(Defaults.orgId),
             initialData: [],
             builder: (context, snapshot) {
               return Expanded(

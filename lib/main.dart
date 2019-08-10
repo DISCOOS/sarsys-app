@@ -20,8 +20,9 @@ void main() async {
   final Widget homepage = await getHome(providers);
 
   // Initialize app-config
-  final AppConfig config = await providers.configProvider.bloc.fetch();
+  await providers.configProvider.bloc.fetch();
 
+  //final AppConfig config = await providers.configProvider.bloc.fetch();
   //runAppWithCatcher(app, config);
 
   runApp(

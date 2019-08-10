@@ -42,7 +42,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   void _init() async {
     await _configBloc.fetch();
-    var catalogs = await AssetsService().fetchTalkGroupCatalogs()
+    var catalogs = await AssetsService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
     _affiliations.value = catalogs;
   }
@@ -320,8 +320,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
             findSuggestions: (String query) async {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
-                var affiliation = _formKey.currentState.fields["affiliation"].currentState.value;
-                return (await service.fetchTalkGroups(affiliation)).where((tg) {
+                var talkGroup = _formKey.currentState.fields["affiliation"].currentState.value;
+                return (await service.fetchTalkGroups(Defaults.orgId, talkGroup)).where((tg) {
                   return tg.name.toLowerCase().contains(lowercaseQuery) ||
                       tg.type.toString().toLowerCase().contains(lowercaseQuery);
                 }).toList(growable: false);
@@ -370,11 +370,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
       builder: (BuildContext context, List value, Widget child) {
         return buildDropDownField(
           attribute: 'affiliation',
-          label: 'Tilhørighet',
+          label: 'Nødnett',
           initialValue: _configBloc?.config?.talkGroups ?? Defaults.talkGroups,
           items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
-            FormBuilderValidators.required(errorText: 'Type må velges'),
+            FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
           ],
         );
       },
