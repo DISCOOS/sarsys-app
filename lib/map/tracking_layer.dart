@@ -53,21 +53,16 @@ class TrackingLayer extends MapPlugin {
   Widget _build(BuildContext context, TrackingLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracks = options.bloc.tracks;
-    final units = options.bloc.units.values.where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].location)));
+    final units = sortMapValues<String, Unit, TrackingStatus>(
+            options.bloc.units, (unit) => tracks[unit.tracking].status, (s1, s2) => s1.index - s2.index)
+        .values
+        .where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].location)));
     return options.bloc.isEmpty
         ? Container()
         : Stack(children: [
             if (options.showLabels)
-              ...units
-                  .map(
-                    (unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location),
-                  )
-                  .toList(),
-            ...units
-                .map(
-                  (unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking]),
-                )
-                .toList(),
+              ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
+            ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
           ]);
   }
 

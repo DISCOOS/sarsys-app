@@ -43,7 +43,7 @@ class Tracking extends Equatable {
   }
 }
 
-enum TrackingStatus { None, Created, Tracking, Paused, Closed }
+enum TrackingStatus { None, Created, Paused, Closed, Tracking }
 
 String translateTrackingStatus(TrackingStatus status) {
   switch (status) {
