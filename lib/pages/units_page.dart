@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
@@ -9,15 +11,17 @@ import 'package:async/async.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 typedef SelectionCallback = void Function(Unit unit);
 
 class UnitsPage extends StatefulWidget {
   final bool withActions;
+  final String query;
   final SelectionCallback onSelection;
 
-  const UnitsPage({Key key, this.withActions = true, this.onSelection}) : super(key: key);
+  const UnitsPage({Key key, this.query, this.withActions = true, this.onSelection}) : super(key: key);
 
   @override
   UnitsPageState createState() => UnitsPageState();
@@ -60,7 +64,11 @@ class UnitsPageState extends State<UnitsPage> {
               builder: (context, snapshot) {
                 var units = _unitBloc.units.isEmpty || snapshot.hasError
                     ? []
-                    : _unitBloc.units.values.where((unit) => _filter.contains(unit.status)).toList();
+                    : _unitBloc.units.values
+                        .where((unit) =>
+                            _filter.contains(unit.status) &&
+                            (widget.query == null || "${unit.searchable}".contains(widget.query)))
+                        .toList();
 
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
@@ -68,10 +76,12 @@ class UnitsPageState extends State<UnitsPage> {
                   firstChild: Center(
                     child: CircularProgressIndicator(),
                   ),
-                  secondChild: _unitBloc.units.isEmpty || snapshot.hasError
+                  secondChild: units.isEmpty || snapshot.hasError
                       ? Center(
                           child: Text(
-                          snapshot.hasError ? snapshot.error : "Legg til en enhet",
+                          snapshot.hasError
+                              ? snapshot.error
+                              : widget.query == null ? "Legg til en enhet" : "Ingen enheter funnet",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ))
                       : _buildList(units),
@@ -252,5 +262,104 @@ class UnitsPageState extends State<UnitsPage> {
         _filter.remove(status);
       }
     });
+  }
+}
+
+class UnitSearch extends SearchDelegate<Unit> {
+  static final _storage = new FlutterSecureStorage();
+  static const RECENT_KEY = "search/unit/recent";
+
+  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+
+  UnitSearch() {
+    _init();
+  }
+
+  void _init() async {
+    final stored = await _storage.read(key: RECENT_KEY);
+    final List recent = stored != null
+        ? json.decode(stored)
+        : {
+            translateUnitType(UnitType.Team),
+            translateUnitType(UnitType.Vehicle),
+            translateUnitStatus(UnitStatus.Mobilized)
+          };
+    _recent.value = recent.map((suggestion) => suggestion as String).toSet();
+  }
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+          showSuggestions(context);
+        },
+      )
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: AnimatedIcon(
+        icon: AnimatedIcons.menu_arrow,
+        progress: transitionAnimation,
+      ),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestions = _recent.value;
+    return suggestions == null
+        ? ValueListenableBuilder<Set<String>>(
+            valueListenable: _recent,
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+              return _buildSuggestionList(
+                context,
+                suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+              );
+            },
+          )
+        : _buildSuggestionList(
+            context,
+            suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+          );
+  }
+
+  ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
+    final ThemeData theme = Theme.of(context);
+    return ListView.builder(
+      itemBuilder: (context, index) => ListTile(
+        leading: Icon(Icons.group),
+        title: RichText(
+          text: TextSpan(
+            text: suggestions[index].substring(0, query.length),
+            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            children: <TextSpan>[
+              TextSpan(
+                text: suggestions[index].substring(query.length),
+                style: theme.textTheme.subhead,
+              ),
+            ],
+          ),
+        ),
+        onTap: () {
+          query = suggestions[index];
+          showResults(context);
+        },
+      ),
+      itemCount: suggestions.length,
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final recent = _recent.value.toSet()..add(query);
+    _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+    return UnitsPage(query: query);
   }
 }

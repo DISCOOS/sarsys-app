@@ -51,6 +51,17 @@ class Incident extends Equatable {
           reference,
         ]);
 
+  /// Get searchable string
+  get searchable => props
+      .map((prop) => prop is IncidentType
+          ? translateIncidentType(prop)
+          : (prop is IncidentStatus
+              ? translateIncidentStatus(prop)
+              : (prop) is List<TalkGroup>
+                  ? prop.map((tg) => tg.searchable)
+                  : (prop is Point ? "ipp, plassering: $prop" : prop)))
+      .join(' ');
+
   /// Factory constructor for creating a new `Incident`  instance
   factory Incident.fromJson(Map<String, dynamic> json) => _$IncidentFromJson(json);
 

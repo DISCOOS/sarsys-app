@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -262,16 +263,23 @@ class MapSearchFieldState extends State<MapSearchField> {
     final units = BlocProvider.of<TrackingBloc>(context).units;
     final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
+    final incident = BlocProvider.of<IncidentBloc>(context).current;
 
-    placemarks.addAll(
-      units.values
-          .where((unit) =>
-              // Search in unit
-              _prepare(unit).contains(match) ||
-              // Search in devices tracked with this unit
-              tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-          .map((unit) => _toPlacemark(tracks[unit.tracking].location, unit)),
-    );
+    placemarks
+      ..addAll(
+        units.values
+            .where((unit) =>
+                // Search in unit
+                _prepare(unit.searchable).contains(match) ||
+                // Search in devices tracked with this unit
+                tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+            .map((unit) => _toPlacemark(tracks[unit.tracking].location, unit.name)),
+      )
+      ..addAll(
+        [incident]
+            .where((incident) => _prepare(incident.searchable).contains(match))
+            .map((incident) => _toPlacemark(incident.ipp, incident.name)),
+      );
     if (placemarks.length == 1) {
       final position = placemarks.first.position;
       _goto(position.latitude, position.longitude);
@@ -284,9 +292,9 @@ class MapSearchFieldState extends State<MapSearchField> {
 
   String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 
-  Placemark _toPlacemark(Point point, Unit unit) {
+  Placemark _toPlacemark(Point point, String name) {
     return Placemark(
-        name: unit.name,
+        name: name,
         country: toUTM(point),
         position: Position(
           latitude: point.lat,

@@ -2,6 +2,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
@@ -41,10 +42,8 @@ class _CommandScreenState extends State<CommandScreen> {
         return Scaffold(
           drawer: AppDrawer(),
           appBar: AppBar(
-            actions: <Widget>[
-              _buildAction(context, incident, incidentBloc),
-            ],
-            title: Tab(text: title),
+            actions: _buildActions(context, incident, incidentBloc),
+            title: _buildTitle(title),
           ),
           body: tabs[current],
           resizeToAvoidBottomPadding: true,
@@ -68,37 +67,69 @@ class _CommandScreenState extends State<CommandScreen> {
     );
   }
 
-  _toName(incident, {ifEmpty: "Hendelse"}) {
-    String name = incident?.reference;
-    return name == null || name.isEmpty ? incident?.name ?? ifEmpty : name;
-  }
+  Widget _buildTitle(title) => GestureDetector(
+        child: Center(child: Text(title)),
+        onTap: () {
+          // TODO: Show general search
+        },
+      );
 
-  Widget _buildAction(BuildContext context, incident, IncidentBloc incidentBloc) {
+  _toName(Incident incident, {ifEmpty: "Hendelse"}) {
     switch (current) {
       case 0:
-        return IconButton(
-          icon: Icon(Icons.more_vert),
-          onPressed: () => showDialog(
-            context: context,
-            builder: (context) => IncidentEditor(incident: incident),
-          ),
-        );
+        String name = incident?.name;
+        return name == null || name.isEmpty ? ifEmpty : name;
       case 1:
-        return IconButton(
-          icon: Icon(Icons.filter_list),
-          onPressed: () async {
-            _unitsKey.currentState.showFilterSheet(context);
-          },
-        );
+        return "Enheter";
       case 2:
-        return IconButton(
-          icon: Icon(Icons.filter_list),
-          onPressed: () async {
-            _devicesKey.currentState.showFilterSheet(context);
-          },
-        );
+        return "Terminaler";
+    }
+  }
+
+  List<Widget> _buildActions(BuildContext context, incident, IncidentBloc incidentBloc) {
+    switch (current) {
+      case 0:
+        return [
+          IconButton(
+            icon: Icon(Icons.more_vert),
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => IncidentEditor(incident: incident),
+            ),
+          )
+        ];
+      case 1:
+        return [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () async {
+              showSearch(context: context, delegate: UnitSearch());
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () async {
+              _unitsKey.currentState.showFilterSheet(context);
+            },
+          )
+        ];
+      case 2:
+        return [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () async {
+              showSearch(context: context, delegate: DeviceSearch());
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () async {
+              _devicesKey.currentState.showFilterSheet(context);
+            },
+          )
+        ];
       default:
-        return Container();
+        return [Container()];
     }
   }
 

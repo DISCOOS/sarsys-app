@@ -27,6 +27,12 @@ class Unit extends Equatable {
     this.tracking,
   }) : super([id, type, number, status, phone, callsign, tracking]);
 
+  /// Get searchable string
+  get searchable => props
+      .map((prop) =>
+          prop is UnitType ? translateUnitType(prop) : (prop is UnitStatus ? translateUnitStatus(prop) : prop))
+      .join(' ');
+
   /// Factory constructor for creating a new `Unit` instance
   factory Unit.fromJson(Map<String, dynamic> json) => _$UnitFromJson(json);
 

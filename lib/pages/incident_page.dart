@@ -57,13 +57,13 @@ class _IncidentPageState extends State<IncidentPage> {
                         children: [
                           _buildMapTile(context, snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildTitle(incident, labelStyle, valueStyle, unitStyle),
-                          SizedBox(height: IncidentPage.SPACING),
                           _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildJustification(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildIPP(incident, labelStyle, valueStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildReference(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
@@ -116,12 +116,12 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Row _buildTitle(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildReference(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("Hendelse", incident.name, "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile("Referanse", incident.reference, "", labelStyle, valueStyle, unitStyle),
         ),
       ],
     );

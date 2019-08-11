@@ -183,7 +183,7 @@ class _UnitEditorState extends State<UnitEditor> {
             (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
             orElse: () => null,
           );
-          return unit != null ? "${unit.name} har samme kallesignal" : null;
+          return unit != null ? "${unit.name} har kallesignal $value" : null;
         },
       ],
     );

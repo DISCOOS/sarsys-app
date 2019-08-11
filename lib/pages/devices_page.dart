@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
@@ -12,11 +14,14 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DevicesPage extends StatefulWidget {
-  DevicesPage({Key key}) : super(key: key);
+  final String query;
+
+  DevicesPage({Key key, this.query}) : super(key: key);
 
   @override
   DevicesPageState createState() => DevicesPageState();
@@ -72,7 +77,11 @@ class DevicesPageState extends State<DevicesPage> {
               builder: (context, snapshot) {
                 var units = _trackingBloc.getUnitsByDeviceId();
                 var tracked = _trackingBloc.getTrackingByDeviceId();
-                var devices = _deviceBloc.devices.values.where((device) => _filter.contains(device.type)).toList();
+                var devices = _deviceBloc.devices.values
+                    .where((device) =>
+                        _filter.contains(device.type) &&
+                        (widget.query == null || _prepare(device).contains(widget.query)))
+                    .toList();
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
                   crossFadeState: _deviceBloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
@@ -97,6 +106,8 @@ class DevicesPageState extends State<DevicesPage> {
       );
     });
   }
+
+  String _prepare(Device device) => "${device.searchable} ${_toDistrict(device.number)} ${_toFunction(device.number)}";
 
   Widget _buildDevice(
     List<Device> devices,
@@ -285,5 +296,104 @@ class DevicesPageState extends State<DevicesPage> {
         _filter.remove(status);
       }
     });
+  }
+}
+
+class DeviceSearch extends SearchDelegate<Device> {
+  static final _storage = new FlutterSecureStorage();
+  static const RECENT_KEY = "search/device/recent";
+
+  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+
+  DeviceSearch() {
+    _init();
+  }
+
+  void _init() async {
+    final stored = await _storage.read(key: RECENT_KEY);
+    final List recent = stored != null
+        ? json.decode(stored)
+        : [
+            "Vaktleder",
+            "Ledelse",
+            "Lag",
+          ];
+    _recent.value = recent.map((suggestion) => suggestion as String).toSet();
+  }
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+          showSuggestions(context);
+        },
+      )
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: AnimatedIcon(
+        icon: AnimatedIcons.menu_arrow,
+        progress: transitionAnimation,
+      ),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestions = _recent.value;
+    return suggestions == null
+        ? ValueListenableBuilder<Set<String>>(
+            valueListenable: _recent,
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+              return _buildSuggestionList(
+                context,
+                suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+              );
+            },
+          )
+        : _buildSuggestionList(
+            context,
+            suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+          );
+  }
+
+  ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
+    final ThemeData theme = Theme.of(context);
+    return ListView.builder(
+      itemBuilder: (context, index) => ListTile(
+        leading: Icon(Icons.group),
+        title: RichText(
+          text: TextSpan(
+            text: suggestions[index].substring(0, query.length),
+            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            children: <TextSpan>[
+              TextSpan(
+                text: suggestions[index].substring(query.length),
+                style: theme.textTheme.subhead,
+              ),
+            ],
+          ),
+        ),
+        onTap: () {
+          query = suggestions[index];
+          showResults(context);
+        },
+      ),
+      itemCount: suggestions.length,
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final recent = _recent.value.toSet()..add(query);
+    _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+    return DevicesPage(query: query);
   }
 }

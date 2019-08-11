@@ -26,6 +26,9 @@ class Device extends Equatable {
   /// Device name
   get name => "${translateDeviceType(type)} $number";
 
+  /// Get searchable string
+  get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
+
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
 }

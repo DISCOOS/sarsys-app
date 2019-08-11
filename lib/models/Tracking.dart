@@ -24,6 +24,9 @@ class Tracking extends Equatable {
     this.track,
   }) : super([id, status, location, distance, devices, track]);
 
+  /// Get searchable string
+  get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
+
   /// Factory constructor for creating a new `Tracking` instance
   factory Tracking.fromJson(Map<String, dynamic> json) => _$TrackingFromJson(json);
 

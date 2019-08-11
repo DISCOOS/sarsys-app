@@ -1,3 +1,4 @@
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -17,6 +18,9 @@ class TalkGroup extends Equatable {
           type,
         ]);
 
+  /// Get searchable string
+  get searchable => props.map((prop) => prop is TalkGroupType ? translateTalkGroupType(prop) : prop).join(' ');
+
   /// Factory constructor for creating a new `TalkGroup`  instance
   factory TalkGroup.fromJson(Map<String, dynamic> json) => _$TalkGroupFromJson(json);
 
@@ -25,3 +29,16 @@ class TalkGroup extends Equatable {
 }
 
 enum TalkGroupType { Tetra, Marine, Analog }
+
+String translateTalkGroupType(TalkGroupType type) {
+  switch (type) {
+    case TalkGroupType.Tetra:
+      return "Nødnett";
+    case TalkGroupType.Marine:
+      return "Maritim";
+    case TalkGroupType.Analog:
+      return "Analog";
+    default:
+      return enumName(type);
+  }
+}

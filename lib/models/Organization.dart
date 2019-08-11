@@ -1,5 +1,4 @@
 import 'package:SarSys/models/Division.dart';
-import 'package:SarSys/models/TalkGroup.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
