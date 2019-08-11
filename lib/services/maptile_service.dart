@@ -74,10 +74,11 @@ class MaptileService {
   Future<List<BaseMap>> fetchStoredMaps() async {
     List<BaseMap> _maps = [];
 
+    /* TODO: Fix fetching stored maps. Plugin seems to fail on iOS, remove for now and investigate alternatives
     // Get permission
-//    Map<PermissionGroup, PermissionStatus> permissions =
-//        await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-    // Plugin seems to fail on iOS, remove for now and investigate alternatives
+    Map<PermissionGroup, PermissionStatus> permissions =
+        await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+//     Plugin seems to fail on iOS, remove for now and investigate alternatives
 
     if (true) {
       Directory baseDir =
@@ -123,6 +124,7 @@ class MaptileService {
         }
       }
     }
+    */
     return _maps;
   }
 
