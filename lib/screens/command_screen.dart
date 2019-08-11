@@ -42,7 +42,8 @@ class _CommandScreenState extends State<CommandScreen> {
           drawer: AppDrawer(),
           appBar: AppBar(
             actions: _buildActions(context, incident, incidentBloc),
-            title: _buildTitle(title),
+            title: Text(title),
+            centerTitle: true,
           ),
           body: tabs[current],
           resizeToAvoidBottomPadding: true,
@@ -65,13 +66,6 @@ class _CommandScreenState extends State<CommandScreen> {
       },
     );
   }
-
-  Widget _buildTitle(title) => GestureDetector(
-        child: Center(child: Text(title)),
-        onTap: () {
-          // TODO: Show general search
-        },
-      );
 
   _toName(Incident incident, {ifEmpty: "Hendelse"}) {
     switch (current) {

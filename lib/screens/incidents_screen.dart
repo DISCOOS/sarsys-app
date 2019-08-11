@@ -6,6 +6,7 @@ import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,7 +34,11 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return Scaffold(
           key: _scaffoldKey,
-          appBar: _buildAppBar(context, _bloc.isUnset),
+          drawer: AppDrawer(),
+          appBar: AppBar(
+            title: Text("Velg hendelse"),
+            centerTitle: false,
+          ),
           extendBody: true,
           resizeToAvoidBottomInset: true,
           body: _buildBody(_bloc, context, viewportConstraints),
@@ -56,28 +61,6 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       builder: (context) => IncidentEditor(),
     );
     if (incident != null) Navigator.pushReplacementNamed(context, 'incident');
-  }
-
-  AppBar _buildAppBar(BuildContext context, bool isUnset) {
-    final userBloc = BlocProvider.of<UserBloc>(context);
-    return AppBar(
-      title: Text("Velg hendelse"),
-      centerTitle: false,
-      actions: <Widget>[
-        if (isUnset)
-          FlatButton(
-            child: Text('LOGG UT', style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () async {
-              userBloc
-                  .logout()
-                  .state
-                  .where((state) => state is UserUnset)
-                  .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
-            },
-          ),
-      ],
-    );
   }
 
   Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
