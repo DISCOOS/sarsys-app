@@ -239,7 +239,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (value) {
                     bloc.update(talkGroups: value);
                   },
-                  value: bloc.config?.talkGroups ?? Defaults.talkGroups,
+                  value: bloc.config?.tgCatalog ?? Defaults.talkGroups,
                 ),
               );
             },

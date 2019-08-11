@@ -26,7 +26,7 @@ class IncidentEditor extends StatefulWidget {
 class _IncidentEditorState extends State<IncidentEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
-  final _affiliations = ValueNotifier(<String>[]);
+  final _tgCatalog = ValueNotifier(<String>[]);
 
   int _currentStep = 0;
   AppConfigBloc _configBloc;
@@ -44,7 +44,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     await _configBloc.fetch();
     var catalogs = await AssetsService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
-    _affiliations.value = catalogs;
+    _tgCatalog.value = catalogs;
   }
 
   @override
@@ -134,7 +134,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                     title: Text('Talegrupper'),
                     subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
                     content: Column(
-                      children: <Widget>[_buildTGField(), SizedBox(height: 16.0), _buildAffiliationField()],
+                      children: <Widget>[_buildTGField(), SizedBox(height: 16.0), _buildTgCatalogField()],
                     ),
                     isActive: _currentStep >= 0,
                     state: _isValid(['talkgroups'])
@@ -320,7 +320,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
             findSuggestions: (String query) async {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
-                var talkGroup = _formKey.currentState.fields["affiliation"].currentState.value;
+                var talkGroup = _formKey.currentState.fields["tgCatalog"].currentState.value;
                 return (await service.fetchTalkGroups(Defaults.orgId, talkGroup)).where((tg) {
                   return tg.name.toLowerCase().contains(lowercaseQuery) ||
                       tg.type.toString().toLowerCase().contains(lowercaseQuery);
@@ -364,15 +364,15 @@ class _IncidentEditorState extends State<IncidentEditor> {
             fields.length;
   }
 
-  Widget _buildAffiliationField() {
+  Widget _buildTgCatalogField() {
     return ValueListenableBuilder(
-      valueListenable: _affiliations,
+      valueListenable: _tgCatalog,
       builder: (BuildContext context, List value, Widget child) {
         return buildDropDownField(
-          attribute: 'affiliation',
+          attribute: 'tgCatalog',
           label: 'Nødnett',
-          initialValue: _configBloc?.config?.talkGroups ?? Defaults.talkGroups,
-          items: _affiliations.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
+          initialValue: _configBloc?.config?.tgCatalog ?? Defaults.talkGroups,
+          items: _tgCatalog.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
           ],

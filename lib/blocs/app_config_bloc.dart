@@ -47,7 +47,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           onboarding: onboarding,
           district: district,
           department: department,
-          talkGroups: talkGroups,
+          tgCatalog: talkGroups,
           locationWhenInUse: locationWhenInUse,
         );
     var response = await service.save(config);

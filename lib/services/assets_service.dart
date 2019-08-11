@@ -39,14 +39,18 @@ class AssetsService {
     if (!_organizations.containsKey(orgId)) {
       await _loadOrg(orgId);
     }
-    return _organizations[orgId].talkGroups[catalog].map((name) => TalkGroup(name: name, type: TalkGroupType.Tetra));
+    return _organizations[orgId]
+        .talkGroups[catalog]
+        .map((name) => TalkGroup(name: name, type: TalkGroupType.Tetra))
+        .toList(growable: false);
   }
 
   Future<List<String>> fetchTalkGroupCatalogs(String orgId) async {
     if (!_organizations.containsKey(orgId)) {
       await _loadOrg(orgId);
     }
-    return _organizations[orgId].talkGroups.keys.toList(growable: false);
+    return _organizations[orgId].talkGroups.keys.toList(growable: false).toList(growable: false);
+    ;
   }
 
   Future<Map<String, Division>> fetchDivisions(String orgId) async {

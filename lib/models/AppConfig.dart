@@ -7,7 +7,7 @@ part 'AppConfig.g.dart';
 @JsonSerializable()
 class AppConfig extends Equatable {
   static const ONBOARDING = 'onboarding';
-  static const TALK_GROUPS = 'talk_groups';
+  static const TALK_GROUPS_CATALOG = 'talk_groups_catalog';
   static const DISTRICT = 'district';
   static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
@@ -17,7 +17,7 @@ class AppConfig extends Equatable {
     ONBOARDING: "bool",
     DISTRICT: "string",
     DEPARTMENT: "string",
-    TALK_GROUPS: "string",
+    TALK_GROUPS_CATALOG: "string",
     LOCATION_WHEN_IN_USE: "bool",
   };
 
@@ -25,7 +25,7 @@ class AppConfig extends Equatable {
   final bool onboarding;
   final String division;
   final String department;
-  final String talkGroups;
+  final String tgCatalog;
   final bool locationWhenInUse;
 
   AppConfig({
@@ -33,13 +33,13 @@ class AppConfig extends Equatable {
     @required this.onboarding,
     @required this.division,
     @required this.department,
-    @required this.talkGroups,
+    @required this.tgCatalog,
     @required this.locationWhenInUse,
   }) : super([
           onboarding,
           division,
           department,
-          talkGroups,
+          tgCatalog,
           locationWhenInUse,
         ]);
 
@@ -54,7 +54,7 @@ class AppConfig extends Equatable {
     bool onboarding,
     String district,
     String department,
-    String talkGroups,
+    String tgCatalog,
     bool locationWhenInUse,
   }) {
     return AppConfig(
@@ -62,7 +62,7 @@ class AppConfig extends Equatable {
       onboarding: onboarding ?? this.onboarding,
       division: district ?? this.division,
       department: department ?? this.department,
-      talkGroups: talkGroups ?? this.talkGroups,
+      tgCatalog: tgCatalog ?? this.tgCatalog,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
     );
   }
