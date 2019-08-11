@@ -64,10 +64,10 @@ class AppDrawer extends StatelessWidget {
             title: Text('Logg ut', style: TextStyle(fontSize: 14)),
             onTap: () async {
               userBloc
-                  .logout()
-                  .state
-                  .where((state) => state is UserUnset)
-                  .listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
+                  ?.logout()
+                  ?.state
+                  ?.where((state) => state is UserUnset)
+                  ?.listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
             },
           ),
           Divider(),
