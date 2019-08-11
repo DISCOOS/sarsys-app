@@ -59,6 +59,7 @@ class MapSearchFieldState extends State<MapSearchField> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context).iconTheme;
     return Container(
       margin: EdgeInsets.all(8.0),
       padding: EdgeInsets.all(0.0),
@@ -67,27 +68,38 @@ class MapSearchFieldState extends State<MapSearchField> {
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8.0),
       ),
-      child: SizedBox(
-        child: TextField(
-          key: _searchKey,
-          focusNode: _focusNode,
-          autofocus: false,
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            hintMaxLines: 1,
-            hintText: widget.hintText ?? "Søk etter posisjon, adresse, enhet",
-            contentPadding: EdgeInsets.all(16.0),
-            prefixIcon: widget.prefixIcon,
-            suffixIcon: _focusNode.hasFocus || _match != null
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: widget.prefixIcon,
+          ),
+          Expanded(
+            child: TextField(
+              key: _searchKey,
+              focusNode: _focusNode,
+              autofocus: false,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintMaxLines: 1,
+                hintText: widget.hintText ?? "Posisjon, adresse, enhet",
+                contentPadding: EdgeInsets.only(top: 16.0, bottom: 16.0),
+              ),
+              controller: _controller,
+              onSubmitted: (value) => _search(context, value),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: _focusNode.hasFocus || _match != null
                 ? GestureDetector(
-                    child: Icon(Icons.close),
+                    child: Icon(Icons.close, color: theme.color),
                     onTap: () => clear(),
                   )
-                : Icon(Icons.search),
+                : Icon(Icons.search, color: theme.color.withOpacity(0.4)),
           ),
-          controller: _controller,
-          onSubmitted: (value) => _search(context, value),
-        ),
+        ],
       ),
     );
   }
