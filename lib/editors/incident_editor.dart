@@ -172,7 +172,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
       resetIcon: null,
       autocorrect: true,
       autovalidate: true,
-      editable: false,
       decoration: InputDecoration(
         labelText: "Hendelsestidspunkt",
         isDense: true,
