@@ -4,7 +4,6 @@ import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/foundation.dart';

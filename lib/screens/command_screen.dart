@@ -2,7 +2,6 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';

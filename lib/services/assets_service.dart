@@ -50,7 +50,6 @@ class AssetsService {
       await _loadOrg(orgId);
     }
     return _organizations[orgId].talkGroups.keys.toList(growable: false).toList(growable: false);
-    ;
   }
 
   Future<Map<String, Division>> fetchDivisions(String orgId) async {
