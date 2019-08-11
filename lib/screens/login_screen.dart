@@ -175,9 +175,12 @@ class LoginScreenState extends State<LoginScreen> {
                       ),
                       if (snapshot.hasData && snapshot.data is UserException)
                         Center(
-                          child: Text(
-                            snapshot.data.data,
-                            style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w300),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Text(
+                              snapshot.data.data,
+                              style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                       _buildEmailInput(),

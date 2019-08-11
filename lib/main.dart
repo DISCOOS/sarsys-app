@@ -41,7 +41,6 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
           height: 36.0,
           textTheme: ButtonTextTheme.primary,
         ),
-        //accentColor: Colors.cyan[600],
       ),
       home: homepage,
       routes: <String, WidgetBuilder>{

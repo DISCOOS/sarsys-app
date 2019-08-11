@@ -23,9 +23,10 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   void _init(UserState state) {
-    if (state.isUnset() || state.isForbidden() || state.isUnauthorized())
+    if (state.isUnset() || state.isForbidden() || state.isUnauthorized()) {
       dispatch(ClearIncidents(_incidents.keys.toList()));
-    else if (state.isAuthenticated()) fetch();
+      dispatch(UnsetIncident());
+    } else if (state.isAuthenticated()) fetch();
   }
 
   @override
@@ -121,6 +122,8 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       }
     } else if (command is ClearIncidents) {
       yield _clear(command);
+    } else if (command is UnsetIncident) {
+      yield _unset();
     } else if (command is RaiseIncidentError) {
       yield command.data;
     } else {
@@ -179,8 +182,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   IncidentUnset _unset() {
+    final incident = _incidents[_given];
     _given = null;
-    return IncidentUnset();
+    return IncidentUnset(incident);
   }
 
   IncidentState _clear(ClearIncidents command) {
@@ -282,6 +286,13 @@ class ClearIncidents extends IncidentCommand<List<String>> {
   String toString() => 'ClearIncidents';
 }
 
+class UnsetIncident extends IncidentCommand<void> {
+  UnsetIncident() : super(null);
+
+  @override
+  String toString() => 'UnsetIncident';
+}
+
 class RaiseIncidentError extends IncidentCommand<IncidentError> {
   RaiseIncidentError(data) : super(data);
 
@@ -307,8 +318,8 @@ abstract class IncidentState<T> extends Equatable {
   isError() => this is IncidentError;
 }
 
-class IncidentUnset extends IncidentState<Null> {
-  IncidentUnset() : super(null);
+class IncidentUnset extends IncidentState<Incident> {
+  IncidentUnset([Incident incident]) : super(incident);
 
   @override
   String toString() => 'IncidentUnset';

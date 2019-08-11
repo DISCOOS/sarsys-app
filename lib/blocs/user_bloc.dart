@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/models/Incident.dart';
@@ -49,32 +50,29 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     var token = await service.getToken();
     if (token != null) {
       print("Init from token f$token");
-      dispatch(InitUser(User.fromToken(token)));
+      return _dispatch<bool>(InitUser(User.fromToken(token)));
     }
     return Future.value(isAuthenticated);
   }
 
-  UserBloc login(String username, String password) {
-    dispatch(_assertUnset(AuthenticateUser(username, password)));
-    return this;
+  Future<bool> login(String username, String password) {
+    return _dispatch<bool>(_assertUnset(AuthenticateUser(username, password)));
   }
 
   UserCommand _assertUnset(UserCommand command) {
-    return isAuthenticated ? RaiseUserError.from("Ikke logget inn") : command;
+    return isAuthenticated ? RaiseUserError.from("Allerede logget inn") : command;
   }
 
-  UserBloc logout() {
-    dispatch(_assertAuthenticated(UnsetUser()));
-    return this;
-  }
-
-  UserBloc authorize(Incident data, String passcode) {
-    dispatch(_assertAuthenticated(AuthorizeUser(data, passcode)));
-    return this;
+  Future<bool> logout() {
+    return _dispatch<bool>(_assertAuthenticated(UnsetUser()));
   }
 
   UserCommand _assertAuthenticated(UserCommand command) {
     return isAuthenticated ? command : RaiseUserError.from("Ikke logget inn");
+  }
+
+  Future<bool> authorize(Incident data, String passcode) {
+    return _dispatch<bool>(_assertAuthenticated(AuthorizeUser(data, passcode)));
   }
 
   @override
@@ -86,11 +84,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       yield await _authenticate(command);
     } else if (command is UnsetUser) {
       if (_user != null) {
-        yield await _unset();
+        yield await _unset(command);
       }
     } else if (command is AuthorizeUser) {
       if (_user != null) {
-        yield _authorize(command.data, command.passcode);
+        yield _authorize(command);
       }
     } else if (command is RaiseUserError) {
       yield command.data;
@@ -101,33 +99,55 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   UserState _init(InitUser command) {
     _user = command.data;
-    return UserAuthenticated(_user);
+    return _toOK(command, UserAuthenticated(_user), result: true);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
     if (await service.login(command.data, command.password)) {
       _user = User.fromToken(await service.getToken());
-      return UserAuthenticated(_user);
+      return _toOK(command, UserAuthenticated(_user), result: true);
     }
-    return UserError("Feil ved innlogging - tjeneste ikke tilgjengelig");
+    return _toError(command, "Feil ved innlogging - tjeneste ikke tilgjengelig");
   }
 
-  Future<UserUnset> _unset() async {
+  Future<UserUnset> _unset(UnsetUser command) async {
     await service.logout();
     _user = null;
     _authorized.clear();
-    return UserUnset();
+    return _toOK(command, UserUnset(), result: true);
   }
 
-  _authorize(Incident data, String passcode) {
-    bool command = data.passcodes.personnel == passcode;
-    bool personnel = command || data.passcodes.personnel == passcode;
-    if (command || personnel) {
-      var state = UserAuthorized(user, data, command, personnel);
-      _authorized.putIfAbsent(data.id, () => state);
-      return state;
+  UserState _authorize(AuthorizeUser command) {
+    bool isCommander = command.data.passcodes.personnel == command.passcode;
+    bool isPersonnel = isCommander || command.data.passcodes.personnel == command.passcode;
+    if (isCommander || isPersonnel) {
+      var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
+      _authorized.putIfAbsent(command.data.id, () => state);
+      return _toOK(command, state, result: true);
     }
-    return UserForbidden("Feil kode: $passcode");
+    return _toError(command, UserForbidden("Feil kode: ${command.passcode}"));
+  }
+
+  // Dispatch and return future
+  Future<R> _dispatch<R>(UserCommand<dynamic, R> command) {
+    dispatch(command);
+    return command.callback.future;
+  }
+
+  // Complete request and return given state to bloc
+  UserState _toOK<R>(UserCommand event, UserState state, {R result}) {
+    if (result != null)
+      event.callback.complete(result);
+    else
+      event.callback.complete();
+    return state;
+  }
+
+  // Complete with error and return response as error state to bloc
+  UserState _toError(UserCommand event, Object response) {
+    final error = UserError(response);
+    event.callback.completeError(error);
+    return error;
   }
 
   @override
@@ -151,27 +171,28 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class UserCommand<T> extends Equatable {
+abstract class UserCommand<T, R> extends Equatable {
   final T data;
+  final Completer<R> callback = Completer();
 
   UserCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class UnsetUser extends UserCommand<Null> {
+class UnsetUser extends UserCommand<void, bool> {
   UnsetUser() : super(null);
 
   @override
   String toString() => 'UnsetUser';
 }
 
-class InitUser extends UserCommand<User> {
+class InitUser extends UserCommand<User, bool> {
   InitUser(User user) : super(user);
 
   @override
   String toString() => 'InitUser';
 }
 
-class AuthenticateUser extends UserCommand<String> {
+class AuthenticateUser extends UserCommand<String, bool> {
   final String password;
   AuthenticateUser(String username, this.password) : super(username, [password]);
 
@@ -179,7 +200,7 @@ class AuthenticateUser extends UserCommand<String> {
   String toString() => 'AuthenticateUser';
 }
 
-class AuthorizeUser extends UserCommand<Incident> {
+class AuthorizeUser extends UserCommand<Incident, bool> {
   final String passcode;
   AuthorizeUser(incident, this.passcode) : super(incident, [passcode]);
 
@@ -187,7 +208,7 @@ class AuthorizeUser extends UserCommand<Incident> {
   String toString() => 'AuthorizeUser';
 }
 
-class RaiseUserError extends UserCommand<UserError> {
+class RaiseUserError extends UserCommand<UserError, void> {
   RaiseUserError(data) : super(data);
 
   static RaiseUserError from(String error) => RaiseUserError(UserError(error));

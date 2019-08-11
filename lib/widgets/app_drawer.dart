@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,7 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
+    final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -22,9 +24,9 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.format_list_bulleted),
-            title: Text('Velg hendelse', style: TextStyle(fontSize: 14)),
+            title: Text('Hendelser', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushNamed(context, 'incidents');
+              Navigator.pushReplacementNamed(context, 'incidents');
             },
           ),
           Divider(),
@@ -37,6 +39,7 @@ class AppDrawer extends StatelessWidget {
           ),
           Divider(),
           ListTile(
+            enabled: !isUnset,
             leading: const Icon(Icons.warning),
             title: Text('Hendelse', style: TextStyle(fontSize: 14)),
             onTap: () {
@@ -44,6 +47,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            enabled: !isUnset,
             leading: const Icon(Icons.people),
             title: Text('Enheter', style: TextStyle(fontSize: 14)),
             onTap: () {
@@ -51,6 +55,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            enabled: !isUnset,
             leading: const Icon(Icons.device_unknown),
             title: Text('Terminaler', style: TextStyle(fontSize: 14)),
             onTap: () {
@@ -62,11 +67,8 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.lock),
             title: Text('Logg ut', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              userBloc
-                  ?.logout()
-                  ?.state
-                  ?.where((state) => state is UserUnset)
-                  ?.listen((_) => {Navigator.pushReplacementNamed(context, 'login')});
+              await userBloc?.logout();
+              Navigator.popAndPushNamed(context, 'login');
             },
           ),
           Divider(),
