@@ -347,21 +347,15 @@ class DeviceSearch extends SearchDelegate<Device> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = _recent.value;
-    return suggestions == null
-        ? ValueListenableBuilder<Set<String>>(
-            valueListenable: _recent,
-            builder: (BuildContext context, Set<String> suggestions, Widget child) {
-              return _buildSuggestionList(
-                context,
-                suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
-              );
-            },
-          )
-        : _buildSuggestionList(
-            context,
-            suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
-          );
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: _recent,
+      builder: (BuildContext context, Set<String> suggestions, Widget child) {
+        return _buildSuggestionList(
+          context,
+          suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+        );
+      },
+    );
   }
 
   ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
@@ -381,6 +375,12 @@ class DeviceSearch extends SearchDelegate<Device> {
             ],
           ),
         ),
+        trailing: index > 2
+            ? IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () => _delete(context, suggestions, index),
+              )
+            : null,
         onTap: () {
           query = suggestions[index];
           showResults(context);
@@ -394,6 +394,14 @@ class DeviceSearch extends SearchDelegate<Device> {
   Widget buildResults(BuildContext context) {
     final recent = _recent.value.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+    _recent.value = recent.toSet();
     return DevicesPage(query: query);
+  }
+
+  void _delete(BuildContext context, List<String> suggestions, int index) async {
+    final recent = suggestions.toList()..remove(suggestions[index]);
+    await _storage.write(key: RECENT_KEY, value: json.encode(recent));
+    _recent.value = recent.toSet();
+    buildSuggestions(context);
   }
 }
