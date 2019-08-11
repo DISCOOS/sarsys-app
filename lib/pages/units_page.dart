@@ -67,7 +67,7 @@ class UnitsPageState extends State<UnitsPage> {
                     : _unitBloc.units.values
                         .where((unit) =>
                             _filter.contains(unit.status) &&
-                            (widget.query == null || "${unit.searchable}".contains(widget.query)))
+                            (widget.query == null || _prepare(unit).contains(widget.query.toLowerCase())))
                         .toList();
 
                 return AnimatedCrossFade(
@@ -93,6 +93,8 @@ class UnitsPageState extends State<UnitsPage> {
       },
     );
   }
+
+  String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();
 
   ListView _buildList(List units) {
     return ListView.builder(
@@ -318,7 +320,7 @@ class UnitSearch extends SearchDelegate<Unit> {
       builder: (BuildContext context, Set<String> suggestions, Widget child) {
         return _buildSuggestionList(
           context,
-          suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+          suggestions.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase())).toList(),
         );
       },
     );

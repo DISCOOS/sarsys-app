@@ -80,7 +80,7 @@ class DevicesPageState extends State<DevicesPage> {
                 var devices = _deviceBloc.devices.values
                     .where((device) =>
                         _filter.contains(device.type) &&
-                        (widget.query == null || _prepare(device).contains(widget.query)))
+                        (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
                     .toList();
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
@@ -107,7 +107,10 @@ class DevicesPageState extends State<DevicesPage> {
     });
   }
 
-  String _prepare(Device device) => "${device.searchable} ${_toDistrict(device.number)} ${_toFunction(device.number)}";
+  String _prepare(Device device) => "${device.searchable} "
+          "${_toDistrict(device.number)} "
+          "${_toFunction(device.number)}"
+      .toLowerCase();
 
   Widget _buildDevice(
     List<Device> devices,
@@ -352,7 +355,7 @@ class DeviceSearch extends SearchDelegate<Device> {
       builder: (BuildContext context, Set<String> suggestions, Widget child) {
         return _buildSuggestionList(
           context,
-          suggestions.where((suggestion) => suggestion.startsWith(query)).toList(),
+          suggestions.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase())).toList(),
         );
       },
     );
@@ -362,7 +365,7 @@ class DeviceSearch extends SearchDelegate<Device> {
     final ThemeData theme = Theme.of(context);
     return ListView.builder(
       itemBuilder: (context, index) => ListTile(
-        leading: Icon(Icons.group),
+        leading: Icon(index > 2 ? Icons.access_time : Icons.group),
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
