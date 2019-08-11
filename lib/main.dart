@@ -91,17 +91,22 @@ void runAppWithCatcher(Widget app, AppConfig config) {
           "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
       pageReportModeAccept: "Godta",
       pageReportModeCancel: "Avbryt");
-
+  var explicitReportModesMap = {"FetchFailure": SilentReportMode()};
+  var explicitHandlerModesMap = {"FetchFailure": ConsoleHandler()};
   Catcher(
     app,
     debugConfig: CatcherOptions(
       PageReportMode(),
       [ConsoleHandler(enableStackTrace: true)],
+      explicitExceptionHandlersMap: explicitHandlerModesMap,
+      explicitExceptionReportModesMap: explicitReportModesMap,
       localizationOptions: [localizationOptions],
     ),
     releaseConfig: CatcherOptions(
       PageReportMode(),
       [SentryHandler(config.sentryDns)],
+      explicitExceptionHandlersMap: explicitHandlerModesMap,
+      explicitExceptionReportModesMap: explicitReportModesMap,
       localizationOptions: [localizationOptions],
     ),
   );
