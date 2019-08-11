@@ -20,48 +20,50 @@ void main() async {
   final Widget homepage = await getHome(providers);
 
   // Initialize app-config
-  await providers.configProvider.bloc.fetch();
+  //await providers.configProvider.bloc.fetch();
+  //runApp(_buildApp(providers, homepage));
+  runAppWithCatcher(
+    _buildApp(providers, homepage),
+    await providers.configProvider.bloc.fetch(),
+  );
+}
 
-  //final AppConfig config = await providers.configProvider.bloc.fetch();
-  //runAppWithCatcher(app, config);
-
-  runApp(
-    BlocProviderTree(
-      blocProviders: providers.all,
-      child: MaterialApp(
-        navigatorKey: Catcher.navigatorKey,
-        debugShowCheckedModeBanner: false,
-        title: 'SarSys',
-        theme: ThemeData(
-          primaryColor: Colors.grey[850],
-          buttonTheme: ButtonThemeData(
-            height: 36.0,
-            textTheme: ButtonTextTheme.primary,
-          ),
-          //accentColor: Colors.cyan[600],
+BlocProviderTree _buildApp(Providers providers, Widget homepage) {
+  return BlocProviderTree(
+    blocProviders: providers.all,
+    child: MaterialApp(
+      navigatorKey: Catcher.navigatorKey,
+      debugShowCheckedModeBanner: false,
+      title: 'SarSys',
+      theme: ThemeData(
+        primaryColor: Colors.grey[850],
+        buttonTheme: ButtonThemeData(
+          height: 36.0,
+          textTheme: ButtonTextTheme.primary,
         ),
-        home: homepage,
-        routes: <String, WidgetBuilder>{
-          'login': (BuildContext context) => LoginScreen(),
-          'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-          'units': (BuildContext context) => CommandScreen(tabIndex: 1),
-          'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
-          'incidents': (BuildContext context) => IncidentsScreen(),
-          'settings': (BuildContext context) => SettingsScreen(),
-          'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
-        },
-        localizationsDelegates: [
-          GlobalWidgetsLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          DefaultMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          DefaultCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: [
-          const Locale('en'), // English
-          const Locale('nb'), // Norwegian
-        ],
+        //accentColor: Colors.cyan[600],
       ),
+      home: homepage,
+      routes: <String, WidgetBuilder>{
+        'login': (BuildContext context) => LoginScreen(),
+        'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
+        'units': (BuildContext context) => CommandScreen(tabIndex: 1),
+        'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
+        'incidents': (BuildContext context) => IncidentsScreen(),
+        'settings': (BuildContext context) => SettingsScreen(),
+        'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
+      },
+      localizationsDelegates: [
+        GlobalWidgetsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        DefaultMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        DefaultCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en'), // English
+        const Locale('nb'), // Norwegian
+      ],
     ),
   );
 }
