@@ -86,7 +86,7 @@
         },
         "210": {
           "name": "Hedmark",
-          "department": {
+          "departments": {
             "211": "Brumunddal",
             "212": "Brøttum",
             "213": "Eidskog",
@@ -109,7 +109,7 @@
         },
         "240": {
           "name": "Oppland",
-          "department": {
+          "departments": {
             "241": "Bagn",
             "242": "Brandbu",
             "243": "Gjøvik",

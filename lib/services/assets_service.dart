@@ -46,7 +46,7 @@ class AssetsService {
     if (!_organizations.containsKey(orgId)) {
       await _loadOrg(orgId);
     }
-    return _organizations[orgId].talkGroups.keys;
+    return _organizations[orgId].talkGroups.keys.toList(growable: false);
   }
 
   Future<Map<String, Division>> fetchDivisions(String orgId) async {
@@ -60,8 +60,10 @@ class AssetsService {
     if (!_organizations.containsKey(orgId)) {
       await _loadOrg(orgId);
     }
-    final departments = {};
-    _organizations[orgId].divisions.values.forEach((division) => departments.addAll(division.departments));
+    final Map<String, String> departments = {};
+    _organizations[orgId].divisions.values.forEach(
+          (division) => departments.addAll(division.departments),
+        );
     return departments;
   }
 

@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -102,6 +104,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       _buildDistrictField(bloc),
       _buildDepartmentField(bloc),
       _buildTalkGroupsField(bloc),
+      SizedBox(height: 16.0),
       Divider(),
       ListTile(
         title: Text(
@@ -144,7 +147,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Expanded(child: Text("Distrikt")),
-          FutureBuilder<Map<String, dynamic>>(
+          FutureBuilder<Map<String, Division>>(
             future: AssetsService().fetchDivisions(Defaults.orgId),
             initialData: {},
             builder: (context, snapshot) {
@@ -152,17 +155,18 @@ class SettingsScreenState extends State<SettingsScreen> {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   items: snapshot.hasData
-                      ? snapshot.data.values
-                          .map((name) => DropdownMenuItem<String>(
-                                value: "$name",
-                                child: Text("$name"),
+                      ? sortMapValues<String, Division, String>(snapshot.data, (division) => division.name)
+                          .entries
+                          .map((division) => DropdownMenuItem<String>(
+                                value: "${division.key}",
+                                child: Text("${division.value.name}"),
                               ))
                           .toList()
                       : [],
                   onChanged: (value) {
                     bloc.update(district: value);
                   },
-                  value: bloc.config?.district ?? Defaults.district,
+                  value: bloc.config?.division ?? Defaults.division,
                 ),
               );
             },
@@ -188,10 +192,11 @@ class SettingsScreenState extends State<SettingsScreen> {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   items: snapshot.hasData
-                      ? snapshot.data.values
-                          .map((name) => DropdownMenuItem<String>(
-                                value: "$name",
-                                child: Text("$name"),
+                      ? sortMapValues<String, String, String>(snapshot.data)
+                          .entries
+                          .map((department) => DropdownMenuItem<String>(
+                                value: "${department.key}",
+                                child: Text("${department.value}"),
                               ))
                           .toList()
                       : [],
@@ -224,7 +229,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   items: snapshot.hasData
-                      ? snapshot.data
+                      ? sortList(snapshot.data)
                           .map((name) => DropdownMenuItem<String>(
                                 value: "$name",
                                 child: Text("$name"),

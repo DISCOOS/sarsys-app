@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:latlong/latlong.dart';
@@ -39,4 +41,34 @@ LatLng toLatLng(Point point) {
 
 Point toPoint(LatLng point) {
   return Point.now(point?.latitude, point?.longitude);
+}
+
+List<T> sortList<T>(List<T> data, [int compare(T a, T b)]) {
+  data.sort(compare);
+  return data;
+}
+
+/// Sort map on keys
+Map<K, V> sortMapKeys<K, V, T>(Map<K, V> map, [int compare(K a, K b)]) {
+  final keys = map.keys.toList(growable: false);
+  if (compare == null) compare = (K a, K b) => "$a".compareTo("$b");
+  keys.sort((k1, k2) => compare(k1, k2));
+  LinkedHashMap<K, V> sortedMap = new LinkedHashMap();
+  keys.forEach((k1) {
+    sortedMap[k1] = map[k1];
+  });
+  return sortedMap;
+}
+
+/// Sort map on values.
+Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(T a, T b)]) {
+  final keys = map.keys.toList(growable: false);
+  if (mapper == null) mapper = (V value) => value as T;
+  if (compare == null) compare = (T a, T b) => "$a".compareTo("$b");
+  keys.sort((k1, k2) => compare(mapper(map[k1]), mapper(map[k2])));
+  LinkedHashMap<K, V> sortedMap = new LinkedHashMap();
+  keys.forEach((k1) {
+    sortedMap[k1] = map[k1];
+  });
+  return sortedMap;
 }

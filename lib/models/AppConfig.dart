@@ -23,7 +23,7 @@ class AppConfig extends Equatable {
 
   final String sentryDns;
   final bool onboarding;
-  final String district;
+  final String division;
   final String department;
   final String talkGroups;
   final bool locationWhenInUse;
@@ -31,13 +31,13 @@ class AppConfig extends Equatable {
   AppConfig({
     @required this.sentryDns,
     @required this.onboarding,
-    @required this.district,
+    @required this.division,
     @required this.department,
     @required this.talkGroups,
     @required this.locationWhenInUse,
   }) : super([
           onboarding,
-          district,
+          division,
           department,
           talkGroups,
           locationWhenInUse,
@@ -60,7 +60,7 @@ class AppConfig extends Equatable {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
       onboarding: onboarding ?? this.onboarding,
-      district: district ?? this.district,
+      division: district ?? this.division,
       department: department ?? this.department,
       talkGroups: talkGroups ?? this.talkGroups,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,

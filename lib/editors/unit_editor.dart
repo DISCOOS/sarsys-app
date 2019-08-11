@@ -1,3 +1,5 @@
+import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:intl/intl.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
@@ -27,6 +29,7 @@ class _UnitEditorState extends State<UnitEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
   final _callsignController = TextEditingController();
+  final Map<String, String> _departments = {};
 
   String _editedName;
   UnitBloc _unitBloc;
@@ -41,6 +44,12 @@ class _UnitEditorState extends State<UnitEditor> {
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
+    _init();
+  }
+
+  void _init() async {
+    _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.orgId));
+    setState(() {});
   }
 
   @override
@@ -84,6 +93,7 @@ class _UnitEditorState extends State<UnitEditor> {
                 _buildStatusField(),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
+                SizedBox(height: MediaQuery.of(context).size.height / 2),
               ],
             ),
           ),
@@ -333,7 +343,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _getDefaultCallSign() {
-    final String department = _appConfigBloc.config.department;
+    final String department = _departments[_appConfigBloc.config.department];
     int number = _ensureCallSignSuffix();
     final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
     return "$department ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
