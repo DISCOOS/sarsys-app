@@ -101,9 +101,10 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         yield _unset();
       }
     } else if (command is CreateIncident) {
-      yield await _create(command);
+      final created = await _create(command);
+      yield created;
       if (command.selected) {
-        yield _set(command.data);
+        yield _set(created.data);
       }
     } else if (command is UpdateIncident) {
       yield await _update(command);
@@ -145,7 +146,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         response.body.id,
         () => response.body,
       );
-      return _toOK(event, IncidentCreated(response.body));
+      return _toOK(event, IncidentCreated(response.body), result: response.body);
     }
     return _toError(event, response);
   }
