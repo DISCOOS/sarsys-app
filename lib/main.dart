@@ -91,21 +91,25 @@ void runAppWithCatcher(Widget app, AppConfig config) {
           "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
       pageReportModeAccept: "Godta",
       pageReportModeCancel: "Avbryt");
-  var explicitReportModesMap = {"FetchFailure": SilentReportMode()};
-  var explicitHandlerModesMap = {"FetchFailure": ConsoleHandler()};
+  var explicitReportModesMap = {
+    // Silence map tile fetch failures thrown by FlutterMap
+    "FetchFailure": SilentReportMode(),
+    // Silence Overlay assertion errors thrown by form_field_builder.
+    // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
+    "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true.":
+        SilentReportMode(),
+  };
   Catcher(
     app,
     debugConfig: CatcherOptions(
       PageReportMode(),
-      [ConsoleHandler(enableStackTrace: true)],
-      explicitExceptionHandlersMap: explicitHandlerModesMap,
+      [SentryHandler(config.sentryDns), ConsoleHandler(enableStackTrace: true)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       localizationOptions: [localizationOptions],
     ),
     releaseConfig: CatcherOptions(
       PageReportMode(),
       [SentryHandler(config.sentryDns)],
-      explicitExceptionHandlersMap: explicitHandlerModesMap,
       explicitExceptionReportModesMap: explicitReportModesMap,
       localizationOptions: [localizationOptions],
     ),

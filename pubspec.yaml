@@ -11,7 +11,7 @@ description: SarSys
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 0.1.1+10
+version: 0.1.1+11
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
@@ -61,6 +61,12 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
+
+dependency_overrides:
+  flutter_chips_input:
+    git:
+      url: git://github.com/DISCOOS/flutter_chips_input
+      ref: master
 
 dev_dependencies:
   flutter_test:
