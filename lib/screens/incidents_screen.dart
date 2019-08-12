@@ -193,17 +193,6 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                               }
                             },
                           ),
-                          FlatButton(
-                            child: Text('ENDRE', style: TextStyle(fontSize: 14.0)),
-                            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            onPressed: isAuthorized
-                                ? () => showDialog(
-                                      context: context,
-                                      builder: (context) => IncidentEditor(incident: incident),
-                                    )
-                                : null,
-                          ),
                         ],
                       ),
                     ),
