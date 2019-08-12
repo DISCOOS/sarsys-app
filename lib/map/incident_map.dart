@@ -107,11 +107,10 @@ class IncidentMapState extends State<IncidentMap> {
     }
     _center = widget.center ?? Defaults.origo;
     _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
-
-    init();
+    _init();
   }
 
-  void init() async {
+  void _init() async {
     _baseMaps = await _maptileService.fetchMaps();
     _locationController?.init();
   }
@@ -388,6 +387,7 @@ class IncidentMapState extends State<IncidentMap> {
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
     _center = position.center;
+    _zoom = widget.mapController.zoom;
     if (isUserGesture && widget.withLocation && _locationController.isTracking) {
       _locationController.toggle();
     }
