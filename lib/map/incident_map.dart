@@ -387,9 +387,11 @@ class IncidentMapState extends State<IncidentMap> {
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
     _center = position.center;
-    _zoom = widget.mapController.zoom;
-    if (isUserGesture && widget.withLocation && _locationController.isTracking) {
-      _locationController.toggle();
+    if (isUserGesture && widget.mapController.ready) {
+      _zoom = widget.mapController.zoom;
+      if (widget.withLocation && _locationController.isTracking) {
+        _locationController.toggle();
+      }
     }
   }
 
