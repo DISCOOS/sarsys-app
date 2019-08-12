@@ -163,23 +163,29 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   FormBuilderDateTimePicker _buildOccurredField() {
+    final now = DateTime.now();
     return FormBuilderDateTimePicker(
       attribute: "occurred",
       initialTime: null,
-      initialValue: widget?.incident?.occurred ?? DateTime.now(),
-      inputType: InputType.both,
+      lastDate: DateTime(now.year, now.month, now.day, 23, 59, 59),
+      initialValue: widget?.incident?.occurred ?? now,
       format: DateFormat("yyyy-MM-dd HH:mm"),
       resetIcon: null,
+      editable: false,
       autocorrect: true,
-      autovalidate: true,
       decoration: InputDecoration(
         labelText: "Hendelsestidspunkt",
         isDense: true,
-        contentPadding: EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
+        contentPadding: EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 12.0),
         hasFloatingPlaceholder: false,
         filled: true,
       ),
       keyboardType: TextInputType.datetime,
+      validators: [
+        (value) {
+          return value.isAfter(DateTime.now()) ? "Du kan ikke sette klokkeslett frem i tid" : null;
+        }
+      ],
       valueTransformer: (dt) => dt.toString(),
     );
   }

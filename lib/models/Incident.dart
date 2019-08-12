@@ -79,14 +79,14 @@ class Incident extends Equatable {
       status: clone.status ?? this.status,
       changed: userId != null
           ? Author(userId: userId, timestamp: now)
-          : clone.changed ?? Author.fromJson(this.changed.toJson()),
-      created: clone.created ?? Author.fromJson(this.created.toJson()),
+          : clone.changed ?? Author.fromJson(this.changed?.toJson()),
+      created: clone.created ?? Author.fromJson(this.created?.toJson()),
       occurred: clone.occurred ?? this.occurred,
       justification: clone.justification ?? this.justification,
       reference: clone.reference ?? this.reference,
-      passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes.toJson()),
+      passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
       ipp: clone.ipp ?? Point.fromJson(this.ipp.toJson()),
-      talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+      talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg?.toJson())).toList(),
     );
   }
 
