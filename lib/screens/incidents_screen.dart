@@ -60,7 +60,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       context: context,
       builder: (context) => IncidentEditor(),
     );
-    if (incident != null) Navigator.pushReplacementNamed(context, 'incident');
+    if (incident != null) Navigator.pushReplacementNamed(context, 'map');
   }
 
   Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
@@ -217,7 +217,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
 
   void _selectAndReroute(IncidentBloc bloc, Incident incident, BuildContext context) {
     bloc.select(incident.id);
-    Navigator.pushReplacementNamed(context, 'incident');
+    Navigator.pushReplacementNamed(context, 'map');
   }
 
   Widget _buildMapTile(IncidentBloc bloc, Incident incident) {
