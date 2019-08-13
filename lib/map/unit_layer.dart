@@ -18,27 +18,29 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 typedef MessageCallback = void Function(String message);
 
-class TrackingLayerOptions extends LayerOptions {
+class UnitLayerOptions extends LayerOptions {
   double size;
   double opacity;
   bool showLabels;
+  bool showTail;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
 
-  TrackingLayerOptions({
+  UnitLayerOptions({
     @required this.bloc,
     this.size = 24.0,
     this.opacity = 0.6,
     this.showLabels = true,
+    this.showTail = true,
     this.onMessage,
     Stream<void> rebuild,
   }) : super(rebuild: rebuild);
 }
 
-class TrackingLayer extends MapPlugin {
+class UnitLayer extends MapPlugin {
   @override
   bool supportsLayer(LayerOptions options) {
-    return options is TrackingLayerOptions;
+    return options is UnitLayerOptions;
   }
 
   @override
@@ -49,14 +51,14 @@ class TrackingLayer extends MapPlugin {
         return StreamBuilder<void>(
           stream: stream, // a Stream<int> or null
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return _build(context, size, options as TrackingLayerOptions, map);
+            return _build(context, size, options as UnitLayerOptions, map);
           },
         );
       },
     );
   }
 
-  Widget _build(BuildContext context, Size size, TrackingLayerOptions options, MapState map) {
+  Widget _build(BuildContext context, Size size, UnitLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracks = options.bloc.tracks;
     final units = sortMapValues<String, Unit, TrackingStatus>(
@@ -66,7 +68,8 @@ class TrackingLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(children: [
-            ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
+            if (options.showTail)
+              ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
             if (options.showLabels)
               ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
             ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
@@ -76,7 +79,7 @@ class TrackingLayer extends MapPlugin {
   _buildTrack(
     BuildContext context,
     Size size,
-    TrackingLayerOptions options,
+    UnitLayerOptions options,
     MapState map,
     Unit unit,
     Tracking tracking,
@@ -104,7 +107,7 @@ class TrackingLayer extends MapPlugin {
     );
   }
 
-  Widget _buildPoint(BuildContext context, TrackingLayerOptions options, MapState map, Unit unit, Tracking tracking) {
+  Widget _buildPoint(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Tracking tracking) {
     var size = options.size;
     var pos = map.project(toLatLng(tracking.location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
@@ -130,7 +133,7 @@ class TrackingLayer extends MapPlugin {
     );
   }
 
-  _buildLabel(BuildContext context, TrackingLayerOptions options, MapState map, Unit unit, Point point) {
+  _buildLabel(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Point point) {
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
@@ -147,7 +150,7 @@ class TrackingLayer extends MapPlugin {
 
   void _showUnitMenu(
     BuildContext context,
-    TrackingLayerOptions options,
+    UnitLayerOptions options,
     MapState map,
     Unit unit,
     Tracking tracking,
@@ -225,7 +228,7 @@ class TrackingLayer extends MapPlugin {
 
   void _showUnitInfo(
     BuildContext context,
-    TrackingLayerOptions options,
+    UnitLayerOptions options,
     MapState map,
     Unit unit,
     Tracking tracking,

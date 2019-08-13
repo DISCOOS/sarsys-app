@@ -8,7 +8,7 @@ import 'package:SarSys/map/coordate_layer.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/scalebar.dart';
-import 'package:SarSys/map/tracking_layer.dart';
+import 'package:SarSys/map/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/maptile_service.dart';
@@ -72,10 +72,18 @@ class IncidentMap extends StatefulWidget {
 
 class IncidentMapState extends State<IncidentMap> {
   static const POI_LAYER = "Interessepunkt";
+  static const UNITS_LAYER = "Enheter";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
   static const SCALE_LAYER = "Målestokk";
-  static const LAYERS = [POI_LAYER, TRACKING_LAYER, SCALE_LAYER, COORDS_LAYER];
+  static const LAYERS = [
+    POI_LAYER,
+    UNITS_LAYER,
+    TRACKING_LAYER,
+    SCALE_LAYER,
+    COORDS_LAYER,
+    SCALE_LAYER,
+  ];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   String _currentBaseMap;
@@ -148,7 +156,7 @@ class IncidentMapState extends State<IncidentMap> {
         plugins: [
           MyLocation(),
           IconLayer(),
-          TrackingLayer(),
+          UnitLayer(),
           CoordinateLayer(),
           ScaleBar(),
         ],
@@ -158,7 +166,7 @@ class IncidentMapState extends State<IncidentMap> {
           urlTemplate: _currentBaseMap,
           tileProvider: NetworkTileProvider(),
         ),
-        if (_layers.contains(TRACKING_LAYER)) _buildTrackingOptions(),
+        if (_layers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
@@ -350,12 +358,13 @@ class IncidentMapState extends State<IncidentMap> {
     );
   }
 
-  TrackingLayerOptions _buildTrackingOptions() {
+  UnitLayerOptions _buildUnitOptions() {
     final trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    return TrackingLayerOptions(
+    return UnitLayerOptions(
       bloc: trackingBloc,
       onMessage: widget.onMessage,
       rebuild: trackingBloc.state,
+      showTail: _layers.contains(TRACKING_LAYER),
     );
   }
 
@@ -460,7 +469,6 @@ class IncidentMapState extends State<IncidentMap> {
       isScrollControlled: true,
       builder: (BuildContext bc) {
         return StatefulBuilder(builder: (context, state) {
-          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
           return DraggableScrollableSheet(
               expand: false,
               builder: (context, controller) {
@@ -468,7 +476,7 @@ class IncidentMapState extends State<IncidentMap> {
                   padding: EdgeInsets.only(bottom: 56.0),
                   children: <Widget>[
                     ListTile(
-                      dense: landscape,
+                      dense: true,
                       contentPadding: EdgeInsets.only(left: 16.0, right: 0),
                       title: Text("Vis", style: style),
                       trailing: FlatButton(
@@ -483,7 +491,7 @@ class IncidentMapState extends State<IncidentMap> {
                     Divider(),
                     ..._withLayers()
                         .map((layer) => ListTile(
-                            dense: landscape,
+                            dense: true,
                             title: Text(layer, style: style),
                             trailing: Switch(
                               value: _layers.contains(layer),
