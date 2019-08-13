@@ -127,8 +127,8 @@ class UnitLayer extends MapPlugin {
             ),
           ),
         ),
+        onTap: () => _showUnitInfo(context, options, map, unit, tracking, pos),
         onLongPress: () => _showUnitMenu(context, options, map, unit, tracking, pos),
-        onDoubleTap: () => _showUnitInfo(context, options, map, unit, tracking, pos),
       ),
     );
   }
@@ -310,7 +310,7 @@ class UnitLayer extends MapPlugin {
                   context: context,
                   label: "Terminaler",
                   icon: Icon(FontAwesomeIcons.mobileAlt),
-                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id]?.number)?.join(', '),
+                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
                   onMessage: options.onMessage,
                 ),
               ],
