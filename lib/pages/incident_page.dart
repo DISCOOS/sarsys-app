@@ -82,11 +82,15 @@ class _IncidentPageState extends State<IncidentPage> {
                       child: FloatingActionButton.extended(
                         icon: Icon(Icons.arrow_downward),
                         label: Text("Gå til bunn"),
-                        onPressed: () => _controller.animateTo(
-                          _controller.position.maxScrollExtent,
-                          curve: Curves.easeOut,
-                          duration: const Duration(milliseconds: 250),
-                        ),
+                        onPressed: () {
+                          if (_controller.hasClients) {
+                            _controller.animateTo(
+                              _controller.position.maxScrollExtent,
+                              curve: Curves.easeOut,
+                              duration: const Duration(milliseconds: 250),
+                            );
+                          }
+                        },
                       )),
                 ),
               ),
