@@ -201,7 +201,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                           .toList()
                       : [],
                   onChanged: (value) {
-                    bloc.update(talkGroups: value);
+                    bloc.update(department: value);
                   },
                   value: bloc.config?.department ?? Defaults.department,
                 ),
