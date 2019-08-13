@@ -134,7 +134,7 @@ class _UnitEditorState extends State<UnitEditor> {
       maxLength: 2,
       maxLengthEnforced: true,
       initialValue: "$actualValue",
-      onChanged: (_) => _onEdit(),
+      onChanged: (value) => _onEdit(value),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
@@ -213,12 +213,11 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  void _onEdit() {
-    return setState(() {
-      _formKey.currentState.save();
-      var unit = Unit.fromJson(_formKey.currentState.value);
-      _editedName = "${translateUnitType(unit.type)} ${unit.number}";
-    });
+  void _onEdit(value) {
+    _formKey.currentState.save();
+    var unit = Unit.fromJson(_formKey.currentState.value);
+    _editedName = "${translateUnitType(unit.type)} $value";
+    return setState(() {});
   }
 
   Widget _buildTypeField() {
@@ -233,7 +232,7 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
-      onChanged: (_) => _onEdit(),
+      onChanged: (_) => _onEdit(_formKey.currentState.value["number"]),
     );
   }
 
