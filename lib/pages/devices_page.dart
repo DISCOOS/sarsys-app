@@ -193,7 +193,7 @@ class DevicesPageState extends State<DevicesPage> {
 
   void _addToUnit(Device device) async {
     var unit = await selectUnit(context);
-    if (unit.tracking == null) {
+    if (unit?.tracking == null) {
       _trackingBloc.create(unit, [device]);
     } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
       var tracking = _trackingBloc.tracks[unit.tracking];
