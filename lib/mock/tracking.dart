@@ -164,7 +164,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
               status: tracking.status,
               devices: tracking.devices,
               distance: tracking.distance,
-              track: tracking.track,
+              track: List.of(tracking.track)..add(location),
             );
             tracks.update(
               trackId,

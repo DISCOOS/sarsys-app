@@ -145,8 +145,11 @@ class _UnitEditorState extends State<UnitEditor> {
         FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
         FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
         (value) {
-          // TODO: Check if number is unique
-          return null;
+          Unit unit = _unitBloc.units.values.firstWhere(
+            (Unit unit) => unit != widget.unit && unit.number == value,
+            orElse: () => null,
+          );
+          return unit != null ? "Lag $value finnes allerede" : null;
         },
       ],
       valueTransformer: (value) => int.tryParse(value) ?? actualValue,

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -42,15 +43,20 @@ class TrackingLayer extends MapPlugin {
 
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
-    return StreamBuilder<void>(
-      stream: stream, // a Stream<int> or null
-      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-        return _build(context, options as TrackingLayerOptions, map);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints bc) {
+        final size = Size(bc.maxWidth, bc.maxHeight);
+        return StreamBuilder<void>(
+          stream: stream, // a Stream<int> or null
+          builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+            return _build(context, size, options as TrackingLayerOptions, map);
+          },
+        );
       },
     );
   }
 
-  Widget _build(BuildContext context, TrackingLayerOptions options, MapState map) {
+  Widget _build(BuildContext context, Size size, TrackingLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracks = options.bloc.tracks;
     final units = sortMapValues<String, Unit, TrackingStatus>(
@@ -60,10 +66,42 @@ class TrackingLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(children: [
+            ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
             if (options.showLabels)
               ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
             ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
           ]);
+  }
+
+  _buildTrack(
+    BuildContext context,
+    Size size,
+    TrackingLayerOptions options,
+    MapState map,
+    Unit unit,
+    Tracking tracking,
+  ) {
+    var offsets = tracking.track.reversed.take(10).map((point) {
+      var pos = map.project(toLatLng(point));
+      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+      return Offset(pos.x.toDouble(), pos.y.toDouble());
+    }).toList(growable: false);
+
+    final color = _toTrackingStatusColor(context, tracking.status);
+
+    return Opacity(
+      opacity: options.opacity,
+      child: CustomPaint(
+        painter: _PolygonPainter(
+          offsets,
+          color,
+          color,
+          4.0,
+          false,
+        ),
+        size: size,
+      ),
+    );
   }
 
   Widget _buildPoint(BuildContext context, TrackingLayerOptions options, MapState map, Unit unit, Tracking tracking) {
@@ -105,21 +143,6 @@ class TrackingLayer extends MapPlugin {
         ),
       ),
     );
-  }
-
-  Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {
-    switch (status) {
-      case TrackingStatus.None:
-      case TrackingStatus.Created:
-      case TrackingStatus.Closed:
-        return Colors.red;
-      case TrackingStatus.Tracking:
-        return Colors.green;
-      case TrackingStatus.Paused:
-        return Colors.orange;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
   }
 
   void _showUnitMenu(
@@ -284,7 +307,7 @@ class TrackingLayer extends MapPlugin {
                   context: context,
                   label: "Terminaler",
                   icon: Icon(FontAwesomeIcons.mobileAlt),
-                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id].number).join(', '),
+                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id]?.number)?.join(', '),
                   onMessage: options.onMessage,
                 ),
               ],
@@ -393,5 +416,57 @@ class _LabelPainter extends CustomPainter {
   @override
   bool shouldRepaint(_LabelPainter oldPainter) {
     return true;
+  }
+}
+
+class _PolygonPainter extends CustomPainter {
+  final List<Offset> offsets;
+
+  final Color color;
+  final Color borderColor;
+  final double borderStrokeWidth;
+  final bool isFilled;
+
+  _PolygonPainter(
+    this.offsets,
+    this.color,
+    this.borderColor,
+    this.borderStrokeWidth,
+    this.isFilled,
+  );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (offsets.isEmpty) {
+      return;
+    }
+    final rect = Offset.zero & size;
+    canvas.clipRect(rect);
+    final paint = Paint()
+      ..strokeWidth = borderStrokeWidth
+      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..color = color;
+
+    var path = Path();
+    path.addPolygon(offsets, false);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_PolygonPainter other) => false;
+}
+
+Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {
+  switch (status) {
+    case TrackingStatus.None:
+    case TrackingStatus.Created:
+    case TrackingStatus.Closed:
+      return Colors.red;
+    case TrackingStatus.Tracking:
+      return Colors.green;
+    case TrackingStatus.Paused:
+      return Colors.orange;
+    default:
+      return Theme.of(context).colorScheme.primary;
   }
 }
