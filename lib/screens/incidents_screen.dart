@@ -156,7 +156,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     ),
                   ),
                 ),
-                if (isAuthorized) _buildMapTile(incident),
+                if (isAuthorized) _buildMapTile(bloc, incident),
                 if (isAuthorized)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
@@ -186,8 +186,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onPressed: () {
                               if (isAuthorized) {
-                                bloc.select(incident.id);
-                                Navigator.pushReplacementNamed(context, 'incident');
+                                _selectAndReroute(bloc, incident, context);
                               } else {
                                 Navigator.push(context, PasscodeRoute(incident));
                               }
@@ -216,15 +215,24 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         });
   }
 
-  Widget _buildMapTile(Incident incident) {
+  void _selectAndReroute(IncidentBloc bloc, Incident incident, BuildContext context) {
+    bloc.select(incident.id);
+    Navigator.pushReplacementNamed(context, 'incident');
+  }
+
+  Widget _buildMapTile(IncidentBloc bloc, Incident incident) {
     final point = incident.ipp != null ? toLatLng(incident.ipp) : Defaults.origo;
-    return Container(
+    return GestureDetector(
+      child: Container(
         height: 240.0,
         child: IncidentMap(
           center: point,
           incident: incident,
           interactive: false,
-        ));
+        ),
+      ),
+      onTap: () => _selectAndReroute(bloc, incident, context),
+    );
   }
 
   BottomAppBar _buildBottomAppBar() {
