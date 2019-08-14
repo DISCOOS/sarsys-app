@@ -47,6 +47,15 @@ class MaptileService {
       url: "https://maptiles1.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
     ));
     _maps.add(BaseMap(
+      name: 'norhybrid',
+      description: "Hybrid",
+      previewFile: "hybrid.png",
+      minZoom: 5,
+      maxZoom: 18,
+      offline: false,
+      url: "https://maptiles1.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
+    ));
+    _maps.add(BaseMap(
       name: 'sjokart',
       description: "Sjøkart",
       previewFile: "sjokart.png",

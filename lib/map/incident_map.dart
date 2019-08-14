@@ -438,15 +438,17 @@ class IncidentMapState extends State<IncidentMap> {
     List<Widget> _mapCards = [];
 
     for (BaseMap map in _baseMaps) {
-      _mapCards.add(GestureDetector(
-        child: BaseMapCard(map: map),
-        onTap: () {
-          setState(() {
-            _currentBaseMap = map.url;
-          });
-          Navigator.pop(context);
-        },
-      ));
+      _mapCards.add(
+        GestureDetector(
+          child: Center(child: BaseMapCard(map: map)),
+          onTap: () {
+            setState(() {
+              _currentBaseMap = map.url;
+            });
+            Navigator.pop(context);
+          },
+        ),
+      );
     }
     return _mapCards;
   }

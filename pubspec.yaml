@@ -102,6 +102,7 @@ flutter:
     - assets/mapspreview/topo4.png
     - assets/mapspreview/toporaster3.png
     - assets/mapspreview/ortofoto.png
+    - assets/mapspreview/hybrid.png
     - assets/mapspreview/sjokart.png
 
 
