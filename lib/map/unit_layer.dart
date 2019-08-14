@@ -67,13 +67,18 @@ class UnitLayer extends MapPlugin {
         .where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].location)));
     return options.bloc.isEmpty
         ? Container()
-        : Stack(children: [
-            if (options.showTail)
-              ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
-            if (options.showLabels)
-              ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location)).toList(),
-            ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
-          ]);
+        : Stack(
+            overflow: Overflow.clip,
+            children: [
+              if (options.showTail)
+                ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
+              if (options.showLabels)
+                ...units
+                    .map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location))
+                    .toList(),
+              ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
+            ],
+          );
   }
 
   _buildTrack(
@@ -447,6 +452,8 @@ class _PolygonPainter extends CustomPainter {
     canvas.clipRect(rect);
     final paint = Paint()
       ..strokeWidth = borderStrokeWidth
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..color = color;
 

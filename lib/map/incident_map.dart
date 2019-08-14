@@ -82,7 +82,6 @@ class IncidentMapState extends State<IncidentMap> {
     TRACKING_LAYER,
     SCALE_LAYER,
     COORDS_LAYER,
-    SCALE_LAYER,
   ];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
