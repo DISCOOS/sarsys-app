@@ -31,7 +31,7 @@ class ServiceResponse<T> extends Equatable {
 
   static ServiceResponse<T> forbidden<T>({message: 'Forbidden'}) {
     return ServiceResponse<T>(
-      code: 401,
+      code: 403,
       message: message,
     );
   }
@@ -43,6 +43,13 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  static ServiceResponse<T> error<T>({message: 'Error', Object error}) {
+    return ServiceResponse<T>(code: 500, message: message, body: error);
+  }
+
   bool get is200 => code == 200;
   bool get is204 => code == 204;
+  bool get is401 => code == 401;
+  bool get is403 => code == 403;
+  bool get is500 => code == 500;
 }

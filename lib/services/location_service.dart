@@ -6,8 +6,6 @@ class LocationService {
   static final _singleton = LocationService._internal();
   final _isReady = ValueNotifier(false);
 
-  String _serverUrl = "https://sporing.rodekors.no/locationtest"; // For testing simple tracking with POST messages
-
   Position _current;
   Geolocator _geolocator;
   GeolocationStatus _status;
@@ -27,19 +25,6 @@ class LocationService {
   Stream<Position> get stream => _stream;
   ValueNotifier<bool> get isReady => _isReady;
   GeolocationStatus get status => _status;
-
-//
-//  bool _locationEnabled;
-//  bool _sendingLocation;
-
-//  // Starts background location and stores to SQLite
-//  startTrackSave() {}
-//
-//  stopTrackSave() {}
-//
-//  startTrackSend() {}
-//
-//  stopTrackSend() {}
 
   Future<GeolocationStatus> init() async {
     _status = await Geolocator().checkGeolocationPermissionStatus();

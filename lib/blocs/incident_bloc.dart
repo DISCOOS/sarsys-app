@@ -23,7 +23,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   void _init(UserState state) {
-    if (state.isUnset() || state.isForbidden() || state.isUnauthorized()) {
+    if (state.isUnset()) {
       dispatch(ClearIncidents(_incidents.keys.toList()));
       dispatch(UnsetIncident());
     } else if (state.isAuthenticated()) fetch();

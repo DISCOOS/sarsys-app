@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -11,7 +9,6 @@ class PasscodeRoute extends PopupRoute {
   final _formKey = new GlobalKey<FormState>();
 
   String _passcode = "";
-  StreamSubscription<bool> subscription;
 
   PasscodeRoute(this.incident);
 
@@ -32,7 +29,7 @@ class PasscodeRoute extends PopupRoute {
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-    UserBloc bloc = _handle(context);
+    final bloc = BlocProvider.of<UserBloc>(context);
     return Center(
       child: Material(
         elevation: 4.0,
@@ -80,7 +77,7 @@ class PasscodeRoute extends PopupRoute {
               SizedBox(
                 height: 16,
               ),
-              _buildPrimaryButton(bloc),
+              _buildPrimaryButton(context, bloc),
             ],
           ),
         ),
@@ -111,33 +108,23 @@ class PasscodeRoute extends PopupRoute {
     );
   }
 
-  Widget _buildPrimaryButton(UserBloc bloc) {
+  Widget _buildPrimaryButton(BuildContext context, UserBloc bloc) {
     return RaisedButton(
       elevation: 2.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
       color: Color.fromRGBO(00, 41, 73, 1),
       child: Text('LÅS OPP', style: TextStyle(fontSize: 20.0, color: Colors.white)),
-      onPressed: () {
+      onPressed: () async {
         if (_validateAndSave()) {
-          bloc.authorize(incident, _passcode);
+          if (await bloc.authorize(incident, _passcode)) {
+            final bloc = BlocProvider.of<IncidentBloc>(context);
+            bloc.select(incident.id);
+            Navigator.pushReplacementNamed(context, 'incident');
+          }
+          //setState(() {});
         }
       },
     );
-  }
-
-  UserBloc _handle(BuildContext context) {
-    final bloc = BlocProvider.of<UserBloc>(context);
-    if (subscription != null) {
-      subscription.cancel();
-    }
-    subscription = bloc.authorized(incident).listen((isAuthorized) {
-      if (isAuthorized) {
-        final bloc = BlocProvider.of<IncidentBloc>(context);
-        bloc.select(incident.id);
-        Navigator.pushReplacementNamed(context, 'incident');
-      }
-    });
-    return bloc;
   }
 
   bool _validateAndSave() {

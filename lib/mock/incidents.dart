@@ -65,12 +65,12 @@ class IncidentServiceMock extends Mock implements IncidentService {
     final unauthorized = UserServiceMock.createToken("unauthorized");
     when(mock.fetch()).thenAnswer((_) async {
       if (incidents.isEmpty) {
-        var authorized = await service.getToken();
+        var response = await service.getToken();
         incidents.addEntries([
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
               "aZ$i",
-              Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, authorized, passcode)),
+              Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, response.body, passcode)),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
             MapEntry(
@@ -82,7 +82,8 @@ class IncidentServiceMock extends Mock implements IncidentService {
       return ServiceResponse.ok(body: incidents.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final authorized = JsonWebToken.unverified(await service.getToken());
+      final response = await service.getToken();
+      final authorized = JsonWebToken.unverified(response.body);
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.claims.subject);
       final created = Incident(

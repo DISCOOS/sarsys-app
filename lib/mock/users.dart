@@ -1,3 +1,4 @@
+import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
@@ -9,13 +10,16 @@ class UserServiceMock extends Mock implements UserService {
     when(mock.login(username, password)).thenAnswer((_) async {
       var token = createToken(username);
       await UserService.storage.write(key: 'test_token', value: token);
-      return Future.value(true);
+      return ServiceResponse.ok();
     });
     when(mock.login(argThat(isNot(equals(username))), argThat(isNot(equals(password)))))
-        .thenAnswer((_) => Future.error("Feil brukernavn/passord"));
-    when(mock.getToken()).thenAnswer((_) async => Future.value(await UserService.storage.read(key: "test_token")));
+        .thenAnswer((_) async => ServiceResponse.unauthorized(message: "Feil brukernavn/passord"));
+    when(mock.getToken()).thenAnswer(
+      (_) async => ServiceResponse.ok(body: await UserService.storage.read(key: "test_token")),
+    );
     when(mock.logout()).thenAnswer((_) async {
       await UserService.storage.delete(key: 'test_token');
+      return;
     });
 
     return mock;
@@ -26,11 +30,14 @@ class UserServiceMock extends Mock implements UserService {
     when(mock.login(any, any)).thenAnswer((username) async {
       var token = createToken(username.positionalArguments[0]);
       await UserService.storage.write(key: 'test_token', value: token);
-      return Future.value(true);
+      return ServiceResponse.ok();
     });
-    when(mock.getToken()).thenAnswer((_) async => Future.value(await UserService.storage.read(key: "test_token")));
+    when(mock.getToken()).thenAnswer(
+      (_) async => ServiceResponse.ok(body: await UserService.storage.read(key: "test_token")),
+    );
     when(mock.logout()).thenAnswer((_) async {
       await UserService.storage.delete(key: 'test_token');
+      return;
     });
 
     return mock;

@@ -47,12 +47,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// Initialize from service
   Future<bool> init() async {
-    var token = await service.getToken();
-    if (token != null) {
-      print("Init from token f$token");
-      return _dispatch<bool>(InitUser(User.fromToken(token)));
-    }
-    return Future.value(isAuthenticated);
+    return _dispatch<bool>(_assertUnset(InitUser()));
   }
 
   Future<bool> login(String username, String password) {
@@ -78,13 +73,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
     if (command is InitUser) {
-      yield _init(command);
+      yield await _init(command);
     } else if (command is AuthenticateUser) {
       yield UserAuthenticating(command.data);
       yield await _authenticate(command);
     } else if (command is UnsetUser) {
       if (_user != null) {
-        yield await _unset(command);
+        yield await _logout(command);
       }
     } else if (command is AuthorizeUser) {
       if (_user != null) {
@@ -97,24 +92,37 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     }
   }
 
-  UserState _init(InitUser command) {
-    _user = command.data;
-    return _toOK(command, UserAuthenticated(_user), result: true);
+  Future<UserState> _init(InitUser command) async {
+    var response = await service.getToken();
+    if (response.is200) {
+      _user = User.fromToken(response.body);
+      print("Init from token ${response.body}");
+      return _toResponse(command, UserAuthenticated(_user), result: true);
+    }
+    return _toError(command, response);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
-    if (await service.login(command.data, command.password)) {
-      _user = User.fromToken(await service.getToken());
-      return _toOK(command, UserAuthenticated(_user), result: true);
+    var response = await service.login(command.data, command.password);
+    if (response.is204) {
+      _user = User.fromToken(response.body);
+      return _toResponse(command, UserAuthenticated(_user), result: true);
+    } else if (response.is401) {
+      return _toResponse(command, UserUnauthorized(response), result: false);
+    } else if (response.is403) {
+      return _toResponse(command, UserForbidden(response), result: false);
     }
-    return _toError(command, "Feil ved innlogging - tjeneste ikke tilgjengelig");
+    return _toError(command, response);
   }
 
-  Future<UserUnset> _unset(UnsetUser command) async {
-    await service.logout();
-    _user = null;
-    _authorized.clear();
-    return _toOK(command, UserUnset(), result: true);
+  Future<UserUnset> _logout(UnsetUser command) async {
+    var response = await service.logout();
+    if (response.is204) {
+      _user = null;
+      _authorized.clear();
+      return _toResponse(command, UserUnset(), result: true);
+    }
+    return _toError(command, response);
   }
 
   UserState _authorize(AuthorizeUser command) {
@@ -123,9 +131,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.id, () => state);
-      return _toOK(command, state, result: true);
+      return _toResponse(command, state, result: true);
     }
-    return _toError(command, UserForbidden("Feil kode: ${command.passcode}"));
+    return _toResponse(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
   }
 
   // Dispatch and return future
@@ -135,7 +143,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete request and return given state to bloc
-  UserState _toOK<R>(UserCommand event, UserState state, {R result}) {
+  UserState _toResponse<R>(UserCommand event, UserState state, {R result}) {
     if (result != null)
       event.callback.complete(result);
     else
@@ -144,7 +152,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete with error and return response as error state to bloc
-  UserState _toError(UserCommand event, Object response) {
+  Future<UserState> _toError(UserCommand event, Object response) async {
     final error = UserError(response);
     event.callback.completeError(error);
     return error;
@@ -185,8 +193,8 @@ class UnsetUser extends UserCommand<void, bool> {
   String toString() => 'UnsetUser';
 }
 
-class InitUser extends UserCommand<User, bool> {
-  InitUser(User user) : super(user);
+class InitUser extends UserCommand<void, bool> {
+  InitUser() : super(null);
 
   @override
   String toString() => 'InitUser';
