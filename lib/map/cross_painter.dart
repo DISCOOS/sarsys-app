@@ -5,9 +5,9 @@ class CrossPainter extends CustomPainter {
   final _gap = 15.0;
   final _length = 40.0;
 
-  CrossPainter() {
+  CrossPainter({color: Colors.red}) {
     _paint = Paint()
-      ..color = Colors.red.withOpacity(0.6)
+      ..color = color
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
   }

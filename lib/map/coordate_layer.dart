@@ -34,7 +34,7 @@ class CoordinateLayer extends MapPlugin {
                     width: 56,
                     height: 56,
                     child: CustomPaint(
-                      painter: CrossPainter(),
+                      painter: CrossPainter(color: Colors.black45),
                     ),
                   )),
               Align(
@@ -43,8 +43,10 @@ class CoordinateLayer extends MapPlugin {
                   margin: EdgeInsets.all(16.0),
                   padding: EdgeInsets.all(16.0),
                   height: 72.0,
-                  decoration:
-                      BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8.0)),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                   child: Column(
                     children: <Widget>[
                       if (center != null) Text(toUTM(center)),

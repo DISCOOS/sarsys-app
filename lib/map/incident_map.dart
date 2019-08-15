@@ -379,7 +379,7 @@ class IncidentMapState extends State<IncidentMap> {
               width: 56,
               height: 56,
               child: CustomPaint(
-                painter: CrossPainter(),
+                painter: CrossPainter(color: Colors.red.withOpacity(0.6)),
               ),
             ),
           ),
