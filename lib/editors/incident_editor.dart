@@ -122,9 +122,15 @@ class _IncidentEditorState extends State<IncidentEditor> {
                         : StepState.error,
                   ),
                   Step(
-                    title: Text('Plassering'),
-                    subtitle: Text('Oppgi hendelsens plassering'),
-                    content: _buildLocationField(),
+                    title: Text('Plasseringer'),
+                    subtitle: Text('Oppgi hendelsens plasseringer'),
+                    content: Column(
+                      children: <Widget>[
+                        _buildLocationField(),
+                        SizedBox(height: 16.0),
+                        _buildMeetupField(),
+                      ],
+                    ),
                     isActive: _currentStep >= 0,
                     state: _isValid(['ipp'])
                         ? (_currentStep > 2 ? StepState.complete : StepState.indexed)
@@ -134,7 +140,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
                     title: Text('Talegrupper'),
                     subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
                     content: Column(
-                      children: <Widget>[_buildTGField(), SizedBox(height: 16.0), _buildTgCatalogField()],
+                      children: <Widget>[
+                        _buildTGField(),
+                        SizedBox(height: 16.0),
+                        _buildTgCatalogField(),
+                      ],
                     ),
                     isActive: _currentStep >= 0,
                     state: _isValid(['talkgroups'])
@@ -279,7 +289,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 errorText: field.hasError ? field.errorText : null,
               ),
               child: field.value == null
-                  ? Text('Velg posisjon', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                  ? Text('Velg IPP', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
                   : Text(
                       toUTM(field.value),
                       style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
@@ -290,14 +300,54 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ),
         valueTransformer: (point) => point.toJson(),
         validators: [
-          FormBuilderValidators.required(errorText: 'Plassering må oppgis'),
+          FormBuilderValidators.required(errorText: 'IPP må oppgis'),
         ],
       );
 
   void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
-      builder: (context) => PointEditor(field.value, 'Velg plassering'),
+      builder: (context) => PointEditor(field.value, 'Velg IPP'),
+    );
+    if (selected != field.value) {
+      field.didChange(selected);
+      setState(() {});
+    }
+  }
+
+  Widget _buildMeetupField() => FormBuilderCustomField(
+        attribute: 'meetup',
+        formField: FormField<Point>(
+          enabled: true,
+          initialValue: widget?.incident?.meetup,
+          builder: (FormFieldState<Point> field) => GestureDetector(
+            child: InputDecorator(
+              decoration: InputDecoration(
+                filled: true,
+                suffixIcon: Icon(Icons.map),
+                contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
+                errorText: field.hasError ? field.errorText : null,
+              ),
+              child: field.value == null
+                  ? Text('Velg oppmøtested', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                  : Text(
+                      toUTM(field.value),
+                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
+                    ),
+            ),
+            onTap: () => _selectLocation(context, field),
+          ),
+        ),
+        valueTransformer: (point) => point.toJson(),
+        validators: [
+          FormBuilderValidators.required(errorText: 'Oppmøtested må oppgis'),
+        ],
+      );
+
+  void _selectMeetup(BuildContext context, FormFieldState<Point> field) async {
+    final selected = await showDialog(
+      context: context,
+      builder: (context) => PointEditor(field.value, 'Velg oppmøtested'),
     );
     if (selected != field.value) {
       field.didChange(selected);

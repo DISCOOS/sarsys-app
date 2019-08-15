@@ -76,7 +76,7 @@ class Unit extends Equatable {
 
 enum UnitStatus { Mobilized, Deployed, Retired }
 
-enum UnitType { Team, K9, Boat, Vehicle, Snowmobile, ATV, Other }
+enum UnitType { Team, K9, Boat, Vehicle, Snowmobile, ATV, CommandPost, Other }
 
 String translateUnitType(UnitType type) {
   switch (type) {
@@ -92,6 +92,8 @@ String translateUnitType(UnitType type) {
       return "Snøscooter";
     case UnitType.Other:
       return "Annet";
+    case UnitType.CommandPost:
+      return "Kommandoplass";
     default:
       return enumName(type);
   }

@@ -54,6 +54,7 @@ const _$UnitTypeEnumMap = <UnitType, dynamic>{
   UnitType.Vehicle: 'Vehicle',
   UnitType.Snowmobile: 'Snowmobile',
   UnitType.ATV: 'ATV',
+  UnitType.CommandPost: 'CommandPost',
   UnitType.Other: 'Other'
 };
 

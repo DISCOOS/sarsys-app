@@ -9,6 +9,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class IncidentPage extends StatefulWidget {
   static const HEIGHT = 82.0;
@@ -62,6 +63,8 @@ class _IncidentPageState extends State<IncidentPage> {
                           _buildJustification(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildIPP(incident, labelStyle, valueStyle, unitStyle),
+                          SizedBox(height: IncidentPage.SPACING),
+                          _buildMeetup(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildReference(incident, labelStyle, valueStyle, unitStyle),
                           SizedBox(height: IncidentPage.SPACING),
@@ -177,8 +180,23 @@ class _IncidentPageState extends State<IncidentPage> {
         Expanded(
           flex: 5,
           child: GestureDetector(
-            child: _buildValueTile("IPP", toUTM(incident.ipp), "", labelStyle, valueStyle, unitStyle),
+            child: _buildValueTile("IPP", toUTM(incident?.ipp), "", labelStyle, valueStyle, unitStyle),
             onTap: () => jumpToPoint(context, incident?.ipp),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row _buildMeetup(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 5,
+          child: GestureDetector(
+            child: _buildValueTile(
+                "Oppmøte", toUTM(incident?.meetup, empty: "Ikke oppgitt"), "", labelStyle, valueStyle, unitStyle),
+            onTap: () => jumpToPoint(context, incident?.meetup),
           ),
         ),
       ],

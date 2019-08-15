@@ -27,6 +27,7 @@ class IncidentBuilder {
         '"occurred": "${DateTime.now().subtract(Duration(hours: since)).toIso8601String()}",'
         '"justification": "Mann, 32 år, økt selvmordsfare.",'
         '"ipp": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
+        '"meetup": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
         '"talkgroups": ['
         '{"name": "RK-RIKS-1", "type": "Tetra"}'
         '],'
@@ -94,6 +95,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         changed: author,
         occurred: incident.occurred,
         ipp: incident.ipp,
+        meetup: incident.meetup,
         name: incident.name,
         justification: incident.justification,
         passcodes: Passcodes(

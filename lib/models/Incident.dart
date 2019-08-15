@@ -18,6 +18,7 @@ class Incident extends Equatable {
   final String justification;
   final List<TalkGroup> talkgroups;
   final Point ipp;
+  final Point meetup;
   final Passcodes passcodes;
   final String reference;
   final Author created;
@@ -32,6 +33,7 @@ class Incident extends Equatable {
     @required this.talkgroups,
     @required this.justification,
     @required this.ipp,
+    @required this.meetup,
     @required this.passcodes,
     @required this.created,
     @required this.changed,
@@ -45,6 +47,7 @@ class Incident extends Equatable {
           talkgroups,
           justification,
           ipp,
+          meetup,
           passcodes,
           created,
           changed,
@@ -86,6 +89,7 @@ class Incident extends Equatable {
       reference: clone.reference ?? this.reference,
       passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
       ipp: clone.ipp ?? Point.fromJson(this.ipp.toJson()),
+      meetup: clone.meetup ?? Point.fromJson(this.meetup.toJson()),
       talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg?.toJson())).toList(),
     );
   }
@@ -105,6 +109,7 @@ class Incident extends Equatable {
       reference: this.reference,
       passcodes: this.passcodes,
       ipp: this.ipp,
+      meetup: this.meetup,
       talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
     );
   }

@@ -23,6 +23,9 @@ Incident _$IncidentFromJson(Map<String, dynamic> json) {
       ipp: json['ipp'] == null
           ? null
           : Point.fromJson(json['ipp'] as Map<String, dynamic>),
+      meetup: json['meetup'] == null
+          ? null
+          : Point.fromJson(json['meetup'] as Map<String, dynamic>),
       passcodes: json['passcodes'] == null
           ? null
           : Passcodes.fromJson(json['passcodes'] as Map<String, dynamic>),
@@ -44,6 +47,7 @@ Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
       'justification': instance.justification,
       'talkgroups': instance.talkgroups?.map((e) => e?.toJson())?.toList(),
       'ipp': instance.ipp?.toJson(),
+      'meetup': instance.meetup?.toJson(),
       'passcodes': instance.passcodes?.toJson(),
       'reference': instance.reference,
       'created': instance.created?.toJson(),
