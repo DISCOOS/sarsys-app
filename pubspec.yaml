@@ -53,6 +53,7 @@ dependencies:
   catcher: ^0.2.0
   device_info: ^0.4.0+2
   url_launcher: ^5.1.2
+  material_design_icons_flutter: ^3.2.3895
 
   # Mocking support
   uuid: ^2.0.2

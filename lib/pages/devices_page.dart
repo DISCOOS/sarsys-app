@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class DevicesPage extends StatefulWidget {
   final String query;
@@ -140,7 +140,7 @@ class DevicesPageState extends State<DevicesPage> {
           key: ObjectKey(device.id),
           leading: CircleAvatar(
             backgroundColor: toTrackingStatusColor(context, status),
-            child: Icon(FontAwesomeIcons.mobileAlt),
+            child: Icon(MdiIcons.cellphoneBasic),
             foregroundColor: Colors.white,
           ),
           title: Text("ISSI: ${device.number}"),

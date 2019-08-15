@@ -8,6 +8,7 @@ import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class CommandScreen extends StatefulWidget {
   final int tabIndex;
@@ -55,7 +56,7 @@ class _CommandScreenState extends State<CommandScreen> {
             items: [
               BottomNavigationBarItem(title: Text("Hendelse"), icon: Icon(Icons.warning)),
               BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
-              BottomNavigationBarItem(title: Text("Terminaler"), icon: Icon(Icons.device_unknown)),
+              BottomNavigationBarItem(title: Text("Terminaler"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
               current = index;
