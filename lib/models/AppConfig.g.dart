@@ -12,7 +12,7 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
       onboarding: json['onboarding'] as bool,
       division: json['division'] as String,
       department: json['department'] as String,
-      tgCatalog: json['talkGroups'] as String,
+      tgCatalog: json['tgCatalog'] as String,
       locationWhenInUse: json['locationWhenInUse'] as bool);
 }
 
@@ -21,6 +21,6 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'onboarding': instance.onboarding,
       'division': instance.division,
       'department': instance.department,
-      'talkGroups': instance.tgCatalog,
+      'tgCatalog': instance.tgCatalog,
       'locationWhenInUse': instance.locationWhenInUse
     };
