@@ -163,7 +163,7 @@ class IncidentMapState extends State<IncidentMap> {
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
-          tileProvider: NetworkTileProvider(),
+          tileProvider: CachedNetworkTileProvider(),
         ),
         if (_layers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),
