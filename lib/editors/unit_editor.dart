@@ -216,7 +216,7 @@ class _UnitEditorState extends State<UnitEditor> {
   void _onEdit(value) {
     _formKey.currentState.save();
     var unit = Unit.fromJson(_formKey.currentState.value);
-    _editedName = "${translateUnitType(unit.type)} $value";
+    _editedName = "${translateUnitType(unit.type)} ${value ?? _unitBloc.units.length + 1}";
     return setState(() {});
   }
 
