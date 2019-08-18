@@ -28,11 +28,13 @@ class _IncidentPageState extends State<IncidentPage> {
   final _controller = ScrollController();
 
   bool _showHint = true;
+  Future<void> _hidePending;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(_toggleHint);
+    _controller.addListener(_testHint);
+    _showAndDelayHide();
   }
 
   @override
@@ -76,16 +78,19 @@ class _IncidentPageState extends State<IncidentPage> {
                     : Container();
               },
             ),
-            if (_showHint)
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Align(
-                      alignment: Alignment.bottomRight,
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: AnimatedOpacity(
                       child: FloatingActionButton.extended(
                         icon: Icon(Icons.arrow_downward),
                         label: Text("Gå til bunn"),
                         onPressed: () {
+                          setState(() {
+                            _showHint = false;
+                          });
                           if (_controller.hasClients) {
                             _controller.animateTo(
                               _controller.position.maxScrollExtent,
@@ -94,9 +99,12 @@ class _IncidentPageState extends State<IncidentPage> {
                             );
                           }
                         },
-                      )),
-                ),
+                      ),
+                      opacity: _showHint ? 1.0 : 0.0,
+                      duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
+                    )),
               ),
+            ),
           ],
         ),
       ),
@@ -319,8 +327,25 @@ class _IncidentPageState extends State<IncidentPage> {
     bloc.update(incident);
   }
 
-  void _toggleHint() {
-    _showHint = _controller.position.extentAfter > IncidentPage.HEIGHT / 2;
-    setState(() {});
+  void _testHint() {
+    final extent = _controller.position.extentAfter;
+    if (extent > IncidentPage.HEIGHT / 2 && _hidePending == null) {
+      _showAndDelayHide();
+    } else if (extent < IncidentPage.HEIGHT / 2) {
+      setState(() {
+        _showHint = false;
+      });
+    }
+  }
+
+  void _showAndDelayHide() {
+    setState(() {
+      _showHint = true;
+    });
+    _hidePending = Future.delayed(const Duration(milliseconds: 3000), () {
+      _showHint = false;
+      setState(() {});
+      _hidePending.whenComplete(() => _hidePending = null);
+    });
   }
 }
