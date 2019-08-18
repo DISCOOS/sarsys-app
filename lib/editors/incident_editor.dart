@@ -91,7 +91,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 steps: [
                   Step(
                     title: Text('Generelt'),
-                    subtitle: Text('Oppgi navn og begrunnelse'),
+                    subtitle: Text('Oppgi stedsnavn og begrunnelse'),
                     content: Column(
                       children: [
                         _buildNameField(),
@@ -184,10 +184,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
       editable: false,
       autocorrect: true,
       decoration: InputDecoration(
-        labelText: "Hendelsestidspunkt",
-        isDense: true,
-        contentPadding: EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 12.0),
-        hasFloatingPlaceholder: false,
+        hintText: "Hendelsestidspunkt",
+        contentPadding: EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 12.0),
         filled: true,
       ),
       keyboardType: TextInputType.datetime,
@@ -207,7 +205,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
       attribute: 'name',
       initialValue: widget?.incident?.name,
       decoration: new InputDecoration(
-        hintText: 'Navn',
+        labelText: 'Stedsnavn',
+        hintText: 'Oppgi stedsnavn',
         filled: true,
       ),
       validators: [
@@ -223,7 +222,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
       attribute: 'justification',
       initialValue: widget?.incident?.justification,
       decoration: new InputDecoration(
-        hintText: 'Begrunnelse',
+        labelText: 'Begrunnelse',
+        hintText: 'Oppgi begrunnelse',
         filled: true,
       ),
       validators: [
@@ -337,7 +337,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
                     ),
             ),
-            onTap: () => _selectLocation(context, field),
+            onTap: () => _selectMeetup(context, field),
           ),
         ),
         valueTransformer: (point) => point.toJson(),
