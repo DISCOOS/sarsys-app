@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/screens/about_screen.dart';
+import 'package:SarSys/screens/map_config_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
@@ -108,29 +109,38 @@ class SettingsScreenState extends State<SettingsScreen> {
       Divider(),
       ListTile(
         title: Text(
+          "Kartdata og oppsett",
+          style: Theme.of(context).textTheme.body1,
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+            return MapConfigScreen();
+          }));
+        },
+      ),
+      Divider(),
+      ListTile(
+        title: Text(
           "System",
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      GestureDetector(
-        child: ListTile(
+      ListTile(
           title: Text(
             "Om SarSys",
             style: Theme.of(context).textTheme.body1,
           ),
-        ),
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-            return AboutScreen();
-          }));
-        },
-      ),
-      GestureDetector(
-        child: ListTile(
-          title: Text(
-            "Endre tilganger",
-            style: Theme.of(context).textTheme.body1,
-          ),
+          trailing: Icon(Icons.keyboard_arrow_right),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+              return AboutScreen();
+            }));
+          }),
+      ListTile(
+        title: Text(
+          "Endre tilganger",
+          style: Theme.of(context).textTheme.body1,
         ),
         onTap: () {
           PermissionHandler().openAppSettings();

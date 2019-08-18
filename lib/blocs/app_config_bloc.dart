@@ -41,6 +41,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     String department,
     String talkGroups,
     bool locationWhenInUse,
+    int mapCacheTTL,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
@@ -49,6 +50,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           department: department,
           tgCatalog: talkGroups,
           locationWhenInUse: locationWhenInUse,
+          mapCacheTTL: mapCacheTTL,
         );
     var response = await service.save(config);
     if (response.is204) {
