@@ -277,7 +277,7 @@ class _IncidentPageState extends State<IncidentPage> {
             if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
             if (label != null && label.isNotEmpty) Spacer(),
             Wrap(children: [
-              Text(value, style: valueStyle),
+              Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
               Text(unit, style: unitStyle),
             ]),
           ],
