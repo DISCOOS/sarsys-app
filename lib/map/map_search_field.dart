@@ -141,9 +141,9 @@ class MapSearchFieldState extends State<MapSearchField> {
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        left: offset.dx,
+        left: 8.0,
         top: offset.dy + size.height + 5.0,
-        width: size.width,
+        width: MediaQuery.of(context).size.width - 16.0,
         height: MediaQuery.of(context).size.height - (offset.dy + size.height + 16.0),
         child: Material(
           elevation: 0.0,
@@ -242,12 +242,8 @@ class MapSearchFieldState extends State<MapSearchField> {
         Locale locale = Localizations.localeOf(context);
         var identifier = "${locale.languageCode}_${locale.countryCode}";
         var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: identifier);
-        if (placemarks.length > 1) {
+        if (placemarks.length > 0) {
           _showResults(placemarks);
-        } else {
-          var first = placemarks.first;
-          lat = first.position.latitude;
-          lon = first.position.longitude;
         }
       } catch (e) {
         widget.onError('Addresse "$value" ikke funnet');
@@ -291,10 +287,7 @@ class MapSearchFieldState extends State<MapSearchField> {
             .where((incident) => _prepare(incident.searchable).contains(match))
             .map((incident) => _toPlacemark(incident.ipp, incident.name)),
       );
-    if (placemarks.length == 1) {
-      final position = placemarks.first.position;
-      _goto(position.latitude, position.longitude);
-    } else if (placemarks.length > 1)
+    if (placemarks.length > 0)
       _showResults(placemarks);
     else
       found = false;
