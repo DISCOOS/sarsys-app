@@ -284,6 +284,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
             child: InputDecorator(
               decoration: InputDecoration(
                 filled: true,
+                labelText: "IPP",
                 suffixIcon: Icon(Icons.map),
                 contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
                 errorText: field.hasError ? field.errorText : null,
@@ -324,6 +325,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
             child: InputDecorator(
               decoration: InputDecoration(
                 filled: true,
+                labelText: "Oppmøtested",
                 suffixIcon: Icon(Icons.map),
                 contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
                 errorText: field.hasError ? field.errorText : null,
