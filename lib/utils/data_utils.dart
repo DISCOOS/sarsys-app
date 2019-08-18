@@ -30,9 +30,7 @@ String formatSince(DateTime timestamp) {
   Duration delta = DateTime.now().difference(timestamp);
   return delta.inHours > 99
       ? "${delta.inDays}d"
-      : delta.inHours > 0
-          ? "${delta.inHours} h"
-          : delta.inMinutes > 0 ? "${delta.inMinutes} min" : "${delta.inSeconds} sec";
+      : delta.inHours > 0 ? "${delta.inHours}h" : delta.inMinutes > 0 ? "${delta.inMinutes}m" : "${delta.inSeconds}s";
 }
 
 LatLng toLatLng(Point point) {
