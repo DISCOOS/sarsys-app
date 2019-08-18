@@ -98,13 +98,15 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       _user = User.fromToken(response.body);
       print("Init from token ${response.body}");
       return _toResponse(command, UserAuthenticated(_user), result: true);
+    } else if (response.is401) {
+      return _toResponse(command, UserUnauthorized(_user), result: false);
     }
     return _toError(command, response);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
     var response = await service.login(command.data, command.password);
-    if (response.is204) {
+    if (response.is200) {
       _user = User.fromToken(response.body);
       return _toResponse(command, UserAuthenticated(_user), result: true);
     } else if (response.is401) {

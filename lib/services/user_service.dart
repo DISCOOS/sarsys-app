@@ -17,17 +17,7 @@ class UserService {
 
   UserService(this.url, this.client);
 
-  Future<ServiceResponse<void>> logout() async {
-    try {
-      // Delete token from storage
-      await storage.delete(key: 'token');
-      return ServiceResponse.noContent();
-    } on Exception catch (e) {
-      return ServiceResponse.error(message: "Failed to delete token from storage", error: e);
-    }
-  }
-
-  // Log in to backed to get token
+  /// Authorize with basic auth and get token
   Future<ServiceResponse<String>> login(String username, String password) async {
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
@@ -56,6 +46,7 @@ class UserService {
     }
   }
 
+  /// Get current token from secure storage
   Future<ServiceResponse<String>> getToken() async {
     String _tokenFromStorage = await storage.read(key: "token");
     if (_tokenFromStorage != null) {
@@ -72,6 +63,17 @@ class UserService {
         return ServiceResponse.error(error: e);
       }
     }
-    return ServiceResponse.error(error: "Token not found");
+    return ServiceResponse.unauthorized();
+  }
+
+  /// Delete token from secure storage
+  Future<ServiceResponse<void>> logout() async {
+    try {
+      // Delete token from storage
+      await storage.delete(key: 'token');
+      return ServiceResponse.noContent();
+    } on Exception catch (e) {
+      return ServiceResponse.error(message: "Failed to delete token from storage", error: e);
+    }
   }
 }

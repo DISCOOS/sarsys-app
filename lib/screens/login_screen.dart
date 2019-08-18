@@ -178,7 +178,7 @@ class LoginScreenState extends State<LoginScreen> {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 16.0),
                             child: Text(
-                              snapshot.data.data,
+                              snapshot.data?.data ?? '',
                               style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
                             ),
                           ),

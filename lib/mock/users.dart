@@ -10,16 +10,22 @@ class UserServiceMock extends Mock implements UserService {
     when(mock.login(username, password)).thenAnswer((_) async {
       var token = createToken(username);
       await UserService.storage.write(key: 'test_token', value: token);
-      return ServiceResponse.ok();
+      return ServiceResponse.ok(body: token);
     });
-    when(mock.login(argThat(isNot(equals(username))), argThat(isNot(equals(password)))))
-        .thenAnswer((_) async => ServiceResponse.unauthorized(message: "Feil brukernavn/passord"));
+    when(mock.login(argThat(isNot(equals(username))), argThat(isNot(equals(password))))).thenAnswer(
+      (_) async => ServiceResponse.unauthorized(message: "Feil brukernavn/passord"),
+    );
     when(mock.getToken()).thenAnswer(
-      (_) async => ServiceResponse.ok(body: await UserService.storage.read(key: "test_token")),
+      (_) async {
+        final token = await UserService.storage.read(key: "test_token");
+        return token == null
+            ? ServiceResponse.unauthorized(message: "Token not found")
+            : ServiceResponse.ok(body: token);
+      },
     );
     when(mock.logout()).thenAnswer((_) async {
       await UserService.storage.delete(key: 'test_token');
-      return;
+      return ServiceResponse.noContent();
     });
 
     return mock;
@@ -30,14 +36,19 @@ class UserServiceMock extends Mock implements UserService {
     when(mock.login(any, any)).thenAnswer((username) async {
       var token = createToken(username.positionalArguments[0]);
       await UserService.storage.write(key: 'test_token', value: token);
-      return ServiceResponse.ok();
+      return ServiceResponse.ok(body: token);
     });
     when(mock.getToken()).thenAnswer(
-      (_) async => ServiceResponse.ok(body: await UserService.storage.read(key: "test_token")),
+      (_) async {
+        final token = await UserService.storage.read(key: "test_token");
+        return token == null
+            ? ServiceResponse.unauthorized(message: "Token not found")
+            : ServiceResponse.ok(body: token);
+      },
     );
     when(mock.logout()).thenAnswer((_) async {
       await UserService.storage.delete(key: 'test_token');
-      return;
+      return ServiceResponse.noContent();
     });
 
     return mock;
