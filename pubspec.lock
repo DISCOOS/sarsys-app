@@ -70,7 +70,7 @@ packages:
       name: build
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.1.5"
+    version: "1.1.6"
   build_config:
     dependency: transitive
     description:
@@ -91,14 +91,14 @@ packages:
       name: build_resolvers
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.6"
+    version: "1.0.7"
   build_runner:
     dependency: "direct dev"
     description:
       name: build_runner
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.6.5"
+    version: "1.6.6"
   build_runner_core:
     dependency: transitive
     description:
@@ -126,14 +126,14 @@ packages:
       name: cached_network_image
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.8.0"
+    version: "1.1.1"
   catcher:
     dependency: "direct main"
     description:
       name: catcher
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.2"
+    version: "0.2.3"
   charcode:
     dependency: transitive
     description:
@@ -219,7 +219,7 @@ packages:
     source: hosted
     version: "1.2.9"
   datetime_picker_formfield:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: datetime_picker_formfield
       url: "https://pub.dartlang.org"
@@ -278,7 +278,7 @@ packages:
       name: flutter_cache_manager
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.3.2"
+    version: "1.1.1"
   flutter_chips_input:
     dependency: "direct main"
     description:
@@ -315,7 +315,7 @@ packages:
       name: flutter_local_notifications
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.8.1"
+    version: "0.8.2"
   flutter_localizations:
     dependency: "direct main"
     description: flutter
@@ -327,14 +327,16 @@ packages:
       name: flutter_mailer
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.4.1+1"
+    version: "0.4.1+2"
   flutter_map:
     dependency: "direct main"
     description:
-      name: flutter_map
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.6.1+2"
+      path: "."
+      ref: "issue/tileprovider"
+      resolved-ref: "69db8a5dda6f0fc0a10a6aaa7abb87298c27c43e"
+      url: "git://github.com/DISCOOS/flutter_map"
+    source: git
+    version: "0.5.6"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -549,7 +551,7 @@ packages:
       name: material_design_icons_flutter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.2.3895"
+    version: "3.2.4096"
   meta:
     dependency: transitive
     description:
@@ -577,7 +579,7 @@ packages:
       name: package_config
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.5"
+    version: "1.1.0"
   package_info:
     dependency: "direct main"
     description:
@@ -605,7 +607,7 @@ packages:
       name: path_provider
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.0+1"
+    version: "1.2.0"
   pedantic:
     dependency: transitive
     description:

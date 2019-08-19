@@ -362,7 +362,7 @@ class IncidentMapState extends State<IncidentMap> {
     return UnitLayerOptions(
       bloc: trackingBloc,
       onMessage: widget.onMessage,
-      rebuild: trackingBloc.state,
+      rebuild: trackingBloc.state.map((_) => null),
       showTail: _layers.contains(TRACKING_LAYER),
     );
   }

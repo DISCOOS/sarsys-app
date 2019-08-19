@@ -10,13 +10,13 @@ class CoordinateLayerOptions extends LayerOptions {
 
   CoordinateLayerOptions({
     this.align = Alignment.bottomLeft,
-    Stream<void> rebuild,
+    Stream<Null> rebuild,
   }) : super(rebuild: rebuild);
 }
 
 class CoordinateLayer extends MapPlugin {
   @override
-  Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     final Point center = toPoint(map.center);
     final params = options as CoordinateLayerOptions;
     var origin = map.project(map.center);

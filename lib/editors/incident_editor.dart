@@ -181,8 +181,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
       initialValue: widget?.incident?.occurred ?? now,
       format: DateFormat("yyyy-MM-dd HH:mm"),
       resetIcon: null,
-      editable: false,
       autocorrect: true,
+      editable: false,
       decoration: InputDecoration(
         hintText: "Hendelsestidspunkt",
         contentPadding: EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 12.0),

@@ -16,7 +16,7 @@ class MyLocationOptions extends LayerOptions {
 
   MyLocationOptions(
     this.point, {
-    Stream<void> rebuild,
+    Stream<Null> rebuild,
     this.size = 30.0,
     this.bearing,
     this.opacity = 1.00,
@@ -31,7 +31,7 @@ class MyLocation extends IconLayer {
   }
 
   @override
-  Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     final params = options as MyLocationOptions;
     return super.createLayer(
       IconLayerOptions(

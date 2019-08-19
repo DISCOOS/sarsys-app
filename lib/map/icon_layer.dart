@@ -28,7 +28,7 @@ class IconLayerOptions extends LayerOptions {
     this.showBadge = false,
     this.opacity = 1.0,
     this.align = AnchorAlign.center,
-    Stream<void> rebuild,
+    Stream<Null> rebuild,
   }) : super(rebuild: rebuild);
 }
 
@@ -39,7 +39,7 @@ class IconLayer implements MapPlugin {
   }
 
   @override
-  Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     return IgnorePointer(
         child: stream == null
             ? Builder(

@@ -48,7 +48,7 @@ class ScalebarOption extends LayerOptions {
 
 class ScaleBar implements MapPlugin {
   @override
-  Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     if (options is ScalebarOption) {
       return IgnorePointer(
           child: StreamBuilder<void>(

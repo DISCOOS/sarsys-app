@@ -22,7 +22,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  flutter_map: ^0.6.1+2
   flutter_secure_storage: ^3.2.1+1
   jose: ^0.1.2
   sqflite: ^1.1.5
@@ -32,7 +31,7 @@ dependencies:
   uni_links: ^0.2.0
   http: ^0.12.0+2
   path: ^1.6.2
-  path_provider: ^0.5.0+1
+  path_provider: ^1.1.0
   protobuf: ^0.13.11
   web_socket_channel: ^1.0.12
   rxdart: ^0.22.0
@@ -56,6 +55,12 @@ dependencies:
   material_design_icons_flutter: ^3.2.3895
   filesize: ^1.0.4
 
+  # Customized plugins
+  flutter_map: #^0.6.1+2
+    git:
+      url: git://github.com/DISCOOS/flutter_map
+      ref: issue/tileprovider
+
   # Mocking support
   uuid: ^2.0.2
   random_string: ^0.0.2
@@ -65,6 +70,11 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dependency_overrides:
+  # Handle initValue bug
+  flutter_form_builder: 3.2.9
+  datetime_picker_formfield: 0.2.0
+  # Silence Overlay assertion errors thrown by form_field_builder.
+  # See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
   flutter_chips_input:
     git:
       url: git://github.com/DISCOOS/flutter_chips_input

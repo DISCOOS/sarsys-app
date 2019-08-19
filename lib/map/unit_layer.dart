@@ -33,7 +33,7 @@ class UnitLayerOptions extends LayerOptions {
     this.showLabels = true,
     this.showTail = true,
     this.onMessage,
-    Stream<void> rebuild,
+    Stream<Null> rebuild,
   }) : super(rebuild: rebuild);
 }
 
@@ -44,7 +44,7 @@ class UnitLayer extends MapPlugin {
   }
 
   @override
-  Widget createLayer(LayerOptions options, MapState map, Stream<void> stream) {
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints bc) {
         final size = Size(bc.maxWidth, bc.maxHeight);

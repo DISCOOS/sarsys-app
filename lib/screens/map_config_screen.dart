@@ -50,7 +50,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         shrinkWrap: true,
         children: <Widget>[
           _buildClearCacheAction(),
-//          _buildMapCacheTTLField(),
+          _buildMapCacheTTLField(),
         ],
       ),
     );
@@ -65,10 +65,10 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Expanded(
-            flex: 4,
+            flex: 49,
             child: ListTile(
               title: Text("Maksimal lagringstid for kartfliser"),
-              subtitle: Text("Angi  mellom 0 til 999 dager"),
+              subtitle: Text("Angi mellom 0 til 999 dager"),
             ),
           ),
           Flexible(
@@ -101,7 +101,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
             final size = files.fold(0, (sum, file) => sum + file.statSync().size);
             return ListTile(
               title: Text("Slett kartbuffer"),
-              subtitle: Text("Buffer inneholder totalt ${files.length} fliser (${filesize(size)})"),
+              subtitle: Text("Inneholder totalt ${files.length} kartfliser (${filesize(size)})"),
               trailing: Icon(Icons.delete),
               onTap: () async {
                 if (await prompt(
