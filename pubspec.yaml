@@ -54,6 +54,7 @@ dependencies:
   device_info: ^0.4.0+2
   url_launcher: ^5.1.2
   material_design_icons_flutter: ^3.2.3895
+  filesize: ^1.0.4
 
   # Mocking support
   uuid: ^2.0.2

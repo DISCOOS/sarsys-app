@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/models/AppConfig.dart';
+import 'package:filesize/filesize.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -97,10 +97,11 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final root = new Directory(snapshot.data);
-            final count = root.listSync(recursive: true).length;
+            final files = root.listSync(recursive: true);
+            final size = files.fold(0, (sum, file) => sum + file.statSync().size);
             return ListTile(
               title: Text("Slett kartbuffer"),
-              subtitle: Text("Buffer inneholder totalt $count fliser"),
+              subtitle: Text("Buffer inneholder totalt ${files.length} fliser (${filesize(size)})"),
               trailing: Icon(Icons.delete),
               onTap: () async {
                 if (await prompt(
