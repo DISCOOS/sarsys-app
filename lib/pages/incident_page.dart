@@ -342,9 +342,11 @@ class _IncidentPageState extends State<IncidentPage> {
       _showHint = true;
     });
     _hidePending = Future.delayed(const Duration(milliseconds: 3000), () {
-      _showHint = false;
-      setState(() {});
-      _hidePending.whenComplete(() => _hidePending = null);
+      if (this.mounted) {
+        _showHint = false;
+        setState(() {});
+        _hidePending.whenComplete(() => _hidePending = null);
+      }
     });
   }
 }
