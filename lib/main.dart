@@ -20,12 +20,12 @@ void main() async {
   final Widget homepage = await getHome(providers);
 
   // Initialize app-config
-  await providers.configProvider.bloc.fetch();
-  runApp(_buildApp(providers, homepage));
-//  runAppWithCatcher(
-//    _buildApp(providers, homepage),
-//    await providers.configProvider.bloc.fetch(),
-//  );
+//  await providers.configProvider.bloc.fetch();
+//  runApp(_buildApp(providers, homepage));
+  runAppWithCatcher(
+    _buildApp(providers, homepage),
+    await providers.configProvider.bloc.fetch(),
+  );
 }
 
 BlocProviderTree _buildApp(Providers providers, Widget homepage) {
