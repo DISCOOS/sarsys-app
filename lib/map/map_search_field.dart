@@ -120,20 +120,27 @@ class MapSearchFieldState extends State<MapSearchField> {
     _overlayEntry = null;
   }
 
-  void _showResults(List<Placemark> placemarks) async {
+  void _showResults(List<_SearchResult> results) async {
     final RenderBox renderBox = _searchKey.currentContext.findRenderObject();
     final size = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
 
     _hideResults();
 
-    final choices = placemarks
+    final backgroundColor = Theme.of(context).canvasColor;
+
+    final choices = results
         .map(
-          (placemark) => ListTile(
-            title: Text(placemark.name ?? ''),
-            subtitle: Text(placemark.country ?? ''),
+          (result) => ListTile(
+            leading: CircleAvatar(
+              child: Icon(result.icon, size: 42.0),
+              backgroundColor: backgroundColor,
+            ),
+            title: Text(result.title ?? ''),
+            subtitle: Text([result.address, result.position].where((test) => test != null).join("\n")),
+            contentPadding: EdgeInsets.all(16.0),
             onTap: () {
-              _goto(placemark.position.latitude, placemark.position.longitude);
+              _goto(result.latitude, result.longitude);
             },
           ),
         )
@@ -155,10 +162,9 @@ class MapSearchFieldState extends State<MapSearchField> {
             ),
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              itemExtent: 56.0,
-              itemCount: placemarks.length,
-              semanticChildCount: placemarks.length,
+              itemExtent: 72.0,
+              itemCount: results.length,
+              semanticChildCount: results.length,
               itemBuilder: (BuildContext context, int index) => choices[index],
             ),
           ),
@@ -168,8 +174,8 @@ class MapSearchFieldState extends State<MapSearchField> {
     Overlay.of(context).insert(this._overlayEntry);
   }
 
-  void _search(BuildContext context, String value) {
-    if (!_searchBlocs(context, value)) {
+  void _search(BuildContext context, String value) async {
+    if (!await _searchBlocs(context, value)) {
       _searchForLocation(value, context);
     }
   }
@@ -240,12 +246,21 @@ class MapSearchFieldState extends State<MapSearchField> {
     if (ordinals.length != 2) {
       try {
         Locale locale = Localizations.localeOf(context);
-        var identifier = "${locale.languageCode}_${locale.countryCode}";
-        var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: identifier);
+        var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: locale.toString());
         if (placemarks.length > 0) {
-          _showResults(placemarks);
+          _showResults(placemarks
+              .map((placemark) => _SearchResult(
+                    icon: Icons.home,
+                    title: placemark.name,
+                    address: _toAddress(placemark),
+                    position: _toPosition(placemark.position.latitude, placemark.position.longitude),
+                    latitude: placemark.position.latitude,
+                    longitude: placemark.position.longitude,
+                  ))
+              .toList());
         }
       } catch (e) {
+        _hideResults();
         widget.onError('Addresse "$value" ikke funnet');
       }
     } else {
@@ -263,49 +278,116 @@ class MapSearchFieldState extends State<MapSearchField> {
     }
   }
 
-  bool _searchBlocs(BuildContext context, String value) {
+  Future<bool> _searchBlocs(BuildContext context, String value) async {
     var found = true;
-    final placemarks = <Placemark>[];
+    final results = <_SearchResult>[];
     final match = RegExp("${_prepare(value)}");
     final units = BlocProvider.of<TrackingBloc>(context).units;
     final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
 
-    placemarks
-      ..addAll(
+    // Search for matches in incident
+    if (_prepare(incident.searchable).contains(match)) {
+      var matches = [
+        await _toSearchResult(incident.ipp, name: "IPP", icon: Icons.location_on),
+        await _toSearchResult(incident.meetup, name: "Oppmøte", icon: Icons.location_on),
+      ];
+      var positions = matches.where((test) => _prepare(test).contains(match));
+      if ((positions).isNotEmpty) {
+        results.addAll(positions);
+      } else {
+        results.addAll(matches);
+      }
+    }
+
+    // Search for matches in units
+    results.addAll(
+      await Future.wait(
         units.values
             .where((unit) =>
                 // Search in unit
                 _prepare(unit.searchable).contains(match) ||
                 // Search in devices tracked with this unit
                 tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-            .map((unit) => _toPlacemark(tracks[unit.tracking].location, unit.name)),
-      )
-      ..addAll(
-        [incident]
-            .where((incident) => _prepare(incident.searchable).contains(match))
-            .map((incident) => _toPlacemark(incident.ipp, incident.name)),
-      );
-    if (placemarks.length > 0)
-      _showResults(placemarks);
-    else
+            .map((unit) async => await _toSearchResult(tracks[unit.tracking].location, name: unit.name)),
+      ),
+    );
+
+    if (results.length > 0) {
+      _showResults(results);
+    } else {
       found = false;
+    }
     return found;
   }
 
   String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 
-  Placemark _toPlacemark(Point point, String name) {
-    return Placemark(
-        name: name,
-        country: toUTM(point),
-        position: Position(
-          latitude: point.lat,
-          longitude: point.lon,
-          accuracy: point.acc,
-          altitude: point.alt,
-        ));
+  Future<_SearchResult> _toSearchResult(Point point, {String name, IconData icon}) async {
+    Placemark closest;
+    var last = double.maxFinite;
+
+    final locator = Geolocator();
+    final matches = await locator.placemarkFromCoordinates(point.lat, point.lon);
+    for (var placemark in matches) {
+      if (closest == null) {
+        closest = placemark;
+        last = await locator.distanceBetween(
+          closest.position.latitude,
+          closest.position.longitude,
+          point.lat,
+          point.lon,
+        );
+      } else {
+        var next = await locator.distanceBetween(
+          closest.position.latitude,
+          closest.position.longitude,
+          placemark.position.latitude,
+          placemark.position.longitude,
+        );
+        if (next < last) {
+          closest = placemark;
+          last = next;
+        }
+      }
+    }
+
+    return closest == null
+        ? _SearchResult(
+            icon: icon,
+            title: name,
+            position: toUTM(
+              Point.now(point.lat, point.lon),
+            ),
+            latitude: point.lat,
+            longitude: point.lon,
+          )
+        : _SearchResult(
+            icon: icon,
+            title: "$name",
+            address: _toAddress(closest),
+            position: _toPosition(point.lat, point.lon, distance: last),
+            latitude: point.lat,
+            longitude: point.lon,
+          );
+  }
+
+  String _toPosition(double lat, double lon, {double distance}) {
+    return "${toUTM(
+      Point.now(lat, lon),
+    )}${distance != null && distance != double.maxFinite ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
+  }
+
+  String _toAddress(Placemark placemark) {
+    return [
+      [
+        placemark.postalCode,
+        placemark.locality,
+      ].where((test) => test != null && test.isNotEmpty).join(' '),
+      placemark.administrativeArea,
+      placemark.country,
+    ].where((test) => test != null && test.isNotEmpty).join(", ").trim();
   }
 
   void _goto(lat, lon) {
@@ -318,5 +400,29 @@ class MapSearchFieldState extends State<MapSearchField> {
       _focusNode?.unfocus();
       _hideResults();
     });
+  }
+}
+
+class _SearchResult {
+  final String title;
+  final IconData icon;
+  final String address;
+  final String position;
+  final double longitude;
+  final double latitude;
+
+  _SearchResult({
+    this.title,
+    this.icon,
+    this.address,
+    this.position,
+    this.longitude,
+    this.latitude,
+  });
+
+  @override
+  String toString() {
+    return '_SearchResult{title: $title, address: $address, position: $position, '
+        'longitude: $longitude, latitude: $latitude}';
   }
 }
