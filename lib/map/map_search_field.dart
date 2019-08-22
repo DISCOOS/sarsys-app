@@ -245,8 +245,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     // Search for address?
     if (ordinals.length != 2) {
       try {
-        Locale locale = Localizations.localeOf(context);
-        var placemarks = await Geolocator().placemarkFromAddress(value, localeIdentifier: locale.toString());
+        var placemarks = await _fromAddress(value);
         if (placemarks.length > 0) {
           _showResults(placemarks
               .map((placemark) => _SearchResult(
@@ -275,6 +274,15 @@ class MapSearchFieldState extends State<MapSearchField> {
     }
     if (lat != null && lon != null) {
       _goto(lat, lon);
+    }
+  }
+
+  Future<List<Placemark>> _fromAddress(String value) async {
+    try {
+      Locale locale = Localizations.localeOf(context);
+      return await Geolocator().placemarkFromAddress(value, localeIdentifier: locale.toString());
+    } on Exception catch (e) {
+      return [];
     }
   }
 
@@ -329,8 +337,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     var last = double.maxFinite;
 
     final locator = Geolocator();
-    final Locale locale = Localizations.localeOf(context);
-    final matches = await locator.placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
+    final matches = await _fromCoordinates(point);
     for (var placemark in matches) {
       if (closest == null) {
         closest = placemark;
@@ -370,6 +377,15 @@ class MapSearchFieldState extends State<MapSearchField> {
             latitude: point.lat,
             longitude: point.lon,
           );
+  }
+
+  Future<List<Placemark>> _fromCoordinates(Point point) async {
+    try {
+      final Locale locale = Localizations.localeOf(context);
+      return await Geolocator().placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
+    } on Exception catch (e) {
+      return [];
+    }
   }
 
   String _toPosition(double lat, double lon, {double distance}) {
