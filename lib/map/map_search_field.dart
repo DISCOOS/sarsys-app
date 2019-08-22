@@ -290,8 +290,8 @@ class MapSearchFieldState extends State<MapSearchField> {
     // Search for matches in incident
     if (_prepare(incident.searchable).contains(match)) {
       var matches = [
-        await _toSearchResult(incident.ipp, name: "IPP", icon: Icons.location_on),
-        await _toSearchResult(incident.meetup, name: "Oppmøte", icon: Icons.location_on),
+        await _toSearchResult(incident.ipp, name: "${incident.name} > IPP", icon: Icons.location_on),
+        await _toSearchResult(incident.meetup, name: "${incident.name} > Oppmøte", icon: Icons.location_on),
       ];
       var positions = matches.where((test) => _prepare(test).contains(match));
       if ((positions).isNotEmpty) {
@@ -329,7 +329,8 @@ class MapSearchFieldState extends State<MapSearchField> {
     var last = double.maxFinite;
 
     final locator = Geolocator();
-    final matches = await locator.placemarkFromCoordinates(point.lat, point.lon);
+    final Locale locale = Localizations.localeOf(context);
+    final matches = await locator.placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
     for (var placemark in matches) {
       if (closest == null) {
         closest = placemark;
@@ -357,9 +358,7 @@ class MapSearchFieldState extends State<MapSearchField> {
         ? _SearchResult(
             icon: icon,
             title: name,
-            position: toUTM(
-              Point.now(point.lat, point.lon),
-            ),
+            position: toUTM(point),
             latitude: point.lat,
             longitude: point.lon,
           )
@@ -376,7 +375,7 @@ class MapSearchFieldState extends State<MapSearchField> {
   String _toPosition(double lat, double lon, {double distance}) {
     return "${toUTM(
       Point.now(lat, lon),
-    )}${distance != null && distance != double.maxFinite ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
+    )}${distance != null && distance != double.maxFinite && distance > 0 ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
   }
 
   String _toAddress(Placemark placemark) {
