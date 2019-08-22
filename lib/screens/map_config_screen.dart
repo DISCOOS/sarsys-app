@@ -17,6 +17,7 @@ class MapConfigScreen extends StatefulWidget {
 class _MapConfigScreenState extends State<MapConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _ttl = TextEditingController();
+  final _capacity = TextEditingController();
 
   AppConfigBloc _bloc;
 
@@ -25,12 +26,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
     super.initState();
     _bloc = BlocProvider.of<AppConfigBloc>(context);
     _ttl.text = "${_bloc.config.mapCacheTTL}";
+    _capacity.text = "${_bloc.config.mapCacheCapacity}";
   }
 
   @override
   void dispose() {
     super.dispose();
     _ttl.dispose();
+    _capacity.dispose();
   }
 
   @override //new
@@ -50,7 +53,9 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         shrinkWrap: true,
         children: <Widget>[
           _buildClearCacheAction(),
+          Divider(),
           _buildMapCacheTTLField(),
+          _buildMapCacheCapacityField(),
         ],
       ),
     );
@@ -65,7 +70,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Expanded(
-            flex: 49,
+            flex: 4,
             child: ListTile(
               title: Text("Maksimal lagringstid for kartfliser"),
               subtitle: Text("Angi mellom 0 til 999 dager"),
@@ -81,6 +86,39 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
               onChanged: (value) {
                 _bloc.update(mapCacheTTL: int.parse(value ?? 0));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildMapCacheCapacityField() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: ListTile(
+              title: Text("Maksimalt antall kartfliser lagret"),
+              subtitle: Text("Angi mellom 0 til 99999 fliser"),
+            ),
+          ),
+          Flexible(
+            child: TextField(
+              controller: _capacity,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(filled: true, counterText: ""),
+              maxLength: 5,
+              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              onChanged: (value) {
+                _bloc.update(mapCacheCapacity: int.parse(value ?? 0));
               },
             ),
           ),

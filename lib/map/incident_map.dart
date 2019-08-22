@@ -7,10 +7,12 @@ import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/coordate_layer.dart';
 import 'package:SarSys/map/cross_painter.dart';
 import 'package:SarSys/map/location_controller.dart';
+import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/scalebar.dart';
 import 'package:SarSys/map/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
@@ -98,13 +100,16 @@ class IncidentMapState extends State<IncidentMap> {
 
   Set<String> _layers;
 
+  AppConfigBloc _appConfigBloc;
+
   @override
   void initState() {
     super.initState();
     _currentBaseMap = widget.url;
+    _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
     if (widget.withLocation) {
       _locationController = LocationController(
-        appConfigBloc: BlocProvider.of<AppConfigBloc>(context),
+        appConfigBloc: _appConfigBloc,
         mapController: widget.mapController,
         onMessage: widget.onMessage,
         onPrompt: widget.onPrompt,
@@ -163,7 +168,7 @@ class IncidentMapState extends State<IncidentMap> {
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
-          tileProvider: CachedNetworkTileProvider(),
+          tileProvider: ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config)),
         ),
         if (_layers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),

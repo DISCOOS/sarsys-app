@@ -14,7 +14,8 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
       department: json['department'] as String,
       tgCatalog: json['tgCatalog'] as String,
       locationWhenInUse: json['locationWhenInUse'] as bool,
-      mapCacheTTL: json['mapCacheTTL'] as int);
+      mapCacheTTL: json['mapCacheTTL'] as int,
+      mapCacheCapacity: json['mapCacheCapacity'] as int);
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
@@ -24,5 +25,6 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'department': instance.department,
       'tgCatalog': instance.tgCatalog,
       'locationWhenInUse': instance.locationWhenInUse,
-      'mapCacheTTL': instance.mapCacheTTL
+      'mapCacheTTL': instance.mapCacheTTL,
+      'mapCacheCapacity': instance.mapCacheCapacity
     };

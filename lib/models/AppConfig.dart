@@ -13,6 +13,7 @@ class AppConfig extends Equatable {
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
   static const SENTRY_DNS = "sentryDns";
   static const MAP_CACHE_TTL = "map_cache_ttl";
+  static const MAP_CACHE_CAPACITY = "map_cache_capacity";
   static const PARAMS = const {
     SENTRY_DNS: "string",
     ONBOARDING: "bool",
@@ -21,6 +22,7 @@ class AppConfig extends Equatable {
     TALK_GROUPS_CATALOG: "string",
     LOCATION_WHEN_IN_USE: "bool",
     MAP_CACHE_TTL: "int",
+    MAP_CACHE_CAPACITY: "int",
   };
 
   final String sentryDns;
@@ -30,6 +32,7 @@ class AppConfig extends Equatable {
   final String tgCatalog;
   final bool locationWhenInUse;
   final int mapCacheTTL;
+  final int mapCacheCapacity;
 
   AppConfig({
     @required this.sentryDns,
@@ -39,6 +42,7 @@ class AppConfig extends Equatable {
     @required this.tgCatalog,
     @required this.locationWhenInUse,
     @required this.mapCacheTTL,
+    @required this.mapCacheCapacity,
   }) : super([
           onboarding,
           division,
@@ -46,6 +50,7 @@ class AppConfig extends Equatable {
           tgCatalog,
           locationWhenInUse,
           mapCacheTTL,
+          mapCacheCapacity,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -62,6 +67,7 @@ class AppConfig extends Equatable {
     String tgCatalog,
     bool locationWhenInUse,
     int mapCacheTTL,
+    int mapCacheCapacity,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
@@ -71,6 +77,7 @@ class AppConfig extends Equatable {
       tgCatalog: tgCatalog ?? this.tgCatalog,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
+      mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
     );
   }
 }
