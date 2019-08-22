@@ -92,7 +92,7 @@ class MapSearchFieldState extends State<MapSearchField> {
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: _focusNode.hasFocus || _match != null
+            child: _focusNode.hasFocus || _match != null || _overlayEntry != null
                 ? GestureDetector(
                     child: Icon(Icons.close, color: theme.color),
                     onTap: () => clear(),
@@ -126,6 +126,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     final offset = renderBox.localToGlobal(Offset.zero);
 
     _hideResults();
+    _focusNode.requestFocus();
 
     final backgroundColor = Theme.of(context).canvasColor;
 
@@ -162,7 +163,6 @@ class MapSearchFieldState extends State<MapSearchField> {
             ),
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemExtent: 72.0,
               itemCount: results.length,
               semanticChildCount: results.length,
               itemBuilder: (BuildContext context, int index) => choices[index],
