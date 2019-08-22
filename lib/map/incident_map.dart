@@ -145,7 +145,7 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildMap() {
-    Point ipp = widget?.incident?.ipp ?? BlocProvider.of<IncidentBloc>(context)?.current?.ipp;
+    final bloc = BlocProvider.of<IncidentBloc>(context);
     return FlutterMap(
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
       mapController: widget.mapController,
@@ -171,7 +171,11 @@ class IncidentMapState extends State<IncidentMap> {
           tileProvider: ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config)),
         ),
         if (_layers.contains(UNITS_LAYER)) _buildUnitOptions(),
-        if (ipp != null && _layers.contains(POI_LAYER)) _buildPoiOptions([ipp]),
+        if (_layers.contains(POI_LAYER))
+          _buildPoiOptions([
+            widget?.incident?.ipp ?? bloc?.current?.ipp,
+            widget?.incident?.meetup ?? bloc?.current?.meetup,
+          ]),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
@@ -203,7 +207,12 @@ class IncidentMapState extends State<IncidentMap> {
           onCleared: _onSearchCleared,
           prefixIcon: GestureDetector(
             child: Icon(Icons.menu),
-            onTap: widget.onOpenDrawer ?? () => Navigator.pop(context),
+            onTap: () {
+              _searchFieldKey.currentState.clear();
+              if (widget.onOpenDrawer != null) {
+                widget.onOpenDrawer();
+              }
+            },
           ),
         ),
       ),
