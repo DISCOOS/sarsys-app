@@ -82,25 +82,28 @@ class _IncidentPageState extends State<IncidentPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Align(
                     alignment: Alignment.bottomRight,
-                    child: AnimatedOpacity(
-                      child: FloatingActionButton.extended(
-                        icon: Icon(Icons.arrow_downward),
-                        label: Text("Gå til bunn"),
-                        onPressed: () {
-                          setState(() {
-                            _showHint = false;
-                          });
-                          if (_controller.hasClients) {
-                            _controller.animateTo(
-                              _controller.position.maxScrollExtent,
-                              curve: Curves.easeOut,
-                              duration: const Duration(milliseconds: 250),
-                            );
-                          }
-                        },
+                    child: IgnorePointer(
+                      ignoring: !_showHint,
+                      child: AnimatedOpacity(
+                        child: FloatingActionButton.extended(
+                          icon: Icon(Icons.arrow_downward),
+                          label: Text("Gå til bunn"),
+                          onPressed: () {
+                            setState(() {
+                              _showHint = false;
+                            });
+                            if (_controller.hasClients) {
+                              _controller.animateTo(
+                                _controller.position.maxScrollExtent,
+                                curve: Curves.easeOut,
+                                duration: const Duration(milliseconds: 250),
+                              );
+                            }
+                          },
+                        ),
+                        opacity: _showHint ? 1.0 : 0.0,
+                        duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
                       ),
-                      opacity: _showHint ? 1.0 : 0.0,
-                      duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
                     )),
               ),
             ),
