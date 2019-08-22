@@ -60,8 +60,8 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
         DefaultCupertinoLocalizations.delegate,
       ],
       supportedLocales: [
-        const Locale('en'), // English
-        const Locale('nb'), // Norwegian
+        const Locale('en', 'US'), // English
+        const Locale('nb', 'NO'), // Norwegian Bokmål
       ],
     ),
   );
@@ -76,37 +76,45 @@ Future<Widget> getHome(Providers providers) async {
 }
 
 void runAppWithCatcher(Widget app, AppConfig config) {
-  final localizationOptions = LocalizationOptions("nb",
-      notificationReportModeTitle: "En feil har oppstått",
-      notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
-      dialogReportModeTitle: "Feilmelding",
-      dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
-          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-      dialogReportModeAccept: "Godta",
-      dialogReportModeCancel: "Avbryt",
-      pageReportModeTitle: "Feilmelding",
-      pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
-          "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-          "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-      pageReportModeAccept: "Godta",
-      pageReportModeCancel: "Avbryt");
-  var explicitReportModesMap = {
+  final localizationOptions = LocalizationOptions(
+    "nb",
+    notificationReportModeTitle: "En feil har oppstått",
+    notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
+    dialogReportModeTitle: "Feilmelding",
+    dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
+        "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+        "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+    dialogReportModeAccept: "Godta",
+    dialogReportModeCancel: "Avbryt",
+    pageReportModeTitle: "Feilmelding",
+    pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
+        "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+        "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+    pageReportModeAccept: "Godta",
+    pageReportModeCancel: "Avbryt",
+  );
+
+  var exceptions = [
+    // Silence map tile cache host lookup
+    "SocketException: Failed host lookup",
     // Silence map tile fetch failures thrown by FlutterMap
-    "Couldn't download or retrieve file.": SilentReportMode(),
+    "Couldn't download or retrieve file", "FetchFailure",
     // Silence Overlay assertion errors thrown by form_field_builder.
     // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
-    "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true.":
-        SilentReportMode(),
-  };
-  var explicitExceptionHandlersMap = {
-    // Silence map tile fetch failures thrown by FlutterMap
-    "Couldn't download or retrieve file.": ConsoleHandler(),
-    // Silence Overlay assertion errors thrown by form_field_builder.
-    // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
-    "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true.":
-        ConsoleHandler(),
-  };
+    "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true."
+  ];
+
+  final Map<String, ReportMode> explicitReportModesMap = Map.fromIterable(
+    exceptions,
+    key: (e) => e,
+    value: (_) => SilentReportMode(),
+  );
+
+  final Map<String, ReportHandler> explicitExceptionHandlersMap = Map.fromIterable(
+    exceptions,
+    key: (e) => e,
+    value: (_) => ConsoleHandler(),
+  );
 
   Catcher(
     app,
