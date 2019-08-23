@@ -12,10 +12,12 @@ import 'package:SarSys/map/scalebar.dart';
 import 'package:SarSys/map/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -155,7 +157,8 @@ class IncidentMapState extends State<IncidentMap> {
         maxZoom: Defaults.maxZoom,
         minZoom: Defaults.minZoom,
         interactive: widget.interactive,
-        onTap: _onTap,
+        onTap: (point) => _onAction(point, UnitLayer.showUnitInfo),
+        onLongPress: (point) => _onAction(point, UnitLayer.showUnitMenu),
         onPositionChanged: _onPositionChanged,
         plugins: [
           MyLocation(),
@@ -402,14 +405,86 @@ class IncidentMapState extends State<IncidentMap> {
     );
   }
 
-  void _onTap(LatLng point) {
+  void _onAction(LatLng point, Function onAction) {
     if (_searchMatch == null) _clearSearchField();
+
+    //showUnitInfo(context, unit, options.bloc, options.onMessage)
+    final bloc = BlocProvider.of<TrackingBloc>(context);
+    final tracks = bloc.tracks;
+    final size = MediaQuery.of(context).size;
+    final tolerance = 120.0 / math.max(size.width, size.height);
+    var distance = tolerance * ScaleBar.toDistance(ScalebarOption.SCALES, _zoom);
+    // Find first unit within given tolerance of tapped point.
+    final units = bloc.units.values.where(
+      (unit) => _within(
+        point,
+        toLatLng(tracks[unit.tracking].location),
+        distance,
+      ),
+    );
+    if (units.isNotEmpty) _showUnit(units.toList(), bloc, onAction);
+
     if (widget.onTap != null) widget.onTap(point);
+  }
+
+  void _showUnit(List<Unit> units, TrackingBloc bloc, Function onAction) {
+    if (units.length == 1) {
+      onAction(context, units.first, bloc, widget.onMessage);
+    } else {
+      final style = Theme.of(context).textTheme.title;
+      final size = MediaQuery.of(context).size;
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return Dialog(
+            elevation: 0,
+            backgroundColor: Colors.white,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.only(left: 16, top: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text('Velg enhet', style: style),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ],
+                  ),
+                ),
+                Divider(),
+                SizedBox(
+                  height: math.min(size.height - 150, 380),
+                  width: MediaQuery.of(context).size.width - 96,
+                  child: ListView.builder(
+                    itemCount: units.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return ListTile(
+                        leading: Icon(Icons.group),
+                        title: Text("${units[index].name}"),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          onAction(context, units[index], bloc, widget.onMessage);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
     _center = position.center;
-    if (isUserGesture && widget.mapController.ready) {
+    if ((isUserGesture || hasGesture) && widget.mapController.ready) {
       _zoom = widget.mapController.zoom;
       if (widget.withLocation && _locationController.isTracking) {
         _locationController.toggle();
@@ -536,5 +611,22 @@ class IncidentMapState extends State<IncidentMap> {
         _layers.remove(layer);
       }
     });
+  }
+
+//  void _handleTap() {
+//    /*
+//    onTap: () => ,
+//        onLongPress: () => showUnitMenu(context, unit, options.bloc, options.onMessage),
+//     */
+//  }
+
+  bool _within(LatLng point, LatLng location, double tolerance) {
+    final distance = ProjMath.eucledianDistance(
+      point.latitude,
+      point.longitude,
+      location.latitude,
+      location.longitude,
+    );
+    return distance < tolerance;
   }
 }

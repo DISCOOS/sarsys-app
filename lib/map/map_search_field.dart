@@ -281,7 +281,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     try {
       Locale locale = Localizations.localeOf(context);
       return await Geolocator().placemarkFromAddress(value, localeIdentifier: locale.toString());
-    } on Exception catch (e) {
+    } on Exception {
       return [];
     }
   }
@@ -383,7 +383,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     try {
       final Locale locale = Localizations.localeOf(context);
       return await Geolocator().placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
-    } on Exception catch (e) {
+    } on Exception {
       return [];
     }
   }

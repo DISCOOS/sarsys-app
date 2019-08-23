@@ -122,18 +122,14 @@ class UnitLayer extends MapPlugin {
       height: size,
       left: pos.x - size / 2,
       top: pos.y - size / 2,
-      child: GestureDetector(
-        child: Opacity(
-          opacity: options.opacity,
-          child: CustomPaint(
-            painter: _PointPainter(
-              size: size,
-              color: _toTrackingStatusColor(context, tracking.status),
-            ),
+      child: Opacity(
+        opacity: options.opacity,
+        child: CustomPaint(
+          painter: _PointPainter(
+            size: size,
+            color: _toTrackingStatusColor(context, tracking.status),
           ),
         ),
-        onTap: () => _showUnitInfo(context, options, map, unit, tracking, pos),
-        onLongPress: () => _showUnitMenu(context, options, map, unit, tracking, pos),
       ),
     );
   }
@@ -153,15 +149,14 @@ class UnitLayer extends MapPlugin {
     );
   }
 
-  void _showUnitMenu(
+  static void showUnitMenu(
     BuildContext context,
-    UnitLayerOptions options,
-    MapState map,
     Unit unit,
-    Tracking tracking,
-    CustomPoint position,
+    TrackingBloc bloc,
+    MessageCallback onMessage,
   ) async {
     final title = Theme.of(context).textTheme.title;
+    final tracking = bloc.tracks[unit.tracking];
     final action = await showDialog(
       context: context,
       barrierDismissible: true,
@@ -220,27 +215,25 @@ class UnitLayer extends MapPlugin {
         );
         break;
       case 2:
-        options.bloc.transition(tracking);
+        bloc.transition(tracking);
         break;
       case 3:
-        _copy(toUTM(tracking.location, prefix: ""), options.onMessage);
+        _copy(toUTM(tracking.location, prefix: ""), onMessage);
         break;
       case 4:
-        _copy(toDD(tracking.location, prefix: ""), options.onMessage);
+        _copy(toDD(tracking.location, prefix: ""), onMessage);
         break;
     }
   }
 
-  void _showUnitInfo(
+  static void showUnitInfo(
     BuildContext context,
-    UnitLayerOptions options,
-    MapState map,
     Unit unit,
-    Tracking tracking,
-    CustomPoint position,
+    TrackingBloc bloc,
+    MessageCallback onMessage,
   ) {
     final style = Theme.of(context).textTheme.title;
-
+    final tracking = bloc.tracks[unit.tracking];
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -272,14 +265,14 @@ class UnitLayer extends MapPlugin {
                   label: "UTM",
                   icon: Icon(Icons.my_location),
                   value: toUTM(tracking.location, prefix: ""),
-                  onMessage: options.onMessage,
+                  onMessage: onMessage,
                 ),
                 _buildCopyableText(
                   context: context,
                   label: "Desimalgrader (DD)",
                   icon: Icon(Icons.my_location),
                   value: toDD(tracking.location, prefix: ""),
-                  onMessage: options.onMessage,
+                  onMessage: onMessage,
                 ),
                 Divider(),
                 Row(
@@ -290,7 +283,7 @@ class UnitLayer extends MapPlugin {
                         label: "Kallesignal",
                         icon: Icon(Icons.headset_mic),
                         value: unit.callsign,
-                        onMessage: options.onMessage,
+                        onMessage: onMessage,
                       ),
                     ),
                     Expanded(
@@ -300,7 +293,7 @@ class UnitLayer extends MapPlugin {
                           label: "Mobil",
                           icon: Icon(Icons.phone),
                           value: unit?.phone ?? "Ukjent",
-                          onMessage: options.onMessage,
+                          onMessage: onMessage,
                         ),
                         onTap: () {
                           final number = unit?.phone ?? '';
@@ -315,8 +308,8 @@ class UnitLayer extends MapPlugin {
                   context: context,
                   label: "Terminaler",
                   icon: Icon(FontAwesomeIcons.mobileAlt),
-                  value: tracking.devices.map((id) => options.bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
-                  onMessage: options.onMessage,
+                  value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
+                  onMessage: onMessage,
                 ),
               ],
             ),
@@ -326,7 +319,7 @@ class UnitLayer extends MapPlugin {
     );
   }
 
-  GestureDetector _buildCopyableText({
+  static Widget _buildCopyableText({
     BuildContext context,
     String label,
     Icon icon,
@@ -349,7 +342,7 @@ class UnitLayer extends MapPlugin {
     );
   }
 
-  void _copy(String value, MessageCallback onMessage) {
+  static void _copy(String value, MessageCallback onMessage) {
     Clipboard.setData(ClipboardData(text: value));
     if (onMessage != null) {
       onMessage('Kopiert til utklippstavlen');
