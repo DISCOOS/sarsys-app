@@ -19,6 +19,7 @@ class IconLayerOptions extends LayerOptions {
   Icon icon;
   Text text;
   bool showBadge;
+  bool showLabels;
   AnchorAlign align;
   IconBuilder builder;
 
@@ -29,6 +30,7 @@ class IconLayerOptions extends LayerOptions {
     this.builder,
     this.bearing,
     this.showBadge = false,
+    this.showLabels = true,
     this.opacity = 0.6,
     this.align = AnchorAlign.center,
     Stream<Null> rebuild,
@@ -108,7 +110,7 @@ class IconLayer implements MapPlugin {
               ),
             ),
           ),
-          if (labels.length > index)
+          if (params.showLabels && labels.length > index)
             Positioned(
               left: size / 2,
               top: size / 2 + 4,
