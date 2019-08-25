@@ -14,7 +14,7 @@ import 'package:system_setting/system_setting.dart';
 
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
 typedef PromptCallback = Future<bool> Function(String title, String message);
-typedef TrackingCallback = void Function(bool isTracking);
+typedef TrackingCallback = void Function(bool isTracking, bool isLocked);
 typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
@@ -25,12 +25,14 @@ class LocationController {
   final TrackingCallback onTrackingChanged;
   final LocationCallback onLocationChanged;
 
+  bool _locked = false;
   bool _tracking = false;
   bool _resolving = false;
   MyLocationOptions _options;
   StreamSubscription<Position> _subscription;
   LocationService _service = LocationService();
 
+  bool get isLocked => _locked;
   bool get isTracking => _tracking;
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
@@ -55,18 +57,20 @@ class LocationController {
     _subscription = null;
   }
 
-  bool toggle() {
+  bool toggle({locked: false}) {
     var old = _tracking;
-    if (_tracking) {
+    if (_tracking && !locked) {
+      _locked = false;
       _tracking = false;
     } else {
+      _locked = locked;
       _tracking = _service.isReady.value;
       if (!_tracking) {
         _service.init().then((status) => _handleGeolocationStatusChange(status));
       }
     }
     if (old != _tracking) {
-      if (onTrackingChanged != null) onTrackingChanged(_tracking);
+      if (onTrackingChanged != null) onTrackingChanged(_tracking, _locked);
     }
     _updateLocation(_service.current, _tracking);
     return _tracking;
@@ -125,7 +129,7 @@ class LocationController {
       _subscription = _service.stream.listen(
         (position) => _updateLocation(position, false),
       );
-      if (_tracking && _resolving) onTrackingChanged(_tracking);
+      if (_tracking && _resolving) onTrackingChanged(_tracking, _locked);
     } else {
       dispose();
     }

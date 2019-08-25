@@ -351,16 +351,21 @@ class IncidentMapState extends State<IncidentMap> {
         valueListenable: _isLocating,
         builder: (BuildContext context, bool value, Widget child) {
           return Container(
-            child: IconButton(
-              color: value ? Colors.green : Colors.black,
-              icon: Icon(Icons.gps_fixed),
-              onPressed: () {
-                _locationController.toggle();
+            child: GestureDetector(
+              child: IconButton(
+                color: value ? Colors.green : Colors.black,
+                icon: Icon(Icons.gps_fixed),
+                onPressed: () {
+                  _locationController.toggle();
+                },
+              ),
+              onLongPress: () {
+                _locationController.toggle(locked: true);
               },
             ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.6),
-              border: Border.all(color: Colors.grey),
+              border: Border.all(color: _locationController.isLocked ? Colors.green : Colors.grey),
               borderRadius: BorderRadius.circular(30.0),
             ),
           );
@@ -490,13 +495,19 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
-    _center = position.center;
+    var center = position.center;
     if ((isUserGesture || hasGesture) && widget.mapController.ready) {
       _zoom = widget.mapController.zoom;
       if (widget.withLocation && _locationController.isTracking) {
-        _locationController.toggle();
+        if (_locationController.isLocked) {
+          center = _center;
+          widget.mapController.move(_center, _zoom);
+        } else {
+          _locationController.toggle();
+        }
       }
     }
+    _center = center;
   }
 
   void _clearSearchField() {
@@ -549,7 +560,7 @@ class IncidentMapState extends State<IncidentMap> {
     return _mapCards;
   }
 
-  void _onTrackingChanged(bool isTracking) {
+  void _onTrackingChanged(bool isTracking, bool isLocked) {
     _isLocating.value = isTracking;
   }
 
