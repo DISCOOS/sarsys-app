@@ -620,13 +620,6 @@ class IncidentMapState extends State<IncidentMap> {
     });
   }
 
-//  void _handleTap() {
-//    /*
-//    onTap: () => ,
-//        onLongPress: () => showUnitMenu(context, unit, options.bloc, options.onMessage),
-//     */
-//  }
-
   bool _within(LatLng point, LatLng location, double tolerance) {
     final distance = ProjMath.eucledianDistance(
       point.latitude,
