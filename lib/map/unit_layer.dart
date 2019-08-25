@@ -1,11 +1,11 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -100,7 +100,7 @@ class UnitLayer extends MapPlugin {
     return Opacity(
       opacity: options.opacity,
       child: CustomPaint(
-        painter: _PolygonPainter(
+        painter: LineStringPainter(
           offsets,
           color,
           color,
@@ -125,7 +125,7 @@ class UnitLayer extends MapPlugin {
       child: Opacity(
         opacity: options.opacity,
         child: CustomPaint(
-          painter: _PointPainter(
+          painter: PointPainter(
             size: size,
             color: _toTrackingStatusColor(context, tracking.status),
           ),
@@ -142,7 +142,7 @@ class UnitLayer extends MapPlugin {
       left: pos.x,
       top: pos.y,
       child: CustomPaint(
-        painter: _LabelPainter(
+        painter: LabelPainter(
           unit.name,
         ),
       ),
@@ -348,115 +348,6 @@ class UnitLayer extends MapPlugin {
       onMessage('Kopiert til utklippstavlen');
     }
   }
-}
-
-class _PointPainter extends CustomPainter {
-  final double size;
-  final Color color;
-  final double opacity;
-
-  const _PointPainter({
-    this.size,
-    this.color,
-    this.opacity = 0.6,
-  });
-
-  @override
-  void paint(Canvas canvas, _) {
-    final paint = Paint()..color = Colors.white;
-    final radius = size / 2.0;
-    final offset = size / 2.0;
-    final center = Offset(offset, offset - 1);
-    canvas.drawCircle(center, radius, paint);
-
-    var path = Path();
-    path.addOval(Rect.fromCircle(center: center.translate(0, 0), radius: radius + 1));
-    canvas.drawShadow(path, Colors.black45, 2, true);
-
-    paint.color = color;
-    paint.style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius - 2, paint);
-    canvas.drawCircle(center, 1, paint..color = Colors.black);
-  }
-
-  @override
-  bool shouldRepaint(_PointPainter oldPainter) {
-    return oldPainter.size != size || oldPainter.opacity != opacity;
-  }
-}
-
-class _LabelPainter extends CustomPainter {
-  final String label;
-
-  const _LabelPainter(this.label);
-
-  @override
-  void paint(Canvas canvas, _) {
-    final paint = Paint()..color = Colors.white;
-
-    var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 12.0, textAlign: TextAlign.left))
-      ..pushStyle(ui.TextStyle(color: Colors.black))
-      ..addText(label);
-    var p = builder.build()..layout(ui.ParagraphConstraints(width: 120));
-    var height = p.height;
-    var width = p.maxIntrinsicWidth;
-    var rect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(0, 22),
-        width: width + 4,
-        height: height + 4,
-      ),
-      Radius.circular(4),
-    );
-    var path = Path()..addRRect(rect);
-    canvas.drawShadow(path, Colors.black45, 2, true);
-    canvas.drawRRect(rect, paint);
-    canvas.drawParagraph(p, Offset(-width / 2, height + 1));
-  }
-
-  @override
-  bool shouldRepaint(_LabelPainter oldPainter) {
-    return true;
-  }
-}
-
-class _PolygonPainter extends CustomPainter {
-  final List<Offset> offsets;
-
-  final Color color;
-  final Color borderColor;
-  final double borderStrokeWidth;
-  final bool isFilled;
-
-  _PolygonPainter(
-    this.offsets,
-    this.color,
-    this.borderColor,
-    this.borderStrokeWidth,
-    this.isFilled,
-  );
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (offsets.isEmpty) {
-      return;
-    }
-    final rect = Offset.zero & size;
-    canvas.clipRect(rect);
-    final paint = Paint()
-      ..strokeWidth = borderStrokeWidth
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..color = color;
-
-    var path = Path();
-    path.addPolygon(offsets, false);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_PolygonPainter other) => false;
 }
 
 Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {

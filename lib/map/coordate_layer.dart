@@ -1,4 +1,4 @@
-import 'package:SarSys/map/cross_painter.dart';
+import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';

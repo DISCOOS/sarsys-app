@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:SarSys/map/painters.dart';
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +13,7 @@ typedef IconBuilder = Icon Function(BuildContext context, int index);
 
 class IconLayerOptions extends LayerOptions {
   Iterable<LatLng> points;
+  Iterable<String> labels;
   double bearing;
   double opacity;
   Icon icon;
@@ -22,11 +24,12 @@ class IconLayerOptions extends LayerOptions {
 
   IconLayerOptions(
     this.points, {
+    this.labels = const [],
     this.icon,
     this.builder,
     this.bearing,
     this.showBadge = false,
-    this.opacity = 1.0,
+    this.opacity = 0.6,
     this.align = AnchorAlign.center,
     Stream<Null> rebuild,
   }) : super(rebuild: rebuild);
@@ -53,9 +56,10 @@ class IconLayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {
     int index = 0;
+    List<String> labels = List.from(params.labels ?? []);
     List<Widget> icons = params.points
         .where((point) => map.bounds.contains(point))
-        .map((point) => _buildIcon(context, map, params, point, index++))
+        .map((point) => _buildIcon(context, map, params, point, labels, index++))
         .toList();
     return icons.isEmpty
         ? Container()
@@ -64,7 +68,14 @@ class IconLayer implements MapPlugin {
           );
   }
 
-  Widget _buildIcon(BuildContext context, MapState map, IconLayerOptions params, LatLng point, int index) {
+  Widget _buildIcon(
+    BuildContext context,
+    MapState map,
+    IconLayerOptions params,
+    LatLng point,
+    List<String> labels,
+    int index,
+  ) {
     var icon = params.icon ?? params.builder(context, index);
     var size = icon.size;
     var anchor = Anchor.forPos(AnchorPos.align(params.align), icon.size, icon.size);
@@ -89,7 +100,7 @@ class IconLayer implements MapPlugin {
                 badgeColor: Colors.white70,
                 toAnimate: false,
                 showBadge: params.showBadge,
-                position: BadgePosition.bottomRight(),
+                position: BadgePosition.topRight(),
                 badgeContent: Text(
                   '${index + 1}',
                   style: TextStyle(fontSize: 10),
@@ -97,6 +108,16 @@ class IconLayer implements MapPlugin {
               ),
             ),
           ),
+          if (labels.length > index)
+            Positioned(
+              left: size / 2,
+              top: size / 2 + 4,
+              child: CustomPaint(
+                painter: LabelPainter(
+                  labels[index],
+                ),
+              ),
+            ),
           if (params.bearing != null)
             Opacity(
               opacity: 0.54,

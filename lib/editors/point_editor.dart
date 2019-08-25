@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/map/cross_painter.dart';
+import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_search_field.dart';
 import 'package:flutter/material.dart';

@@ -5,7 +5,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/coordate_layer.dart';
-import 'package:SarSys/map/cross_painter.dart';
+import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/scalebar.dart';
@@ -366,6 +366,7 @@ class IncidentMapState extends State<IncidentMap> {
   IconLayerOptions _buildPoiOptions(List<Point> points) {
     return IconLayerOptions(
       points.map((point) => toLatLng(point)).toList(),
+      labels: ["IPP", "Oppmøte"],
       icon: Icon(
         Icons.location_on,
         size: 30,
