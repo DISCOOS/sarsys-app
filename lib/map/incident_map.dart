@@ -198,24 +198,28 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildSearchBar() {
+    final size = MediaQuery.of(context).size;
     return SafeArea(
       child: Align(
-        alignment: Alignment.topCenter,
-        child: MapSearchField(
-          key: _searchFieldKey,
-          controller: widget.mapController,
-          zoom: 18,
-          onError: widget.onMessage,
-          onMatch: _onSearchMatch,
-          onCleared: _onSearchCleared,
-          prefixIcon: GestureDetector(
-            child: Icon(Icons.menu),
-            onTap: () {
-              _searchFieldKey.currentState.clear();
-              if (widget.onOpenDrawer != null) {
-                widget.onOpenDrawer();
-              }
-            },
+        alignment: Alignment.topLeft,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: math.min(size.width, size.height)),
+          child: MapSearchField(
+            key: _searchFieldKey,
+            controller: widget.mapController,
+            zoom: 18,
+            onError: widget.onMessage,
+            onMatch: _onSearchMatch,
+            onCleared: _onSearchCleared,
+            prefixIcon: GestureDetector(
+              child: Icon(Icons.menu),
+              onTap: () {
+                _searchFieldKey.currentState.clear();
+                if (widget.onOpenDrawer != null) {
+                  widget.onOpenDrawer();
+                }
+              },
+            ),
           ),
         ),
       ),
