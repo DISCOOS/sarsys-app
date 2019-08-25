@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/map/map_caching.dart';
+import 'package:SarSys/services/image_cache_service.dart';
 import 'package:filesize/filesize.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -128,7 +130,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   }
 
   Widget _buildClearCacheAction() {
-    final cache = DefaultCacheManager();
+    final cache = FileCacheService(_bloc.config);
     final path = cache.getFilePath();
     return FutureBuilder<Object>(
         future: path,
