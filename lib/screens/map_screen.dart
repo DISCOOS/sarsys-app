@@ -1,8 +1,11 @@
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
@@ -63,6 +66,7 @@ class MapScreenState extends State<MapScreen> {
 
   void _showCreateItemSheet(context) {
     final style = Theme.of(context).textTheme.title;
+    final bloc = BlocProvider.of<IncidentBloc>(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -77,7 +81,8 @@ class MapScreenState extends State<MapScreen> {
                   children: <Widget>[
                     ListTile(title: Text("Opprett", style: style)),
                     Divider(),
-                    ListTile(
+                    if (!bloc.isUnset)
+                      ListTile(
                         dense: landscape,
                         leading: Icon(Icons.group_add),
                         title: Text('Enhet', style: style),
@@ -87,7 +92,20 @@ class MapScreenState extends State<MapScreen> {
                             context: context,
                             builder: (context) => UnitEditor(),
                           );
-                        }),
+                        },
+                      ),
+                    ListTile(
+                      dense: landscape,
+                      leading: Icon(Icons.warning),
+                      title: Text('Hendelse', style: style),
+                      onTap: () {
+                        Navigator.pop(context);
+                        showDialog(
+                          context: context,
+                          builder: (context) => IncidentEditor(),
+                        );
+                      },
+                    ),
                   ],
                 );
               });
