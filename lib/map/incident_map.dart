@@ -364,6 +364,7 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   IconLayerOptions _buildPoiOptions(List<Point> points) {
+    final bloc = BlocProvider.of<IncidentBloc>(context);
     return IconLayerOptions(
       points.map((point) => toLatLng(point)).toList(),
       labels: ["IPP", "Oppmøte"],
@@ -372,15 +373,16 @@ class IncidentMapState extends State<IncidentMap> {
         size: 30,
         color: Colors.red,
       ),
+      rebuild: bloc.state.map((_) => null),
     );
   }
 
   UnitLayerOptions _buildUnitOptions() {
-    final trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    final bloc = BlocProvider.of<TrackingBloc>(context);
     return UnitLayerOptions(
-      bloc: trackingBloc,
+      bloc: bloc,
       onMessage: widget.onMessage,
-      rebuild: trackingBloc.state.map((_) => null),
+      rebuild: bloc.state.map((_) => null),
       showTail: _layers.contains(TRACKING_LAYER),
     );
   }
