@@ -49,6 +49,8 @@ class MapSearchFieldState extends State<MapSearchField> {
   LatLng _match;
   OverlayEntry _overlayEntry;
 
+  bool get hasFocus => _focusNode.hasFocus;
+
   @override
   void initState() {
     super.initState();

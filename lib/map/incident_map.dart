@@ -199,11 +199,15 @@ class IncidentMapState extends State<IncidentMap> {
 
   Widget _buildSearchBar() {
     final size = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
+    final maxWidth = orientation != Orientation.landscape || _searchFieldKey.currentState.hasFocus
+        ? size.width + (orientation == Orientation.landscape ? -56.0 : 0.0)
+        : math.min(size.width, size.height) * 0.7;
     return SafeArea(
       child: Align(
         alignment: Alignment.topLeft,
         child: Container(
-          constraints: BoxConstraints(maxWidth: math.min(size.width, size.height)),
+          constraints: BoxConstraints(maxWidth: maxWidth),
           child: MapSearchField(
             key: _searchFieldKey,
             controller: widget.mapController,
