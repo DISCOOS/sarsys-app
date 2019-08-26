@@ -49,14 +49,16 @@ class MapSearchFieldState extends State<MapSearchField> {
   LatLng _match;
   OverlayEntry _overlayEntry;
 
-  bool get hasFocus => _focusNode.hasFocus;
+  bool get hasFocus => _focusNode?.hasFocus ?? false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() => {
-          setState(() {}),
-        });
+    _focusNode.addListener(
+      () => {
+        setState(() {}),
+      },
+    );
   }
 
   @override

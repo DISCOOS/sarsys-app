@@ -24,7 +24,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/map/icon_layer.dart';
-import 'package:SarSys/map/map_search_field.dart';
+import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/my_location.dart';
 
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
@@ -200,7 +200,8 @@ class IncidentMapState extends State<IncidentMap> {
   Widget _buildSearchBar() {
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
-    final maxWidth = orientation != Orientation.landscape || _searchFieldKey.currentState.hasFocus
+    final maxWidth = orientation != Orientation.landscape ||
+            _searchFieldKey.currentState != null && _searchFieldKey.currentState.hasFocus
         ? size.width + (orientation == Orientation.landscape ? -56.0 : 0.0)
         : math.min(size.width, size.height) * 0.7;
     return SafeArea(
@@ -354,26 +355,51 @@ class IncidentMapState extends State<IncidentMap> {
     return ValueListenableBuilder(
         valueListenable: _isLocating,
         builder: (BuildContext context, bool value, Widget child) {
-          return Container(
-            child: GestureDetector(
-              child: IconButton(
-                color: value ? Colors.green : Colors.black,
-                icon: Icon(Icons.gps_fixed),
-                onPressed: () {
-                  _locationController.toggle();
-                },
-              ),
-              onLongPress: () {
-                _locationController.toggle(locked: true);
-              },
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
-              border: Border.all(color: _locationController.isLocked ? Colors.green : Colors.grey),
-              borderRadius: BorderRadius.circular(30.0),
-            ),
-          );
+          return _locationController.isLocked
+              ? Stack(
+                  children: <Widget>[
+                    _buildLocateButton(value),
+                    Positioned(
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 12,
+                          minHeight: 12,
+                        ),
+                        child: Icon(Icons.lock, size: 16, color: Colors.green),
+                      ),
+                    )
+                  ],
+                )
+              : _buildLocateButton(value);
         });
+  }
+
+  Container _buildLocateButton(bool value) {
+    return Container(
+      child: GestureDetector(
+        child: IconButton(
+          color: value ? Colors.green : Colors.black,
+          icon: Icon(Icons.gps_fixed),
+          onPressed: () {
+            _locationController.toggle();
+          },
+        ),
+        onLongPress: () {
+          _locationController.toggle(locked: true);
+        },
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.6),
+        border: Border.all(color: _locationController.isLocked ? Colors.green : Colors.grey),
+        borderRadius: BorderRadius.circular(30.0),
+      ),
+    );
   }
 
   IconLayerOptions _buildPoiOptions(List<Point> points) {
@@ -424,7 +450,6 @@ class IncidentMapState extends State<IncidentMap> {
   void _onAction(LatLng point, Function onAction) {
     if (_searchMatch == null) _clearSearchField();
 
-    //showUnitInfo(context, unit, options.bloc, options.onMessage)
     final bloc = BlocProvider.of<TrackingBloc>(context);
     final tracks = bloc.tracks;
     final size = MediaQuery.of(context).size;
