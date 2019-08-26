@@ -58,7 +58,8 @@ class LocationController {
   }
 
   bool toggle({locked: false}) {
-    var old = _tracking;
+    var wasLocked = _locked;
+    var wasTracking = _tracking;
     if (_tracking && !locked) {
       _locked = false;
       _tracking = false;
@@ -69,7 +70,7 @@ class LocationController {
         _service.init().then((status) => _handleGeolocationStatusChange(status));
       }
     }
-    if (old != _tracking) {
+    if (wasTracking != _tracking || wasLocked != _locked) {
       if (onTrackingChanged != null) onTrackingChanged(_tracking, _locked);
     }
     _updateLocation(_service.current, _tracking);

@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/coordate_layer.dart';
+import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
@@ -98,7 +99,7 @@ class IncidentMapState extends State<IncidentMap> {
   double _zoom = Defaults.zoom;
 
   LocationController _locationController;
-  ValueNotifier<bool> _isLocating = ValueNotifier(false);
+  ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
 
   Set<String> _layers;
 
@@ -232,172 +233,49 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildControls() {
-    final Size size = Size(42.0, 42.0);
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
     return Positioned(
       top: landscape ? 8.0 : 100.0,
       right: 8.0,
       child: SafeArea(
-        child: Column(
-          children: <Widget>[
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: _buildFilterAction(),
+        child: MapControls(
+          controls: [
+            MapControl(
+              icon: Icons.filter_list,
+              onPressed: () => _showLayerSheet(context),
             ),
-            SizedBox(
-              height: 4.0,
+            MapControl(
+              icon: Icons.map,
+              onPressed: () {
+                _showBaseMapBottomSheet(context);
+              },
             ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: _buildBaseMapAction(),
+            MapControl(
+              icon: Icons.add,
+              onPressed: () {
+                _zoom = math.min(_zoom + 1, Defaults.maxZoom);
+                widget.mapController.move(_center, _zoom);
+              },
             ),
-            SizedBox(
-              height: 4.0,
+            MapControl(
+              icon: Icons.remove,
+              onPressed: () {
+                _zoom = math.max(_zoom - 1, Defaults.minZoom);
+                widget.mapController.move(_center, _zoom);
+              },
             ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: _buildZoomInAction(),
-            ),
-            SizedBox(
-              height: 4.0,
-            ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: _buildZoomOutAction(),
-            ),
-            SizedBox(height: 4.0),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: _buildLocateAction(size),
+            MapControl(
+              icon: Icons.gps_fixed,
+              listenable: _isLocating,
+              onPressed: () {
+                _locationController.toggle();
+              },
+              onLongPress: () {
+                _locationController.toggle(locked: true);
+              },
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Container _buildFilterAction() {
-    return Container(
-      child: IconButton(
-        icon: Icon(Icons.filter_list),
-        onPressed: () => _showLayerSheet(context),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-    );
-  }
-
-  Container _buildBaseMapAction() {
-    return Container(
-      child: IconButton(
-        icon: Icon(Icons.map),
-        onPressed: () {
-          _showBaseMapBottomSheet(context);
-        },
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-    );
-  }
-
-  Container _buildZoomInAction() {
-    return Container(
-      child: IconButton(
-        icon: Icon(Icons.add),
-        onPressed: () {
-          _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-          widget.mapController.move(_center, _zoom);
-//          setState(() {
-//            _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-//          });
-        },
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-    );
-  }
-
-  Container _buildZoomOutAction() {
-    return Container(
-      child: IconButton(
-        icon: Icon(Icons.remove),
-        onPressed: () {
-          _zoom = math.max(_zoom - 1, Defaults.minZoom);
-          widget.mapController.move(_center, _zoom);
-//          setState(() {
-//            _zoom = math.max(_zoom - 1, Defaults.minZoom);
-//          });
-        },
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-    );
-  }
-
-  Widget _buildLocateAction(Size size) {
-    return ValueListenableBuilder(
-        valueListenable: _isLocating,
-        builder: (BuildContext context, bool value, Widget child) {
-          return _locationController.isLocked
-              ? Stack(
-                  children: <Widget>[
-                    _buildLocateButton(value),
-                    Positioned(
-                      right: 0,
-                      child: Container(
-                        padding: EdgeInsets.all(0),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 12,
-                          minHeight: 12,
-                        ),
-                        child: Icon(Icons.lock, size: 16, color: Colors.green),
-                      ),
-                    )
-                  ],
-                )
-              : _buildLocateButton(value);
-        });
-  }
-
-  Container _buildLocateButton(bool value) {
-    return Container(
-      child: GestureDetector(
-        child: IconButton(
-          color: value ? Colors.green : Colors.black,
-          icon: Icon(Icons.gps_fixed),
-          onPressed: () {
-            _locationController.toggle();
-          },
-        ),
-        onLongPress: () {
-          _locationController.toggle(locked: true);
-        },
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
-        border: Border.all(color: _locationController.isLocked ? Colors.green : Colors.grey),
-        borderRadius: BorderRadius.circular(30.0),
       ),
     );
   }
@@ -590,7 +468,10 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   void _onTrackingChanged(bool isTracking, bool isLocked) {
-    _isLocating.value = isTracking;
+    _isLocating.value = MapControlState(
+      isToggled: isTracking,
+      isLocked: isLocked,
+    );
   }
 
   void _onLocationChanged(LatLng point) {
