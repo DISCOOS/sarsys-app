@@ -10,15 +10,16 @@ import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/scalebar.dart';
+import 'package:SarSys/map/tools/map_tools.dart';
+import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -27,8 +28,7 @@ import 'package:latlong/latlong.dart';
 import 'package:SarSys/map/icon_layer.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/my_location.dart';
-
-typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class IncidentMap extends StatefulWidget {
   static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
@@ -98,6 +98,7 @@ class IncidentMapState extends State<IncidentMap> {
   LatLng _searchMatch;
   double _zoom = Defaults.zoom;
 
+  MapToolController _mapToolController;
   LocationController _locationController;
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
 
@@ -119,6 +120,11 @@ class IncidentMapState extends State<IncidentMap> {
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
+    }
+    if (widget.withControls) {
+      _mapToolController = MapToolController(tools: [
+        UnitTool(BlocProvider.of<TrackingBloc>(context), active: true),
+      ]);
     }
     _center = widget.center ?? Defaults.origo;
     _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
@@ -158,8 +164,8 @@ class IncidentMapState extends State<IncidentMap> {
         maxZoom: Defaults.maxZoom,
         minZoom: Defaults.minZoom,
         interactive: widget.interactive,
-        onTap: (point) => _onAction(point, UnitLayer.showUnitInfo),
-        onLongPress: (point) => _onAction(point, UnitLayer.showUnitMenu),
+        onTap: (point) => _onTap(point),
+        onLongPress: (point) => _onLongPress(point),
         onPositionChanged: _onPositionChanged,
         plugins: [
           MyLocation(),
@@ -186,6 +192,16 @@ class IncidentMapState extends State<IncidentMap> {
         if (widget.withScaleBar && _layers.contains(SCALE_LAYER)) _buildScaleBarOptions()
       ],
     );
+  }
+
+  void _onTap(LatLng point) {
+    if (_searchMatch == null) _clearSearchField();
+    if (_mapToolController != null) _mapToolController.onTap(context, point, _zoom, ScalebarOption.SCALES);
+  }
+
+  void _onLongPress(LatLng point) {
+    if (_searchMatch == null) _clearSearchField();
+    if (_mapToolController != null) _mapToolController.onLongPress(context, point, _zoom, ScalebarOption.SCALES);
   }
 
   ScalebarOption _buildScaleBarOptions() {
@@ -274,6 +290,10 @@ class IncidentMapState extends State<IncidentMap> {
                 _locationController.toggle(locked: true);
               },
             ),
+            MapControl(
+              icon: MdiIcons.mathCompass,
+//              icon: MdiIcons.tapeMeasure,
+            ),
           ],
         ),
       ),
@@ -323,82 +343,6 @@ class IncidentMapState extends State<IncidentMap> {
         ),
       ],
     );
-  }
-
-  void _onAction(LatLng point, Function onAction) {
-    if (_searchMatch == null) _clearSearchField();
-
-    final bloc = BlocProvider.of<TrackingBloc>(context);
-    final tracks = bloc.tracks;
-    final size = MediaQuery.of(context).size;
-    final tolerance = 120.0 / math.max(size.width, size.height);
-    var distance = tolerance * ScaleBar.toDistance(ScalebarOption.SCALES, _zoom);
-    // Find first unit within given tolerance of tapped point.
-    final units = bloc.units.values.where(
-      (unit) => _within(
-        point,
-        toLatLng(tracks[unit.tracking].location),
-        distance,
-      ),
-    );
-    if (units.isNotEmpty) _showUnit(units.toList(), bloc, onAction);
-
-    if (widget.onTap != null) widget.onTap(point);
-  }
-
-  void _showUnit(List<Unit> units, TrackingBloc bloc, Function onAction) {
-    if (units.length == 1) {
-      onAction(context, units.first, bloc, widget.onMessage);
-    } else {
-      final style = Theme.of(context).textTheme.title;
-      final size = MediaQuery.of(context).size;
-      showDialog(
-        context: context,
-        barrierDismissible: true,
-        builder: (context) {
-          return Dialog(
-            elevation: 0,
-            backgroundColor: Colors.white,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text('Velg enhet', style: style),
-                      IconButton(
-                        icon: Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    ],
-                  ),
-                ),
-                Divider(),
-                SizedBox(
-                  height: math.min(size.height - 150, 380),
-                  width: MediaQuery.of(context).size.width - 96,
-                  child: ListView.builder(
-                    itemCount: units.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return ListTile(
-                        leading: Icon(Icons.group),
-                        title: Text("${units[index].name}"),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          onAction(context, units[index], bloc, widget.onMessage);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    }
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
@@ -539,15 +483,5 @@ class IncidentMapState extends State<IncidentMap> {
         _layers.remove(layer);
       }
     });
-  }
-
-  bool _within(LatLng point, LatLng location, double tolerance) {
-    final distance = ProjMath.eucledianDistance(
-      point.latitude,
-      point.longitude,
-      location.latitude,
-      location.longitude,
-    );
-    return distance < tolerance;
   }
 }

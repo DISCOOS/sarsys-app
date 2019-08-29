@@ -4,6 +4,7 @@ import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/map/my_location.dart';
 import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,16 +13,14 @@ import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:system_setting/system_setting.dart';
 
-typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
-typedef PromptCallback = Future<bool> Function(String title, String message);
 typedef TrackingCallback = void Function(bool isTracking, bool isLocked);
 typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
   final AppConfigBloc appConfigBloc;
   final MapController mapController;
-  final MessageCallback onMessage;
   final PromptCallback onPrompt;
+  final MessageCallback onMessage;
   final TrackingCallback onTrackingChanged;
   final LocationCallback onLocationChanged;
 

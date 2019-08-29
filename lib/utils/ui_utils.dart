@@ -4,7 +4,11 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+
+typedef PromptCallback = Future<bool> Function(String title, String message);
+typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
 
 Future<bool> prompt(BuildContext context, String title, String message) async {
   // flutter defined function
@@ -142,4 +146,34 @@ Future<Unit> selectUnit(BuildContext context) async {
       );
     },
   );
+}
+
+Widget buildCopyableText({
+  BuildContext context,
+  String label,
+  Icon icon,
+  String value,
+  MessageCallback onMessage,
+}) {
+  return GestureDetector(
+    child: InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: icon,
+        border: InputBorder.none,
+      ),
+      child: Text(value),
+    ),
+    onLongPress: () {
+      Navigator.pop(context);
+      copy(value, onMessage);
+    },
+  );
+}
+
+void copy(String value, MessageCallback onMessage, {String message: 'Kopiert til utklippstavlen'}) {
+  Clipboard.setData(ClipboardData(text: value));
+  if (onMessage != null) {
+    onMessage(message);
+  }
 }
