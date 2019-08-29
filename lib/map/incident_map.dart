@@ -4,15 +4,15 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
-import 'package:SarSys/map/coordate_layer.dart';
+import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
-import 'package:SarSys/map/scalebar.dart';
+import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
-import 'package:SarSys/map/unit_layer.dart';
+import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/image_cache_service.dart';
@@ -25,9 +25,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
-import 'package:SarSys/map/icon_layer.dart';
+import 'package:SarSys/map/layers/icon_layer.dart';
 import 'package:SarSys/map/map_search.dart';
-import 'package:SarSys/map/my_location.dart';
+import 'package:SarSys/map/layers/my_location.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class IncidentMap extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:SarSys/map/icon_layer.dart';
+import 'package:SarSys/map/layers/icon_layer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
