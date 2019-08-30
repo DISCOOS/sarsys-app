@@ -58,8 +58,8 @@ dependencies:
   # Customized plugins
   flutter_map: #^0.6.1+2
     git:
-      url: git://github.com/DISCOOS/flutter_map
-      ref: issue/tileprovider
+      url: git://github.com/johnpryan/flutter_map
+      ref: master
 
   # Mocking support
   uuid: ^2.0.2

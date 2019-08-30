@@ -13,14 +13,17 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:latlong/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class UnitTool extends MapTool<Unit> {
+class UnitTool extends MapTool with MapSelectable<Unit> {
   final TrackingBloc bloc;
   final MessageCallback onMessage;
   UnitTool(
     this.bloc, {
     bool active = false,
     this.onMessage,
-  }) : super(active, bloc.units.values);
+  }) : super(active);
+
+  @override
+  Iterable<Unit> get targets => bloc.units.values;
 
   @override
   void doProcessLongPress(BuildContext context, List<Unit> units) {

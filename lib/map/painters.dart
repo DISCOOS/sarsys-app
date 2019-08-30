@@ -90,7 +90,7 @@ class LineStringPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (offsets.isEmpty) {
+    if (offsets.length < 2) {
       return;
     }
     final rect = Offset.zero & size;
@@ -113,10 +113,10 @@ class LineStringPainter extends CustomPainter {
 
 class CrossPainter extends CustomPainter {
   Paint _paint;
-  final _gap = 15.0;
-  final _length = 40.0;
+  final gap;
+  final length;
 
-  CrossPainter({color: Colors.red}) {
+  CrossPainter({color: Colors.black45, this.gap: 12.0, this.length: 24.0}) {
     _paint = Paint()
       ..color = color
       ..strokeWidth = 4.0
@@ -127,10 +127,10 @@ class CrossPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.width / 2);
     canvas.drawCircle(center, 2.0, _paint);
-    canvas.drawLine(center.translate(-_gap, 0), center.translate(-_length, 0), _paint);
-    canvas.drawLine(center.translate(_gap, 0), center.translate(_length, 0), _paint);
-    canvas.drawLine(center.translate(0, _gap), center.translate(0, _length), _paint);
-    canvas.drawLine(center.translate(0, -_gap), center.translate(0, -_length), _paint);
+    canvas.drawLine(center.translate(-gap, 0), center.translate(-length, 0), _paint);
+    canvas.drawLine(center.translate(gap, 0), center.translate(length, 0), _paint);
+    canvas.drawLine(center.translate(0, gap), center.translate(0, length), _paint);
+    canvas.drawLine(center.translate(0, -gap), center.translate(0, -length), _paint);
   }
 
   @override

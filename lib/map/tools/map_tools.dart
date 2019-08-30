@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:SarSys/map/layers/scalebar.dart';
@@ -13,11 +14,15 @@ class MapToolController {
   final double tapTargetSize;
   final MatchCallback onMatch;
 
+  void dispose() => tools.forEach((tool) => tool.dispose());
+
   MapToolController({
     @required this.tools,
     this.onMatch,
     this.tapTargetSize = 120.0,
   });
+
+  T of<T extends MapTool>() => tools.whereType<T>().first;
 
   void onTap(BuildContext context, LatLng point, double zoom, List<double> scales) {
     final size = MediaQuery.of(context).size;
@@ -34,20 +39,34 @@ class MapToolController {
   }
 }
 
-abstract class MapTool<T> {
+abstract class MapTool {
+  final StreamController<Null> _changes = StreamController.broadcast();
+  Stream<Null> get changes => _changes.stream;
+  void changed(VoidCallback fn) {
+    fn();
+    _changes.add(null);
+  }
+
+  void dispose() => _changes.close();
+
   bool active;
-  Iterable<T> targets;
+  MapTool(this.active);
+  bool onTap(BuildContext context, LatLng point, double tolerance, MatchCallback onMatch) => false;
+  bool onLongPress(BuildContext context, LatLng point, double tolerance, MatchCallback onMatch) => false;
+}
 
-  MapTool(this.active, this.targets);
-
+mixin MapSelectable<T> on MapTool {
+  Iterable<T> get targets;
   LatLng toPoint(T target);
   void doProcessTap(BuildContext context, List<T> matches);
   void doProcessLongPress(BuildContext context, List<T> matches);
 
+  @override
   bool onTap(BuildContext context, LatLng point, double tolerance, MatchCallback onMatch) {
     return _match(context, point, tolerance, onMatch, doProcessTap);
   }
 
+  @override
   bool onLongPress(BuildContext context, LatLng point, double tolerance, MatchCallback onMatch) {
     return _match(context, point, tolerance, onMatch, doProcessLongPress);
   }
@@ -74,4 +93,9 @@ abstract class MapTool<T> {
         ) <
         tolerance;
   }
+}
+
+mixin MapEditable<T> on MapTool {
+  T get target;
+  set target(T newValue);
 }

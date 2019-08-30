@@ -28,8 +28,7 @@ class UnitLayerOptions extends LayerOptions {
     this.showLabels = true,
     this.showTail = true,
     this.onMessage,
-    Stream<Null> rebuild,
-  }) : super(rebuild: rebuild);
+  }) : super(rebuild: bloc.state.map((_) => null));
 }
 
 class UnitLayer extends MapPlugin {

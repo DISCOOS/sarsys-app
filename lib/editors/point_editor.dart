@@ -245,8 +245,8 @@ class _PointEditorState extends State<PointEditor> {
     _searchFieldKey?.currentState?.clear();
   }
 
-  void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
-    if (isUserGesture && _locationController.isTracking) {
+  void _onPositionChanged(MapPosition position, bool hasGesture) {
+    if (hasGesture && _locationController.isTracking) {
       _locationController.toggle();
     }
     _updatePoint(position, hasGesture);

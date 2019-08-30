@@ -33,6 +33,11 @@ String formatSince(DateTime timestamp) {
       : delta.inHours > 0 ? "${delta.inHours}h" : delta.inMinutes > 0 ? "${delta.inMinutes}m" : "${delta.inSeconds}s";
 }
 
+String formatDistance(double distance) {
+  if (distance == null) return "-";
+  return distance > 10000 ? "${(distance / 1000).toStringAsFixed(3)} km" : "${distance.round()} m";
+}
+
 LatLng toLatLng(Point point) {
   return LatLng(point?.lat, point?.lon);
 }

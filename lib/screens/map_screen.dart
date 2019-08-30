@@ -22,6 +22,8 @@ class MapScreen extends StatefulWidget {
 class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _showFAB = true;
+
   @override
   void dispose() {
     super.dispose();
@@ -38,13 +40,15 @@ class MapScreenState extends State<MapScreen> {
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showCreateItemSheet(context);
-        },
-        child: Icon(Icons.add),
-        elevation: 2.0,
-      ),
+      floatingActionButton: _showFAB
+          ? FloatingActionButton(
+              onPressed: () {
+                _showCreateItemSheet(context);
+              },
+              child: Icon(Icons.add),
+              elevation: 2.0,
+            )
+          : Container(),
       body: _buildMap(),
       resizeToAvoidBottomInset: false,
     );
@@ -59,8 +63,11 @@ class MapScreenState extends State<MapScreen> {
       withScaleBar: true,
       withCoordsPanel: true,
       onMessage: _showMessage,
-      onPrompt: (title, message) => prompt(context, title, message),
+      onToolChange: (tool) => setState(() {
+        _showFAB = !tool.active;
+      }),
       onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
+      onPrompt: (title, message) => prompt(context, title, message),
     );
   }
 

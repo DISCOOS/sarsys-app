@@ -5,12 +5,14 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
+import 'package:SarSys/map/layers/measure_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
+import 'package:SarSys/map/tools/measure_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -30,6 +32,8 @@ import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+typedef ToolCallback = void Function(MapTool tool);
+
 class IncidentMap extends StatefulWidget {
   static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
 
@@ -44,10 +48,11 @@ class IncidentMap extends StatefulWidget {
 
   final LatLng center;
   final Incident incident;
-  final MapController mapController;
   final TapCallback onTap;
   final PromptCallback onPrompt;
   final MessageCallback onMessage;
+  final ToolCallback onToolChange;
+  final MapController mapController;
 
   final GestureTapCallback onOpenDrawer;
 
@@ -66,6 +71,7 @@ class IncidentMap extends StatefulWidget {
     this.onTap,
     this.onPrompt,
     this.onMessage,
+    this.onToolChange,
     this.onOpenDrawer,
     MapController mapController,
   })  : this.mapController = mapController ?? MapController(),
@@ -101,6 +107,7 @@ class IncidentMapState extends State<IncidentMap> {
   MapToolController _mapToolController;
   LocationController _locationController;
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
+  ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
 
   Set<String> _layers;
 
@@ -122,9 +129,12 @@ class IncidentMapState extends State<IncidentMap> {
       );
     }
     if (widget.withControls) {
-      _mapToolController = MapToolController(tools: [
-        UnitTool(BlocProvider.of<TrackingBloc>(context), active: true),
-      ]);
+      _mapToolController = MapToolController(
+        tools: [
+          MeasureTool(),
+          UnitTool(BlocProvider.of<TrackingBloc>(context), active: true),
+        ],
+      );
     }
     _center = widget.center ?? Defaults.origo;
     _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
@@ -139,6 +149,7 @@ class IncidentMapState extends State<IncidentMap> {
   @override
   void dispose() {
     super.dispose();
+    _mapToolController?.dispose();
     _locationController?.dispose();
   }
 
@@ -154,6 +165,7 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildMap() {
+    final tool = _mapToolController?.of<MeasureTool>();
     final bloc = BlocProvider.of<IncidentBloc>(context);
     return FlutterMap(
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
@@ -173,6 +185,7 @@ class IncidentMapState extends State<IncidentMap> {
           UnitLayer(),
           CoordinateLayer(),
           ScaleBar(),
+          MeasureLayer(),
         ],
       ),
       layers: [
@@ -189,7 +202,8 @@ class IncidentMapState extends State<IncidentMap> {
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
-        if (widget.withScaleBar && _layers.contains(SCALE_LAYER)) _buildScaleBarOptions()
+        if (widget.withScaleBar && _layers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
+        if (tool != null && tool.active) MeasureLayerOptions(tool),
       ],
     );
   }
@@ -292,7 +306,30 @@ class IncidentMapState extends State<IncidentMap> {
             ),
             MapControl(
               icon: MdiIcons.mathCompass,
+              listenable: _isMeasuring,
 //              icon: MdiIcons.tapeMeasure,
+              child: MapControls(controls: [
+                MapControl(
+                    icon: MdiIcons.mapMarkerPlus,
+                    state: MapControlState(isToggled: true),
+                    listenable: _isMeasuring,
+                    onPressed: () {
+                      final tool = _mapToolController.of<MeasureTool>();
+                      tool.onAdd(_center);
+                    })
+              ]),
+              onPressed: () {
+                final tool = _mapToolController.of<MeasureTool>();
+                setState(() {
+                  tool.active = !tool.active;
+                  if (tool.active)
+                    tool.onInit(_center);
+                  else
+                    tool.clear();
+                  _isMeasuring.value = MapControlState(isToggled: tool.active);
+                });
+                if (widget.onToolChange != null) widget.onToolChange(tool);
+              },
             ),
           ],
         ),
@@ -319,7 +356,6 @@ class IncidentMapState extends State<IncidentMap> {
     return UnitLayerOptions(
       bloc: bloc,
       onMessage: widget.onMessage,
-      rebuild: bloc.state.map((_) => null),
       showTail: _layers.contains(TRACKING_LAYER),
     );
   }
@@ -345,9 +381,9 @@ class IncidentMapState extends State<IncidentMap> {
     );
   }
 
-  void _onPositionChanged(MapPosition position, bool hasGesture, bool isUserGesture) {
+  void _onPositionChanged(MapPosition position, bool hasGesture) {
     var center = position.center;
-    if ((isUserGesture || hasGesture) && widget.mapController.ready) {
+    if (hasGesture && widget.mapController.ready) {
       _zoom = widget.mapController.zoom;
       if (widget.withLocation && _locationController.isTracking) {
         if (_locationController.isLocked) {

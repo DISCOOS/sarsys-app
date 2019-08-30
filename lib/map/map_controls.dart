@@ -17,7 +17,16 @@ class MapControls extends StatelessWidget {
                   height: _size.height,
                   child: _buildControl(context, control),
                 ),
-                if (control != controls.last) SizedBox(height: 4.0)
+                if (control != controls.last || control.child != null) SizedBox(height: 4.0),
+                if (control.child != null)
+                  control.listenable == null
+                      ? control.child
+                      : ValueListenableBuilder(
+                          valueListenable: control.listenable,
+                          builder: (BuildContext context, MapControlState state, Widget child) {
+                            return state.isToggled ? control.child : Container();
+                          },
+                        )
               ])
           .toList(growable: false),
     );
@@ -92,6 +101,7 @@ class MapControl {
   final VoidCallback onPressed;
   final GestureLongPressCallback onLongPress;
   final ValueNotifier<MapControlState> listenable;
+  final MapControls child;
 
   MapControl({
     @required this.icon,
@@ -99,6 +109,7 @@ class MapControl {
     this.onPressed,
     this.onLongPress,
     this.state = const MapControlState(),
+    this.child,
   });
 }
 
