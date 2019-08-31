@@ -87,7 +87,7 @@ class MapSearchFieldState extends State<MapSearchField> {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintMaxLines: 1,
-                hintText: widget.hintText ?? "Posisjon, adresse, enhet",
+                hintText: widget.hintText ?? "Søk her",
                 contentPadding: EdgeInsets.only(top: 16.0, bottom: 16.0),
               ),
               controller: _controller,
