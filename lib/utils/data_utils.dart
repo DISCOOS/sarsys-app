@@ -35,7 +35,7 @@ String formatSince(DateTime timestamp) {
 
 String formatDistance(double distance) {
   if (distance == null) return "-";
-  return distance > 10000 ? "${(distance / 1000).toStringAsFixed(3)} km" : "${distance.round()} m";
+  return distance > 10000 ? "${(distance / 1000).toStringAsFixed(1)} km" : "${distance.round()} m";
 }
 
 LatLng toLatLng(Point point) {
