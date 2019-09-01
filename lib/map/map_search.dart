@@ -172,9 +172,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   }
 
   ListTile _buildListTile(BuildContext context, _SearchResult data) {
-    final backgroundColor = Theme
-        .of(context)
-        .canvasColor;
+    final backgroundColor = Theme.of(context).canvasColor;
     return ListTile(
       leading: CircleAvatar(
         child: Icon(data.icon, size: 36.0),
@@ -185,7 +183,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
           ? Text(data.position)
           : Text([data.address, data.position].where((test) => test != null).join("\n")),
       contentPadding:
-      data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+          data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
       onTap: () {
         _goto(data.latitude, data.longitude);
       },
@@ -269,8 +267,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
               .map((placemark) => _SearchResult(
                     icon: Icons.home,
                     title: placemark.name,
-            address: _AddressLookup.toAddress(placemark),
-            position: _AddressLookup.toPosition(placemark.position.latitude, placemark.position.longitude),
+                    address: _AddressLookup.toAddress(placemark),
+                    position: _AddressLookup.toPosition(placemark.position.latitude, placemark.position.longitude),
                     latitude: placemark.position.latitude,
                     longitude: placemark.position.longitude,
                   ))
@@ -341,17 +339,16 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     results.addAll(
       units.values
           .where((unit) =>
-      // Search in unit
-      _prepare(unit.searchable).contains(match) ||
-          // Search in devices tracked with this unit
-          tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-          .map((unit) =>
-          _AddressLookup(
-            context: context,
-            point: tracks[unit.tracking].location,
-            title: unit.name,
-            icon: Icons.group,
-          )),
+              // Search in unit
+              _prepare(unit.searchable).contains(match) ||
+              // Search in devices tracked with this unit
+              tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+          .map((unit) => _AddressLookup(
+                context: context,
+                point: tracks[unit.tracking].location,
+                title: unit.name,
+                icon: Icons.group,
+              )),
     );
 
     if (results.length > 0) {
@@ -410,12 +407,12 @@ class _AddressLookup extends _SearchResult {
     @required String title,
     @required IconData icon,
   }) : super(
-    title: title,
-    icon: icon,
-    position: toPosition(point.lat, point.lon),
-    latitude: point.lat,
-    longitude: point.lon,
-  );
+          title: title,
+          icon: icon,
+          position: toPosition(point.lat, point.lon),
+          latitude: point.lat,
+          longitude: point.lon,
+        );
 
   Future<_SearchResult> get search => _lookup(context, point, title: title, icon: icon);
 
@@ -451,16 +448,16 @@ class _AddressLookup extends _SearchResult {
     return closest == null
         ? _SearchResult(
             icon: icon,
-      title: title,
+            title: title,
             position: toUTM(point),
             latitude: point.lat,
             longitude: point.lon,
           )
         : _SearchResult(
             icon: icon,
-      title: "$title",
-      address: toAddress(closest),
-      position: toPosition(point.lat, point.lon, distance: last),
+            title: "$title",
+            address: toAddress(closest),
+            position: toPosition(point.lat, point.lon, distance: last),
             latitude: point.lat,
             longitude: point.lon,
           );

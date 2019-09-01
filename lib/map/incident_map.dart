@@ -162,8 +162,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         MeasureLayer(),
       ],
     );
-    _useLayers = Set.of(_withLayers())
-      ..remove(COORDS_LAYER);
+    _useLayers = Set.of(_withLayers())..remove(COORDS_LAYER);
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
 
