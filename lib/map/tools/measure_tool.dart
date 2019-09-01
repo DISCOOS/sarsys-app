@@ -8,13 +8,9 @@ class MeasureTool extends MapTool with MapEditable<Set<LatLng>> {
 
   MeasureTool() : super(false);
 
-  void init(LatLng point) => changed(() => target
-    ..clear()
-    ..add(point));
-
+  void init() => changed(() => target..clear());
   void add(LatLng point) => changed(() => target.add(point));
   void remove() => changed(() => target.remove(target.last));
-  void clear() => changed(() => target.clear());
 
   @override
   bool onTap(BuildContext context, LatLng point, double tolerance, onMatch) {

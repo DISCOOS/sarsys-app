@@ -310,20 +310,24 @@ class IncidentMapState extends State<IncidentMap> {
             listenable: _isMeasuring,
             children: [
               MapControl(
-                  icon: MdiIcons.mapMarkerPlus,
-                  state: MapControlState(),
-                  onPressed: () {
-                    final tool = _mapToolController.of<MeasureTool>();
-                    tool.add(_center);
-                  })
+                icon: MdiIcons.mapMarkerPlus,
+                state: MapControlState(),
+                onPressed: () {
+                  _mapToolController.of<MeasureTool>().add(_center);
+                },
+              ),
+              MapControl(
+                icon: MdiIcons.mapMarkerMinus,
+                state: MapControlState(),
+                onPressed: () {
+                  _mapToolController.of<MeasureTool>().remove();
+                },
+              )
             ],
             onPressed: () {
               final tool = _mapToolController.of<MeasureTool>();
               tool.active = !tool.active;
-              if (tool.active)
-                tool.init(_center);
-              else
-                tool.clear();
+              tool.init();
               _isMeasuring.value = MapControlState(toggled: tool.active);
               if (widget.onToolChange != null) widget.onToolChange(tool);
             },
