@@ -322,7 +322,11 @@ class MapSearchFieldState extends State<MapSearchField> {
                 _prepare(unit.searchable).contains(match) ||
                 // Search in devices tracked with this unit
                 tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-            .map((unit) async => await _toSearchResult(tracks[unit.tracking].location, name: unit.name)),
+            .map((unit) async => await _toSearchResult(
+                  tracks[unit.tracking].location,
+                  name: unit.name,
+                  icon: Icons.group,
+                )),
       ),
     );
 
