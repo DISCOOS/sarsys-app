@@ -157,6 +157,7 @@ class MeasureLayer extends MapPlugin {
       child: CustomPaint(
         painter: LabelPainter(
           "${formatDistance(distance)}",
+          top: options.size / 2 + 4,
         ),
       ),
     );
