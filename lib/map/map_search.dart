@@ -475,9 +475,8 @@ class _AddressLookup extends _SearchResult {
   }
 
   static String toPosition(double lat, double lon, {double distance}) {
-    return "${toUTM(Point.now(lat, lon))}${distance != null && distance != double.maxFinite && distance > 0
-        ? " (${distance.toStringAsFixed(0)} meter)"
-        : ""}";
+    final hasDistance = distance != null && distance != double.maxFinite && distance > 0;
+    return "${toUTM(Point.now(lat, lon))}${hasDistance ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
   }
 
   static String toAddress(Placemark placemark) {
