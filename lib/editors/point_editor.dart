@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
@@ -21,15 +22,15 @@ class PointEditor extends StatefulWidget {
   _PointEditorState createState() => _PointEditorState();
 }
 
-class _PointEditorState extends State<PointEditor> {
+class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   bool _init;
   Point _current;
   String _currentBaseMap;
-  MapController _mapController;
   MapSearchField _searchField;
+  IncidentMapController _mapController;
   LocationController _locationController;
 
   @override
@@ -37,21 +38,23 @@ class _PointEditorState extends State<PointEditor> {
     super.initState();
     // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
     _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
-    _mapController = MapController();
+    _mapController = IncidentMapController();
     // TODO: Use device location as default location
     _init = false;
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
-      controller: _mapController,
+      mapController: _mapController,
       onError: _onError,
     );
     _locationController = LocationController(
         appConfigBloc: BlocProvider.of<AppConfigBloc>(context),
         mapController: _mapController,
+        tickerProvider: this,
         onMessage: _showMessage,
         onPrompt: _prompt,
         onLocationChanged: (_) => setState(() {}));
+    _locationController.init();
   }
 
   @override
@@ -149,7 +152,7 @@ class _PointEditorState extends State<PointEditor> {
                 child: IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
-                    _mapController.move(_mapController.center, _mapController.zoom + 1);
+                    _mapController.animatedMove(_mapController.center, _mapController.zoom + 1, this);
                   },
                 ),
                 decoration: BoxDecoration(
@@ -169,7 +172,7 @@ class _PointEditorState extends State<PointEditor> {
                 child: IconButton(
                   icon: Icon(Icons.remove),
                   onPressed: () {
-                    _mapController.move(_mapController.center, _mapController.zoom - 1);
+                    _mapController.animatedMove(_mapController.center, _mapController.zoom - 1, this);
                   },
                 ),
                 decoration: BoxDecoration(

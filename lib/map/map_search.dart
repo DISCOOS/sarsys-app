@@ -3,13 +3,13 @@ import 'dart:collection';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
@@ -22,14 +22,14 @@ class MapSearchField extends StatefulWidget {
   final ErrorCallback onError;
   final MatchCallback onMatch;
   final VoidCallback onCleared;
-  final MapController controller;
+  final IncidentMapController mapController;
 
   final Widget prefixIcon;
 
   const MapSearchField({
     Key key,
     @required this.onError,
-    @required this.controller,
+    @required this.mapController,
     this.onMatch,
     this.onCleared,
     this.prefixIcon,
@@ -41,7 +41,7 @@ class MapSearchField extends StatefulWidget {
   MapSearchFieldState createState() => MapSearchFieldState();
 }
 
-class MapSearchFieldState extends State<MapSearchField> {
+class MapSearchFieldState extends State<MapSearchField> with TickerProviderStateMixin {
   final _searchKey = GlobalKey();
   final _focusNode = FocusNode();
   final _controller = TextEditingController();
@@ -417,7 +417,7 @@ class MapSearchFieldState extends State<MapSearchField> {
     setState(() {
       _match = LatLng(lat, lon);
       if (!kReleaseMode) print("Goto: $_match");
-      widget.controller.move(_match, widget.zoom ?? widget.controller.zoom);
+      widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
       widget?.onMatch(_match);
       _controller.clear();
       _focusNode?.unfocus();

@@ -53,7 +53,7 @@ class IncidentMap extends StatefulWidget {
   final PromptCallback onPrompt;
   final MessageCallback onMessage;
   final ToolCallback onToolChange;
-  final MapController mapController;
+  final IncidentMapController mapController;
 
   final GestureTapCallback onOpenDrawer;
 
@@ -75,14 +75,14 @@ class IncidentMap extends StatefulWidget {
     this.onToolChange,
     this.onOpenDrawer,
     MapController mapController,
-  })  : this.mapController = mapController ?? MapController(),
+  })  : this.mapController = mapController ?? IncidentMapController(),
         super(key: key);
 
   @override
   IncidentMapState createState() => IncidentMapState();
 }
 
-class IncidentMapState extends State<IncidentMap> {
+class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
   static const POI_LAYER = "Interessepunkt";
   static const UNITS_LAYER = "Enheter";
   static const TRACKING_LAYER = "Sporing";
@@ -124,6 +124,7 @@ class IncidentMapState extends State<IncidentMap> {
       _locationController = LocationController(
         appConfigBloc: _appConfigBloc,
         mapController: widget.mapController,
+        tickerProvider: this,
         onMessage: widget.onMessage,
         onPrompt: widget.onPrompt,
         onTrackingChanged: _onTrackingChanged,
@@ -140,6 +141,7 @@ class IncidentMapState extends State<IncidentMap> {
     }
     _center = widget.center ?? Defaults.origo;
     _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
+    widget.mapController.progress.addListener(_onMoveProgress);
     _init();
   }
 
@@ -149,10 +151,20 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   @override
+  void didUpdateWidget(IncidentMap old) {
+    super.didUpdateWidget(old);
+    if (old.mapController != widget.mapController) {
+      widget.mapController.progress.removeListener(_onMoveProgress);
+      widget.mapController.progress.addListener(_onMoveProgress);
+    }
+  }
+
+  @override
   void dispose() {
     super.dispose();
     _mapToolController?.dispose();
     _locationController?.dispose();
+    widget.mapController.progress.removeListener(_onMoveProgress);
   }
 
   @override
@@ -245,7 +257,7 @@ class IncidentMapState extends State<IncidentMap> {
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: MapSearchField(
             key: _searchFieldKey,
-            controller: widget.mapController,
+            mapController: widget.mapController,
             zoom: 18,
             onError: widget.onMessage,
             onMatch: _onSearchMatch,
@@ -522,4 +534,58 @@ class IncidentMapState extends State<IncidentMap> {
       }
     });
   }
+
+  void _onMoveProgress() {
+    _zoom = widget.mapController.progress.value.zoom;
+    _center = widget.mapController.progress.value.center;
+  }
+}
+
+/// Incident MapController that supports animated move operations
+class IncidentMapController extends MapControllerImpl {
+  ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
+
+  /// Move to given point and zoom
+  void animatedMove(LatLng point, double zoom, TickerProvider provider, {int milliSeconds: 500}) {
+    // Create some tweens. These serve to split up the transition from one location to another.
+    // In our case, we want to split the transition be<tween> our current map center and the destination.
+    final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+    final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
+    final _zoomTween = Tween<double>(begin: zoom, end: zoom);
+
+    // Create a animation controller that has a duration and a TickerProvider.
+    var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+
+    // The animation determines what path the animation will take. You can try different Curves values, although I found
+    // fastOutSlowIn to be my favorite.
+    Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
+
+    controller.addListener(() {
+      final state = MapMoveState(
+        LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
+        _zoomTween.evaluate(animation),
+      );
+      move(state.center, state.zoom);
+      progress.value = state;
+    });
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        controller.dispose();
+      } else if (status == AnimationStatus.dismissed) {
+        controller.dispose();
+      }
+    });
+
+    controller.forward();
+  }
+}
+
+class MapMoveState {
+  final LatLng center;
+  final double zoom;
+
+  MapMoveState(this.center, this.zoom);
+
+  static MapMoveState none() => MapMoveState(null, null);
 }

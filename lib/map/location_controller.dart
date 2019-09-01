@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -18,7 +18,8 @@ typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
   final AppConfigBloc appConfigBloc;
-  final MapController mapController;
+  final IncidentMapController mapController;
+  final TickerProvider tickerProvider;
   final PromptCallback onPrompt;
   final MessageCallback onMessage;
   final TrackingCallback onTrackingChanged;
@@ -41,6 +42,7 @@ class LocationController {
     @required this.mapController,
     @required this.onMessage,
     @required this.onPrompt,
+    this.tickerProvider,
     this.onTrackingChanged,
     this.onLocationChanged,
   })  : assert(mapController != null, "mapController must not be null"),
@@ -89,7 +91,10 @@ class LocationController {
       if (force || _tracking && _isMoved(center)) {
         _options?.point = center;
         if (onLocationChanged != null) onLocationChanged(center);
-        mapController.move(center, mapController.zoom ?? Defaults.zoom);
+        if (tickerProvider != null)
+          mapController.animatedMove(center, mapController.zoom ?? Defaults.zoom, tickerProvider);
+        else
+          mapController.move(center, mapController.zoom ?? Defaults.zoom);
       }
     }
   }
