@@ -459,11 +459,13 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _mapCards.add(
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
-          onTap: () {
-            _currentBaseMap = map.url;
-            _setLayerOptions();
-            Navigator.pop(context);
-          },
+          onTap: () => setState(
+            () {
+              _currentBaseMap = map.url;
+              _setLayerOptions();
+              Navigator.pop(context);
+            },
+          ),
         ),
       );
     }
