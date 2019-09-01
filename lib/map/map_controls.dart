@@ -71,9 +71,10 @@ class _MapControlsState extends State<MapControls> {
     final horizontal = _buildList(context, visible, count, true);
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
     final top = landscape ? 8.0 : 100.0;
+    final right = landscape ? 16.0 : 8.0;
     return Positioned(
       top: top,
-      right: 8.0,
+      right: right,
       child: SafeArea(
         child: SizedBox(
           height: height - (top + PADDING),
