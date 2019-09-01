@@ -35,15 +35,15 @@ String formatSince(DateTime timestamp) {
 
 String formatDistance(double distance) {
   if (distance == null) return "-";
-  return distance > 10000 ? "${(distance / 1000).toStringAsFixed(1)} km" : "${distance.round()} m";
+  return distance > 1000 ? "${(distance / 1000).toStringAsFixed(1)} km" : "${distance.round()} m";
 }
 
 LatLng toLatLng(Point point) {
-  return LatLng(point?.lat, point?.lon);
+  return LatLng(point?.lat ?? 0.0, point?.lon ?? 0.0);
 }
 
 Point toPoint(LatLng point) {
-  return Point.now(point?.latitude, point?.longitude);
+  return Point.now(point?.latitude ?? 0, point?.longitude ?? 0);
 }
 
 List<T> sortList<T>(List<T> data, [int compare(T a, T b)]) {

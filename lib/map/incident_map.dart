@@ -336,7 +336,7 @@ class IncidentMapState extends State<IncidentMap> {
   IconLayerOptions _buildPoiOptions(List<Point> points) {
     final bloc = BlocProvider.of<IncidentBloc>(context);
     return IconLayerOptions(
-      points.map((point) => toLatLng(point)).toList(),
+      points.where((point) => point != null).map((point) => toLatLng(point)).toList(),
       labels: ["IPP", "Oppmøte"],
       align: AnchorAlign.top,
       icon: Icon(
