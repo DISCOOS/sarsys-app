@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
@@ -209,18 +209,7 @@ class _PointEditorState extends State<PointEditor> {
   Align _buildCoordsPanel() {
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: EdgeInsets.all(8.0),
-        padding: EdgeInsets.all(16.0),
-        height: 72.0,
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(8.0)),
-        child: Column(
-          children: <Widget>[
-            if (_current != null) Text(toDD(_current)),
-            if (_current != null) Text(toUTM(_current)),
-          ],
-        ),
-      ),
+      child: CoordinatePanel(point: _current),
     );
   }
 

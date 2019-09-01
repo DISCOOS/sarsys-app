@@ -1,3 +1,4 @@
+import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -39,22 +40,7 @@ class CoordinateLayer extends MapPlugin {
                   )),
               Align(
                 alignment: params.align,
-                child: Container(
-                  margin: EdgeInsets.all(8.0),
-                  padding: EdgeInsets.all(16.0),
-                  height: 80.0,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      if (center != null) Text(toUTM(center), textAlign: TextAlign.start),
-                      if (center != null) Text(toDD(center), textAlign: TextAlign.start),
-                    ],
-                  ),
-                ),
+                child: CoordinatePanel(point: center),
               ),
             ],
           );
