@@ -134,11 +134,9 @@ class UnitLayer extends MapPlugin {
 
     return Positioned(
       left: pos.x,
-      top: pos.y,
+      top: pos.y + options.size,
       child: CustomPaint(
-        painter: LabelPainter(
-          unit.name,
-        ),
+        painter: LabelPainter(unit.name),
       ),
     );
   }

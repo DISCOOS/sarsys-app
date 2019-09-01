@@ -25,6 +25,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/map/layers/icon_layer.dart';
@@ -309,18 +310,17 @@ class IncidentMapState extends State<IncidentMap> {
             children: [
               MapControl(
                   icon: MdiIcons.mapMarkerPlus,
-                  state: MapControlState(toggled: true),
-                  listenable: _isMeasuring,
+                  state: MapControlState(),
                   onPressed: () {
                     final tool = _mapToolController.of<MeasureTool>();
-                    tool.onAdd(_center);
+                    tool.add(_center);
                   })
             ],
             onPressed: () {
               final tool = _mapToolController.of<MeasureTool>();
               tool.active = !tool.active;
               if (tool.active)
-                tool.onInit(_center);
+                tool.init(_center);
               else
                 tool.clear();
               _isMeasuring.value = MapControlState(toggled: tool.active);
@@ -338,6 +338,7 @@ class IncidentMapState extends State<IncidentMap> {
     return IconLayerOptions(
       points.map((point) => toLatLng(point)).toList(),
       labels: ["IPP", "Oppmøte"],
+      align: AnchorAlign.top,
       icon: Icon(
         Icons.location_on,
         size: 30,

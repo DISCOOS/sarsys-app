@@ -39,31 +39,41 @@ class PointPainter extends CustomPainter {
 
 class LabelPainter extends CustomPainter {
   final String label;
+  final double top;
+  final double width;
+  final double padding;
+  final double fontSize;
 
-  const LabelPainter(this.label);
+  const LabelPainter(
+    this.label, {
+    this.top = 0,
+    this.width = 200,
+    this.padding = 4,
+    this.fontSize = 12.0,
+  });
 
   @override
   void paint(Canvas canvas, _) {
     final paint = Paint()..color = Colors.white;
 
-    var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 12.0, textAlign: TextAlign.left))
-      ..pushStyle(ui.TextStyle(color: Colors.black))
+    var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: fontSize, textAlign: TextAlign.left))
+      ..pushStyle(ui.TextStyle(color: Colors.black, height: 1.0))
       ..addText(label);
-    var p = builder.build()..layout(ui.ParagraphConstraints(width: 120));
+    var p = builder.build()..layout(ui.ParagraphConstraints(width: this.width));
     var height = p.height;
     var width = p.maxIntrinsicWidth;
     var rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
-        center: Offset(0, 22),
-        width: width + 4,
-        height: height + 4,
+        center: Offset(0, top),
+        width: width + padding,
+        height: height + padding,
       ),
       Radius.circular(4),
     );
     var path = Path()..addRRect(rect);
     canvas.drawShadow(path, Colors.black45, 2, true);
     canvas.drawRRect(rect, paint);
-    canvas.drawParagraph(p, Offset(-width / 2, height + 1));
+    canvas.drawParagraph(p, Offset(-width / 2, (top - height / 2)));
   }
 
   @override

@@ -88,8 +88,6 @@ class IconLayer implements MapPlugin {
     var pixelPosY = (pos.y - (size - anchor.top)).toDouble();
 
     return Positioned(
-      width: size,
-      height: size,
       left: pixelPosX,
       top: pixelPosY,
       child: Stack(
@@ -113,11 +111,9 @@ class IconLayer implements MapPlugin {
           if (params.showLabels && labels.length > index)
             Positioned(
               left: size / 2,
-              top: size / 2 + 4,
+              top: size,
               child: CustomPaint(
-                painter: LabelPainter(
-                  labels[index],
-                ),
+                painter: LabelPainter(labels[index], top: size / 2),
               ),
             ),
           if (params.bearing != null)
