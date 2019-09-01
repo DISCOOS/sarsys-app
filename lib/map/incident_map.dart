@@ -104,6 +104,7 @@ class IncidentMapState extends State<IncidentMap> {
   LatLng _searchMatch;
   double _zoom = Defaults.zoom;
 
+  MapControls _mapControls;
   MapToolController _mapToolController;
   LocationController _locationController;
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
@@ -263,78 +264,73 @@ class IncidentMapState extends State<IncidentMap> {
   }
 
   Widget _buildControls() {
-    final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
-    return Positioned(
-      top: landscape ? 8.0 : 100.0,
-      right: 8.0,
-      child: SafeArea(
-        child: MapControls(
-          controls: [
-            MapControl(
-              icon: Icons.filter_list,
-              onPressed: () => _showLayerSheet(context),
-            ),
-            MapControl(
-              icon: Icons.map,
-              onPressed: () {
-                _showBaseMapBottomSheet(context);
-              },
-            ),
-            MapControl(
-              icon: Icons.add,
-              onPressed: () {
-                _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-                widget.mapController.move(_center, _zoom);
-              },
-            ),
-            MapControl(
-              icon: Icons.remove,
-              onPressed: () {
-                _zoom = math.max(_zoom - 1, Defaults.minZoom);
-                widget.mapController.move(_center, _zoom);
-              },
-            ),
-            MapControl(
-              icon: Icons.gps_fixed,
-              listenable: _isLocating,
-              onPressed: () {
-                _locationController.toggle();
-              },
-              onLongPress: () {
-                _locationController.toggle(locked: true);
-              },
-            ),
-            MapControl(
-              icon: MdiIcons.mathCompass,
-              listenable: _isMeasuring,
-//              icon: MdiIcons.tapeMeasure,
-              child: MapControls(controls: [
-                MapControl(
-                    icon: MdiIcons.mapMarkerPlus,
-                    state: MapControlState(isToggled: true),
-                    listenable: _isMeasuring,
-                    onPressed: () {
-                      final tool = _mapToolController.of<MeasureTool>();
-                      tool.onAdd(_center);
-                    })
-              ]),
-              onPressed: () {
-                final tool = _mapToolController.of<MeasureTool>();
-                setState(() {
-                  tool.active = !tool.active;
-                  if (tool.active)
-                    tool.onInit(_center);
-                  else
-                    tool.clear();
-                  _isMeasuring.value = MapControlState(isToggled: tool.active);
-                });
-                if (widget.onToolChange != null) widget.onToolChange(tool);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    if (_mapControls == null) {
+      _mapControls = MapControls(
+        controller: _mapToolController,
+        controls: [
+          MapControl(
+            icon: Icons.filter_list,
+            onPressed: () => _showLayerSheet(context),
+          ),
+          MapControl(
+            icon: Icons.map,
+            onPressed: () {
+              _showBaseMapBottomSheet(context);
+            },
+          ),
+          MapControl(
+            icon: Icons.add,
+            onPressed: () {
+              _zoom = math.min(_zoom + 1, Defaults.maxZoom);
+              widget.mapController.move(_center, _zoom);
+            },
+          ),
+          MapControl(
+            icon: Icons.remove,
+            onPressed: () {
+              _zoom = math.max(_zoom - 1, Defaults.minZoom);
+              widget.mapController.move(_center, _zoom);
+            },
+          ),
+          MapControl(
+            icon: Icons.gps_fixed,
+            listenable: _isLocating,
+            onPressed: () {
+              _locationController.toggle();
+            },
+            onLongPress: () {
+              _locationController.toggle(locked: true);
+            },
+          ),
+          MapControl(
+            icon: MdiIcons.tapeMeasure,
+//          icon: MdiIcons.mathCompass,
+            listenable: _isMeasuring,
+            children: [
+              MapControl(
+                  icon: MdiIcons.mapMarkerPlus,
+                  state: MapControlState(toggled: true),
+                  listenable: _isMeasuring,
+                  onPressed: () {
+                    final tool = _mapToolController.of<MeasureTool>();
+                    tool.onAdd(_center);
+                  })
+            ],
+            onPressed: () {
+              final tool = _mapToolController.of<MeasureTool>();
+              tool.active = !tool.active;
+              if (tool.active)
+                tool.onInit(_center);
+              else
+                tool.clear();
+              _isMeasuring.value = MapControlState(toggled: tool.active);
+              if (widget.onToolChange != null) widget.onToolChange(tool);
+            },
+          ),
+        ],
+      );
+    }
+    return _mapControls;
   }
 
   IconLayerOptions _buildPoiOptions(List<Point> points) {
@@ -449,8 +445,8 @@ class IncidentMapState extends State<IncidentMap> {
 
   void _onTrackingChanged(bool isTracking, bool isLocked) {
     _isLocating.value = MapControlState(
-      isToggled: isTracking,
-      isLocked: isLocked,
+      toggled: isTracking,
+      locked: isLocked,
     );
   }
 
