@@ -429,6 +429,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _onSearchMatch(LatLng point) {
     _searchMatch = point;
     _setLayerOptions();
+    _locationController?.stop();
     _mapController.animatedMove(point, _zoom, this);
   }
 

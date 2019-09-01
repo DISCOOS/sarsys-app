@@ -60,6 +60,19 @@ class LocationController {
     mapController.progress.removeListener(_onMapMoved);
   }
 
+  bool stop() {
+    var wasLocked = _locked;
+    var wasTracking = _tracking;
+    if (_tracking) {
+      _locked = false;
+      _tracking = false;
+    }
+    if (wasTracking != _tracking || wasLocked != _locked) {
+      if (onTrackingChanged != null) onTrackingChanged(_tracking, _locked);
+    }
+    return wasTracking;
+  }
+
   bool toggle({locked: false}) {
     var wasLocked = _locked;
     var wasTracking = _tracking;
