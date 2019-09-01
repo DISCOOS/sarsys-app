@@ -439,13 +439,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _showBaseMapBottomSheet(context) {
+    final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
     showModalBottomSheet(
         context: context,
         builder: (BuildContext bc) {
           return Container(
             padding: EdgeInsets.all(24.0),
             child: GridView.count(
-              crossAxisCount: 2,
+              crossAxisCount: landscape ? 4 : 2,
               children: _mapBottomSheetCards(),
             ),
           );
