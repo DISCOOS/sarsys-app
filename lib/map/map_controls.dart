@@ -137,10 +137,6 @@ class _MapControlsState extends State<MapControls> {
                 right: 0,
                 child: Container(
                   padding: EdgeInsets.all(0),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
                   constraints: BoxConstraints(
                     minWidth: 12,
                     minHeight: 12,
