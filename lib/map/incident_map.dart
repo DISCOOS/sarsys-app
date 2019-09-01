@@ -296,14 +296,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             icon: Icons.add,
             onPressed: () {
               _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-              widget.mapController.move(_center, _zoom);
+              widget.mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
             icon: Icons.remove,
             onPressed: () {
               _zoom = math.max(_zoom - 1, Defaults.minZoom);
-              widget.mapController.move(_center, _zoom);
+              widget.mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
@@ -551,7 +551,7 @@ class IncidentMapController extends MapControllerImpl {
     // In our case, we want to split the transition be<tween> our current map center and the destination.
     final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
     final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
-    final _zoomTween = Tween<double>(begin: zoom, end: zoom);
+    final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
     // Create a animation controller that has a duration and a TickerProvider.
     var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
