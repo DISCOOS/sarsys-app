@@ -121,10 +121,13 @@ class _IncidentPageState extends State<IncidentPage> {
       child: Material(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(IncidentPage.CORNER),
-          child: IncidentMap(
-            center: point,
-            incident: incident,
-            onTap: (_) => Navigator.pushReplacementNamed(context, 'map', arguments: point),
+          child: GestureDetector(
+            child: IncidentMap(
+              center: point,
+              incident: incident,
+              interactive: false,
+            ),
+            onTap: () => point == null ? null : Navigator.pushReplacementNamed(context, 'map', arguments: point),
           ),
         ),
         elevation: IncidentPage.ELEVATION,

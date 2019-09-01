@@ -213,6 +213,7 @@ class IncidentMapState extends State<IncidentMap> {
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
     if (_mapToolController != null) _mapToolController.onTap(context, point, _zoom, ScalebarOption.SCALES);
+    if (widget.onTap != null) widget.onTap(point);
   }
 
   void _onLongPress(LatLng point) {
