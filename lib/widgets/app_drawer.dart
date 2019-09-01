@@ -2,6 +2,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -56,7 +57,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             enabled: !isUnset,
-            leading: const Icon(Icons.device_unknown),
+            leading: const Icon(MdiIcons.cellphoneBasic),
             title: Text('Terminaler', style: TextStyle(fontSize: 14)),
             onTap: () {
               Navigator.pushReplacementNamed(context, 'terminals');
