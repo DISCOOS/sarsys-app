@@ -50,12 +50,14 @@ class LocationController {
         assert(onPrompt != null, "onPrompt must not be null");
 
   void init() async {
+    mapController.progress.addListener(_onMapMoved);
     _handleGeolocationStatusChange(await _service.init());
   }
 
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
+    mapController.progress.removeListener(_onMapMoved);
   }
 
   bool toggle({locked: false}) {
@@ -196,4 +198,6 @@ class LocationController {
       _handleGeolocationStatusChange(await _service.init());
     });
   }
+
+  void _onMapMoved() {}
 }

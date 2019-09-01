@@ -97,21 +97,23 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   ];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
+  MapOptions _options;
   String _currentBaseMap;
   List<BaseMap> _baseMaps;
   MaptileService _maptileService = MaptileService();
 
-  LatLng _center;
   LatLng _searchMatch;
   double _zoom = Defaults.zoom;
 
   MapControls _mapControls;
+  IncidentMapController _mapController;
   MapToolController _mapToolController;
   LocationController _locationController;
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
 
-  Set<String> _layers;
+  Set<String> _useLayers;
+  List<LayerOptions> _layerOptions = [];
 
   AppConfigBloc _appConfigBloc;
 
@@ -120,6 +122,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     super.initState();
     _currentBaseMap = widget.url;
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
+    // Configure location controller
     if (widget.withLocation) {
       _locationController = LocationController(
         appConfigBloc: _appConfigBloc,
@@ -131,6 +134,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         onLocationChanged: _onLocationChanged,
       );
     }
+    // Configure map tool controller
     if (widget.withControls) {
       _mapToolController = MapToolController(
         tools: [
@@ -139,10 +143,36 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
-    _center = widget.center ?? Defaults.origo;
-    _layers = Set.of(_withLayers())..remove(COORDS_LAYER);
-    widget.mapController.progress.addListener(_onMoveProgress);
+    // Initialize map options
+    _options = MapOptions(
+      zoom: _zoom,
+      center: _ensureCenter(),
+      maxZoom: Defaults.maxZoom,
+      minZoom: Defaults.minZoom,
+      interactive: widget.interactive,
+      onTap: (point) => _onTap(point),
+      onLongPress: (point) => _onLongPress(point),
+      onPositionChanged: _onPositionChanged,
+      plugins: [
+        MyLocation(),
+        IconLayer(),
+        UnitLayer(),
+        CoordinateLayer(),
+        ScaleBar(),
+        MeasureLayer(),
+      ],
+    );
+    _useLayers = Set.of(_withLayers())
+      ..remove(COORDS_LAYER);
+    _mapController = widget.mapController;
+    _mapController.progress.addListener(_onMoveProgress);
+
     _init();
+  }
+
+  LatLng _ensureCenter() {
+    final bloc = BlocProvider.of<IncidentBloc>(context);
+    return widget.center ?? (bloc.current?.meetup != null ? toLatLng(bloc.current?.meetup) : null) ?? Defaults.origo;
   }
 
   void _init() async {
@@ -151,20 +181,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   @override
-  void didUpdateWidget(IncidentMap old) {
-    super.didUpdateWidget(old);
-    if (old.mapController != widget.mapController) {
-      widget.mapController.progress.removeListener(_onMoveProgress);
-      widget.mapController.progress.addListener(_onMoveProgress);
-    }
-  }
-
-  @override
   void dispose() {
     super.dispose();
     _mapToolController?.dispose();
     _locationController?.dispose();
-    widget.mapController.progress.removeListener(_onMoveProgress);
+    _mapController.progress.removeListener(_onMoveProgress);
   }
 
   @override
@@ -179,47 +200,37 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   Widget _buildMap() {
-    final tool = _mapToolController?.of<MeasureTool>();
-    final bloc = BlocProvider.of<IncidentBloc>(context);
     return FlutterMap(
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
-      mapController: widget.mapController,
-      options: MapOptions(
-        center: _center,
-        zoom: _zoom,
-        maxZoom: Defaults.maxZoom,
-        minZoom: Defaults.minZoom,
-        interactive: widget.interactive,
-        onTap: (point) => _onTap(point),
-        onLongPress: (point) => _onLongPress(point),
-        onPositionChanged: _onPositionChanged,
-        plugins: [
-          MyLocation(),
-          IconLayer(),
-          UnitLayer(),
-          CoordinateLayer(),
-          ScaleBar(),
-          MeasureLayer(),
-        ],
-      ),
-      layers: [
+      mapController: _mapController,
+      options: _options,
+      layers: _setLayerOptions(),
+    );
+  }
+
+  List<LayerOptions> _setLayerOptions() {
+    final tool = _mapToolController?.of<MeasureTool>();
+    final bloc = BlocProvider.of<IncidentBloc>(context);
+    _layerOptions
+      ..clear()
+      ..addAll([
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
           tileProvider: ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config)),
         ),
-        if (_layers.contains(UNITS_LAYER)) _buildUnitOptions(),
-        if (_layers.contains(POI_LAYER))
+        if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
+        if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions([
             widget?.incident?.ipp ?? bloc?.current?.ipp,
             widget?.incident?.meetup ?? bloc?.current?.meetup,
           ]),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
-        if (widget.withCoordsPanel && _layers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
-        if (widget.withScaleBar && _layers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
+        if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
+        if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
         if (tool != null && tool.active) MeasureLayerOptions(tool),
-      ],
-    );
+      ]);
+    return _layerOptions;
   }
 
   void _onTap(LatLng point) {
@@ -257,7 +268,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: MapSearchField(
             key: _searchFieldKey,
-            mapController: widget.mapController,
+            mapController: _mapController,
             zoom: 18,
             onError: widget.onMessage,
             onMatch: _onSearchMatch,
@@ -296,14 +307,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             icon: Icons.add,
             onPressed: () {
               _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-              widget.mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
+              _mapController.animatedMove(_options.center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
             icon: Icons.remove,
             onPressed: () {
               _zoom = math.max(_zoom - 1, Defaults.minZoom);
-              widget.mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
+              _mapController.animatedMove(_options.center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
@@ -325,7 +336,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                 icon: MdiIcons.mapMarkerPlus,
                 state: MapControlState(),
                 onPressed: () {
-                  _mapToolController.of<MeasureTool>().add(_center);
+                  _mapToolController.of<MeasureTool>().add(_options.center);
                 },
               ),
               MapControl(
@@ -370,7 +381,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return UnitLayerOptions(
       bloc: bloc,
       onMessage: widget.onMessage,
-      showTail: _layers.contains(TRACKING_LAYER),
+      showTail: _useLayers.contains(TRACKING_LAYER),
     );
   }
 
@@ -397,18 +408,18 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
     var center = position.center;
-    if (hasGesture && widget.mapController.ready) {
-      _zoom = widget.mapController.zoom;
+    if ((hasGesture) && _mapController.ready) {
+      _zoom = _mapController.zoom;
       if (widget.withLocation && _locationController.isTracking) {
         if (_locationController.isLocked) {
-          center = _center;
-          widget.mapController.move(_center, _zoom);
+          center = _options.center;
+          _mapController.move(_options.center, _zoom);
         } else {
           _locationController.toggle();
         }
       }
     }
-    _center = center;
+    _options.center = center;
   }
 
   void _clearSearchField() {
@@ -416,10 +427,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _onSearchMatch(LatLng point) {
-    setState(() {
-      _center = point;
-      _searchMatch = point;
-    });
+    _searchMatch = point;
+    _setLayerOptions();
+    _mapController.animatedMove(point, _zoom, this);
   }
 
   void _onSearchCleared() {
@@ -450,9 +460,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
           onTap: () {
-            setState(() {
-              _currentBaseMap = map.url;
-            });
+            _currentBaseMap = map.url;
+            _setLayerOptions();
             Navigator.pop(context);
           },
         ),
@@ -466,12 +475,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       toggled: isTracking,
       locked: isLocked,
     );
+    _setLayerOptions();
   }
 
   void _onLocationChanged(LatLng point) {
-    setState(() {
-      _center = point;
-    });
+    _mapController.animatedMove(point, _zoom, this);
+    _setLayerOptions();
   }
 
   void _showLayerSheet(context) {
@@ -492,12 +501,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                       contentPadding: EdgeInsets.only(left: 16.0, right: 0),
                       title: Text("Vis", style: style),
                       trailing: FlatButton(
-                        child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
-                        onPressed: () => setState(
-                          () {
-                            Navigator.pop(context);
-                          },
-                        ),
+                        child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     Divider(),
@@ -506,7 +511,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                             dense: true,
                             title: Text(layer, style: style),
                             trailing: Switch(
-                              value: _layers.contains(layer),
+                              value: _useLayers.contains(layer),
                               onChanged: (value) => _onFilterChanged(layer, value, state),
                             )))
                         .toList(),
@@ -528,16 +533,17 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _onFilterChanged(String layer, bool value, StateSetter update) {
     update(() {
       if (value) {
-        _layers.add(layer);
+        _useLayers.add(layer);
       } else {
-        _layers.remove(layer);
+        _useLayers.remove(layer);
       }
+      setState(() {});
     });
   }
 
   void _onMoveProgress() {
-    _zoom = widget.mapController.progress.value.zoom;
-    _center = widget.mapController.progress.value.center;
+    _zoom = _mapController.progress.value.zoom;
+    _options.center = _mapController.progress.value.center;
   }
 }
 
@@ -547,37 +553,50 @@ class IncidentMapController extends MapControllerImpl {
 
   /// Move to given point and zoom
   void animatedMove(LatLng point, double zoom, TickerProvider provider, {int milliSeconds: 500}) {
-    // Create some tweens. These serve to split up the transition from one location to another.
-    // In our case, we want to split the transition be<tween> our current map center and the destination.
-    final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
-    final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
-    final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
+    if (!ready) {
+      move(point, zoom);
+      progress.value = MapMoveState(point, zoom);
+    } else {
+      // Create some tweens. These serve to split up the transition from one location to another.
+      // In our case, we want to split the transition be<tween> our current map center and the destination.
+      final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+      final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
+      final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
-    // Create a animation controller that has a duration and a TickerProvider.
-    var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+      // Create a animation controller that has a duration and a TickerProvider.
+      var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
-    // The animation determines what path the animation will take. You can try different Curves values, although I found
-    // fastOutSlowIn to be my favorite.
-    Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
+      // The animation determines what path the animation will take. You can try different Curves values, although I found
+      // fastOutSlowIn to be my favorite.
+      Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
 
-    controller.addListener(() {
-      final state = MapMoveState(
-        LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
-        _zoomTween.evaluate(animation),
-      );
-      move(state.center, state.zoom);
-      progress.value = state;
-    });
+      controller.addListener(() {
+        final state = MapMoveState(
+          LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
+          _zoomTween.evaluate(animation),
+        );
 
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        controller.dispose();
-      } else if (status == AnimationStatus.dismissed) {
-        controller.dispose();
-      }
-    });
+        if (state.center == null) {
+          print("oups: $state");
+        }
+        if (state.zoom == null) {
+          print("oups: $state");
+        }
 
-    controller.forward();
+        move(state.center, state.zoom);
+        progress.value = state;
+      });
+
+      animation.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          controller.dispose();
+        } else if (status == AnimationStatus.dismissed) {
+          controller.dispose();
+        }
+      });
+
+      controller.forward();
+    }
   }
 }
 

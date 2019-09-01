@@ -9,6 +9,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong/latlong.dart';
 
 class IncidentPage extends StatefulWidget {
   static const HEIGHT = 82.0;
@@ -114,8 +115,7 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Widget _buildMapTile(BuildContext context, Incident incident) {
-    final point =
-        incident == null || incident.ipp == null || incident.ipp.isEmpty ? Defaults.origo : toLatLng(incident.ipp);
+    final point = _toMapCenter(incident);
     return Container(
       height: 240.0,
       child: Material(
@@ -134,6 +134,12 @@ class _IncidentPageState extends State<IncidentPage> {
         borderRadius: BorderRadius.circular(IncidentPage.CORNER),
       ),
     );
+  }
+
+  LatLng _toMapCenter(Incident incident) {
+    bool isIppEmpty = incident.ipp == null || incident.ipp.isEmpty;
+    bool isMeetupEmpty = incident.meetup == null || incident.meetup.isEmpty;
+    return isMeetupEmpty ? (isIppEmpty ? Defaults.origo : toLatLng(incident.ipp)) : toLatLng(incident.meetup);
   }
 
   Row _buildReference(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {

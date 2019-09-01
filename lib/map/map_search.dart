@@ -132,24 +132,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _hideResults();
     _focusNode.requestFocus();
 
-    final backgroundColor = Theme.of(context).canvasColor;
-
-    final choices = results
-        .map(
-          (result) => ListTile(
-            leading: CircleAvatar(
-              child: Icon(result.icon, size: 42.0),
-              backgroundColor: backgroundColor,
-            ),
-            title: Text(result.title ?? ''),
-            subtitle: Text([result.address, result.position].where((test) => test != null).join("\n")),
-            contentPadding: EdgeInsets.all(16.0),
-            onTap: () {
-              _goto(result.latitude, result.longitude);
-            },
-          ),
-        )
-        .toList();
+    final choices = results.map((result) => _buildListTileFromLookup(result)).toList();
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -178,8 +161,39 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     Overlay.of(context).insert(this._overlayEntry);
   }
 
-  void _search(BuildContext context, String value) async {
-    if (!await _searchBlocs(context, value)) {
+  Widget _buildListTileFromLookup(_AddressLookup lookup) {
+    return FutureBuilder<_SearchResult>(
+      initialData: lookup,
+      future: lookup.search,
+      builder: (BuildContext context, AsyncSnapshot<_SearchResult> snapshot) {
+        return _buildListTile(context, snapshot.hasData ? snapshot.data : lookup);
+      },
+    );
+  }
+
+  ListTile _buildListTile(BuildContext context, _SearchResult data) {
+    final backgroundColor = Theme
+        .of(context)
+        .canvasColor;
+    return ListTile(
+      leading: CircleAvatar(
+        child: Icon(data.icon, size: 36.0),
+        backgroundColor: backgroundColor,
+      ),
+      title: Text(data.title ?? ''),
+      subtitle: data.address == null
+          ? Text(data.position)
+          : Text([data.address, data.position].where((test) => test != null).join("\n")),
+      contentPadding:
+      data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+      onTap: () {
+        _goto(data.latitude, data.longitude);
+      },
+    );
+  }
+
+  void _search(BuildContext context, String value) {
+    if (!_searchBlocs(context, value)) {
       _searchForLocation(value, context);
     }
   }
@@ -255,8 +269,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
               .map((placemark) => _SearchResult(
                     icon: Icons.home,
                     title: placemark.name,
-                    address: _toAddress(placemark),
-                    position: _toPosition(placemark.position.latitude, placemark.position.longitude),
+            address: _AddressLookup.toAddress(placemark),
+            position: _AddressLookup.toPosition(placemark.position.latitude, placemark.position.longitude),
                     latitude: placemark.position.latitude,
                     longitude: placemark.position.longitude,
                   ))
@@ -290,9 +304,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     }
   }
 
-  Future<bool> _searchBlocs(BuildContext context, String value) async {
+  bool _searchBlocs(BuildContext context, String value) {
     var found = true;
-    final results = <_SearchResult>[];
+    final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
     final units = BlocProvider.of<TrackingBloc>(context).units;
     final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
@@ -302,8 +316,18 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     // Search for matches in incident
     if (_prepare(incident.searchable).contains(match)) {
       var matches = [
-        await _toSearchResult(incident.ipp, name: "${incident.name} > IPP", icon: Icons.location_on),
-        await _toSearchResult(incident.meetup, name: "${incident.name} > Oppmøte", icon: Icons.location_on),
+        _AddressLookup(
+          context: context,
+          point: incident.ipp,
+          title: "${incident.name} > IPP",
+          icon: Icons.location_on,
+        ),
+        _AddressLookup(
+          context: context,
+          point: incident.meetup,
+          title: "${incident.name} > Oppmøte",
+          icon: Icons.location_on,
+        ),
       ];
       var positions = matches.where((test) => _prepare(test).contains(match));
       if ((positions).isNotEmpty) {
@@ -315,19 +339,19 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
     // Search for matches in units
     results.addAll(
-      await Future.wait(
-        units.values
-            .where((unit) =>
-                // Search in unit
-                _prepare(unit.searchable).contains(match) ||
-                // Search in devices tracked with this unit
-                tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-            .map((unit) async => await _toSearchResult(
-                  tracks[unit.tracking].location,
-                  name: unit.name,
-                  icon: Icons.group,
-                )),
-      ),
+      units.values
+          .where((unit) =>
+      // Search in unit
+      _prepare(unit.searchable).contains(match) ||
+          // Search in devices tracked with this unit
+          tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+          .map((unit) =>
+          _AddressLookup(
+            context: context,
+            point: tracks[unit.tracking].location,
+            title: unit.name,
+            icon: Icons.group,
+          )),
     );
 
     if (results.length > 0) {
@@ -340,12 +364,67 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
   String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 
-  Future<_SearchResult> _toSearchResult(Point point, {String name, IconData icon}) async {
+  void _goto(lat, lon) {
+    _match = LatLng(lat, lon);
+    if (!kReleaseMode) print("Goto: $_match");
+    widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
+    widget?.onMatch(_match);
+    _controller.clear();
+    _focusNode?.unfocus();
+    _hideResults();
+  }
+}
+
+class _SearchResult {
+  final String title;
+  final IconData icon;
+  final String address;
+  final String position;
+  final double longitude;
+  final double latitude;
+
+  _SearchResult({
+    this.title,
+    this.icon,
+    this.address,
+    this.position,
+    this.longitude,
+    this.latitude,
+  });
+
+  @override
+  String toString() {
+    return '_SearchResult{title: $title, address: $address, position: $position, '
+        'longitude: $longitude, latitude: $latitude}';
+  }
+}
+
+class _AddressLookup extends _SearchResult {
+  final locator = Geolocator();
+  final BuildContext context;
+  final Point point;
+
+  _AddressLookup({
+    @required this.context,
+    @required this.point,
+    @required String title,
+    @required IconData icon,
+  }) : super(
+    title: title,
+    icon: icon,
+    position: toPosition(point.lat, point.lon),
+    latitude: point.lat,
+    longitude: point.lon,
+  );
+
+  Future<_SearchResult> get search => _lookup(context, point, title: title, icon: icon);
+
+  Future<_SearchResult> _lookup(BuildContext context, Point point, {String title, IconData icon}) async {
     Placemark closest;
     var last = double.maxFinite;
+    final Locale locale = Localizations.localeOf(context);
 
-    final locator = Geolocator();
-    final matches = await _fromCoordinates(point);
+    final matches = await _fromCoordinates(context, locale, point);
     for (var placemark in matches) {
       if (closest == null) {
         closest = placemark;
@@ -372,37 +451,36 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     return closest == null
         ? _SearchResult(
             icon: icon,
-            title: name,
+      title: title,
             position: toUTM(point),
             latitude: point.lat,
             longitude: point.lon,
           )
         : _SearchResult(
             icon: icon,
-            title: "$name",
-            address: _toAddress(closest),
-            position: _toPosition(point.lat, point.lon, distance: last),
+      title: "$title",
+      address: toAddress(closest),
+      position: toPosition(point.lat, point.lon, distance: last),
             latitude: point.lat,
             longitude: point.lon,
           );
   }
 
-  Future<List<Placemark>> _fromCoordinates(Point point) async {
+  Future<List<Placemark>> _fromCoordinates(BuildContext context, Locale locale, Point point) async {
     try {
-      final Locale locale = Localizations.localeOf(context);
-      return await Geolocator().placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
+      return await locator.placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
     } on Exception {
       return [];
     }
   }
 
-  String _toPosition(double lat, double lon, {double distance}) {
-    return "${toUTM(
-      Point.now(lat, lon),
-    )}${distance != null && distance != double.maxFinite && distance > 0 ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
+  static String toPosition(double lat, double lon, {double distance}) {
+    return "${toUTM(Point.now(lat, lon))}${distance != null && distance != double.maxFinite && distance > 0
+        ? " (${distance.toStringAsFixed(0)} meter)"
+        : ""}";
   }
 
-  String _toAddress(Placemark placemark) {
+  static String toAddress(Placemark placemark) {
     return [
       [
         placemark.postalCode,
@@ -411,41 +489,5 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       placemark.administrativeArea,
       placemark.country,
     ].where((test) => test != null && test.isNotEmpty).join(", ").trim();
-  }
-
-  void _goto(lat, lon) {
-    setState(() {
-      _match = LatLng(lat, lon);
-      if (!kReleaseMode) print("Goto: $_match");
-      widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
-      widget?.onMatch(_match);
-      _controller.clear();
-      _focusNode?.unfocus();
-      _hideResults();
-    });
-  }
-}
-
-class _SearchResult {
-  final String title;
-  final IconData icon;
-  final String address;
-  final String position;
-  final double longitude;
-  final double latitude;
-
-  _SearchResult({
-    this.title,
-    this.icon,
-    this.address,
-    this.position,
-    this.longitude,
-    this.latitude,
-  });
-
-  @override
-  String toString() {
-    return '_SearchResult{title: $title, address: $address, position: $position, '
-        'longitude: $longitude, latitude: $latitude}';
   }
 }
