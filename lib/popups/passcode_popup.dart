@@ -88,14 +88,13 @@ class PasscodeRoute extends PopupRoute {
   Widget _buildPasscodeInput() {
     return Align(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+        padding: EdgeInsets.fromLTRB(0.0, 15.0, 8.0, 0.0),
         child: TextFormField(
           maxLines: 1,
           obscureText: true,
           autofocus: true,
           decoration: InputDecoration(
             hintText: 'Tilgangskode',
-            filled: true,
             icon: Icon(
               Icons.lock,
               color: Colors.grey,
