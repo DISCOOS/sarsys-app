@@ -132,7 +132,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _hideResults();
     _focusNode.requestFocus();
 
-    final choices = results.map((result) => _buildListTileFromLookup(result)).toList();
+    final choices = results
+        .map((result) => result is _AddressLookup ? _buildListTileFromLookup(result) : _buildListTile(context, result))
+        .toList();
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
