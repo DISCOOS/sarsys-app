@@ -106,7 +106,7 @@ class AppConfig extends Equatable {
   }
 
   LocationAccuracy toLocationAccuracy({
-    LocationAccuracy defaultValue: LocationAccuracy.best,
+    LocationAccuracy defaultValue: LocationAccuracy.high,
   }) =>
       LocationAccuracy.values.firstWhere(
         (test) => "$test" == this.locationAccuracy,

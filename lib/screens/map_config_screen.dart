@@ -1,13 +1,17 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/services/image_cache_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/defaults.dart';
 import 'package:filesize/filesize.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapConfigScreen extends StatefulWidget {
   @override
@@ -18,6 +22,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _ttl = TextEditingController();
   final _capacity = TextEditingController();
+  final _displacement = TextEditingController();
+  final _interval = TextEditingController();
 
   AppConfigBloc _bloc;
 
@@ -27,6 +33,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
     _bloc = BlocProvider.of<AppConfigBloc>(context);
     _ttl.text = "${_bloc.config.mapCacheTTL}";
     _capacity.text = "${_bloc.config.mapCacheCapacity}";
+    _interval.text = "${_bloc.config.locationFastestInterval ~/ 1000}";
+    _displacement.text = "${_bloc.config.locationSmallestDisplacement}";
   }
 
   @override
@@ -34,6 +42,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
     super.dispose();
     _ttl.dispose();
     _capacity.dispose();
+    _interval.dispose();
+    _displacement.dispose();
   }
 
   @override //new
@@ -56,6 +66,10 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           Divider(),
           _buildMapCacheTTLField(),
           _buildMapCacheCapacityField(),
+          Divider(),
+          _buildLocationAccuracyField(),
+          _buildLocationFastestIntervalField(),
+          _buildLocationSmallestDisplacementField(),
         ],
       ),
     );
@@ -155,5 +169,130 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           }
           return Container();
         });
+  }
+
+  _buildLocationAccuracyField() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 3,
+            child: ListTile(
+              title: Text("Lokasjonsnøyaktighet"),
+              subtitle: Text("Høy nøyaktighet bruker mer batteri"),
+            ),
+          ),
+          Flexible(
+            child: DropdownButton<LocationAccuracy>(
+              isExpanded: true,
+              items: _toOsSpecific(LocationAccuracy.values)
+                  .map((value) => DropdownMenuItem<LocationAccuracy>(
+                        value: value,
+                        child: Text("${_toAccuracyName(value)}"),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                _bloc.update(locationAccuracy: value.toString());
+              },
+              value: _bloc.config?.toLocationAccuracy(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildLocationSmallestDisplacementField() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: ListTile(
+              title: Text("Minste avstand"),
+              subtitle: Text("Angi avstand mellom 0 til 99 meter"),
+            ),
+          ),
+          Flexible(
+            child: TextField(
+              controller: _displacement,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(filled: true, counterText: ""),
+              maxLength: 2,
+              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              onChanged: (value) {
+                _bloc.update(locationSmallestDisplacement: int.parse(value ?? 0));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildLocationFastestIntervalField() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: ListTile(
+              title: Text("Minste tidsinterval"),
+              subtitle: Text("Angi tid mellom 0 og 99 sekunder"),
+            ),
+          ),
+          Flexible(
+            child: TextField(
+              controller: _interval,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(filled: true, counterText: ""),
+              maxLength: 2,
+              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              onChanged: (value) {
+                _bloc.update(locationFastestInterval: int.parse(value ?? 0) * 1000);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<LocationAccuracy> _toOsSpecific(List<LocationAccuracy> values) {
+    if (Platform.isIOS == false) {
+      values = values.toList()..remove(LocationAccuracy.best)..remove(LocationAccuracy.bestForNavigation);
+    }
+    return values;
+  }
+
+  _toAccuracyName(LocationAccuracy value) {
+    switch (value) {
+      case LocationAccuracy.lowest:
+        return "Lavest";
+      case LocationAccuracy.low:
+        return "Lav";
+      case LocationAccuracy.medium:
+        return "Medium";
+      case LocationAccuracy.high:
+        return "Høy";
+      case LocationAccuracy.best:
+        return "Best";
+      case LocationAccuracy.bestForNavigation:
+        return "Navigasjon";
+    }
   }
 }

@@ -12,8 +12,8 @@ class Defaults {
   static const String talkGroups = "Nasjonal";
   static const int mapCacheTTL = 30;
   static const int mapCacheCapacity = 15000;
-  static const String locationAccuracy = "best";
-  static const int locationFastestInterval = 500;
+  static const String locationAccuracy = "high";
+  static const int locationFastestInterval = 1000;
   static const int locationSmallestDisplacement = 3;
 
   static final LatLng origo = LatLng(59.5, 10.09);

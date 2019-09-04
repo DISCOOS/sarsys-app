@@ -97,7 +97,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   ];
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  MapOptions _options;
   String _currentBaseMap;
   List<BaseMap> _baseMaps;
   MaptileService _maptileService = MaptileService();
@@ -306,14 +305,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             icon: Icons.add,
             onPressed: () {
               _zoom = math.min(_zoom + 1, Defaults.maxZoom);
-              _mapController.animatedMove(_options.center, _zoom, this, milliSeconds: 250);
+              _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
             icon: Icons.remove,
             onPressed: () {
               _zoom = math.max(_zoom - 1, Defaults.minZoom);
-              _mapController.animatedMove(_options.center, _zoom, this, milliSeconds: 250);
+              _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
             },
           ),
           MapControl(
@@ -335,7 +334,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                 icon: MdiIcons.mapMarkerPlus,
                 state: MapControlState(),
                 onPressed: () {
-                  _mapToolController.of<MeasureTool>().add(_options.center);
+                  _mapToolController.of<MeasureTool>().add(_center);
                 },
               ),
               MapControl(
@@ -411,8 +410,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _zoom = _mapController.zoom;
       if (widget.withLocation) {
         if (_locationController.isLocked) {
-          center = _options.center;
-          _mapController.move(_options.center, _zoom);
+          center = _center;
+          _mapController.move(_center, _zoom);
         }
       }
     }
@@ -424,7 +423,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         );
       }
     }
-    _options.center = center;
+    _center = center;
   }
 
   void _clearSearchField() {
