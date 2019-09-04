@@ -43,6 +43,9 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     bool locationWhenInUse,
     int mapCacheTTL,
     int mapCacheCapacity,
+    String locationAccuracy,
+    int locationFastestInterval,
+    int locationSmallestDisplacement,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
@@ -53,6 +56,9 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           locationWhenInUse: locationWhenInUse,
           mapCacheTTL: mapCacheTTL,
           mapCacheCapacity: mapCacheCapacity,
+          locationAccuracy: locationAccuracy,
+          locationFastestInterval: locationFastestInterval,
+          locationSmallestDisplacement: locationSmallestDisplacement,
         );
     var response = await service.save(config);
     if (response.is204) {

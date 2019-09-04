@@ -102,6 +102,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   List<BaseMap> _baseMaps;
   MaptileService _maptileService = MaptileService();
 
+  LatLng _center;
   LatLng _searchMatch;
   double _zoom = Defaults.zoom;
 
@@ -143,25 +144,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
-    // Initialize map options
-    _options = MapOptions(
-      zoom: _zoom,
-      center: _ensureCenter(),
-      maxZoom: Defaults.maxZoom,
-      minZoom: Defaults.minZoom,
-      interactive: widget.interactive,
-      onTap: (point) => _onTap(point),
-      onLongPress: (point) => _onLongPress(point),
-      onPositionChanged: _onPositionChanged,
-      plugins: [
-        MyLocation(),
-        IconLayer(),
-        UnitLayer(),
-        CoordinateLayer(),
-        ScaleBar(),
-        MeasureLayer(),
-      ],
-    );
+    _center = _ensureCenter();
     _useLayers = Set.of(_withLayers())..remove(COORDS_LAYER);
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
@@ -202,7 +185,24 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return FlutterMap(
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
       mapController: _mapController,
-      options: _options,
+      options: MapOptions(
+        zoom: _zoom,
+        center: _center,
+        maxZoom: Defaults.maxZoom,
+        minZoom: Defaults.minZoom,
+        interactive: widget.interactive,
+        onTap: (point) => _onTap(point),
+        onLongPress: (point) => _onLongPress(point),
+        onPositionChanged: _onPositionChanged,
+        plugins: [
+          MyLocation(),
+          IconLayer(),
+          UnitLayer(),
+          CoordinateLayer(),
+          ScaleBar(),
+          MeasureLayer(),
+        ],
+      ),
       layers: _setLayerOptions(),
     );
   }
@@ -320,10 +320,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             icon: Icons.gps_fixed,
             listenable: _isLocating,
             onPressed: () {
-              _locationController.toggle();
+              _locationController.goto();
             },
             onLongPress: () {
-              _locationController.toggle(locked: true);
+              _locationController.goto(locked: true);
             },
           ),
           MapControl(
@@ -409,13 +409,19 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     var center = position.center;
     if ((hasGesture) && _mapController.ready) {
       _zoom = _mapController.zoom;
-      if (widget.withLocation && _locationController.isTracking) {
+      if (widget.withLocation) {
         if (_locationController.isLocked) {
           center = _options.center;
           _mapController.move(_options.center, _zoom);
-        } else {
-          _locationController.toggle();
         }
+      }
+    }
+    if (widget.withLocation) {
+      if (_locationController.isLocated != _isLocating.value?.toggled) {
+        _isLocating.value = MapControlState(
+          toggled: _locationController.isLocated,
+          locked: _locationController.isLocked,
+        );
       }
     }
     _options.center = center;
@@ -473,16 +479,15 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return _mapCards;
   }
 
-  void _onTrackingChanged(bool isTracking, bool isLocked) {
+  void _onTrackingChanged(bool isLocated, bool isLocked) {
     _isLocating.value = MapControlState(
-      toggled: isTracking,
+      toggled: isLocated,
       locked: isLocked,
     );
     _setLayerOptions();
   }
 
   void _onLocationChanged(LatLng point) {
-    _mapController.animatedMove(point, _zoom, this);
     _setLayerOptions();
   }
 
@@ -546,7 +551,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _onMoveProgress() {
     _zoom = _mapController.progress.value.zoom;
-    _options.center = _mapController.progress.value.center;
+    _center = _mapController.progress.value.center;
   }
 }
 
@@ -578,14 +583,6 @@ class IncidentMapController extends MapControllerImpl {
           LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
           _zoomTween.evaluate(animation),
         );
-
-        if (state.center == null) {
-          print("oups: $state");
-        }
-        if (state.zoom == null) {
-          print("oups: $state");
-        }
-
         move(state.center, state.zoom);
         progress.value = state;
       });

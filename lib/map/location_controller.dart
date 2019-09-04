@@ -13,7 +13,7 @@ import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:system_setting/system_setting.dart';
 
-typedef TrackingCallback = void Function(bool isTracking, bool isLocked);
+typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
@@ -26,14 +26,14 @@ class LocationController {
   final LocationCallback onLocationChanged;
 
   bool _locked = false;
-  bool _tracking = false;
   bool _resolving = false;
+  LocationService _service;
   MyLocationOptions _options;
-  StreamSubscription<Position> _subscription;
-  LocationService _service = LocationService();
+  StreamSubscription _positionSubscription;
+  StreamController<Null> _locationUpdateController;
 
   bool get isLocked => _locked;
-  bool get isTracking => _tracking;
+  bool get isLocated => _toLatLng(_service?.current) == mapController?.center;
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
 
@@ -47,71 +47,77 @@ class LocationController {
     this.onLocationChanged,
   })  : assert(mapController != null, "mapController must not be null"),
         assert(onMessage != null, "onMessage must not be null"),
-        assert(onPrompt != null, "onPrompt must not be null");
+        assert(onPrompt != null, "onPrompt must not be null"),
+        _service = LocationService(appConfigBloc);
 
   void init() async {
-    mapController.progress.addListener(_onMapMoved);
-    _handleGeolocationStatusChange(await _service.init());
+    final status = await _service.configure();
+    _handleGeolocationStatusChange(status);
   }
 
   void dispose() {
-    _subscription?.cancel();
-    _subscription = null;
-    mapController.progress.removeListener(_onMapMoved);
+    _options = null;
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+    _locationUpdateController?.close();
+    _locationUpdateController = null;
+  }
+
+  bool goto({locked: false}) {
+    if (isReady) {
+      var wasLocked = _locked;
+      var wasLocated = isLocated;
+      _locked = locked;
+      _updateLocation(_service.current, isReady);
+      if (wasLocated != isLocated || wasLocked != _locked) {
+        if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+      }
+    }
+    return isLocated;
   }
 
   bool stop() {
     var wasLocked = _locked;
-    var wasTracking = _tracking;
-    if (_tracking) {
-      _locked = false;
-      _tracking = false;
+    _locked = false;
+    if (wasLocked != _locked) {
+      if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
     }
-    if (wasTracking != _tracking || wasLocked != _locked) {
-      if (onTrackingChanged != null) onTrackingChanged(_tracking, _locked);
-    }
-    return wasTracking;
-  }
-
-  bool toggle({locked: false}) {
-    var wasLocked = _locked;
-    var wasTracking = _tracking;
-    if (_tracking && !locked) {
-      _locked = false;
-      _tracking = false;
-    } else {
-      _locked = locked;
-      _tracking = _service.isReady.value;
-      if (!_tracking) {
-        _service.init().then((status) => _handleGeolocationStatusChange(status));
-      }
-    }
-    if (wasTracking != _tracking || wasLocked != _locked) {
-      if (onTrackingChanged != null) onTrackingChanged(_tracking, _locked);
-    }
-    _updateLocation(_service.current, _tracking);
-    return _tracking;
+    return wasLocked;
   }
 
   LatLng _toLatLng(Position position) {
-    return position == null ? null : LatLng(position?.latitude, position?.longitude);
+    return position == null ? LatLng(0, 0) : LatLng(position?.latitude, position?.longitude);
   }
 
-  void _updateLocation(Position position, bool force) {
+  bool _updateLocation(Position position, bool goto) {
+    bool hasMoved = false;
     if (position != null && mapController.ready) {
       //locationOpts.bearing = _calculateBearing();
-      final center = _toLatLng(position);
+      final point = _toLatLng(position);
 
       // Full refresh of map needed?
-      if (force || _tracking && _isMoved(center)) {
-        _options?.point = center;
-        if (onLocationChanged != null) onLocationChanged(center);
-        if (tickerProvider != null)
-          mapController.animatedMove(center, mapController.zoom ?? Defaults.zoom, tickerProvider);
-        else
-          mapController.move(center, mapController.zoom ?? Defaults.zoom);
+      if (goto || isLocked) {
+        hasMoved = true;
+        _options.point = point;
+        _options.accuracy = position.accuracy;
+        if (onLocationChanged != null) onLocationChanged(point);
+        if (goto || _locked) {
+          if (tickerProvider != null) {
+            mapController.animatedMove(point, mapController.zoom ?? Defaults.zoom, tickerProvider);
+          } else {
+            mapController.move(point, mapController.zoom ?? Defaults.zoom);
+          }
+        }
+      } else if (_isMoved(point)) {
+        if (onLocationChanged != null) onLocationChanged(point);
+        if (_options.point == null || tickerProvider == null) {
+          _locationUpdateController.add(null);
+        } else {
+          _options.animatedMove(point);
+        }
       }
     }
+    return hasMoved;
   }
 
   bool _isMoved(LatLng position) {
@@ -126,11 +132,11 @@ class LocationController {
     var isReady = false;
     switch (status) {
       case GeolocationStatus.granted:
-        if (_updateConfig(true)) onMessage("Stedstjenester er tilgjengelig");
+        if (_updateAppConfig(true)) onMessage("Stedstjenester er tilgjengelig");
         isReady = true;
         break;
       case GeolocationStatus.restricted:
-        if (_updateConfig(true)) onMessage("Tilgang til stedstjenester er begrenset");
+        if (_updateAppConfig(true)) onMessage("Tilgang til stedstjenester er begrenset");
         isReady = true;
         break;
       case GeolocationStatus.denied:
@@ -145,11 +151,18 @@ class LocationController {
     }
 
     if (isReady) {
-      _options = MyLocationOptions(_toLatLng(_service.current));
-      _subscription = _service.stream.listen(
+      _locationUpdateController = StreamController.broadcast();
+      _options = MyLocationOptions(
+        _toLatLng(_service.current),
+        opacity: 0.5,
+        tickerProvider: tickerProvider,
+        locationUpdateController: _locationUpdateController,
+        rebuild: _locationUpdateController.stream,
+      );
+      _positionSubscription = _service.stream.listen(
         (position) => _updateLocation(position, false),
       );
-      if (_tracking && _resolving) onTrackingChanged(_tracking, _locked);
+      if (isLocated && _resolving) onTrackingChanged(isLocated, _locked);
     } else {
       dispose();
     }
@@ -157,7 +170,7 @@ class LocationController {
     _resolving = false;
   }
 
-  bool _updateConfig(bool locationWhenInUse) {
+  bool _updateAppConfig(bool locationWhenInUse) {
     var notify = true;
     if (appConfigBloc.isReady) {
       if (notify = appConfigBloc.config.locationWhenInUse != locationWhenInUse) {
@@ -183,7 +196,7 @@ class LocationController {
         var status = response[PermissionGroup.locationWhenInUse];
         if (status == PermissionStatus.granted || status == PermissionStatus.restricted) {
           _resolving = true;
-          _handleGeolocationStatusChange(await _service.init());
+          _handleGeolocationStatusChange(await _service.configure());
         } else {
           onMessage(message);
         }
@@ -208,9 +221,7 @@ class LocationController {
       // to open settings can also leads to possible App Store rejection.
       await SystemSetting.goto(SettingTarget.LOCATION);
       _resolving = true;
-      _handleGeolocationStatusChange(await _service.init());
+      _handleGeolocationStatusChange(await _service.configure());
     });
   }
-
-  void _onMapMoved() {}
 }

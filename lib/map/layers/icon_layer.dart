@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:math';
 
 import 'package:SarSys/map/painters.dart';
 import 'package:badges/badges.dart';
@@ -46,14 +45,15 @@ class IconLayer implements MapPlugin {
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
     return IgnorePointer(
-        child: stream == null
-            ? Builder(
-                builder: (context) => _buildLayer(context, options, map),
-              )
-            : StreamBuilder<void>(
-                stream: stream, // a Stream<int> or null
-                builder: (context, snapshot) => _buildLayer(context, options, map),
-              ));
+      child: stream == null
+          ? Builder(
+              builder: (context) => _buildLayer(context, options, map),
+            )
+          : StreamBuilder<void>(
+              stream: stream, // a Stream<int> or null
+              builder: (context, snapshot) => _buildLayer(context, options, map),
+            ),
+    );
   }
 
   Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {
@@ -127,45 +127,5 @@ class IconLayer implements MapPlugin {
         ],
       ),
     );
-  }
-}
-
-class BearingPainter extends CustomPainter {
-  final Paint bearingPaint;
-  final Paint bearingsPaint;
-
-  double bearing;
-
-  BearingPainter(this.bearing)
-      : bearingPaint = Paint(),
-        bearingsPaint = Paint() {
-    bearingPaint.color = Colors.red;
-    bearingPaint.style = PaintingStyle.stroke;
-    bearingPaint.strokeWidth = 2.0;
-    bearingsPaint.color = Colors.red;
-    bearingsPaint.style = PaintingStyle.fill;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final radius = size.width / 2;
-    canvas.save();
-
-    canvas.translate(radius, radius);
-
-    canvas.rotate(this.bearing * pi / 180);
-
-    Path path = Path();
-    path.moveTo(0.0, -radius);
-    path.lineTo(0.0, radius / 4);
-
-    canvas.drawPath(path, bearingPaint);
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(BearingPainter oldDelegate) {
-    return this.bearing != oldDelegate.bearing;
   }
 }

@@ -1,4 +1,6 @@
+import 'package:SarSys/utils/defaults.dart';
 import 'package:equatable/equatable.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -12,8 +14,12 @@ class AppConfig extends Equatable {
   static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
   static const SENTRY_DNS = "sentryDns";
-  static const MAP_CACHE_TTL = "map_cache_ttl";
-  static const MAP_CACHE_CAPACITY = "map_cache_capacity";
+  static const MAP_CACHE_TTL = "mapCacheTTL";
+  static const MAP_CACHE_CAPACITY = "mapCacheCapacity";
+  static const LOCATION_ACCURACY = "locationAccuracy";
+  static const LOCATION_FASTEST_INTERVAL = "locationFastestInterval";
+  static const LOCATION_SMALLEST_DISPLACEMENT = "locationSmallestDisplacement";
+
   static const PARAMS = const {
     SENTRY_DNS: "string",
     ONBOARDING: "bool",
@@ -23,34 +29,46 @@ class AppConfig extends Equatable {
     LOCATION_WHEN_IN_USE: "bool",
     MAP_CACHE_TTL: "int",
     MAP_CACHE_CAPACITY: "int",
+    LOCATION_ACCURACY: "string",
+    LOCATION_FASTEST_INTERVAL: "int",
+    LOCATION_SMALLEST_DISPLACEMENT: "int",
   };
 
   final String sentryDns;
   final bool onboarding;
   final String division;
   final String department;
-  final String tgCatalog;
+  final String talkGroups;
   final bool locationWhenInUse;
   final int mapCacheTTL;
   final int mapCacheCapacity;
+  final String locationAccuracy;
+  final int locationFastestInterval;
+  final int locationSmallestDisplacement;
 
   AppConfig({
     @required this.sentryDns,
-    @required this.onboarding,
-    @required this.division,
-    @required this.department,
-    @required this.tgCatalog,
-    @required this.locationWhenInUse,
-    @required this.mapCacheTTL,
-    @required this.mapCacheCapacity,
+    this.onboarding = true,
+    this.locationWhenInUse = false,
+    this.division = Defaults.division,
+    this.department = Defaults.department,
+    this.talkGroups = Defaults.talkGroups,
+    this.mapCacheTTL = Defaults.mapCacheTTL,
+    this.mapCacheCapacity = Defaults.mapCacheCapacity,
+    this.locationAccuracy = Defaults.locationAccuracy,
+    this.locationFastestInterval = Defaults.locationFastestInterval,
+    this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
   }) : super([
           onboarding,
           division,
           department,
-          tgCatalog,
+          talkGroups,
           locationWhenInUse,
           mapCacheTTL,
           mapCacheCapacity,
+          locationAccuracy,
+          locationFastestInterval,
+          locationSmallestDisplacement
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -68,16 +86,30 @@ class AppConfig extends Equatable {
     bool locationWhenInUse,
     int mapCacheTTL,
     int mapCacheCapacity,
+    String locationAccuracy,
+    int locationFastestInterval,
+    int locationSmallestDisplacement,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
       onboarding: onboarding ?? this.onboarding,
       division: district ?? this.division,
       department: department ?? this.department,
-      tgCatalog: tgCatalog ?? this.tgCatalog,
+      talkGroups: tgCatalog ?? this.talkGroups,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
       mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
+      locationAccuracy: locationAccuracy ?? this.locationAccuracy,
+      locationFastestInterval: locationFastestInterval ?? this.locationFastestInterval,
+      locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
     );
   }
+
+  LocationAccuracy toLocationAccuracy({
+    LocationAccuracy defaultValue: LocationAccuracy.best,
+  }) =>
+      LocationAccuracy.values.firstWhere(
+        (test) => "$test" == this.locationAccuracy,
+        orElse: () => defaultValue,
+      );
 }

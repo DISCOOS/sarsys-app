@@ -190,10 +190,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
               height: size.height,
               child: Container(
                 child: IconButton(
-                  color: _locationController.isTracking ? Colors.green : Colors.black,
+                  color: _locationController.isLocated ? Colors.green : Colors.black,
                   icon: Icon(Icons.gps_fixed),
                   onPressed: () {
-                    _locationController.toggle();
+                    _locationController.goto();
                   },
                 ),
                 decoration: BoxDecoration(
@@ -238,8 +238,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
-    if (hasGesture && _locationController.isTracking) {
-      _locationController.toggle();
+    if (hasGesture && _locationController.isLocated) {
+      _locationController.goto();
     }
     _updatePoint(position, hasGesture);
   }

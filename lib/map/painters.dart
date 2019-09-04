@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -6,28 +7,27 @@ class PointPainter extends CustomPainter {
   final double size;
   final Color color;
   final double opacity;
+  final double outer;
 
   const PointPainter({
     this.size,
     this.color,
-    this.opacity = 0.6,
+    this.outer,
+    this.opacity = 0.54,
   });
 
   @override
   void paint(Canvas canvas, _) {
-    final paint = Paint()..color = Colors.white;
+    final paint = Paint()..color = Colors.white.withOpacity(opacity);
     final radius = size / 2.0;
     final offset = size / 2.0;
     final center = Offset(offset, offset - 1);
     canvas.drawCircle(center, radius, paint);
 
-    var path = Path();
-    path.addOval(Rect.fromCircle(center: center.translate(0, 0), radius: radius + 1));
-    canvas.drawShadow(path, Colors.black45, 2, true);
-
-    paint.color = color;
+    paint.color = color.withOpacity(opacity);
     paint.style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, paint);
+    if (outer != null) canvas.drawCircle(center, outer - 2, paint);
     canvas.drawCircle(center, 1, paint..color = Colors.black);
   }
 
@@ -146,5 +146,45 @@ class CrossPainter extends CustomPainter {
   @override
   bool shouldRepaint(CrossPainter oldDelegate) {
     return false;
+  }
+}
+
+class BearingPainter extends CustomPainter {
+  final Paint bearingPaint;
+  final Paint bearingsPaint;
+
+  double bearing;
+
+  BearingPainter(this.bearing)
+      : bearingPaint = Paint(),
+        bearingsPaint = Paint() {
+    bearingPaint.color = Colors.red;
+    bearingPaint.style = PaintingStyle.stroke;
+    bearingPaint.strokeWidth = 2.0;
+    bearingsPaint.color = Colors.red;
+    bearingsPaint.style = PaintingStyle.fill;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = size.width / 2;
+    canvas.save();
+
+    canvas.translate(radius, radius);
+
+    canvas.rotate(this.bearing * pi / 180);
+
+    Path path = Path();
+    path.moveTo(0.0, -radius);
+    path.lineTo(0.0, radius / 4);
+
+    canvas.drawPath(path, bearingPaint);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(BearingPainter oldDelegate) {
+    return this.bearing != oldDelegate.bearing;
   }
 }

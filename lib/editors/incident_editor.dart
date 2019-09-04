@@ -428,7 +428,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         return buildDropDownField(
           attribute: 'tgCatalog',
           label: 'Nødnett',
-          initialValue: _configBloc?.config?.tgCatalog ?? Defaults.talkGroups,
+          initialValue: _configBloc?.config?.talkGroups ?? Defaults.talkGroups,
           items: _tgCatalog.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Talegruppe må velges'),

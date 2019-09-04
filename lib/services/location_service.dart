@@ -1,24 +1,34 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/models/AppConfig.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 
 class LocationService {
-  static final _singleton = LocationService._internal();
+  static LocationService _singleton;
   final _isReady = ValueNotifier(false);
 
   Position _current;
   Geolocator _geolocator;
-  GeolocationStatus _status;
+  GeolocationStatus _status = GeolocationStatus.unknown;
+
+  LocationOptions _options;
+  AppConfigBloc _appConfigBloc;
 
   Stream<Position> _stream;
-  StreamSubscription<Position> _subscription;
+  StreamSubscription _configSubscription;
+  StreamSubscription _locatorSubscription;
 
-  factory LocationService() {
+  factory LocationService(AppConfigBloc bloc) {
+    if (_singleton == null) {
+      _singleton = LocationService._internal(bloc);
+    }
     return _singleton;
   }
 
-  LocationService._internal() {
-    init();
+  LocationService._internal(AppConfigBloc bloc) {
+    _appConfigBloc = bloc;
+    _geolocator = Geolocator();
   }
 
   Position get current => _current;
@@ -26,24 +36,30 @@ class LocationService {
   ValueNotifier<bool> get isReady => _isReady;
   GeolocationStatus get status => _status;
 
-  Future<GeolocationStatus> init() async {
-    _status = await Geolocator().checkGeolocationPermissionStatus();
+  Future<GeolocationStatus> configure() async {
+    _status = await _geolocator.checkGeolocationPermissionStatus();
     switch (_status) {
       case GeolocationStatus.granted:
       case GeolocationStatus.restricted:
         {
-          _geolocator = Geolocator();
-          var options = LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
+          final config = _appConfigBloc.config;
 
-          _stream = _geolocator.getPositionStream(options).asBroadcastStream();
-          _subscription = _stream.listen((Position position) {
-            print(position == null
-                ? 'Position unknown'
-                : "Current position: ${position.latitude}, ${position.longitude}");
-            _current = position;
-          });
-          _current = await _geolocator.getLastKnownPosition(desiredAccuracy: LocationAccuracy.high);
-          _isReady.value = true;
+          var options = _toOptions(config);
+
+          if (_isConfigChanged(options)) {
+            if (_stream != null) dispose();
+            _configure(options);
+            _configSubscription = _appConfigBloc.state.listen(
+              (state) {
+                if (state.data is AppConfig) {
+                  final options = _toOptions(state.data);
+                  if (_isConfigChanged(options)) {
+                    _configure(options);
+                  }
+                }
+              },
+            );
+          }
           break;
         }
       case GeolocationStatus.disabled:
@@ -51,15 +67,44 @@ class LocationService {
       case GeolocationStatus.unknown:
         {
           dispose();
+          break;
         }
     }
     return _status;
   }
 
+  LocationOptions _toOptions(AppConfig config) {
+    return LocationOptions(
+      accuracy: config.toLocationAccuracy(),
+      timeInterval: config.locationFastestInterval,
+      distanceFilter: config.locationSmallestDisplacement,
+    );
+  }
+
+  void _configure(LocationOptions options) async {
+    _options = options;
+    _stream = _geolocator.getPositionStream(_options).asBroadcastStream();
+    _locatorSubscription = _stream.listen((Position position) {
+      _current = position;
+    });
+    _current = await _geolocator.getLastKnownPosition(desiredAccuracy: _options.accuracy);
+    if (_current == null) _current = await _geolocator.getCurrentPosition(desiredAccuracy: _options.accuracy);
+    _isReady.value = true;
+  }
+
   void dispose() {
-    _subscription?.cancel();
-    _subscription = null;
+    _configSubscription?.cancel();
+    _locatorSubscription?.cancel();
+    _stream = null;
+    _configSubscription = null;
+    _locatorSubscription = null;
     _isReady.value = false;
+  }
+
+  bool _isConfigChanged(LocationOptions options) {
+    return _options?.accuracy != options.accuracy ||
+        _options?.timeInterval != options.timeInterval ||
+        _options?.distanceFilter != options.distanceFilter;
   }
 }
 
