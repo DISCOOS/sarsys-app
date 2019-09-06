@@ -42,6 +42,7 @@ class LabelPainter extends CustomPainter {
   final double top;
   final double width;
   final double padding;
+  final double opacity;
   final double fontSize;
 
   const LabelPainter(
@@ -49,12 +50,13 @@ class LabelPainter extends CustomPainter {
     this.top = 0,
     this.width = 200,
     this.padding = 4,
+    this.opacity = 0.4,
     this.fontSize = 12.0,
   });
 
   @override
   void paint(Canvas canvas, _) {
-    final paint = Paint()..color = Colors.white;
+    final paint = Paint()..color = Colors.white.withOpacity(opacity);
 
     var builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: fontSize, textAlign: TextAlign.left))
       ..pushStyle(ui.TextStyle(color: Colors.black, height: 1.0))
