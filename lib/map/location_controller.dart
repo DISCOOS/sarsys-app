@@ -33,7 +33,7 @@ class LocationController {
   StreamController<Null> _locationUpdateController;
 
   bool get isLocked => _locked;
-  bool get isLocated => _toLatLng(_service?.current) == mapController?.center;
+  bool get isLocated => mapController.ready && _toLatLng(_service?.current) == mapController?.center;
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
 
