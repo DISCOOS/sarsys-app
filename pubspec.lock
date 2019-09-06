@@ -308,7 +308,7 @@ packages:
       name: flutter_launcher_icons
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.7.2+1"
+    version: "0.7.3"
   flutter_local_notifications:
     dependency: transitive
     description:
@@ -333,7 +333,7 @@ packages:
     description:
       path: "."
       ref: master
-      resolved-ref: "0fd473e5c8c31b54db4839a2f7257f60d024152a"
+      resolved-ref: a69e5cc86f5b8e59125cad983eb117e01958fc82
       url: "git://github.com/johnpryan/flutter_map"
     source: git
     version: "0.7.2"
@@ -572,7 +572,7 @@ packages:
       name: mockito
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.1.0"
+    version: "4.1.1"
   package_config:
     dependency: transitive
     description:
@@ -600,7 +600,7 @@ packages:
       name: path
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.6.2"
+    version: "1.6.4"
   path_provider:
     dependency: "direct main"
     description:
@@ -684,7 +684,7 @@ packages:
       name: quiver
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.5"
   random_string:
     dependency: "direct main"
     description:
@@ -780,7 +780,7 @@ packages:
       name: string_scanner
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.4"
+    version: "1.0.5"
   sy_flutter_widgets:
     dependency: transitive
     description:
