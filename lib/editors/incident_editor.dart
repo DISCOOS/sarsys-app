@@ -182,7 +182,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
       format: DateFormat("yyyy-MM-dd HH:mm"),
       resetIcon: null,
       autocorrect: true,
-      editable: false,
       decoration: InputDecoration(
         hintText: "Hendelsestidspunkt",
         contentPadding: EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 12.0),
