@@ -267,7 +267,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           child: MapSearchField(
             key: _searchFieldKey,
             mapController: _mapController,
-            zoom: 18,
+            zoom: _zoom,
             onError: widget.onMessage,
             onMatch: _onSearchMatch,
             onCleared: _onSearchCleared,
@@ -556,10 +556,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
 /// Incident MapController that supports animated move operations
 class IncidentMapController extends MapControllerImpl {
+  bool isMoving = false;
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
 
   /// Move to given point and zoom
   void animatedMove(LatLng point, double zoom, TickerProvider provider, {int milliSeconds: 500}) {
+    if (isMoving) return;
     if (!ready) {
       move(point, zoom);
       progress.value = MapMoveState(point, zoom);
@@ -571,7 +573,7 @@ class IncidentMapController extends MapControllerImpl {
       final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
       // Create a animation controller that has a duration and a TickerProvider.
-      var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+      final controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
       // The animation determines what path the animation will take. You can try different Curves values, although I found
       // fastOutSlowIn to be my favorite.
@@ -579,7 +581,10 @@ class IncidentMapController extends MapControllerImpl {
 
       controller.addListener(() {
         final state = MapMoveState(
-          LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
+          LatLng(
+            _latTween.evaluate(animation),
+            _lngTween.evaluate(animation),
+          ),
           _zoomTween.evaluate(animation),
         );
         move(state.center, state.zoom);
@@ -588,8 +593,10 @@ class IncidentMapController extends MapControllerImpl {
 
       animation.addStatusListener((status) {
         if (status == AnimationStatus.completed) {
+          isMoving = false;
           controller.dispose();
         } else if (status == AnimationStatus.dismissed) {
+          isMoving = false;
           controller.dispose();
         }
       });
