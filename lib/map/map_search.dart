@@ -268,7 +268,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
           _showResults(placemarks
               .map((placemark) => _SearchResult(
                     icon: Icons.home,
-                    title: placemark.name,
+                    title: "${placemark.thoroughfare} ${placemark.subThoroughfare}",
                     address: _AddressLookup.toAddress(placemark),
                     position: _AddressLookup.toPosition(placemark.position.latitude, placemark.position.longitude),
                     latitude: placemark.position.latitude,
