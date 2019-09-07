@@ -33,6 +33,7 @@ class LocationController {
   StreamController<Null> _locationUpdateController;
 
   bool get isLocked => _locked;
+  bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
   bool get isLocated => mapController.ready && (isLocked || _toLatLng(_service?.current) == mapController?.center);
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
@@ -93,9 +94,9 @@ class LocationController {
     bool hasMoved = false;
     bool wasLocated = isLocated;
     if (position != null && mapController.ready) {
-      //locationOpts.bearing = _calculateBearing();
-      final point = _toLatLng(position);
+      final wasChangeInAccuracy = (_options?.accuracy != position.accuracy);
       _options.accuracy = position.accuracy;
+      final point = _toLatLng(position);
       // Full refresh of map needed?
       if (goto || isLocked) {
         hasMoved = true;
@@ -124,6 +125,8 @@ class LocationController {
             if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
           });
         }
+      } else if (wasChangeInAccuracy) {
+        _locationUpdateController.add(null);
       }
     }
     if (onTrackingChanged != null && wasLocated != isLocated) onTrackingChanged(isLocated, _locked);

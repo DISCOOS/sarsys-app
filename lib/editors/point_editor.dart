@@ -5,7 +5,6 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/icon_layer.dart';
-import 'package:SarSys/map/layers/measure_layer.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
