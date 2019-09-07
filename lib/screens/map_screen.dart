@@ -3,6 +3,7 @@ import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -108,12 +109,22 @@ class MapScreenState extends State<MapScreen> {
                       dense: landscape,
                       leading: Icon(Icons.warning),
                       title: Text('Hendelse', style: style),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(context);
-                        showDialog(
+                        final incident = await showDialog(
                           context: context,
                           builder: (context) => IncidentEditor(),
                         );
+                        if (incident != null) {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            'map',
+                            arguments: {
+                              "incident": incident,
+                              "center": toLatLng(incident.ipp),
+                            },
+                          );
+                        }
                       },
                     ),
                   ],

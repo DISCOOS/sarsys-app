@@ -65,8 +65,8 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         context,
         'map',
         arguments: {
-          "center": incident.ipp,
           "incident": incident,
+          "center": toLatLng(incident.ipp),
         },
       );
   }
