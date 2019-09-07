@@ -13,11 +13,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong/latlong.dart';
 
 class IncidentEditor extends StatefulWidget {
+  final Point ipp;
   final Incident incident;
 
-  const IncidentEditor({Key key, this.incident}) : super(key: key);
+  const IncidentEditor({Key key, this.incident, this.ipp}) : super(key: key);
 
   @override
   _IncidentEditorState createState() => _IncidentEditorState();
@@ -278,7 +280,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         attribute: 'ipp',
         formField: FormField<Point>(
           enabled: true,
-          initialValue: widget?.incident?.ipp,
+          initialValue: widget?.incident?.ipp ?? widget.ipp,
           builder: (FormFieldState<Point> field) => GestureDetector(
             child: InputDecorator(
               decoration: InputDecoration(

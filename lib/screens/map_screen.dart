@@ -24,6 +24,7 @@ class MapScreen extends StatefulWidget {
 
 class MapScreenState extends State<MapScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _mapController = IncidentMapController();
 
   bool _showFAB = true;
 
@@ -61,6 +62,7 @@ class MapScreenState extends State<MapScreen> {
     return IncidentMap(
       center: widget.center,
       incident: widget.incident,
+      mapController: _mapController,
       withSearch: true,
       withControls: true,
       withLocation: true,
@@ -110,10 +112,9 @@ class MapScreenState extends State<MapScreen> {
                       leading: Icon(Icons.warning),
                       title: Text('Hendelse', style: style),
                       onTap: () async {
-                        Navigator.pop(context);
                         final incident = await showDialog(
                           context: context,
-                          builder: (context) => IncidentEditor(),
+                          builder: (context) => IncidentEditor(ipp: toPoint(_mapController.center)),
                         );
                         if (incident != null) {
                           Navigator.pushReplacementNamed(
