@@ -266,7 +266,7 @@ class DevicesPageState extends State<DevicesPage> {
                       contentPadding: EdgeInsets.only(left: 16.0, right: 0),
                       title: Text("Vis", style: style),
                       trailing: FlatButton(
-                        child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                        child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                         onPressed: () => setState(
                           () {
                             Navigator.pop(context);
@@ -299,6 +299,7 @@ class DevicesPageState extends State<DevicesPage> {
       } else if (_filter.length > 1) {
         _filter.remove(status);
       }
+      setState(() {});
     });
   }
 }
