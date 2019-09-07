@@ -31,6 +31,18 @@ class Device extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
+
+  /// Clone device and set given location
+  Device cloneWith({
+    Point location,
+  }) {
+    return Device(
+      id: this.id,
+      type: this.type,
+      number: this.number,
+      location: location ?? this.location,
+    );
+  }
 }
 
 enum DeviceType { Tetra, Mobile, APRS, AIS }

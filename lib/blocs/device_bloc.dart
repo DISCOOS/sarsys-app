@@ -5,7 +5,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
+import 'package:flutter/foundation.dart' show VoidCallback;
 
 typedef void DeviceCallback(VoidCallback fn);
 
@@ -19,6 +19,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
     incidentBloc.state.listen(_init);
+    service.messages.listen((event) => dispatch(HandleMessage(event)));
   }
 
   void _init(IncidentState state) {
@@ -35,6 +36,9 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
 
   /// Get devices
   Map<String, Device> get devices => UnmodifiableMapView<String, Device>(_devices);
+
+  /// Stream of device updates
+  Stream<Device> get updates => state.where((state) => state.isUpdated()).map((state) => state.data);
 
   /// Fetch devices from [service]
   Future<List<Device>> fetch() async {
@@ -62,6 +66,8 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Stream<DeviceState> mapEventToState(DeviceCommand command) async* {
     if (command is LoadDevices) {
       yield _load(command.data);
+    } else if (command is HandleMessage) {
+      yield _process(command.data);
     } else if (command is ClearDevices) {
       yield _clear(command);
     } else if (command is RaiseDeviceError) {
@@ -78,6 +84,20 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     return DevicesLoaded(_devices.keys.toList());
   }
 
+  DeviceState _process(DeviceMessage event) {
+    switch (event.type) {
+      case DeviceMessageType.LocationChanged:
+        var id = event.json['id'];
+        if (_devices.containsKey(id)) {
+          return DeviceUpdated(
+            _devices.update(id, (device) => Device.fromJson(event.json)),
+          );
+        }
+        break;
+    }
+    return DeviceError("Device message not recognized: $event");
+  }
+
   DevicesCleared _clear(ClearDevices command) {
     List<Device> cleared = [];
     command.data.forEach((id) => {if (_devices.containsKey(id)) cleared.add(_devices.remove(id))});
@@ -85,18 +105,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   @override
-  void onEvent(DeviceCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<DeviceCommand, DeviceState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseDeviceError(DeviceError(error, trace: stacktrace)));
   }
 }
@@ -115,6 +124,13 @@ class LoadDevices extends DeviceCommand<List<Device>> {
 
   @override
   String toString() => 'LoadDevices';
+}
+
+class HandleMessage extends DeviceCommand<DeviceMessage> {
+  HandleMessage(DeviceMessage data) : super(data);
+
+  @override
+  String toString() => 'HandleMessage';
 }
 
 class ClearDevices extends DeviceCommand<List<String>> {
@@ -141,6 +157,7 @@ abstract class DeviceState<T> extends Equatable {
 
   isEmpty() => this is DevicesEmpty;
   isLoaded() => this is DevicesLoaded;
+  isUpdated() => this is DeviceUpdated;
   isCleared() => this is DevicesCleared;
   isException() => this is DeviceException;
   isError() => this is DeviceError;
@@ -158,6 +175,13 @@ class DevicesLoaded extends DeviceState<List<String>> {
 
   @override
   String toString() => 'DevicesLoaded';
+}
+
+class DeviceUpdated extends DeviceState<Device> {
+  DeviceUpdated(Device device) : super(device);
+
+  @override
+  String toString() => 'DeviceUpdated';
 }
 
 class DevicesCleared extends DeviceState<List<Device>> {

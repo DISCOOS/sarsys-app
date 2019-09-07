@@ -6,7 +6,7 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
+import 'package:flutter/foundation.dart' show VoidCallback;
 
 typedef void UnitCallback(VoidCallback fn);
 
@@ -170,18 +170,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   @override
-  void onEvent(UnitCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<UnitCommand, UnitState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseUnitError(UnitError(error, trace: stacktrace)));
   }
 }

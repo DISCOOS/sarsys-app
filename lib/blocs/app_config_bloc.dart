@@ -2,7 +2,7 @@ import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 
 typedef void AppConfigCallback(VoidCallback fn);
@@ -82,18 +82,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }
 
   @override
-  void onEvent(AppConfigCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<AppConfigCommand, AppConfigState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseAppConfigError(AppConfigError(error, trace: stacktrace)));
   }
 }

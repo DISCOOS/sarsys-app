@@ -11,7 +11,7 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
+import 'package:flutter/foundation.dart' show VoidCallback;
 
 typedef void TrackingCallback(VoidCallback fn);
 
@@ -269,18 +269,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   @override
-  void onEvent(TrackingCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<TrackingCommand, TrackingState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseTrackingError(TrackingError(error, trace: stacktrace)));
   }
 }

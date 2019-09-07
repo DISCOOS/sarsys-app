@@ -18,10 +18,10 @@ class PointPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, _) {
-    final paint = Paint()..color = Colors.white.withOpacity(opacity);
+    final offset = 0.0;
     final radius = size / 2.0;
-    final offset = size / 2.0;
-    final center = Offset(offset, offset - 1);
+    final paint = Paint()..color = Colors.white.withOpacity(opacity);
+    final center = Offset(offset, offset);
     canvas.drawCircle(center, radius, paint);
 
     paint.color = color.withOpacity(opacity);
@@ -89,16 +89,18 @@ class LineStringPainter extends CustomPainter {
 
   final Color color;
   final Color borderColor;
+  final double opacity;
   final double borderStrokeWidth;
   final bool isFilled;
 
-  LineStringPainter(
+  LineStringPainter({
     this.offsets,
     this.color,
     this.borderColor,
-    this.borderStrokeWidth,
-    this.isFilled,
-  );
+    this.opacity = 0.6,
+    this.borderStrokeWidth = 4.0,
+    this.isFilled = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -112,7 +114,7 @@ class LineStringPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..color = color;
+      ..color = color.withOpacity(opacity);
 
     var path = Path();
     path.addPolygon(offsets, false);

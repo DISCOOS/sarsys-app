@@ -6,7 +6,6 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
 
 class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   final IncidentService service;
@@ -217,18 +216,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   @override
-  void onEvent(IncidentCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<IncidentCommand, IncidentState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseIncidentError(IncidentError(error, trace: stacktrace)));
   }
 }

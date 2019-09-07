@@ -98,11 +98,8 @@ class MeasureLayer extends MapPlugin {
       opacity: options.opacity,
       child: CustomPaint(
         painter: LineStringPainter(
-          offsets,
-          color,
-          color,
-          4.0,
-          false,
+          offsets: offsets,
+          color: color,
         ),
         size: size,
       ),

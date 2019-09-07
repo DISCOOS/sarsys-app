@@ -106,69 +106,65 @@ class MyLocation extends MapPlugin {
 
   Widget _buildPosition(
     BuildContext context,
-    MyLocationOptions params,
+    MyLocationOptions options,
     MapState map,
     Stream<Null> stream,
   ) {
     var size = 8.0;
-    var pixelRadiusX = 0.0;
-    var pixelRadiusY = 0.0;
-    var pos = map.project(params.point);
+    var pos = map.project(options.point);
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-
-    var pixelPosX = (pos.x - size).toDouble();
-    var pixelPosY = (pos.y - size).toDouble();
-
-    if (params.accuracy != null && params.accuracy > 0.0) {
-      var coords = ProjMath.calculateEndingGlobalCoordinates(
-        params.point.latitude,
-        params.point.longitude,
-        params.bearing ?? 90.0,
-        params.accuracy,
-      );
-      pos = map.project(LatLng(coords.y, coords.x));
-      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-      pixelRadiusX = max(pos.x - pixelPosX, 4).abs().toDouble();
-      pixelRadiusY = max(pos.y - pixelPosY, 4).abs().toDouble();
-    }
+    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, options);
 
     return Positioned(
-      left: pixelPosX - pixelRadiusX / 2,
-      top: pixelPosY - pixelRadiusY / 2,
-      width: pixelRadiusX,
-      height: pixelRadiusY,
+      top: pos.y,
+      left: pos.x,
+      width: pixelRadius,
+      height: pixelRadius,
       child: Stack(
         overflow: Overflow.visible,
         children: [
           Positioned(
-            left: pixelRadiusX / 2,
-            top: pixelRadiusY / 2,
+            left: 0.0,
+            top: 0.0,
             child: CustomPaint(
               painter: PointPainter(
                 size: 8.0,
                 color: Colors.green,
-                opacity: params.opacity,
-                outer: pixelRadiusX,
+                opacity: options.opacity,
+                outer: pixelRadius,
               ),
             ),
           ),
-          if (params.bearing != null)
-            Opacity(
-              opacity: params.opacity,
-              child: CustomPaint(
-                painter: BearingPainter(params.bearing),
-              ),
+          if (options.bearing != null)
+            CustomPaint(
+              painter: BearingPainter(options.bearing),
             ),
           Positioned(
-            left: (pixelRadiusX + size) / 2,
-            top: size + 16,
+            left: 0,
+            top: size,
             child: CustomPaint(
-              painter: LabelPainter("Meg", top: size / 2),
+              painter: LabelPainter("Meg", top: size),
               size: Size(size, size),
             ),
           ),
         ],
       ),
     );
+  }
+
+  double _toPixelRadius(MapState map, double size, double x, double y, MyLocationOptions options) {
+    var pixelRadius = size;
+    if (options.accuracy != null && options.accuracy > 0.0) {
+      var coords = ProjMath.calculateEndingGlobalCoordinates(
+        options.point.latitude,
+        options.point.longitude,
+        45.0,
+        options.accuracy,
+      );
+      var pos = map.project(LatLng(coords.y, coords.x));
+      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+      pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
+    }
+    return pixelRadius;
   }
 }

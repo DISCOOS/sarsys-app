@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
+import 'package:SarSys/map/layers/device_layer.dart';
 import 'package:SarSys/map/layers/measure_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
@@ -85,6 +87,7 @@ class IncidentMap extends StatefulWidget {
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
   static const POI_LAYER = "Interessepunkt";
   static const UNITS_LAYER = "Enheter";
+  static const DEVICES_LAYER = "Terminaler";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
   static const SCALE_LAYER = "Målestokk";
@@ -92,6 +95,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     POI_LAYER,
     UNITS_LAYER,
     TRACKING_LAYER,
+    DEVICES_LAYER,
     SCALE_LAYER,
     COORDS_LAYER,
   ];
@@ -144,7 +148,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       );
     }
     _center = _ensureCenter();
-    _useLayers = Set.of(_withLayers())..remove(COORDS_LAYER);
+    _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
 
@@ -196,6 +200,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         plugins: [
           MyLocation(),
           IconLayer(),
+          DeviceLayer(),
           UnitLayer(),
           CoordinateLayer(),
           ScaleBar(),
@@ -216,6 +221,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           urlTemplate: _currentBaseMap,
           tileProvider: ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config)),
         ),
+        if (_useLayers.contains(DEVICES_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions([
@@ -374,6 +380,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     );
   }
 
+  DeviceLayerOptions _buildDeviceOptions() {
+    final bloc = BlocProvider.of<DeviceBloc>(context);
+    return DeviceLayerOptions(
+      bloc: bloc,
+      onMessage: widget.onMessage,
+    );
+  }
+
   UnitLayerOptions _buildUnitOptions() {
     final bloc = BlocProvider.of<TrackingBloc>(context);
     return UnitLayerOptions(
@@ -491,7 +505,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _showLayerSheet(context) {
-    final style = Theme.of(context).textTheme.title;
+    final title = Theme.of(context).textTheme.title;
+    final filter = Theme.of(context).textTheme.subtitle;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -506,7 +521,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                     ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.only(left: 16.0, right: 0),
-                      title: Text("Vis", style: style),
+                      title: Text("Vis", style: title),
                       trailing: FlatButton(
                         child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                         onPressed: () => Navigator.pop(context),
@@ -516,7 +531,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                     ..._withLayers()
                         .map((layer) => ListTile(
                             dense: true,
-                            title: Text(layer, style: style),
+                            title: Text(layer, style: filter),
                             trailing: Switch(
                               value: _useLayers.contains(layer),
                               onChanged: (value) => _onFilterChanged(layer, value, state),

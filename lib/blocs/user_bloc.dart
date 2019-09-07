@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
@@ -7,7 +10,7 @@ import 'package:SarSys/services/user_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import 'package:flutter/foundation.dart' show VoidCallback, kReleaseMode;
+import 'package:flutter/foundation.dart' show VoidCallback;
 
 typedef void UserCallback(VoidCallback fn);
 
@@ -96,7 +99,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     var response = await service.getToken();
     if (response.is200) {
       _user = User.fromToken(response.body);
-      print("Init from token ${response.body}");
+      if (!kDebugMode) developer.log("Init from token ${response.body}", level: Level.CONFIG.value);
       return _toResponse(command, UserAuthenticated(_user), result: true);
     } else if (response.is401) {
       return _toResponse(command, UserUnauthorized(_user), result: false);
@@ -161,19 +164,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   @override
-  void onEvent(UserCommand event) {
-    if (!kReleaseMode) print("Command $event");
-  }
-
-  @override
-  void onTransition(Transition<UserCommand, UserState> transition) {
-    if (!kReleaseMode) print("$transition");
-  }
-
-  /// Throw error to stream
-  @override
   void onError(Object error, StackTrace stacktrace) {
-    if (!kReleaseMode) print("Error $error, stacktrace: $stacktrace");
     dispatch(RaiseUserError(UserError(error, trace: stacktrace)));
   }
 }

@@ -51,7 +51,6 @@ class LocationService {
             _configure(options);
             _configSubscription = _appConfigBloc.state.listen(
               (state) {
-                print(state);
                 if (state.data is AppConfig) {
                   final options = _toOptions(state.data);
                   if (_isConfigChanged(options)) {

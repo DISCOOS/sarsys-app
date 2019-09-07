@@ -107,11 +107,12 @@ class LocationController {
               point,
               mapController.zoom ?? Defaults.zoom,
               tickerProvider,
-              // Synchronize my location with animation
-              onMove: (center) => {_options.point = center, _locationUpdateController.add(null)},
             );
+            options.animatedMove(point, onMove: (point) {
+              // Synchronize map control state with my location animation
+              if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+            });
           } else {
-            _options.point = point;
             mapController.move(point, mapController.zoom ?? Defaults.zoom);
           }
         }

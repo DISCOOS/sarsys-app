@@ -6,10 +6,12 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/proj4d.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:latlong/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 
@@ -23,7 +25,7 @@ class UnitLayerOptions extends LayerOptions {
 
   UnitLayerOptions({
     @required this.bloc,
-    this.size = 24.0,
+    this.size = 8.0,
     this.opacity = 0.6,
     this.showLabels = true,
     this.showTail = true,
@@ -62,7 +64,7 @@ class UnitLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(
-            overflow: Overflow.clip,
+            overflow: Overflow.visible,
             children: [
               if (options.showTail)
                 ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
@@ -91,55 +93,70 @@ class UnitLayer extends MapPlugin {
 
     final color = _toTrackingStatusColor(context, tracking.status);
 
-    return Opacity(
-      opacity: options.opacity,
-      child: CustomPaint(
-        painter: LineStringPainter(
-          offsets,
-          color,
-          color,
-          4.0,
-          false,
-        ),
-        size: size,
+    return CustomPaint(
+      painter: LineStringPainter(
+        offsets: offsets,
+        color: color,
+        borderColor: color,
+        opacity: options.opacity,
       ),
+      size: size,
     );
   }
 
   Widget _buildPoint(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Tracking tracking) {
     var size = options.size;
-    var pos = map.project(toLatLng(tracking.location));
+    var location = tracking.location;
+    var pos = map.project(toLatLng(location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
 
     return Positioned(
-      width: size,
-      height: size,
-      left: pos.x - size / 2,
-      top: pos.y - size / 2,
-      child: Opacity(
-        opacity: options.opacity,
-        child: CustomPaint(
-          painter: PointPainter(
-            size: size,
-            color: _toTrackingStatusColor(context, tracking.status),
-          ),
+      top: pos.y,
+      left: pos.x,
+      width: pixelRadius,
+      height: pixelRadius,
+      child: CustomPaint(
+        painter: PointPainter(
+          size: size,
+          opacity: options.opacity,
+          outer: pixelRadius,
+          color: _toTrackingStatusColor(context, tracking.status),
         ),
       ),
     );
   }
 
   _buildLabel(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Point point) {
+    var size = options.size;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
-      left: pos.x,
-      top: pos.y + options.size,
+      top: pos.y + size * 2,
+      left: pos.x + size / 2,
       child: CustomPaint(
-        painter: LabelPainter(unit.name),
+        painter: LabelPainter(unit.name, top: size),
+        size: Size(size, size),
       ),
     );
   }
+}
+
+double _toPixelRadius(MapState map, double size, double x, double y, Point point) {
+  var pixelRadius = size;
+  if (point.acc != null && point.acc > 0.0) {
+    var coords = ProjMath.calculateEndingGlobalCoordinates(
+      point.lat,
+      point.lon,
+      45.0,
+      point.acc,
+    );
+    var pos = map.project(LatLng(coords.y, coords.x));
+    pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+    pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
+  }
+  return pixelRadius;
 }
 
 Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {

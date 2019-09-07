@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -32,30 +33,153 @@ class DeviceBuilder {
 }
 
 class DeviceServiceMock extends Mock implements DeviceService {
+  final Timer simulator;
+  final Map<String, Map<String, Device>> deviceRepo;
+
+  DeviceServiceMock._internal(this.deviceRepo, this.simulator);
+
   static DeviceService build(final IncidentBloc bloc, final int count) {
-    final Map<String, List<Device>> deviceRepo = {};
-    final DeviceServiceMock mock = DeviceServiceMock();
+    final rnd = math.Random();
+    final Map<String, Map<String, Device>> deviceRepo = {}; // incidentId -> devices
+    final Map<String, _DeviceSimulation> simulations = {}; // deviceId -> simulation
+    final StreamController<DeviceMessage> controller = StreamController.broadcast();
+
+    final simulator = Timer.periodic(
+      Duration(seconds: 2),
+      (_) => _progress(
+        rnd,
+        bloc,
+        deviceRepo,
+        simulations,
+        controller,
+      ),
+    );
+    final DeviceServiceMock mock = DeviceServiceMock._internal(deviceRepo, simulator);
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+    // Mock all service methods
     when(mock.fetch(any)).thenAnswer((_) async {
       var incidentId = _.positionalArguments[0];
       var devices = deviceRepo[incidentId];
       if (devices == null) {
-        devices = deviceRepo.putIfAbsent(incidentId, () => []);
+        devices = deviceRepo.putIfAbsent(incidentId, () => {});
       }
       if (devices.isEmpty) {
         int number = 6114000;
         Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
-        devices.addAll([
+        devices.addAll({
           for (var i = 1; i <= count; i++)
-            Device.fromJson(DeviceBuilder.createDeviceAsJson(
-              "${incidentId}d$i",
-              DeviceType.Tetra,
-              "${++number % 10 == 0 ? ++number : number}",
-              center,
-            )),
-        ]);
+            "${incidentId}d$i": _simulate(
+              Device.fromJson(
+                DeviceBuilder.createDeviceAsJson(
+                  "${incidentId}d$i",
+                  DeviceType.Tetra,
+                  "${++number % 10 == 0 ? ++number : number}",
+                  Point.now(
+                    center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
+                    center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
+                  ),
+                ),
+              ),
+              rnd,
+              simulations,
+            ),
+        });
       }
-      return ServiceResponse.ok(body: devices);
+      return ServiceResponse.ok(body: devices.values.toList());
     });
     return mock;
+  }
+
+  static Device _simulate(
+    Device device,
+    math.Random rnd,
+    Map<String, _DeviceSimulation> simulations,
+  ) {
+    final simulation = _DeviceSimulation(
+      id: device.id,
+      location: device.location,
+      steps: 16,
+      delta: DeviceBuilder.nextDouble(rnd, 0.02),
+    );
+    simulations.update(device.id, (_) => simulation, ifAbsent: () => simulation);
+    return device;
+  }
+
+  static void _progress(
+    math.Random rnd,
+    IncidentBloc bloc,
+    Map<String, Map<String, Device>> devicesMap,
+    Map<String, _DeviceSimulation> simulations,
+    StreamController<DeviceMessage> controller,
+  ) {
+    final incidentId = bloc.current?.id;
+    if (incidentId != null) {
+      final devices = devicesMap[incidentId].values.toList()..shuffle();
+      // only update 10% each iteration
+      final min = math.min((devices.length * 0.2).toInt(), 3);
+      devices.take(min).forEach((device) {
+        if (simulations.containsKey(device.id)) {
+          var simulation = simulations[device.id];
+          var location = simulation.progress(rnd.nextDouble() * 20.0);
+          device = device.cloneWith(
+            location: location,
+          );
+          devicesMap[incidentId].update(
+            device.id,
+            (_) => device,
+            ifAbsent: () => device,
+          );
+          controller.add(DeviceMessage(device.id, DeviceMessageType.LocationChanged, device.toJson()));
+        }
+      });
+    }
+  }
+}
+
+class _DeviceSimulation {
+  final String id;
+  final int steps;
+  final double delta;
+
+  int current;
+  Point location;
+
+  _DeviceSimulation({this.delta, this.id, this.location, this.steps}) : current = 0;
+
+  Point progress(double acc) {
+    var leg = ((current / 4.0) % 4 + 1).toInt();
+    switch (leg) {
+      case 1:
+        location = Point.now(
+          location.lat,
+          location.lon + delta / steps,
+          acc: acc,
+        );
+        break;
+      case 2:
+        location = Point.now(
+          location.lat - delta / steps,
+          location.lon,
+          acc: acc,
+        );
+        break;
+      case 3:
+        location = Point.now(
+          location.lat,
+          location.lon - delta / steps,
+          acc: acc,
+        );
+        break;
+      case 4:
+        location = Point.now(
+          location.lat + delta / steps,
+          location.lon,
+          acc: acc,
+        );
+        break;
+    }
+    current = (current + 1) % steps;
+    return location;
   }
 }

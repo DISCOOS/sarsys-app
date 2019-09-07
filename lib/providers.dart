@@ -81,14 +81,20 @@ class Providers {
     final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
 
     // Configure Device service
-    final DeviceService deviceService =
-        !mock ? DeviceService('$baseRestUrl/api/incidents') : DeviceServiceMock.build(incidentBloc, deviceCount);
+    final DeviceService deviceService = !mock
+        ? DeviceService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
+        : DeviceServiceMock.build(incidentBloc, deviceCount);
     final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
 
     // Configure Tracking service
     final TrackingService trackingService = !mock
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
-        : TrackingServiceMock.build(incidentBloc, unitService as UnitServiceMock, unitCount);
+        : TrackingServiceMock.build(
+            incidentBloc,
+            unitService as UnitServiceMock,
+            deviceService as DeviceServiceMock,
+            unitCount,
+          );
     final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, unitBloc, deviceBloc);
 
     return Providers._internal(

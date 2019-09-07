@@ -4,10 +4,16 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:http/http.dart' show Client;
 
 class DeviceService {
-  final String url;
+  final String wsUrl;
+  final String restUrl;
   final Client client;
 
-  DeviceService(this.url, [Client client]) : this.client = client ?? Client();
+  final StreamController _controller = StreamController.broadcast();
+
+  /// Get stream of device messages
+  Stream<DeviceMessage> get messages => _controller.stream;
+
+  DeviceService(this.restUrl, this.wsUrl, this.client);
 
   /// GET ../devices
   Future<ServiceResponse<List<Device>>> fetch(String incidentId) async {
@@ -32,4 +38,17 @@ class DeviceService {
     // TODO: Implement delete device
     throw "Not implemented";
   }
+
+  void dispose() {
+    _controller.close();
+  }
+}
+
+enum DeviceMessageType { LocationChanged }
+
+class DeviceMessage {
+  final String deviceId;
+  final DeviceMessageType type;
+  final Map<String, dynamic> json;
+  DeviceMessage(this.deviceId, this.type, this.json);
 }
