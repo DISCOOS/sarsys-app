@@ -20,12 +20,12 @@ void main() async {
   final Widget homepage = await getHome(providers);
 
   // Initialize app-config
-  await providers.configProvider.bloc.fetch();
-  runApp(_buildApp(providers, homepage));
-//  runAppWithCatcher(
-//    _buildApp(providers, homepage),
-//    await providers.configProvider.bloc.fetch(),
-//  );
+//  await providers.configProvider.bloc.fetch();
+//  runApp(_buildApp(providers, homepage));
+  runAppWithCatcher(
+    _buildApp(providers, homepage),
+    await providers.configProvider.bloc.fetch(),
+  );
 }
 
 BlocProviderTree _buildApp(Providers providers, Widget homepage) {
@@ -50,7 +50,7 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
         'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
         'incidents': (BuildContext context) => IncidentsScreen(),
         'settings': (BuildContext context) => SettingsScreen(),
-        'map': (BuildContext context) => MapScreen(center: ModalRoute.of(context).settings.arguments),
+        'map': (BuildContext context) => _toMapScreen(context),
       },
       localizationsDelegates: [
         GlobalWidgetsLocalizations.delegate,
@@ -65,6 +65,14 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
       ],
     ),
   );
+}
+
+MapScreen _toMapScreen(BuildContext context) {
+  final arguments = ModalRoute.of(context).settings.arguments;
+  if (arguments is Map) {
+    return MapScreen(center: arguments["center"], incident: arguments["incident"]);
+  }
+  return MapScreen();
 }
 
 Future<Widget> getHome(Providers providers) async {
