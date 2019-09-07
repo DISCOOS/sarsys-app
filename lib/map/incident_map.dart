@@ -556,16 +556,17 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
 /// Incident MapController that supports animated move operations
 class IncidentMapController extends MapControllerImpl {
-  bool isMoving = false;
+  bool isAnimating = false;
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
 
   /// Move to given point and zoom
-  void animatedMove(LatLng point, double zoom, TickerProvider provider, {int milliSeconds: 500}) {
-    if (isMoving) return;
+  void animatedMove(LatLng point, double zoom, TickerProvider provider,
+      {int milliSeconds: 500, void onMove(LatLng p)}) {
     if (!ready) {
       move(point, zoom);
       progress.value = MapMoveState(point, zoom);
-    } else {
+    } else if (!isAnimating) {
+      isAnimating = true;
       // Create some tweens. These serve to split up the transition from one location to another.
       // In our case, we want to split the transition be<tween> our current map center and the destination.
       final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
@@ -589,14 +590,15 @@ class IncidentMapController extends MapControllerImpl {
         );
         move(state.center, state.zoom);
         progress.value = state;
+        if (onMove != null) onMove(state.center);
       });
 
       animation.addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          isMoving = false;
+          isAnimating = false;
           controller.dispose();
         } else if (status == AnimationStatus.dismissed) {
-          isMoving = false;
+          isAnimating = false;
           controller.dispose();
         }
       });

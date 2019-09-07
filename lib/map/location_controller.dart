@@ -33,7 +33,7 @@ class LocationController {
   StreamController<Null> _locationUpdateController;
 
   bool get isLocked => _locked;
-  bool get isLocated => mapController.ready && _toLatLng(_service?.current) == mapController?.center;
+  bool get isLocated => mapController.ready && (isLocked || _toLatLng(_service?.current) == mapController?.center);
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
 
@@ -91,20 +91,26 @@ class LocationController {
 
   bool _updateLocation(Position position, bool goto) {
     bool hasMoved = false;
+    bool wasLocated = isLocated;
     if (position != null && mapController.ready) {
       //locationOpts.bearing = _calculateBearing();
       final point = _toLatLng(position);
-
+      _options.accuracy = position.accuracy;
       // Full refresh of map needed?
       if (goto || isLocked) {
         hasMoved = true;
-        _options.point = point;
-        _options.accuracy = position.accuracy;
         if (onLocationChanged != null) onLocationChanged(point);
         if (goto || _locked) {
           if (tickerProvider != null) {
-            mapController.animatedMove(point, mapController.zoom ?? Defaults.zoom, tickerProvider);
+            mapController.animatedMove(
+              point,
+              mapController.zoom ?? Defaults.zoom,
+              tickerProvider,
+              // Synchronize my location with animation
+              onMove: (center) => {_options.point = center, _locationUpdateController.add(null)},
+            );
           } else {
+            _options.point = point;
             mapController.move(point, mapController.zoom ?? Defaults.zoom);
           }
         }
@@ -113,10 +119,14 @@ class LocationController {
         if (_options.point == null || tickerProvider == null) {
           _locationUpdateController.add(null);
         } else {
-          _options.animatedMove(point);
+          _options.animatedMove(point, onMove: (point) {
+            // Synchronize map control state with my location animation
+            if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+          });
         }
       }
     }
+    if (onTrackingChanged != null && wasLocated != isLocated) onTrackingChanged(isLocated, _locked);
     return hasMoved;
   }
 

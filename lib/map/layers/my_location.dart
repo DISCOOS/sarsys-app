@@ -41,7 +41,7 @@ class MyLocationOptions extends LayerOptions {
   }) : super(rebuild: rebuild);
 
   /// Move icon to given point
-  void animatedMove(LatLng point, {double bearing}) {
+  void animatedMove(LatLng point, {double bearing, void onMove(LatLng p)}) {
     if (_isAnimating) return;
     _isAnimating = true;
 
@@ -62,6 +62,7 @@ class MyLocationOptions extends LayerOptions {
 
     controller.addListener(() {
       this.point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
+      if (onMove != null) onMove(this.point);
       locationUpdateController.add(null);
     });
 
