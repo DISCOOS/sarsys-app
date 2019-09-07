@@ -5,6 +5,8 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/icon_layer.dart';
+import 'package:SarSys/map/layers/measure_layer.dart';
+import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
@@ -115,7 +117,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           zoom: 13,
           onPositionChanged: _onPositionChanged,
           onTap: (_) => _clearSearchField(),
-          plugins: [IconLayer()]),
+          plugins: [
+            IconLayer(),
+            ScaleBar(),
+          ]),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
@@ -124,7 +129,14 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           _buildPoiOptions([
             widget?.incident?.ipp,
             widget?.incident?.meetup,
-          ])
+          ]),
+        ScalebarOption(
+          lineColor: Colors.black54,
+          lineWidth: 2,
+          textStyle: TextStyle(color: Colors.black87, fontSize: 12),
+          padding: EdgeInsets.only(left: 16, top: 16),
+          alignment: Alignment.bottomLeft,
+        ),
       ],
     );
   }
@@ -236,8 +248,11 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Align _buildCoordsPanel() {
     return Align(
-      alignment: Alignment.bottomCenter,
-      child: CoordinatePanel(point: _current),
+      alignment: Alignment.center,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 220.0),
+        child: CoordinatePanel(point: _current),
+      ),
     );
   }
 
