@@ -60,7 +60,15 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       context: context,
       builder: (context) => IncidentEditor(),
     );
-    if (incident != null) Navigator.pushReplacementNamed(context, 'map');
+    if (incident != null)
+      Navigator.pushReplacementNamed(
+        context,
+        'map',
+        arguments: {
+          "center": incident.ipp,
+          "incident": incident,
+        },
+      );
   }
 
   Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {

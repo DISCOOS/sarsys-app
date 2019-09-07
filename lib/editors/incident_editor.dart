@@ -307,7 +307,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
-      builder: (context) => PointEditor(field.value, 'Velg IPP'),
+      builder: (context) => PointEditor(field.value, 'Velg IPP', incident: widget.incident),
     );
     if (selected != field.value) {
       field.didChange(selected);
@@ -348,7 +348,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   void _selectMeetup(BuildContext context, FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
-      builder: (context) => PointEditor(field.value, 'Velg oppmøtested'),
+      builder: (context) => PointEditor(field.value, 'Velg oppmøtested', incident: widget.incident),
     );
     if (selected != field.value) {
       field.didChange(selected);

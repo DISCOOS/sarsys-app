@@ -1,12 +1,16 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/layers/icon_layer.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -15,8 +19,9 @@ import 'package:latlong/latlong.dart';
 class PointEditor extends StatefulWidget {
   final Point point;
   final String title;
+  final Incident incident;
 
-  const PointEditor(this.point, this.title, {Key key}) : super(key: key);
+  const PointEditor(this.point, this.title, {Key key, this.incident}) : super(key: key);
 
   @override
   _PointEditorState createState() => _PointEditorState();
@@ -106,16 +111,36 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: LatLng(_current.lat, _current.lon),
-        zoom: 13,
-        onPositionChanged: _onPositionChanged,
-        onTap: (_) => _clearSearchField(),
-      ),
+          center: LatLng(_current.lat, _current.lon),
+          zoom: 13,
+          onPositionChanged: _onPositionChanged,
+          onTap: (_) => _clearSearchField(),
+          plugins: [IconLayer()]),
       layers: [
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
         ),
+        if (widget.incident != null)
+          _buildPoiOptions([
+            widget?.incident?.ipp,
+            widget?.incident?.meetup,
+          ])
       ],
+    );
+  }
+
+  IconLayerOptions _buildPoiOptions(List<Point> points) {
+    final bloc = BlocProvider.of<IncidentBloc>(context);
+    return IconLayerOptions(
+      points.where((point) => point != null).map((point) => toLatLng(point)).toList(),
+      labels: ["IPP", "Oppmøte"],
+      align: AnchorAlign.top,
+      icon: Icon(
+        Icons.location_on,
+        size: 30,
+        color: Colors.red,
+      ),
+      rebuild: bloc.state.map((_) => null),
     );
   }
 

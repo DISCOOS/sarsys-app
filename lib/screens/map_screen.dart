@@ -2,6 +2,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,8 +13,9 @@ import 'package:SarSys/widgets/app_drawer.dart';
 
 class MapScreen extends StatefulWidget {
   final LatLng center;
+  final Incident incident;
 
-  const MapScreen({Key key, this.center}) : super(key: key);
+  const MapScreen({Key key, this.center, this.incident}) : super(key: key);
 
   @override
   MapScreenState createState() => MapScreenState();
@@ -57,6 +59,7 @@ class MapScreenState extends State<MapScreen> {
   Widget _buildMap() {
     return IncidentMap(
       center: widget.center,
+      incident: widget.incident,
       withSearch: true,
       withControls: true,
       withLocation: true,

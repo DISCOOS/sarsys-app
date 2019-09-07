@@ -127,7 +127,12 @@ class _IncidentPageState extends State<IncidentPage> {
               incident: incident,
               interactive: false,
             ),
-            onTap: () => point == null ? null : Navigator.pushReplacementNamed(context, 'map', arguments: point),
+            onTap: () => point == null
+                ? null
+                : Navigator.pushReplacementNamed(context, 'map', arguments: {
+                    "center": point,
+                    "incident": incident,
+                  }),
           ),
         ),
         elevation: IncidentPage.ELEVATION,
@@ -137,8 +142,8 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   LatLng _toMapCenter(Incident incident) {
-    bool isIppEmpty = incident.ipp == null || incident.ipp.isEmpty;
-    bool isMeetupEmpty = incident.meetup == null || incident.meetup.isEmpty;
+    bool isIppEmpty = incident?.ipp?.isEmpty == null;
+    bool isMeetupEmpty = incident?.meetup?.isEmpty == null;
     return isMeetupEmpty ? (isIppEmpty ? Defaults.origo : toLatLng(incident.ipp)) : toLatLng(incident.meetup);
   }
 
