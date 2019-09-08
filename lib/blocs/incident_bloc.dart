@@ -102,22 +102,26 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     } else if (command is CreateIncident) {
       final created = await _create(command);
       yield created;
-      if (command.selected) {
+      if (created.isCreated() && command.selected) {
         yield _set(created.data);
       }
     } else if (command is UpdateIncident) {
-      yield await _update(command);
-      var select = command.selected && command.data.id != _given;
-      if (select) {
-        yield _set(command.data);
+      final updated = await _update(command);
+      yield updated;
+      if (updated.isUpdated()) {
+        var select = command.selected && command.data.id != _given;
+        if (select) {
+          yield _set(command.data);
+        }
       }
     } else if (command is SelectIncident) {
       if (command.data != _given && _incidents.containsKey(command.data)) {
         yield _set(_incidents[command.data]);
       }
     } else if (command is DeleteIncident) {
-      yield await _delete(command);
-      if (command.data.id == _given) {
+      final deleted = await _delete(command);
+      yield deleted;
+      if (deleted.isDeleted() && command.data.id == _given) {
         yield _unset();
       }
     } else if (command is ClearIncidents) {

@@ -105,6 +105,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         talkgroups: incident.talkgroups,
         reference: incident.reference,
       );
+      incidents.putIfAbsent(created.id, () => incident);
       return ServiceResponse.ok(body: created);
     });
     when(mock.update(any)).thenAnswer((_) async {
