@@ -355,6 +355,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
                 _prepare(unit.searchable).contains(match) ||
                 // Search in devices tracked with this unit
                 tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+            .where((unit) => tracks[unit.tracking].location != null)
             .map((unit) => _AddressLookup(
                   context: context,
                   point: tracks[unit.tracking].location,
