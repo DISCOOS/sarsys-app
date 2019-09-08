@@ -118,12 +118,12 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<UnitState> _update(UpdateUnit event) async {
     var response = await service.update(event.data);
     if (response.is204) {
-      // TODO: Close tracking if Unit is retired
       _units.update(
         event.data.id,
         (_) => event.data,
         ifAbsent: () => event.data,
       );
+      // If state is Retired any tracking is removed by listening to this event in TrackingBloc
       return _toOK(event, UnitUpdated(event.data));
     }
     return _toError(event, response);
@@ -132,10 +132,10 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<UnitState> _delete(DeleteUnit event) async {
     var response = await service.delete(event.data);
     if (response.is204) {
-      // TODO: Delete tracking if Unit was tracked
       if (_units.remove(event.data.id) == null) {
         return _toError(event, "Failed to delete unit $event, not found locally");
       }
+      // Any tracking is removed by listening to this event in TrackingBloc
       return _toOK(event, UnitDeleted(event.data));
     }
     return _toError(event, response);

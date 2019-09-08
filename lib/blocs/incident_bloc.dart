@@ -157,12 +157,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Future<IncidentState> _update(UpdateIncident event) async {
     var response = await service.update(event.data);
     if (response.is204) {
-      // TODO: Close all tracking if Incident is closed (cancelled or resolved)
       _incidents.update(
         event.data.id,
         (_) => event.data,
         ifAbsent: () => event.data,
       );
+      // All tracking is removed by listening to this event in TrackingBloc
       return _toOK(event, IncidentUpdated(event.data));
     }
     return _toError(event, response);
@@ -171,10 +171,10 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Future<IncidentState> _delete(DeleteIncident event) async {
     var response = await service.delete(event.data);
     if (response.is204) {
-      // TODO: Delete all tracking
       if (_incidents.remove(event.data.id) == null) {
         return _toError(event, "Failed to delete incident $event, not found locally");
       }
+      // All tracking is removed by listening to this event in TrackingBloc
       return _toOK(event, IncidentDeleted(event.data));
     }
     return _toError(event, response);

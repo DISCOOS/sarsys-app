@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -29,13 +30,36 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     assert(unitBloc != null, "unitBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
     incidentBloc.state.listen(_init);
+    unitBloc.state.listen(_cleanup);
     service.messages.listen((event) => dispatch(HandleMessage(event)));
   }
 
   void _init(IncidentState state) {
-    if (state.isUnset() || state.isCreated() || state.isDeleted())
+    // Clear out current tracking upon states given below
+    if (state.isUnset() ||
+        state.isCreated() ||
+        state.isDeleted() ||
+        (state.isUpdated() &&
+            [
+              IncidentStatus.Cancelled,
+              IncidentStatus.Resolved,
+            ].contains((state as IncidentUpdated).data.status))) {
       dispatch(ClearTracking(_tracks.keys.toList()));
-    else if (state.isSelected()) _fetch(state.data.id);
+    } else if (state.isSelected()) {
+      _fetch(state.data.id);
+    }
+  }
+
+  void _cleanup(UnitState state) {
+    if (state.isUpdated()) {
+      final event = state as UnitUpdated;
+      if (UnitStatus.Retired == event.data.status) {
+        dispatch(HandleRemoved(event.data.tracking));
+      }
+    } else if (state.isDeleted()) {
+      final event = state as UnitDeleted;
+      dispatch(HandleRemoved(event.data.tracking));
+    }
   }
 
   @override
@@ -167,6 +191,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       yield _clear(command);
     } else if (command is HandleMessage) {
       yield _process(command.data);
+    } else if (command is HandleRemoved) {
+      yield _remove(command);
     } else if (command is RaiseTrackingError) {
       yield command.data;
     } else {
@@ -196,12 +222,21 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return _toError(event, response);
   }
 
+  TrackingState _remove(HandleRemoved command) {
+    var state;
+    final tracking = _tracks.remove(command.data);
+    if (tracking != null) state = TrackingDeleted(tracking);
+    return state;
+  }
+
   TrackingState _process(TrackingMessage event) {
     switch (event.type) {
       case TrackingMessageType.TrackingChanged:
-        var tracking = Tracking.fromJson(event.json);
-        if (_tracks.containsKey(tracking.id)) {
-          return TrackingUpdated(_tracks.update(tracking.id, (_) => tracking));
+        // Only handle tracking in current incident
+        if (event.incidentId == incidentBloc?.current?.id) {
+          var tracking = Tracking.fromJson(event.json);
+          // Update or add as new
+          return TrackingUpdated(_tracks.update(tracking.id, (_) => tracking, ifAbsent: () => tracking));
         }
         break;
       case TrackingMessageType.LocationChanged:
@@ -311,6 +346,13 @@ class HandleMessage extends TrackingCommand<TrackingMessage, void> {
 
   @override
   String toString() => 'HandleMessage';
+}
+
+class HandleRemoved extends TrackingCommand<String, void> {
+  HandleRemoved(String id) : super(id);
+
+  @override
+  String toString() => 'HandleShortcut';
 }
 
 class DeleteTracking extends TrackingCommand<Tracking, void> {
