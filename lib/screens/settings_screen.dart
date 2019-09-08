@@ -43,7 +43,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
-        title: Text("Preferanser"),
+        title: Text("Innstillinger"),
         centerTitle: false,
         automaticallyImplyLeading: true,
         leading: IconButton(
