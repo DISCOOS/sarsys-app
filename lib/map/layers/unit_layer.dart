@@ -91,7 +91,7 @@ class UnitLayer extends MapPlugin {
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
 
-    final color = _toTrackingStatusColor(context, tracking.status);
+    final color = _toLocationStatusColor(context, tracking.location);
 
     return CustomPaint(
       painter: LineStringPainter(
@@ -157,6 +157,11 @@ double _toPixelRadius(MapState map, double size, double x, double y, Point point
     pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
   }
   return pixelRadius;
+}
+
+Color _toLocationStatusColor(BuildContext context, Point location) {
+  final since = location.timestamp.difference(DateTime.now()).inMinutes;
+  return since > 15 ? Colors.red : (since > 2 ? Colors.orange : Colors.green);
 }
 
 Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {

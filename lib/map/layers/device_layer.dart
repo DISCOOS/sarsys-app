@@ -73,12 +73,9 @@ class DeviceLayer extends MapPlugin {
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
 
-    var pixelPosX = (pos.x - pixelRadius / 2).toDouble();
-    var pixelPosY = (pos.y - pixelRadius / 2).toDouble();
-
     return Positioned(
-      left: pixelPosX,
-      top: pixelPosY,
+      top: pos.y,
+      left: pos.x,
       width: pixelRadius,
       height: pixelRadius,
       child: CustomPaint(
@@ -97,14 +94,10 @@ class DeviceLayer extends MapPlugin {
     var location = device.location;
     var pos = map.project(toLatLng(location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
-
-    var pixelPosX = (pos.x - pixelRadius / 2).toDouble();
-    var pixelPosY = (pos.y - pixelRadius / 2).toDouble();
 
     return Positioned(
-      left: pixelPosX + size / 2,
-      top: pixelPosY + size * 2,
+      top: pos.y + size * 2,
+      left: pos.x + size / 2,
       child: CustomPaint(
         painter: LabelPainter(device.name, top: size),
         size: Size(size, size),
