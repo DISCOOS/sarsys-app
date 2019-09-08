@@ -285,7 +285,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                       contentPadding: EdgeInsets.only(left: 16.0, right: 0),
                       title: Text("Vis", style: style),
                       trailing: FlatButton(
-                        child: Text('BRUK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
+                        child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                         onPressed: () => setState(
                           () {
                             Navigator.pop(context);
@@ -318,6 +318,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       } else if (_filter.length > 1) {
         _filter.remove(status);
       }
+      setState(() {});
     });
   }
 }
