@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/services/image_cache_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:filesize/filesize.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -189,11 +190,13 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               items: _toOsSpecific(LocationAccuracy.values)
                   .map((value) => DropdownMenuItem<LocationAccuracy>(
                         value: value,
-                        child: Text("${_toAccuracyName(value)}"),
+                        child: Text("${_toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
               onChanged: (value) {
-                _bloc.update(locationAccuracy: value.toString());
+                setState(() {
+                  _bloc.update(locationAccuracy: enumName(value));
+                });
               },
               value: _bloc.config?.toLocationAccuracy(),
             ),

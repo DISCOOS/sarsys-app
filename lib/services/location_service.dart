@@ -41,27 +41,22 @@ class LocationService {
     switch (_status) {
       case GeolocationStatus.granted:
       case GeolocationStatus.restricted:
-        {
-          final config = _appConfigBloc.config;
-
-          var options = _toOptions(config);
-
-          if (_isConfigChanged(options)) {
-            if (_stream != null) dispose();
-            _configure(options);
-            _configSubscription = _appConfigBloc.state.listen(
-              (state) {
-                if (state.data is AppConfig) {
-                  final options = _toOptions(state.data);
-                  if (_isConfigChanged(options)) {
-                    _configure(options);
-                  }
+        final config = _appConfigBloc.config;
+        var options = _toOptions(config);
+        if (_isConfigChanged(options)) {
+          _subscribe(options);
+          _configSubscription = _appConfigBloc.state.listen(
+            (state) {
+              if (state.data is AppConfig) {
+                final options = _toOptions(state.data);
+                if (_isConfigChanged(options)) {
+                  _subscribe(options);
                 }
-              },
-            );
-          }
-          break;
+              }
+            },
+          );
         }
+        break;
       case GeolocationStatus.disabled:
       case GeolocationStatus.denied:
       case GeolocationStatus.unknown:
@@ -81,7 +76,8 @@ class LocationService {
     );
   }
 
-  void _configure(LocationOptions options) async {
+  void _subscribe(LocationOptions options) async {
+    if (_stream != null) _unsubscribe();
     _options = options;
     _stream = _geolocator.getPositionStream(_options).asBroadcastStream();
     _locatorSubscription = _stream.listen((Position position) {
@@ -94,9 +90,13 @@ class LocationService {
 
   void dispose() {
     _configSubscription?.cancel();
-    _locatorSubscription?.cancel();
-    _stream = null;
     _configSubscription = null;
+    _unsubscribe();
+  }
+
+  void _unsubscribe() {
+    _stream = null;
+    _locatorSubscription?.cancel();
     _locatorSubscription = null;
     _isReady.value = false;
   }

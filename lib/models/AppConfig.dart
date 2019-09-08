@@ -1,3 +1,4 @@
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
@@ -109,7 +110,7 @@ class AppConfig extends Equatable {
     LocationAccuracy defaultValue: LocationAccuracy.high,
   }) =>
       LocationAccuracy.values.firstWhere(
-        (test) => "$test" == this.locationAccuracy,
+        (test) => enumName(test) == this.locationAccuracy,
         orElse: () => defaultValue,
       );
 }
