@@ -13,7 +13,7 @@ import 'package:mockito/mockito.dart';
 
 class DeviceBuilder {
   static createDeviceAsJson(String id, DeviceType type, String number, Point center) {
-    final rnd = math.Random(1);
+    final rnd = math.Random();
     final location = createPointAsJson(center.lat + nextDouble(rnd, 0.03), center.lon + nextDouble(rnd, 0.03));
     return json.decode('{'
         '"id": "$id",'
@@ -75,10 +75,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
                   "${incidentId}d$i",
                   DeviceType.Tetra,
                   "${++number % 10 == 0 ? ++number : number}",
-                  Point.now(
-                    center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
-                    center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
-                  ),
+                  center,
                 ),
               ),
               rnd,
