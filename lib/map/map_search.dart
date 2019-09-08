@@ -62,6 +62,12 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _hideResults();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).iconTheme;
     return Container(
@@ -278,7 +284,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         }
       } catch (e) {
         _hideResults();
-        widget.onError('Addresse "$value" ikke funnet');
+        if (widget.onError != null) widget.onError('"$value" ikke funnet');
       }
     } else {
       lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
@@ -292,6 +298,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     }
     if (lat != null && lon != null) {
       _goto(lat, lon);
+    } else {
+      if (widget.onError != null) widget.onError('"$value" ikke funnet');
     }
   }
 
@@ -305,7 +313,6 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   }
 
   bool _searchBlocs(BuildContext context, String value) {
-    var found = true;
     final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
     final units = BlocProvider.of<TrackingBloc>(context).units;
@@ -313,50 +320,54 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
 
-    // Search for matches in incident
-    if (_prepare(incident.searchable).contains(match)) {
-      var matches = [
-        _AddressLookup(
-          context: context,
-          point: incident.ipp,
-          title: "${incident.name} > IPP",
-          icon: Icons.location_on,
-        ),
-        _AddressLookup(
-          context: context,
-          point: incident.meetup,
-          title: "${incident.name} > Oppmøte",
-          icon: Icons.location_on,
-        ),
-      ];
-      var positions = matches.where((test) => _prepare(test).contains(match));
-      if ((positions).isNotEmpty) {
-        results.addAll(positions);
-      } else {
-        results.addAll(matches);
+    var found = incident != null;
+
+    if (found) {
+      // Search for matches in incident
+      if (_prepare(incident.searchable).contains(match)) {
+        var matches = [
+          _AddressLookup(
+            context: context,
+            point: incident.ipp,
+            title: "${incident.name} > IPP",
+            icon: Icons.location_on,
+          ),
+          _AddressLookup(
+            context: context,
+            point: incident.meetup,
+            title: "${incident.name} > Oppmøte",
+            icon: Icons.location_on,
+          ),
+        ];
+        var positions = matches.where((test) => _prepare(test).contains(match));
+        if ((positions).isNotEmpty) {
+          results.addAll(positions);
+        } else {
+          results.addAll(matches);
+        }
       }
-    }
 
-    // Search for matches in units
-    results.addAll(
-      units.values
-          .where((unit) =>
-              // Search in unit
-              _prepare(unit.searchable).contains(match) ||
-              // Search in devices tracked with this unit
-              tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-          .map((unit) => _AddressLookup(
-                context: context,
-                point: tracks[unit.tracking].location,
-                title: unit.name,
-                icon: Icons.group,
-              )),
-    );
+      // Search for matches in units
+      results.addAll(
+        units.values
+            .where((unit) =>
+                // Search in unit
+                _prepare(unit.searchable).contains(match) ||
+                // Search in devices tracked with this unit
+                tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+            .map((unit) => _AddressLookup(
+                  context: context,
+                  point: tracks[unit.tracking].location,
+                  title: unit.name,
+                  icon: Icons.group,
+                )),
+      );
 
-    if (results.length > 0) {
-      _showResults(results);
-    } else {
-      found = false;
+      if (results.length > 0) {
+        _showResults(results);
+      } else {
+        found = false;
+      }
     }
     return found;
   }
@@ -367,7 +378,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _match = LatLng(lat, lon);
     if (!kReleaseMode) print("Goto: $_match");
     widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
-    widget?.onMatch(_match);
+    if (widget.onMatch != null) widget.onMatch(_match);
     _controller.clear();
     _focusNode?.unfocus();
     _hideResults();

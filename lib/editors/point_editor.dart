@@ -263,10 +263,16 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   void _onError(String message) {
     final snackbar = SnackBar(
-      duration: Duration(seconds: 1),
+      duration: Duration(seconds: 2),
       content: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Text(message),
+      ),
+      action: SnackBarAction(
+        label: "OK",
+        onPressed: () {
+          _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+        },
       ),
     );
     _scaffoldKey.currentState.showSnackBar(snackbar);
