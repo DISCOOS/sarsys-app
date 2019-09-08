@@ -139,7 +139,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           }),
       ListTile(
         title: Text(
-          "Endre tilganger",
+          "Endre tilganger for app",
           style: Theme.of(context).textTheme.body1,
         ),
         onTap: () {
