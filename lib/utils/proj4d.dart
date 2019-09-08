@@ -1103,13 +1103,13 @@ class CoordinateFormat {
 
   /// UTM coordinate pattern
   static final RegExp utm = RegExp(
-    r"^([1-6]\d)([C-X]+)\s*([NSWE]?\d{1,7}[.]?\d*[NSWE]?\s+[NSWE]?\d{1,7}[.]?\d*[NSWE]?)$",
+    r"([1-6]\d)([C-X]+)\s*([NSWE]?\d{1,7}[.]?\d*[NSWE]?\s+[NSWE]?\d{1,7}[.]?\d*[NSWE]?)",
     caseSensitive: false,
   );
 
   /// Coordinate ordinate pattern
   static final RegExp ordinate = RegExp(
-    r"^([NSWE]?)([-]?\d+[.]?\d?)([NSWE]?)$",
+    r"([NSWE]?)([-]?\d+[.]?\d*)([NSWE]?)",
     caseSensitive: false,
   );
 
