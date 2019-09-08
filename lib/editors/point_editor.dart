@@ -125,10 +125,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           urlTemplate: _currentBaseMap,
         ),
         if (widget.incident != null)
-          _buildPoiOptions([
-            widget?.incident?.ipp,
-            widget?.incident?.meetup,
-          ]),
+          _buildPoiOptions({
+            widget?.incident?.ipp: "IPP",
+            widget?.incident?.meetup: "Oppmøte",
+          }),
         ScalebarOption(
           lineColor: Colors.black54,
           lineWidth: 2,
@@ -140,11 +140,12 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     );
   }
 
-  IconLayerOptions _buildPoiOptions(List<Point> points) {
+  IconLayerOptions _buildPoiOptions(Map<Point, String> points) {
     final bloc = BlocProvider.of<IncidentBloc>(context);
     return IconLayerOptions(
-      points.where((point) => point != null).map((point) => toLatLng(point)).toList(),
-      labels: ["IPP", "Oppmøte"],
+      Map.fromEntries(
+        points.entries.where((entry) => entry.key != null).map((entry) => MapEntry(toLatLng(entry.key), entry.value)),
+      ),
       align: AnchorAlign.top,
       icon: Icon(
         Icons.location_on,

@@ -83,7 +83,7 @@ class DeviceLayer extends MapPlugin {
           size: size,
           outer: pixelRadius,
           opacity: options.opacity,
-          color: _toLocationStatusColor(context, device.location),
+          color: toPointStatusColor(context, device.location),
         ),
       ),
     );
@@ -96,8 +96,8 @@ class DeviceLayer extends MapPlugin {
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
-      top: pos.y + size * 2,
-      left: pos.x + size / 2,
+      top: pos.y + size,
+      left: pos.x,
       child: CustomPaint(
         painter: LabelPainter(device.name, top: size),
         size: Size(size, size),
@@ -120,9 +120,4 @@ class DeviceLayer extends MapPlugin {
     }
     return pixelRadius;
   }
-}
-
-Color _toLocationStatusColor(BuildContext context, Point location) {
-  final since = location.timestamp.difference(DateTime.now()).inMinutes;
-  return since > 15 ? Colors.red : (since > 2 ? Colors.orange : Colors.green);
 }

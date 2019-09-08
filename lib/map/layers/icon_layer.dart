@@ -11,8 +11,7 @@ import 'package:latlong/latlong.dart' hide Path;
 typedef IconBuilder = Icon Function(BuildContext context, int index);
 
 class IconLayerOptions extends LayerOptions {
-  Iterable<LatLng> points;
-  Iterable<String> labels;
+  Map<LatLng, String> points;
   double bearing;
   double opacity;
   Icon icon;
@@ -24,7 +23,6 @@ class IconLayerOptions extends LayerOptions {
 
   IconLayerOptions(
     this.points, {
-    this.labels = const [],
     this.icon,
     this.builder,
     this.bearing,
@@ -58,10 +56,9 @@ class IconLayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {
     int index = 0;
-    List<String> labels = List.from(params.labels ?? []);
-    List<Widget> icons = params.points
-        .where((point) => map.bounds.contains(point))
-        .map((point) => _buildIcon(context, map, params, point, labels, index++))
+    List<Widget> icons = params.points.entries
+        .where((entry) => map.bounds.contains(entry.key))
+        .map((entry) => _buildIcon(context, map, params, entry.key, entry.value, index++))
         .toList();
     return icons.isEmpty
         ? Container()
@@ -75,7 +72,7 @@ class IconLayer implements MapPlugin {
     MapState map,
     IconLayerOptions params,
     LatLng point,
-    List<String> labels,
+    String label,
     int index,
   ) {
     var icon = params.icon ?? params.builder(context, index);
@@ -108,12 +105,12 @@ class IconLayer implements MapPlugin {
               ),
             ),
           ),
-          if (params.showLabels && labels.length > index)
+          if (params.showLabels && label != null)
             Positioned(
               left: size / 2,
               top: size,
               child: CustomPaint(
-                painter: LabelPainter(labels[index], top: size / 2),
+                painter: LabelPainter(label, top: size / 2),
               ),
             ),
           if (params.bearing != null)

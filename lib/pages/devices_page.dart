@@ -127,9 +127,7 @@ class DevicesPageState extends State<DevicesPage> {
       );
     }
     final device = devices[index];
-    tracked = _trackingBloc.getTrackingByDeviceId();
-    final status = tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
-        TrackingStatus.None;
+    final status = _toTrackingStatus(tracked, device);
     return Slidable(
       actionPane: SlidableScrollActionPane(),
       actionExtentRatio: 0.2,
@@ -139,7 +137,7 @@ class DevicesPageState extends State<DevicesPage> {
           dense: true,
           key: ObjectKey(device.id),
           leading: CircleAvatar(
-            backgroundColor: toTrackingStatusColor(context, status),
+            backgroundColor: toPointStatusColor(context, device.location),
             child: Icon(MdiIcons.cellphoneBasic),
             foregroundColor: Colors.white,
           ),
@@ -182,6 +180,11 @@ class DevicesPageState extends State<DevicesPage> {
         ]
       ],
     );
+  }
+
+  TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
+    return tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
+        TrackingStatus.None;
   }
 
   void _createUnit(Device device) async {

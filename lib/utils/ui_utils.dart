@@ -119,6 +119,11 @@ IconData toTrackingIconData(BuildContext context, TrackingStatus status) {
   }
 }
 
+Color toPointStatusColor(BuildContext context, Point point) {
+  final since = (point == null ? null : DateTime.now().difference(point.timestamp).inMinutes);
+  return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
+}
+
 void jumpToPoint(BuildContext context, Point location) {
   if (location != null) {
     Navigator.pushNamed(context, "map", arguments: toLatLng(location));

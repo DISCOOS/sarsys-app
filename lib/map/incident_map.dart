@@ -224,10 +224,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (_useLayers.contains(DEVICES_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
-          _buildPoiOptions([
-            widget?.incident?.ipp ?? bloc?.current?.ipp,
-            widget?.incident?.meetup ?? bloc?.current?.meetup,
-          ]),
+          _buildPoiOptions({
+            widget?.incident?.ipp ?? bloc?.current?.ipp: "IPP",
+            widget?.incident?.meetup ?? bloc?.current?.meetup: "Oppmøte",
+          }),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
@@ -365,11 +365,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return _mapControls;
   }
 
-  IconLayerOptions _buildPoiOptions(List<Point> points) {
+  IconLayerOptions _buildPoiOptions(Map<Point, String> points) {
     final bloc = BlocProvider.of<IncidentBloc>(context);
     return IconLayerOptions(
-      points.where((point) => point != null).map((point) => toLatLng(point)).toList(),
-      labels: ["IPP", "Oppmøte"],
+      Map.fromEntries(
+        points.entries.where((entry) => entry.key != null).map((entry) => MapEntry(toLatLng(entry.key), entry.value)),
+      ),
       align: AnchorAlign.top,
       icon: Icon(
         Icons.location_on,

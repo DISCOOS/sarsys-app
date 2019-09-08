@@ -91,7 +91,7 @@ class UnitLayer extends MapPlugin {
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
 
-    final color = _toLocationStatusColor(context, tracking.location);
+    final color = toPointStatusColor(context, tracking.location);
 
     return CustomPaint(
       painter: LineStringPainter(
@@ -121,7 +121,7 @@ class UnitLayer extends MapPlugin {
           size: size,
           opacity: options.opacity,
           outer: pixelRadius,
-          color: _toTrackingStatusColor(context, tracking.status),
+          color: toPointStatusColor(context, tracking.location),
         ),
       ),
     );
@@ -133,8 +133,8 @@ class UnitLayer extends MapPlugin {
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
-      top: pos.y + size * 2,
-      left: pos.x + size / 2,
+      top: pos.y + size,
+      left: pos.x,
       child: CustomPaint(
         painter: LabelPainter(unit.name, top: size),
         size: Size(size, size),
@@ -157,24 +157,4 @@ double _toPixelRadius(MapState map, double size, double x, double y, Point point
     pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
   }
   return pixelRadius;
-}
-
-Color _toLocationStatusColor(BuildContext context, Point location) {
-  final since = location.timestamp.difference(DateTime.now()).inMinutes;
-  return since > 15 ? Colors.red : (since > 2 ? Colors.orange : Colors.green);
-}
-
-Color _toTrackingStatusColor(BuildContext context, TrackingStatus status) {
-  switch (status) {
-    case TrackingStatus.None:
-    case TrackingStatus.Created:
-    case TrackingStatus.Closed:
-      return Colors.red;
-    case TrackingStatus.Tracking:
-      return Colors.green;
-    case TrackingStatus.Paused:
-      return Colors.orange;
-    default:
-      return Theme.of(context).colorScheme.primary;
-  }
 }
