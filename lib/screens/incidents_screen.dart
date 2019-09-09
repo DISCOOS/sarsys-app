@@ -6,6 +6,7 @@ import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,15 +61,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       context: context,
       builder: (context) => IncidentEditor(),
     );
-    if (incident != null)
-      Navigator.pushReplacementNamed(
-        context,
-        'map',
-        arguments: {
-          "incident": incident,
-          "center": toLatLng(incident.ipp),
-        },
-      );
+    if (incident != null) jumpToPoint(context, center: incident.meetup, incident: incident);
   }
 
   Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
@@ -225,7 +218,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
 
   void _selectAndReroute(IncidentBloc bloc, Incident incident, BuildContext context) {
     bloc.select(incident.id);
-    Navigator.pushReplacementNamed(context, 'map');
+    jumpToPoint(context, center: incident.meetup, incident: incident);
   }
 
   Widget _buildMapTile(IncidentBloc bloc, Incident incident) {

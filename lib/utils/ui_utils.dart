@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -5,6 +6,8 @@ import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 typedef PromptCallback = Future<bool> Function(String title, String message);
@@ -124,9 +127,13 @@ Color toPointStatusColor(BuildContext context, Point point) {
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }
 
-void jumpToPoint(BuildContext context, Point location) {
-  if (location != null) {
-    Navigator.pushNamed(context, "map", arguments: toLatLng(location));
+void jumpToPoint(BuildContext context, {Point center, Incident incident}) {
+  jumpToLatLng(context, center: toLatLng(center), incident: incident);
+}
+
+void jumpToLatLng(BuildContext context, {LatLng center, Incident incident}) {
+  if (center != null) {
+    Navigator.pushNamed(context, "map", arguments: {"center": center, "incident": incident});
   }
 }
 

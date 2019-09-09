@@ -127,12 +127,7 @@ class _IncidentPageState extends State<IncidentPage> {
               incident: incident,
               interactive: false,
             ),
-            onTap: () => point == null
-                ? null
-                : Navigator.pushReplacementNamed(context, 'map', arguments: {
-                    "center": point,
-                    "incident": incident,
-                  }),
+            onTap: () => point == null ? null : jumpToLatLng(context, center: point, incident: incident),
           ),
         ),
         elevation: IncidentPage.ELEVATION,
@@ -205,7 +200,7 @@ class _IncidentPageState extends State<IncidentPage> {
           flex: 5,
           child: GestureDetector(
             child: _buildValueTile("IPP", toUTM(incident?.ipp), "", labelStyle, valueStyle, unitStyle),
-            onTap: () => jumpToPoint(context, incident?.ipp),
+            onTap: () => jumpToPoint(context, center: incident?.ipp, incident: incident),
           ),
         ),
       ],
@@ -220,7 +215,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: GestureDetector(
             child: _buildValueTile(
                 "Oppmøte", toUTM(incident?.meetup, empty: "Ikke oppgitt"), "", labelStyle, valueStyle, unitStyle),
-            onTap: () => jumpToPoint(context, incident?.meetup),
+            onTap: () => jumpToPoint(context, center: incident?.meetup, incident: incident),
           ),
         ),
       ],

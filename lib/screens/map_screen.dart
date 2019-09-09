@@ -112,20 +112,11 @@ class MapScreenState extends State<MapScreen> {
                       leading: Icon(Icons.warning),
                       title: Text('Hendelse', style: style),
                       onTap: () async {
-                        final incident = await showDialog(
+                        final incident = await showDialog<Incident>(
                           context: context,
                           builder: (context) => IncidentEditor(ipp: toPoint(_mapController.center)),
                         );
-                        if (incident != null) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            'map',
-                            arguments: {
-                              "incident": incident,
-                              "center": toLatLng(incident.ipp),
-                            },
-                          );
-                        }
+                        if (incident != null) jumpToPoint(context, center: incident.meetup, incident: incident);
                       },
                     ),
                   ],
