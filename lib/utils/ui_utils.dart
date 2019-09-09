@@ -1,15 +1,22 @@
+import 'dart:io';
+
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/units_page.dart';
+import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'defaults.dart';
 
@@ -175,6 +182,32 @@ void jumpToIncident(
     jumpToLatLngBounds(context, fitBounds: fitBounds, fitBoundOptions: fitBoundOptions);
 }
 
+Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
+  final url = Platform.isIOS ? "comgooglemaps://?q" : "google.navigation:q";
+  var success = await launch("$url=${point.latitude},${point.longitude}");
+  if (success == false && Platform.isIOS) {
+    final service = LocationService(BlocProvider.of<AppConfigBloc>(context));
+    var status = service.status;
+    if (GeolocationStatus.unknown == status) {
+      status = await service.configure();
+    }
+    if ([
+      GeolocationStatus.granted,
+      GeolocationStatus.restricted,
+    ].contains(status)) {
+      var current = service.current;
+      if (current != null) {
+        success = await launch(
+          "http://maps.apple.com/maps?"
+          "saddr=${current.latitude},${current.longitude}&"
+          "daddr=${point.latitude},${point.longitude}",
+        );
+      }
+    }
+  }
+  return success;
+}
+
 Future<Unit> selectUnit(BuildContext context) async {
   // flutter defined function
   return await showDialog<Unit>(
@@ -203,6 +236,8 @@ Widget buildCopyableText({
   String label,
   Icon icon,
   String value,
+  Icon action,
+  GestureTapCallback onAction,
   MessageCallback onMessage,
 }) {
   return GestureDetector(
@@ -210,10 +245,12 @@ Widget buildCopyableText({
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon,
+        suffixIcon: action,
         border: InputBorder.none,
       ),
       child: Text(value),
     ),
+    onTap: onAction,
     onLongPress: () {
       Navigator.pop(context);
       copy(value, onMessage);

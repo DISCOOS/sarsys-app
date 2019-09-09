@@ -213,6 +213,13 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
                   label: "UTM",
                   icon: Icon(Icons.my_location),
                   value: toUTM(tracking.location, prefix: ""),
+                  action: tracking?.location == null ? null : Icon(Icons.navigation),
+                  onAction: tracking?.location == null
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          navigateToLatLng(context, toLatLng(tracking.location));
+                        },
                   onMessage: onMessage,
                 ),
                 buildCopyableText(
@@ -220,6 +227,13 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
                   label: "Desimalgrader (DD)",
                   icon: Icon(Icons.my_location),
                   value: toDD(tracking.location, prefix: ""),
+                  action: tracking?.location == null ? null : Icon(Icons.navigation),
+                  onAction: tracking?.location == null
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          navigateToLatLng(context, toLatLng(tracking.location));
+                        },
                   onMessage: onMessage,
                 ),
                 Divider(),

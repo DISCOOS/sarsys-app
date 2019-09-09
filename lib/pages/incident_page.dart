@@ -4,13 +4,11 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
 
 class IncidentPage extends StatefulWidget {
   static const HEIGHT = 82.0;
@@ -31,6 +29,12 @@ class _IncidentPageState extends State<IncidentPage> {
   bool _showHint = true;
   Future<void> _hidePending;
 
+  TextStyle labelStyle;
+
+  TextStyle valueStyle;
+
+  TextStyle unitStyle;
+
   @override
   void initState() {
     super.initState();
@@ -40,9 +44,9 @@ class _IncidentPageState extends State<IncidentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
-    final valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 22.0);
-    final unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
+    labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
+    valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
+    unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
     return Container(
       color: Color.fromRGBO(168, 168, 168, 0.6),
       child: Padding(
@@ -61,17 +65,17 @@ class _IncidentPageState extends State<IncidentPage> {
                         children: [
                           _buildMapTile(context, snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildGeneral(incident, labelStyle, valueStyle, unitStyle),
+                          _buildGeneral(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildJustification(incident, labelStyle, valueStyle, unitStyle),
+                          _buildJustification(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildIPP(incident, labelStyle, valueStyle, unitStyle),
+                          _buildIPP(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildMeetup(incident, labelStyle, valueStyle, unitStyle),
+                          _buildMeetup(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildReference(incident, labelStyle, valueStyle, unitStyle),
+                          _buildReference(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildPasscodes(incident, labelStyle, valueStyle, unitStyle),
+                          _buildPasscodes(incident),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildActions(context),
                         ],
@@ -140,32 +144,31 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Row _buildReference(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildReference(Incident incident) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("Referanse", incident.reference, "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile(incident.reference, label: "Referanse"),
         ),
       ],
     );
   }
 
-  Row _buildGeneral(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildGeneral(Incident incident) {
     final bloc = BlocProvider.of<UnitBloc>(context);
     return Row(
       children: <Widget>[
         Expanded(
           flex: 2,
-          child: _buildValueTile("Type", translateIncidentType(incident.type), "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile(translateIncidentType(incident.type), label: "Type"),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
           child: StreamBuilder<int>(
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
-                return _buildValueTile(
-                    "Innsats", "${formatSince(incident.occurred)}", "", labelStyle, valueStyle, unitStyle);
+                return _buildValueTile("${formatSince(incident.occurred)}", label: "Innsats");
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
@@ -173,66 +176,69 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<UnitState>(
               stream: bloc.state,
               builder: (context, snapshot) {
-                return _buildValueTile("Enheter", "${bloc.count}", "", labelStyle, valueStyle, unitStyle);
+                return _buildValueTile("${bloc.count}", label: "Enheter");
               }),
         ),
       ],
     );
   }
 
-  Row _buildJustification(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildJustification(Incident incident) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile("Begrunnelse", incident.justification, "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile(incident.justification, label: "Begrunnelse"),
         ),
       ],
     );
   }
 
-  Row _buildIPP(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildIPP(Incident incident) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: GestureDetector(
-            child: _buildValueTile("IPP", toUTM(incident?.ipp), "", labelStyle, valueStyle, unitStyle),
-            onTap: () => jumpToPoint(context, center: incident?.ipp, incident: incident),
+          child: _buildValueTile(
+            toUTM(incident.ipp),
+            label: "IPP",
+            icon: Icons.navigation,
+            onIconTap: () => navigateToLatLng(context, toLatLng(incident.ipp)),
+            onValueTap: () => jumpToPoint(context, center: incident?.ipp, incident: incident),
           ),
         ),
       ],
     );
   }
 
-  Row _buildMeetup(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildMeetup(Incident incident) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: GestureDetector(
-            child: _buildValueTile(
-                "Oppmøte", toUTM(incident?.meetup, empty: "Ikke oppgitt"), "", labelStyle, valueStyle, unitStyle),
-            onTap: () => jumpToPoint(context, center: incident?.meetup, incident: incident),
+          child: _buildValueTile(
+            toUTM(incident?.meetup, empty: "Ikke oppgitt"),
+            label: "Oppmøte",
+            icon: Icons.navigation,
+            onIconTap: () => navigateToLatLng(context, toLatLng(incident.meetup)),
+            onValueTap: () => jumpToPoint(context, center: incident?.meetup, incident: incident),
           ),
         ),
       ],
     );
   }
 
-  Row _buildPasscodes(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {
+  Row _buildPasscodes(Incident incident) {
     return Row(
       children: <Widget>[
         Expanded(
           flex: 2,
-          child: _buildValueTile(
-              "Kode for aksjonsledelse", "${incident.passcodes?.command}", "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile("${incident.passcodes?.command}", label: "Kode for aksjonsledelse"),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
           flex: 2,
-          child: _buildValueTile(
-              "Kode for mannskap", "${incident.passcodes?.personnel}", "", labelStyle, valueStyle, unitStyle),
+          child: _buildValueTile("${incident.passcodes?.personnel}", label: "Kode for mannskap"),
         ),
       ],
     );
@@ -276,33 +282,79 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Material _buildValueTile(
+  Widget _buildValueTile(
+    String value, {
     String label,
-    String value,
     String unit,
-    TextStyle labelStyle,
-    TextStyle valueStyle,
-    TextStyle unitStyle,
-  ) {
-    return Material(
+    IconData icon,
+    GestureTapCallback onIconTap,
+    GestureTapCallback onValueTap,
+  }) {
+    Widget tile = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
+        if (label != null && label.isNotEmpty) Spacer(),
+        Wrap(children: [
+          Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
+          if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle),
+        ]),
+      ],
+    );
+
+    if (icon != null) {
+      Widget action = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 24.0),
+            SizedBox(
+              child: Text(
+                "Naviger",
+                style: labelStyle.copyWith(fontSize: 12),
+                softWrap: true,
+              ),
+            )
+          ],
+        ),
+      );
+
+      action = Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          tile,
+          SizedBox(width: IncidentPage.SPACING),
+          action,
+        ],
+      );
+
+      tile = onIconTap == null
+          ? action
+          : GestureDetector(
+              child: action,
+              onTap: onIconTap,
+            );
+    }
+
+    tile = Material(
       child: Container(
         height: IncidentPage.HEIGHT,
         padding: IncidentPage.PADDING,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
-            if (label != null && label.isNotEmpty) Spacer(),
-            Wrap(children: [
-              Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
-              Text(unit, style: unitStyle),
-            ]),
-          ],
-        ),
+        child: tile,
       ),
       elevation: IncidentPage.ELEVATION,
       borderRadius: BorderRadius.circular(IncidentPage.CORNER),
     );
+
+    return onValueTap == null
+        ? tile
+        : GestureDetector(
+            child: tile,
+            onTap: onValueTap,
+          );
   }
 
   void _onCancel(BuildContext context) async {
