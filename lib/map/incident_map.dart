@@ -49,7 +49,6 @@ class IncidentMap extends StatefulWidget {
   final bool withScaleBar;
   final bool withCoordsPanel;
 
-  final LatLng center;
   final Incident incident;
   final TapCallback onTap;
   final PromptCallback onPrompt;
@@ -59,11 +58,22 @@ class IncidentMap extends StatefulWidget {
 
   final GestureTapCallback onOpenDrawer;
 
+  /// Center map on given point [center]. If [fitBounds] is given [center] is overridden
+  final LatLng center;
+
+  /// Fit map to given bounds. If [fitBounds] is given [center] is overridden
+  final LatLngBounds fitBounds;
+
+  /// If [fitBounds] is given, control who bounds is fitted with [fitBoundOptions]
+  final FitBoundsOptions fitBoundOptions;
+
   IncidentMap({
     Key key,
     this.center,
-    this.url = BASEMAP,
     this.incident,
+    this.fitBounds,
+    this.fitBoundOptions = FIT_BOUNDS_OPTIONS,
+    this.url = BASEMAP,
     this.offline = false,
     this.interactive = true,
     this.withSearch = false,
@@ -150,6 +160,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _center = _ensureCenter();
     _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
     _mapController = widget.mapController;
+    // Only do this once per state instance
+    _mapController.onReady.then((_) {
+      if (widget.fitBounds != null)
+        _mapController.fitBounds(
+          widget.fitBounds,
+          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+        );
+    });
     _mapController.progress.addListener(_onMoveProgress);
 
     _init();
@@ -157,7 +175,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   LatLng _ensureCenter() {
     final bloc = BlocProvider.of<IncidentBloc>(context);
-    return widget.center ?? (bloc.current?.meetup != null ? toLatLng(bloc.current?.meetup) : null) ?? Defaults.origo;
+    final current = widget.withLocation ? _locationController.current : null;
+    return widget.center ??
+        (bloc.current?.meetup != null ? toLatLng(bloc.current?.meetup) : null) ??
+        current ??
+        Defaults.origo;
   }
 
   void _init() async {

@@ -8,6 +8,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
@@ -15,8 +16,10 @@ import 'package:SarSys/widgets/app_drawer.dart';
 class MapScreen extends StatefulWidget {
   final LatLng center;
   final Incident incident;
+  final LatLngBounds fitBounds;
+  final FitBoundsOptions fitBoundOptions;
 
-  const MapScreen({Key key, this.center, this.incident}) : super(key: key);
+  const MapScreen({Key key, this.center, this.fitBounds, this.fitBoundOptions, this.incident}) : super(key: key);
 
   @override
   MapScreenState createState() => MapScreenState();
@@ -62,6 +65,8 @@ class MapScreenState extends State<MapScreen> {
     return IncidentMap(
       center: widget.center,
       incident: widget.incident,
+      fitBounds: widget.fitBounds,
+      fitBoundOptions: widget.fitBoundOptions,
       mapController: _mapController,
       withSearch: true,
       withControls: true,
@@ -116,7 +121,7 @@ class MapScreenState extends State<MapScreen> {
                           context: context,
                           builder: (context) => IncidentEditor(ipp: toPoint(_mapController.center)),
                         );
-                        if (incident != null) jumpToPoint(context, center: incident.meetup, incident: incident);
+                        if (incident != null) jumpToIncident(context, incident);
                       },
                     ),
                   ],

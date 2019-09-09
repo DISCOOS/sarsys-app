@@ -9,6 +9,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
 class IncidentPage extends StatefulWidget {
@@ -115,7 +116,9 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Widget _buildMapTile(BuildContext context, Incident incident) {
-    final point = _toMapCenter(incident);
+    final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
+    final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+    final fitBounds = LatLngBounds(ipp, meetup);
     return Container(
       height: 240.0,
       child: Material(
@@ -123,23 +126,18 @@ class _IncidentPageState extends State<IncidentPage> {
           borderRadius: BorderRadius.circular(IncidentPage.CORNER),
           child: GestureDetector(
             child: IncidentMap(
-              center: point,
+              center: meetup ?? ipp,
+              fitBounds: fitBounds.isValid ? fitBounds : null,
               incident: incident,
               interactive: false,
             ),
-            onTap: () => point == null ? null : jumpToLatLng(context, center: point, incident: incident),
+            onTap: () => jumpToIncident(context, incident),
           ),
         ),
         elevation: IncidentPage.ELEVATION,
         borderRadius: BorderRadius.circular(IncidentPage.CORNER),
       ),
     );
-  }
-
-  LatLng _toMapCenter(Incident incident) {
-    bool isIppEmpty = incident?.ipp?.isEmpty == null;
-    bool isMeetupEmpty = incident?.meetup?.isEmpty == null;
-    return isMeetupEmpty ? (isIppEmpty ? Defaults.origo : toLatLng(incident.ipp)) : toLatLng(incident.meetup);
   }
 
   Row _buildReference(Incident incident, TextStyle labelStyle, TextStyle valueStyle, TextStyle unitStyle) {

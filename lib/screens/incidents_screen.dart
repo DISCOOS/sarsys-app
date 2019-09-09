@@ -10,6 +10,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class IncidentsScreen extends StatefulWidget {
   @override
@@ -61,7 +62,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
       context: context,
       builder: (context) => IncidentEditor(),
     );
-    if (incident != null) jumpToPoint(context, center: incident.meetup, incident: incident);
+    if (incident != null) jumpToIncident(context, incident);
   }
 
   Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
@@ -218,16 +219,20 @@ class IncidentsScreenState extends State<IncidentsScreen> {
 
   void _selectAndReroute(IncidentBloc bloc, Incident incident, BuildContext context) {
     bloc.select(incident.id);
-    jumpToPoint(context, center: incident.meetup, incident: incident);
+    jumpToIncident(context, incident);
   }
 
   Widget _buildMapTile(IncidentBloc bloc, Incident incident) {
-    final point = incident.ipp != null ? toLatLng(incident.ipp) : Defaults.origo;
+    final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
+    final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+    final fitBounds = (ipp == null || meetup == null) == false ? LatLngBounds(ipp, meetup) : null;
     return GestureDetector(
       child: Container(
         height: 240.0,
         child: IncidentMap(
-          center: point,
+          center: meetup ?? ipp,
+          fitBounds: fitBounds.isValid ? fitBounds : null,
+          fitBoundOptions: FitBoundsOptions(zoom: Defaults.zoom, maxZoom: Defaults.zoom, padding: EdgeInsets.all(48.0)),
           incident: incident,
           interactive: false,
         ),

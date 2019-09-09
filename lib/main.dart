@@ -70,7 +70,12 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
 MapScreen _toMapScreen(BuildContext context) {
   final arguments = ModalRoute.of(context).settings.arguments;
   if (arguments is Map) {
-    return MapScreen(center: arguments["center"], incident: arguments["incident"]);
+    return MapScreen(
+      center: arguments["center"],
+      incident: arguments["incident"],
+      fitBounds: arguments["fitBounds"],
+      fitBoundOptions: arguments["fitBoundOptions"],
+    );
   }
   return MapScreen();
 }

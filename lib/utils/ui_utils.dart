@@ -6,12 +6,21 @@ import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
+import 'defaults.dart';
+
 typedef PromptCallback = Future<bool> Function(String title, String message);
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
+
+const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
+  zoom: Defaults.zoom,
+  maxZoom: Defaults.zoom,
+  padding: EdgeInsets.all(48.0),
+);
 
 Future<bool> prompt(BuildContext context, String title, String message) async {
   // flutter defined function
@@ -135,6 +144,35 @@ void jumpToLatLng(BuildContext context, {LatLng center, Incident incident}) {
   if (center != null) {
     Navigator.pushNamed(context, "map", arguments: {"center": center, "incident": incident});
   }
+}
+
+void jumpToLatLngBounds(
+  BuildContext context, {
+  Incident incident,
+  LatLngBounds fitBounds,
+  FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
+}) {
+  if (fitBounds != null && fitBounds.isValid) {
+    Navigator.pushNamed(context, "map", arguments: {
+      "incident": incident,
+      "fitBounds": fitBounds,
+      "fitBoundOptions": fitBoundOptions,
+    });
+  }
+}
+
+void jumpToIncident(
+  BuildContext context,
+  Incident incident, {
+  FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
+}) {
+  final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
+  final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+  final fitBounds = LatLngBounds(ipp, meetup);
+  if (ipp == null || meetup == null || fitBounds.isValid == false)
+    jumpToLatLng(context, center: meetup ?? ipp, incident: incident);
+  else
+    jumpToLatLngBounds(context, fitBounds: fitBounds, fitBoundOptions: fitBoundOptions);
 }
 
 Future<Unit> selectUnit(BuildContext context) async {

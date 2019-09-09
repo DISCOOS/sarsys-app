@@ -51,6 +51,9 @@ class LocationController {
         assert(onPrompt != null, "onPrompt must not be null"),
         _service = LocationService(appConfigBloc);
 
+  /// Get current location
+  get current => _service.current;
+
   void init() async {
     final status = await _service.configure();
     _handleGeolocationStatusChange(status);
