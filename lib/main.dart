@@ -47,7 +47,7 @@ BlocProviderTree _buildApp(Providers providers, Widget homepage) {
         'login': (BuildContext context) => LoginScreen(),
         'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
         'units': (BuildContext context) => CommandScreen(tabIndex: 1),
-        'terminals': (BuildContext context) => CommandScreen(tabIndex: 2),
+        'devices': (BuildContext context) => CommandScreen(tabIndex: 2),
         'incidents': (BuildContext context) => IncidentsScreen(),
         'settings': (BuildContext context) => SettingsScreen(),
         'map': (BuildContext context) => _toMapScreen(context),

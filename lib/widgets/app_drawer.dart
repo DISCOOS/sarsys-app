@@ -58,9 +58,9 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             enabled: !isUnset,
             leading: const Icon(MdiIcons.cellphoneBasic),
-            title: Text('Terminaler', style: TextStyle(fontSize: 14)),
+            title: Text('Apparater', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'terminals');
+              Navigator.pushReplacementNamed(context, 'devices');
             },
           ),
           Divider(),

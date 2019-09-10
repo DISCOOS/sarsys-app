@@ -97,7 +97,7 @@ class IncidentMap extends StatefulWidget {
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
   static const POI_LAYER = "Interessepunkt";
   static const UNITS_LAYER = "Enheter";
-  static const DEVICES_LAYER = "Terminaler";
+  static const DEVICES_LAYER = "Apparater";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
   static const SCALE_LAYER = "Målestokk";

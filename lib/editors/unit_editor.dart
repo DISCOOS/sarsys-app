@@ -265,7 +265,7 @@ class _UnitEditorState extends State<UnitEditor> {
         initialValue: devices,
         decoration: InputDecoration(
           labelText: "Sporing",
-          hintText: "Søk etter terminaler",
+          hintText: "Søk etter apparater",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),

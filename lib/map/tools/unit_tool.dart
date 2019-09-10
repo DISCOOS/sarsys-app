@@ -173,7 +173,6 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
               buildCopyableText(
                 context: context,
                 label: "Desimalgrader (DD)",
-                icon: Icon(Icons.my_location),
                 value: toDD(tracking.location, prefix: ""),
                 onTap: () => tracking?.location == null
                     ? null
@@ -244,7 +243,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Terminaler",
+            label: "Apparater",
             icon: Icon(MdiIcons.cellphoneBasic),
             value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
             onMessage: onMessage,
@@ -253,7 +252,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Avstand",
+            label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
             value: formatDistance(tracking.distance),
             onMessage: onMessage,

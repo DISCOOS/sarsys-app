@@ -91,7 +91,7 @@ class DevicesPageState extends State<DevicesPage> {
                   secondChild: devices.isEmpty || snapshot.hasError
                       ? Center(
                           child: Text(
-                          snapshot.hasError ? snapshot.error : "Ingen terminaler innen rekkevidde",
+                          snapshot.hasError ? snapshot.error : "Ingen apparater innen rekkevidde",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ))
                       : ListView.builder(
@@ -122,7 +122,7 @@ class DevicesPageState extends State<DevicesPage> {
       return SizedBox(
         height: 88,
         child: Center(
-          child: Text("Antall terminaler: $index"),
+          child: Text("Antall apparater: $index"),
         ),
       );
     }

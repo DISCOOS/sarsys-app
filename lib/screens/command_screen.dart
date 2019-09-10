@@ -56,7 +56,7 @@ class _CommandScreenState extends State<CommandScreen> {
             items: [
               BottomNavigationBarItem(title: Text("Hendelse"), icon: Icon(Icons.warning)),
               BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
-              BottomNavigationBarItem(title: Text("Terminaler"), icon: Icon(MdiIcons.cellphoneBasic)),
+              BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
               current = index;
@@ -76,7 +76,7 @@ class _CommandScreenState extends State<CommandScreen> {
       case 1:
         return "Enheter";
       case 2:
-        return "Terminaler";
+        return "Apparater";
     }
   }
 
