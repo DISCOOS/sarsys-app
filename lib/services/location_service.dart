@@ -107,10 +107,3 @@ class LocationService {
         _options?.distanceFilter != options.distanceFilter;
   }
 }
-
-class LocationReport {
-  double lat;
-  double lon;
-  int timestamp;
-  int accuracy;
-}

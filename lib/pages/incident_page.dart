@@ -309,7 +309,11 @@ class _IncidentPageState extends State<IncidentPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Icon(icon, size: 24.0),
+            Icon(
+              icon,
+              size: 24.0,
+              color: Colors.black45,
+            ),
             SizedBox(
               child: Text(
                 "Naviger",

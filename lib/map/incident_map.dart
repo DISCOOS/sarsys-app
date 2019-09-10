@@ -153,7 +153,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _mapToolController = MapToolController(
         tools: [
           MeasureTool(),
-          UnitTool(BlocProvider.of<TrackingBloc>(context), active: true),
+          UnitTool(
+            BlocProvider.of<TrackingBloc>(context),
+            active: true,
+            onMessage: widget.onMessage,
+          ),
         ],
       );
     }

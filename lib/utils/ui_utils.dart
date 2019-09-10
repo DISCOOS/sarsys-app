@@ -239,23 +239,28 @@ Widget buildCopyableText({
   Icon action,
   GestureTapCallback onAction,
   MessageCallback onMessage,
+  GestureTapCallback onTap,
 }) {
   return GestureDetector(
-    child: InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: icon,
-        suffixIcon: action,
-        border: InputBorder.none,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon,
+          suffixIcon: action != null
+              ? IconButton(
+                  icon: action,
+                  onPressed: onAction,
+                )
+              : null,
+          border: InputBorder.none,
+        ),
+        child: Text(value),
       ),
-      child: Text(value),
-    ),
-    onTap: onAction,
-    onLongPress: () {
-      Navigator.pop(context);
-      copy(value, onMessage);
-    },
-  );
+      onTap: onTap,
+      onLongPress: () {
+        Navigator.pop(context);
+        copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
+      });
 }
 
 void copy(String value, MessageCallback onMessage, {String message: 'Kopiert til utklippstavlen'}) {

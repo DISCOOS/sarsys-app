@@ -214,6 +214,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
                   icon: Icon(Icons.my_location),
                   value: toUTM(tracking.location, prefix: ""),
                   action: tracking?.location == null ? null : Icon(Icons.navigation),
+                  onTap: () => tracking?.location == null ? null : jumpToPoint(context, center: tracking.location),
                   onAction: tracking?.location == null
                       ? null
                       : () {
@@ -228,6 +229,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
                   icon: Icon(Icons.my_location),
                   value: toDD(tracking.location, prefix: ""),
                   action: tracking?.location == null ? null : Icon(Icons.navigation),
+                  onTap: () => tracking?.location == null ? null : jumpToPoint(context, center: tracking.location),
                   onAction: tracking?.location == null
                       ? null
                       : () {
