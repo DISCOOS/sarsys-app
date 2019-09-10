@@ -58,8 +58,8 @@ abstract class MapTool {
 mixin MapSelectable<T> on MapTool {
   Iterable<T> get targets;
   LatLng toPoint(T target);
-  void doProcessTap(BuildContext context, List<T> matches);
-  void doProcessLongPress(BuildContext context, List<T> matches);
+  void doProcessTap(BuildContext context, List<T> matches) {}
+  void doProcessLongPress(BuildContext context, List<T> matches) {}
 
   @override
   bool onTap(BuildContext context, LatLng point, double tolerance, MatchCallback onMatch) {
