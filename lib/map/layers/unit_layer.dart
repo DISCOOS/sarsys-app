@@ -20,6 +20,7 @@ class UnitLayerOptions extends LayerOptions {
   double opacity;
   bool showLabels;
   bool showTail;
+  bool showRetired;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
 
@@ -29,6 +30,7 @@ class UnitLayerOptions extends LayerOptions {
     this.opacity = 0.6,
     this.showLabels = true,
     this.showTail = true,
+    this.showRetired = false,
     this.onMessage,
   }) : super(rebuild: bloc.state.map((_) => null));
 }
@@ -60,7 +62,7 @@ class UnitLayer extends MapPlugin {
     final units = sortMapValues<String, Unit, TrackingStatus>(
             options.bloc.units, (unit) => tracks[unit.tracking].status, (s1, s2) => s1.index - s2.index)
         .values
-        .where((unit) => unit.status != UnitStatus.Retired)
+        .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
         .where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].location)));
     return options.bloc.isEmpty
         ? Container()
