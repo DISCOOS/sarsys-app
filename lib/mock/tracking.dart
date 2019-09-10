@@ -11,6 +11,7 @@ import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/proj4d.dart';
 import 'package:mockito/mockito.dart';
 
 import 'devices.dart';
@@ -241,6 +242,7 @@ class _TrackSimulation {
 
   Tracking progress() {
     var location;
+    var distance;
     if (tracking.devices.isEmpty)
       location = tracking.location;
     else if (tracking.devices.length == 1)
@@ -270,8 +272,20 @@ class _TrackSimulation {
       growable: true,
     )..add(location);
 
+    // Calculate distance
+    if (track.length > 1) {
+      distance = ProjMath.eucledianDistance(
+        track.last.lat,
+        track.last.lon,
+        track[track.length - 2].lat,
+        track[track.length - 2].lon,
+      );
+      distance = (tracking.distance == null ? distance : tracking.distance + distance);
+    }
+
     return tracking.cloneWith(
       location: location,
+      distance: distance ?? 0.0,
       track: track.skip(max(0, track.length - 10)).toList(),
     );
   }

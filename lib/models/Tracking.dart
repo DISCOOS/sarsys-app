@@ -34,14 +34,20 @@ class Tracking extends Equatable {
   Map<String, dynamic> toJson() => _$TrackingToJson(this);
 
   /// Clone with given devices and state
-  Tracking cloneWith({List<String> devices, TrackingStatus status, Point location, List<Point> track}) {
+  Tracking cloneWith({
+    List<String> devices,
+    TrackingStatus status,
+    Point location,
+    List<Point> track,
+    double distance,
+  }) {
     return Tracking(
       id: this.id,
-      distance: this.distance,
       track: track ?? this.track,
       status: status ?? this.status,
       devices: devices ?? this.devices,
       location: location ?? this.location,
+      distance: distance ?? this.distance,
     );
   }
 }
