@@ -119,8 +119,8 @@ class MeasureLayer extends MapPlugin {
     return Positioned(
       width: size,
       height: size,
-      left: pos.x - size / 2,
-      top: pos.y - size / 2,
+      left: pos.x,
+      top: pos.y,
       child: Opacity(
         opacity: options.opacity,
         child: CustomPaint(
