@@ -5,7 +5,9 @@ import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/unit_transition.dart';
+import 'package:SarSys/usecase/unit/edit_unit.dart';
+import 'package:SarSys/usecase/unit/retire_unit.dart';
+import 'package:SarSys/usecase/unit/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
@@ -187,10 +189,7 @@ class UnitsPageState extends State<UnitsPage> {
       caption: 'ENDRE',
       color: Theme.of(context).buttonColor,
       icon: Icons.more_horiz,
-      onTap: () => showDialog(
-        context: context,
-        builder: (context) => UnitEditor(unit: unit),
-      ),
+      onTap: () => editUnit(UnitParams(context, unit)),
     );
   }
 
@@ -199,8 +198,8 @@ class UnitsPageState extends State<UnitsPage> {
       caption: 'OPPLØS',
       color: Colors.red,
       icon: Icons.delete,
-      onTap: () {
-        final retireUnit = RetireUnit();
+      onTap: () async {
+        Navigator.pop(context);
         retireUnit(UnitParams(context, unit));
       },
     );

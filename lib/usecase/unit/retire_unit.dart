@@ -1,9 +1,11 @@
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/usecase/unit/unit.dart';
 import 'package:SarSys/usecase/use_case.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:dartz/dartz.dart' as dartz;
-import 'package:flutter/widgets.dart';
+
+Future<dartz.Either<bool, UnitState>> retireUnit(params) => RetireUnit()(params);
 
 class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
   @override
@@ -18,8 +20,4 @@ class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
     await params.bloc.update(params.data.cloneWith(status: UnitStatus.Retired));
     return dartz.Right(params.bloc.currentState);
   }
-}
-
-class UnitParams extends BlocParams<UnitBloc, Unit> {
-  UnitParams(BuildContext context, Unit unit) : super(context, unit);
 }

@@ -6,7 +6,9 @@ import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/unit_transition.dart';
+import 'package:SarSys/usecase/unit/edit_unit.dart';
+import 'package:SarSys/usecase/unit/retire_unit.dart';
+import 'package:SarSys/usecase/unit/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -268,12 +270,10 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
         FlatButton(
           padding: EdgeInsets.zero,
           child: Text("Endre"),
-          onPressed: () {
+          onPressed: () async {
             Navigator.pop(context);
-            showDialog(
-              context: context,
-              builder: (context) => UnitEditor(unit: unit),
-            );
+            final result = await editUnit(UnitParams(context, unit));
+            if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
           },
         ),
         FlatButton(
@@ -281,9 +281,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           child: Text("Oppløs"),
           onPressed: () async {
             Navigator.pop(context);
-            final retireUnit = RetireUnit();
-            final result = await retireUnit(UnitParams(context, unit));
-            if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppløst");
+            retireUnit(UnitParams(context, unit));
           },
         ),
       ],

@@ -244,6 +244,7 @@ Widget buildCopyableText({
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          hintMaxLines: 3,
           prefixIcon: icon == null ? Container(width: 24.0) : icon,
           suffixIcon: action != null
               ? IconButton(
