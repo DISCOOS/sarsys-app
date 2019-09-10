@@ -209,7 +209,6 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
 }
 
 Future<Unit> selectUnit(BuildContext context) async {
-  // flutter defined function
   return await showDialog<Unit>(
     context: context,
     builder: (BuildContext context) {

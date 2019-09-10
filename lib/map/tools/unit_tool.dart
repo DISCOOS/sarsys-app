@@ -1,16 +1,18 @@
 import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/usecase/unit_transition.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:latlong/latlong.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UnitTool extends MapTool with MapSelectable<Unit> {
@@ -24,11 +26,6 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
 
   @override
   Iterable<Unit> get targets => bloc.units.values;
-
-  @override
-  void doProcessLongPress(BuildContext context, List<Unit> units) {
-    _show(context, units, _showUnitMenu);
-  }
 
   @override
   void doProcessTap(BuildContext context, List<Unit> units) {
@@ -95,92 +92,11 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
     }
   }
 
-  void _showUnitMenu(
-    BuildContext context,
-    Unit unit,
-  ) async {
-    final title = Theme.of(context).textTheme.title;
-    final tracking = bloc.tracks[unit.tracking];
-    _execute(
-        await showDialog(
-          context: context,
-          barrierDismissible: true,
-          builder: (context) {
-            return Dialog(
-              elevation: 0,
-              backgroundColor: Colors.white,
-              child: SizedBox(
-                height: 232,
-                width: MediaQuery.of(context).size.width - 112,
-                child: ListView(
-                  children: <Widget>[
-                    ListTile(
-                      dense: true,
-                      leading: Icon(Icons.group),
-                      title: Text("Endre ${unit.name}", style: title),
-                      onTap: () => Navigator.pop(context, 1),
-                    ),
-                    Divider(),
-                    ListTile(
-                      dense: true,
-                      leading: Icon(tracking.status == TrackingStatus.Tracking
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline),
-                      title: Text(
-                        tracking.status == TrackingStatus.Tracking ? "Stopp sporing" : "Start sporing",
-                        style: title,
-                      ),
-                      onTap: () => Navigator.pop(context, 2),
-                    ),
-                    Divider(),
-                    ListTile(
-                      dense: true,
-                      leading: Icon(Icons.content_copy),
-                      title: Text("Kopier UTM", style: title),
-                      onTap: () => Navigator.pop(context, 3),
-                    ),
-                    ListTile(
-                      dense: true,
-                      leading: Icon(Icons.content_copy),
-                      title: Text("Kopier desmialgrader", style: title),
-                      onTap: () => Navigator.pop(context, 4),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        context,
-        unit,
-        tracking);
-  }
-
-  void _execute(action, BuildContext context, Unit unit, Tracking tracking) {
-    switch (action) {
-      case 1:
-        showDialog(
-          context: context,
-          builder: (context) => UnitEditor(unit: unit),
-        );
-        break;
-      case 2:
-        bloc.transition(tracking);
-        break;
-      case 3:
-        copy(toUTM(tracking.location, prefix: ""), onMessage);
-        break;
-      case 4:
-        copy(toDD(tracking.location, prefix: ""), onMessage);
-        break;
-    }
-  }
-
   void _showUnitInfo(
     BuildContext context,
     Unit unit,
   ) {
-    final style = Theme.of(context).textTheme.title;
+    final theme = Theme.of(context).textTheme;
     final tracking = bloc.tracks[unit.tracking];
     showDialog(
       context: context,
@@ -190,96 +106,188 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: 380,
+            height: min(432.0, MediaQuery.of(context).size.height - 96),
             width: MediaQuery.of(context).size.width - 96,
-            child: Column(
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(left: 16, top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text('${unit.name}', style: style),
-                      IconButton(
-                        icon: Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    ],
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _buildHeader(unit, theme, context),
+                  Divider(),
+                  _buildLocationInfo(context, tracking, theme),
+                  Divider(indent: 42.0),
+                  buildContactInfo(context, unit),
+                  Divider(indent: 42.0),
+                  _buildTrackingInfo(context, tracking),
+                  Divider(),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+                    child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
                   ),
-                ),
-                Divider(),
-                buildCopyableText(
-                  context: context,
-                  label: "UTM",
-                  icon: Icon(Icons.my_location),
-                  value: toUTM(tracking.location, prefix: ""),
-                  action: tracking?.location == null ? null : Icon(Icons.navigation),
-                  onTap: () => tracking?.location == null ? null : jumpToPoint(context, center: tracking.location),
-                  onAction: tracking?.location == null
-                      ? null
-                      : () {
-                          Navigator.pop(context);
-                          navigateToLatLng(context, toLatLng(tracking.location));
-                        },
-                  onMessage: onMessage,
-                ),
-                buildCopyableText(
-                  context: context,
-                  label: "Desimalgrader (DD)",
-                  icon: Icon(Icons.my_location),
-                  value: toDD(tracking.location, prefix: ""),
-                  action: tracking?.location == null ? null : Icon(Icons.navigation),
-                  onTap: () => tracking?.location == null ? null : jumpToPoint(context, center: tracking.location),
-                  onAction: tracking?.location == null
-                      ? null
-                      : () {
-                          Navigator.pop(context);
-                          navigateToLatLng(context, toLatLng(tracking.location));
-                        },
-                  onMessage: onMessage,
-                ),
-                Divider(),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: buildCopyableText(
-                        context: context,
-                        label: "Kallesignal",
-                        icon: Icon(Icons.headset_mic),
-                        value: unit.callsign,
-                        onMessage: onMessage,
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        child: buildCopyableText(
-                          context: context,
-                          label: "Mobil",
-                          icon: Icon(Icons.phone),
-                          value: unit?.phone ?? "Ukjent",
-                          onMessage: onMessage,
-                        ),
-                        onTap: () {
-                          final number = unit?.phone ?? '';
-                          if (number.isNotEmpty) launch("tel:$number");
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                Divider(),
-                buildCopyableText(
-                  context: context,
-                  label: "Terminaler",
-                  icon: Icon(FontAwesomeIcons.mobileAlt),
-                  value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
-                  onMessage: onMessage,
-                ),
-              ],
+                  _buildActions(context, unit)
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Padding _buildHeader(Unit unit, TextTheme theme, BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: 16, top: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text('${unit.name}', style: theme.title),
+          IconButton(
+            icon: Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      ),
+    );
+  }
+
+  Row _buildLocationInfo(BuildContext context, Tracking tracking, TextTheme theme) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 4,
+          child: Column(
+            children: <Widget>[
+              buildCopyableText(
+                context: context,
+                label: "UTM",
+                icon: Icon(Icons.my_location),
+                value: toUTM(tracking.location, prefix: ""),
+                onTap: () => tracking?.location == null
+                    ? null
+                    : jumpToPoint(
+                        context,
+                        center: tracking.location,
+                      ),
+                onMessage: onMessage,
+              ),
+              buildCopyableText(
+                context: context,
+                label: "Desimalgrader (DD)",
+                icon: Icon(Icons.my_location),
+                value: toDD(tracking.location, prefix: ""),
+                onTap: () => tracking?.location == null
+                    ? null
+                    : jumpToPoint(
+                        context,
+                        center: tracking.location,
+                      ),
+                onMessage: onMessage,
+              ),
+            ],
+          ),
+        ),
+        if (tracking?.location != null)
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.navigation, color: Colors.black45),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    navigateToLatLng(context, toLatLng(tracking.location));
+                  },
+                ),
+                Text("Naviger", style: theme.caption),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Row buildContactInfo(BuildContext context, Unit unit) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Kallesignal",
+            icon: Icon(Icons.headset_mic),
+            value: unit.callsign,
+            onMessage: onMessage,
+          ),
+        ),
+        Expanded(
+          child: GestureDetector(
+            child: buildCopyableText(
+              context: context,
+              label: "Mobil",
+              icon: Icon(Icons.phone),
+              value: unit?.phone ?? "Ukjent",
+              onMessage: onMessage,
+            ),
+            onTap: () {
+              final number = unit?.phone ?? '';
+              if (number.isNotEmpty) launch("tel:$number");
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row _buildTrackingInfo(BuildContext context, Tracking tracking) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Terminaler",
+            icon: Icon(MdiIcons.cellphoneBasic),
+            value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
+            onMessage: onMessage,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Avstand",
+            icon: Icon(MdiIcons.tapeMeasure),
+            value: formatDistance(tracking.distance),
+            onMessage: onMessage,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActions(BuildContext context, Unit unit) {
+    return Row(
+      children: <Widget>[
+        FlatButton(
+          padding: EdgeInsets.zero,
+          child: Text("Endre"),
+          onPressed: () {
+            Navigator.pop(context);
+            showDialog(
+              context: context,
+              builder: (context) => UnitEditor(unit: unit),
+            );
+          },
+        ),
+        FlatButton(
+          padding: EdgeInsets.zero,
+          child: Text("Oppløs"),
+          onPressed: () async {
+            Navigator.pop(context);
+            final retireUnit = RetireUnit();
+            final result = await retireUnit(UnitParams(context, unit));
+            if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppløst");
+          },
+        ),
+      ],
     );
   }
 }
