@@ -141,7 +141,7 @@ class _MapControlsState extends State<MapControls> {
                     minWidth: 12,
                     minHeight: 12,
                   ),
-                  child: Icon(Icons.lock, size: 16, color: Colors.green),
+                  child: Icon(Icons.lock, size: 16, color: Colors.blue),
                 ),
               )
             ],
@@ -154,7 +154,7 @@ class _MapControlsState extends State<MapControls> {
       child: IconButton(
         icon: Icon(
           control.icon,
-          color: state.toggled ? Colors.green : Colors.black,
+          color: state.toggled ? Colors.blue : Colors.black,
         ),
         onPressed: control.onPressed,
       ),
