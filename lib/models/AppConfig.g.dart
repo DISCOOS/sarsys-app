@@ -10,15 +10,16 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
   return AppConfig(
       sentryDns: json['sentryDns'] as String,
       onboarding: json['onboarding'] as bool,
+      locationWhenInUse: json['locationWhenInUse'] as bool,
       division: json['division'] as String,
       department: json['department'] as String,
-      talkGroups: json['tgCatalog'] as String,
-      locationWhenInUse: json['locationWhenInUse'] as bool,
+      talkGroups: json['talkGroups'] as String,
       mapCacheTTL: json['mapCacheTTL'] as int,
       mapCacheCapacity: json['mapCacheCapacity'] as int,
       locationAccuracy: json['locationAccuracy'] as String,
       locationFastestInterval: json['locationFastestInterval'] as int,
-      locationSmallestDisplacement: json['locationSmallestDisplacement'] as int);
+      locationSmallestDisplacement:
+          json['locationSmallestDisplacement'] as int);
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
@@ -26,7 +27,7 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'onboarding': instance.onboarding,
       'division': instance.division,
       'department': instance.department,
-      'tgCatalog': instance.talkGroups,
+      'talkGroups': instance.talkGroups,
       'locationWhenInUse': instance.locationWhenInUse,
       'mapCacheTTL': instance.mapCacheTTL,
       'mapCacheCapacity': instance.mapCacheCapacity,
