@@ -90,7 +90,7 @@ class UnitLayer extends MapPlugin {
     Unit unit,
     Tracking tracking,
   ) {
-    var offsets = tracking.track.reversed.take(10).map((point) {
+    var offsets = tracking.history.reversed.take(10).map((point) {
       var pos = map.project(toLatLng(point));
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());

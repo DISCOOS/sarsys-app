@@ -26,7 +26,9 @@ class TracksBuilder {
         '"id": "$id",'
         '"status": "${enumName(status)}",'
         '"distance": 0,'
-        '"devices": ["${devices.join(",")}"]'
+        '"devices": ["${devices.join(",")}"],'
+        '"history": [],'
+        '"tracks": {}'
         '}');
   }
 
@@ -221,8 +223,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
         final simulation = simulations[trackingId];
         if (simulation != null) {
           simulation.devices[device.id] = device;
-          // Calculate new position, update and notfiy
-          final next = simulation.progress();
+          // Append to tracks, calculate new position, update and notify
+          final next = simulation.progress([device.id]);
           trackingRepo[incident.key][trackingId] = next;
           controller.add(TrackingMessage(incident.key, TrackingMessageType.TrackingChanged, next.toJson()));
         }
@@ -240,9 +242,9 @@ class _TrackSimulation {
 
   _TrackSimulation({this.id, this.trackingList, this.devices = const {}});
 
-  Tracking progress() {
-    var location;
-    var distance;
+  Tracking progress([Iterable<String> ids = const []]) {
+    Point location;
+    double distance;
     if (tracking.devices.isEmpty)
       location = tracking.location;
     else if (tracking.devices.length == 1)
@@ -266,27 +268,40 @@ class _TrackSimulation {
       );
     }
 
-    // Only add to track if status is Tracking
-    final track = List.of(
-      tracking.status != TrackingStatus.Tracking || tracking.track == null ? <Point>[] : tracking.track,
-      growable: true,
-    )..add(location);
+    // Only add to device track and tracking history if status is Tracking
+    List<Point> history;
+    if (tracking.status == TrackingStatus.Tracking) {
+      ids.forEach(
+        (id) => tracking.tracks.update(
+          id,
+          (track) => track..add(devices[id].location),
+          ifAbsent: () => [devices[id].location],
+        ),
+      );
+      history = List.of(
+        tracking.history,
+        growable: true,
+      )..add(location);
+    } else {
+      history = tracking.history;
+    }
 
     // Calculate distance
-    if (track.length > 1) {
+    if (history.length > 1) {
       distance = ProjMath.eucledianDistance(
-        track.last.lat,
-        track.last.lon,
-        track[track.length - 2].lat,
-        track[track.length - 2].lon,
+        history.last.lat,
+        history.last.lon,
+        history[history.length - 2].lat,
+        history[history.length - 2].lon,
       );
       distance = (tracking.distance == null ? distance : tracking.distance + distance);
     }
 
+    // Limit history and tracks to maximum 10 items each (prevent unbounded memory usage in long-running app)
     return tracking.cloneWith(
-      location: location,
-      distance: distance ?? 0.0,
-      track: track.skip(max(0, track.length - 10)).toList(),
-    );
+        location: location,
+        distance: distance ?? 0.0,
+        history: history.skip(max(0, history.length - 10)).toList(),
+        tracks: tracking.tracks.map((id, track) => MapEntry(id, track.skip(max(0, track.length - 10)).toList())));
   }
 }

@@ -15,10 +15,19 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
           : Point.fromJson(json['location'] as Map<String, dynamic>),
       distance: (json['distance'] as num)?.toDouble(),
       devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
-      track: (json['track'] as List)
+      history: (json['history'] as List)
           ?.map((e) =>
               e == null ? null : Point.fromJson(e as Map<String, dynamic>))
-          ?.toList());
+          ?.toList(),
+      tracks: (json['tracks'] as Map<String, dynamic>)?.map(
+        (k, e) => MapEntry(
+            k,
+            (e as List)
+                ?.map((e) => e == null
+                    ? null
+                    : Point.fromJson(e as Map<String, dynamic>))
+                ?.toList()),
+      ));
 }
 
 Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
@@ -27,7 +36,9 @@ Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
       'location': instance.location?.toJson(),
       'distance': instance.distance,
       'devices': instance.devices,
-      'track': instance.track?.map((e) => e?.toJson())?.toList()
+      'history': instance.history?.map((e) => e?.toJson())?.toList(),
+      'tracks': instance.tracks
+          ?.map((k, e) => MapEntry(k, e?.map((e) => e?.toJson())?.toList()))
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
@@ -53,7 +64,7 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
 const _$TrackingStatusEnumMap = <TrackingStatus, dynamic>{
   TrackingStatus.None: 'None',
   TrackingStatus.Created: 'Created',
+  TrackingStatus.Tracking: 'Tracking',
   TrackingStatus.Paused: 'Paused',
-  TrackingStatus.Closed: 'Closed',
-  TrackingStatus.Tracking: 'Tracking'
+  TrackingStatus.Closed: 'Closed'
 };

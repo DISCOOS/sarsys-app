@@ -13,7 +13,8 @@ class Tracking extends Equatable {
   final Point location;
   final double distance;
   final List<String> devices;
-  final List<Point> track;
+  final List<Point> history;
+  final Map<String, List<Point>> tracks;
 
   Tracking({
     @required this.id,
@@ -21,8 +22,9 @@ class Tracking extends Equatable {
     this.location,
     this.distance,
     this.devices,
-    this.track,
-  }) : super([id, status, location, distance, devices, track]);
+    this.history,
+    this.tracks = const {},
+  }) : super([id, status, location, distance, devices, history, tracks]);
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
@@ -38,16 +40,24 @@ class Tracking extends Equatable {
     List<String> devices,
     TrackingStatus status,
     Point location,
-    List<Point> track,
     double distance,
+    List<Point> history,
+    Map<String, List<Point>> tracks,
   }) {
     return Tracking(
       id: this.id,
-      track: track ?? this.track,
       status: status ?? this.status,
       devices: devices ?? this.devices,
-      location: location ?? this.location,
+      location: location ?? Point.fromJson(this.location.toJson()),
       distance: distance ?? this.distance,
+      history: history ?? this.history.map((point) => Point.fromJson(point.toJson())).toList(),
+      tracks: tracks ??
+          this.tracks.map(
+                (id, track) => MapEntry<String, List<Point>>(
+                  id,
+                  track.map((point) => Point.fromJson(point.toJson())).toList(),
+                ),
+              ),
     );
   }
 }
