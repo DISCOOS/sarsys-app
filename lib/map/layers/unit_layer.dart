@@ -147,6 +147,7 @@ class UnitLayer extends MapPlugin {
 }
 
 double _toPixelRadius(MapState map, double size, double x, double y, Point point) {
+  if (point == null) return 0;
   var pixelRadius = size;
   if (point.acc != null && point.acc > 0.0) {
     var coords = ProjMath.calculateEndingGlobalCoordinates(
