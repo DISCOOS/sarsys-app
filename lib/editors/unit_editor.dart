@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:intl/intl.dart';
@@ -254,7 +255,11 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
     final devices = (widget?.unit?.tracking != null
-        ? _trackingBloc.getDevicesFromTrackingId(widget?.unit?.tracking)
+        ? _trackingBloc.getDevicesFromTrackingId(
+            widget?.unit?.tracking,
+            // Include closed tracks
+            exclude: [],
+          )
         : [])
       ..addAll(widget.devices);
     return Padding(

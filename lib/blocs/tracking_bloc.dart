@@ -53,12 +53,24 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   void _cleanup(UnitState state) {
     if (state.isUpdated()) {
       final event = state as UnitUpdated;
-      if (UnitStatus.Retired == event.data.status) {
-        dispatch(HandleRemoved(event.data.tracking));
+      final tracking = _tracks[event.data.tracking];
+      // Close tracking?
+      if (tracking != null) {
+        if (UnitStatus.Retired == event.data.status) {
+          dispatch(UpdateTracking(tracking.cloneWith(
+            status: TrackingStatus.Closed,
+            devices: [],
+          )));
+        } else if (TrackingStatus.Closed == tracking.status) {
+          dispatch(UpdateTracking(tracking.cloneWith(
+            status: TrackingStatus.Tracking,
+          )));
+        }
       }
     } else if (state.isDeleted()) {
       final event = state as UnitDeleted;
-      dispatch(HandleRemoved(event.data.tracking));
+      final tracking = _tracks[event.data.tracking];
+      if (tracking != null) dispatch(DeleteTracking(tracking));
     }
   }
 
@@ -72,24 +84,40 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Map<String, Tracking> get tracks => UnmodifiableMapView<String, Tracking>(_tracks);
 
   /// Get units being tracked
-  Map<String, Unit> get units => UnmodifiableMapView(
+  Map<String, Unit> getTrackedUnits({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      UnmodifiableMapView(
         Map.fromEntries(
-          unitBloc.units.entries.where((entry) => isTrackingUnit(entry.value)),
+          unitBloc.units.entries.where((entry) => isTrackingUnit(entry.value, exclude: exclude)),
         ),
       );
 
   /// Test if unit is being tracked
-  bool isTrackingUnit(Unit unit) => unit?.tracking != null && _tracks.containsKey(unit?.tracking);
+  bool isTrackingUnit(
+    Unit unit, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      unit?.tracking != null &&
+      _tracks.containsKey(unit?.tracking) &&
+      !exclude.contains(_tracks[unit?.tracking].status);
 
   /// Get units being tracked
-  Unit getUnitFromTrackingId(String id) =>
-      unitBloc.units.values.firstWhere((unit) => isTrackingUnit(unit) && id == unit?.tracking);
+  Unit getUnitFromTrackingId(
+    String id, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      unitBloc.units.values.firstWhere(
+        (unit) => isTrackingUnit(unit, exclude: exclude) && id == unit?.tracking,
+      );
 
   /// Get units for all tracked devices.
-  Map<String, Set<Unit>> getUnitsByDeviceId() {
+  Map<String, Set<Unit>> getUnitsByDeviceId({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) {
     final Map<String, Set<Unit>> map = {};
-    units.values.forEach((unit) {
-      getDevicesFromTrackingId(unit.tracking).forEach((device) {
+    getTrackedUnits(exclude: exclude).values.forEach((unit) {
+      getDevicesFromTrackingId(unit.tracking, exclude: exclude).forEach((device) {
         map.update(device.id, (set) {
           set.add(unit);
           return set;
@@ -100,13 +128,17 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Get devices being tracked by given id
-  List<Device> getDevicesFromTrackingId(String id) => _tracks.containsKey(id)
-      ? _tracks[id]
-          .devices
-          .where((id) => deviceBloc.devices.containsKey(id))
-          .map((id) => deviceBloc.devices[id])
-          .toList()
-      : [];
+  List<Device> getDevicesFromTrackingId(
+    String id, {
+    List<TrackingStatus> exclude = const [TrackingStatus.Closed],
+  }) =>
+      _tracks.containsKey(id) && !exclude.contains(_tracks[id].status)
+          ? _tracks[id]
+              .devices
+              .where((id) => deviceBloc.devices.containsKey(id))
+              .map((id) => deviceBloc.devices[id])
+              .toList()
+          : [];
 
   /// Get tracking for all tracked devices.
   Map<String, Set<Tracking>> getTrackingByDeviceId() {
@@ -191,8 +223,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       yield _clear(command);
     } else if (command is HandleMessage) {
       yield _process(command.data);
-    } else if (command is HandleRemoved) {
-      yield _remove(command);
     } else if (command is RaiseTrackingError) {
       yield command.data;
     } else {
@@ -220,13 +250,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       return _toOK(event, TrackingCreated(tracking), result: tracking);
     }
     return _toError(event, response);
-  }
-
-  TrackingState _remove(HandleRemoved command) {
-    var state;
-    final tracking = _tracks.remove(command.data);
-    if (tracking != null) state = TrackingDeleted(tracking);
-    return state;
   }
 
   TrackingState _process(TrackingMessage event) {
@@ -346,13 +369,6 @@ class HandleMessage extends TrackingCommand<TrackingMessage, void> {
 
   @override
   String toString() => 'HandleMessage';
-}
-
-class HandleRemoved extends TrackingCommand<String, void> {
-  HandleRemoved(String id) : super(id);
-
-  @override
-  String toString() => 'HandleShortcut';
 }
 
 class DeleteTracking extends TrackingCommand<Tracking, void> {

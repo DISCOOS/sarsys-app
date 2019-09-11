@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -20,14 +19,17 @@ import 'package:url_launcher/url_launcher.dart';
 class UnitTool extends MapTool with MapSelectable<Unit> {
   final TrackingBloc bloc;
   final MessageCallback onMessage;
+  final bool includeRetired;
+
   UnitTool(
     this.bloc, {
     bool active = false,
     this.onMessage,
+    this.includeRetired = false,
   }) : super(active);
 
   @override
-  Iterable<Unit> get targets => bloc.units.values;
+  Iterable<Unit> get targets => bloc.getTrackedUnits(exclude: includeRetired ? [] : [TrackingStatus.Closed]).values;
 
   @override
   void doProcessTap(BuildContext context, List<Unit> units) {

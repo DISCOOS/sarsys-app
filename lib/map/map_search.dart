@@ -5,6 +5,8 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/proj4d.dart';
 import 'package:flutter/foundation.dart';
@@ -26,6 +28,8 @@ class MapSearchField extends StatefulWidget {
 
   final Widget prefixIcon;
 
+  final bool withRetired;
+
   const MapSearchField({
     Key key,
     @required this.onError,
@@ -35,6 +39,7 @@ class MapSearchField extends StatefulWidget {
     this.prefixIcon,
     this.zoom,
     this.hintText,
+    this.withRetired = false,
   }) : super(key: key);
 
   @override
@@ -315,7 +320,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   bool _searchBlocs(BuildContext context, String value) {
     final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
-    final units = BlocProvider.of<TrackingBloc>(context).units;
+    final units = BlocProvider.of<TrackingBloc>(context).getTrackedUnits;
     final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
@@ -349,7 +354,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
       // Search for matches in units
       results.addAll(
-        units.values
+        units(exclude: widget.withRetired ? [] : [TrackingStatus.Closed])
+            .values
+            .where((unit) => widget.withRetired || unit.status != UnitStatus.Retired)
             .where((unit) =>
                 // Search in unit
                 _prepare(unit.searchable).contains(match) ||
