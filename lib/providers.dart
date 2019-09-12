@@ -1,3 +1,5 @@
+import 'package:SarSys/models/User.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -66,13 +68,14 @@ class Providers {
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final UserService userService = !mock ? UserService('$baseRestUrl/auth/login', client) : UserServiceMock.buildAny();
+    final UserService userService =
+        !mock ? UserService('$baseRestUrl/auth/login', client) : UserServiceMock.buildAny(enumName(UserRole.Commander));
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service
     final IncidentService incidentService = !mock
         ? IncidentService('$baseRestUrl/api/incidents', client)
-        : IncidentServiceMock.build(userService, 2, "T123");
+        : IncidentServiceMock.build(userService, 2, enumName(UserRole.Commander), "T123");
     final IncidentBloc incidentBloc = IncidentBloc(incidentService, userBloc);
 
     // Configure Unit service

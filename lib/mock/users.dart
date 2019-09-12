@@ -5,10 +5,10 @@ import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 
 class UserServiceMock extends Mock implements UserService {
-  static UserService build(String username, String password) {
+  static UserService build(String role, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(username, password)).thenAnswer((_) async {
-      var token = createToken(username);
+      var token = createToken(username, role);
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
@@ -31,10 +31,10 @@ class UserServiceMock extends Mock implements UserService {
     return mock;
   }
 
-  static UserService buildAny() {
+  static UserService buildAny(String role) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(any, any)).thenAnswer((username) async {
-      var token = createToken(username.positionalArguments[0]);
+      var token = createToken(username.positionalArguments[0], role);
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
@@ -54,13 +54,13 @@ class UserServiceMock extends Mock implements UserService {
     return mock;
   }
 
-  static String createToken(String username) {
+  static String createToken(String username, String role) {
     final key = 's3cr3t';
     final claimSet = new JwtClaim(
         subject: username,
         issuer: 'rkh',
         otherClaims: <String, dynamic>{
-          'roles': ['pilot', 'al'],
+          'roles': [role],
         },
         maxAge: const Duration(minutes: 5));
 

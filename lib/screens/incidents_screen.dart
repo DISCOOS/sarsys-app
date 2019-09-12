@@ -32,6 +32,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
 
   @override //new
   Widget build(BuildContext context) {
+    final userBloc = BlocProvider.of<UserBloc>(context);
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return Scaffold(
@@ -45,12 +46,14 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           resizeToAvoidBottomInset: true,
           body: _buildBody(_bloc, context, viewportConstraints),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _create(context),
-            tooltip: 'Ny hendelse',
-            child: Icon(Icons.add),
-            elevation: 2.0,
-          ),
+          floatingActionButton: userBloc?.user?.isCommander == true
+              ? FloatingActionButton(
+                  onPressed: () => _create(context),
+                  tooltip: 'Ny hendelse',
+                  child: Icon(Icons.add),
+                  elevation: 2.0,
+                )
+              : null,
           bottomNavigationBar: _buildBottomAppBar(),
         );
       },

@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
@@ -43,11 +44,12 @@ class MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userBloc = BlocProvider.of<UserBloc>(context);
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButton: _showFAB
+      floatingActionButton: _showFAB && userBloc?.user?.isCommander == true
           ? FloatingActionButton(
               onPressed: () {
                 _showCreateItemSheet(context);

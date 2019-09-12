@@ -60,10 +60,10 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static IncidentService build(UserService service, final int count, final String passcode) {
+  static IncidentService build(UserService service, final int count, final String role, final String passcode) {
     final Map<String, Incident> incidents = {};
     final IncidentServiceMock mock = IncidentServiceMock();
-    final unauthorized = UserServiceMock.createToken("unauthorized");
+    final unauthorized = UserServiceMock.createToken("unauthorized", role);
     when(mock.fetch()).thenAnswer((_) async {
       if (incidents.isEmpty) {
         var response = await service.getToken();

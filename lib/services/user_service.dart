@@ -52,7 +52,7 @@ class UserService {
     if (_tokenFromStorage != null) {
       // TODO: Validate token (checks only for expired, should probably do a bit more)
       try {
-        var jwt = new JsonWebToken.unverified(_tokenFromStorage);
+        var jwt = JsonWebToken.unverified(_tokenFromStorage);
         print("claims: ${jwt.claims}");
         print(new DateTime.now().millisecondsSinceEpoch / 1000);
         if (jwt.claims.expiry.isAfter(new DateTime.now())) {

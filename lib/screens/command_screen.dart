@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -27,6 +28,7 @@ class _CommandScreenState extends State<CommandScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     final IncidentBloc incidentBloc = BlocProvider.of<IncidentBloc>(context);
     return StreamBuilder(
       stream: incidentBloc.changes,
@@ -42,7 +44,7 @@ class _CommandScreenState extends State<CommandScreen> {
         return Scaffold(
           drawer: AppDrawer(),
           appBar: AppBar(
-            actions: _buildActions(context, incident, incidentBloc),
+            actions: _buildActions(context, userBloc, incident, incidentBloc),
             title: Text(title),
             centerTitle: true,
           ),
@@ -62,7 +64,7 @@ class _CommandScreenState extends State<CommandScreen> {
               current = index;
             }),
           ),
-          floatingActionButton: _buildFAB(context),
+          floatingActionButton: _buildFAB(context, userBloc),
         );
       },
     );
@@ -80,17 +82,18 @@ class _CommandScreenState extends State<CommandScreen> {
     }
   }
 
-  List<Widget> _buildActions(BuildContext context, incident, IncidentBloc incidentBloc) {
+  List<Widget> _buildActions(BuildContext context, UserBloc userBloc, incident, IncidentBloc incidentBloc) {
     switch (current) {
       case 0:
         return [
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => IncidentEditor(incident: incident),
-            ),
-          )
+          if (userBloc?.user?.isCommander == true)
+            IconButton(
+              icon: Icon(Icons.more_vert),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (context) => IncidentEditor(incident: incident),
+              ),
+            )
         ];
       case 1:
         return [
@@ -127,8 +130,8 @@ class _CommandScreenState extends State<CommandScreen> {
     }
   }
 
-  StatelessWidget _buildFAB(BuildContext context) {
-    return current == 1
+  StatelessWidget _buildFAB(BuildContext context, UserBloc bloc) {
+    return current == 1 && bloc?.user?.isCommander == true
         ? FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () => showDialog(

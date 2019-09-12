@@ -131,8 +131,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserState _authorize(AuthorizeUser command) {
-    bool isCommander = command.data.passcodes.personnel == command.passcode;
-    bool isPersonnel = isCommander || command.data.passcodes.personnel == command.passcode;
+    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
+    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.id, () => state);

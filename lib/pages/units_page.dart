@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit/edit_unit.dart';
@@ -30,17 +31,20 @@ class UnitsPage extends StatefulWidget {
 }
 
 class UnitsPageState extends State<UnitsPage> {
+  UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
+
   List<UnitStatus> _filter = UnitStatus.values.toList()..remove(UnitStatus.Retired);
 
   @override
   void initState() {
     super.initState();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state);
+    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
   }
 
   @override
@@ -119,15 +123,14 @@ class UnitsPageState extends State<UnitsPage> {
     var unit = units[index];
     var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
-    return widget.withActions
+    return widget.withActions && _userBloc?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
             child: _buildListTile(unit, status, tracking),
             secondaryActions: <Widget>[
-              if (tracking?.location != null) _buildTrackingAction(context, status, tracking),
               _buildEditAction(context, unit),
-              _buildCloseAction(context, unit),
+              if (tracking?.status != TrackingStatus.Closed) _buildCloseAction(context, unit),
             ],
           )
         : _buildListTile(unit, status, tracking);
@@ -152,7 +155,7 @@ class UnitsPageState extends State<UnitsPage> {
           style: caption,
         ),
         dense: true,
-        trailing: widget.withActions
+        trailing: widget.withActions && _userBloc?.user?.isCommander == true
             ? RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -172,15 +175,6 @@ class UnitsPageState extends State<UnitsPage> {
     } else {
       widget.onSelection(unit);
     }
-  }
-
-  IconSlideAction _buildTrackingAction(BuildContext context, TrackingStatus status, Tracking tracking) {
-    return IconSlideAction(
-      caption: 'SPORING',
-      color: toTrackingStatusColor(context, status),
-      icon: toTrackingIconData(context, status),
-      onTap: () => _trackingBloc.transition(tracking),
-    );
   }
 
   IconSlideAction _buildEditAction(BuildContext context, Unit unit) {

@@ -26,18 +26,19 @@ class IncidentPage extends StatefulWidget {
 class _IncidentPageState extends State<IncidentPage> {
   final _controller = ScrollController();
 
+  UserBloc _userBloc;
   bool _showHint = true;
-  Future<void> _hidePending;
 
   TextStyle labelStyle;
-
   TextStyle valueStyle;
-
   TextStyle unitStyle;
+
+  Future<void> _hidePending;
 
   @override
   void initState() {
     super.initState();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _controller.addListener(_testHint);
     _showAndDelayHide();
   }
@@ -76,8 +77,10 @@ class _IncidentPageState extends State<IncidentPage> {
                           _buildReference(incident),
                           SizedBox(height: IncidentPage.SPACING),
                           _buildPasscodes(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildActions(context),
+                          if (_userBloc?.user?.isCommander) ...[
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildActions(context)
+                          ],
                         ],
                       )
                     : Container();

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Division.dart';
@@ -20,8 +21,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 class DevicesPage extends StatefulWidget {
   final String query;
+  final bool withActions;
 
-  DevicesPage({Key key, this.query}) : super(key: key);
+  DevicesPage({Key key, this.query, this.withActions = true}) : super(key: key);
 
   @override
   DevicesPageState createState() => DevicesPageState();
@@ -30,6 +32,7 @@ class DevicesPage extends StatefulWidget {
 class DevicesPageState extends State<DevicesPage> {
   List<DeviceType> _filter = DeviceType.values.toList();
 
+  UserBloc _userBloc;
   UnitBloc _unitBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
@@ -41,10 +44,15 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void initState() {
     super.initState();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_deviceBloc.state)..add(_trackingBloc.state);
+    _group = StreamGroup.broadcast()
+      ..add(_userBloc.state)
+      ..add(_unitBloc.state)
+      ..add(_deviceBloc.state)
+      ..add(_trackingBloc.state);
     _init();
   }
 
@@ -128,57 +136,77 @@ class DevicesPageState extends State<DevicesPage> {
     }
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
-    return Slidable(
-      actionPane: SlidableScrollActionPane(),
-      actionExtentRatio: 0.2,
-      child: Container(
-        color: Colors.white,
-        child: ListTile(
-          dense: true,
-          key: ObjectKey(device.id),
-          leading: CircleAvatar(
-            backgroundColor: toPointStatusColor(context, device.location),
-            child: Icon(MdiIcons.cellphoneBasic),
-            foregroundColor: Colors.white,
-          ),
-          title: Text("ISSI: ${device.number}"),
-          subtitle: Text(
-            "${_toDistrict(device.number)}, "
-            "${_toFunction(device.number)}, "
-            "${_toStatusText(device, status, units[device.id]).toLowerCase()}",
-          ),
-          trailing: RotatedBox(
-            quarterTurns: 1,
-            child: Icon(
-              Icons.drag_handle,
-              color: Colors.grey.withOpacity(0.2),
-            ),
-          ),
-        ),
-      ),
-      secondaryActions: <Widget>[
-        if (status != TrackingStatus.None)
-          IconSlideAction(
-            caption: 'FJERN',
-            color: Colors.red,
-            icon: Icons.people,
-            onTap: () => _removeFromUnits(device, units[device.id]),
+    return widget.withActions && _userBloc?.user?.isCommander == true
+        ? Slidable(
+            actionPane: SlidableScrollActionPane(),
+            actionExtentRatio: 0.2,
+            child: _buildListTile(device, status, units),
+            secondaryActions: <Widget>[
+              if (status != TrackingStatus.None)
+                _buildRemoveAction(device, units)
+              else ...[
+                _buildCreateAction(device),
+                _buildAttachAction(device),
+              ]
+            ],
           )
-        else ...[
-          IconSlideAction(
-            caption: 'OPPRETT',
-            color: Theme.of(context).buttonColor,
-            icon: Icons.group_add,
-            onTap: () => _createUnit(device),
-          ),
-          IconSlideAction(
-            caption: 'KNYTT',
-            color: Theme.of(context).buttonColor,
-            icon: Icons.people,
-            onTap: () async => _addToUnit(device),
-          ),
-        ]
-      ],
+        : _buildListTile(device, status, units);
+  }
+
+  IconSlideAction _buildAttachAction(Device device) {
+    return IconSlideAction(
+      caption: 'KNYTT',
+      color: Theme.of(context).buttonColor,
+      icon: Icons.people,
+      onTap: () async => _addToUnit(device),
+    );
+  }
+
+  IconSlideAction _buildCreateAction(Device device) {
+    return IconSlideAction(
+      caption: 'OPPRETT',
+      color: Theme.of(context).buttonColor,
+      icon: Icons.group_add,
+      onTap: () => _createUnit(device),
+    );
+  }
+
+  IconSlideAction _buildRemoveAction(Device device, Map<String, Set<Unit>> units) {
+    return IconSlideAction(
+      caption: 'FJERN',
+      color: Colors.red,
+      icon: Icons.people,
+      onTap: () => _removeFromUnits(device, units[device.id]),
+    );
+  }
+
+  Widget _buildListTile(Device device, TrackingStatus status, Map<String, Set<Unit>> units) {
+    return Container(
+      color: Colors.white,
+      child: ListTile(
+        dense: true,
+        key: ObjectKey(device.id),
+        leading: CircleAvatar(
+          backgroundColor: toPointStatusColor(context, device.location),
+          child: Icon(MdiIcons.cellphoneBasic),
+          foregroundColor: Colors.white,
+        ),
+        title: Text("ISSI: ${device.number}"),
+        subtitle: Text(
+          "${_toDistrict(device.number)}, "
+          "${_toFunction(device.number)}, "
+          "${_toStatusText(device, status, units[device.id]).toLowerCase()}",
+        ),
+        trailing: widget.withActions && _userBloc?.user?.isCommander == true
+            ? RotatedBox(
+                quarterTurns: 1,
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+              )
+            : null,
+      ),
     );
   }
 

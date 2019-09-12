@@ -3,14 +3,25 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/user_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:matcher/matcher.dart';
 
 void main() {
-  final UserService userService = UserServiceMock.build('test@local', 'password');
-  final IncidentService incidentService = IncidentServiceMock.build(userService, 2, "T123");
+  final UserService userService = UserServiceMock.build(
+    enumName(UserRole.Commander),
+    'test@local',
+    'password',
+  );
+  final IncidentService incidentService = IncidentServiceMock.build(
+    userService,
+    2,
+    enumName(UserRole.Commander),
+    "T123",
+  );
 
   UserBloc userBloc;
   IncidentBloc incidentBloc;
