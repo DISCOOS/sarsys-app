@@ -76,7 +76,8 @@ class LocationController {
       if (wasLocated != isLocated || wasLocked != _locked) {
         if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
       }
-    }
+    } else
+      _handleGeolocationStatusChange(_service.status);
     return isLocated;
   }
 
