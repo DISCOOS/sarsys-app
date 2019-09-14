@@ -11,7 +11,7 @@ import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:mockito/mockito.dart';
 
 import 'devices.dart';

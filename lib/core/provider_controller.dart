@@ -13,7 +13,7 @@ import 'package:SarSys/mock/tracking.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/users.dart';
 
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/device_service.dart';
@@ -29,7 +29,7 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 
-import 'models/AppConfig.dart';
+import '../models/AppConfig.dart';
 
 class ProviderController {
   final Client client;

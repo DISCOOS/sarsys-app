@@ -67,9 +67,13 @@ class AppConfigService {
   }
 
   Future<bool> _set(String key, value) async {
+    return set(prefs, key, value);
+  }
+
+  static Future<bool> set(SharedPreferences prefs, String key, value) {
     if (AppConfig.PARAMS.containsKey(key)) {
-      switch (AppConfig.PARAMS[key]) {
-        case "String":
+      switch (AppConfig.PARAMS[key].toLowerCase()) {
+        case "string":
           return prefs.setString(key, value);
         case "bool":
           return prefs.setBool(key, value);
@@ -77,10 +81,14 @@ class AppConfigService {
           return prefs.setInt(key, value);
         case "double":
           return prefs.setDouble(key, value);
-        case "StringList":
+        case "stringlist":
           return prefs.setStringList(key, value);
       }
     }
     throw "Type ${AppConfig.PARAMS[key]} for $key is not supported";
+  }
+
+  static void setAll(SharedPreferences prefs, Map<String, dynamic> values) async {
+    values.forEach((key, value) async => await set(prefs, key, value));
   }
 }

@@ -6,7 +6,7 @@ import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/map_config_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -126,26 +126,29 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      ListTile(
-          title: Text(
-            "Om SarSys",
-            style: Theme.of(context).textTheme.body1,
-          ),
-          trailing: Icon(Icons.keyboard_arrow_right),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-              return AboutScreen();
-            }));
-          }),
+      _buildOnboardingField(bloc),
       ListTile(
         title: Text(
           "Endre tilganger for app",
           style: Theme.of(context).textTheme.body1,
         ),
+        trailing: Icon(Icons.open_in_new),
         onTap: () {
           PermissionHandler().openAppSettings();
         },
-      )
+      ),
+      ListTile(
+        title: Text(
+          "Om SarSys",
+          style: Theme.of(context).textTheme.body1,
+        ),
+        trailing: Icon(Icons.keyboard_arrow_right),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+            return AboutScreen();
+          }));
+        },
+      ),
     ];
   }
 
@@ -173,9 +176,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                               ))
                           .toList()
                       : [],
-                  onChanged: (value) {
-                    bloc.update(district: value);
-                  },
+                  onChanged: (value) => bloc.update(district: value),
                   value: bloc.config?.division ?? Defaults.division,
                 ),
               );
@@ -210,9 +211,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                               ))
                           .toList()
                       : [],
-                  onChanged: (value) {
-                    bloc.update(department: value);
-                  },
+                  onChanged: (value) => bloc.update(department: value),
                   value: bloc.config?.department ?? Defaults.department,
                 ),
               );
@@ -246,9 +245,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                               ))
                           .toList()
                       : [],
-                  onChanged: (value) {
-                    bloc.update(talkGroups: value);
-                  },
+                  onChanged: (value) => bloc.update(talkGroups: value),
                   value: bloc.config?.talkGroups ?? Defaults.talkGroups,
                 ),
               );
@@ -256,6 +253,19 @@ class SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Padding _buildOnboardingField(AppConfigBloc bloc) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0),
+      child: Row(mainAxisSize: MainAxisSize.max, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: <Widget>[
+        Expanded(child: Text("Vis oppstartsveiviser")),
+        Switch(
+          value: bloc.config.onboarding,
+          onChanged: (value) => bloc.update(onboarding: value),
+        ),
+      ]),
     );
   }
 }

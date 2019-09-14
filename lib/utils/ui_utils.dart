@@ -18,7 +18,7 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'defaults.dart';
+import '../core/defaults.dart';
 
 typedef PromptCallback = Future<bool> Function(String title, String message);
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});

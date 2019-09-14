@@ -8,7 +8,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:mockito/mockito.dart';
 
 class DeviceBuilder {

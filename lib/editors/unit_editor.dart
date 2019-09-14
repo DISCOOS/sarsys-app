@@ -1,5 +1,5 @@
 import 'package:SarSys/services/assets_service.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:intl/intl.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';

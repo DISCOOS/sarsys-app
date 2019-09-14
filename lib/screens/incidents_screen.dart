@@ -5,7 +5,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';

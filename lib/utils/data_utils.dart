@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:latlong/latlong.dart';
 
 String enumName(Object o) => o.toString().split('.').last;

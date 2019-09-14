@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'dart:math';
 
 import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';

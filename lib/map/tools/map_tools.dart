@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:SarSys/map/layers/scalebar.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';

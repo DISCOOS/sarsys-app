@@ -4,7 +4,7 @@ import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/my_location.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';

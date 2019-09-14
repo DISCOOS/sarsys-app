@@ -1,7 +1,7 @@
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/provider_controller.dart';
+import 'package:SarSys/core/provider_controller.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/defaults.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -15,7 +15,7 @@ class AppConfig extends Equatable {
   static const DEMO_ROLE = 'demoRole';
   static const ONBOARDING = 'onboarding';
   static const TALK_GROUPS = 'talkGroups';
-  static const DISTRICT = 'district';
+  static const DIVISION = 'division';
   static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
   static const SENTRY_DNS = "sentryDns";
@@ -30,7 +30,7 @@ class AppConfig extends Equatable {
     DEMO: "bool",
     DEMO_ROLE: "string",
     ONBOARDING: "bool",
-    DISTRICT: "string",
+    DIVISION: "string",
     DEPARTMENT: "string",
     TALK_GROUPS: "string",
     LOCATION_WHEN_IN_USE: "bool",

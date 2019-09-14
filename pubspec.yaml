@@ -102,6 +102,7 @@ flutter:
     - assets/config/app_config.json
     - assets/config/fleet_map.json
     - assets/images/map.png
+    - assets/images/cabin.png
     - assets/images/sar-team 2.png
     - assets/mapspreview/missing.png
     - assets/mapspreview/topo4.png

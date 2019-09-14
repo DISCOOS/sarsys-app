@@ -1,7 +1,7 @@
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/provider_controller.dart';
+import 'package:SarSys/core/provider_controller.dart';
 import 'package:SarSys/screens/settings_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

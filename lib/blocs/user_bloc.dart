@@ -89,7 +89,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         yield _authorize(command);
       }
     } else if (command is RaiseUserError) {
-      yield command.data;
+      yield _toError(command, command.data);
     } else {
       yield UserError("Unsupported $command");
     }
@@ -157,7 +157,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete with error and return response as error state to bloc
-  Future<UserState> _toError(UserCommand event, Object response) async {
+  UserState _toError(UserCommand event, Object response) {
     final error = UserError(response);
     event.callback.completeError(error);
     return error;
@@ -209,7 +209,7 @@ class AuthorizeUser extends UserCommand<Incident, bool> {
   String toString() => 'AuthorizeUser';
 }
 
-class RaiseUserError extends UserCommand<UserError, void> {
+class RaiseUserError extends UserCommand<UserError, bool> {
   RaiseUserError(data) : super(data);
 
   static RaiseUserError from(String error) => RaiseUserError(UserError(error));

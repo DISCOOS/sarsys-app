@@ -6,7 +6,7 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/proj4d.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
