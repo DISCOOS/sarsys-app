@@ -55,6 +55,7 @@ dependencies:
   material_design_icons_flutter: ^3.2.3895
   filesize: ^1.0.4
   dartz: ^0.8.7
+  intro_views_flutter: ^2.6.0
 
   # Customized plugins
   flutter_map:
@@ -100,6 +101,8 @@ flutter:
     - logo.png
     - assets/config/app_config.json
     - assets/config/fleet_map.json
+    - assets/images/map.png
+    - assets/images/sar-team 2.png
     - assets/mapspreview/missing.png
     - assets/mapspreview/topo4.png
     - assets/mapspreview/toporaster3.png

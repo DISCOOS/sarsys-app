@@ -1,8 +1,10 @@
 {
-  "isOnboarding": false,
+  "demo": true,
+  "demoRole": "Commander",
+  "onboarding": true,
   "division": "140",
   "department": "141",
-  "talk_groups_catalog": "Nasjonal",
+  "talkGroups": "Nasjonal",
   "locationWhenInUse": false,
   "mapCacheTTL": 30,
   "mapCacheCapacity": 15000,

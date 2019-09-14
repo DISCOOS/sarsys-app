@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:bloc/bloc.dart';
@@ -27,8 +29,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   Future<AppConfig> fetch() async {
     var response = await service.fetch();
     if (response.is200) {
-      dispatch(FetchAppConfig(response.body));
-      return response.body;
+      return _dispatch(FetchAppConfig(response.body));
     }
     dispatch(RaiseAppConfigError(response));
     return Future.error(response);
@@ -36,6 +37,8 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   /// Update given settings
   Future<AppConfig> update({
+    bool demo,
+    String demoRole,
     bool onboarding,
     String district,
     String department,
@@ -49,10 +52,12 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
+          demo: demo,
+          demoRole: demoRole,
           onboarding: onboarding,
           district: district,
           department: department,
-          tgCatalog: talkGroups,
+          talkGroups: talkGroups,
           locationWhenInUse: locationWhenInUse,
           mapCacheTTL: mapCacheTTL,
           mapCacheCapacity: mapCacheCapacity,
@@ -62,8 +67,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
         );
     var response = await service.save(config);
     if (response.is204) {
-      dispatch(UpdateAppConfig(config));
-      return config;
+      return _dispatch(UpdateAppConfig(config));
     }
     dispatch(RaiseAppConfigError(response));
     return Future.error(response);
@@ -71,14 +75,39 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   @override
   Stream<AppConfigState> mapEventToState(AppConfigCommand command) async* {
-    if (command is FetchAppConfig || command is UpdateAppConfig) {
+    if (command is FetchAppConfig) {
       _config = command.data;
-      yield AppConfigLoaded(_config);
+      yield _toOK(command, AppConfigLoaded(_config), result: _config);
+    } else if (command is UpdateAppConfig) {
+      _config = command.data;
+      yield _toOK(command, AppConfigUpdated(_config), result: _config);
     } else if (command is RaiseAppConfigError) {
-      yield command.data;
+      yield _toError(command, command.data);
     } else {
-      yield AppConfigError("Unsupported $command");
+      yield _toError(command, AppConfigError("Unsupported $command"));
     }
+  }
+
+  // Dispatch and return future
+  Future<T> _dispatch<T>(AppConfigCommand<T> command) {
+    dispatch(command);
+    return command.callback.future;
+  }
+
+  // Complete request and return given state to bloc
+  AppConfigState _toOK(AppConfigCommand event, AppConfigState state, {AppConfig result}) {
+    if (result != null)
+      event.callback.complete(result);
+    else
+      event.callback.complete();
+    return state;
+  }
+
+  // Complete with error and return response as error state to bloc
+  AppConfigState _toError(AppConfigCommand event, Object response) {
+    final error = AppConfigError(response);
+    event.callback.completeError(error);
+    return error;
   }
 
   @override
@@ -92,6 +121,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 /// ---------------------
 abstract class AppConfigCommand<T> extends Equatable {
   final T data;
+  final Completer<T> callback = Completer();
 
   AppConfigCommand(this.data, [props = const []]) : super([data, ...props]);
 }
@@ -128,6 +158,7 @@ abstract class AppConfigState<T> extends Equatable {
   isEmpty() => this is AppConfigEmpty;
   isInit() => this is AppConfigInit;
   isLoaded() => this is AppConfigLoaded;
+  isUpdated() => this is AppConfigUpdated;
   isException() => this is AppConfigException;
   isError() => this is AppConfigError;
 }
@@ -139,6 +170,13 @@ class AppConfigEmpty extends AppConfigState<Null> {
   String toString() => 'AppConfigEmpty';
 }
 
+class AppConfigInit extends AppConfigState<AppConfig> {
+  AppConfigInit(AppConfig config) : super(config);
+
+  @override
+  String toString() => 'AppConfigInit';
+}
+
 class AppConfigLoaded extends AppConfigState<AppConfig> {
   AppConfigLoaded(AppConfig data) : super(data);
 
@@ -146,11 +184,11 @@ class AppConfigLoaded extends AppConfigState<AppConfig> {
   String toString() => 'AppConfigLoaded';
 }
 
-class AppConfigInit extends AppConfigState<AppConfig> {
-  AppConfigInit(AppConfig config) : super(config);
+class AppConfigUpdated extends AppConfigState<AppConfig> {
+  AppConfigUpdated(AppConfig data) : super(data);
 
   @override
-  String toString() => 'AppConfigInit';
+  String toString() => 'AppConfigUpdated';
 }
 
 /// ---------------------

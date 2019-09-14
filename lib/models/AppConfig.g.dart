@@ -9,6 +9,8 @@ part of 'AppConfig.dart';
 AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
   return AppConfig(
       sentryDns: json['sentryDns'] as String,
+      demo: json['demo'] as bool,
+      demoRole: json['demoRole'] as String,
       onboarding: json['onboarding'] as bool,
       locationWhenInUse: json['locationWhenInUse'] as bool,
       division: json['division'] as String,
@@ -33,5 +35,7 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'mapCacheCapacity': instance.mapCacheCapacity,
       'locationAccuracy': instance.locationAccuracy,
       'locationFastestInterval': instance.locationFastestInterval,
-      'locationSmallestDisplacement': instance.locationSmallestDisplacement
+      'locationSmallestDisplacement': instance.locationSmallestDisplacement,
+      'demo': instance.demo,
+      'demoRole': instance.demoRole
     };

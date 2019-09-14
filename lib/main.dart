@@ -1,6 +1,7 @@
 import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/providers.dart';
+import 'package:SarSys/provider_controller.dart';
 import 'package:SarSys/screens/settings_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,54 +17,68 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   final Client client = Client();
-  final providers = Providers.build(client, mock: true);
-  final Widget homepage = await getHome(providers);
+  final providers = await ProviderController.build(
+    client,
+    demo: DemoParams(true),
+  ).init();
 
   // Initialize app-config
-//  await providers.configProvider.bloc.fetch();
-//  runApp(_buildApp(providers, homepage));
-  runAppWithCatcher(
-    _buildApp(providers, homepage),
-    await providers.configProvider.bloc.fetch(),
-  );
+  runApp(_buildApp(providers));
+//  runAppWithCatcher(
+//    _buildApp(providers, homepage),
+//    await providers.configProvider.bloc.fetch(),
+//  );
 }
 
-BlocProviderTree _buildApp(Providers providers, Widget homepage) {
-  return BlocProviderTree(
-    blocProviders: providers.all,
-    child: MaterialApp(
-      navigatorKey: Catcher.navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'SarSys',
-      theme: ThemeData(
-        primaryColor: Colors.grey[850],
-        buttonTheme: ButtonThemeData(
-          height: 36.0,
-          textTheme: ButtonTextTheme.primary,
-        ),
+Widget _buildApp(ProviderController providers) {
+  /// Initialize provider after build events
+  providers.onChange.listen(
+    (state) => {if (ProviderControllerState.Built == state) providers.init()},
+  );
+
+  return MaterialApp(
+    navigatorKey: Catcher.navigatorKey,
+    debugShowCheckedModeBanner: false,
+    title: 'SarSys',
+    theme: ThemeData(
+      primaryColor: Colors.grey[850],
+      buttonTheme: ButtonThemeData(
+        height: 36.0,
+        textTheme: ButtonTextTheme.primary,
       ),
-      home: homepage,
-      routes: <String, WidgetBuilder>{
-        'login': (BuildContext context) => LoginScreen(),
-        'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
-        'units': (BuildContext context) => CommandScreen(tabIndex: 1),
-        'devices': (BuildContext context) => CommandScreen(tabIndex: 2),
-        'incidents': (BuildContext context) => IncidentsScreen(),
-        'settings': (BuildContext context) => SettingsScreen(),
-        'map': (BuildContext context) => _toMapScreen(context),
-      },
-      localizationsDelegates: [
-        GlobalWidgetsLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        DefaultMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        DefaultCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        const Locale('en', 'US'), // English
-        const Locale('nb', 'NO'), // Norwegian Bokmål
-      ],
     ),
+    home: getHome(providers),
+    builder: (context, child) {
+      // will rebuild when blocs are rebuilt with Providers.rebuild
+      return StreamBuilder<ProviderControllerState>(
+          stream: providers.onChange,
+          builder: (context, snapshot) {
+            return BlocProviderTree(
+              blocProviders: providers.all,
+              child: child,
+            );
+          });
+    },
+    routes: <String, WidgetBuilder>{
+      'login': (BuildContext context) => LoginScreen(),
+      'incident': (BuildContext context) => CommandScreen(tabIndex: 0),
+      'units': (BuildContext context) => CommandScreen(tabIndex: 1),
+      'devices': (BuildContext context) => CommandScreen(tabIndex: 2),
+      'incidents': (BuildContext context) => IncidentsScreen(),
+      'settings': (BuildContext context) => SettingsScreen(),
+      'map': (BuildContext context) => _toMapScreen(context),
+    },
+    localizationsDelegates: [
+      GlobalWidgetsLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      DefaultMaterialLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      DefaultCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: [
+      const Locale('en', 'US'), // English
+      const Locale('nb', 'NO'), // Norwegian Bokmål
+    ],
   );
 }
 
@@ -80,12 +95,13 @@ MapScreen _toMapScreen(BuildContext context) {
   return MapScreen();
 }
 
-Future<Widget> getHome(Providers providers) async {
-  if (await providers.userProvider.bloc.init()) {
+Widget getHome(ProviderController providers) {
+  if (providers.configProvider.bloc.config.onboarding)
+    return OnboardingScreen();
+  else if (providers.userProvider.bloc.isAuthenticated)
     return IncidentsScreen();
-  } else {
+  else
     return LoginScreen();
-  }
 }
 
 void runAppWithCatcher(Widget app, AppConfig config) {

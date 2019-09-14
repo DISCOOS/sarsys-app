@@ -1,3 +1,5 @@
+import 'package:SarSys/models/User.dart';
+import 'package:SarSys/provider_controller.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/defaults.dart';
 import 'package:equatable/equatable.dart';
@@ -9,8 +11,10 @@ part 'AppConfig.g.dart';
 
 @JsonSerializable()
 class AppConfig extends Equatable {
+  static const DEMO = 'demo';
+  static const DEMO_ROLE = 'demoRole';
   static const ONBOARDING = 'onboarding';
-  static const TALK_GROUPS_CATALOG = 'talk_groups_catalog';
+  static const TALK_GROUPS = 'talkGroups';
   static const DISTRICT = 'district';
   static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
@@ -23,10 +27,12 @@ class AppConfig extends Equatable {
 
   static const PARAMS = const {
     SENTRY_DNS: "string",
+    DEMO: "bool",
+    DEMO_ROLE: "string",
     ONBOARDING: "bool",
     DISTRICT: "string",
     DEPARTMENT: "string",
-    TALK_GROUPS_CATALOG: "string",
+    TALK_GROUPS: "string",
     LOCATION_WHEN_IN_USE: "bool",
     MAP_CACHE_TTL: "int",
     MAP_CACHE_CAPACITY: "int",
@@ -47,8 +53,13 @@ class AppConfig extends Equatable {
   final int locationFastestInterval;
   final int locationSmallestDisplacement;
 
+  final bool demo;
+  final String demoRole;
+
   AppConfig({
     @required this.sentryDns,
+    this.demo,
+    this.demoRole,
     this.onboarding = true,
     this.locationWhenInUse = false,
     this.division = Defaults.division,
@@ -60,6 +71,8 @@ class AppConfig extends Equatable {
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
   }) : super([
+          demo,
+          demoRole,
           onboarding,
           division,
           department,
@@ -80,10 +93,12 @@ class AppConfig extends Equatable {
 
   AppConfig copyWith({
     String sentry,
+    bool demo,
+    String demoRole,
     bool onboarding,
     String district,
     String department,
-    String tgCatalog,
+    String talkGroups,
     bool locationWhenInUse,
     int mapCacheTTL,
     int mapCacheCapacity,
@@ -93,10 +108,12 @@ class AppConfig extends Equatable {
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
+      demo: demo ?? this.demo,
+      demoRole: demoRole ?? this.demoRole,
       onboarding: onboarding ?? this.onboarding,
       division: district ?? this.division,
       department: department ?? this.department,
-      talkGroups: tgCatalog ?? this.talkGroups,
+      talkGroups: talkGroups ?? this.talkGroups,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
       mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
@@ -105,6 +122,16 @@ class AppConfig extends Equatable {
       locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
     );
   }
+
+  DemoParams toDemoParams() => DemoParams(demo, role: toRole());
+
+  UserRole toRole({
+    UserRole defaultValue: UserRole.Commander,
+  }) =>
+      UserRole.values.firstWhere(
+        (test) => enumName(test) == this.demoRole,
+        orElse: () => defaultValue,
+      );
 
   LocationAccuracy toLocationAccuracy({
     LocationAccuracy defaultValue: LocationAccuracy.high,

@@ -1,14 +1,16 @@
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 
 class UserServiceMock extends Mock implements UserService {
-  static UserService build(String role, String username, String password) {
+  static UserService build(UserRole role, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(username, password)).thenAnswer((_) async {
-      var token = createToken(username, role);
+      var token = createToken(username, enumName(role));
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
@@ -31,16 +33,24 @@ class UserServiceMock extends Mock implements UserService {
     return mock;
   }
 
-  static UserService buildAny(String role) {
+  static UserService buildAny(UserRole role) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(any, any)).thenAnswer((username) async {
-      var token = createToken(username.positionalArguments[0], role);
+      var token = createToken(username.positionalArguments[0], enumName(role));
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
     when(mock.getToken()).thenAnswer(
       (_) async {
-        final token = await UserService.storage.read(key: "test_token");
+        var token = await UserService.storage.read(key: "test_token");
+        if (token != null) {
+          final user = User.fromToken(token);
+          // Logout if not same role
+          if (!user.roles.contains(role)) {
+            await UserService.storage.delete(key: 'test_token');
+            token = null;
+          }
+        }
         return token == null
             ? ServiceResponse.unauthorized(message: "Token not found")
             : ServiceResponse.ok(body: token);

@@ -12,7 +12,7 @@ import 'package:matcher/matcher.dart';
 
 void main() {
   final UserService userService = UserServiceMock.build(
-    enumName(UserRole.Commander),
+    UserRole.Commander,
     'test@local',
     'password',
   );

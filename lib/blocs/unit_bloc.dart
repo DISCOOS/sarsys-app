@@ -70,8 +70,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     var response = await service.fetch(id);
     if (response.is200) {
       dispatch(ClearUnits(_units.keys.toList()));
-      dispatch(LoadUnits(response.body));
-      return UnmodifiableListView<Unit>(response.body);
+      return _dispatch(LoadUnits(response.body));
     }
     dispatch(RaiseUnitError(response));
     return Future.error(response);

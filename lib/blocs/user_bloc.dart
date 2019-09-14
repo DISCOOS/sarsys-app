@@ -48,9 +48,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   Stream<bool> authorized(Incident incident) =>
       state.map((state) => state is UserAuthorized && state.incident == incident);
 
-  /// Initialize from service
-  Future<bool> init() async {
-    return _dispatch<bool>(_assertUnset(InitUser()));
+  /// Load user from secure storage
+  Future<bool> load() async {
+    return _dispatch<bool>(_assertUnset(LoadUser()));
   }
 
   Future<bool> login(String username, String password) {
@@ -75,8 +75,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
-    if (command is InitUser) {
-      yield await _init(command);
+    if (command is LoadUser) {
+      yield await _load(command);
     } else if (command is AuthenticateUser) {
       yield UserAuthenticating(command.data);
       yield await _authenticate(command);
@@ -95,7 +95,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     }
   }
 
-  Future<UserState> _init(InitUser command) async {
+  Future<UserState> _load(LoadUser command) async {
     var response = await service.getToken();
     if (response.is200) {
       _user = User.fromToken(response.body);
@@ -186,11 +186,11 @@ class UnsetUser extends UserCommand<void, bool> {
   String toString() => 'UnsetUser';
 }
 
-class InitUser extends UserCommand<void, bool> {
-  InitUser() : super(null);
+class LoadUser extends UserCommand<void, bool> {
+  LoadUser() : super(null);
 
   @override
-  String toString() => 'InitUser';
+  String toString() => 'LoadUser';
 }
 
 class AuthenticateUser extends UserCommand<String, bool> {
