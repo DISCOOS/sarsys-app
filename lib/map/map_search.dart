@@ -487,7 +487,7 @@ class _AddressLookup extends _SearchResult {
   Future<List<Placemark>> _fromCoordinates(BuildContext context, Locale locale, Point point) async {
     try {
       return await locator.placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
-    } on Exception {
+    } catch (e) {
       return [];
     }
   }

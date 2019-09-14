@@ -60,9 +60,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           SizedBox(height: 16.0),
           Text(
-            'Denne appen er en test av brukergrensesnitt og funksjonalitet. '
             'Ingen data i appen er reelle. Enheter, apparater og posisjoner simuleres.',
-            style: TextStyle(fontSize: 16.0),
+            textScaleFactor: 0.75,
           ),
         ],
       ),
@@ -134,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             "Du vil bli logget inn som "
             "${_commander ? translateUserRole(UserRole.Commander) : translateUserRole(UserRole.Personnel)}. \n"
             "I demonstasjonsmodus godtas alle brukernavn og passord",
-            textScaleFactor: 0.8,
+            textScaleFactor: 0.75,
           ),
         ],
       ),

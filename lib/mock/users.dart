@@ -44,11 +44,16 @@ class UserServiceMock extends Mock implements UserService {
       (_) async {
         var token = await UserService.storage.read(key: "test_token");
         if (token != null) {
-          final user = User.fromToken(token);
-          // Logout if not same role
-          if (!user.roles.contains(role)) {
-            await UserService.storage.delete(key: 'test_token');
+          try {
+            final user = User.fromToken(token);
+            // Logout if not same role
+            if (!user.roles.contains(role)) {
+              token = null;
+              await UserService.storage.delete(key: 'test_token');
+            }
+          } catch (e) {
             token = null;
+            await UserService.storage.delete(key: 'test_token');
           }
         }
         return token == null
