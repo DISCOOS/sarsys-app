@@ -171,7 +171,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   _onTap(Unit unit, Tracking tracking) {
     if (widget.onSelection == null) {
-      jumpToPoint(context, center: tracking?.location);
+      if (tracking?.location?.isNotEmpty == true) jumpToPoint(context, center: tracking?.location);
     } else {
       widget.onSelection(unit);
     }

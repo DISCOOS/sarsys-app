@@ -48,16 +48,10 @@ class Tracking extends Equatable {
       id: this.id,
       status: status ?? this.status,
       devices: devices ?? this.devices,
-      location: location ?? Point.fromJson(this.location.toJson()),
+      location: location ?? this.location,
       distance: distance ?? this.distance,
-      history: history ?? this.history.map((point) => Point.fromJson(point.toJson())).toList(),
-      tracks: tracks ??
-          this.tracks.map(
-                (id, track) => MapEntry<String, List<Point>>(
-                  id,
-                  track.map((point) => Point.fromJson(point.toJson())).toList(),
-                ),
-              ),
+      history: history ?? this.history,
+      tracks: tracks ?? this.tracks,
     );
   }
 }
