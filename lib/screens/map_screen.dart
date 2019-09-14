@@ -119,6 +119,7 @@ class MapScreenState extends State<MapScreen> {
                       leading: Icon(Icons.warning),
                       title: Text('Hendelse', style: style),
                       onTap: () async {
+                        Navigator.pop(context);
                         final incident = await showDialog<Incident>(
                           context: context,
                           builder: (context) => IncidentEditor(ipp: toPoint(_mapController.center)),
