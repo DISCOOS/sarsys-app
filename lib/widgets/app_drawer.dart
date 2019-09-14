@@ -11,6 +11,7 @@ class AppDrawer extends StatelessWidget {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
+    final avatar = Image.asset("assets/images/avatar male.png");
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -23,12 +24,9 @@ class AppDrawer extends StatelessWidget {
               color: Colors.grey[800],
             ),
             currentAccountPicture: CircleAvatar(
-              radius: 32,
+              radius: 24,
               backgroundColor: Colors.grey[600],
-              child: Text(
-                user.userId.substring(0, 1).toUpperCase(),
-                style: TextStyle(fontSize: 40.0),
-              ),
+              child: avatar,
             ),
           ),
           ListTile(
