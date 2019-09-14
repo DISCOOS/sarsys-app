@@ -21,95 +21,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return IntroViewsFlutter(
       [
-        PageViewModel(
-          pageColor: const Color(0xFF749859),
-//          pageColor: const Color(0xFF03A9F4),
-          title: Text('SarSys'),
-          body: Column(
-            children: <Widget>[
-              Text(
-                'Søk og redning gjort enkelt',
-              ),
-              SizedBox(height: 16.0),
-              Text(
-                'Denne appen er en test av brukergrensesnitt og funksjonalitet. '
-                'Ingen data i appen er reelle. Enheter, apparater og posisjoner simuleres.',
-                style: TextStyle(fontSize: 16.0),
-              ),
-            ],
-          ),
-          mainImage: Image.asset(
-            'assets/images/map.png',
-            height: 250.0,
-            width: 250.0,
-            alignment: Alignment.center,
-          ),
-        ),
-        PageViewModel(
-          pageColor: Colors.orange[600],
-          title: Text('SarSys'),
-          body: Column(
-            children: <Widget>[
-              Text(
-                'Hvilken rolle du vil teste?',
-              ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Text(
-                      "Mannskap",
-                      textScaleFactor: 0.8,
-                      style: TextStyle(color: Colors.white.withOpacity(_commander ? 0.5 : 1.0)),
-                    ),
-                    Switch(
-                      value: _commander,
-                      activeColor: Colors.white,
-                      activeTrackColor: Colors.orange[900],
-                      inactiveTrackColor: Colors.orange[900],
-                      onChanged: (value) => setState(() => _commander = value),
-                    ),
-                    Text(
-                      "Aksjonsleder",
-                      textScaleFactor: 0.8,
-                      style: TextStyle(color: Colors.white.withOpacity(_commander ? 1.0 : 0.5)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          mainImage: Image.asset(
-            'assets/images/sar-team 2.png',
-            height: 250.0,
-            width: 250.0,
-            alignment: Alignment.center,
-          ),
-        ),
-        PageViewModel(
-          pageColor: Color(0xFF7bd4ff),
-          title: Text('SarSys'),
-          body: Column(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  'Det var alt!',
-                ),
-              ),
-              Text(
-                "Du vil logge inn som ${_commander ? 'Aksjonsleder' : 'Mannskap'}. \n"
-                "I demonstasjonsmodus godtas alle brukernavn og passord",
-                textScaleFactor: 0.8,
-              ),
-            ],
-          ),
-          mainImage: Image.asset(
-            'assets/images/cabin.png',
-            height: 250.0,
-            width: 250.0,
-            alignment: Alignment.center,
-          ),
-        ),
+        _buildWelcomePage(),
+        _buildDemoPage(),
+        _buildFinishPage(),
       ],
       showSkipButton: false,
       doneText: Text('FERDIG'),
@@ -131,6 +45,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         final authn = BlocProvider.of<UserBloc>(context).isAuthenticated;
         Navigator.pushReplacementNamed(context, authn ? 'incidents' : 'login');
       },
+    );
+  }
+
+  PageViewModel _buildWelcomePage() {
+    return PageViewModel(
+      pageColor: const Color(0xFF749859),
+//          pageColor: const Color(0xFF03A9F4),
+      title: Text('SarSys'),
+      body: Column(
+        children: <Widget>[
+          Text(
+            'Søk og redning gjort enkelt',
+          ),
+          SizedBox(height: 16.0),
+          Text(
+            'Denne appen er en test av brukergrensesnitt og funksjonalitet. '
+            'Ingen data i appen er reelle. Enheter, apparater og posisjoner simuleres.',
+            style: TextStyle(fontSize: 16.0),
+          ),
+        ],
+      ),
+      mainImage: Image.asset(
+        'assets/images/map.png',
+        height: 250.0,
+        width: 250.0,
+        alignment: Alignment.center,
+      ),
+    );
+  }
+
+  PageViewModel _buildDemoPage() {
+    return PageViewModel(
+      pageColor: Colors.orange[600],
+      title: Text('SarSys'),
+      body: Column(
+        children: <Widget>[
+          Text(
+            'Hvilken rolle du vil teste?',
+          ),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Text(
+                  "Mannskap",
+                  textScaleFactor: 0.8,
+                  style: TextStyle(color: Colors.white.withOpacity(_commander ? 0.5 : 1.0)),
+                ),
+                Switch(
+                  value: _commander,
+                  activeColor: Colors.white,
+                  activeTrackColor: Colors.orange[900],
+                  inactiveTrackColor: Colors.orange[900],
+                  onChanged: (value) => setState(() => _commander = value),
+                ),
+                Text(
+                  "Aksjonsleder",
+                  textScaleFactor: 0.8,
+                  style: TextStyle(color: Colors.white.withOpacity(_commander ? 1.0 : 0.5)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      mainImage: Image.asset(
+        'assets/images/sar-team 2.png',
+        height: 250.0,
+        width: 250.0,
+        alignment: Alignment.center,
+      ),
+    );
+  }
+
+  PageViewModel _buildFinishPage() {
+    return PageViewModel(
+      pageColor: Color(0xFF7bd4ff),
+      title: Text('SarSys'),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              'Det var alt!',
+            ),
+          ),
+          Text(
+            "Du vil bli logget inn som ${_commander ? 'Aksjonsleder' : 'Mannskap'}. \n"
+            "I demonstasjonsmodus godtas alle brukernavn og passord",
+            textScaleFactor: 0.8,
+          ),
+        ],
+      ),
+      mainImage: Image.asset(
+        'assets/images/cabin.png',
+        height: 250.0,
+        width: 250.0,
+        alignment: Alignment.center,
+      ),
     );
   }
 }

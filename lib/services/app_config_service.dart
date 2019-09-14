@@ -34,21 +34,35 @@ class AppConfigService {
   }
 
   void _get(Map<String, dynamic> json, String key) async {
+    json.putIfAbsent(key, () => get(prefs, key));
+  }
+
+  static Future get(SharedPreferences prefs, String key) async {
     if (AppConfig.PARAMS.containsKey(key)) {
-      switch (AppConfig.PARAMS[key]) {
-        case "String":
-          return json.putIfAbsent(key, () => prefs.getString(key));
+      print("$key: ${await prefs.get(key)}");
+      switch (AppConfig.PARAMS[key]?.toLowerCase()) {
+        case "string":
+          return prefs.getString(key);
         case "bool":
-          return json.putIfAbsent(key, () => prefs.getBool(key));
+          return prefs.getBool(key);
         case "int":
-          return json.putIfAbsent(key, () => prefs.getInt(key));
+          return prefs.getInt(key);
         case "double":
-          return json.putIfAbsent(key, () => prefs.getDouble(key));
-        case "StringList":
-          return json.putIfAbsent(key, () => prefs.getStringList(key));
+          return prefs.getDouble(key);
+        case "stringlist":
+          return prefs.getStringList(key);
       }
     }
     throw "Type ${AppConfig.PARAMS[key]} for $key is not supported";
+  }
+
+  static Future<Map<String, dynamic>> getAll(SharedPreferences prefs) async {
+    final values = {};
+    AppConfig.PARAMS.forEach((key, value) async {
+      final param = await get(prefs, key);
+      if (value != null) values.putIfAbsent(key, () => param);
+    });
+    return Map.from(values);
   }
 
   /// GET ../app-config
@@ -72,7 +86,7 @@ class AppConfigService {
 
   static Future<bool> set(SharedPreferences prefs, String key, value) {
     if (AppConfig.PARAMS.containsKey(key)) {
-      switch (AppConfig.PARAMS[key].toLowerCase()) {
+      switch (AppConfig.PARAMS[key]?.toLowerCase()) {
         case "string":
           return prefs.setString(key, value);
         case "bool":

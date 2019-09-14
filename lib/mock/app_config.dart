@@ -21,10 +21,12 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
       return config;
     });
     when(mock.fetch()).thenAnswer((_) async {
-      final Map<String, dynamic> assets = json.decode(await rootBundle.loadString(asset));
       prefs = await SharedPreferences.getInstance();
-      AppConfigService.setAll(prefs, assets);
-      return ServiceResponse.ok(body: config = AppConfig.fromJson(assets));
+      final Map<String, dynamic> params = await AppConfigService.getAll(prefs);
+      final Map<String, dynamic> assets = json.decode(await rootBundle.loadString(asset));
+      // Keep existing values, append new config parameters
+      assets.forEach((key, value) => params.putIfAbsent(key, () => value));
+      return ServiceResponse.ok(body: config = AppConfig.fromJson(params));
     });
     when(mock.save(any)).thenAnswer((c) async {
       config = c.positionalArguments[0];
