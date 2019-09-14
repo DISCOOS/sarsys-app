@@ -57,12 +57,14 @@ class AppConfigService {
   }
 
   static Future<Map<String, dynamic>> getAll(SharedPreferences prefs) async {
-    final values = {};
+    final Map<String, dynamic> values = {};
     AppConfig.PARAMS.forEach((key, value) async {
       final param = await get(prefs, key);
-      if (value != null) values.putIfAbsent(key, () => param);
+      if (param != null) {
+        values.putIfAbsent(key, () => param);
+      }
     });
-    return Map.from(values);
+    return values;
   }
 
   /// GET ../app-config

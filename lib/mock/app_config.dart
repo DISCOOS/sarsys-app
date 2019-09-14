@@ -30,6 +30,7 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
     });
     when(mock.save(any)).thenAnswer((c) async {
       config = c.positionalArguments[0];
+      AppConfigService.setAll(prefs, config.toJson());
       return ServiceResponse.noContent();
     });
     return mock;

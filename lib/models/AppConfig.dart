@@ -71,6 +71,7 @@ class AppConfig extends Equatable {
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
   }) : super([
+          sentryDns,
           demo,
           demoRole,
           onboarding,

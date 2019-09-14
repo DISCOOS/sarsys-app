@@ -1,5 +1,7 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/models/User.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -8,18 +10,25 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
+    final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,
         children: <Widget>[
-          SizedBox(
-            height: 120.0,
-            child: DrawerHeader(
-              child: Text("SarSys", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.white)),
-              decoration: BoxDecoration(
-                color: Colors.grey[800],
+          UserAccountsDrawerHeader(
+            accountName: Text("User ${user.userId}"),
+            accountEmail: Text(user.roles.map((role) => translateUserRole(role)).join(", ")),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+            ),
+            currentAccountPicture: CircleAvatar(
+              radius: 32,
+              backgroundColor: Colors.grey[600],
+              child: Text(
+                user.userId.substring(0, 1).toUpperCase(),
+                style: TextStyle(fontSize: 40.0),
               ),
             ),
           ),

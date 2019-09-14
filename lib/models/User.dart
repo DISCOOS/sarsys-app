@@ -80,3 +80,15 @@ class User extends Equatable {
 }
 
 enum UserRole { Commander, UnitLeader, Personnel }
+
+String translateUserRole(UserRole role) {
+  switch (role) {
+    case UserRole.Commander:
+      return "Aksjonsleder";
+    case UserRole.Personnel:
+      return "Mannskap";
+    case UserRole.UnitLeader:
+    default:
+      return "Lagleder";
+  }
+}

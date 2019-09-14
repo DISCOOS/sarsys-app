@@ -89,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
                 Text(
-                  "Mannskap",
+                  translateUserRole(UserRole.Personnel),
                   textScaleFactor: 0.8,
                   style: TextStyle(color: Colors.white.withOpacity(_commander ? 0.5 : 1.0)),
                 ),
@@ -101,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onChanged: (value) => setState(() => _commander = value),
                 ),
                 Text(
-                  "Aksjonsleder",
+                  translateUserRole(UserRole.Commander),
                   textScaleFactor: 0.8,
                   style: TextStyle(color: Colors.white.withOpacity(_commander ? 1.0 : 0.5)),
                 ),
@@ -131,7 +131,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           Text(
-            "Du vil bli logget inn som ${_commander ? 'Aksjonsleder' : 'Mannskap'}. \n"
+            "Du vil bli logget inn som "
+            "${_commander ? translateUserRole(UserRole.Commander) : translateUserRole(UserRole.Personnel)}. \n"
             "I demonstasjonsmodus godtas alle brukernavn og passord",
             textScaleFactor: 0.8,
           ),
