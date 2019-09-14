@@ -63,7 +63,7 @@ class MyLocationOptions extends LayerOptions {
     controller.addListener(() {
       this.point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
       if (onMove != null) onMove(this.point);
-      locationUpdateController.add(null);
+      if (!locationUpdateController.isClosed) locationUpdateController.add(null);
     });
 
     animation.addStatusListener((status) {
