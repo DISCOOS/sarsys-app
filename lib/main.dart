@@ -23,11 +23,11 @@ void main() async {
   ).init();
 
   // Initialize app-config
-  runApp(_buildApp(providers));
-//  runAppWithCatcher(
-//    _buildApp(providers, homepage),
-//    await providers.configProvider.bloc.fetch(),
-//  );
+//  runApp(_buildApp(providers));
+  runAppWithCatcher(
+    _buildApp(providers),
+    providers.configProvider.bloc.config.sentryDns,
+  );
 }
 
 Widget _buildApp(ProviderController providers) {
@@ -104,7 +104,7 @@ Widget getHome(ProviderController providers) {
     return LoginScreen();
 }
 
-void runAppWithCatcher(Widget app, AppConfig config) {
+void runAppWithCatcher(Widget app, String sentryDns) {
   final localizationOptions = LocalizationOptions(
     "nb",
     notificationReportModeTitle: "En feil har oppstått",
@@ -151,14 +151,14 @@ void runAppWithCatcher(Widget app, AppConfig config) {
     app,
     debugConfig: CatcherOptions(
       PageReportMode(),
-      [SentryHandler(config.sentryDns), ConsoleHandler(enableStackTrace: true)],
+      [SentryHandler(sentryDns), ConsoleHandler(enableStackTrace: true)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],
     ),
     releaseConfig: CatcherOptions(
       PageReportMode(),
-      [SentryHandler(config.sentryDns)],
+      [SentryHandler(sentryDns)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],
