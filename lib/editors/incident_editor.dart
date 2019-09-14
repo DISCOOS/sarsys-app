@@ -42,7 +42,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   void _init() async {
-    await _configBloc.fetch();
     var catalogs = await AssetsService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
     _tgCatalog.value = catalogs;
