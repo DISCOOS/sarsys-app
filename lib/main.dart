@@ -129,6 +129,7 @@ void runAppWithCatcher(Widget app, AppConfig config) {
     // Silence map tile fetch failures thrown by FlutterMap
     "Couldn't download or retrieve file", "FetchFailure",
     "SocketException: OS Error: Software caused connection abort",
+    "Connection closed while receiving data",
     // Silence Overlay assertion errors thrown by form_field_builder.
     // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
     "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true."
