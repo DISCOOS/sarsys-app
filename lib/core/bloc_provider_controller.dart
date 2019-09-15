@@ -31,7 +31,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 
 import '../models/AppConfig.dart';
 
-class ProviderController {
+class BlocProviderController {
   final Client client;
   final DemoParams demo;
 
@@ -65,12 +65,12 @@ class ProviderController {
         _trackingProvider,
       ];
 
-  ProviderController._internal(
+  BlocProviderController._internal(
     this.client,
     this.demo,
   );
 
-  ProviderController link({
+  BlocProviderController link({
     @required AppConfigBloc configBloc,
     @required UserBloc userBloc,
     @required IncidentBloc incidentBloc,
@@ -103,14 +103,14 @@ class ProviderController {
   }
 
   /// Create providers for mocking
-  factory ProviderController.build(
+  factory BlocProviderController.build(
     Client client, {
     DemoParams demo = DemoParams.NONE,
   }) {
-    return _build(ProviderController._internal(client, demo), demo, client);
+    return _build(BlocProviderController._internal(client, demo), demo, client);
   }
 
-  static ProviderController _build(ProviderController providers, DemoParams demo, Client client) {
+  static BlocProviderController _build(BlocProviderController providers, DemoParams demo, Client client) {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
@@ -170,13 +170,24 @@ class ProviderController {
   }) =>
       this.demo == demo ? false : _build(this, demo, client) != null;
 
-  Future<ProviderController> init() async {
+  Future<BlocProviderController> init() async {
+    final result = Completer<BlocProviderController>();
     if (ProviderControllerState.Built == _state) {
-      await userProvider.bloc.load();
-      await configProvider.bloc.fetch();
-      _controller.add((_state = ProviderControllerState.Ready));
+      // Fail fast on first error
+      await Future.wait<dynamic>([
+        configProvider.bloc.fetch(),
+        userProvider.bloc.load(),
+      ]).catchError(
+        (e) => result.completeError(e, StackTrace.current),
+      );
+      if (!result.isCompleted) {
+        _controller.add((_state = ProviderControllerState.Ready));
+        result.complete(this);
+      }
+    } else {
+      result.complete(this);
     }
-    return this;
+    return result.future;
   }
 
   void dispose() {

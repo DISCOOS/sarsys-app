@@ -75,23 +75,27 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
-    if (command is LoadUser) {
-      yield await _load(command);
-    } else if (command is AuthenticateUser) {
-      yield UserAuthenticating(command.data);
-      yield await _authenticate(command);
-    } else if (command is UnsetUser) {
-      if (_user != null) {
-        yield await _logout(command);
+    try {
+      if (command is LoadUser) {
+        yield await _load(command);
+      } else if (command is AuthenticateUser) {
+        yield UserAuthenticating(command.data);
+        yield await _authenticate(command);
+      } else if (command is UnsetUser) {
+        if (_user != null) {
+          yield await _logout(command);
+        }
+      } else if (command is AuthorizeUser) {
+        if (_user != null) {
+          yield _authorize(command);
+        }
+      } else if (command is RaiseUserError) {
+        yield _toError(command, command.data);
+      } else {
+        yield UserError("Unsupported $command");
       }
-    } else if (command is AuthorizeUser) {
-      if (_user != null) {
-        yield _authorize(command);
-      }
-    } else if (command is RaiseUserError) {
-      yield _toError(command, command.data);
-    } else {
-      yield UserError("Unsupported $command");
+    } catch (e) {
+      _toError(command, e);
     }
   }
 
