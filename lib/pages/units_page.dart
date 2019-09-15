@@ -192,7 +192,6 @@ class UnitsPageState extends State<UnitsPage> {
       color: Colors.red,
       icon: Icons.delete,
       onTap: () async {
-        Navigator.pop(context);
         retireUnit(UnitParams(context, unit));
       },
     );
