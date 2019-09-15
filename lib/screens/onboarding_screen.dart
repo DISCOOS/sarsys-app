@@ -16,6 +16,13 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _commander = true;
+  bool _onboard = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _commander = (UserRole.Commander == BlocProvider.of<AppConfigBloc>(context)?.config?.toRole());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       onTapDoneButton: () async {
         final configBloc = BlocProvider.of<AppConfigBloc>(context);
         configBloc.update(
-          onboarding: false,
+          onboarding: _onboard,
           demoRole: _commander ? enumName(UserRole.Commander) : enumName(UserRole.Personnel),
         );
         final authn = BlocProvider.of<UserBloc>(context).isAuthenticated;
@@ -51,7 +58,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   PageViewModel _buildWelcomePage() {
     return PageViewModel(
       pageColor: const Color(0xFF749859),
-//          pageColor: const Color(0xFF03A9F4),
       title: Text('SarSys'),
       body: Column(
         children: <Widget>[
@@ -84,27 +90,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             'Hvilken rolle du vil teste?',
           ),
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Text(
-                  translateUserRole(UserRole.Personnel),
-                  textScaleFactor: 0.8,
-                  style: TextStyle(color: Colors.white.withOpacity(_commander ? 0.5 : 1.0)),
-                ),
-                Switch(
-                  value: _commander,
-                  activeColor: Colors.white,
-                  activeTrackColor: Colors.orange[900],
-                  inactiveTrackColor: Colors.orange[900],
-                  onChanged: (value) => setState(() => _commander = value),
-                ),
-                Text(
-                  translateUserRole(UserRole.Commander),
-                  textScaleFactor: 0.8,
-                  style: TextStyle(color: Colors.white.withOpacity(_commander ? 1.0 : 0.5)),
-                ),
-              ],
+            child: _buildSwith(
+              _commander,
+              leftSide: translateUserRole(UserRole.Personnel),
+              rightSide: translateUserRole(UserRole.Commander),
+              onChanged: (value) => setState(() => _commander = value),
             ),
           ),
         ],
@@ -132,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             "Du vil bli logget inn som "
             "${_commander ? translateUserRole(UserRole.Commander) : translateUserRole(UserRole.Personnel)}. \n"
-            "I demonstasjonsmodus godtas alle brukernavn og passord",
+            "Alle brukernavn og passord godtas i demonstrasjonsmodus.",
             textScaleFactor: 0.75,
           ),
         ],
@@ -143,6 +133,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: 250.0,
         alignment: Alignment.center,
       ),
+    );
+  }
+
+  Row _buildSwith(
+    bool value, {
+    @required String leftSide,
+    @required String rightSide,
+    @required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        Text(
+          leftSide,
+          textScaleFactor: 0.8,
+          style: TextStyle(color: Colors.white.withOpacity(value ? 0.5 : 1.0)),
+        ),
+        Switch(
+          value: _commander,
+          activeColor: Colors.white,
+          activeTrackColor: Colors.orange[900],
+          inactiveTrackColor: Colors.orange[900],
+          onChanged: onChanged,
+        ),
+        Text(
+          rightSide,
+          textScaleFactor: 0.8,
+          style: TextStyle(color: Colors.white.withOpacity(_commander ? 1.0 : 0.5)),
+        ),
+      ],
     );
   }
 }

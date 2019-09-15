@@ -24,29 +24,34 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   final LinkedHashMap<String, Tracking> _tracks = LinkedHashMap();
 
+  List<StreamSubscription> _subscriptions = [];
+
   TrackingBloc(this.service, this.incidentBloc, this.unitBloc, this.deviceBloc) {
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
     assert(unitBloc != null, "unitBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
-    incidentBloc.state.listen(_init);
-    unitBloc.state.listen(_cleanup);
-    service.messages.listen((event) => dispatch(HandleMessage(event)));
+    _subscriptions
+      ..add(incidentBloc.state.listen(_init))
+      ..add(unitBloc.state.listen(_cleanup))
+      ..add(service.messages.listen((event) => dispatch(HandleMessage(event))));
   }
 
   void _init(IncidentState state) {
-    // Clear out current tracking upon states given below
-    if (state.isUnset() ||
-        state.isCreated() ||
-        state.isDeleted() ||
-        (state.isUpdated() &&
-            [
-              IncidentStatus.Cancelled,
-              IncidentStatus.Resolved,
-            ].contains((state as IncidentUpdated).data.status))) {
-      dispatch(ClearTracking(_tracks.keys.toList()));
-    } else if (state.isSelected()) {
-      _fetch(state.data.id);
+    if (_subscriptions.isNotEmpty) {
+      // Clear out current tracking upon states given below
+      if (state.isUnset() ||
+          state.isCreated() ||
+          state.isDeleted() ||
+          (state.isUpdated() &&
+              [
+                IncidentStatus.Cancelled,
+                IncidentStatus.Resolved,
+              ].contains((state as IncidentUpdated).data.status))) {
+        dispatch(ClearTracking(_tracks.keys.toList()));
+      } else if (state.isSelected()) {
+        _fetch(state.data.id);
+      }
     }
   }
 
@@ -327,8 +332,19 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   @override
-  void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseTrackingError(TrackingError(error, trace: stacktrace)));
+  void onError(Object error, StackTrace stackTrace) {
+    if (_subscriptions.isNotEmpty) {
+      dispatch(RaiseTrackingError(DeviceError(error, trace: stackTrace)));
+    } else {
+      throw "Bad state: TrackingBloc is disposed. Unexpected ${DeviceError(error, trace: stackTrace)}";
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
   }
 }
 

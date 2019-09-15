@@ -14,18 +14,21 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   final LinkedHashMap<String, Incident> _incidents = LinkedHashMap();
 
   String _given;
+  StreamSubscription _subscription;
 
   IncidentBloc(this.service, this.userBloc) {
     assert(this.service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
-    userBloc.state.listen(_init);
+    _subscription = userBloc.state.listen(_init);
   }
 
   void _init(UserState state) {
-    if (state.isUnset()) {
-      dispatch(ClearIncidents(_incidents.keys.toList()));
-      dispatch(UnsetIncident());
-    } else if (state.isAuthenticated()) fetch();
+    if (_subscription != null) {
+      if (state.isUnset()) {
+        dispatch(ClearIncidents(_incidents.keys.toList()));
+        dispatch(UnsetIncident());
+      } else if (state.isAuthenticated()) fetch();
+    }
   }
 
   @override
@@ -221,7 +224,18 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseIncidentError(IncidentError(error, trace: stacktrace)));
+    if (_subscription != null) {
+      dispatch(RaiseIncidentError(IncidentError(error, trace: stacktrace)));
+    } else {
+      throw "Bad state: IncidentBloc is disposed. Unexpected ${IncidentError(error, trace: stacktrace)}";
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _subscription?.cancel();
+    _subscription = null;
   }
 }
 

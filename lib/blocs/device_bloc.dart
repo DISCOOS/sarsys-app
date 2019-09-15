@@ -17,17 +17,22 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
 
   final LinkedHashMap<String, Device> _devices = LinkedHashMap();
 
+  List<StreamSubscription> _subscriptions = [];
+
   DeviceBloc(this.service, this.incidentBloc) {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
-    incidentBloc.state.listen(_init);
-    service.messages.listen((event) => dispatch(HandleMessage(event)));
+    _subscriptions
+      ..add(incidentBloc.state.listen(_init))
+      ..add(service.messages.listen((event) => dispatch(HandleMessage(event))));
   }
 
   void _init(IncidentState state) {
-    if (state.isUnset() || state.isCreated() || state.isDeleted())
-      dispatch(ClearDevices(_devices.keys.toList()));
-    else if (state.isSelected()) _fetch(state.data.id);
+    if (_subscriptions.isNotEmpty) {
+      if (state.isUnset() || state.isCreated() || state.isDeleted())
+        dispatch(ClearDevices(_devices.keys.toList()));
+      else if (state.isSelected()) _fetch(state.data.id);
+    }
   }
 
   @override
@@ -129,7 +134,18 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseDeviceError(DeviceError(error, trace: stacktrace)));
+    if (_subscriptions.isNotEmpty) {
+      dispatch(RaiseDeviceError(DeviceError(error, trace: stacktrace)));
+    } else {
+      throw "Bad state: DeviceBloc is disposed. Unexpected ${DeviceError(error, trace: stacktrace)}";
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
   }
 }
 

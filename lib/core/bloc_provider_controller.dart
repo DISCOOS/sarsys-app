@@ -33,7 +33,9 @@ import '../models/AppConfig.dart';
 
 class BlocProviderController {
   final Client client;
-  final DemoParams demo;
+
+  DemoParams _demo;
+  DemoParams get demo => _demo;
 
   BlocProvider<AppConfigBloc> _configProvider;
   BlocProvider<UserBloc> _userProvider;
@@ -49,12 +51,12 @@ class BlocProviderController {
   BlocProvider<DeviceBloc> get deviceProvider => _deviceProvider;
   BlocProvider<TrackingBloc> get trackingProvider => _trackingProvider;
 
-  ProviderControllerState _state = ProviderControllerState.Empty;
-  ProviderControllerState get state => _state;
+  BlocProviderControllerState _state = BlocProviderControllerState.Empty;
+  BlocProviderControllerState get state => _state;
 
-  StreamSubscription _subscription;
-  StreamController<ProviderControllerState> _controller = StreamController.broadcast();
-  Stream<ProviderControllerState> get onChange => _controller.stream;
+  List<StreamSubscription> _subscriptions = [];
+  StreamController<BlocProviderControllerState> _controller = StreamController.broadcast();
+  Stream<BlocProviderControllerState> get onChange => _controller.stream;
 
   List<BlocProvider> get all => [
         _configProvider,
@@ -67,40 +69,8 @@ class BlocProviderController {
 
   BlocProviderController._internal(
     this.client,
-    this.demo,
-  );
-
-  BlocProviderController link({
-    @required AppConfigBloc configBloc,
-    @required UserBloc userBloc,
-    @required IncidentBloc incidentBloc,
-    @required UnitBloc unitBloc,
-    @required DeviceBloc deviceBloc,
-    @required TrackingBloc trackingBloc,
-  }) {
-    _unset();
-
-    _configProvider = BlocProvider<AppConfigBloc>(bloc: configBloc);
-    _userProvider = BlocProvider<UserBloc>(bloc: userBloc);
-    _incidentProvider = BlocProvider<IncidentBloc>(bloc: incidentBloc);
-    _unitProvider = BlocProvider<UnitBloc>(bloc: unitBloc);
-    _deviceProvider = BlocProvider<DeviceBloc>(bloc: deviceBloc);
-    _trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
-
-    // Rebuild providers when demo parameters changes
-    _subscription = configBloc.state.listen(_handle);
-
-    // Notify that providers are ready
-    _controller.add(_state = ProviderControllerState.Built);
-
-    return this;
-  }
-
-  void _handle(AppConfigState state) {
-    if (state.isInit() || state.isLoaded() || state.isUpdated()) {
-      rebuild(demo: (state.data as AppConfig).toDemoParams());
-    }
-  }
+    DemoParams demo,
+  ) : _demo = demo ?? DemoParams.NONE;
 
   /// Create providers for mocking
   factory BlocProviderController.build(
@@ -120,8 +90,9 @@ class BlocProviderController {
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final UserService userService =
-        !demo.active ? UserService('$baseRestUrl/auth/login', client) : UserServiceMock.buildAny(demo.role);
+    final UserService userService = !demo.active
+        ? UserService('$baseRestUrl/auth/login', client)
+        : UserServiceMock.buildAny(demo.role, configService);
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service
@@ -152,7 +123,8 @@ class BlocProviderController {
           );
     final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, unitBloc, deviceBloc);
 
-    return providers.link(
+    return providers._set(
+      demo: demo,
       configBloc: configBloc,
       userBloc: userBloc,
       incidentBloc: incidentBloc,
@@ -165,23 +137,32 @@ class BlocProviderController {
   /// Rebuild providers with given demo parameters.
   ///
   /// Returns true if one or more providers was rebuilt
-  bool rebuild({
+  bool _rebuild({
     DemoParams demo = DemoParams.NONE,
   }) =>
       this.demo == demo ? false : _build(this, demo, client) != null;
 
+  /// Initialize required blocs (config and user)
   Future<BlocProviderController> init() async {
     final result = Completer<BlocProviderController>();
-    if (ProviderControllerState.Built == _state) {
+    if (BlocProviderControllerState.Built == _state) {
       // Fail fast on first error
-      await Future.wait<dynamic>([
+      List results = await Future.wait<dynamic>([
         configProvider.bloc.fetch(),
         userProvider.bloc.load(),
       ]).catchError(
         (e) => result.completeError(e, StackTrace.current),
       );
       if (!result.isCompleted) {
-        _controller.add((_state = ProviderControllerState.Ready));
+        // Override demo parameter from persisted config
+        _demo = configProvider.bloc.config.toDemoParams();
+
+        // Allow _onUserChange to transition to next legal state
+        _controller.add(BlocProviderControllerState.Initialized);
+
+        // Set state depending on user state
+        _onUserState(userProvider.bloc.currentState);
+
         result.complete(this);
       }
     } else {
@@ -190,34 +171,98 @@ class BlocProviderController {
     return result.future;
   }
 
+  BlocProviderController _set({
+    @required DemoParams demo,
+    @required AppConfigBloc configBloc,
+    @required UserBloc userBloc,
+    @required IncidentBloc incidentBloc,
+    @required UnitBloc unitBloc,
+    @required DeviceBloc deviceBloc,
+    @required TrackingBloc trackingBloc,
+  }) {
+    _unset();
+
+    _demo = demo;
+
+    _configProvider = BlocProvider<AppConfigBloc>(bloc: configBloc);
+    _userProvider = BlocProvider<UserBloc>(bloc: userBloc);
+    _incidentProvider = BlocProvider<IncidentBloc>(bloc: incidentBloc);
+    _unitProvider = BlocProvider<UnitBloc>(bloc: unitBloc);
+    _deviceProvider = BlocProvider<DeviceBloc>(bloc: deviceBloc);
+    _trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
+
+    // Rebuild providers when demo parameters changes
+    _subscriptions..add(configBloc.state.listen(_onConfigState))..add(userBloc.state.listen(_onUserState));
+
+    // Notify that providers are ready
+    _controller.add(_state = BlocProviderControllerState.Built);
+
+    return this;
+  }
+
+  void _onConfigState(AppConfigState state) {
+    // Only rebuild when in local or ready state
+    if ([
+      BlocProviderControllerState.Local,
+      BlocProviderControllerState.Ready,
+    ].contains(_state)) {
+      if (state.isInit() || state.isLoaded() || state.isUpdated()) {
+        _rebuild(demo: (state.data as AppConfig).toDemoParams());
+      }
+    }
+  }
+
+  void _onUserState(UserState state) {
+    // Handle legal transitions only
+    // 1) Initialized -> Local
+    // 2) Initialized -> Ready
+    // 3) Local -> Ready
+    // 4) Ready -> Local
+    if ([
+      BlocProviderControllerState.Initialized,
+      BlocProviderControllerState.Local,
+      BlocProviderControllerState.Ready,
+    ].contains(_state)) {
+      var next = state.isAuthenticated() ? BlocProviderControllerState.Ready : BlocProviderControllerState.Local;
+      if (next != _state) {
+        _state = next;
+        _controller.add(_state);
+      }
+    }
+  }
+
+  void _unset() {
+    // Cancel state change subscriptions on current blocs
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
+
+    // Dispose current blocs
+    all.forEach((provider) => provider?.bloc?.dispose());
+
+    // Notify that provider is not ready
+    _controller.add(_state = BlocProviderControllerState.Empty);
+  }
+
   void dispose() {
     _unset();
     _controller.close();
   }
-
-  void _unset() {
-    if (_subscription != null) _subscription.cancel();
-
-    _configProvider?.bloc?.dispose();
-    _userProvider?.bloc?.dispose();
-    _incidentProvider?.bloc?.dispose();
-    _unitProvider?.bloc?.dispose();
-    _deviceProvider?.bloc?.dispose();
-    _trackingProvider?.bloc?.dispose();
-
-    // Notify that provider is not ready
-    _controller.add(_state = ProviderControllerState.Empty);
-  }
 }
 
-enum ProviderControllerState {
+enum BlocProviderControllerState {
   /// Controller is empty, no blocs available
   Empty,
 
-  /// Blocs are built, not ready
+  /// Controller is built, blocks not ready
   Built,
 
-  /// Blocks are ready
+  /// Required blocs (user and config) are initialized
+  Initialized,
+
+  /// Local user (not authenticated), blocks are ready to receive commands
+  Local,
+
+  /// User authenticated, blocks are ready to receive commands
   Ready,
 }
 

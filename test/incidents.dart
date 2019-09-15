@@ -1,9 +1,12 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -11,8 +14,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:matcher/matcher.dart';
 
 void main() {
+  final baseRestUrl = Defaults.baseRestUrl;
+  final assetConfig = 'assets/config/app_config.json';
+  final AppConfigService configService = AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', null);
   final UserService userService = UserServiceMock.build(
     UserRole.Commander,
+    configService,
     'test@local',
     'password',
   );

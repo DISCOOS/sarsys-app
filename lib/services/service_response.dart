@@ -50,6 +50,7 @@ class ServiceResponse<T> extends Equatable {
   bool get is200 => code == 200;
   bool get is204 => code == 204;
   bool get is401 => code == 401;
+  bool get is404 => code == 404;
   bool get is403 => code == 403;
   bool get is500 => code == 500;
 }

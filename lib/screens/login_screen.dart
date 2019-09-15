@@ -178,7 +178,7 @@ class LoginScreenState extends State<LoginScreen> {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 16.0),
                             child: Text(
-                              snapshot.data?.data ?? '',
+                              _toError(snapshot.data),
                               style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -191,5 +191,14 @@ class LoginScreenState extends State<LoginScreen> {
                 )),
           );
         });
+  }
+
+  String _toError(UserException state) {
+    if (state is UserUnauthorized) {
+      return 'Feil brukernavn eller passord';
+    } else if (state is UserForbidden) {
+      return 'Ingen tilgang';
+    }
+    return '';
   }
 }

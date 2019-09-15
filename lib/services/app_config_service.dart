@@ -39,7 +39,6 @@ class AppConfigService {
 
   static Future get(SharedPreferences prefs, String key) async {
     if (AppConfig.PARAMS.containsKey(key)) {
-      print("$key: ${await prefs.get(key)}");
       switch (AppConfig.PARAMS[key]?.toLowerCase()) {
         case "string":
           return prefs.getString(key);

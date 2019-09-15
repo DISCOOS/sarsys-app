@@ -16,16 +16,21 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   final LinkedHashMap<String, Unit> _units = LinkedHashMap();
 
+  // only set once to prevent reentrant error loop
+  StreamSubscription _subscription;
+
   UnitBloc(this.service, this.incidentBloc) {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
-    incidentBloc.state.listen(_init);
+    _subscription = incidentBloc.state.listen(_init);
   }
 
   void _init(IncidentState state) {
-    if (state.isUnset() || state.isCreated() || state.isDeleted())
-      dispatch(ClearUnits(_units.keys.toList()));
-    else if (state.isSelected()) _fetch(state.data.id);
+    if (_subscription != null) {
+      if (state.isUnset() || state.isCreated() || state.isDeleted())
+        dispatch(ClearUnits(_units.keys.toList()));
+      else if (state.isSelected()) _fetch(state.data.id);
+    }
   }
 
   @override
@@ -170,7 +175,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseUnitError(UnitError(error, trace: stacktrace)));
+    if (_subscription != null) {
+      dispatch(RaiseUnitError(UnitError(error, trace: stacktrace)));
+    } else {
+      throw "Bad state: UnitBloc is disposed. Unexpected ${UnitError(error, trace: stacktrace)}";
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _subscription?.cancel();
+    _subscription = null;
   }
 }
 

@@ -49,8 +49,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       state.map((state) => state is UserAuthorized && state.incident == incident);
 
   /// Load user from secure storage
-  Future<bool> load() async {
-    return _dispatch<bool>(_assertUnset(LoadUser()));
+  Future<User> load() async {
+    return _dispatch<User>(_assertUnset(LoadUser()));
   }
 
   Future<bool> login(String username, String password) {
@@ -104,9 +104,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     if (response.is200) {
       _user = User.fromToken(response.body);
       if (!kDebugMode) developer.log("Init from token ${response.body}", level: Level.CONFIG.value);
-      return _toResponse(command, UserAuthenticated(_user), result: true);
+      return _toResponse(command, UserAuthenticated(_user), result: _user);
     } else if (response.is401) {
-      return _toResponse(command, UserUnauthorized(_user), result: false);
+      return _toResponse(command, UserUnauthorized(response));
+    } else if (response.is404) {
+      return _toResponse(command, UserUnset());
     }
     return _toError(command, response);
   }
@@ -190,7 +192,7 @@ class UnsetUser extends UserCommand<void, bool> {
   String toString() => 'UnsetUser';
 }
 
-class LoadUser extends UserCommand<void, bool> {
+class LoadUser extends UserCommand<void, User> {
   LoadUser() : super(null);
 
   @override
@@ -240,7 +242,7 @@ abstract class UserState<T> extends Equatable {
   isError() => this is UserError;
 }
 
-class UserUnset extends UserState<Null> {
+class UserUnset extends UserState<void> {
   UserUnset() : super(null);
   @override
   String toString() => 'UserUnset';

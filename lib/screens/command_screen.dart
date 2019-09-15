@@ -24,15 +24,30 @@ class _CommandScreenState extends State<CommandScreen> {
   final _unitsKey = GlobalKey<UnitsPageState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
-  var current;
+  int _current;
+  UserBloc _userBloc;
+  IncidentBloc _incidentBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _userBloc = BlocProvider.of<UserBloc>(context);
+    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
+  }
+
+  @override
+  void didUpdateWidget(CommandScreen old) {
+    super.didUpdateWidget(old);
+    if (old.tabIndex != widget.tabIndex) {
+      _current = widget.tabIndex;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
-    final IncidentBloc incidentBloc = BlocProvider.of<IncidentBloc>(context);
     return StreamBuilder(
-      stream: incidentBloc.changes,
-      initialData: incidentBloc.current,
+      stream: _incidentBloc.changes,
+      initialData: _incidentBloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = snapshot.data is Incident ? snapshot.data : null;
         final title = _toName(incident);
@@ -44,14 +59,14 @@ class _CommandScreenState extends State<CommandScreen> {
         return Scaffold(
           drawer: AppDrawer(),
           appBar: AppBar(
-            actions: _buildActions(context, userBloc, incident, incidentBloc),
+            actions: _buildActions(incident),
             title: Text(title),
             centerTitle: true,
           ),
-          body: tabs[current],
+          body: tabs[_current],
           resizeToAvoidBottomPadding: true,
           bottomNavigationBar: BottomNavigationBar(
-            currentIndex: current,
+            currentIndex: _current,
             elevation: 4.0,
             selectedItemColor: Theme.of(context).colorScheme.primary,
             type: BottomNavigationBarType.fixed,
@@ -61,17 +76,17 @@ class _CommandScreenState extends State<CommandScreen> {
               BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
-              current = index;
+              _current = index;
             }),
           ),
-          floatingActionButton: _buildFAB(context, userBloc),
+          floatingActionButton: _buildFAB(),
         );
       },
     );
   }
 
   _toName(Incident incident, {ifEmpty: "Hendelse"}) {
-    switch (current) {
+    switch (_current) {
       case 0:
         String name = incident?.name;
         return name == null || name.isEmpty ? ifEmpty : name;
@@ -82,11 +97,11 @@ class _CommandScreenState extends State<CommandScreen> {
     }
   }
 
-  List<Widget> _buildActions(BuildContext context, UserBloc userBloc, incident, IncidentBloc incidentBloc) {
-    switch (current) {
+  List<Widget> _buildActions(incident) {
+    switch (_current) {
       case 0:
         return [
-          if (userBloc?.user?.isCommander == true)
+          if (_userBloc?.user?.isCommander == true)
             IconButton(
               icon: Icon(Icons.more_vert),
               onPressed: () => showDialog(
@@ -130,8 +145,8 @@ class _CommandScreenState extends State<CommandScreen> {
     }
   }
 
-  StatelessWidget _buildFAB(BuildContext context, UserBloc bloc) {
-    return current == 1 && bloc?.user?.isCommander == true
+  StatelessWidget _buildFAB() {
+    return _current == 1 && _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () => showDialog(
@@ -140,12 +155,5 @@ class _CommandScreenState extends State<CommandScreen> {
             ),
           )
         : Container();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    super.initState();
-    current = widget.tabIndex;
   }
 }

@@ -18,8 +18,8 @@ class AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: <Widget>[
           UserAccountsDrawerHeader(
-            accountName: Text("User ${user.userId}"),
-            accountEmail: Text(user.roles.map((role) => translateUserRole(role)).join(", ")),
+            accountName: Text("User ${user?.userId}"),
+            accountEmail: Text(user?.roles?.map((role) => translateUserRole(role))?.join(", ")),
             decoration: BoxDecoration(
               color: Colors.grey[800],
             ),
@@ -73,10 +73,7 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.lock),
             title: Text('Logg ut', style: TextStyle(fontSize: 14)),
-            onTap: () async {
-              await userBloc?.logout();
-              Navigator.popAndPushNamed(context, 'login');
-            },
+            onTap: () => userBloc?.logout(),
           ),
           Divider(),
           ListTile(

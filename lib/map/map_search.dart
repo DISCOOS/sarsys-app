@@ -228,7 +228,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       row = match.group(2).toUpperCase();
       isSouth = 'N'.compareTo(row) > 0;
       value = match.group(3);
-      print("Found UTM coordinate in grid '$zone$row'");
+      if (!kReleaseMode) print("Found UTM coordinate in grid '$zone$row'");
     }
 
     // Attempt to map each match to an axis

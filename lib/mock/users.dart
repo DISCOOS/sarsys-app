@@ -1,4 +1,5 @@
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -7,10 +8,12 @@ import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 
 class UserServiceMock extends Mock implements UserService {
-  static UserService build(UserRole role, String username, String password) {
+  static UserService build(UserRole role, AppConfigService configService, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(username, password)).thenAnswer((_) async {
-      var token = createToken(username, enumName(role));
+      var response = await configService.fetch();
+      var actual = response.body.toRole(defaultValue: role);
+      var token = createToken(username, enumName(actual));
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
@@ -19,10 +22,7 @@ class UserServiceMock extends Mock implements UserService {
     );
     when(mock.getToken()).thenAnswer(
       (_) async {
-        final token = await UserService.storage.read(key: "test_token");
-        return token == null
-            ? ServiceResponse.unauthorized(message: "Token not found")
-            : ServiceResponse.ok(body: token);
+        return await _getToken(role, configService);
       },
     );
     when(mock.logout()).thenAnswer((_) async {
@@ -33,32 +33,18 @@ class UserServiceMock extends Mock implements UserService {
     return mock;
   }
 
-  static UserService buildAny(UserRole role) {
+  static UserService buildAny(UserRole role, AppConfigService configService) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(any, any)).thenAnswer((username) async {
-      var token = createToken(username.positionalArguments[0], enumName(role));
+      var response = await configService.fetch();
+      var actual = response.body.toRole(defaultValue: role);
+      var token = createToken(username.positionalArguments[0], enumName(actual));
       await UserService.storage.write(key: 'test_token', value: token);
       return ServiceResponse.ok(body: token);
     });
     when(mock.getToken()).thenAnswer(
       (_) async {
-        var token = await UserService.storage.read(key: "test_token");
-        if (token != null) {
-          try {
-            final user = User.fromToken(token);
-            // Logout if not same role
-            if (!user.roles.contains(role)) {
-              token = null;
-              await UserService.storage.delete(key: 'test_token');
-            }
-          } catch (e) {
-            token = null;
-            await UserService.storage.delete(key: 'test_token');
-          }
-        }
-        return token == null
-            ? ServiceResponse.unauthorized(message: "Token not found")
-            : ServiceResponse.ok(body: token);
+        return await _getToken(role, configService);
       },
     );
     when(mock.logout()).thenAnswer((_) async {
@@ -67,6 +53,26 @@ class UserServiceMock extends Mock implements UserService {
     });
 
     return mock;
+  }
+
+  static Future<ServiceResponse<String>> _getToken(UserRole role, AppConfigService configService) async {
+    var response = await configService.fetch();
+    var actual = response.body.toRole(defaultValue: role);
+    var token = await UserService.storage.read(key: "test_token");
+    if (token != null) {
+      try {
+        final user = User.fromToken(token);
+        // Logout if not same role
+        if (!user.roles.contains(actual)) {
+          token = null;
+          await UserService.storage.delete(key: 'test_token');
+        }
+      } catch (e) {
+        token = null;
+        await UserService.storage.delete(key: 'test_token');
+      }
+    }
+    return token == null ? ServiceResponse.notFound(message: "Token not found") : ServiceResponse.ok(body: token);
   }
 
   static String createToken(String username, String role) {

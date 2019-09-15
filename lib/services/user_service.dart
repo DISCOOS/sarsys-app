@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:SarSys/services/service_response.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
@@ -53,10 +54,10 @@ class UserService {
       // TODO: Validate token (checks only for expired, should probably do a bit more)
       try {
         var jwt = JsonWebToken.unverified(_tokenFromStorage);
-        print("claims: ${jwt.claims}");
-        print(new DateTime.now().millisecondsSinceEpoch / 1000);
+        if (!kReleaseMode) print("claims: ${jwt.claims}");
+        if (!kReleaseMode) print(new DateTime.now().millisecondsSinceEpoch / 1000);
         if (jwt.claims.expiry.isAfter(new DateTime.now())) {
-          print("token still valid");
+          if (!kReleaseMode) print("token still valid");
           return ServiceResponse.ok(body: _tokenFromStorage);
         }
       } catch (e) {

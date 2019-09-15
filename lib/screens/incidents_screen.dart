@@ -4,22 +4,20 @@ import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
+import 'package:SarSys/screens/secure_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 
-class IncidentsScreen extends StatefulWidget {
+class IncidentsScreen extends SecureScreen<IncidentsScreenState> {
   @override
   IncidentsScreenState createState() => IncidentsScreenState();
 }
 
-class IncidentsScreenState extends State<IncidentsScreen> {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
-
+class IncidentsScreenState extends SecureScreenState {
   IncidentBloc _bloc;
   Set<IncidentStatus> _filter;
 
@@ -30,62 +28,43 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     _bloc = BlocProvider.of<IncidentBloc>(context);
   }
 
-  @override //new
-  Widget build(BuildContext context) {
-    final userBloc = BlocProvider.of<UserBloc>(context);
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints viewportConstraints) {
-        return Scaffold(
-          key: _scaffoldKey,
-          drawer: AppDrawer(),
-          appBar: AppBar(
-            title: Text("Velg hendelse"),
-            centerTitle: false,
-          ),
-          extendBody: true,
-          resizeToAvoidBottomInset: true,
-          body: _buildBody(_bloc, context, viewportConstraints),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-          floatingActionButton: userBloc?.user?.isCommander == true
-              ? FloatingActionButton(
-                  onPressed: () => _create(context),
-                  tooltip: 'Ny hendelse',
-                  child: Icon(Icons.add),
-                  elevation: 2.0,
-                )
-              : null,
-          bottomNavigationBar: _buildBottomAppBar(),
-        );
-      },
-    );
+  @override
+  void didUpdateWidget(SecureScreen old) {
+    super.didUpdateWidget(old);
+    _bloc = BlocProvider.of<IncidentBloc>(context);
   }
 
-  Future _create(BuildContext context) async {
-    var incident = await showDialog<Incident>(
-      context: context,
-      builder: (context) => IncidentEditor(),
-    );
-    if (incident != null) jumpToIncident(context, incident);
-  }
+  @override
+  String get title => "Velg hendelse";
 
-  Widget _buildBody(IncidentBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
+  @override
+  FloatingActionButton get floatingActionButton => _buildFAB();
+
+  @override
+  FloatingActionButtonLocation get floatingActionButtonLocation => FloatingActionButtonLocation.centerDocked;
+
+  @override
+  BottomAppBar get bottomAppBar => _buildBottomAppBar();
+
+  @override
+  Widget buildBody(BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        await bloc.fetch();
+        await _bloc.fetch();
         setState(() {});
       },
       child: Container(
         color: Color.fromRGBO(168, 168, 168, 0.6),
         child: StreamBuilder(
-          stream: bloc.state,
+          stream: _bloc.state,
           builder: (context, snapshot) {
-            var cards = bloc.incidents
+            var cards = _bloc.incidents
                 .where((incident) => _filter.contains(incident.status))
-                .map((incident) => _buildCard(context, bloc, incident))
+                .map((incident) => _buildCard(incident))
                 .toList();
             return AnimatedCrossFade(
               duration: Duration(milliseconds: 300),
-              crossFadeState: bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              crossFadeState: _bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
               firstChild: Center(
                 child: CircularProgressIndicator(),
               ),
@@ -93,7 +72,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                 physics: AlwaysScrollableScrollPhysics(),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: viewportConstraints.maxHeight,
+                    minHeight: constraints.maxHeight,
                   ),
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
@@ -103,7 +82,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                           )
                         : Center(
                             child: Text(
-                              "0 av ${bloc.incidents.length} hendelser vises",
+                              "0 av ${_bloc.incidents.length} hendelser vises",
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -117,7 +96,26 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     );
   }
 
-  Widget _buildCard(BuildContext context, IncidentBloc bloc, Incident incident) {
+  FloatingActionButton _buildFAB() {
+    return userBloc?.user?.isCommander == true
+        ? FloatingActionButton(
+            onPressed: () => _create(),
+            tooltip: 'Ny hendelse',
+            child: Icon(Icons.add),
+            elevation: 2.0,
+          )
+        : null;
+  }
+
+  Future _create() async {
+    var incident = await showDialog<Incident>(
+      context: context,
+      builder: (context) => IncidentEditor(),
+    );
+    if (incident != null) jumpToIncident(context, incident);
+  }
+
+  Widget _buildCard(Incident incident) {
     final userBloc = BlocProvider.of<UserBloc>(context);
 
     return StreamBuilder(
@@ -129,7 +127,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
               key: ObjectKey(incident.id),
               children: <Widget>[
                 ListTile(
-                  selected: bloc.current == incident,
+                  selected: _bloc.current == incident,
                   leading: CircleAvatar(
                     child: Text(
                       "${formatSince(incident.occurred)}",
@@ -161,7 +159,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                     ),
                   ),
                 ),
-                if (isAuthorized) _buildMapTile(bloc, incident),
+                if (isAuthorized) _buildMapTile(incident),
                 if (isAuthorized)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
@@ -178,9 +176,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    ButtonTheme.bar(
-                      layoutBehavior: ButtonBarLayoutBehavior.constrained,
-                      padding: EdgeInsets.only(right: 0.0),
+                    ButtonBarTheme(
                       // make buttons use the appropriate styles for cards
                       child: ButtonBar(
                         alignment: MainAxisAlignment.start,
@@ -191,13 +187,17 @@ class IncidentsScreenState extends State<IncidentsScreen> {
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onPressed: () {
                               if (isAuthorized) {
-                                _selectAndReroute(bloc, incident, context);
+                                _selectAndReroute(incident);
                               } else {
                                 Navigator.push(context, PasscodeRoute(incident));
                               }
                             },
                           ),
                         ],
+                      ),
+                      data: ButtonBarThemeData(
+                        layoutBehavior: ButtonBarLayoutBehavior.constrained,
+                        buttonPadding: EdgeInsets.only(right: 0.0),
                       ),
                     ),
                     Padding(
@@ -220,12 +220,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
         });
   }
 
-  void _selectAndReroute(IncidentBloc bloc, Incident incident, BuildContext context) {
-    bloc.select(incident.id);
-    jumpToIncident(context, incident);
-  }
-
-  Widget _buildMapTile(IncidentBloc bloc, Incident incident) {
+  Widget _buildMapTile(Incident incident) {
     final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
     final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
     final fitBounds = (ipp == null || meetup == null) == false ? LatLngBounds(ipp, meetup) : null;
@@ -240,8 +235,13 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           interactive: false,
         ),
       ),
-      onTap: () => _selectAndReroute(bloc, incident, context),
+      onTap: () => _selectAndReroute(incident),
     );
+  }
+
+  void _selectAndReroute(Incident incident) {
+    _bloc.select(incident.id);
+    jumpToIncident(context, incident);
   }
 
   BottomAppBar _buildBottomAppBar() {
@@ -253,7 +253,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
           IconButton(
             icon: Icon(Icons.filter_list),
             color: Colors.white,
-            onPressed: () => _showFilterSheet(context),
+            onPressed: () => _showFilterSheet(),
           ),
           IconButton(
             icon: Icon(Icons.search),
@@ -267,7 +267,7 @@ class IncidentsScreenState extends State<IncidentsScreen> {
     );
   }
 
-  void _showFilterSheet(context) {
+  void _showFilterSheet() {
     final style = Theme.of(context).textTheme.title;
     showModalBottomSheet(
       context: context,
