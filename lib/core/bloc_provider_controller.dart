@@ -147,7 +147,7 @@ class BlocProviderController {
     final result = Completer<BlocProviderController>();
     if (BlocProviderControllerState.Built == _state) {
       // Fail fast on first error
-      List results = await Future.wait<dynamic>([
+      await Future.wait<dynamic>([
         configProvider.bloc.fetch(),
         userProvider.bloc.load(),
       ]).catchError(

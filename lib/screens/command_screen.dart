@@ -31,6 +31,7 @@ class _CommandScreenState extends State<CommandScreen> {
   @override
   void initState() {
     super.initState();
+    _current = widget.tabIndex;
     _userBloc = BlocProvider.of<UserBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
@@ -61,7 +62,6 @@ class _CommandScreenState extends State<CommandScreen> {
           appBar: AppBar(
             actions: _buildActions(incident),
             title: Text(title),
-            centerTitle: true,
           ),
           body: tabs[_current],
           resizeToAvoidBottomPadding: true,
