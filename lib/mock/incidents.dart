@@ -12,29 +12,27 @@ import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
 
 class IncidentBuilder {
-  static createIncidentFromToken(String id, int since, String token, String passcode) {
-    return json.decode(createIncidentAsJson(id, since, token, passcode));
-  }
-
-  static createIncidentAsJson(String id, int since, String token, String passcode) {
+  static Map<String, dynamic> createIncidentAsJson(String id, int since, String token, String passcode) {
     final rnd = math.Random();
-    return '{'
-        '"id": "$id",'
-        '"name": "Savnet person",'
-        '"type": "Lost",'
-        '"status": "Handling",'
-        '"reference": "2019-RKH-245$since",'
-        '"occurred": "${DateTime.now().subtract(Duration(hours: since)).toIso8601String()}",'
-        '"justification": "Mann, 32 år, økt selvmordsfare.",'
-        '"ipp": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
-        '"meetup": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
-        '"talkgroups": ['
-        '{"name": "RK-RIKS-1", "type": "Tetra"}'
-        '],'
-        '"passcodes": ${createPasscodesAsJson(passcode)},'
-        '"created": ${createAuthor(token)},'
-        '"changed": ${createAuthor(token)}'
-        '}';
+    return json.decode(
+      '{'
+      '"id": "$id",'
+      '"name": "Savnet person",'
+      '"type": "Lost",'
+      '"status": "Handling",'
+      '"reference": "2019-RKH-245$since",'
+      '"occurred": "${DateTime.now().subtract(Duration(hours: since)).toIso8601String()}",'
+      '"justification": "Mann, 32 år, økt selvmordsfare.",'
+      '"ipp": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
+      '"meetup": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
+      '"talkgroups": ['
+      '{"name": "RK-RIKS-1", "type": "Tetra"}'
+      '],'
+      '"passcodes": ${createPasscodesAsJson(passcode)},'
+      '"created": ${createAuthor(token)},'
+      '"changed": ${createAuthor(token)}'
+      '}',
+    );
   }
 
   static createPointAsJson(double lat, double lon) {
@@ -71,12 +69,12 @@ class IncidentServiceMock extends Mock implements IncidentService {
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
               "aZ$i",
-              Incident.fromJson(IncidentBuilder.createIncidentFromToken("aZ$i", i, response.body, passcode)),
+              Incident.fromJson(IncidentBuilder.createIncidentAsJson("aZ$i", i, response.body, passcode)),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
             MapEntry(
               "By$i",
-              Incident.fromJson(IncidentBuilder.createIncidentFromToken("By$i", i, unauthorized, passcode)),
+              Incident.fromJson(IncidentBuilder.createIncidentAsJson("By$i", i, unauthorized, passcode)),
             ),
         ]);
       }

@@ -24,9 +24,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   void _init(UserState state) {
     if (_subscription != null) {
-      if (state.isUnset()) {
+      if (!state.isUnset() && state.isUnset()) {
         dispatch(ClearIncidents(_incidents.keys.toList()));
-        dispatch(UnsetIncident());
+        if (_given != null) dispatch(UnsetIncident());
       } else if (state.isAuthenticated()) fetch();
     }
   }
@@ -65,18 +65,18 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     var response = await service.fetch();
     if (response.is200) {
       dispatch(ClearIncidents(_incidents.keys.toList()));
-      dispatch(LoadIncidents(response.body));
-      return UnmodifiableListView<Incident>(response.body);
+      return _dispatch(LoadIncidents(response.body));
     }
     dispatch(RaiseIncidentError(response));
     return Future.error(response);
   }
 
   /// Select given id
-  void select(String id) {
+  Future<void> select(String id) {
     if (_given != id && _incidents.containsKey(id)) {
-      dispatch(SelectIncident(id));
+      return _dispatch(SelectIncident(id));
     }
+    return Future.value();
   }
 
   /// Create given incident
@@ -94,39 +94,45 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return _dispatch(DeleteIncident(incident));
   }
 
+  /// Clear all incidents
+  Future<void> clear() {
+    return _dispatch(ClearIncidents(_incidents.keys.toList()));
+  }
+
   @override
   Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
     if (command is LoadIncidents) {
-      yield _load(command);
+      final loaded = _load(command);
       // Currently selected incident not found?
       if (_given != null && _given.isNotEmpty && !_incidents.containsKey(_given)) {
         yield _unset();
       }
+      yield loaded;
     } else if (command is CreateIncident) {
       final created = await _create(command);
-      yield created;
       if (created.isCreated() && command.selected) {
         yield _set(created.data);
       }
+      yield created;
     } else if (command is UpdateIncident) {
       final updated = await _update(command);
-      yield updated;
       if (updated.isUpdated()) {
         var select = command.selected && command.data.id != _given;
         if (select) {
           yield _set(command.data);
         }
+        yield updated;
       }
     } else if (command is SelectIncident) {
       if (command.data != _given && _incidents.containsKey(command.data)) {
-        yield _set(_incidents[command.data]);
+        yield _select(command);
       }
     } else if (command is DeleteIncident) {
       final deleted = await _delete(command);
-      yield deleted;
       if (deleted.isDeleted() && command.data.id == _given) {
         yield _unset();
       }
+      yield deleted;
     } else if (command is ClearIncidents) {
       yield _clear(command);
     } else if (command is UnsetIncident) {
@@ -142,7 +148,11 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     _incidents.addEntries((command.data).map(
       (incident) => MapEntry(incident.id, incident),
     ));
-    return IncidentsLoaded(_incidents.keys.toList());
+    return _toOK<List<Incident>>(
+      command,
+      IncidentsLoaded(_incidents.keys.toList()),
+      result: _incidents.values.toList(),
+    );
   }
 
   Future<IncidentState> _create(CreateIncident event) async {
@@ -152,7 +162,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         response.body.id,
         () => response.body,
       );
-      return _toOK(event, IncidentCreated(response.body), result: response.body);
+      return _toOK<Incident>(event, IncidentCreated(response.body), result: response.body);
     }
     return _toError(event, response);
   }
@@ -183,6 +193,10 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return _toError(event, response);
   }
 
+  IncidentSelected _select(SelectIncident command) {
+    return _toOK(command, _set(_incidents[command.data]));
+  }
+
   IncidentSelected _set(Incident data) {
     _given = data.id;
     return IncidentSelected(data);
@@ -197,7 +211,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   IncidentState _clear(ClearIncidents command) {
     List<Incident> cleared = [];
     command.data.forEach((id) => {if (_incidents.containsKey(id)) cleared.add(_incidents.remove(id))});
-    return IncidentsCleared(cleared);
+    return _toOK(command, IncidentsCleared(cleared));
   }
 
   // Dispatch and return future
@@ -207,7 +221,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   // Complete request and return given state to bloc
-  Future<IncidentState> _toOK(IncidentCommand event, IncidentState state, {Incident result}) async {
+  IncidentState _toOK<T>(IncidentCommand event, IncidentState state, {T result}) {
     if (result != null)
       event.callback.complete(result);
     else

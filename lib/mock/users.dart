@@ -6,15 +6,18 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserServiceMock extends Mock implements UserService {
   static UserService build(UserRole role, AppConfigService configService, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
+
     when(mock.login(username, password)).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(username, enumName(actual));
-      await UserService.storage.write(key: 'test_token', value: token);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('test_token', token);
       return ServiceResponse.ok(body: token);
     });
     when(mock.login(argThat(isNot(equals(username))), argThat(isNot(equals(password))))).thenAnswer(
@@ -26,7 +29,8 @@ class UserServiceMock extends Mock implements UserService {
       },
     );
     when(mock.logout()).thenAnswer((_) async {
-      await UserService.storage.delete(key: 'test_token');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('test_token');
       return ServiceResponse.noContent();
     });
 
@@ -35,11 +39,12 @@ class UserServiceMock extends Mock implements UserService {
 
   static UserService buildAny(UserRole role, AppConfigService configService) {
     final UserServiceMock mock = UserServiceMock();
-    when(mock.login(any, any)).thenAnswer((username) async {
+    when(mock.login(any, any)).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
-      var token = createToken(username.positionalArguments[0], enumName(actual));
-      await UserService.storage.write(key: 'test_token', value: token);
+      var token = createToken(_.positionalArguments[0], enumName(actual));
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('test_token', token);
       return ServiceResponse.ok(body: token);
     });
     when(mock.getToken()).thenAnswer(
@@ -48,7 +53,8 @@ class UserServiceMock extends Mock implements UserService {
       },
     );
     when(mock.logout()).thenAnswer((_) async {
-      await UserService.storage.delete(key: 'test_token');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('test_token');
       return ServiceResponse.noContent();
     });
 
@@ -58,18 +64,19 @@ class UserServiceMock extends Mock implements UserService {
   static Future<ServiceResponse<String>> _getToken(UserRole role, AppConfigService configService) async {
     var response = await configService.fetch();
     var actual = response.body.toRole(defaultValue: role);
-    var token = await UserService.storage.read(key: "test_token");
+    final prefs = await SharedPreferences.getInstance();
+    var token = prefs.getString('test_token');
     if (token != null) {
       try {
         final user = User.fromToken(token);
         // Logout if not same role
         if (!user.roles.contains(actual)) {
           token = null;
-          await UserService.storage.delete(key: 'test_token');
+          prefs.remove('test_token');
         }
       } catch (e) {
         token = null;
-        await UserService.storage.delete(key: 'test_token');
+        prefs.remove('test_token');
       }
     }
     return token == null ? ServiceResponse.notFound(message: "Token not found") : ServiceResponse.ok(body: token);
