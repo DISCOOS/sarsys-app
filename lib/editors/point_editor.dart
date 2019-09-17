@@ -9,7 +9,7 @@ import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/map/location_controller.dart';
+import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +54,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       onError: _onError,
     );
     _locationController = LocationController(
-        appConfigBloc: BlocProvider.of<AppConfigBloc>(context),
+        configBloc: BlocProvider.of<AppConfigBloc>(context),
         mapController: _mapController,
         tickerProvider: this,
         onMessage: _showMessage,

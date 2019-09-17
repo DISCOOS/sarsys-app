@@ -4,13 +4,14 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/controllers/storage_controller.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/layers/device_layer.dart';
 import 'package:SarSys/map/layers/measure_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/map/location_controller.dart';
+import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
@@ -122,7 +123,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   MapControls _mapControls;
   IncidentMapController _mapController;
   MapToolController _mapToolController;
+  StorageController _storageController;
   LocationController _locationController;
+
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
 
@@ -136,14 +139,21 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     super.initState();
     _currentBaseMap = widget.url;
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
+    _storageController = StorageController(
+      configBloc: _appConfigBloc,
+      onPrompt: widget.onPrompt,
+      onMessage: widget.onMessage,
+    );
+    // Track state of storage controller
+    _storageController.isReady.addListener(_setLayerOptions);
     // Configure location controller
     if (widget.withLocation) {
       _locationController = LocationController(
-        appConfigBloc: _appConfigBloc,
+        configBloc: _appConfigBloc,
         mapController: widget.mapController,
         tickerProvider: this,
-        onMessage: widget.onMessage,
         onPrompt: widget.onPrompt,
+        onMessage: widget.onMessage,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
@@ -188,6 +198,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _init() async {
     _baseMaps = await _maptileService.fetchMaps();
+    _storageController.init();
     _locationController?.init();
   }
 
@@ -245,7 +256,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       ..addAll([
         TileLayerOptions(
           urlTemplate: _currentBaseMap,
-          tileProvider: ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config)),
+          tileProvider: _buildTileProvider(),
         ),
         if (_useLayers.contains(DEVICES_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
@@ -261,6 +272,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (tool != null && tool.active) MeasureLayerOptions(tool),
       ]);
     return _layerOptions;
+  }
+
+  TileProvider _buildTileProvider() {
+    return ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config));
   }
 
   void _onTap(LatLng point) {

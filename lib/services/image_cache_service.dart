@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +18,7 @@ class FileCacheService extends BaseCacheManager {
       _mapCacheTTL = config.mapCacheTTL;
       _mapCacheCapacity = config.mapCacheCapacity;
     }
+
     return _instance;
   }
 
@@ -27,7 +30,7 @@ class FileCacheService extends BaseCacheManager {
         );
 
   Future<String> getFilePath() async {
-    var directory = await getTemporaryDirectory();
+    Directory directory = await getApplicationSupportDirectory();
     return p.join(directory.path, key);
   }
 }

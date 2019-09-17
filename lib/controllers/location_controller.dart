@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -11,13 +12,12 @@ import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:system_setting/system_setting.dart';
 
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point);
 
 class LocationController {
-  final AppConfigBloc appConfigBloc;
+  final AppConfigBloc configBloc;
   final IncidentMapController mapController;
   final TickerProvider tickerProvider;
   final PromptCallback onPrompt;
@@ -26,11 +26,12 @@ class LocationController {
   final LocationCallback onLocationChanged;
 
   bool _locked = false;
-  bool _resolving = false;
   LocationService _service;
   MyLocationOptions _options;
   StreamSubscription _positionSubscription;
   StreamController<Null> _locationUpdateController;
+
+  PermissionController _permissions;
 
   bool get isLocked => _locked;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
@@ -39,7 +40,7 @@ class LocationController {
   MyLocationOptions get options => _options;
 
   LocationController({
-    @required this.appConfigBloc,
+    @required this.configBloc,
     @required this.mapController,
     @required this.onMessage,
     @required this.onPrompt,
@@ -49,14 +50,18 @@ class LocationController {
   })  : assert(mapController != null, "mapController must not be null"),
         assert(onMessage != null, "onMessage must not be null"),
         assert(onPrompt != null, "onPrompt must not be null"),
-        _service = LocationService(appConfigBloc);
+        _service = LocationService(configBloc),
+        _permissions = PermissionController(
+          onMessage: onMessage,
+          onPrompt: onPrompt,
+          configBloc: configBloc,
+        );
 
   /// Get current location
   get current => _service.current;
 
   void init() async {
-    final status = await _service.configure();
-    _handleGeolocationStatusChange(status);
+    _handle(await _service.configure());
   }
 
   void dispose() {
@@ -77,7 +82,7 @@ class LocationController {
         if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
       }
     } else
-      _handleGeolocationStatusChange(_service.status);
+      _handle(_service.status);
     return isLocated;
   }
 
@@ -146,29 +151,13 @@ class LocationController {
         (mapController.center.longitude - position.longitude).abs() > 0.0001;
   }
 
-  void _handleGeolocationStatusChange(GeolocationStatus status) async {
-    var isReady = false;
-    switch (status) {
-      case GeolocationStatus.granted:
-        if (_updateAppConfig(true)) onMessage("Stedstjenester er tilgjengelig");
-        isReady = true;
-        break;
-      case GeolocationStatus.restricted:
-        if (_updateAppConfig(true)) onMessage("Tilgang til stedstjenester er begrenset");
-        isReady = true;
-        break;
-      case GeolocationStatus.denied:
-        _handleLocationDenied();
-        break;
-      case GeolocationStatus.disabled:
-        _handleLocationDisabled();
-        break;
-      default:
-        _handlePermissions("Stedstjenester er ikke tilgjengelige");
-        break;
-    }
+  void _handle(PermissionStatus status) async {
+    await _permissions.handle(status, _permissions.locationWhenInUseRequest.copyWith(onReady: _onReady));
+  }
 
-    if (isReady) {
+  void _onReady() async {
+    final status = await _service.configure();
+    if (_service.isReady.value) {
       _locationUpdateController = StreamController.broadcast();
       _options = MyLocationOptions(
         _toLatLng(_service.current),
@@ -180,66 +169,8 @@ class LocationController {
       _positionSubscription = _service.stream.listen(
         (position) => _updateLocation(position, false),
       );
-      if (isLocated && _resolving) onTrackingChanged(isLocated, _locked);
-    } else {
-      dispose();
-    }
-
-    _resolving = false;
-  }
-
-  bool _updateAppConfig(bool locationWhenInUse) {
-    var notify = true;
-    if (appConfigBloc.isReady) {
-      if (notify = appConfigBloc.config.locationWhenInUse != locationWhenInUse) {
-        appConfigBloc.update(locationWhenInUse: locationWhenInUse);
-      }
-    }
-    return notify;
-  }
-
-  void _handlePermissions(String message) async {
-    final handler = PermissionHandler();
-    onMessage(message, action: "LØS", onPressed: () async {
-      var prompt = true;
-      // Only supported on Android, iOS always return false
-      if (await handler.shouldShowRequestPermissionRationale(PermissionGroup.locationWhenInUse)) {
-        prompt = await onPrompt(
-            "Stedstjenester",
-            "Du har tidligere avslått deling av posisjon. "
-                "Du må akseptere deling av lokasjon med appen for å se hvor du er.");
-      }
-      if (prompt) {
-        var response = await handler.requestPermissions([PermissionGroup.locationWhenInUse]);
-        var status = response[PermissionGroup.locationWhenInUse];
-        if (status == PermissionStatus.granted || status == PermissionStatus.restricted) {
-          _resolving = true;
-          _handleGeolocationStatusChange(await _service.configure());
-        } else {
-          onMessage(message);
-        }
-      }
-    });
-  }
-
-  void _handleLocationDenied() async {
-    final handler = PermissionHandler();
-    var check = await handler.checkServiceStatus(PermissionGroup.locationWhenInUse);
-    if (check == ServiceStatus.disabled) {
-      _handleLocationDisabled();
-    } else {
-      _handlePermissions("Lokalisering er ikke tillatt");
-    }
-  }
-
-  void _handleLocationDisabled() async {
-    onMessage("Stedstjenester er avslått", action: "LØS", onPressed: () async {
-      // Will only work on Android. For iOS, this plugin only opens the app setting screen Settings application,
-      // as using url schemes to open inner setting path is a violation of Apple's regulations. Using url scheme
-      // to open settings can also leads to possible App Store rejection.
-      await SystemSetting.goto(SettingTarget.LOCATION);
-      _resolving = true;
-      _handleGeolocationStatusChange(await _service.configure());
-    });
+      if (isLocated && _permissions.resolving) onTrackingChanged(isLocated, _locked);
+    } else
+      _handle(status);
   }
 }

@@ -5,6 +5,7 @@
   "division": "140",
   "department": "141",
   "talkGroups": "Nasjonal",
+  "storage": false,
   "locationWhenInUse": false,
   "mapCacheTTL": 30,
   "mapCacheCapacity": 15000,

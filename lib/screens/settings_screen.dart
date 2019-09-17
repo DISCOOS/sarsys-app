@@ -133,8 +133,8 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.body1,
         ),
         trailing: Icon(Icons.open_in_new),
-        onTap: () {
-          PermissionHandler().openAppSettings();
+        onTap: () async {
+          await PermissionHandler().openAppSettings();
         },
       ),
       ListTile(

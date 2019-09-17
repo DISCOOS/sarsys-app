@@ -4,13 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 
+import 'package:permission_handler/permission_handler.dart';
+
 class LocationService {
   static LocationService _singleton;
   final _isReady = ValueNotifier(false);
 
   Position _current;
   Geolocator _geolocator;
-  GeolocationStatus _status = GeolocationStatus.unknown;
+  PermissionStatus _status = PermissionStatus.unknown;
 
   LocationOptions _options;
   AppConfigBloc _appConfigBloc;
@@ -34,36 +36,28 @@ class LocationService {
   Position get current => _current;
   Stream<Position> get stream => _stream;
   ValueNotifier<bool> get isReady => _isReady;
-  GeolocationStatus get status => _status;
+  PermissionStatus get status => _status;
 
-  Future<GeolocationStatus> configure() async {
-    _status = await _geolocator.checkGeolocationPermissionStatus();
-    switch (_status) {
-      case GeolocationStatus.granted:
-      case GeolocationStatus.restricted:
-        final config = _appConfigBloc.config;
-        var options = _toOptions(config);
-        if (_isConfigChanged(options)) {
-          _subscribe(options);
-          _configSubscription = _appConfigBloc.state.listen(
-            (state) {
-              if (state.data is AppConfig) {
-                final options = _toOptions(state.data);
-                if (_isConfigChanged(options)) {
-                  _subscribe(options);
-                }
+  Future<PermissionStatus> configure() async {
+    _status = await PermissionHandler().checkPermissionStatus(PermissionGroup.locationWhenInUse);
+    if ([PermissionStatus.granted, PermissionStatus.restricted].contains(_status)) {
+      final config = _appConfigBloc.config;
+      var options = _toOptions(config);
+      if (_isConfigChanged(options)) {
+        _subscribe(options);
+        _configSubscription = _appConfigBloc.state.listen(
+          (state) {
+            if (state.data is AppConfig) {
+              final options = _toOptions(state.data);
+              if (_isConfigChanged(options)) {
+                _subscribe(options);
               }
-            },
-          );
-        }
-        break;
-      case GeolocationStatus.disabled:
-      case GeolocationStatus.denied:
-      case GeolocationStatus.unknown:
-        {
-          dispose();
-          break;
-        }
+            }
+          },
+        );
+      }
+    } else {
+      dispose();
     }
     return _status;
   }

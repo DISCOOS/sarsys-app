@@ -12,10 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/defaults.dart';
@@ -188,12 +188,12 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   if (success == false && Platform.isIOS) {
     final service = LocationService(BlocProvider.of<AppConfigBloc>(context));
     var status = service.status;
-    if (GeolocationStatus.unknown == status) {
+    if (PermissionStatus.unknown == status) {
       status = await service.configure();
     }
     if ([
-      GeolocationStatus.granted,
-      GeolocationStatus.restricted,
+      PermissionStatus.granted,
+      PermissionStatus.restricted,
     ].contains(status)) {
       var current = service.current;
       if (current != null) {

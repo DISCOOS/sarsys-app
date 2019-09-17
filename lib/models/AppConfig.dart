@@ -18,6 +18,7 @@ class AppConfig extends Equatable {
   static const DIVISION = 'division';
   static const DEPARTMENT = 'department';
   static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
+  static const STORAGE = 'storage';
   static const SENTRY_DNS = "sentryDns";
   static const MAP_CACHE_TTL = "mapCacheTTL";
   static const MAP_CACHE_CAPACITY = "mapCacheCapacity";
@@ -34,6 +35,7 @@ class AppConfig extends Equatable {
     DEPARTMENT: "string",
     TALK_GROUPS: "string",
     LOCATION_WHEN_IN_USE: "bool",
+    STORAGE: "bool",
     MAP_CACHE_TTL: "int",
     MAP_CACHE_CAPACITY: "int",
     LOCATION_ACCURACY: "string",
@@ -46,6 +48,7 @@ class AppConfig extends Equatable {
   final String division;
   final String department;
   final String talkGroups;
+  final bool storage;
   final bool locationWhenInUse;
   final int mapCacheTTL;
   final int mapCacheCapacity;
@@ -61,6 +64,7 @@ class AppConfig extends Equatable {
     this.demo,
     this.demoRole,
     this.onboarding = true,
+    this.storage = false,
     this.locationWhenInUse = false,
     this.division = Defaults.division,
     this.department = Defaults.department,
@@ -78,6 +82,7 @@ class AppConfig extends Equatable {
           division,
           department,
           talkGroups,
+          storage,
           locationWhenInUse,
           mapCacheTTL,
           mapCacheCapacity,
@@ -100,6 +105,7 @@ class AppConfig extends Equatable {
     String district,
     String department,
     String talkGroups,
+    bool storage,
     bool locationWhenInUse,
     int mapCacheTTL,
     int mapCacheCapacity,
@@ -115,6 +121,7 @@ class AppConfig extends Equatable {
       division: district ?? this.division,
       department: department ?? this.department,
       talkGroups: talkGroups ?? this.talkGroups,
+      storage: storage ?? this.storage,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
       mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
