@@ -134,6 +134,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   AppConfigBloc _appConfigBloc;
 
+  // Prevent
+  bool _disposed = false;
+
   @override
   void initState() {
     super.initState();
@@ -205,6 +208,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   @override
   void dispose() {
     super.dispose();
+    _disposed = true;
     _mapToolController?.dispose();
     _locationController?.dispose();
     _mapController.progress.removeListener(_onMoveProgress);
@@ -535,6 +539,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _onTrackingChanged(bool isLocated, bool isLocked) {
+    if (_disposed) return;
     _isLocating.value = MapControlState(
       toggled: isLocated,
       locked: isLocked,
