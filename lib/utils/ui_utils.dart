@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -17,8 +18,6 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../core/defaults.dart';
 
 typedef PromptCallback = Future<bool> Function(String title, String message);
 typedef MessageCallback = void Function(String message, {String action, VoidCallback onPressed});
@@ -254,7 +253,7 @@ Widget buildCopyableText({
               : null,
           border: InputBorder.none,
         ),
-        child: Text(value),
+        child: SelectableText(value),
       ),
       onTap: onTap,
       onLongPress: () {
