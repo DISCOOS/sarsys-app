@@ -49,21 +49,97 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: Center(
+      body: Container(
+        color: Colors.white,
         child: Container(
-          color: Theme.of(context).primaryColor,
-          alignment: AlignmentDirectional(0.0, 0.0),
-          child: Container(
-            padding: EdgeInsets.all(16.0),
-            constraints: BoxConstraints(maxWidth: 400.0),
-            child: Card(
-              elevation: 10.0,
-              child: _buildBody(context),
-            ),
-          ),
+          padding: EdgeInsets.all(16.0),
+          constraints: BoxConstraints(maxWidth: 400.0),
+          child: _buildBody(context),
         ),
       ),
     );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    UserBloc bloc = _handle(context);
+    return StreamBuilder<UserState>(
+        stream: bloc.state,
+        builder: (context, snapshot) {
+          return AnimatedCrossFade(
+            duration: Duration(microseconds: 300),
+            crossFadeState: snapshot.hasData && snapshot.data.isAuthenticating()
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Container(
+              padding: EdgeInsets.all(16.0),
+              child: ListView(
+                shrinkWrap: true,
+                children: <Widget>[
+                  Center(child: CircularProgressIndicator()),
+                  // Logo
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.transparent,
+                      radius: 80.0,
+                      child: Image.asset('assets/logo.png'),
+                    ),
+                  ),
+                  Center(
+                    child: Text("Logger inn, vennligst vent"),
+                  )
+                ],
+              ),
+            ),
+            secondChild: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: <Widget>[
+                      SafeArea(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 32.0),
+                            child: Text(
+                              "SarSys",
+                              style: Theme.of(context).textTheme.title.copyWith(
+                                    fontSize: 32,
+                                    color: Color(0xFF0d2149),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Logo
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.transparent,
+                          radius: 40.0,
+                          child: Image.asset('assets/logo.png'),
+                        ),
+                      ),
+                      if (snapshot.hasData && snapshot.data is UserException)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Text(
+                              _toError(snapshot.data),
+                              style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      _buildEmailInput(),
+                      _buildPasswordInput(),
+                      _buildPrimaryButton(bloc),
+                    ],
+                  ),
+                )),
+          );
+        });
   }
 
   Widget _buildEmailInput() {
@@ -124,73 +200,6 @@ class LoginScreenState extends State<LoginScreen> {
             },
           ),
         ));
-  }
-
-  Widget _buildBody(BuildContext context) {
-    UserBloc bloc = _handle(context);
-    return StreamBuilder<UserState>(
-        stream: bloc.state,
-        builder: (context, snapshot) {
-          return AnimatedCrossFade(
-            duration: Duration(microseconds: 300),
-            crossFadeState: snapshot.hasData && snapshot.data.isAuthenticating()
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Container(
-              padding: EdgeInsets.all(16.0),
-              child: ListView(
-                shrinkWrap: true,
-                children: <Widget>[
-                  Center(child: CircularProgressIndicator()),
-                  // Logo
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.transparent,
-                      radius: 80.0,
-                      child: Image.asset('assets/logo.png'),
-                    ),
-                  ),
-                  Center(
-                    child: Text("Logger inn, vennligst vent"),
-                  )
-                ],
-              ),
-            ),
-            secondChild: Container(
-                padding: EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: <Widget>[
-                      // Logo
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          radius: 60.0,
-                          child: Image.asset('assets/logo.png'),
-                        ),
-                      ),
-                      if (snapshot.hasData && snapshot.data is UserException)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 16.0),
-                            child: Text(
-                              _toError(snapshot.data),
-                              style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                      _buildEmailInput(),
-                      _buildPasswordInput(),
-                      _buildPrimaryButton(bloc),
-                    ],
-                  ),
-                )),
-          );
-        });
   }
 
   String _toError(UserException state) {
