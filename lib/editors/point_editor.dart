@@ -4,7 +4,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
-import 'package:SarSys/map/layers/icon_layer.dart';
+import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
@@ -117,7 +117,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           onPositionChanged: _onPositionChanged,
           onTap: (_) => _clearSearchField(),
           plugins: [
-            IconLayer(),
+            POILayer(),
             ScaleBar(),
           ]),
       layers: [
@@ -140,10 +140,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     );
   }
 
-  IconLayerOptions _buildPoiOptions(Map<Point, String> points) {
+  POILayerOptions _buildPoiOptions(Map<Point, String> points) {
     final bloc = BlocProvider.of<IncidentBloc>(context);
-    return IconLayerOptions(
-      Map.fromEntries(
+    return POILayerOptions(
+      List.from(
         points.entries.where((entry) => entry.key != null).map((entry) => MapEntry(toLatLng(entry.key), entry.value)),
       ),
       align: AnchorAlign.top,

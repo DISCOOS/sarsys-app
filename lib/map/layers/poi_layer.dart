@@ -1,7 +1,10 @@
 import 'dart:ui';
 
 import 'package:SarSys/map/painters.dart';
+import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:badges/badges.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -10,8 +13,18 @@ import 'package:latlong/latlong.dart' hide Path;
 
 typedef IconBuilder = Icon Function(BuildContext context, int index);
 
-class IconLayerOptions extends LayerOptions {
-  Map<LatLng, String> points;
+class POI extends Equatable {
+  final String name;
+  final Point point;
+
+  POI({
+    @required this.name,
+    @required this.point,
+  });
+}
+
+class POILayerOptions extends LayerOptions {
+  List<POI> items;
   double bearing;
   double opacity;
   Icon icon;
@@ -21,8 +34,8 @@ class IconLayerOptions extends LayerOptions {
   AnchorAlign align;
   IconBuilder builder;
 
-  IconLayerOptions(
-    this.points, {
+  POILayerOptions(
+    this.items, {
     this.icon,
     this.builder,
     this.bearing,
@@ -34,10 +47,10 @@ class IconLayerOptions extends LayerOptions {
   }) : super(rebuild: rebuild);
 }
 
-class IconLayer implements MapPlugin {
+class POILayer implements MapPlugin {
   @override
   bool supportsLayer(LayerOptions options) {
-    return options is IconLayerOptions;
+    return options is POILayerOptions;
   }
 
   @override
@@ -54,11 +67,11 @@ class IconLayer implements MapPlugin {
     );
   }
 
-  Widget _buildLayer(BuildContext context, IconLayerOptions params, MapState map) {
+  Widget _buildLayer(BuildContext context, POILayerOptions params, MapState map) {
     int index = 0;
-    List<Widget> icons = params.points.entries
-        .where((entry) => map.bounds.contains(entry.key))
-        .map((entry) => _buildIcon(context, map, params, entry.key, entry.value, index++))
+    List<Widget> icons = params.items
+        .where((poi) => map.bounds.contains(toLatLng(poi.point)))
+        .map((poi) => _buildIcon(context, map, params, toLatLng(poi.point), poi.name, index++))
         .toList();
     return icons.isEmpty
         ? Container()
@@ -70,7 +83,7 @@ class IconLayer implements MapPlugin {
   Widget _buildIcon(
     BuildContext context,
     MapState map,
-    IconLayerOptions params,
+    POILayerOptions params,
     LatLng point,
     String label,
     int index,

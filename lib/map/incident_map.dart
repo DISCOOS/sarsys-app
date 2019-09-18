@@ -16,6 +16,7 @@ import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/map/tools/measure_tool.dart';
+import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -31,7 +32,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
-import 'package:SarSys/map/layers/icon_layer.dart';
+import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -166,6 +167,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _mapToolController = MapToolController(
         tools: [
           MeasureTool(),
+          POITool(
+            BlocProvider.of<IncidentBloc>(context),
+            active: true,
+            onMessage: widget.onMessage,
+          ),
           UnitTool(
             BlocProvider.of<TrackingBloc>(context),
             active: true,
@@ -240,7 +246,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         onPositionChanged: _onPositionChanged,
         plugins: [
           MyLocation(),
-          IconLayer(),
+          POILayer(),
           DeviceLayer(),
           UnitLayer(),
           CoordinateLayer(),
@@ -410,12 +416,15 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return _mapControls;
   }
 
-  IconLayerOptions _buildPoiOptions(Map<Point, String> points) {
+  POILayerOptions _buildPoiOptions(Map<Point, String> points) {
     final bloc = BlocProvider.of<IncidentBloc>(context);
-    return IconLayerOptions(
-      Map.fromEntries(
-        points.entries.where((entry) => entry.key != null).map((entry) => MapEntry(toLatLng(entry.key), entry.value)),
-      ),
+    return POILayerOptions(
+      List.from(points.entries.where((entry) => entry.key != null).map(
+            (entry) => POI(
+              name: entry.value,
+              point: entry.key,
+            ),
+          )),
       align: AnchorAlign.top,
       icon: Icon(
         Icons.location_on,
