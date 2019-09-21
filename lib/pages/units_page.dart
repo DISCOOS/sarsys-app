@@ -37,8 +37,8 @@ class UnitsPageState extends State<UnitsPage> {
   List<UnitStatus> _filter = UnitStatus.values.toList()..remove(UnitStatus.Retired);
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);

@@ -1,70 +1,67 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
-import 'package:SarSys/screens/secure_screen.dart';
+import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:provider/provider.dart';
 
-class IncidentsScreen extends SecureScreen<IncidentsScreenState> {
+class IncidentsScreen extends Screen<IncidentsScreenState> {
   @override
   IncidentsScreenState createState() => IncidentsScreenState();
 }
 
-class IncidentsScreenState extends SecureScreenState {
-  IncidentBloc _bloc;
+class IncidentsScreenState extends ScreenState {
+  UserBloc _userBloc;
+  IncidentBloc _incidentBloc;
   Set<IncidentStatus> _filter;
+
+  IncidentsScreenState()
+      : super(
+          title: "Velg hendelse",
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        );
 
   @override
   void initState() {
     super.initState();
     _filter = Set.of([IncidentStatus.Registered, IncidentStatus.Handling, IncidentStatus.Other]);
-    _bloc = BlocProvider.of<IncidentBloc>(context);
   }
 
   @override
-  void didUpdateWidget(SecureScreen old) {
-    super.didUpdateWidget(old);
-    _bloc = BlocProvider.of<IncidentBloc>(context);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _userBloc = BlocProvider.of<UserBloc>(context);
+    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
-
-  @override
-  String get title => "Velg hendelse";
-
-  @override
-  FloatingActionButton get floatingActionButton => _buildFAB();
-
-  @override
-  FloatingActionButtonLocation get floatingActionButtonLocation => FloatingActionButtonLocation.centerDocked;
-
-  @override
-  BottomAppBar get bottomAppBar => _buildBottomAppBar();
 
   @override
   Widget buildBody(BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        await _bloc.fetch();
+        await _incidentBloc.fetch();
         setState(() {});
       },
       child: Container(
         color: Color.fromRGBO(168, 168, 168, 0.6),
         child: StreamBuilder(
-          stream: _bloc.state,
+          stream: _incidentBloc.state,
           builder: (context, snapshot) {
-            var cards = _bloc.incidents
+            var cards = _incidentBloc.incidents
                 .where((incident) => _filter.contains(incident.status))
                 .map((incident) => _buildCard(incident))
                 .toList();
             return AnimatedCrossFade(
               duration: Duration(milliseconds: 300),
-              crossFadeState: _bloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              crossFadeState: _incidentBloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
               firstChild: Center(
                 child: CircularProgressIndicator(),
               ),
@@ -82,7 +79,7 @@ class IncidentsScreenState extends SecureScreenState {
                           )
                         : Center(
                             child: Text(
-                              "0 av ${_bloc.incidents.length} hendelser vises",
+                              "0 av ${_incidentBloc.incidents.length} hendelser vises",
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -96,8 +93,9 @@ class IncidentsScreenState extends SecureScreenState {
     );
   }
 
-  FloatingActionButton _buildFAB() {
-    return userBloc?.user?.isCommander == true
+  @override
+  FloatingActionButton buildFAB() {
+    return _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             onPressed: () => _create(),
             tooltip: 'Ny hendelse',
@@ -110,7 +108,9 @@ class IncidentsScreenState extends SecureScreenState {
   Future _create() async {
     var incident = await showDialog<Incident>(
       context: context,
-      builder: (context) => IncidentEditor(),
+      builder: (context) => IncidentEditor(
+        controller: Provider.of<PermissionController>(context),
+      ),
     );
     if (incident != null) jumpToIncident(context, incident);
   }
@@ -127,7 +127,7 @@ class IncidentsScreenState extends SecureScreenState {
               key: ObjectKey(incident.id),
               children: <Widget>[
                 ListTile(
-                  selected: _bloc.current == incident,
+                  selected: _incidentBloc.current == incident,
                   leading: CircleAvatar(
                     child: Text(
                       "${formatSince(incident.occurred)}",
@@ -240,11 +240,12 @@ class IncidentsScreenState extends SecureScreenState {
   }
 
   void _selectAndReroute(Incident incident) {
-    _bloc.select(incident.id);
+    _incidentBloc.select(incident.id);
     jumpToIncident(context, incident);
   }
 
-  BottomAppBar _buildBottomAppBar() {
+  @override
+  BottomAppBar bottomNavigationBar() {
     return BottomAppBar(
       child: Row(
         mainAxisSize: MainAxisSize.max,

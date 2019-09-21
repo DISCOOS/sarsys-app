@@ -26,8 +26,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   AppConfigBloc _bloc;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _bloc = BlocProvider.of<AppConfigBloc>(context);
     _ttl.text = "${_bloc.config.mapCacheTTL}";
     _capacity.text = "${_bloc.config.mapCacheCapacity}";

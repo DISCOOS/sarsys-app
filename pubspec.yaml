@@ -58,6 +58,7 @@ dependencies:
   dartz: ^0.8.7
   intro_views_flutter: ^2.6.0
   flutter_email_sender: ^2.0.3
+  provider: ^3.1.0
 
   # Customized plugins
   flutter_map:

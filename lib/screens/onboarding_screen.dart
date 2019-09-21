@@ -21,6 +21,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _commander = (UserRole.Commander == BlocProvider.of<AppConfigBloc>(context)?.config?.toRole());
   }
 
@@ -45,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       nextText: Text('NESTE'),
       onTapDoneButton: () async {
         final configBloc = BlocProvider.of<AppConfigBloc>(context);
-        configBloc.update(
+        await configBloc.update(
           onboarding: _onboard,
           demoRole: _commander ? enumName(UserRole.Commander) : enumName(UserRole.Personnel),
         );

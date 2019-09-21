@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
@@ -11,7 +12,6 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -21,8 +21,15 @@ class PointEditor extends StatefulWidget {
   final Point point;
   final String title;
   final Incident incident;
+  final PermissionController controller;
 
-  const PointEditor(this.point, this.title, {Key key, this.incident}) : super(key: key);
+  const PointEditor(
+    this.point, {
+    Key key,
+    this.incident,
+    @required this.title,
+    @required this.controller,
+  }) : super(key: key);
 
   @override
   _PointEditorState createState() => _PointEditorState();
@@ -53,12 +60,18 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       mapController: _mapController,
       onError: _onError,
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _locationController = LocationController(
-        configBloc: BlocProvider.of<AppConfigBloc>(context),
         mapController: _mapController,
+        configBloc: BlocProvider.of<AppConfigBloc>(context),
+        permissionController: widget.controller.cloneWith(
+          onMessage: _showMessage,
+        ),
         tickerProvider: this,
-        onMessage: _showMessage,
-        onPrompt: _prompt,
         onLocationChanged: (_) => setState(() {}));
     _locationController.init();
   }
@@ -144,7 +157,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     final bloc = BlocProvider.of<IncidentBloc>(context);
     return POILayerOptions(
       List.from(
-        points.entries.where((entry) => entry.key != null).map((entry) => MapEntry(toLatLng(entry.key), entry.value)),
+        points.entries.where((entry) => entry.key != null).map((entry) => POI(point: entry.key, name: entry.value)),
       ),
       align: AnchorAlign.top,
       icon: Icon(
@@ -290,7 +303,12 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     _updatePoint(position, hasGesture);
   }
 
-  void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {
+  void _showMessage(
+    String message, {
+    String action = "OK",
+    VoidCallback onPressed,
+    dynamic data,
+  }) {
     final snackbar = SnackBar(
       duration: Duration(seconds: 2),
       content: Padding(
@@ -309,34 +327,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     return SnackBarAction(
       label: label,
       onPressed: onPressed,
-    );
-  }
-
-  Future<bool> _prompt(String title, String message) async {
-    // flutter defined function
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        // return object of type Dialog
-        return AlertDialog(
-          title: new Text(title),
-          content: new Text(message),
-          actions: <Widget>[
-            new FlatButton(
-              child: new Text("CANCEL"),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            new FlatButton(
-              child: new Text("FORTSETT"),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

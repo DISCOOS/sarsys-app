@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
+import 'package:provider/provider.dart';
 
 class MapScreen extends StatefulWidget {
   final LatLng center;
@@ -80,7 +82,6 @@ class MapScreenState extends State<MapScreen> {
         _showFAB = !tool.active;
       }),
       onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
-      onPrompt: (title, message) => prompt(context, title, message),
     );
   }
 
@@ -122,7 +123,10 @@ class MapScreenState extends State<MapScreen> {
                         Navigator.pop(context);
                         final incident = await showDialog<Incident>(
                           context: context,
-                          builder: (context) => IncidentEditor(ipp: toPoint(_mapController.center)),
+                          builder: (context) => IncidentEditor(
+                            ipp: toPoint(_mapController.center),
+                            controller: Provider.of<PermissionController>(context),
+                          ),
                         );
                         if (incident != null) jumpToIncident(context, incident);
                       },
@@ -135,7 +139,12 @@ class MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _showMessage(String message, {String action = "OK", VoidCallback onPressed}) {
+  void _showMessage(
+    String message, {
+    String action = "OK",
+    VoidCallback onPressed,
+    dynamic data,
+  }) {
     final snackbar = SnackBar(
       duration: Duration(seconds: 2),
       content: Padding(

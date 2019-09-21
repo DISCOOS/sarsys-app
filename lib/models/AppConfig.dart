@@ -1,5 +1,5 @@
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/core/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:equatable/equatable.dart';

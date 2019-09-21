@@ -1,7 +1,7 @@
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/core/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';

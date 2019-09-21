@@ -1,8 +1,11 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'dart:async';
+
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
-import 'package:SarSys/core/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/settings_screen.dart';
+import 'package:SarSys/widgets/permission_checker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,7 +16,7 @@ import 'package:SarSys/screens/login_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class SarSysApp extends StatelessWidget {
+class SarSysApp extends StatefulWidget {
   final Key navigatorKey;
   final BlocProviderController controller;
   const SarSysApp({
@@ -23,9 +26,36 @@ class SarSysApp extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _SarSysAppState createState() => _SarSysAppState();
+}
+
+class _SarSysAppState extends State<SarSysApp> {
+  final _checkerKey = UniqueKey();
+
+  StreamSubscription<UserState> _subscription;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _subscription?.cancel();
+    _subscription = widget.controller.userProvider.bloc.state.listen((state) {
+      if (!(state.isAuthenticating() || state.isAuthenticated() || state.isAuthorized())) {
+        final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
+        Navigator.of(context).pushReplacementNamed(onboarding ? "onboarding" : "login");
+      }
+    });
+  }
+
+  void dispose() {
+    super.dispose();
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
+      navigatorKey: widget.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'SarSys',
       theme: ThemeData(
@@ -35,15 +65,15 @@ class SarSysApp extends StatelessWidget {
           textTheme: ButtonTextTheme.primary,
         ),
       ),
-      home: _toHome(controller),
+      home: _toHome(widget.controller),
       builder: (context, child) {
         // will rebuild when blocs are rebuilt with Providers.rebuild
         return BlocProviderTree(
-          blocProviders: controller.all,
+          blocProviders: widget.controller.all,
           child: child,
         );
       },
-      onGenerateRoute: (settings) => _toRoute(controller, settings),
+      onGenerateRoute: (settings) => _toRoute(settings),
       localizationsDelegates: [
         GlobalWidgetsLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -58,48 +88,61 @@ class SarSysApp extends StatelessWidget {
     );
   }
 
-  Route _toRoute(BlocProviderController controller, RouteSettings settings) {
+  Route _toRoute(RouteSettings settings) {
     WidgetBuilder builder;
 
     // Ensure logged in
-    if (controller.userProvider.bloc.isAuthenticated) {
+    if (widget.controller.userProvider.bloc.isAuthenticated) {
       switch (settings.name) {
         case 'login':
-          builder = (context) => LoginScreen();
+          builder = _toUnchecked(LoginScreen());
           break;
         case 'incident':
-          builder = (context) => CommandScreen(tabIndex: 0);
+          builder = _toChecked(CommandScreen(tabIndex: 0));
           break;
         case 'units':
-          builder = (context) => CommandScreen(tabIndex: 1);
+          builder = _toChecked(CommandScreen(tabIndex: 1));
           break;
         case 'devices':
-          builder = (context) => CommandScreen(tabIndex: 2);
+          builder = _toChecked(CommandScreen(tabIndex: 2));
           break;
         case 'incidents':
-          builder = (context) => IncidentsScreen();
+          builder = _toChecked(IncidentsScreen());
           break;
         case 'settings':
-          builder = (context) => SettingsScreen();
+          builder = _toChecked(SettingsScreen());
           break;
         case 'map':
-          builder = (context) => _toMapScreen(context);
+          builder = _toChecked(_toMapScreen(context));
           break;
         case 'onboarding':
-          builder = (context) => OnboardingScreen();
+          builder = _toUnchecked(OnboardingScreen());
           break;
       }
     } else {
-      builder = (context) {
-        final onboarding = BlocProvider.of<AppConfigBloc>(context)?.config?.onboarding;
-        return onboarding == true ? OnboardingScreen() : LoginScreen();
-      };
+      final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
+      builder = onboarding == true ? _toChecked(OnboardingScreen()) : _toUnchecked(LoginScreen());
     }
-    return MaterialPageRoute(builder: builder, settings: settings);
+
+    return MaterialPageRoute(
+      builder: builder,
+      settings: settings,
+    );
+  }
+
+  WidgetBuilder _toChecked(Widget child) {
+    return (context) => PermissionChecker(
+          key: _checkerKey,
+          child: child,
+        );
+  }
+
+  WidgetBuilder _toUnchecked(Widget child) {
+    return (context) => child;
   }
 
   MapScreen _toMapScreen(BuildContext context) {
-    final arguments = ModalRoute.of(context).settings.arguments;
+    final arguments = ModalRoute.of(context)?.settings?.arguments;
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],
@@ -115,7 +158,10 @@ class SarSysApp extends StatelessWidget {
     if (providers.configProvider.bloc.config.onboarding)
       return OnboardingScreen();
     else if (providers.userProvider.bloc.isAuthenticated)
-      return IncidentsScreen();
+      return PermissionChecker(
+        key: _checkerKey,
+        child: IncidentsScreen(),
+      );
     else
       return LoginScreen();
   }

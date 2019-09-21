@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
@@ -18,7 +19,14 @@ class IncidentEditor extends StatefulWidget {
   final Point ipp;
   final Incident incident;
 
-  const IncidentEditor({Key key, this.incident, this.ipp}) : super(key: key);
+  final PermissionController controller;
+
+  const IncidentEditor({
+    Key key,
+    this.ipp,
+    this.incident,
+    @required this.controller,
+  }) : super(key: key);
 
   @override
   _IncidentEditorState createState() => _IncidentEditorState();
@@ -36,8 +44,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
   @override
   void initState() {
     super.initState();
-    _configBloc = BlocProvider.of<AppConfigBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _init();
   }
 
@@ -45,6 +51,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
     var catalogs = await AssetsService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
     _tgCatalog.value = catalogs;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _configBloc = BlocProvider.of<AppConfigBloc>(context);
+    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
 
   @override
@@ -295,7 +308,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
                     ),
             ),
-            onTap: () => _selectLocation(context, field),
+            onTap: () => _selectLocation(field),
           ),
         ),
         valueTransformer: (point) => point.toJson(),
@@ -304,10 +317,15 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ],
       );
 
-  void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
+  void _selectLocation(FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
-      builder: (context) => PointEditor(field.value, 'Velg IPP', incident: widget.incident),
+      builder: (context) => PointEditor(
+        field.value,
+        title: 'Velg IPP',
+        incident: widget.incident,
+        controller: widget.controller,
+      ),
     );
     if (selected != field.value) {
       field.didChange(selected);
@@ -336,7 +354,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
                     ),
             ),
-            onTap: () => _selectMeetup(context, field),
+            onTap: () => _selectMeetup(field),
           ),
         ),
         valueTransformer: (point) => point.toJson(),
@@ -345,10 +363,15 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ],
       );
 
-  void _selectMeetup(BuildContext context, FormFieldState<Point> field) async {
+  void _selectMeetup(FormFieldState<Point> field) async {
     final selected = await showDialog(
       context: context,
-      builder: (context) => PointEditor(field.value, 'Velg oppmøtested', incident: widget.incident),
+      builder: (context) => PointEditor(
+        field.value,
+        title: 'Velg oppmøtested',
+        incident: widget.incident,
+        controller: widget.controller,
+      ),
     );
     if (selected != field.value) {
       field.didChange(selected);

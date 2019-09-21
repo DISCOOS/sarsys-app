@@ -128,10 +128,10 @@ class PasscodeRoute extends PopupRoute {
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
-    if (form.validate()) {
+    final valid = form.validate();
+    if (valid) {
       form.save();
-      return true;
     }
-    return false;
+    return valid;
   }
 }

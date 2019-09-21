@@ -36,8 +36,8 @@ class _IncidentPageState extends State<IncidentPage> {
   Future<void> _hidePending;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _controller.addListener(_testHint);
     _showAndDelayHide();

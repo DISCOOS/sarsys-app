@@ -6,7 +6,6 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
@@ -19,9 +18,8 @@ typedef LocationCallback = void Function(LatLng point);
 class LocationController {
   final AppConfigBloc configBloc;
   final IncidentMapController mapController;
+  final PermissionController permissionController;
   final TickerProvider tickerProvider;
-  final PromptCallback onPrompt;
-  final MessageCallback onMessage;
   final TrackingCallback onTrackingChanged;
   final LocationCallback onLocationChanged;
 
@@ -30,8 +28,6 @@ class LocationController {
   MyLocationOptions _options;
   StreamSubscription _positionSubscription;
   StreamController<Null> _locationUpdateController;
-
-  PermissionController _permissions;
 
   bool get isLocked => _locked;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
@@ -42,20 +38,13 @@ class LocationController {
   LocationController({
     @required this.configBloc,
     @required this.mapController,
-    @required this.onMessage,
-    @required this.onPrompt,
+    @required this.permissionController,
     this.tickerProvider,
     this.onTrackingChanged,
     this.onLocationChanged,
   })  : assert(mapController != null, "mapController must not be null"),
-        assert(onMessage != null, "onMessage must not be null"),
-        assert(onPrompt != null, "onPrompt must not be null"),
-        _service = LocationService(configBloc),
-        _permissions = PermissionController(
-          onMessage: onMessage,
-          onPrompt: onPrompt,
-          configBloc: configBloc,
-        );
+        assert(permissionController != null, "permissionController must not be null"),
+        _service = LocationService(configBloc);
 
   /// Get current location
   get current => _service.current;
@@ -152,13 +141,16 @@ class LocationController {
   }
 
   void _handle(PermissionStatus status) async {
-    await _permissions.handle(status, _permissions.locationWhenInUseRequest.copyWith(onReady: _onReady));
+    await permissionController.handle(
+        status, permissionController.locationWhenInUseRequest.copyWith(onReady: _onReady));
   }
 
   void _onReady() async {
     final status = await _service.configure();
     if (_service.isReady.value) {
+      assert(_locationUpdateController == null);
       _locationUpdateController = StreamController.broadcast();
+
       _options = MyLocationOptions(
         _toLatLng(_service.current),
         opacity: 0.5,
@@ -169,7 +161,7 @@ class LocationController {
       _positionSubscription = _service.stream.listen(
         (position) => _updateLocation(position, false),
       );
-      if (isLocated && _permissions.resolving) onTrackingChanged(isLocated, _locked);
+      if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
     } else
       _handle(status);
   }

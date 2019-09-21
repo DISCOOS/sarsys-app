@@ -40,16 +40,21 @@ class _UnitEditorState extends State<UnitEditor> {
   @override
   void initState() {
     super.initState();
+    _init();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
-    _init();
   }
 
   void _init() async {
     _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.orgId));
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
@@ -163,7 +168,6 @@ class _UnitEditorState extends State<UnitEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'callsign',
-      autofocus: true,
       initialValue: actualValue,
       controller: _callsignController,
       decoration: InputDecoration(
@@ -203,6 +207,7 @@ class _UnitEditorState extends State<UnitEditor> {
       attribute: 'phone',
       maxLength: 8,
       maxLengthEnforced: true,
+      autofocus: true,
       initialValue: (widget?.unit?.phone ?? "").toString(),
       decoration: InputDecoration(
         hintText: 'Skriv inn',

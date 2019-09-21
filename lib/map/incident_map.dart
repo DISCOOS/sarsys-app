@@ -4,7 +4,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/controllers/storage_controller.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/layers/device_layer.dart';
@@ -36,6 +36,7 @@ import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
 
 typedef ToolCallback = void Function(MapTool tool);
 
@@ -53,7 +54,6 @@ class IncidentMap extends StatefulWidget {
 
   final Incident incident;
   final TapCallback onTap;
-  final PromptCallback onPrompt;
   final MessageCallback onMessage;
   final ToolCallback onToolChange;
   final IncidentMapController mapController;
@@ -84,7 +84,6 @@ class IncidentMap extends StatefulWidget {
     this.withScaleBar = false,
     this.withCoordsPanel = false,
     this.onTap,
-    this.onPrompt,
     this.onMessage,
     this.onToolChange,
     this.onOpenDrawer,
@@ -124,7 +123,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   MapControls _mapControls;
   IncidentMapController _mapController;
   MapToolController _mapToolController;
-  StorageController _storageController;
   LocationController _locationController;
 
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
@@ -133,7 +131,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   Set<String> _useLayers;
   List<LayerOptions> _layerOptions = [];
 
-  AppConfigBloc _appConfigBloc;
+  AppConfigBloc _configBloc;
 
   // Prevent
   bool _disposed = false;
@@ -142,22 +140,34 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void initState() {
     super.initState();
     _currentBaseMap = widget.url;
-    _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
-    _storageController = StorageController(
-      configBloc: _appConfigBloc,
-      onPrompt: widget.onPrompt,
-      onMessage: widget.onMessage,
-    );
-    // Track state of storage controller
-    _storageController.isReady.addListener(_setLayerOptions);
+    _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
+    _mapController = widget.mapController;
+    // Only do this once per state instance
+    _mapController.onReady.then((_) {
+      if (widget.fitBounds != null)
+        _mapController.fitBounds(
+          widget.fitBounds,
+          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+        );
+    });
+    _mapController.progress.addListener(_onMoveProgress);
+
+    _init();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _configBloc = BlocProvider.of<AppConfigBloc>(context);
     // Configure location controller
     if (widget.withLocation) {
       _locationController = LocationController(
-        configBloc: _appConfigBloc,
+        configBloc: _configBloc,
+        permissionController: Provider.of<PermissionController>(context).cloneWith(
+          onMessage: widget.onMessage,
+        ),
         mapController: widget.mapController,
         tickerProvider: this,
-        onPrompt: widget.onPrompt,
-        onMessage: widget.onMessage,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
@@ -181,19 +191,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       );
     }
     _center = _ensureCenter();
-    _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
-    _mapController = widget.mapController;
-    // Only do this once per state instance
-    _mapController.onReady.then((_) {
-      if (widget.fitBounds != null)
-        _mapController.fitBounds(
-          widget.fitBounds,
-          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-        );
-    });
-    _mapController.progress.addListener(_onMoveProgress);
-
-    _init();
   }
 
   LatLng _ensureCenter() {
@@ -207,8 +204,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _init() async {
     _baseMaps = await _maptileService.fetchMaps();
-    _storageController.init();
-    _locationController?.init();
   }
 
   @override
@@ -285,7 +280,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   TileProvider _buildTileProvider() {
-    return ManagedCacheTileProvider(FileCacheService(_appConfigBloc.config));
+    return ManagedCacheTileProvider(FileCacheService(_configBloc.config));
   }
 
   void _onTap(LatLng point) {
@@ -325,7 +320,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             key: _searchFieldKey,
             mapController: _mapController,
             zoom: _zoom,
-            onError: widget.onMessage,
+            onError: (message) => widget.onMessage(message),
             onMatch: _onSearchMatch,
             onCleared: _onSearchCleared,
             prefixIcon: GestureDetector(
@@ -513,16 +508,29 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _showBaseMapBottomSheet(context) {
-    final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
     showModalBottomSheet(
         context: context,
-        builder: (BuildContext bc) {
-          return Container(
-            padding: EdgeInsets.all(24.0),
-            child: GridView.count(
-              crossAxisCount: landscape ? 4 : 2,
-              children: _mapBottomSheetCards(),
-            ),
+        builder: (BuildContext context) {
+          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("Internettkart", style: Theme.of(context).textTheme.title),
+              ),
+              Divider(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    crossAxisCount: landscape ? 4 : 2,
+                    children: _mapBottomSheetCards(),
+                  ),
+                ),
+              ),
+            ],
           );
         });
   }

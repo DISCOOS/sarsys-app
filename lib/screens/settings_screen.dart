@@ -24,6 +24,11 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     bloc = BlocProvider.of<AppConfigBloc>(context);
   }
 

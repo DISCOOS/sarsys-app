@@ -44,6 +44,12 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void initState() {
     super.initState();
+    _init();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
@@ -53,13 +59,12 @@ class DevicesPageState extends State<DevicesPage> {
       ..add(_unitBloc.state)
       ..add(_deviceBloc.state)
       ..add(_trackingBloc.state);
-    _init();
   }
 
   void _init() async {
     _divisions = await AssetsService().fetchDivisions(Defaults.orgId);
     _functions = await AssetsService().fetchFunctions(Defaults.orgId);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
