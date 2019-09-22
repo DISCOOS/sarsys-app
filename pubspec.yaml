@@ -110,6 +110,7 @@ flutter:
     - assets/images/avatar male.png
     - assets/mapspreview/missing.png
     - assets/mapspreview/topo4.png
+    - assets/mapspreview/normaphd.png
     - assets/mapspreview/toporaster3.png
     - assets/mapspreview/ortofoto.png
     - assets/mapspreview/hybrid.png

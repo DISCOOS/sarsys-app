@@ -29,13 +29,13 @@ class MaptileService {
       url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     ));
     _maps.add(BaseMap(
-      name: 'toporaster3',
-      description: "Topografisk (papirkart)",
-      previewFile: "toporaster3.png",
+      name: 'normaphd',
+      description: "Topogafisk HD",
+      previewFile: "normaphd.png",
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
+      url: "https://maptiles.finncdn.no/tileService/1.0.3/normaphd/{z}/{x}/{y}.png",
     ));
     _maps.add(BaseMap(
       name: 'norortho',
@@ -44,7 +44,7 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url: "https://maptiles1.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
+      url: "https://maptiles.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
     ));
     _maps.add(BaseMap(
       name: 'norhybrid',
@@ -53,11 +53,20 @@ class MaptileService {
       minZoom: 5,
       maxZoom: 18,
       offline: false,
-      url: "https://maptiles1.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
+      url: "https://maptiles.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
+    ));
+    _maps.add(BaseMap(
+      name: 'toporaster3',
+      description: "Papirkart N50",
+      previewFile: "toporaster3.png",
+      minZoom: 5,
+      maxZoom: 18,
+      offline: false,
+      url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
     ));
     _maps.add(BaseMap(
       name: 'sjokart',
-      description: "Sjøkart",
+      description: "Sjøkart N50",
       previewFile: "sjokart.png",
       minZoom: 5,
       maxZoom: 18,
