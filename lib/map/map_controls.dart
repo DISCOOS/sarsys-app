@@ -167,7 +167,7 @@ class _MapControlsState extends State<MapControls> {
   }
 
   void _onChange() {
-    setState(() {});
+    if (mounted) setState(() {});
   }
 }
 

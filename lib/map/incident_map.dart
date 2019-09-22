@@ -161,6 +161,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     // Configure location controller
     if (widget.withLocation) {
+      _locationController?.dispose();
       _locationController = LocationController(
         configBloc: _configBloc,
         permissionController: Provider.of<PermissionController>(context).cloneWith(
@@ -171,9 +172,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
+      _locationController.init();
     }
     // Configure map tool controller
     if (widget.withControls) {
+      _mapToolController?.dispose();
       _mapToolController = MapToolController(
         tools: [
           MeasureTool(),
