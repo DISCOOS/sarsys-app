@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +28,10 @@ class PermissionChecker extends StatefulWidget {
 }
 
 class _PermissionCheckerState extends State<PermissionChecker> with AutomaticKeepAliveClientMixin {
+  bool _listening = false;
   bool _checkPermission = true;
   PermissionController controller;
+  StreamSubscription<UserState> _subscription;
 
   @override
   void initState() {
@@ -37,7 +42,23 @@ class _PermissionCheckerState extends State<PermissionChecker> with AutomaticKee
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _listening = false;
     controller = _ensureController();
+    _subscription?.cancel();
+    _subscription = BlocProvider.of<UserBloc>(context)?.state?.listen((state) {
+      if (_listening && state.isUnset()) {
+        final onboarding = BlocProvider.of<AppConfigBloc>(context)?.config?.onboarding;
+        Navigator.of(context)?.pushReplacementNamed(onboarding == true ? "onboarding" : "login");
+      }
+      _listening = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _subscription?.cancel();
+    _subscription = null;
   }
 
   @override

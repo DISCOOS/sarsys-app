@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
@@ -31,26 +28,6 @@ class SarSysApp extends StatefulWidget {
 
 class _SarSysAppState extends State<SarSysApp> {
   final _checkerKey = UniqueKey();
-
-  StreamSubscription<UserState> _subscription;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _subscription?.cancel();
-    _subscription = widget.controller.userProvider.bloc.state.listen((state) {
-      if (!(state.isAuthenticating() || state.isAuthenticated() || state.isAuthorized())) {
-        final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
-        Navigator.of(context).pushReplacementNamed(onboarding ? "onboarding" : "login");
-      }
-    });
-  }
-
-  void dispose() {
-    super.dispose();
-    _subscription?.cancel();
-    _subscription = null;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +98,7 @@ class _SarSysAppState extends State<SarSysApp> {
       }
     } else {
       final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
-      builder = onboarding == true ? _toChecked(OnboardingScreen()) : _toUnchecked(LoginScreen());
+      builder = _toUnchecked(onboarding == true ? OnboardingScreen() : LoginScreen());
     }
 
     return MaterialPageRoute(

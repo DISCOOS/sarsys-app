@@ -73,7 +73,10 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.lock),
             title: Text('Logg ut', style: TextStyle(fontSize: 14)),
-            onTap: () => userBloc?.logout(),
+            onTap: () {
+              Navigator.pop(context);
+              userBloc?.logout();
+            },
           ),
           Divider(),
           ListTile(
