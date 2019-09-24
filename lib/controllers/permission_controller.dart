@@ -96,15 +96,9 @@ class PermissionController {
       );
   }
 
-  Future ask(PermissionRequest request) async {
-    if (!request.platforms.contains(Platform.operatingSystem)) {
-      if (onMessage != null)
-        onMessage(
-          "${request.title} er ikke tilgjengelig på "
-          "${toBeginningOfSentenceCase(Platform.operatingSystem)}. ${request.consequence}",
-          data: request,
-        );
-    } else {
+  Future<bool> ask(PermissionRequest request) async {
+    var allowed = false;
+    if (request.platforms.contains(Platform.operatingSystem)) {
       final handler = PermissionHandler();
       final status = await handler.checkServiceStatus(request.group);
       switch (status) {
@@ -129,6 +123,7 @@ class PermissionController {
           break;
       }
     }
+    return allowed;
   }
 
   Future handle(PermissionStatus status, PermissionRequest request) async {
