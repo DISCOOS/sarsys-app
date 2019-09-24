@@ -66,9 +66,14 @@ dependencies:
       url: git://github.com/johnpryan/flutter_map
       ref: master
 
+
+dependency_overrides:
+  intro_views_flutter:
+    path: ../IntroViews-Flutter
+
   # Mocking support
   uuid: ^2.0.2
-  random_string: ^0.0.2
+  random_string: ^1.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
