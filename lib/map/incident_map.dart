@@ -201,7 +201,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     final current = widget.withLocation ? _locationController.current : null;
     return widget.center ??
         (bloc?.current?.meetup != null ? toLatLng(bloc?.current?.meetup) : null) ??
-        current ??
+        LatLng(current.latitude, current.longitude) ??
         Defaults.origo;
   }
 

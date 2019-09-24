@@ -49,7 +49,7 @@ class LocationController {
         _service = LocationService(configBloc);
 
   /// Get current location
-  get current => _service.current;
+  Position get current => _service.current;
 
   void init() async {
     _handle(await _service.configure());
