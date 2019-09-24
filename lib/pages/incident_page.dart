@@ -36,11 +36,16 @@ class _IncidentPageState extends State<IncidentPage> {
   Future<void> _hidePending;
 
   @override
+  void initState() {
+    super.initState();
+    _showAndDelayHide();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _controller.addListener(_testHint);
-    _showAndDelayHide();
   }
 
   @override
@@ -407,15 +412,17 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   void _showAndDelayHide() {
-    setState(() {
-      _showHint = true;
-    });
+    if (mounted) {
+      setState(() {
+        _showHint = true;
+      });
+    }
     _hidePending = Future.delayed(const Duration(milliseconds: 3000), () {
-      if (this.mounted) {
+      if (mounted) {
         _showHint = false;
         setState(() {});
-        _hidePending.whenComplete(() => _hidePending = null);
       }
     });
+    _hidePending.whenComplete(() => _hidePending = null);
   }
 }

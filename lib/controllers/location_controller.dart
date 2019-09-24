@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:SarSys/Services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
@@ -84,6 +86,20 @@ class LocationController {
     return wasLocked;
   }
 
+  void _subscribe() {
+    _positionSubscription = _service.stream.listen(
+      (position) => _updateLocation(position, false),
+    );
+    if (Platform.isIOS) {
+      // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
+      _positionSubscription.onError((e) {
+        Catcher.reportCheckedError(e, StackTrace.current);
+        _positionSubscription.cancel();
+        _subscribe();
+      });
+    }
+  }
+
   LatLng _toLatLng(Position position) {
     return position == null ? LatLng(0, 0) : LatLng(position?.latitude, position?.longitude);
   }
@@ -158,9 +174,7 @@ class LocationController {
         locationUpdateController: _locationUpdateController,
         rebuild: _locationUpdateController.stream,
       );
-      _positionSubscription = _service.stream.listen(
-        (position) => _updateLocation(position, false),
-      );
+      _subscribe();
       if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
     } else
       _handle(status);
