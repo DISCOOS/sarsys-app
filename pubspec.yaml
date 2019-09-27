@@ -48,6 +48,7 @@ dependencies:
   flutter_slidable: ^0.5.3
   package_info: ^0.4.0+5
   font_awesome_flutter: ^8.5.0
+  flutter_map: ^0.7.2
   badges: ^1.1.0
   sentry: ^2.2.0
   catcher: ^0.2.0
@@ -60,16 +61,6 @@ dependencies:
   flutter_email_sender: ^2.0.3
   provider: ^3.1.0
 
-  # Customized plugins
-  flutter_map:
-    git:
-      url: git://github.com/johnpryan/flutter_map
-      ref: master
-
-
-dependency_overrides:
-  intro_views_flutter:
-    path: ../IntroViews-Flutter
 
   # Mocking support
   uuid: ^2.0.2
@@ -78,6 +69,17 @@ dependency_overrides:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
+
+dependency_overrides:
+  flutter_map:
+    git:
+      url: git://github.com/johnpryan/flutter_map
+      ref: master
+  intro_views_flutter:
+    git:
+      url: https://github.com/aagarwal1012/IntroViews-Flutter.git
+      ref: master
+    #path: ../IntroViews-Flutter
 
 dev_dependencies:
   flutter_test:
