@@ -25,12 +25,16 @@ String toUTM(Point point, {String prefix = "UTM", String empty = "Velg"}) {
   return ("$prefix ${CoordinateFormat.toUTM(dst)}").trim();
 }
 
-String formatSince(DateTime timestamp) {
-  if (timestamp == null) return "-";
+String formatSince(DateTime timestamp, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {
+  if (timestamp == null) return defaultValue;
   Duration delta = DateTime.now().difference(timestamp);
   return delta.inHours > 99
-      ? "${delta.inDays}d"
-      : delta.inHours > 0 ? "${delta.inHours}h" : delta.inMinutes > 0 ? "${delta.inMinutes}m" : "${delta.inSeconds}s";
+      ? "${delta.inDays}${withUnits ? " dager" : ""}"
+      : delta.inHours > 0
+          ? "${delta.inHours}${withUnits ? " timer" : ""}"
+          : delta.inMinutes > 0
+              ? "${delta.inMinutes}${withUnits ? " min" : ""}"
+              : approx ? "~1${withUnits ? " min" : ""}" : "${delta.inSeconds}${withUnits ? " sek" : ""}";
 }
 
 String formatDistance(double distance) {

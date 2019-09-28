@@ -471,7 +471,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         _create(Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
       } else {
         incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
-        if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
+        if (!closed.contains(current) && IncidentStatus.Cancelled == incident._unitStatus) {
           prompt(
             context,
             "Bekreft kansellering",
@@ -479,7 +479,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
           ).then(
             (proceed) => proceed ? _update(incident) : Navigator.pop(context),
           );
-        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident.status) {
+        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident._unitStatus) {
           prompt(
             context,
             "Bekreft løsning",

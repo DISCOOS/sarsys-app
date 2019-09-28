@@ -83,7 +83,7 @@ class DeviceLayer extends MapPlugin {
           size: size,
           outer: pixelRadius,
           opacity: options.opacity,
-          color: toPointStatusColor(context, device.location),
+          color: toPointStatusColor(device.location),
         ),
       ),
     );

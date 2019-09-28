@@ -97,7 +97,7 @@ class UnitLayer extends MapPlugin {
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
 
-    final color = toPointStatusColor(context, tracking.location);
+    final color = toPointStatusColor(tracking.location);
 
     return CustomPaint(
       painter: LineStringPainter(
@@ -127,7 +127,7 @@ class UnitLayer extends MapPlugin {
           size: size,
           opacity: options.opacity,
           outer: pixelRadius,
-          color: toPointStatusColor(context, tracking.location),
+          color: toPointStatusColor(tracking.location),
         ),
       ),
     );

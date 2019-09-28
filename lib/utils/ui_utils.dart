@@ -13,9 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:latlong/latlong.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -108,36 +110,69 @@ Widget buildDropdown<T>({
       ),
     );
 
-Color toTrackingStatusColor(BuildContext context, TrackingStatus status) {
+Color toTrackingStatusColor(TrackingStatus status) {
   switch (status) {
-    case TrackingStatus.None:
-      return Colors.grey;
-    case TrackingStatus.Created:
-      return Theme.of(context).colorScheme.primary;
     case TrackingStatus.Tracking:
       return Colors.green;
     case TrackingStatus.Paused:
       return Colors.orange;
     case TrackingStatus.Closed:
-      return Colors.red;
+      return Colors.brown;
+    case TrackingStatus.Created:
+      return Colors.grey;
+    case TrackingStatus.None:
     default:
-      return Theme.of(context).colorScheme.primary;
+      return Colors.red;
   }
 }
 
-IconData toTrackingIconData(BuildContext context, TrackingStatus status) {
+IconData toTrackingIconData(TrackingStatus status) {
   switch (status) {
     case TrackingStatus.Created:
+      return Icons.more_horiz;
     case TrackingStatus.Paused:
-    case TrackingStatus.Closed:
-      return Icons.play_arrow;
-    case TrackingStatus.Tracking:
-    default:
       return Icons.pause;
+    case TrackingStatus.Closed:
+      return Icons.check_circle;
+    case TrackingStatus.Tracking:
+      return Icons.play_circle_filled;
+    default:
+      return Icons.warning;
   }
 }
 
-Color toPointStatusColor(BuildContext context, Point point) {
+Color toUnitStatusColor(UnitStatus status) {
+  switch (status) {
+    case UnitStatus.Deployed:
+      return Colors.green;
+    case UnitStatus.Retired:
+      return Colors.brown;
+    case UnitStatus.Mobilized:
+    default:
+      return Colors.grey;
+  }
+}
+
+IconData toUnitIconData(UnitType type) {
+  switch (type) {
+    case UnitType.ATV:
+    case UnitType.Snowmobile:
+    case UnitType.Vehicle:
+      return MdiIcons.carEstate;
+    case UnitType.Boat:
+      return Icons.directions_boat;
+    case UnitType.K9:
+      return FontAwesomeIcons.dog;
+    case UnitType.CommandPost:
+      return FontAwesomeIcons.shieldAlt;
+    case UnitType.Team:
+    case UnitType.Other:
+    default:
+      return Icons.people;
+  }
+}
+
+Color toPointStatusColor(Point point) {
   final since = (point == null ? null : DateTime.now().difference(point.timestamp).inMinutes);
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }

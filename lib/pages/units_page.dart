@@ -9,7 +9,6 @@ import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -103,6 +102,7 @@ class UnitsPageState extends State<UnitsPage> {
   ListView _buildList(List units) {
     return ListView.builder(
       itemCount: units.length + 1,
+      itemExtent: 72.0,
       itemBuilder: (context, index) {
         return _buildUnit(units, index);
       },
@@ -125,43 +125,62 @@ class UnitsPageState extends State<UnitsPage> {
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
-            child: _buildListTile(unit, status, tracking),
+            child: _buildUnitTile(unit, status, tracking),
             secondaryActions: <Widget>[
               _buildEditAction(context, unit),
               if (tracking?.status != TrackingStatus.Closed) _buildCloseAction(context, unit),
             ],
           )
-        : _buildListTile(unit, status, tracking);
+        : _buildUnitTile(unit, status, tracking);
   }
 
-  Container _buildListTile(Unit unit, TrackingStatus status, Tracking tracking) {
-    final caption = Theme.of(context).textTheme.caption.copyWith(fontSize: 11);
+  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
     return Container(
+      key: ObjectKey(unit.id),
       color: Colors.white,
-      child: ListTile(
-        key: ObjectKey(unit.id),
-        leading: CircleAvatar(
-          backgroundColor: toTrackingStatusColor(context, status),
-          child: Icon(Icons.people),
-          foregroundColor: Colors.white,
-        ),
-        title: Text(unit.callsign),
-        subtitle: Text(
-          "${translateUnitType(unit.type)} "
-          "${translateUnitStatus(unit.status).toLowerCase()}, "
-          "${toUTM(tracking?.location, empty: "Ingen posisjon")}",
-          style: caption,
-        ),
-        dense: true,
-        trailing: widget.withActions && _userBloc?.user?.isCommander == true
-            ? RotatedBox(
+      constraints: BoxConstraints.expand(),
+      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+      child: GestureDetector(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            UnitAvatar(unit: unit, tracking: tracking),
+            SizedBox(width: 16.0),
+            Chip(
+              label: Text("${unit.callsign}"),
+              labelPadding: EdgeInsets.only(right: 4.0),
+              backgroundColor: Colors.grey[100],
+              avatar: Icon(
+                Icons.headset_mic,
+                size: 16.0,
+                color: Colors.black38,
+              ),
+            ),
+            SizedBox(width: 16.0),
+            Expanded(
+              child: Text(unit.name, overflow: TextOverflow.ellipsis),
+            ),
+            SizedBox(width: 4.0),
+            Chip(
+              label: Text("${formatSince(tracking?.location?.timestamp, defaultValue: "Ingen")}"),
+              labelPadding: EdgeInsets.only(right: 4.0),
+              backgroundColor: Colors.grey[100],
+              avatar: Icon(
+                Icons.my_location,
+                size: 16.0,
+                color: toPointStatusColor(tracking?.location),
+              ),
+            ),
+            if (widget.withActions && _userBloc?.user?.isCommander == true)
+              RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
                   Icons.drag_handle,
                   color: Colors.grey.withOpacity(0.2),
                 ),
-              )
-            : null,
+              ),
+          ],
+        ),
         onTap: () => _onTap(unit, tracking),
       ),
     );
@@ -249,6 +268,45 @@ class UnitsPageState extends State<UnitsPage> {
       }
       setState(() {});
     });
+  }
+}
+
+class UnitAvatar extends StatelessWidget {
+  final Unit unit;
+  final Tracking tracking;
+  const UnitAvatar({
+    Key key,
+    this.unit,
+    this.tracking,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      backgroundColor: toUnitStatusColor(unit.status),
+      child: Stack(
+        children: <Widget>[
+          Center(child: Icon(toUnitIconData(unit.type))),
+          Positioned(
+            left: 20,
+            top: 20,
+            child: Container(
+              padding: EdgeInsets.all(0.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: Icon(
+                toTrackingIconData(tracking.status),
+                size: 20,
+                color: toTrackingStatusColor(tracking.status),
+              ),
+            ),
+          ),
+        ],
+      ),
+      foregroundColor: Colors.white,
+    );
   }
 }
 

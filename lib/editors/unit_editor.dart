@@ -28,8 +28,10 @@ class _UnitEditorState extends State<UnitEditor> {
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
-  final _callsignController = TextEditingController();
   final Map<String, String> _departments = {};
+  final _numberController = TextEditingController();
+  final _callsignController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   String _editedName;
   UnitBloc _unitBloc;
@@ -87,15 +89,11 @@ class _UnitEditorState extends State<UnitEditor> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildNameAndNumber(),
+                _buildTwoCellRow(_buildNameField(), _buildNumberField()),
                 SizedBox(height: SPACING),
-                _buildTypeField(),
+                _buildTwoCellRow(_buildTypeField(), _buildCallsignField()),
                 SizedBox(height: SPACING),
-                _buildCallsignField(),
-                SizedBox(height: SPACING),
-                _buildPhoneField(),
-                SizedBox(height: SPACING),
-                _buildStatusField(),
+                _buildTwoCellRow(_buildPhoneField(), _buildStatusField()),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
                 SizedBox(height: MediaQuery.of(context).size.height / 2),
@@ -107,32 +105,45 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  Row _buildNameAndNumber() {
+  Widget _buildTwoCellRow(Widget left, Widget right) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
           flex: 6,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              labelText: "Navn",
-              filled: true,
-              enabled: false,
-            ),
-            child: Text(_editedName ??
-                widget?.unit?.name ??
-                "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}"),
-          ),
+          child: left,
         ),
         SizedBox(width: SPACING),
-        Expanded(flex: 6, child: _buildNumberField()),
+        Expanded(
+          flex: 6,
+          child: right,
+        ),
       ],
     );
   }
 
+  InputDecorator _buildNameField() {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: "Navn",
+        filled: true,
+        enabled: false,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Text(
+          _editedName ?? widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}",
+          style: Theme.of(context).textTheme.subhead,
+        ),
+      ),
+    );
+  }
+
   FormBuilderTextField _buildNumberField() {
-    final actualValue = widget?.unit?.number ?? _unitBloc.units.length + 1;
+    final defaultValue = _getDefaultNumber();
+    final actualValue = _getActualNumber(defaultValue);
+    _numberController.text = "$actualValue";
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
@@ -140,10 +151,19 @@ class _UnitEditorState extends State<UnitEditor> {
       maxLengthEnforced: true,
       initialValue: "$actualValue",
       onChanged: (value) => _onEdit(value),
+      controller: _numberController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
         labelText: 'Nummer',
+        suffix: GestureDetector(
+          child: Icon(
+            Icons.clear,
+            color: Colors.grey,
+            size: 20,
+          ),
+          onTap: () => _setText(_numberController, "${_getActualNumber(defaultValue)}"),
+        ),
       ),
       keyboardType: TextInputType.numberWithOptions(),
       validators: [
@@ -175,11 +195,12 @@ class _UnitEditorState extends State<UnitEditor> {
         filled: true,
         labelText: 'Kallesignal',
         suffix: GestureDetector(
-          child: Icon(Icons.clear, color: Colors.grey),
-          onTap: () {
-            _callsignController.text = _getDefaultCallSign();
-            _formKey.currentState.save();
-          },
+          child: Icon(
+            Icons.clear,
+            color: Colors.grey,
+            size: 20,
+          ),
+          onTap: () => _setText(_callsignController, _getDefaultCallSign()),
         ),
       ),
       keyboardType: TextInputType.text,
@@ -202,20 +223,41 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   FormBuilderTextField _buildPhoneField() {
+    final value = (widget?.unit?.phone ?? "").toString();
+    _phoneController.text = value;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'phone',
       maxLength: 8,
       maxLengthEnforced: true,
       autofocus: true,
-      initialValue: (widget?.unit?.phone ?? "").toString(),
+      initialValue: value,
+      controller: _phoneController,
       decoration: InputDecoration(
-        hintText: 'Skriv inn',
         filled: true,
+        hintText: 'Skriv inn',
         labelText: 'Mobiltelefon',
+        suffix: GestureDetector(
+          child: Icon(
+            Icons.clear,
+            color: Colors.grey,
+            size: 20,
+          ),
+          onTap: () => _setText(_phoneController, value),
+        ),
       ),
       keyboardType: TextInputType.phone,
     );
+  }
+
+  void _setText(TextEditingController controller, String value) {
+    // Workaround for errors when clearing TextField,
+    // see https://github.com/flutter/flutter/issues/17647
+    if (value.isEmpty)
+      WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
+    else
+      controller.text = value;
+    _formKey.currentState.save();
   }
 
   void _onEdit(value) {
@@ -342,6 +384,17 @@ class _UnitEditorState extends State<UnitEditor> {
       _trackingBloc.update(tracking, devices: devices);
     }
     return UnitEditorResult(unit, devices);
+  }
+
+  int _getDefaultNumber() {
+    return _unitBloc.units.length + 1;
+  }
+
+  int _getActualNumber(int defaultValue) {
+    final values = _formKey?.currentState?.value;
+    return (values == null ? widget?.unit?.number ?? defaultValue : values['number']) ??
+        widget?.unit?.number ??
+        defaultValue;
   }
 
   final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;

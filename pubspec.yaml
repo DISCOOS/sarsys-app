@@ -80,6 +80,8 @@ dependency_overrides:
       url: https://github.com/aagarwal1012/IntroViews-Flutter.git
       ref: master
     #path: ../IntroViews-Flutter
+  flutter_chips_input:
+    path: ../flutter_chips_input
 
 dev_dependencies:
   flutter_test:

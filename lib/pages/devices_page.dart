@@ -192,7 +192,7 @@ class DevicesPageState extends State<DevicesPage> {
         dense: true,
         key: ObjectKey(device.id),
         leading: CircleAvatar(
-          backgroundColor: toPointStatusColor(context, device.location),
+          backgroundColor: toPointStatusColor(device.location),
           child: Icon(MdiIcons.cellphoneBasic),
           foregroundColor: Colors.white,
         ),

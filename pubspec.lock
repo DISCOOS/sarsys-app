@@ -296,9 +296,9 @@ packages:
   flutter_chips_input:
     dependency: "direct main"
     description:
-      name: flutter_chips_input
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "../flutter_chips_input"
+      relative: true
+    source: path
     version: "1.5.0"
   flutter_cupertino_localizations:
     dependency: "direct main"
