@@ -89,11 +89,11 @@ String translateUnitType(UnitType type) {
     case UnitType.Boat:
       return "Båt";
     case UnitType.Snowmobile:
-      return "Snøscooter";
+      return "Snøskuter";
     case UnitType.Other:
       return "Annet";
     case UnitType.CommandPost:
-      return "Kommandoplass";
+      return "KO";
     default:
       return enumName(type);
   }
