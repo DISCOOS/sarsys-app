@@ -1,10 +1,9 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/usecase/unit_cases.dart';
+import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +13,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
-import 'package:provider/provider.dart';
 
 class MapScreen extends StatefulWidget {
   final LatLng center;
@@ -92,11 +90,11 @@ class MapScreenState extends State<MapScreen> {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext bc) {
-        return StatefulBuilder(builder: (context, state) {
+        return StatefulBuilder(builder: (_, state) {
           final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
           return DraggableScrollableSheet(
               expand: false,
-              builder: (context, controller) {
+              builder: (_, controller) {
                 return ListView(
                   padding: EdgeInsets.only(bottom: 56.0),
                   children: <Widget>[
@@ -118,14 +116,14 @@ class MapScreenState extends State<MapScreen> {
                       title: Text('Hendelse', style: style),
                       onTap: () async {
                         Navigator.pop(context);
-                        final incident = await showDialog<Incident>(
-                          context: context,
-                          builder: (context) => IncidentEditor(
-                            ipp: toPoint(_mapController.center),
-                            controller: Provider.of<PermissionController>(context),
-                          ),
+                        final result = await createIncident(IncidentParams(
+                          context,
+                          ipp: toPoint(_mapController.center),
+                        ));
+                        result.fold(
+                          (_) => null,
+                          (incident) => jumpToIncident(context, incident),
                         );
-                        if (incident != null) jumpToIncident(context, incident);
                       },
                     ),
                   ],

@@ -19,6 +19,7 @@ class _MapControlsState extends State<MapControls> {
   static const SIZE = 42.0;
   static const SPACING = 4.0;
   static const PADDING = 32.0;
+
   final Size _size = const Size(SIZE, SIZE);
 
   @override
@@ -44,15 +45,13 @@ class _MapControlsState extends State<MapControls> {
 
   @override
   void dispose() {
-    super.dispose();
     _dispose();
+    super.dispose();
   }
 
   void _dispose() {
     return widget._controls.forEach((control) {
-      if (control.listenable != null) {
-        control.listenable.removeListener(_onChange);
-      }
+      control.listenable?.removeListener(_onChange);
       control.dispose();
     });
   }
@@ -200,9 +199,7 @@ class MapControl {
   }
 
   void dispose() {
-    if (listenable != null) {
-      listenable.removeListener(_onChange);
-    }
+    listenable?.removeListener(_onChange);
     if (children.isNotEmpty) {
       children.forEach((control) => control.dispose());
     }

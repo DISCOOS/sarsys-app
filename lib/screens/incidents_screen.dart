@@ -1,18 +1,16 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/screens/screen.dart';
+import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:provider/provider.dart';
 
 class IncidentsScreen extends Screen<IncidentsScreenState> {
   @override
@@ -44,7 +42,7 @@ class IncidentsScreenState extends ScreenState {
   }
 
   @override
-  Widget buildBody(BoxConstraints constraints) {
+  Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return RefreshIndicator(
       onRefresh: () async {
         await _incidentBloc.fetch();
@@ -94,10 +92,10 @@ class IncidentsScreenState extends ScreenState {
   }
 
   @override
-  FloatingActionButton buildFAB() {
+  FloatingActionButton buildFAB(BuildContext context) {
     return _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
-            onPressed: () => _create(),
+            onPressed: () => _create(context),
             tooltip: 'Ny hendelse',
             child: Icon(Icons.add),
             elevation: 2.0,
@@ -105,14 +103,9 @@ class IncidentsScreenState extends ScreenState {
         : null;
   }
 
-  Future _create() async {
-    var incident = await showDialog<Incident>(
-      context: context,
-      builder: (context) => IncidentEditor(
-        controller: Provider.of<PermissionController>(context),
-      ),
-    );
-    if (incident != null) jumpToIncident(context, incident);
+  Future _create(BuildContext context) async {
+    var result = await createIncident(IncidentParams(context));
+    result.fold((_) => null, (incident) => jumpToIncident(context, incident));
   }
 
   Widget _buildCard(Incident incident) {
@@ -245,7 +238,7 @@ class IncidentsScreenState extends ScreenState {
   }
 
   @override
-  BottomAppBar bottomNavigationBar() {
+  BottomAppBar bottomNavigationBar(BuildContext context) {
     return BottomAppBar(
       child: Row(
         mainAxisSize: MainAxisSize.max,

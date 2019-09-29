@@ -51,8 +51,8 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   /// Update given unit
-  Future<void> update(Unit unit) {
-    return _dispatch<void>(UpdateUnit(unit));
+  Future<Unit> update(Unit unit) {
+    return _dispatch<Unit>(UpdateUnit(unit));
   }
 
   /// Delete given unit
@@ -128,7 +128,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         ifAbsent: () => event.data,
       );
       // If state is Retired any tracking is removed by listening to this event in TrackingBloc
-      return _toOK(event, UnitUpdated(event.data));
+      return _toOK(event, UnitUpdated(event.data), result: event.data);
     }
     return _toError(event, response);
   }

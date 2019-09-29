@@ -466,7 +466,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
       Incident incident;
       _formKey.currentState.save();
       if (widget.incident == null) {
-        _create(Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
+        Navigator.pop(
+          context,
+          Incident.fromJson(_formKey.currentState.value).withAuthor(userId),
+        );
       } else {
         incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
         if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
@@ -493,11 +496,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
       // Show errors
       setState(() {});
     }
-  }
-
-  void _create(Incident incident) {
-    _incidentBloc.create(incident);
-    Navigator.pop(context, incident);
   }
 
   void _update(Incident incident) {

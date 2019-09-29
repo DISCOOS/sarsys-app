@@ -85,7 +85,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   /// Update given incident
-  Future<void> update(Incident incident, [bool selected = true]) {
+  Future<Incident> update(Incident incident, [bool selected = true]) {
     return _dispatch(UpdateIncident(incident, selected: selected));
   }
 
@@ -176,7 +176,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         ifAbsent: () => event.data,
       );
       // All tracking is removed by listening to this event in TrackingBloc
-      return _toOK(event, IncidentUpdated(event.data));
+      return _toOK(event, IncidentUpdated(event.data), result: event.data);
     }
     return _toError(event, response);
   }

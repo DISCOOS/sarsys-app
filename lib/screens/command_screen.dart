@@ -1,17 +1,15 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
-import 'package:SarSys/usecase/unit_cases.dart';
+import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:provider/provider.dart';
 
 class CommandScreen extends StatefulWidget {
   final int tabIndex;
@@ -107,18 +105,11 @@ class _CommandScreenState extends State<CommandScreen> {
   List<Widget> _buildActions(incident) {
     switch (_current) {
       case 0:
-        final controller = Provider.of<PermissionController>(context);
         return [
           if (_userBloc?.user?.isCommander == true)
             IconButton(
               icon: Icon(Icons.more_vert),
-              onPressed: () => showDialog(
-                context: context,
-                builder: (context) => IncidentEditor(
-                  incident: incident,
-                  controller: controller,
-                ),
-              ),
+              onPressed: () => editIncident(IncidentParams(context, incident: incident)),
             )
         ];
       case 1:

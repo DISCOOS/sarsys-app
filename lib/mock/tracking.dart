@@ -303,8 +303,8 @@ class _TrackSimulation {
       distance = ProjMath.eucledianDistance(
         history.last.lat,
         history.last.lon,
-        history[history.length - 2].lat,
-        history[history.length - 2].lon,
+        history[history.length - 2]?.lat ?? history.last.lat,
+        history[history.length - 2]?.lon ?? history.last.lon,
       );
       distance = (tracking.distance == null ? distance : tracking.distance + distance);
     }

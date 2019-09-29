@@ -190,8 +190,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Update given tracking
-  Future<void> update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
-    return _dispatch<void>(UpdateTracking(tracking.cloneWith(
+  Future<Tracking> update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
+    return _dispatch<Tracking>(UpdateTracking(tracking.cloneWith(
       status: status,
       devices: devices == null ? tracking.devices : devices.map((device) => device.id).toList(),
     )));
@@ -287,7 +287,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         (_) => event.data,
         ifAbsent: () => event.data,
       );
-      return _toOK(event, TrackingUpdated(event.data));
+      return _toOK(event, TrackingUpdated(event.data), result: event.data);
     }
     return _toError(event, response);
   }
@@ -373,7 +373,7 @@ class CreateTracking extends TrackingCommand<List<String>, Tracking> {
   String toString() => 'CreateTracking';
 }
 
-class UpdateTracking extends TrackingCommand<Tracking, void> {
+class UpdateTracking extends TrackingCommand<Tracking, Tracking> {
   UpdateTracking(Tracking data) : super(data);
 
   @override

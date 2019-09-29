@@ -199,10 +199,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   LatLng _ensureCenter() {
     final bloc = BlocProvider.of<IncidentBloc>(context);
     final current = widget.withLocation ? _locationController.current : null;
+    // Use center supplied by widget,
+    //  if not set, use
     return widget.center ??
         (bloc?.current?.meetup != null ? toLatLng(bloc?.current?.meetup) : null) ??
-        LatLng(current.latitude, current.longitude) ??
-        Defaults.origo;
+        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
   }
 
   void _init() async {
@@ -211,16 +212,24 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   @override
   void dispose() {
-    super.dispose();
     _disposed = true;
+    _mapController.progress.removeListener(_onMoveProgress);
     _mapToolController?.dispose();
     _locationController?.dispose();
-    _mapController.progress.removeListener(_onMoveProgress);
+    _isLocating?.dispose();
+    _isMeasuring?.dispose();
+    _isLocating = null;
+    _isMeasuring = null;
+    _mapController = null;
+    _mapToolController = null;
+    _locationController = null;
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
+      overflow: Overflow.clip,
       children: [
         _buildMap(),
         if (widget.withControls) _buildControls(),
@@ -482,7 +491,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         }
       }
     }
-    if (widget.withLocation) {
+    if ((hasGesture) && widget.withLocation) {
       if (_locationController.isLocated != _isLocating.value?.toggled) {
         _isLocating.value = MapControlState(
           toggled: _locationController.isLocated,

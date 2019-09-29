@@ -70,7 +70,7 @@ class UnitLayer extends MapPlugin {
     return options.bloc.isEmpty
         ? Container()
         : Stack(
-            overflow: Overflow.visible,
+            overflow: Overflow.clip,
             children: [
               if (options.showTail)
                 ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),

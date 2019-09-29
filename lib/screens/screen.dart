@@ -19,13 +19,13 @@ abstract class ScreenState extends State<Screen> {
   });
 
   @protected
-  Widget buildFAB() => null;
+  Widget buildFAB(BuildContext context) => null;
 
   @protected
-  Widget bottomNavigationBar() => null;
+  Widget bottomNavigationBar(BuildContext context) => null;
 
   @protected
-  Widget buildBody(BoxConstraints constraints);
+  Widget buildBody(BuildContext context, BoxConstraints constraints);
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +40,10 @@ abstract class ScreenState extends State<Screen> {
           ),
           extendBody: true,
           resizeToAvoidBottomInset: true,
-          body: buildBody(constraints),
+          body: buildBody(context, constraints),
           floatingActionButtonLocation: floatingActionButtonLocation,
-          floatingActionButton: buildFAB(),
-          bottomNavigationBar: bottomNavigationBar(),
+          floatingActionButton: buildFAB(context),
+          bottomNavigationBar: bottomNavigationBar(context),
         );
       },
     );
