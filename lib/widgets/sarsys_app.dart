@@ -90,7 +90,7 @@ class _SarSysAppState extends State<SarSysApp> {
           builder = _toChecked(SettingsScreen());
           break;
         case 'map':
-          builder = _toChecked(_toMapScreen(context));
+          builder = _toChecked(_toMapScreen(context, settings));
           break;
         case 'onboarding':
           builder = _toUnchecked(OnboardingScreen());
@@ -118,8 +118,8 @@ class _SarSysAppState extends State<SarSysApp> {
     return (context) => child;
   }
 
-  MapScreen _toMapScreen(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings?.arguments;
+  MapScreen _toMapScreen(BuildContext context, RouteSettings settings) {
+    final arguments = settings?.arguments;
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],

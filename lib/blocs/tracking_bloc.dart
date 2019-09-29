@@ -334,9 +334,9 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   @override
   void onError(Object error, StackTrace stackTrace) {
     if (_subscriptions.isNotEmpty) {
-      dispatch(RaiseTrackingError(DeviceError(error, trace: stackTrace)));
+      dispatch(RaiseTrackingError(TrackingError(error, trace: stackTrace)));
     } else {
-      throw "Bad state: TrackingBloc is disposed. Unexpected ${DeviceError(error, trace: stackTrace)}";
+      throw "Bad state: TrackingBloc is disposed. Unexpected ${TrackingError(error, trace: stackTrace)}";
     }
   }
 

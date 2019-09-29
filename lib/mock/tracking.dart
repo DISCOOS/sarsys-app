@@ -110,29 +110,38 @@ class TrackingServiceMock extends Mock implements TrackingService {
       var devices = _.positionalArguments[1] as List<String>;
       final incident = unitServiceMock.unitsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(unitId),
-        orElse: null,
+        orElse: () => null,
       );
       if (incident == null) {
         return ServiceResponse.notFound(message: "Not found. Unit $unitId.");
       }
       final trackingList = trackingRepo[incident.key];
       final trackingId = "${incident.key}t${trackingList.length + 1}";
-      final tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
+      var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
         trackingId,
         status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty),
         devices: devices,
       ));
-      _simulate(trackingId, trackingList, deviceServiceMock.deviceRepo[incident.key], simulations);
+      trackingList.putIfAbsent(tracking.id, () => tracking);
+      tracking = _simulate(
+        trackingId,
+        trackingList,
+        deviceServiceMock.deviceRepo[incident.key],
+        simulations,
+      );
       trackingList.putIfAbsent(tracking.id, () => tracking);
       trackedUnits.putIfAbsent(unitId, () => tracking.id);
       trackedDevices.addEntries(
         tracking.devices.map((deviceId) => MapEntry(deviceId, trackingId)),
       );
-      return ServiceResponse.ok(body: trackingList.putIfAbsent(tracking.id, () => tracking));
+      return ServiceResponse.ok(body: tracking);
     });
     when(mock.update(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0] as Tracking;
-      var incident = trackingRepo.entries.firstWhere((entry) => entry.value.containsKey(tracking.id), orElse: null);
+      var incident = trackingRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(tracking.id),
+        orElse: () => null,
+      );
       if (incident != null) {
         // Ensure only valid statuses are persisted
         tracking = tracking.cloneWith(status: _toStatus(tracking.status, tracking.devices.isNotEmpty));
@@ -159,7 +168,10 @@ class TrackingServiceMock extends Mock implements TrackingService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
-      var incident = trackingRepo.entries.firstWhere((entry) => entry.value.containsKey(tracking.id), orElse: null);
+      var incident = trackingRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(tracking.id),
+        orElse: () => null,
+      );
       if (incident != null) {
         var trackingList = incident.value;
         trackingList.remove(tracking.id);

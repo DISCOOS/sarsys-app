@@ -4,13 +4,13 @@ import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/usecase/unit_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
@@ -165,7 +165,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'KNYTT',
       color: Theme.of(context).buttonColor,
       icon: Icons.people,
-      onTap: () async => _addToUnit(device),
+      onTap: () => addToUnit(UnitParams(context, devices: [device])),
     );
   }
 
@@ -174,7 +174,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'OPPRETT',
       color: Theme.of(context).buttonColor,
       icon: Icons.group_add,
-      onTap: () => _createUnit(device),
+      onTap: () => createUnit(UnitParams(context, devices: [device])),
     );
   }
 
@@ -219,7 +219,7 @@ class DevicesPageState extends State<DevicesPage> {
             ),
             SizedBox(width: 4.0),
             Chip(
-              label: Text("${units[device.id].map((unit) => unit.name).join(",")} "
+              label: Text("${units[device.id]?.map((unit) => unit.name)?.join(",") ?? ""} "
                   "${formatSince(device?.location?.timestamp, defaultValue: "ingen")}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
@@ -246,25 +246,6 @@ class DevicesPageState extends State<DevicesPage> {
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
     return tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
         TrackingStatus.None;
-  }
-
-  void _createUnit(Device device) async {
-    showDialog<UnitEditorResult>(
-      context: context,
-      builder: (context) => UnitEditor(devices: [device]),
-    );
-  }
-
-  void _addToUnit(Device device) async {
-    var unit = await selectUnit(context);
-    if (unit == null) return;
-    if (unit.tracking == null) {
-      _trackingBloc.create(unit, [device]);
-    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
-      var tracking = _trackingBloc.tracks[unit.tracking];
-      var devices = _trackingBloc.getDevicesFromTrackingId(unit.tracking)..add(device);
-      _trackingBloc.update(tracking, devices: devices);
-    }
   }
 
   _removeFromUnits(Device device, Iterable<Unit> units) async {

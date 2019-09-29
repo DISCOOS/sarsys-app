@@ -26,9 +26,11 @@ class UnitEditor extends StatefulWidget {
 class _UnitEditorState extends State<UnitEditor> {
   static const SPACING = 16.0;
 
+  final Map<String, String> _departments = {};
+
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
-  final Map<String, String> _departments = {};
+
   final _numberController = TextEditingController();
   final _callsignController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -366,26 +368,11 @@ class _UnitEditorState extends State<UnitEditor> {
       var unit = widget.unit == null
           ? Unit.fromJson(_formKey.currentState.value)
           : widget.unit.withJson(_formKey.currentState.value);
-      Navigator.pop(context, await _apply(unit, devices));
+      Navigator.pop(context, UnitEditorResult(unit, devices));
     } else {
       // Show errors
       setState(() {});
     }
-  }
-
-  Future<UnitEditorResult> _apply(Unit unit, List<Device> devices) async {
-    if (widget.unit == null) {
-      unit = await _unitBloc.create(unit);
-    } else {
-      await _unitBloc.update(unit);
-    }
-    if (unit.tracking == null) {
-      _trackingBloc.create(unit, devices);
-    } else if (_trackingBloc.tracks.containsKey(unit.tracking)) {
-      var tracking = _trackingBloc.tracks[unit.tracking];
-      _trackingBloc.update(tracking, devices: devices);
-    }
-    return UnitEditorResult(unit, devices);
   }
 
   int _getDefaultNumber(UnitType type) {

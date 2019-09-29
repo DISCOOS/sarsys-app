@@ -2,11 +2,11 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/incident_editor.dart';
-import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
+import 'package:SarSys/usecase/unit_cases.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -160,10 +160,7 @@ class _CommandScreenState extends State<CommandScreen> {
     return _current == 1 && _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => UnitEditor(),
-            ),
+            onPressed: () => createUnit(UnitParams(context)),
           )
         : Container();
   }

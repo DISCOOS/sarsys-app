@@ -2,9 +2,9 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/incident_editor.dart';
-import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/usecase/unit_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -109,10 +109,7 @@ class MapScreenState extends State<MapScreen> {
                         title: Text('Enhet', style: style),
                         onTap: () {
                           Navigator.pop(context);
-                          showDialog(
-                            context: context,
-                            builder: (context) => UnitEditor(),
-                          );
+                          createUnit(UnitParams(context));
                         },
                       ),
                     ListTile(
