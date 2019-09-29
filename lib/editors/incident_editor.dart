@@ -124,9 +124,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                     subtitle: Text('Oppgi type og status'),
                     content: Column(
                       children: [
-                        _buildTypeField(),
-                        SizedBox(height: 16.0),
-                        _buildStatusField(),
+                        buildTwoCellRow(_buildTypeField(), _buildStatusField()),
                       ],
                     ),
                     isActive: _currentStep >= 0,
@@ -196,7 +194,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
       resetIcon: null,
       autocorrect: true,
       decoration: InputDecoration(
-        hintText: "Hendelsestidspunkt",
+        labelText: "Hendelsestidspunkt",
         contentPadding: EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 12.0),
         filled: true,
       ),
@@ -465,13 +463,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
       const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
       final userId = BlocProvider.of<UserBloc>(context).user?.userId;
       final current = widget?.incident?.status;
-      var incident;
+      Incident incident;
       _formKey.currentState.save();
       if (widget.incident == null) {
         _create(Incident.fromJson(_formKey.currentState.value).withAuthor(userId));
       } else {
         incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
-        if (!closed.contains(current) && IncidentStatus.Cancelled == incident._unitStatus) {
+        if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
           prompt(
             context,
             "Bekreft kansellering",
@@ -479,7 +477,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
           ).then(
             (proceed) => proceed ? _update(incident) : Navigator.pop(context),
           );
-        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident._unitStatus) {
+        } else if (!closed.contains(current) && IncidentStatus.Resolved == incident.status) {
           prompt(
             context,
             "Bekreft løsning",

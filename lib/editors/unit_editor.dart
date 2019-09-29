@@ -89,11 +89,11 @@ class _UnitEditorState extends State<UnitEditor> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildTwoCellRow(_buildNameField(), _buildNumberField()),
+                buildTwoCellRow(_buildNameField(), _buildNumberField(), spacing: SPACING),
                 SizedBox(height: SPACING),
-                _buildTwoCellRow(_buildTypeField(), _buildCallsignField()),
+                buildTwoCellRow(_buildTypeField(), _buildCallsignField(), spacing: SPACING),
                 SizedBox(height: SPACING),
-                _buildTwoCellRow(_buildPhoneField(), _buildStatusField()),
+                buildTwoCellRow(_buildStatusField(), _buildPhoneField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
                 SizedBox(height: MediaQuery.of(context).size.height / 2),
@@ -102,24 +102,6 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTwoCellRow(Widget left, Widget right) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          flex: 6,
-          child: left,
-        ),
-        SizedBox(width: SPACING),
-        Expanded(
-          flex: 6,
-          child: right,
-        ),
-      ],
     );
   }
 
@@ -141,16 +123,22 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   FormBuilderTextField _buildNumberField() {
-    final defaultValue = _getDefaultNumber();
-    final actualValue = _getActualNumber(defaultValue);
-    _numberController.text = "$actualValue";
+    final actualType = _getActualType(UnitType.Team);
+    final defaultNumber = _getDefaultNumber(actualType);
+    final actualNumber = _getActualNumber(defaultNumber);
+    _numberController.text = "$actualNumber";
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
       maxLength: 2,
       maxLengthEnforced: true,
-      initialValue: "$actualValue",
-      onChanged: (value) => _onEdit(value),
+      initialValue: "$actualNumber",
+      onChanged: (number) => _onTypeOrNumberEdit(
+        enumName(_getActualType(UnitType.Team)),
+        number,
+        false,
+      ),
+      onEditingComplete: () => setState(() {}),
       controller: _numberController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -162,7 +150,10 @@ class _UnitEditorState extends State<UnitEditor> {
             color: Colors.grey,
             size: 20,
           ),
-          onTap: () => _setText(_numberController, "${_getActualNumber(defaultValue)}"),
+          onTap: () => _setText(
+            _numberController,
+            "${_getActualNumber(_getDefaultNumber(_getActualType(UnitType.Team)))}",
+          ),
         ),
       ),
       keyboardType: TextInputType.numberWithOptions(),
@@ -177,7 +168,7 @@ class _UnitEditorState extends State<UnitEditor> {
           return unit != null ? "Lag $value finnes allerede" : null;
         },
       ],
-      valueTransformer: (value) => int.tryParse(value) ?? actualValue,
+      valueTransformer: (value) => int.tryParse(value) ?? actualNumber,
     );
   }
 
@@ -260,18 +251,25 @@ class _UnitEditorState extends State<UnitEditor> {
     _formKey.currentState.save();
   }
 
-  void _onEdit(value) {
+  void _onTypeOrNumberEdit(String type, number, bool update) {
     _formKey.currentState.save();
     var unit = Unit.fromJson(_formKey.currentState.value);
-    _editedName = "${translateUnitType(unit.type)} ${value ?? _unitBloc.units.length + 1}";
-    return setState(() {});
+    // Type changed?
+    if (enumName(unit.type) != type) {
+      number = _getDefaultNumber(unit.type);
+      _setText(_numberController, "$number");
+    }
+    _editedName = "${translateUnitType(unit.type)} ${number ?? _getDefaultNumber(unit.type)}";
+    if (update) setState(() {});
   }
 
   Widget _buildTypeField() {
+    final defaultValue = UnitType.Team;
+    final actualValue = _getActualType(defaultValue);
     return buildDropDownField(
       attribute: 'type',
       label: 'Type enhet',
-      initialValue: enumName(widget?.unit?.type ?? UnitType.Team),
+      initialValue: enumName(actualValue),
       items: UnitType.values
           .map((type) => [enumName(type), translateUnitType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
@@ -279,7 +277,11 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
-      onChanged: (_) => _onEdit(_formKey.currentState.value["number"]),
+      onChanged: (_) => _onTypeOrNumberEdit(
+        enumName(actualValue),
+        _formKey.currentState.value["number"],
+        true,
+      ),
     );
   }
 
@@ -386,14 +388,22 @@ class _UnitEditorState extends State<UnitEditor> {
     return UnitEditorResult(unit, devices);
   }
 
-  int _getDefaultNumber() {
+  int _getDefaultNumber(UnitType type) {
     return _unitBloc.units.length + 1;
+    //return _unitBloc.units.values.where((unit) => type == unit.type).length + 1;
   }
 
   int _getActualNumber(int defaultValue) {
     final values = _formKey?.currentState?.value;
     return (values == null ? widget?.unit?.number ?? defaultValue : values['number']) ??
         widget?.unit?.number ??
+        defaultValue;
+  }
+
+  UnitType _getActualType(UnitType defaultValue) {
+    final values = _formKey?.currentState?.value;
+    return (values == null ? widget?.unit?.type ?? defaultValue : Unit.fromJson(values).type) ??
+        widget?.unit?.type ??
         defaultValue;
   }
 

@@ -130,7 +130,7 @@ class IncidentsScreenState extends ScreenState {
                   selected: _incidentBloc.current == incident,
                   leading: CircleAvatar(
                     child: Text(
-                      "${formatSince(incident.occurred)}",
+                      "${formatSince(incident.occurred, withUnits: false)}",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

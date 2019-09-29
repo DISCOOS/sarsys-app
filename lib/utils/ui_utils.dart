@@ -110,6 +110,24 @@ Widget buildDropdown<T>({
       ),
     );
 
+Widget buildTwoCellRow(Widget left, Widget right, {double spacing = 16.0}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Expanded(
+        flex: 6,
+        child: left,
+      ),
+      SizedBox(width: spacing),
+      Expanded(
+        flex: 6,
+        child: right,
+      ),
+    ],
+  );
+}
+
 Color toTrackingStatusColor(TrackingStatus status) {
   switch (status) {
     case TrackingStatus.Tracking:
