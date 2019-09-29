@@ -48,6 +48,7 @@ class UnitsPageState extends State<UnitsPage> {
     _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    if (_group != null) _group.close();
     _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
   }
 

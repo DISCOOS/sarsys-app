@@ -55,6 +55,7 @@ class DevicesPageState extends State<DevicesPage> {
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(_userBloc.state)
       ..add(_unitBloc.state)

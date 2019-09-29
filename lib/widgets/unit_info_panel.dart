@@ -34,9 +34,9 @@ class UnitInfoPanel extends StatelessWidget {
         if (withHeader) _buildHeader(unit, theme, context),
         if (withHeader) Divider(),
         _buildLocationInfo(context, tracking, theme),
-        Divider(indent: 42.0),
+        Divider(),
         _buildContactInfo(context, unit),
-        Divider(indent: 42.0),
+        Divider(),
         _buildTrackingInfo(context, tracking),
         Divider(),
         Padding(

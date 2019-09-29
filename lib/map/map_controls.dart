@@ -2,11 +2,16 @@ import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:flutter/material.dart';
 
 class MapControls extends StatefulWidget {
+  final double top;
   final List<MapControl> _controls;
   final MapToolController _controller;
 
-  MapControls({Key key, List<MapControl> controls, MapToolController controller})
-      : this._controls = controls,
+  MapControls({
+    Key key,
+    List<MapControl> controls,
+    MapToolController controller,
+    this.top = 100.0,
+  })  : this._controls = controls,
         this._controller = controller,
         super(key: key);
 
@@ -59,7 +64,7 @@ class _MapControlsState extends State<MapControls> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final active = widget._controller.tools.firstWhere((tool) => tool.active) != null;
+    final active = widget._controller?.tools?.firstWhere((tool) => tool.active) != null;
     final count = ((height - (active ? PADDING : PADDING + FAB)) / (SIZE + SPACING)).floor();
 
     final visible = widget._controls
@@ -69,7 +74,7 @@ class _MapControlsState extends State<MapControls> {
     final vertical = _buildList(context, visible, count, false);
     final horizontal = _buildList(context, visible, count, true);
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
-    final top = landscape ? 8.0 : 100.0;
+    final top = landscape ? 8.0 : widget.top;
     final right = landscape ? 16.0 : 8.0;
     return Positioned(
       top: top,

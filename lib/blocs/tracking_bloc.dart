@@ -22,7 +22,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   final DeviceBloc deviceBloc;
   final IncidentBloc incidentBloc;
 
-  final LinkedHashMap<String, Tracking> _tracks = LinkedHashMap();
+  final LinkedHashMap<String, Tracking> _tracking = LinkedHashMap();
 
   List<StreamSubscription> _subscriptions = [];
 
@@ -48,7 +48,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
                 IncidentStatus.Cancelled,
                 IncidentStatus.Resolved,
               ].contains((state as IncidentUpdated).data.status))) {
-        dispatch(ClearTracking(_tracks.keys.toList()));
+        dispatch(ClearTracking(_tracking.keys.toList()));
       } else if (state.isSelected()) {
         _fetch(state.data.id);
       }
@@ -58,7 +58,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   void _cleanup(UnitState state) {
     if (state.isUpdated()) {
       final event = state as UnitUpdated;
-      final tracking = _tracks[event.data.tracking];
+      final tracking = _tracking[event.data.tracking];
       // Close tracking?
       if (tracking != null) {
         if (UnitStatus.Retired == event.data.status) {
@@ -74,7 +74,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       }
     } else if (state.isDeleted()) {
       final event = state as UnitDeleted;
-      final tracking = _tracks[event.data.tracking];
+      final tracking = _tracking[event.data.tracking];
       if (tracking != null) dispatch(DeleteTracking(tracking));
     }
   }
@@ -82,11 +82,20 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   @override
   TrackingState get initialState => TrackingEmpty();
 
+  /// Stream of tracking changes for to given unit
+  Stream<Tracking> changes(Unit unit) => state
+      .where(
+        (state) =>
+            (state is TrackingUpdated && state.data.id == unit.tracking) ||
+            (state is TrackingLoaded && state.data.contains(unit.tracking)),
+      )
+      .map((state) => state is TrackingLoaded ? _tracking[unit.tracking] : state.data);
+
   /// Check if [tracking] is empty
-  bool get isEmpty => _tracks.isEmpty;
+  bool get isEmpty => _tracking.isEmpty;
 
   /// Get tracks
-  Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracks);
+  Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracking);
 
   /// Get units being tracked
   Map<String, Unit> getTrackedUnits({
@@ -104,8 +113,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
   }) =>
       unit?.tracking != null &&
-      _tracks.containsKey(unit?.tracking) &&
-      !exclude.contains(_tracks[unit?.tracking].status);
+      _tracking.containsKey(unit?.tracking) &&
+      !exclude.contains(_tracking[unit?.tracking].status);
 
   /// Get units being tracked
   Unit getUnitFromTrackingId(
@@ -137,8 +146,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     String id, {
     List<TrackingStatus> exclude = const [TrackingStatus.Closed],
   }) =>
-      _tracks.containsKey(id) && !exclude.contains(_tracks[id].status)
-          ? _tracks[id]
+      _tracking.containsKey(id) && !exclude.contains(_tracking[id].status)
+          ? _tracking[id]
               .devices
               .where((id) => deviceBloc.devices.containsKey(id))
               .map((id) => deviceBloc.devices[id])
@@ -148,7 +157,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   /// Get tracking for all tracked devices.
   Map<String, Set<Tracking>> getTrackingByDeviceId() {
     final Map<String, Set<Tracking>> map = {};
-    _tracks.values.forEach((tracking) {
+    _tracking.values.forEach((tracking) {
       getDevicesFromTrackingId(tracking.id).forEach((device) {
         map.update(device.id, (set) {
           set.add(tracking);
@@ -176,7 +185,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<List<Tracking>> _fetch(String id) async {
     var response = await service.fetch(id);
     if (response.is200) {
-      dispatch(ClearTracking(_tracks.keys.toList()));
+      dispatch(ClearTracking(_tracking.keys.toList()));
       dispatch(LoadTracking(response.body));
       return UnmodifiableListView<Tracking>(response.body);
     }
@@ -236,10 +245,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   TrackingLoaded _load(List<Tracking> tracks) {
-    _tracks.addEntries(tracks.map(
+    _tracking.addEntries(tracks.map(
       (tracking) => MapEntry(tracking.id, tracking),
     ));
-    return TrackingLoaded(_tracks.keys.toList());
+    return TrackingLoaded(_tracking.keys.toList());
   }
 
   Future<TrackingState> _create(CreateTracking event) async {
@@ -248,7 +257,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       await unitBloc.update(
         event.unit.cloneWith(tracking: response.body.id),
       );
-      final tracking = _tracks.putIfAbsent(
+      final tracking = _tracking.putIfAbsent(
         response.body.id,
         () => response.body,
       );
@@ -264,14 +273,14 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         if (event.incidentId == incidentBloc?.current?.id) {
           var tracking = Tracking.fromJson(event.json);
           // Update or add as new
-          return TrackingUpdated(_tracks.update(tracking.id, (_) => tracking, ifAbsent: () => tracking));
+          return TrackingUpdated(_tracking.update(tracking.id, (_) => tracking, ifAbsent: () => tracking));
         }
         break;
       case TrackingMessageType.LocationChanged:
         var id = event.json['id'];
-        if (_tracks.containsKey(id)) {
+        if (_tracking.containsKey(id)) {
           return TrackingUpdated(
-            _tracks.update(id, (tracking) => tracking.cloneWith(location: Point.fromJson(event.json))),
+            _tracking.update(id, (tracking) => tracking.cloneWith(location: Point.fromJson(event.json))),
           );
         }
         break;
@@ -282,7 +291,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<TrackingState> _update(UpdateTracking event) async {
     var response = await service.update(event.data);
     if (response.is204) {
-      _tracks.update(
+      _tracking.update(
         event.data.id,
         (_) => event.data,
         ifAbsent: () => event.data,
@@ -295,7 +304,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<TrackingState> _delete(DeleteTracking event) async {
     var response = await service.delete(event.data);
     if (response.is204) {
-      if (_tracks.remove(event.data.id) == null) {
+      if (_tracking.remove(event.data.id) == null) {
         return _toError(event, "Failed to delete tracking $event, not found locally");
       }
       return _toOK(event, TrackingDeleted(event.data));
@@ -305,7 +314,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   TrackingCleared _clear(ClearTracking command) {
     List<Tracking> cleared = [];
-    command.data.forEach((id) => {if (_tracks.containsKey(id)) cleared.add(_tracks.remove(id))});
+    command.data.forEach((id) => {if (_tracking.containsKey(id)) cleared.add(_tracking.remove(id))});
     return TrackingCleared(cleared);
   }
 
