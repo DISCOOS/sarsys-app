@@ -1,3 +1,4 @@
+import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
@@ -77,6 +78,9 @@ class _SarSysAppState extends State<SarSysApp> {
         case 'incident':
           builder = _toChecked(CommandScreen(tabIndex: 0));
           break;
+        case 'unit':
+          builder = _toChecked(_toUnitScreen(settings));
+          break;
         case 'units':
           builder = _toChecked(CommandScreen(tabIndex: 1));
           break;
@@ -90,7 +94,7 @@ class _SarSysAppState extends State<SarSysApp> {
           builder = _toChecked(SettingsScreen());
           break;
         case 'map':
-          builder = _toChecked(_toMapScreen(context, settings));
+          builder = _toChecked(_toMapScreen(settings));
           break;
         case 'onboarding':
           builder = _toUnchecked(OnboardingScreen());
@@ -118,7 +122,7 @@ class _SarSysAppState extends State<SarSysApp> {
     return (context) => child;
   }
 
-  MapScreen _toMapScreen(BuildContext context, RouteSettings settings) {
+  Widget _toMapScreen(RouteSettings settings) {
     final arguments = settings?.arguments;
     if (arguments is Map) {
       return MapScreen(
@@ -129,6 +133,13 @@ class _SarSysAppState extends State<SarSysApp> {
       );
     }
     return MapScreen();
+  }
+
+  Widget _toUnitScreen(RouteSettings settings) {
+    final unit = settings?.arguments;
+    return UnitScreen(
+      unit: unit,
+    );
   }
 
   Widget _toHome(BlocProviderController providers) {

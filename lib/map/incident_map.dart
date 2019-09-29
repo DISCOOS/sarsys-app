@@ -60,6 +60,9 @@ class IncidentMap extends StatefulWidget {
 
   final GestureTapCallback onOpenDrawer;
 
+  /// Zoom map on given
+  final double zoom;
+
   /// Center map on given point [center]. If [fitBounds] is given [center] is overridden
   final LatLng center;
 
@@ -71,6 +74,7 @@ class IncidentMap extends StatefulWidget {
 
   IncidentMap({
     Key key,
+    this.zoom,
     this.center,
     this.incident,
     this.fitBounds,
@@ -118,7 +122,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   LatLng _center;
   LatLng _searchMatch;
-  double _zoom = Defaults.zoom;
+  double _zoom;
 
   MapControls _mapControls;
   IncidentMapController _mapController;
@@ -139,6 +143,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   @override
   void initState() {
     super.initState();
+    _zoom = widget.zoom ?? Defaults.zoom;
     _currentBaseMap = widget.url;
     _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
     _mapController = widget.mapController;

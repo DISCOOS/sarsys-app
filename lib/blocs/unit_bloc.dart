@@ -36,6 +36,15 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   @override
   UnitState get initialState => UnitsEmpty();
 
+  /// Stream of changes on given unit
+  Stream<Unit> changes(Unit unit) => state
+      .where(
+        (state) =>
+            (state is UnitUpdated && state.data.id == unit.id) ||
+            (state is UnitsLoaded && state.data.contains(unit.id)),
+      )
+      .map((state) => state is UnitsLoaded ? _units[unit.id] : state.data);
+
   /// Check if [units] is empty
   bool get isEmpty => units.isEmpty;
 

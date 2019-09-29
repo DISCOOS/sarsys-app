@@ -39,13 +39,20 @@ class _IncidentPageState extends State<IncidentPage> {
   void initState() {
     super.initState();
     _showAndDelayHide();
+    _controller.addListener(_testHint);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
-    _controller.addListener(_testHint);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_testHint);
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -88,7 +95,7 @@ class _IncidentPageState extends State<IncidentPage> {
                           ],
                         ],
                       )
-                    : Container();
+                    : Center(child: Text("Ingen data"));
               },
             ),
             SafeArea(

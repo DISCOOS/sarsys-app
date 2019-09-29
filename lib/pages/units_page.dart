@@ -188,14 +188,15 @@ class UnitsPageState extends State<UnitsPage> {
               ),
           ],
         ),
-        onTap: () => _onTap(unit, tracking),
+        onTap: () => _onTap(unit),
       ),
     );
   }
 
-  _onTap(Unit unit, Tracking tracking) {
+  _onTap(Unit unit) {
     if (widget.onSelection == null) {
-      if (tracking?.location?.isNotEmpty == true) jumpToPoint(context, center: tracking?.location);
+      Navigator.pushNamed(context, 'unit', arguments: unit);
+//      if (tracking?.location?.isNotEmpty == true) jumpToPoint(context, center: tracking?.location);
     } else {
       widget.onSelection(unit);
     }

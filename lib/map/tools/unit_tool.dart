@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -71,10 +73,16 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: UnitInfoPanel(
-            unit: unit,
-            bloc: bloc,
-            onMessage: onMessage,
+          child: SizedBox(
+            height: min(432.0, MediaQuery.of(context).size.height - 96),
+            width: MediaQuery.of(context).size.width - 96,
+            child: SingleChildScrollView(
+              child: UnitInfoPanel(
+                unit: unit,
+                bloc: bloc,
+                onMessage: onMessage,
+              ),
+            ),
           ),
         );
       },

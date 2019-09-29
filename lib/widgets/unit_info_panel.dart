@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
+  final bool withHeader;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
 
@@ -20,35 +21,30 @@ class UnitInfoPanel extends StatelessWidget {
     @required this.unit,
     @required this.bloc,
     @required this.onMessage,
+    this.withHeader = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
     final tracking = bloc.tracking[unit.tracking];
-    return SizedBox(
-      height: min(432.0, MediaQuery.of(context).size.height - 96),
-      width: MediaQuery.of(context).size.width - 96,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            _buildHeader(unit, theme, context),
-            Divider(),
-            _buildLocationInfo(context, tracking, theme),
-            Divider(indent: 42.0),
-            _buildContactInfo(context, unit),
-            Divider(indent: 42.0),
-            _buildTrackingInfo(context, tracking),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-              child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
-            ),
-            _buildActions(context, unit)
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        if (withHeader) _buildHeader(unit, theme, context),
+        if (withHeader) Divider(),
+        _buildLocationInfo(context, tracking, theme),
+        Divider(indent: 42.0),
+        _buildContactInfo(context, unit),
+        Divider(indent: 42.0),
+        _buildTrackingInfo(context, tracking),
+        Divider(),
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+          child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
         ),
-      ),
+        _buildActions(context, unit)
+      ],
     );
   }
 
