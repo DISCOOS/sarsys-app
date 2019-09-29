@@ -58,7 +58,7 @@ class UnitLayer extends MapPlugin {
 
   Widget _build(BuildContext context, Size size, UnitLayerOptions options, MapState map) {
     final bounds = map.getBounds();
-    final tracks = options.bloc.tracks;
+    final tracks = options.bloc.tracking;
     final units = sortMapValues<String, Unit, TrackingStatus>(
             options.bloc.getTrackedUnits(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
             (unit) => tracks[unit.tracking].status,

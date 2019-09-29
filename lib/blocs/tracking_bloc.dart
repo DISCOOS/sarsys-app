@@ -82,11 +82,11 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   @override
   TrackingState get initialState => TrackingEmpty();
 
-  /// Check if [tracks] is empty
+  /// Check if [tracking] is empty
   bool get isEmpty => _tracks.isEmpty;
 
   /// Get tracks
-  Map<String, Tracking> get tracks => UnmodifiableMapView<String, Tracking>(_tracks);
+  Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracks);
 
   /// Get units being tracked
   Map<String, Unit> getTrackedUnits({

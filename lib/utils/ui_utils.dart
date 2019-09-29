@@ -260,7 +260,11 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   return success;
 }
 
-Future<Unit> selectUnit(BuildContext context) async {
+Future<Unit> selectUnit(
+  BuildContext context, {
+  bool where(Unit unit),
+  String query,
+}) async {
   return await showDialog<Unit>(
     context: context,
     builder: (BuildContext context) {
@@ -274,6 +278,8 @@ Future<Unit> selectUnit(BuildContext context) async {
           title: Text("Velg enhet", textAlign: TextAlign.start),
         ),
         body: UnitsPage(
+          where: where,
+          query: query,
           withActions: false,
           onSelection: (unit) => Navigator.pop(context, unit),
         ),

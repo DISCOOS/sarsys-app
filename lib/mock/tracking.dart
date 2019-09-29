@@ -19,14 +19,13 @@ import 'devices.dart';
 class TracksBuilder {
   static Map<String, dynamic> createTrackingAsJson(
     String id, {
-    List<String> devices = const [],
     TrackingStatus status = TrackingStatus.Tracking,
   }) {
     return json.decode('{'
         '"id": "$id",'
         '"status": "${enumName(status)}",'
         '"distance": 0,'
-        '"devices": ["${devices.join(",")}"],'
+        '"devices": [],'
         '"history": [],'
         '"tracks": {}'
         '}');
@@ -82,9 +81,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
               TracksBuilder.createTrackingAsJson(
                 "${incidentId}t$i",
                 status: TrackingStatus.Tracking,
-                devices: List.from(["${incidentId}d$i"]),
               ),
-            ),
+            ).cloneWith(devices: List.from(["${incidentId}d$i"])),
         ].map((tracking) => MapEntry(tracking.id, tracking)));
         // Create simulations
         trackingList.keys.forEach(
@@ -120,8 +118,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
         trackingId,
         status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty),
-        devices: devices,
-      ));
+      )).cloneWith(devices: devices);
       trackingList.putIfAbsent(tracking.id, () => tracking);
       tracking = _simulate(
         trackingId,

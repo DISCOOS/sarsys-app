@@ -59,7 +59,11 @@ Future<dartz.Either<bool, Tracking>> addToUnit(UnitParams params) => AddToUnit()
 class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
   @override
   Future<dartz.Either<bool, Tracking>> call(params) async {
-    var unit = await selectUnit(params.context);
+    final bloc = BlocProvider.of<TrackingBloc>(params.context);
+    var unit = await selectUnit(
+      params.context,
+      where: (unit) => bloc.tracking[unit.tracking] == null || bloc.tracking[unit.tracking].devices.isEmpty,
+    );
     if (unit == null) return dartz.Left(false);
     final state = await _handleTracking(params, unit, params.devices);
     return dartz.Right(state);
@@ -71,8 +75,8 @@ Future<Tracking> _handleTracking(UnitParams params, Unit unit, List<Device> devi
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (unit.tracking == null) {
     tracking = await trackingBloc.create(unit, devices);
-  } else if (trackingBloc.tracks.containsKey(unit.tracking)) {
-    tracking = trackingBloc.tracks[unit.tracking];
+  } else if (trackingBloc.tracking.containsKey(unit.tracking)) {
+    tracking = trackingBloc.tracking[unit.tracking];
     tracking = await trackingBloc.update(tracking, devices: devices);
   }
   return tracking;

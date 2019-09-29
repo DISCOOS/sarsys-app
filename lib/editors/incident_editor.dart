@@ -398,10 +398,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
                 var talkGroup = _formKey.currentState.fields["tgCatalog"].currentState.value;
-                return (await service.fetchTalkGroups(Defaults.orgId, talkGroup)).where((tg) {
-                  return tg.name.toLowerCase().contains(lowercaseQuery) ||
-                      tg.type.toString().toLowerCase().contains(lowercaseQuery);
-                }).toList(growable: false);
+                return (await service.fetchTalkGroups(Defaults.orgId, talkGroup))
+                    .where((tg) =>
+                        tg.name.toLowerCase().contains(lowercaseQuery) ||
+                        tg.type.toString().toLowerCase().contains(lowercaseQuery))
+                    .take(5)
+                    .toList(growable: false);
               } else {
                 return const <TalkGroup>[];
               }

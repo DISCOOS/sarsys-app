@@ -259,8 +259,8 @@ class DevicesPageState extends State<DevicesPage> {
       final bloc = BlocProvider.of<TrackingBloc>(context);
       units.forEach(
         (unit) => bloc.update(
-          bloc.tracks[unit.tracking].cloneWith(
-            devices: bloc.tracks[unit.tracking].devices.where((test) => test != device.id).toList(),
+          bloc.tracking[unit.tracking].cloneWith(
+            devices: bloc.tracking[unit.tracking].devices.where((test) => test != device.id).toList(),
           ),
         ),
       );

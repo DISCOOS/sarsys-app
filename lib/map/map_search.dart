@@ -321,7 +321,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
     final units = BlocProvider.of<TrackingBloc>(context).getTrackedUnits;
-    final tracks = BlocProvider.of<TrackingBloc>(context).tracks;
+    final tracks = BlocProvider.of<TrackingBloc>(context).tracking;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
 

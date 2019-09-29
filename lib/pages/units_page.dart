@@ -20,8 +20,15 @@ class UnitsPage extends StatefulWidget {
   final bool withActions;
   final String query;
   final SelectionCallback onSelection;
+  final bool Function(Unit unit) where;
 
-  const UnitsPage({Key key, this.query, this.withActions = true, this.onSelection}) : super(key: key);
+  const UnitsPage({
+    Key key,
+    this.query,
+    this.withActions = true,
+    this.onSelection,
+    this.where,
+  }) : super(key: key);
 
   @override
   UnitsPageState createState() => UnitsPageState();
@@ -68,9 +75,9 @@ class UnitsPageState extends State<UnitsPage> {
                 var units = _unitBloc.units.isEmpty || snapshot.hasError
                     ? []
                     : _unitBloc.units.values
-                        .where((unit) =>
-                            _filter.contains(unit.status) &&
-                            (widget.query == null || _prepare(unit).contains(widget.query.toLowerCase())))
+                        .where((unit) => _filter.contains(unit.status))
+                        .where((unit) => widget.where == null || widget.where(unit))
+                        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
                         .toList();
 
                 return AnimatedCrossFade(
@@ -119,7 +126,7 @@ class UnitsPageState extends State<UnitsPage> {
       );
     }
     var unit = units[index];
-    var tracking = unit.tracking == null ? null : _trackingBloc.tracks[unit.tracking];
+    var tracking = unit.tracking == null ? null : _trackingBloc.tracking[unit.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions && _userBloc?.user?.isCommander == true
         ? Slidable(

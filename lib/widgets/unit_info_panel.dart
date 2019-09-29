@@ -25,7 +25,7 @@ class UnitInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    final tracking = bloc.tracks[unit.tracking];
+    final tracking = bloc.tracking[unit.tracking];
     return SizedBox(
       height: min(432.0, MediaQuery.of(context).size.height - 96),
       width: MediaQuery.of(context).size.width - 96,

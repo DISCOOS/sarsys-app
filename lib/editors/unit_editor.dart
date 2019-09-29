@@ -328,10 +328,10 @@ class _UnitEditorState extends State<UnitEditor> {
           if (query.length != 0) {
             var lowercaseQuery = query.toLowerCase();
             return _deviceBloc.devices.values
-                .where((device) {
-                  return device.number.toLowerCase().contains(lowercaseQuery) ||
-                      device.type.toString().toLowerCase().contains(lowercaseQuery);
-                })
+                .where((devices) => _trackingBloc.isTrackingDeviceById(devices.id) == false)
+                .where((device) =>
+                    device.number.toLowerCase().contains(lowercaseQuery) ||
+                    device.type.toString().toLowerCase().contains(lowercaseQuery))
                 .take(5)
                 .toList(growable: false);
           } else {
