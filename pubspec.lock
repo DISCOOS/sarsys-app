@@ -358,8 +358,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: master
-      resolved-ref: "22fab80678937509ba5149557582a714fff6ed81"
+      ref: "69e423abd394b3a143448defbadb950e76f9764e"
+      resolved-ref: "69e423abd394b3a143448defbadb950e76f9764e"
       url: "git://github.com/johnpryan/flutter_map"
     source: git
     version: "0.7.2"
