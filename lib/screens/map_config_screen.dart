@@ -37,11 +37,11 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
 
   @override
   void dispose() {
-    super.dispose();
     _ttl.dispose();
     _capacity.dispose();
     _interval.dispose();
     _displacement.dispose();
+    super.dispose();
   }
 
   @override //new

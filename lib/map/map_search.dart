@@ -68,8 +68,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
   @override
   void dispose() {
-    super.dispose();
     _hideResults();
+    super.dispose();
   }
 
   @override

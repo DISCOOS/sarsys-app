@@ -56,9 +56,9 @@ class _PermissionCheckerState extends State<PermissionChecker> with AutomaticKee
 
   @override
   void dispose() {
-    super.dispose();
     _subscription?.cancel();
     _subscription = null;
+    super.dispose();
   }
 
   @override

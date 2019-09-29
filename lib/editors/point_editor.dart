@@ -78,8 +78,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   @override
   void dispose() {
-    super.dispose();
     _locationController.dispose();
+    super.dispose();
   }
 
   @override

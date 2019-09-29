@@ -46,9 +46,9 @@ class UnitsPageState extends State<UnitsPage> {
 
   @override
   void dispose() {
-    super.dispose();
     _group.close();
     _group = null;
+    super.dispose();
   }
 
   @override

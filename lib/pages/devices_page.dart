@@ -70,8 +70,8 @@ class DevicesPageState extends State<DevicesPage> {
 
   @override
   void dispose() {
-    super.dispose();
     _group.close();
+    super.dispose();
   }
 
   @override

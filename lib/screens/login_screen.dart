@@ -40,10 +40,10 @@ class LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    super.dispose();
     if (subscription != null) {
       subscription.cancel();
     }
+    super.dispose();
   }
 
   @override

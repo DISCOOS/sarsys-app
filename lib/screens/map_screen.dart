@@ -33,16 +33,6 @@ class MapScreenState extends State<MapScreen> {
   bool _showFAB = true;
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final userBloc = BlocProvider.of<UserBloc>(context);
     return Scaffold(
