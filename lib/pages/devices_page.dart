@@ -11,6 +11,7 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +110,7 @@ class DevicesPageState extends State<DevicesPage> {
                         ))
                       : ListView.builder(
                           itemCount: devices.length + 1,
+                          itemExtent: 72.0,
                           itemBuilder: (context, index) {
                             return _buildDevice(devices, index, units, tracked);
                           },
@@ -145,7 +147,7 @@ class DevicesPageState extends State<DevicesPage> {
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
-            child: _buildListTile(device, status, units),
+            child: _buildDeviceTile(device, status, units),
             secondaryActions: <Widget>[
               if (status != TrackingStatus.None)
                 _buildRemoveAction(device, units)
@@ -155,7 +157,7 @@ class DevicesPageState extends State<DevicesPage> {
               ]
             ],
           )
-        : _buildListTile(device, status, units);
+        : _buildDeviceTile(device, status, units);
   }
 
   IconSlideAction _buildAttachAction(Device device) {
@@ -185,32 +187,58 @@ class DevicesPageState extends State<DevicesPage> {
     );
   }
 
-  Widget _buildListTile(Device device, TrackingStatus status, Map<String, Set<Unit>> units) {
+  Widget _buildDeviceTile(Device device, TrackingStatus status, Map<String, Set<Unit>> units) {
     return Container(
+      key: ObjectKey(device.id),
       color: Colors.white,
-      child: ListTile(
-        dense: true,
-        key: ObjectKey(device.id),
-        leading: CircleAvatar(
-          backgroundColor: toPointStatusColor(device.location),
-          child: Icon(MdiIcons.cellphoneBasic),
-          foregroundColor: Colors.white,
-        ),
-        title: Text("ISSI: ${device.number}"),
-        subtitle: Text(
-          "${_toDistrict(device.number)}, "
-          "${_toFunction(device.number)}, "
-          "${_toStatusText(device, status, units[device.id]).toLowerCase()}",
-        ),
-        trailing: widget.withActions && _userBloc?.user?.isCommander == true
-            ? RotatedBox(
+      constraints: BoxConstraints.expand(),
+      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+      child: GestureDetector(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            CircleAvatar(
+              backgroundColor: toPointStatusColor(device.location),
+              child: Icon(MdiIcons.cellphoneBasic),
+              foregroundColor: Colors.white,
+            ),
+            SizedBox(width: 16.0),
+            Chip(
+              label: Text("${device.number}"),
+              labelPadding: EdgeInsets.only(right: 4.0),
+              backgroundColor: Colors.grey[100],
+              avatar: Icon(
+                Icons.headset_mic,
+                size: 16.0,
+                color: Colors.black38,
+              ),
+            ),
+            SizedBox(width: 16.0),
+            Expanded(
+              child: Text(translateDeviceType(device.type), overflow: TextOverflow.ellipsis),
+            ),
+            SizedBox(width: 4.0),
+            Chip(
+              label: Text("${units[device.id].map((unit) => unit.name).join(",")} "
+                  "${formatSince(device?.location?.timestamp, defaultValue: "ingen")}"),
+              labelPadding: EdgeInsets.only(right: 4.0),
+              backgroundColor: Colors.grey[100],
+              avatar: Icon(
+                Icons.my_location,
+                size: 16.0,
+                color: toPointStatusColor(device?.location),
+              ),
+            ),
+            if (widget.withActions && _userBloc?.user?.isCommander == true)
+              RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
                   Icons.drag_handle,
                   color: Colors.grey.withOpacity(0.2),
                 ),
-              )
-            : null,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -256,22 +284,6 @@ class DevicesPageState extends State<DevicesPage> {
         ),
       );
     }
-  }
-
-  String _toStatusText(Device device, TrackingStatus status, Set<Unit> units) {
-    switch (status) {
-      case TrackingStatus.None:
-        return "Ikke knyttet til enhet";
-      case TrackingStatus.Created:
-        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}";
-      case TrackingStatus.Tracking:
-        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporer";
-      case TrackingStatus.Paused:
-        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporing pauset";
-      case TrackingStatus.Closed:
-        return "Tilknyttet ${units.map((unit) => unit.name).join(",")}, sporing fjernet";
-    }
-    throw "Status $status not recognized";
   }
 
   String _toDistrict(String number) {
@@ -393,7 +405,7 @@ class DeviceSearch extends SearchDelegate<Device> {
       builder: (BuildContext context, Set<String> suggestions, Widget child) {
         return _buildSuggestionList(
           context,
-          suggestions.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase())).toList(),
+          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
         );
       },
     );
