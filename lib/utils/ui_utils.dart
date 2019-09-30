@@ -294,9 +294,11 @@ Widget buildCopyableText({
   Icon icon,
   String value,
   Icon action,
+  bool selectable = false,
   GestureTapCallback onAction,
   MessageCallback onMessage,
   GestureTapCallback onTap,
+  VoidCallback onComplete,
 }) {
   return GestureDetector(
       child: InputDecorator(
@@ -312,11 +314,11 @@ Widget buildCopyableText({
               : null,
           border: InputBorder.none,
         ),
-        child: SelectableText(value),
+        child: selectable ? SelectableText(value) : Text(value),
       ),
       onTap: onTap,
       onLongPress: () {
-        Navigator.pop(context);
+        if (onComplete != null) onComplete();
         copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
       });
 }
