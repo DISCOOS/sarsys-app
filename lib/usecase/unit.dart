@@ -115,7 +115,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     var proceed = await prompt(
       params.context,
       "Bekreft fjerning",
-      "Dette vil fjerne ${params.devices.join((', '))} fra ${unit.name}?",
+      "Dette vil fjerne ${params.devices.map((device) => device.name).join((', '))} fra ${unit.name}",
     );
 
     if (!proceed) return dartz.left(false);

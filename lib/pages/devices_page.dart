@@ -184,7 +184,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'FJERN',
       color: Colors.red,
       icon: Icons.people,
-      onTap: () => removeFromUnit(context, units[device.id], [device]),
+      onTap: () => removeFromUnit(context, units[device.id], devices: [device]),
     );
   }
 

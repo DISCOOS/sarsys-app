@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit.dart';
@@ -175,34 +176,51 @@ class UnitInfoPanel extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, Unit unit) {
-    return Row(
-      children: <Widget>[
-        FlatButton(
-          padding: EdgeInsets.zero,
-          child: Text("Endre"),
-          onPressed: () async {
-            Navigator.pop(context);
-            final result = await editUnit(context, unit);
-            if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
-          },
-        ),
-        FlatButton(
-          padding: EdgeInsets.zero,
-          child: Text("Oppløs"),
-          onPressed: () async {
-            Navigator.pop(context);
-            retireUnit(context, unit);
-          },
-        ),
-        FlatButton(
-          padding: EdgeInsets.zero,
-          child: Text("Fjern apparater"),
-          onPressed: () async {
-            Navigator.pop(context);
-            retireUnit(context, unit);
-          },
-        ),
-      ],
+    List<Device> devices = bloc.getDevicesFromTrackingId(unit.tracking);
+    return ButtonBarTheme(
+      // make buttons use the appropriate styles for cards
+      child: ButtonBar(
+        alignment: MainAxisAlignment.start,
+        children: <Widget>[
+          FlatButton(
+            child: Text(
+              "Endre",
+              textAlign: TextAlign.center,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await editUnit(context, unit);
+              if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
+            },
+          ),
+          FlatButton(
+            child: Text(
+              "Oppløs",
+              textAlign: TextAlign.center,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              retireUnit(context, unit);
+            },
+          ),
+          FlatButton(
+            child: Text(
+              "Fjern apparater",
+              textAlign: TextAlign.center,
+            ),
+            onPressed: devices.isNotEmpty
+                ? () async {
+                    Navigator.pop(context);
+                    removeFromUnit(context, unit, devices: devices);
+                  }
+                : null,
+          ),
+        ],
+      ),
+      data: ButtonBarThemeData(
+        layoutBehavior: ButtonBarLayoutBehavior.constrained,
+        buttonPadding: EdgeInsets.all(8.0),
+      ),
     );
   }
 }
