@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -13,6 +15,7 @@ class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
   final bool withHeader;
   final TrackingBloc bloc;
+  final VoidCallback onComplete;
   final MessageCallback onMessage;
 
   const UnitInfoPanel({
@@ -20,6 +23,7 @@ class UnitInfoPanel extends StatelessWidget {
     @required this.unit,
     @required this.bloc,
     @required this.onMessage,
+    this.onComplete,
     this.withHeader = true,
   }) : super(key: key);
 
@@ -56,7 +60,7 @@ class UnitInfoPanel extends StatelessWidget {
           Text('${unit.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
+            onPressed: onComplete,
           )
         ],
       ),
@@ -107,8 +111,8 @@ class UnitInfoPanel extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.navigation, color: Colors.black45),
                   onPressed: () {
-                    Navigator.pop(context);
                     navigateToLatLng(context, toLatLng(tracking.location));
+                    if (onComplete != null) onComplete();
                   },
                 ),
                 Text("Naviger", style: theme.caption),
@@ -188,9 +192,9 @@ class UnitInfoPanel extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              Navigator.pop(context);
               final result = await editUnit(context, unit);
               if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
+              if (onComplete != null) onComplete();
             },
           ),
           FlatButton(
@@ -199,8 +203,8 @@ class UnitInfoPanel extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              Navigator.pop(context);
-              retireUnit(context, unit);
+              await retireUnit(context, unit);
+              if (onComplete != null) onComplete();
             },
           ),
           FlatButton(
@@ -210,8 +214,8 @@ class UnitInfoPanel extends StatelessWidget {
             ),
             onPressed: devices.isNotEmpty
                 ? () async {
-                    Navigator.pop(context);
-                    removeFromUnit(context, unit, devices: devices);
+                    await removeFromUnit(context, unit, devices: devices);
+                    if (onComplete != null) onComplete();
                   }
                 : null,
           ),

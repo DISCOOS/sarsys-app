@@ -208,7 +208,7 @@ class UnitsPageState extends State<UnitsPage> {
       caption: 'ENDRE',
       color: Theme.of(context).buttonColor,
       icon: Icons.more_horiz,
-      onTap: () => editUnit(context, unit),
+      onTap: () async => await editUnit(context, unit),
     );
   }
 
@@ -217,9 +217,7 @@ class UnitsPageState extends State<UnitsPage> {
       caption: 'OPPLØS',
       color: Colors.red,
       icon: Icons.delete,
-      onTap: () async {
-        retireUnit(context, unit);
-      },
+      onTap: () async => await retireUnit(context, unit),
     );
   }
 
