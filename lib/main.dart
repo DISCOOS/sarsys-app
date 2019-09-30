@@ -1,5 +1,6 @@
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
+import 'package:SarSys/widgets/screen_report.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
@@ -110,14 +111,14 @@ void runAppWithCatcher(Widget app, String sentryDns) {
   Catcher(
     app,
     debugConfig: CatcherOptions(
-      PageReportMode(),
+      ScreenReportMode(),
       [SentryHandler(sentryDns), ConsoleHandler(enableStackTrace: true)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],
     ),
     releaseConfig: CatcherOptions(
-      PageReportMode(),
+      ScreenReportMode(),
       [SentryHandler(sentryDns)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:catcher/model/report.dart';
+import 'package:catcher/model/report_mode.dart';
 import 'package:flutter/material.dart';
 import 'package:sentry/sentry.dart';
 
