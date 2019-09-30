@@ -24,7 +24,7 @@ class UnitScreen extends Screen<_UnitScreenState> {
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
-  static const ELEVATION = 4.0;
+  static const ELEVATION = 2.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
   final Unit unit;
@@ -108,12 +108,14 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   Widget _buildMapTile(BuildContext context, Unit unit) {
     final center = toCenter(_trackingBloc.tracking[unit.tracking]);
-    return Container(
-      height: 240.0,
-      child: Stack(
-        children: <Widget>[
-          Material(
-            child: ClipRRect(
+    return Material(
+      elevation: UnitScreen.ELEVATION,
+      borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+      child: Container(
+        height: 240.0,
+        child: Stack(
+          children: <Widget>[
+            ClipRRect(
               borderRadius: BorderRadius.circular(UnitScreen.CORNER),
               child: GestureDetector(
                 child: IncidentMap(
@@ -125,11 +127,9 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                 onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
               ),
             ),
-            elevation: UnitScreen.ELEVATION,
-            borderRadius: BorderRadius.circular(UnitScreen.CORNER),
-          ),
-          _buildControls(),
-        ],
+            _buildControls(),
+          ],
+        ),
       ),
     );
   }
