@@ -40,7 +40,6 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   final _controller = IncidentMapController();
 
-  UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
@@ -54,7 +53,6 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
@@ -169,6 +167,6 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   void _onMove(Tracking event) {
     final center = toCenter(event);
-    _controller.animatedMove(center, _controller.zoom, this);
+    if (center != null) _controller.animatedMove(center, _controller.zoom, this);
   }
 }
