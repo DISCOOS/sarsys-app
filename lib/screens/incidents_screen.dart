@@ -104,7 +104,7 @@ class IncidentsScreenState extends ScreenState {
   }
 
   Future _create(BuildContext context) async {
-    var result = await createIncident(IncidentParams(context));
+    var result = await createIncident(context);
     result.fold((_) => null, (incident) => jumpToIncident(context, incident));
   }
 

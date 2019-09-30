@@ -166,7 +166,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'KNYTT',
       color: Theme.of(context).buttonColor,
       icon: Icons.people,
-      onTap: () => addToUnit(context, [device]),
+      onTap: () async => await addToUnit(context, [device]),
     );
   }
 
@@ -175,7 +175,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'OPPRETT',
       color: Theme.of(context).buttonColor,
       icon: Icons.group_add,
-      onTap: () => createUnit(context, devices: [device]),
+      onTap: () async => await createUnit(context, devices: [device]),
     );
   }
 
@@ -184,7 +184,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'FJERN',
       color: Colors.red,
       icon: Icons.people,
-      onTap: () => removeFromUnit(context, units[device.id], devices: [device]),
+      onTap: () async => await removeFromUnit(context, units[device.id], devices: [device]),
     );
   }
 

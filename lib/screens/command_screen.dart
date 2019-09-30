@@ -109,7 +109,7 @@ class _CommandScreenState extends State<CommandScreen> {
           if (_userBloc?.user?.isCommander == true)
             IconButton(
               icon: Icon(Icons.more_vert),
-              onPressed: () => editIncident(IncidentParams(context, incident: incident)),
+              onPressed: () async => await editIncident(context, incident),
             )
         ];
       case 1:
@@ -151,7 +151,7 @@ class _CommandScreenState extends State<CommandScreen> {
     return _current == 1 && _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () => createUnit(context),
+            onPressed: () async => await createUnit(context),
           )
         : Container();
   }

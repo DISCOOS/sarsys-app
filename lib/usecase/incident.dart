@@ -18,7 +18,12 @@ class IncidentParams extends BlocParams<IncidentBloc, Incident> {
   }) : super(context, incident);
 }
 
-Future<dartz.Either<bool, Incident>> createIncident(IncidentParams params) => CreateIncident()(params);
+/// Create incident
+Future<dartz.Either<bool, Incident>> createIncident(
+  BuildContext context, {
+  Point ipp,
+}) =>
+    CreateIncident()(IncidentParams(context, ipp: ipp));
 
 class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
@@ -39,7 +44,11 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   }
 }
 
-Future<dartz.Either<bool, Incident>> editIncident(IncidentParams params) => EditIncident()(params);
+Future<dartz.Either<bool, Incident>> editIncident(
+  BuildContext context,
+  Incident incident,
+) =>
+    EditIncident()(IncidentParams(context, incident: incident));
 
 class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   @override

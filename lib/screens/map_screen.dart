@@ -95,9 +95,9 @@ class MapScreenState extends State<MapScreen> {
                         dense: landscape,
                         leading: Icon(Icons.group_add),
                         title: Text('Enhet', style: style),
-                        onTap: () {
+                        onTap: () async {
+                          await createUnit(context);
                           Navigator.pop(context);
-                          createUnit(context);
                         },
                       ),
                     ListTile(
@@ -105,15 +105,12 @@ class MapScreenState extends State<MapScreen> {
                       leading: Icon(Icons.warning),
                       title: Text('Hendelse', style: style),
                       onTap: () async {
-                        Navigator.pop(context);
-                        final result = await createIncident(IncidentParams(
+                        final result = await createIncident(
                           context,
                           ipp: toPoint(_mapController.center),
-                        ));
-                        result.fold(
-                          (_) => null,
-                          (incident) => jumpToIncident(context, incident),
                         );
+                        result.fold((_) => null, (incident) => jumpToIncident(context, incident));
+                        Navigator.pop(context);
                       },
                     ),
                   ],
