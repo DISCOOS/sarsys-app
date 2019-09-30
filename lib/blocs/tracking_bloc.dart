@@ -204,7 +204,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Transition tracking state to next legal state
-  Future<void> transition(Tracking tracking) {
+  Future<Tracking> transition(Tracking tracking) {
     switch (tracking.status) {
       case TrackingStatus.Created:
       case TrackingStatus.Paused:
@@ -287,13 +287,14 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   Future<TrackingState> _update(UpdateTracking event) async {
     var response = await service.update(event.data);
-    if (response.is204) {
+    if (response.is200) {
+      final tracking = event.data.cloneWith(status: response.body);
       _tracking.update(
-        event.data.id,
-        (_) => event.data,
-        ifAbsent: () => event.data,
+        tracking.id,
+        (_) => tracking,
+        ifAbsent: () => tracking,
       );
-      return _toOK(event, TrackingUpdated(event.data), result: event.data);
+      return _toOK(event, TrackingUpdated(tracking), result: tracking);
     }
     return _toError(event, response);
   }

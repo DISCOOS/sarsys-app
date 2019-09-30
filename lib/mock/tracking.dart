@@ -159,7 +159,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         // Configure simulation
         _simulate(tracking.id, trackingList, deviceServiceMock.deviceRepo[incident.key], simulations);
 
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(body: tracking.status);
       }
       return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
     });
@@ -184,8 +184,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   static TrackingStatus _toStatus(TrackingStatus status, bool hasDevices) {
     return [TrackingStatus.None, TrackingStatus.Created].contains(status)
-        ? hasDevices ? TrackingStatus.Created : TrackingStatus.Tracking
-        : status;
+        ? (hasDevices ? TrackingStatus.Tracking : TrackingStatus.Created)
+        : (hasDevices ? TrackingStatus.Tracking : (TrackingStatus.Closed == status ? status : TrackingStatus.Paused));
   }
 
   static Tracking _simulate(

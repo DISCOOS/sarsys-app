@@ -27,7 +27,7 @@ class TrackingService {
     throw "Not implemented";
   }
 
-  Future<ServiceResponse<void>> update(Tracking tracking) async {
+  Future<ServiceResponse<TrackingStatus>> update(Tracking tracking) async {
     // TODO: Implement update tracking
     throw "Not implemented";
   }
