@@ -151,7 +151,7 @@ class _CommandScreenState extends State<CommandScreen> {
     return _current == 1 && _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () => createUnit(UnitParams(context)),
+            onPressed: () => createUnit(context),
           )
         : Container();
   }

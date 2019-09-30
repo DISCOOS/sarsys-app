@@ -131,7 +131,7 @@ class DevicesPageState extends State<DevicesPage> {
   Widget _buildDevice(
     List<Device> devices,
     int index,
-    Map<String, Set<Unit>> units,
+    Map<String, Unit> units,
     Map<String, Set<Tracking>> tracked,
   ) {
     if (index == devices.length) {
@@ -166,7 +166,7 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'KNYTT',
       color: Theme.of(context).buttonColor,
       icon: Icons.people,
-      onTap: () => addToUnit(UnitParams(context, devices: [device])),
+      onTap: () => addToUnit(context, [device]),
     );
   }
 
@@ -175,20 +175,20 @@ class DevicesPageState extends State<DevicesPage> {
       caption: 'OPPRETT',
       color: Theme.of(context).buttonColor,
       icon: Icons.group_add,
-      onTap: () => createUnit(UnitParams(context, devices: [device])),
+      onTap: () => createUnit(context, devices: [device]),
     );
   }
 
-  IconSlideAction _buildRemoveAction(Device device, Map<String, Set<Unit>> units) {
+  IconSlideAction _buildRemoveAction(Device device, Map<String, Unit> units) {
     return IconSlideAction(
       caption: 'FJERN',
       color: Colors.red,
       icon: Icons.people,
-      onTap: () => _removeFromUnits(device, units[device.id]),
+      onTap: () => removeFromUnit(context, units[device.id], [device]),
     );
   }
 
-  Widget _buildDeviceTile(Device device, TrackingStatus status, Map<String, Set<Unit>> units) {
+  Widget _buildDeviceTile(Device device, TrackingStatus status, Map<String, Unit> units) {
     return Container(
       key: ObjectKey(device.id),
       color: Colors.white,
@@ -220,7 +220,7 @@ class DevicesPageState extends State<DevicesPage> {
             ),
             SizedBox(width: 4.0),
             Chip(
-              label: Text("${units[device.id]?.map((unit) => unit.name)?.join(",") ?? ""} "
+              label: Text("${units[device.id]?.name ?? ""} "
                   "${formatSince(device?.location?.timestamp, defaultValue: "ingen")}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
@@ -247,25 +247,6 @@ class DevicesPageState extends State<DevicesPage> {
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
     return tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
         TrackingStatus.None;
-  }
-
-  _removeFromUnits(Device device, Iterable<Unit> units) async {
-    var proceed = await prompt(
-      context,
-      "Bekreft fjerning",
-      "Dette vil fjerne ${device.name} fra ${units.length > 1 ? 'enheter' : 'enheten'} "
-          "${units.map((unit) => unit.name).join(', ')}.",
-    );
-    if (proceed) {
-      final bloc = BlocProvider.of<TrackingBloc>(context);
-      units.forEach(
-        (unit) => bloc.update(
-          bloc.tracking[unit.tracking].cloneWith(
-            devices: bloc.tracking[unit.tracking].devices.where((test) => test != device.id).toList(),
-          ),
-        ),
-      );
-    }
   }
 
   String _toDistrict(String number) {

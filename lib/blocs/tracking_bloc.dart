@@ -126,16 +126,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       );
 
   /// Get units for all tracked devices.
-  Map<String, Set<Unit>> getUnitsByDeviceId({
+  Map<String, Unit> getUnitsByDeviceId({
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
   }) {
-    final Map<String, Set<Unit>> map = {};
+    final Map<String, Unit> map = {};
     getTrackedUnits(exclude: exclude).values.forEach((unit) {
       getDevicesFromTrackingId(unit.tracking, exclude: exclude).forEach((device) {
-        map.update(device.id, (set) {
-          set.add(unit);
-          return set;
-        }, ifAbsent: () => {unit});
+        map.update(device.id, (set) => unit, ifAbsent: () => unit);
       });
     });
     return UnmodifiableMapView(map);

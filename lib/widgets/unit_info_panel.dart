@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -184,7 +182,7 @@ class UnitInfoPanel extends StatelessWidget {
           child: Text("Endre"),
           onPressed: () async {
             Navigator.pop(context);
-            final result = await editUnit(UnitParams(context, unit: unit));
+            final result = await editUnit(context, unit);
             if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
           },
         ),
@@ -193,7 +191,15 @@ class UnitInfoPanel extends StatelessWidget {
           child: Text("Oppløs"),
           onPressed: () async {
             Navigator.pop(context);
-            retireUnit(UnitParams(context, unit: unit));
+            retireUnit(context, unit);
+          },
+        ),
+        FlatButton(
+          padding: EdgeInsets.zero,
+          child: Text("Fjern apparater"),
+          onPressed: () async {
+            Navigator.pop(context);
+            retireUnit(context, unit);
           },
         ),
       ],

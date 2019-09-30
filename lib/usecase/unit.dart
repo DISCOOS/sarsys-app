@@ -18,7 +18,14 @@ class UnitParams extends BlocParams<UnitBloc, Unit> {
         super(context, unit);
 }
 
-Future<dartz.Either<bool, Unit>> createUnit(UnitParams params) => CreateUnit()(params);
+Future<dartz.Either<bool, Unit>> createUnit(
+  BuildContext context, {
+  List<Device> devices,
+}) =>
+    CreateUnit()(UnitParams(
+      context,
+      devices: devices,
+    ));
 
 class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   @override
@@ -36,7 +43,14 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   }
 }
 
-Future<dartz.Either<bool, Unit>> editUnit(UnitParams params) => EditUnit()(params);
+Future<dartz.Either<bool, Unit>> editUnit(
+  BuildContext context,
+  Unit unit,
+) =>
+    EditUnit()(UnitParams(
+      context,
+      unit: unit,
+    ));
 
 class EditUnit extends UseCase<bool, Unit, UnitParams> {
   @override
@@ -54,7 +68,16 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
   }
 }
 
-Future<dartz.Either<bool, Tracking>> addToUnit(UnitParams params) => AddToUnit()(params);
+Future<dartz.Either<bool, Tracking>> addToUnit(
+  BuildContext context,
+  List<Device> devices, {
+  Unit unit,
+}) =>
+    AddToUnit()(UnitParams(
+      context,
+      unit: unit,
+      devices: devices,
+    ));
 
 class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
   @override
@@ -70,6 +93,40 @@ class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
   }
 }
 
+Future<dartz.Either<bool, Tracking>> removeFromUnit(
+  BuildContext context,
+  Unit unit,
+  List<Device> devices,
+) =>
+    RemoveFromUnit()(UnitParams(
+      context,
+      unit: unit,
+      devices: devices,
+    ));
+
+class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
+  @override
+  Future<dartz.Either<bool, Tracking>> call(UnitParams params) async {
+    final unit = params.data;
+    var proceed = await prompt(
+      params.context,
+      "Bekreft fjerning",
+      "Dette vil fjerne ${params.devices.join((', '))} fra ${unit.name}?",
+    );
+
+    if (!proceed) return dartz.left(false);
+
+    final bloc = BlocProvider.of<TrackingBloc>(params.context);
+    final devices = params.devices.map((device) => device.id).toList();
+    final tracking = await bloc.update(
+      bloc.tracking[unit.tracking].cloneWith(
+        devices: bloc.tracking[unit.tracking].devices.where((id) => !devices.contains(id)).toList(),
+      ),
+    );
+    return dartz.right(tracking);
+  }
+}
+
 Future<Tracking> _handleTracking(UnitParams params, Unit unit, List<Device> devices) async {
   var tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
@@ -82,7 +139,14 @@ Future<Tracking> _handleTracking(UnitParams params, Unit unit, List<Device> devi
   return tracking;
 }
 
-Future<dartz.Either<bool, UnitState>> retireUnit(UnitParams params) => RetireUnit()(params);
+Future<dartz.Either<bool, UnitState>> retireUnit(
+  BuildContext context,
+  Unit unit,
+) =>
+    RetireUnit()(UnitParams(
+      context,
+      unit: unit,
+    ));
 
 class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
   @override

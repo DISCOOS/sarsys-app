@@ -97,7 +97,7 @@ class MapScreenState extends State<MapScreen> {
                         title: Text('Enhet', style: style),
                         onTap: () {
                           Navigator.pop(context);
-                          createUnit(UnitParams(context));
+                          createUnit(context);
                         },
                       ),
                     ListTile(
