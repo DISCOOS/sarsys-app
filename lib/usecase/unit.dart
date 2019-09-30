@@ -18,6 +18,7 @@ class UnitParams extends BlocParams<UnitBloc, Unit> {
         super(context, unit);
 }
 
+/// Create unit with tracking of given devices
 Future<dartz.Either<bool, Unit>> createUnit(
   BuildContext context, {
   List<Device> devices,
@@ -43,6 +44,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   }
 }
 
+/// Edit given unit
 Future<dartz.Either<bool, Unit>> editUnit(
   BuildContext context,
   Unit unit,
@@ -68,6 +70,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
   }
 }
 
+/// Add given devices tracking of given unit
 Future<dartz.Either<bool, Tracking>> addToUnit(
   BuildContext context,
   List<Device> devices, {
@@ -93,15 +96,16 @@ class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
   }
 }
 
+/// Remove given devices from unit. If no devices are supplied, all devices tracked by unit is removed
 Future<dartz.Either<bool, Tracking>> removeFromUnit(
   BuildContext context,
-  Unit unit,
-  List<Device> devices,
-) =>
+  Unit unit, {
+  List<Device> devices = const [],
+}) =>
     RemoveFromUnit()(UnitParams(
       context,
       unit: unit,
-      devices: devices,
+      devices: devices ?? [],
     ));
 
 class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
@@ -120,7 +124,8 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     final devices = params.devices.map((device) => device.id).toList();
     final tracking = await bloc.update(
       bloc.tracking[unit.tracking].cloneWith(
-        devices: bloc.tracking[unit.tracking].devices.where((id) => !devices.contains(id)).toList(),
+        devices:
+            devices.isEmpty ? [] : bloc.tracking[unit.tracking].devices.where((id) => !devices.contains(id)).toList(),
       ),
     );
     return dartz.right(tracking);
