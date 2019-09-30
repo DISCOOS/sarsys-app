@@ -8,11 +8,13 @@ import 'package:flutter/material.dart';
 class POIInfoPanel extends StatelessWidget {
   final POI poi;
   final MessageCallback onMessage;
+  final onComplete;
 
   const POIInfoPanel({
     Key key,
     @required this.poi,
     @required this.onMessage,
+    this.onComplete,
   }) : super(key: key);
 
   @override
@@ -43,7 +45,7 @@ class POIInfoPanel extends StatelessWidget {
           Text('${poi.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
+            onPressed: onComplete,
           )
         ],
       ),
@@ -67,6 +69,7 @@ class POIInfoPanel extends StatelessWidget {
                   center: poi.point,
                 ),
                 onMessage: onMessage,
+                onComplete: onComplete,
               ),
               buildCopyableText(
                 context: context,
@@ -77,6 +80,7 @@ class POIInfoPanel extends StatelessWidget {
                   center: poi.point,
                 ),
                 onMessage: onMessage,
+                onComplete: onComplete,
               ),
             ],
           ),
@@ -89,7 +93,7 @@ class POIInfoPanel extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.navigation, color: Colors.black45),
                 onPressed: () {
-                  Navigator.pop(context);
+                  if (onComplete) onComplete();
                   navigateToLatLng(context, toLatLng(poi.point));
                 },
               ),

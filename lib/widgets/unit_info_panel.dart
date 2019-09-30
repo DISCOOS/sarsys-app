@@ -86,6 +86,7 @@ class UnitInfoPanel extends StatelessWidget {
                         center: tracking.location,
                       ),
                 onMessage: onMessage,
+                onComplete: onComplete,
               ),
               buildCopyableText(
                 context: context,
@@ -98,6 +99,7 @@ class UnitInfoPanel extends StatelessWidget {
                         center: tracking.location,
                       ),
                 onMessage: onMessage,
+                onComplete: onComplete,
               ),
             ],
           ),
@@ -133,6 +135,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(Icons.headset_mic),
             value: unit.callsign,
             onMessage: onMessage,
+            onComplete: onComplete,
           ),
         ),
         Expanded(
@@ -143,6 +146,7 @@ class UnitInfoPanel extends StatelessWidget {
               icon: Icon(Icons.phone),
               value: unit?.phone ?? "Ukjent",
               onMessage: onMessage,
+              onComplete: onComplete,
             ),
             onTap: () {
               final number = unit?.phone ?? '';
@@ -164,6 +168,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.cellphoneBasic),
             value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
             onMessage: onMessage,
+            onComplete: onComplete,
           ),
         ),
         Expanded(
@@ -173,6 +178,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.tapeMeasure),
             value: formatDistance(tracking.distance),
             onMessage: onMessage,
+            onComplete: onComplete,
           ),
         ),
       ],
