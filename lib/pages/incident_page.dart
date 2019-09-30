@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -146,7 +147,12 @@ class _IncidentPageState extends State<IncidentPage> {
           child: GestureDetector(
             child: IncidentMap(
               center: meetup ?? ipp,
-              fitBounds: fitBounds.isValid ? fitBounds : null,
+              fitBounds: fitBounds?.isValid == true ? fitBounds : null,
+              fitBoundOptions: FitBoundsOptions(
+                zoom: Defaults.zoom,
+                maxZoom: Defaults.zoom,
+                padding: EdgeInsets.all(48.0),
+              ),
               incident: incident,
               interactive: false,
             ),

@@ -222,8 +222,12 @@ class IncidentsScreenState extends ScreenState {
         height: 240.0,
         child: IncidentMap(
           center: meetup ?? ipp,
-          fitBounds: fitBounds.isValid ? fitBounds : null,
-          fitBoundOptions: FitBoundsOptions(zoom: Defaults.zoom, maxZoom: Defaults.zoom, padding: EdgeInsets.all(48.0)),
+          fitBounds: fitBounds?.isValid == true ? fitBounds : null,
+          fitBoundOptions: FitBoundsOptions(
+            zoom: Defaults.zoom,
+            maxZoom: Defaults.zoom,
+            padding: EdgeInsets.all(48.0),
+          ),
           incident: incident,
           interactive: false,
         ),

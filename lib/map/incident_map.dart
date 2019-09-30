@@ -149,7 +149,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _mapController = widget.mapController;
     // Only do this once per state instance
     _mapController.onReady.then((_) {
-      if (widget.fitBounds != null)
+      if (widget.fitBounds?.isValid == true)
         _mapController.fitBounds(
           widget.fitBounds,
           options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
@@ -204,8 +204,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   LatLng _ensureCenter() {
     final bloc = BlocProvider.of<IncidentBloc>(context);
     final current = widget.withLocation ? _locationController.current : null;
-    // Use center supplied by widget,
-    //  if not set, use
     return widget.center ??
         (bloc?.current?.meetup != null ? toLatLng(bloc?.current?.meetup) : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);

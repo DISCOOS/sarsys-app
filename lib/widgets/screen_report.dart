@@ -42,7 +42,7 @@ class ScreenReportState extends State<ScreenReport> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("En uventet feil har oppstått"),
+          title: Text("Uventet feil"),
           leading: IconButton(
             icon: Icon(Icons.close),
             onPressed: () => _cancelReport(),
