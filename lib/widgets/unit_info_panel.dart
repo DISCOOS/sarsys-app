@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -78,26 +76,26 @@ class UnitInfoPanel extends StatelessWidget {
                 context: context,
                 label: "UTM",
                 icon: Icon(Icons.my_location),
-                value: toUTM(tracking.location, prefix: ""),
-                onTap: () => tracking?.location == null
+                value: toUTM(tracking?.location, prefix: ""),
+                onTap: tracking?.location == null
                     ? null
-                    : jumpToPoint(
-                        context,
-                        center: tracking.location,
-                      ),
+                    : () => jumpToPoint(
+                          context,
+                          center: tracking.location,
+                        ),
                 onMessage: onMessage,
                 onComplete: onComplete,
               ),
               buildCopyableText(
                 context: context,
                 label: "Desimalgrader (DD)",
-                value: toDD(tracking.location, prefix: ""),
-                onTap: () => tracking?.location == null
+                value: toDD(tracking?.location, prefix: ""),
+                onTap: tracking?.location == null
                     ? null
-                    : jumpToPoint(
-                        context,
-                        center: tracking.location,
-                      ),
+                    : () => jumpToPoint(
+                          context,
+                          center: tracking.location,
+                        ),
                 onMessage: onMessage,
                 onComplete: onComplete,
               ),
@@ -112,10 +110,12 @@ class UnitInfoPanel extends StatelessWidget {
               children: <Widget>[
                 IconButton(
                   icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: () {
-                    navigateToLatLng(context, toLatLng(tracking.location));
-                    if (onComplete != null) onComplete();
-                  },
+                  onPressed: tracking?.location == null
+                      ? null
+                      : () {
+                          navigateToLatLng(context, toLatLng(tracking?.location));
+                          if (onComplete != null) onComplete();
+                        },
                 ),
                 Text("Naviger", style: theme.caption),
               ],
@@ -166,7 +166,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Apparater",
             icon: Icon(MdiIcons.cellphoneBasic),
-            value: tracking.devices.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
+            value: tracking?.devices?.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -176,7 +176,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(tracking.distance),
+            value: formatDistance(tracking?.distance),
             onMessage: onMessage,
             onComplete: onComplete,
           ),

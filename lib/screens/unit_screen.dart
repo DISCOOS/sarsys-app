@@ -7,7 +7,6 @@ import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/screen.dart';

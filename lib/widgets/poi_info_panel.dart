@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 class POIInfoPanel extends StatelessWidget {
   final POI poi;
   final MessageCallback onMessage;
-  final onComplete;
+  final VoidCallback onComplete;
 
   const POIInfoPanel({
     Key key,
@@ -93,7 +93,7 @@ class POIInfoPanel extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.navigation, color: Colors.black45),
                 onPressed: () {
-                  if (onComplete) onComplete();
+                  if (onComplete != null) onComplete();
                   navigateToLatLng(context, toLatLng(poi.point));
                 },
               ),

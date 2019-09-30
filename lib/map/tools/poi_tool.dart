@@ -78,7 +78,7 @@ class POITool extends MapTool with MapSelectable<POI> {
           child: POIInfoPanel(
             poi: poi,
             onMessage: onMessage,
-            onComplete: Navigator.pop(context),
+            onComplete: () => Navigator.pop(context),
           ),
         );
       },
