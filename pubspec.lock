@@ -245,7 +245,7 @@ packages:
       name: device_info
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.4.0+2"
+    version: "0.4.0+3"
   dio:
     dependency: transitive
     description:
@@ -296,9 +296,11 @@ packages:
   flutter_chips_input:
     dependency: "direct main"
     description:
-      path: "../flutter_chips_input"
-      relative: true
-    source: path
+      path: "."
+      ref: "issue/set_editing_state_error"
+      resolved-ref: "311939c785f030467f87874472f5c47b2f651f53"
+      url: "https://github.com/DISCOOS/flutter_chips_input.git"
+    source: git
     version: "1.5.0"
   flutter_cupertino_localizations:
     dependency: "direct main"
@@ -358,9 +360,9 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "69e423abd394b3a143448defbadb950e76f9764e"
-      resolved-ref: "69e423abd394b3a143448defbadb950e76f9764e"
-      url: "git://github.com/johnpryan/flutter_map"
+      ref: "issues/432"
+      resolved-ref: "17eeeaf65a15a2407ed0ba4595044f9eea71ec97"
+      url: "https://github.com/DISCOOS/flutter_map.git"
     source: git
     version: "0.7.2"
   flutter_secure_storage:
@@ -444,7 +446,7 @@ packages:
       name: html
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.14.0+2"
+    version: "0.14.0+3"
   http:
     dependency: "direct main"
     description:

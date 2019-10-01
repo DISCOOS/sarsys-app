@@ -11,7 +11,7 @@ description: SarSys
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 0.1.1+32
+version: 0.1.1+33
 
 environment:
   sdk: ">=2.4.0 <3.0.0"
@@ -72,11 +72,14 @@ dependencies:
 
 dependency_overrides:
   flutter_map:
-    git:
-      url: git://github.com/johnpryan/flutter_map
+      #url: git://github.com/johnpryan/flutter_map
       # Rollback last merge with working onTap
       # This breaks onTap -> ref: 22fab80678937509ba5149557582a714fff6ed81
-      ref: 69e423abd394b3a143448defbadb950e76f9764e
+      #ref: 69e423abd394b3a143448defbadb950e76f9764e
+    git:
+      url: https://github.com/DISCOOS/flutter_map.git
+      ref: issues/432
+
   intro_views_flutter:
     git:
       url: https://github.com/aagarwal1012/IntroViews-Flutter.git
@@ -85,7 +88,10 @@ dependency_overrides:
   flutter_chips_input:
     # Add guard against calling setEditingState in detached mode
     # https://github.com/danvick/flutter_chips_input/pull/17
-    path: ../flutter_chips_input
+    #path: ../flutter_chips_input
+    git:
+      url: https://github.com/DISCOOS/flutter_chips_input.git
+      ref: issue/set_editing_state_error
 
 dev_dependencies:
   flutter_test:

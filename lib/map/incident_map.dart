@@ -148,15 +148,15 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
     _mapController = widget.mapController;
     // Only do this once per state instance
-    _mapController.onReady.then((_) {
-      if (widget.fitBounds?.isValid == true)
-        setState(() {
-          _mapController.fitBounds(
-            widget.fitBounds,
-            options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-          );
-        });
-    });
+//    _mapController.onReady.then((_) {
+//      if (widget.fitBounds?.isValid == true)
+//        setState(() {
+//          _mapController.fitBounds(
+//            widget.fitBounds,
+//            options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+//          );
+//        });
+//    });
     _mapController.progress.addListener(_onMoveProgress);
 
     _init();
