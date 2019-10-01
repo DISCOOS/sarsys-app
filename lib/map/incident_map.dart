@@ -118,7 +118,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   String _currentBaseMap;
   List<BaseMap> _baseMaps;
-  MaptileService _maptileService = MaptileService();
+  MaptileService _mapTileService = MaptileService();
 
   LatLng _center;
   LatLng _searchMatch;
@@ -147,18 +147,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _currentBaseMap = widget.url;
     _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
     _mapController = widget.mapController;
-    // Only do this once per state instance
-//    _mapController.onReady.then((_) {
-//      if (widget.fitBounds?.isValid == true)
-//        setState(() {
-//          _mapController.fitBounds(
-//            widget.fitBounds,
-//            options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-//          );
-//        });
-//    });
     _mapController.progress.addListener(_onMoveProgress);
-
     _init();
   }
 
@@ -200,7 +189,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
-    _center = _ensureCenter();
+
+    // Only ensure center if not set already
+    _center ??= _ensureCenter();
   }
 
   LatLng _ensureCenter() {
@@ -212,7 +203,17 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _init() async {
-    _baseMaps = await _maptileService.fetchMaps();
+    _baseMaps = await _mapTileService.fetchMaps();
+
+    // Only do this once per state instance
+    if (widget.fitBounds?.isValid == true) {
+      _mapController.onReady.then((_) {
+        _mapController.fitBounds(
+          widget.fitBounds,
+          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+        );
+      });
+    }
   }
 
   @override

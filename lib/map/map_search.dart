@@ -387,7 +387,6 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     if (!kReleaseMode) print("Goto: $_match");
     widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
     if (widget.onMatch != null) widget.onMatch(_match);
-    _controller.clear();
     _focusNode?.unfocus();
     _hideResults();
   }
