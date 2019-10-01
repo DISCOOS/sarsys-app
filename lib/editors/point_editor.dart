@@ -125,8 +125,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-          center: LatLng(_current.lat, _current.lon),
           zoom: 13,
+          center: LatLng(_current.lat, _current.lon),
           onPositionChanged: _onPositionChanged,
           onTap: (_) => _clearSearchField(),
           plugins: [

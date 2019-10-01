@@ -147,7 +147,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: GestureDetector(
             child: IncidentMap(
               center: meetup ?? ipp,
-              fitBounds: fitBounds?.isValid == true ? fitBounds : null,
+              fitBounds: fitBounds,
               fitBoundOptions: FitBoundsOptions(
                 zoom: Defaults.zoom,
                 maxZoom: Defaults.zoom,

@@ -122,7 +122,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   LatLng _center;
   LatLng _searchMatch;
-  double _zoom;
+  double _zoom = Defaults.zoom;
 
   MapControls _mapControls;
   IncidentMapController _mapController;
@@ -150,10 +150,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     // Only do this once per state instance
     _mapController.onReady.then((_) {
       if (widget.fitBounds?.isValid == true)
-        _mapController.fitBounds(
-          widget.fitBounds,
-          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-        );
+        setState(() {
+          _mapController.fitBounds(
+            widget.fitBounds,
+            options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+          );
+        });
     });
     _mapController.progress.addListener(_onMoveProgress);
 

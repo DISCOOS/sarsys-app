@@ -83,6 +83,8 @@ dependency_overrides:
       ref: master
     #path: ../IntroViews-Flutter
   flutter_chips_input:
+    # Add guard against calling setEditingState in detached mode
+    # https://github.com/danvick/flutter_chips_input/pull/17
     path: ../flutter_chips_input
 
 dev_dependencies:
