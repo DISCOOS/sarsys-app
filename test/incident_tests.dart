@@ -127,6 +127,19 @@ void main() async {
     expect(incidentBloc.isEmpty, isTrue, reason: "Bloc should be empty");
     expect(incidentBloc.isUnset, isTrue, reason: "Bloc should not be in selected state");
   });
+
+  test('Should be selected after switching to other incident', () async {
+    List<Incident> incidents = await incidentBloc.fetch();
+    await incidentBloc.select(incidents.first.id);
+    expect(incidentBloc.current, incidents.first, reason: "First incident was not selected");
+    await incidentBloc.select(incidents.last.id);
+    expect(incidentBloc.current, incidents.last, reason: "Last incident was not selected");
+    await incidentBloc.select(incidents.first.id);
+    _assertEvents(incidentBloc, [
+      emits(isA<IncidentSelected>()),
+      emits(isA<IncidentSelected>()),
+    ]);
+  });
 }
 
 void _assertEvents(IncidentBloc incidentBloc, List<StreamMatcher> events) {

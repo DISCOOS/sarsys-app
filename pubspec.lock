@@ -297,9 +297,9 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "issue/set_editing_state_error"
-      resolved-ref: "311939c785f030467f87874472f5c47b2f651f53"
-      url: "https://github.com/DISCOOS/flutter_chips_input.git"
+      ref: master
+      resolved-ref: "4abb866860dd11560491abfb6b06353eb0a08f30"
+      url: "https://github.com/danvick/flutter_chips_input.git"
     source: git
     version: "1.5.0"
   flutter_cupertino_localizations:
@@ -360,8 +360,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "issues/432"
-      resolved-ref: "17eeeaf65a15a2407ed0ba4595044f9eea71ec97"
+      ref: "issues/limit_fitbounds_padding"
+      resolved-ref: "3ef705a704f9c4fa860ca864ab282f8c043fc7ff"
       url: "https://github.com/DISCOOS/flutter_map.git"
     source: git
     version: "0.7.2"
