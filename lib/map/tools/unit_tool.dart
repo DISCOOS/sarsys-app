@@ -74,7 +74,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: min(432.0, MediaQuery.of(context).size.height - 96),
+            height: min(494.0, MediaQuery.of(context).size.height - 96),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
               child: UnitInfoPanel(

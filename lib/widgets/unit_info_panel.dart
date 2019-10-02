@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit.dart';
@@ -40,6 +41,8 @@ class UnitInfoPanel extends StatelessWidget {
         Divider(),
         _buildTrackingInfo(context, tracking),
         Divider(),
+        _buildEffortInfo(context, tracking),
+        Divider(),
         Padding(
           padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
           child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
@@ -72,32 +75,19 @@ class UnitInfoPanel extends StatelessWidget {
           flex: 4,
           child: Column(
             children: <Widget>[
-              buildCopyableText(
-                context: context,
+              buildCopyableLocation(
+                context,
                 label: "UTM",
-                icon: Icon(Icons.my_location),
-                value: toUTM(tracking?.location, prefix: ""),
-                onTap: tracking?.location == null
-                    ? null
-                    : () => jumpToPoint(
-                          context,
-                          center: tracking.location,
-                        ),
-                onMessage: onMessage,
-                onComplete: onComplete,
+                icon: Icons.my_location,
+                tracking: tracking,
+                formatter: (point) => toUTM(tracking?.location, prefix: ""),
               ),
-              buildCopyableText(
-                context: context,
+              buildCopyableLocation(
+                context,
                 label: "Desimalgrader (DD)",
-                value: toDD(tracking?.location, prefix: ""),
-                onTap: tracking?.location == null
-                    ? null
-                    : () => jumpToPoint(
-                          context,
-                          center: tracking.location,
-                        ),
-                onMessage: onMessage,
-                onComplete: onComplete,
+                icon: Icons.my_location,
+                tracking: tracking,
+                formatter: (point) => toDD(tracking?.location, prefix: ""),
               ),
             ],
           ),
@@ -122,6 +112,29 @@ class UnitInfoPanel extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget buildCopyableLocation(
+    BuildContext context, {
+    Tracking tracking,
+    String label,
+    IconData icon,
+    String formatter(Point location),
+  }) {
+    return buildCopyableText(
+      context: context,
+      label: label,
+      icon: Icon(icon),
+      value: formatter(tracking.location),
+      onTap: tracking?.location == null
+          ? null
+          : () => jumpToPoint(
+                context,
+                center: tracking.location,
+              ),
+      onMessage: onMessage,
+      onComplete: onComplete,
     );
   }
 
@@ -177,6 +190,33 @@ class UnitInfoPanel extends StatelessWidget {
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
             value: formatDistance(tracking?.distance),
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row _buildEffortInfo(BuildContext context, Tracking tracking) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Innsatstid",
+            icon: Icon(Icons.timer),
+            value: "",
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Gj.snitthastiget",
+            icon: Icon(MdiIcons.speedometer),
+            value: "",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
