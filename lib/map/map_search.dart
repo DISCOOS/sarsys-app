@@ -320,7 +320,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   bool _searchBlocs(BuildContext context, String value) {
     final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
-    final units = BlocProvider.of<TrackingBloc>(context).getTrackedUnits;
+    final units = BlocProvider.of<TrackingBloc>(context).getTrackedUnits(
+      exclude: widget.withRetired ? [] : [TrackingStatus.Closed],
+    );
     final tracks = BlocProvider.of<TrackingBloc>(context).tracking;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
@@ -354,8 +356,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
       // Search for matches in units
       results.addAll(
-        units(exclude: widget.withRetired ? [] : [TrackingStatus.Closed])
-            .values
+        units.values
             .where((unit) => widget.withRetired || unit.status != UnitStatus.Retired)
             .where((unit) =>
                 // Search in unit
