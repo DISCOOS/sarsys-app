@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -8,19 +7,20 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class UnitInfoPanel extends StatelessWidget {
-  final Unit unit;
+class DeviceInfoPanel extends StatelessWidget {
   final bool withHeader;
-  final TrackingBloc bloc;
+  final Unit unit;
+  final Device device;
+  final Tracking tracking;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
 
-  const UnitInfoPanel({
+  const DeviceInfoPanel({
     Key key,
     @required this.unit,
-    @required this.bloc,
+    @required this.device,
+    @required this.tracking,
     @required this.onMessage,
     this.onComplete,
     this.withHeader = true,
@@ -29,19 +29,18 @@ class UnitInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    final tracking = bloc.tracking[unit.tracking];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(unit, theme, context),
+        if (withHeader) _buildHeader(device, theme, context),
         if (withHeader) Divider(),
-        _buildLocationInfo(context, tracking, theme),
+        _buildLocationInfo(context, device, theme),
         Divider(),
-        _buildContactInfo(context, unit),
+        _buildContactInfo(context),
         Divider(),
-        _buildTrackingInfo(context, tracking),
+        _buildTrackingInfo(context),
         Divider(),
-        _buildEffortInfo(context, tracking),
+        _buildEffortInfo(context),
         Divider(),
         Padding(
           padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
@@ -52,13 +51,13 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Padding _buildHeader(Unit unit, TextTheme theme, BuildContext context) {
+  Padding _buildHeader(Device device, TextTheme theme, BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(left: 16, top: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text('${unit.name}', style: theme.title),
+          Text('${device.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
             onPressed: onComplete,
@@ -68,7 +67,7 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildLocationInfo(BuildContext context, Tracking tracking, TextTheme theme) {
+  Row _buildLocationInfo(BuildContext context, Device device, TextTheme theme) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -79,20 +78,20 @@ class UnitInfoPanel extends StatelessWidget {
                 context,
                 label: "UTM",
                 icon: Icons.my_location,
-                tracking: tracking,
-                formatter: (point) => toUTM(tracking?.location, prefix: "", empty: "Ingen"),
+                location: device?.location,
+                formatter: (point) => toUTM(device?.location, prefix: "", empty: "Ingen"),
               ),
               buildCopyableLocation(
                 context,
                 label: "Desimalgrader (DD)",
                 icon: Icons.my_location,
-                tracking: tracking,
-                formatter: (point) => toDD(tracking?.location, prefix: "", empty: "Ingen"),
+                location: device?.location,
+                formatter: (point) => toDD(device?.location, prefix: "", empty: "Ingen"),
               ),
             ],
           ),
         ),
-        if (tracking?.location != null)
+        if (device?.location != null)
           Expanded(
             flex: 2,
             child: Column(
@@ -100,10 +99,10 @@ class UnitInfoPanel extends StatelessWidget {
               children: <Widget>[
                 IconButton(
                   icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: tracking?.location == null
+                  onPressed: device?.location == null
                       ? null
                       : () {
-                          navigateToLatLng(context, toLatLng(tracking?.location));
+                          navigateToLatLng(context, toLatLng(device?.location));
                           if (onComplete != null) onComplete();
                         },
                 ),
@@ -117,7 +116,7 @@ class UnitInfoPanel extends StatelessWidget {
 
   Widget buildCopyableLocation(
     BuildContext context, {
-    Tracking tracking,
+    Point location,
     String label,
     IconData icon,
     String formatter(Point location),
@@ -126,27 +125,27 @@ class UnitInfoPanel extends StatelessWidget {
       context: context,
       label: label,
       icon: Icon(icon),
-      value: formatter(tracking.location),
-      onTap: tracking?.location == null
+      value: formatter(location),
+      onTap: location == null
           ? null
           : () => jumpToPoint(
                 context,
-                center: tracking.location,
+                center: location,
               ),
       onMessage: onMessage,
       onComplete: onComplete,
     );
   }
 
-  Row _buildContactInfo(BuildContext context, Unit unit) {
+  Row _buildContactInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Kallesignal",
+            label: "Type",
             icon: Icon(Icons.headset_mic),
-            value: unit.callsign,
+            value: translateDeviceType(device.type),
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -155,31 +154,28 @@ class UnitInfoPanel extends StatelessWidget {
           child: GestureDetector(
             child: buildCopyableText(
               context: context,
-              label: "Mobil",
+              label: "Nummer",
               icon: Icon(Icons.phone),
-              value: unit?.phone ?? "Ukjent",
+              value: device?.number,
               onMessage: onMessage,
               onComplete: onComplete,
             ),
-            onTap: () {
-              final number = unit?.phone ?? '';
-              if (number.isNotEmpty) launch("tel:$number");
-            },
           ),
         ),
       ],
     );
   }
 
-  Row _buildTrackingInfo(BuildContext context, Tracking tracking) {
+  Row _buildTrackingInfo(BuildContext context) {
+    final List<Point> track = _toTrack(tracking);
     return Row(
       children: <Widget>[
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Apparater",
-            icon: Icon(MdiIcons.cellphoneBasic),
-            value: tracking?.devices?.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
+            label: "Spores av",
+            icon: Icon(Icons.group),
+            value: unit?.name ?? "Ingen",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -189,7 +185,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(tracking?.distance),
+            value: formatDistance(asDistance(track, tail: track.length)),
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -198,7 +194,12 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildEffortInfo(BuildContext context, Tracking tracking) {
+  List<Point> _toTrack(Tracking tracking) => tracking != null ? tracking.tracks[device.id] ?? [] : [];
+
+  Row _buildEffortInfo(BuildContext context) {
+    final List<Point> track = _toTrack(tracking);
+    final effort = asEffort(track);
+    final distance = asDistance(track, tail: track.length);
     return Row(
       children: <Widget>[
         Expanded(
@@ -206,7 +207,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Innsatstid",
             icon: Icon(Icons.timer),
-            value: "${formatDuration(tracking.effort)}",
+            value: "${formatDuration(effort)}",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -216,7 +217,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Gj.snitthastiget",
             icon: Icon(MdiIcons.speedometer),
-            value: "${(tracking.speed / 3.6).toStringAsFixed(1)} km/t",
+            value: "${(asSpeed(distance, effort) / 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -226,44 +227,17 @@ class UnitInfoPanel extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, Unit unit) {
-    List<Device> devices = bloc.getDevicesFromTrackingId(unit.tracking);
     return ButtonBarTheme(
       // make buttons use the appropriate styles for cards
       child: ButtonBar(
         alignment: MainAxisAlignment.start,
         children: <Widget>[
-          FlatButton(
-            child: Text(
-              "ENDRE",
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              final result = await editUnit(context, unit);
-              if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
-              if (onComplete != null) onComplete();
-            },
-          ),
-          FlatButton(
-            child: Text(
-              "OPPLØS",
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              await retireUnit(context, unit);
-              if (onComplete != null) onComplete();
-            },
-          ),
-          if (devices.isNotEmpty)
-            FlatButton(
-              child: Text(
-                "FJERN APPARATER",
-                textAlign: TextAlign.center,
-              ),
-              onPressed: () async {
-                await removeFromUnit(context, unit, devices: devices);
-                if (onComplete != null) onComplete();
-              },
-            ),
+          if (unit != null)
+            _buildRemoveAction(context, unit)
+          else ...[
+            _buildCreateAction(context),
+            _buildAttachAction(context, unit),
+          ],
         ],
       ),
       data: ButtonBarThemeData(
@@ -271,5 +245,42 @@ class UnitInfoPanel extends StatelessWidget {
         buttonPadding: EdgeInsets.all(8.0),
       ),
     );
+  }
+
+  FlatButton _buildAttachAction(BuildContext context, Unit unit) {
+    return FlatButton(
+        child: Text(
+          'KNYTT TIL ENHET',
+          textAlign: TextAlign.center,
+        ),
+        onPressed: () async {
+          await addToUnit(context, [device], unit: unit);
+          if (onComplete != null) onComplete();
+        });
+  }
+
+  FlatButton _buildCreateAction(BuildContext context) {
+    return FlatButton(
+      child: Text(
+        'OPPRETT ENHET',
+        textAlign: TextAlign.center,
+      ),
+      onPressed: () async {
+        await createUnit(context, devices: [device]);
+        if (onComplete != null) onComplete();
+      },
+    );
+  }
+
+  FlatButton _buildRemoveAction(BuildContext context, Unit unit) {
+    return FlatButton(
+        child: Text(
+          'FJERN FRA ENHET',
+          textAlign: TextAlign.center,
+        ),
+        onPressed: () async {
+          await removeFromUnit(context, unit, devices: [device]);
+          if (onComplete != null) onComplete();
+        });
   }
 }

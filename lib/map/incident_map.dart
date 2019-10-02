@@ -14,6 +14,7 @@ import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_caching.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
+import 'package:SarSys/map/tools/device_tool.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/map/tools/measure_tool.dart';
 import 'package:SarSys/map/tools/poi_tool.dart';
@@ -52,6 +53,10 @@ class IncidentMap extends StatefulWidget {
   final bool withScaleBar;
   final bool withCoordsPanel;
 
+  final bool withPOIs;
+  final bool withUnits;
+  final bool withDevices;
+
   final Incident incident;
   final TapCallback onTap;
   final MessageCallback onMessage;
@@ -72,6 +77,8 @@ class IncidentMap extends StatefulWidget {
   /// If [fitBounds] is given, control who bounds is fitted with [fitBoundOptions]
   final FitBoundsOptions fitBoundOptions;
 
+  final List<String> showLayers;
+
   IncidentMap({
     Key key,
     this.zoom,
@@ -82,11 +89,15 @@ class IncidentMap extends StatefulWidget {
     this.url = BASEMAP,
     this.offline = false,
     this.interactive = true,
+    this.withPOIs = true,
+    this.withUnits = true,
+    this.withDevices = true,
     this.withSearch = false,
     this.withControls = false,
     this.withLocation = false,
     this.withScaleBar = false,
     this.withCoordsPanel = false,
+    this.showLayers = IncidentMapState.DEFAULT_LAYERS,
     this.onTap,
     this.onMessage,
     this.onToolChange,
@@ -101,19 +112,26 @@ class IncidentMap extends StatefulWidget {
 
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
   static const POI_LAYER = "Interessepunkt";
-  static const UNITS_LAYER = "Enheter";
-  static const DEVICES_LAYER = "Apparater";
+  static const UNIT_LAYER = "Enheter";
+  static const DEVICE_LAYER = "Apparater";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
   static const SCALE_LAYER = "Målestokk";
-  static const LAYERS = [
+
+  static const ALL_LAYERS = [
     POI_LAYER,
-    UNITS_LAYER,
+    UNIT_LAYER,
     TRACKING_LAYER,
-    DEVICES_LAYER,
+    DEVICE_LAYER,
     SCALE_LAYER,
     COORDS_LAYER,
   ];
+  static const DEFAULT_LAYERS = [
+    POI_LAYER,
+    UNIT_LAYER,
+    SCALE_LAYER,
+  ];
+
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   String _currentBaseMap;
@@ -151,7 +169,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     super.initState();
     _zoom = widget.zoom ?? Defaults.zoom;
     _currentBaseMap = widget.url;
-    _useLayers = Set.of(_withLayers())..removeAll([DEVICES_LAYER, TRACKING_LAYER, COORDS_LAYER]);
+    _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
     _init();
@@ -193,12 +211,17 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           MeasureTool(),
           POITool(
             _incidentBloc,
-            active: true,
+            active: () => _useLayers.contains(POI_LAYER),
             onMessage: widget.onMessage,
           ),
           UnitTool(
             _trackingBloc,
-            active: true,
+            active: () => _useLayers.contains(UNIT_LAYER),
+            onMessage: widget.onMessage,
+          ),
+          DeviceTool(
+            _trackingBloc,
+            active: () => _useLayers.contains(DEVICE_LAYER),
             onMessage: widget.onMessage,
           ),
         ],
@@ -322,8 +345,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           urlTemplate: _currentBaseMap,
           tileProvider: _buildTileProvider(),
         ),
-        if (_useLayers.contains(DEVICES_LAYER)) _buildDeviceOptions(),
-        if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
+        if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
+        if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions({
             widget?.incident?.ipp ?? _incidentBloc?.current?.ipp: "IPP",
@@ -333,7 +356,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (widget.withLocation && _locationController.isReady) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
         if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
-        if (tool != null && tool.active) MeasureLayerOptions(tool),
+        if (tool != null && tool.active()) MeasureLayerOptions(tool),
       ]);
     return _layerOptions;
   }
@@ -458,9 +481,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             ],
             onPressed: () {
               final tool = _mapToolController.of<MeasureTool>();
-              tool.active = !tool.active;
+              tool.state = !tool.state;
               tool.init();
-              _isMeasuring.value = MapControlState(toggled: tool.active);
+              _isMeasuring.value = MapControlState(toggled: tool.active());
               if (widget.onToolChange != null) widget.onToolChange(tool);
             },
           ),
@@ -665,11 +688,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     );
   }
 
-  List<String> _withLayers() {
-    final layers = LAYERS.toList();
+  Set<String> _withLayers() {
+    final layers = ALL_LAYERS.toList();
     if (!widget.withScaleBar) layers.remove(SCALE_LAYER);
     if (!widget.withCoordsPanel) layers.remove(COORDS_LAYER);
-    return layers;
+    if (!widget.withPOIs) layers.remove(POI_LAYER);
+    if (!widget.withUnits) layers.remove(UNIT_LAYER);
+    if (!widget.withDevices) layers.remove(DEVICE_LAYER);
+    return layers.toSet();
   }
 
   void _onFilterChanged(String layer, bool value, StateSetter update) {

@@ -6,7 +6,11 @@ class MeasureTool extends MapTool with MapEditable<Set<LatLng>> {
   @override
   Set<LatLng> target = {};
 
-  MeasureTool() : super(false);
+  bool state = false;
+
+  bool active() => state;
+
+  MeasureTool() : super();
 
   void init() => changed(() => target..clear());
   void add(LatLng point) => changed(() => target.add(point));

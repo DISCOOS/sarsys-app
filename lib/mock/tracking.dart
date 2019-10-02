@@ -11,7 +11,6 @@ import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/core/proj4d.dart';
 import 'package:mockito/mockito.dart';
 
 import 'devices.dart';
@@ -303,8 +302,8 @@ class _TrackSimulation {
     // Calculate effort, distance and speed
     if (history.length > 1) {
       effort = asEffort(history);
-      distance = asDistance(distance, history);
-      speed = distance / effort.inSeconds;
+      distance = (tracking.distance == null ? distance : asDistance(history, distance: tracking.distance));
+      speed = asSpeed(distance, effort);
     }
 
     // Limit history and tracks to maximum 10 items each (prevent unbounded memory usage in long-running app)
@@ -316,17 +315,4 @@ class _TrackSimulation {
         history: history.skip(max(0, history.length - 10)).toList(),
         tracks: tracking.tracks.map((id, track) => MapEntry(id, track.skip(max(0, track.length - 10)).toList())));
   }
-
-  double asDistance(double distance, List<Point> history) {
-    distance = ProjMath.eucledianDistance(
-      history.last.lat,
-      history.last.lon,
-      history[history.length - 2]?.lat ?? history.last.lat,
-      history[history.length - 2]?.lon ?? history.last.lon,
-    );
-    distance = (tracking.distance == null ? distance : tracking.distance + distance);
-    return distance;
-  }
-
-  Duration asEffort(List<Point> history) => history.last.timestamp.difference(history.first.timestamp);
 }

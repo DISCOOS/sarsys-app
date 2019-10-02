@@ -14,12 +14,17 @@ class POITool extends MapTool with MapSelectable<POI> {
   final MessageCallback onMessage;
   final bool includeRetired;
 
+  final bool Function() _active;
+
+  @override
+  bool active() => _active();
+
   POITool(
     this.bloc, {
-    bool active = false,
+    @required bool Function() active,
     this.onMessage,
     this.includeRetired = false,
-  }) : super(active);
+  }) : _active = active;
 
   @override
   Iterable<POI> get targets => bloc.isUnset

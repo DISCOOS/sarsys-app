@@ -99,7 +99,7 @@ class DeviceLayer extends MapPlugin {
       top: pos.y + size,
       left: pos.x,
       child: CustomPaint(
-        painter: LabelPainter(device.name, top: size),
+        painter: LabelPainter(device.number, top: size),
         size: Size(size, size),
       ),
     );

@@ -138,6 +138,20 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return UnmodifiableMapView(map);
   }
 
+  /// Get devices being tracked
+  Map<String, Device> getTrackedDevices({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      UnmodifiableMapView(
+        Map.fromEntries(
+          unitBloc.units.values
+              .where((unit) => isTrackingUnit(unit, exclude: exclude))
+              .map((unit) => _tracking[unit.tracking]?.devices ?? [])
+              .reduce((l1, l2) => List.from(l1)..addAll(l2))
+              .map((id) => MapEntry(id, deviceBloc.devices[id])),
+        ),
+      );
+
   /// Get devices being tracked by given id
   List<Device> getDevicesFromTrackingId(
     String id, {

@@ -241,6 +241,7 @@ class DevicesPageState extends State<DevicesPage> {
               ),
           ],
         ),
+        onTap: () => Navigator.pushNamed(context, 'device', arguments: device),
       ),
     );
   }

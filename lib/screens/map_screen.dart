@@ -67,7 +67,7 @@ class MapScreenState extends State<MapScreen> {
       withCoordsPanel: true,
       onMessage: _showMessage,
       onToolChange: (tool) => setState(() {
-        _showFAB = !tool.active;
+        _showFAB = !tool.active();
       }),
       onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
     );

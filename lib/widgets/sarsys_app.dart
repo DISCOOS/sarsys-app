@@ -1,3 +1,6 @@
+import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/device_screen.dart';
 import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
@@ -84,6 +87,9 @@ class _SarSysAppState extends State<SarSysApp> {
         case 'units':
           builder = _toChecked(CommandScreen(tabIndex: 1));
           break;
+        case 'device':
+          builder = _toChecked(_toDeviceScreen(settings));
+          break;
         case 'devices':
           builder = _toChecked(CommandScreen(tabIndex: 2));
           break;
@@ -136,9 +142,16 @@ class _SarSysAppState extends State<SarSysApp> {
   }
 
   Widget _toUnitScreen(RouteSettings settings) {
-    final unit = settings?.arguments;
+    final unit = settings?.arguments as Unit;
     return UnitScreen(
       unit: unit,
+    );
+  }
+
+  Widget _toDeviceScreen(RouteSettings settings) {
+    final device = settings?.arguments as Device;
+    return DeviceScreen(
+      device: device,
     );
   }
 

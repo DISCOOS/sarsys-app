@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -88,3 +89,27 @@ Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(
   });
   return sortedMap;
 }
+
+double asSpeed(double distance, Duration effort) =>
+    distance.isNaN == false && effort.inMicroseconds > 0.0 ? distance / effort.inSeconds : 0.0;
+
+double asDistance(List<Point> history, {double distance = 0, int tail = 2}) {
+  distance ??= 0;
+  var offset = max(0, history.length - tail - 1);
+  var i = offset + 1;
+  history?.skip(offset)?.forEach((point) {
+    i++;
+    distance += i < history.length
+        ? ProjMath.eucledianDistance(
+            history[i]?.lat ?? point.lat,
+            history[i]?.lon ?? point.lon,
+            point.lat,
+            point.lon,
+          )
+        : 0.0;
+  });
+  return distance;
+}
+
+Duration asEffort(List<Point> history) =>
+    history.isNotEmpty ? history.last.timestamp.difference(history.first.timestamp) : Duration.zero;

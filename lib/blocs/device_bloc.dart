@@ -38,6 +38,15 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   @override
   DeviceState get initialState => DevicesEmpty();
 
+  /// Stream of changes on given device
+  Stream<Device> changes(Device device) => state
+      .where(
+        (state) =>
+            (state is DeviceUpdated && state.data.id == device.id) ||
+            (state is DevicesLoaded && state.data.contains(device.id)),
+      )
+      .map((state) => state is DevicesLoaded ? _devices[device.id] : state.data);
+
   /// Check if [devices] is empty
   bool get isEmpty => devices.isEmpty;
 

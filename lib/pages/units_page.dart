@@ -197,7 +197,6 @@ class UnitsPageState extends State<UnitsPage> {
   _onTap(Unit unit) {
     if (widget.onSelection == null) {
       Navigator.pushNamed(context, 'unit', arguments: unit);
-//      if (tracking?.location?.isNotEmpty == true) jumpToPoint(context, center: tracking?.location);
     } else {
       widget.onSelection(unit);
     }

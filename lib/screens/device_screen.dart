@@ -1,48 +1,50 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/unit_info_panel.dart';
+import 'package:SarSys/widgets/device_info_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
-class UnitScreen extends Screen<_UnitScreenState> {
+class DeviceScreen extends Screen<_DeviceScreenState> {
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
   static const ELEVATION = 2.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
-  final Unit unit;
+  final Device device;
 
-  const UnitScreen({Key key, @required this.unit}) : super(key: key);
+  const DeviceScreen({Key key, @required this.device}) : super(key: key);
 
   @override
-  _UnitScreenState createState() => _UnitScreenState(unit);
+  _DeviceScreenState createState() => _DeviceScreenState(device);
 }
 
-class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateMixin {
-  _UnitScreenState(Unit unit) : super(title: "${unit.name}", withDrawer: false);
+class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderStateMixin {
+  _DeviceScreenState(Device unit) : super(title: "${unit.name}", withDrawer: false);
 
   final _controller = IncidentMapController();
 
-  UnitBloc _unitBloc;
+  Unit _unit;
+  DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
-  StreamSubscription<Tracking> _onMoved;
+  StreamSubscription<Device> _onMoved;
 
   @override
   void initState() {
@@ -52,12 +54,13 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+    _unit = _trackingBloc.getUnitsByDeviceId()[widget.device.id];
     if (_group != null) _group.close();
-    _group = StreamGroup.broadcast()..add(_unitBloc.changes(widget.unit))..add(_trackingBloc.changes(widget.unit));
+    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(widget.device))..add(_trackingBloc.changes(_unit));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _trackingBloc.changes(widget.unit).listen(_onMove);
+    _onMoved = _deviceBloc.changes(widget.device).listen(_onMove);
   }
 
   @override
@@ -71,7 +74,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    var actual = widget.unit;
+    var actual = widget.device;
     return Container(
       child: Padding(
         padding: const EdgeInsets.all(0),
@@ -81,22 +84,21 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
               initialData: actual,
               stream: _group.stream,
               builder: (context, snapshot) {
-                if (snapshot.data is Unit) actual = snapshot.data;
-                return snapshot.hasData
-                    ? ListView(
-                        padding: const EdgeInsets.all(UnitScreen.SPACING),
-                        physics: AlwaysScrollableScrollPhysics(),
-                        children: [
-                          _buildMapTile(context, actual),
-                          UnitInfoPanel(
-                            unit: actual,
-                            bloc: _trackingBloc,
-                            withHeader: false,
-                            onMessage: showMessage,
-                          ),
-                        ],
-                      )
-                    : Center(child: Text("Ingen data"));
+                if (snapshot.data is Device) actual = snapshot.data;
+                return ListView(
+                  padding: const EdgeInsets.all(DeviceScreen.SPACING),
+                  physics: AlwaysScrollableScrollPhysics(),
+                  children: [
+                    _buildMapTile(context, actual),
+                    DeviceInfoPanel(
+                      unit: _unit,
+                      device: actual,
+                      tracking: _trackingBloc.tracking[_unit?.tracking],
+                      withHeader: false,
+                      onMessage: showMessage,
+                    ),
+                  ],
+                );
               },
             ),
           ],
@@ -105,17 +107,17 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(_trackingBloc.tracking[unit.tracking]);
+  Widget _buildMapTile(BuildContext context, Device device) {
+    final center = toCenter(device.location);
     return Material(
-      elevation: UnitScreen.ELEVATION,
-      borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+      elevation: DeviceScreen.ELEVATION,
+      borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
       child: Container(
         height: 240.0,
         child: Stack(
           children: <Widget>[
             ClipRRect(
-              borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+              borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
               child: GestureDetector(
                 child: IncidentMap(
                   center: center,
@@ -131,33 +133,32 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                 onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
               ),
             ),
-            _buildControls(),
+            _buildControls(device),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildControls() {
-    var tracking = _trackingBloc.tracking[widget.unit.tracking];
+  Widget _buildControls(Device device) {
     return MapControls(
       top: 16.0,
       controls: [
         MapControl(
           icon: Icons.add,
           onPressed: () {
-            if (tracking != null) {
-              var zoom = min(_controller.zoom + 1, Defaults.maxZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
+            if (device?.location != null) {
+              var zoom = math.min(_controller.zoom + 1, Defaults.maxZoom);
+              _controller.animatedMove(toCenter(device?.location), zoom, this, milliSeconds: 250);
             }
           },
         ),
         MapControl(
           icon: Icons.remove,
           onPressed: () {
-            if (tracking != null) {
-              var zoom = max(_controller.zoom - 1, Defaults.minZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
+            if (device?.location != null) {
+              var zoom = math.max(_controller.zoom - 1, Defaults.minZoom);
+              _controller.animatedMove(toCenter(device?.location), zoom, this, milliSeconds: 250);
             }
           },
         ),
@@ -165,13 +166,12 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
     );
   }
 
-  LatLng toCenter(Tracking event) {
-    final location = event?.location;
+  LatLng toCenter(Point location) {
     return location != null ? toLatLng(location) : null;
   }
 
-  void _onMove(Tracking event) {
-    final center = toCenter(event);
+  void _onMove(Device event) {
+    final center = toCenter(event?.location);
     if (center != null) _controller.animatedMove(center, _controller.zoom, this);
   }
 }
