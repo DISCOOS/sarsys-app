@@ -70,7 +70,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           builder: (context, snapshot) {
             return AnimatedCrossFade(
               duration: Duration(milliseconds: 300),
-              crossFadeState: bloc.isReady ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: snapshot.hasData && bloc.isReady ? CrossFadeState.showSecond : CrossFadeState.showFirst,
               firstChild: Center(
                 child: CircularProgressIndicator(),
               ),

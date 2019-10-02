@@ -73,6 +73,7 @@ class UnitsPageState extends State<UnitsPage> {
             child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
+                if (snapshot.hasData == false) return Container();
                 var units = _unitBloc.units.isEmpty || snapshot.hasError
                     ? []
                     : _unitBloc.units.values
@@ -80,7 +81,6 @@ class UnitsPageState extends State<UnitsPage> {
                         .where((unit) => widget.where == null || widget.where(unit))
                         .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
                         .toList();
-
                 return AnimatedCrossFade(
                   duration: Duration(milliseconds: 300),
                   crossFadeState: _unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,

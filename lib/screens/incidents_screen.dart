@@ -53,10 +53,13 @@ class IncidentsScreenState extends ScreenState {
         child: StreamBuilder(
           stream: _incidentBloc.state,
           builder: (context, snapshot) {
-            var cards = _incidentBloc.incidents
-                .where((incident) => _filter.contains(incident.status))
-                .map((incident) => _buildCard(incident))
-                .toList();
+            if (snapshot.hasData == false) return Container();
+            var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
+                ? _incidentBloc.incidents
+                    .where((incident) => _filter.contains(incident.status))
+                    .map((incident) => _buildCard(incident))
+                    .toList()
+                : [];
             return AnimatedCrossFade(
               duration: Duration(milliseconds: 300),
               crossFadeState: _incidentBloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
@@ -114,6 +117,7 @@ class IncidentsScreenState extends ScreenState {
     return StreamBuilder(
         stream: userBloc.state,
         builder: (context, snapshot) {
+          if (snapshot.hasData == false) return Container();
           final isAuthorized = userBloc.isAuthorized(incident);
           return Card(
             child: Column(

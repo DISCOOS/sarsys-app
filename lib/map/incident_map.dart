@@ -26,6 +26,7 @@ import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:catcher/core/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -135,10 +136,16 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   Set<String> _useLayers;
   List<LayerOptions> _layerOptions = [];
 
-  AppConfigBloc _configBloc;
-
-  // Prevent
+  // Prevent location updates after dispose
   bool _disposed = false;
+
+  DeviceBloc _deviceBloc;
+  AppConfigBloc _configBloc;
+  TrackingBloc _trackingBloc;
+  IncidentBloc _incidentBloc;
+
+  //
+  bool _hasFitToBounds = false;
 
   @override
   void initState() {
@@ -151,20 +158,29 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _init();
   }
 
+  void _init() async {
+    _baseMaps = await _mapTileService.fetchMaps();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
+    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
+    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+
     // Configure location controller
     if (widget.withLocation) {
       _locationController?.dispose();
       _locationController = LocationController(
+        tickerProvider: this,
         configBloc: _configBloc,
         permissionController: Provider.of<PermissionController>(context).cloneWith(
           onMessage: widget.onMessage,
         ),
         mapController: widget.mapController,
-        tickerProvider: this,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
@@ -177,12 +193,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         tools: [
           MeasureTool(),
           POITool(
-            BlocProvider.of<IncidentBloc>(context),
+            _incidentBloc,
             active: true,
             onMessage: widget.onMessage,
           ),
           UnitTool(
-            BlocProvider.of<TrackingBloc>(context),
+            _trackingBloc,
             active: true,
             onMessage: widget.onMessage,
           ),
@@ -192,28 +208,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
     // Only ensure center if not set already
     _center ??= _ensureCenter();
-  }
-
-  LatLng _ensureCenter() {
-    final bloc = BlocProvider.of<IncidentBloc>(context);
-    final current = widget.withLocation ? _locationController.current : null;
-    return widget.center ??
-        (bloc?.current?.meetup != null ? toLatLng(bloc?.current?.meetup) : null) ??
-        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
-  }
-
-  void _init() async {
-    _baseMaps = await _mapTileService.fetchMaps();
-
-    // Only do this once per state instance
-    if (widget.fitBounds?.isValid == true) {
-      _mapController.onReady.then((_) {
-        _mapController.fitBounds(
-          widget.fitBounds,
-          options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-        );
-      });
-    }
   }
 
   @override
@@ -232,6 +226,13 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     super.dispose();
   }
 
+  LatLng _ensureCenter() {
+    final current = widget.withLocation ? _locationController.current : null;
+    return widget.center ??
+        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup) : null) ??
+        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -245,6 +246,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   Widget _buildMap() {
+    _fitToBoundsOnce();
     return FlutterMap(
       key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
       mapController: _mapController,
@@ -271,9 +273,49 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     );
   }
 
+  void _fitToBoundsOnce() async {
+    if (_hasFitToBounds == false) {
+      if (widget.fitBounds?.isValid == true) {
+        // Listen for ready event
+        _mapController.onReady.then((_) => _fitBounds());
+      }
+      // Only do this once per state instance
+      _hasFitToBounds = true;
+    }
+  }
+
+  void _fitBounds() {
+    _mapController.fitBounds(
+      widget.fitBounds,
+      options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+    );
+  }
+
+  /*
+  void _debugFitBounds() {
+    final fitBounds = widget.fitBounds;
+    final fitBoundOptions = widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS;
+    final centerZoom = _mapController.getBoundsCenterZoom(fitBounds, fitBoundOptions);
+    try {
+      _fitBounds();
+    } on Error catch (e) {
+      Catcher.reportCheckedError(
+        "Method _fitBounds() failed with: \n "
+        "_mapController(zoom: ${_mapController.zoom}, center: ${_mapController.center}, ${_mapController.size}, "
+        "options(zoom: ${_mapController.options.zoom}), state(zoom: ${_mapController.state.zoom})) \n"
+        "fitBounds(isValid: ${fitBounds.isValid}, west: ${fitBounds.west}, "
+        "north: ${fitBounds.north}, east: ${fitBounds.east}, south: ${fitBounds.south}) \n"
+        "fitBoundsOptions(zoom: ${fitBoundOptions.zoom}, maxZoom ${fitBoundOptions.maxZoom}),${fitBoundOptions.padding}) \n"
+        "centerZoom(zoom: ${centerZoom.zoom}, center: ${centerZoom.center}). \n"
+        "Error was $e",
+        e.stackTrace,
+      );
+    }
+  }
+   */
+
   List<LayerOptions> _setLayerOptions() {
     final tool = _mapToolController?.of<MeasureTool>();
-    final bloc = BlocProvider.of<IncidentBloc>(context);
     _layerOptions
       ..clear()
       ..addAll([
@@ -285,8 +327,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (_useLayers.contains(UNITS_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions({
-            widget?.incident?.ipp ?? bloc?.current?.ipp: "IPP",
-            widget?.incident?.meetup ?? bloc?.current?.meetup: "Oppmøte",
+            widget?.incident?.ipp ?? _incidentBloc?.current?.ipp: "IPP",
+            widget?.incident?.meetup ?? _incidentBloc?.current?.meetup: "Oppmøte",
           }),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController.isReady) _locationController.options,
@@ -430,7 +472,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   POILayerOptions _buildPoiOptions(Map<Point, String> points) {
-    final bloc = BlocProvider.of<IncidentBloc>(context);
     return POILayerOptions(
       List.from(points.entries.where((entry) => entry.key != null).map(
             (entry) => POI(
@@ -444,22 +485,20 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         size: 30,
         color: Colors.red,
       ),
-      rebuild: bloc.state.map((_) => null),
+      rebuild: _incidentBloc.state.map((_) => null),
     );
   }
 
   DeviceLayerOptions _buildDeviceOptions() {
-    final bloc = BlocProvider.of<DeviceBloc>(context);
     return DeviceLayerOptions(
-      bloc: bloc,
+      bloc: _deviceBloc,
       onMessage: widget.onMessage,
     );
   }
 
   UnitLayerOptions _buildUnitOptions() {
-    final bloc = BlocProvider.of<TrackingBloc>(context);
     return UnitLayerOptions(
-      bloc: bloc,
+      bloc: _trackingBloc,
       onMessage: widget.onMessage,
       showTail: _useLayers.contains(TRACKING_LAYER),
     );

@@ -70,7 +70,6 @@ class _IncidentPageState extends State<IncidentPage> {
             StreamBuilder<Incident>(
               stream: BlocProvider.of<IncidentBloc>(context).changes,
               builder: (context, snapshot) {
-                var incident = snapshot.data;
                 return snapshot.hasData
                     ? ListView(
                         controller: _controller,
@@ -79,17 +78,17 @@ class _IncidentPageState extends State<IncidentPage> {
                         children: [
                           _buildMapTile(context, snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildGeneral(incident),
+                          _buildGeneral(snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildJustification(incident),
+                          _buildJustification(snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildIPP(incident),
+                          _buildIPP(snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildMeetup(incident),
+                          _buildMeetup(snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildReference(incident),
+                          _buildReference(snapshot.data),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildPasscodes(incident),
+                          _buildPasscodes(snapshot.data),
                           if (_userBloc?.user?.isCommander) ...[
                             SizedBox(height: IncidentPage.SPACING),
                             _buildActions(context)
@@ -189,7 +188,9 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<int>(
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
-                return _buildValueTile("${formatSince(incident.occurred)}", label: "Innsats");
+                return snapshot.hasData
+                    ? _buildValueTile("${formatSince(incident.occurred)}", label: "Innsats")
+                    : Container();
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
@@ -197,7 +198,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<UnitState>(
               stream: bloc.state,
               builder: (context, snapshot) {
-                return _buildValueTile("${bloc.count}", label: "Enheter");
+                return snapshot.hasData ? _buildValueTile("${bloc.count}", label: "Enheter") : Container();
               }),
         ),
       ],

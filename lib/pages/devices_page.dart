@@ -90,6 +90,7 @@ class DevicesPageState extends State<DevicesPage> {
           child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
+                if (snapshot.hasData == false) return Container();
                 var units = _trackingBloc.getUnitsByDeviceId();
                 var tracked = _trackingBloc.getTrackingByDeviceId();
                 var devices = _deviceBloc.devices.values
