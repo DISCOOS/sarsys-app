@@ -188,9 +188,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<int>(
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
-                return snapshot.hasData
-                    ? _buildValueTile("${formatSince(incident.occurred)}", label: "Innsats")
-                    : Container();
+                return _buildValueTile("${snapshot.hasData ? formatSince(incident.occurred) : "-"}", label: "Innsats");
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
@@ -198,7 +196,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<UnitState>(
               stream: bloc.state,
               builder: (context, snapshot) {
-                return snapshot.hasData ? _buildValueTile("${bloc.count}", label: "Enheter") : Container();
+                return _buildValueTile("${snapshot.hasData ? bloc.count : "-"}", label: "Enheter");
               }),
         ),
       ],
