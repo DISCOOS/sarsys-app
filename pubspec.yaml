@@ -72,24 +72,17 @@ dependencies:
 
 dependency_overrides:
   flutter_map:
-    #git:
-      # url: git://github.com/johnpryan/flutter_map
-      # Rollback last merge with working onTap
-      # This breaks onTap -> ref: 22fab80678937509ba5149557582a714fff6ed81
-    # ref: 69e423abd394b3a143448defbadb950e76f9764e
-    git:
-      url: https://github.com/DISCOOS/flutter_map.git
-      ref: issues/limit_fitbounds_padding
     #path: ../flutter_map
+    git:
+      url: git://github.com/johnpryan/flutter_map
+      ref: master
 
   intro_views_flutter:
+    #path: ../IntroViews-Flutter
     git:
       url: https://github.com/aagarwal1012/IntroViews-Flutter.git
       ref: master
-    #path: ../IntroViews-Flutter
   flutter_chips_input:
-    # Add guard against calling setEditingState in detached mode
-    # https://github.com/danvick/flutter_chips_input/pull/17
     #path: ../flutter_chips_input
     git:
       url: https://github.com/danvick/flutter_chips_input.git
