@@ -14,6 +14,10 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
           ? null
           : Point.fromJson(json['location'] as Map<String, dynamic>),
       distance: (json['distance'] as num)?.toDouble(),
+      speed: (json['speed'] as num)?.toDouble(),
+      effort: json['effort'] == null
+          ? null
+          : Duration(microseconds: json['effort'] as int),
       devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
       history: (json['history'] as List)
           ?.map((e) =>
@@ -35,6 +39,8 @@ Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
       'status': _$TrackingStatusEnumMap[instance.status],
       'location': instance.location?.toJson(),
       'distance': instance.distance,
+      'speed': instance.speed,
+      'effort': instance.effort?.inMicroseconds,
       'devices': instance.devices,
       'history': instance.history?.map((e) => e?.toJson())?.toList(),
       'tracks': instance.tracks

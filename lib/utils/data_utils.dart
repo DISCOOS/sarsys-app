@@ -27,7 +27,16 @@ String toUTM(Point point, {String prefix = "UTM", String empty = "Velg"}) {
 
 String formatSince(DateTime timestamp, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {
   if (timestamp == null) return defaultValue;
-  Duration delta = DateTime.now().difference(timestamp);
+  return formatDuration(
+    DateTime.now().difference(timestamp),
+    approx: approx,
+    defaultValue: defaultValue,
+    withUnits: withUnits,
+  );
+}
+
+String formatDuration(Duration delta, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {
+  if (delta == null) return defaultValue;
   return delta.inHours > 99
       ? "${delta.inDays}${withUnits ? " dager" : ""}"
       : delta.inHours > 0

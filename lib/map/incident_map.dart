@@ -26,7 +26,6 @@ import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';

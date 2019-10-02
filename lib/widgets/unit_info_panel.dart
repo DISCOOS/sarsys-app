@@ -9,6 +9,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
@@ -206,7 +207,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Innsatstid",
             icon: Icon(Icons.timer),
-            value: "",
+            value: "${formatDuration(tracking.effort)}",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -216,7 +217,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Gj.snitthastiget",
             icon: Icon(MdiIcons.speedometer),
-            value: "",
+            value: "${(tracking.speed / 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
             onComplete: onComplete,
           ),

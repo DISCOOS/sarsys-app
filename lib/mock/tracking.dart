@@ -254,26 +254,31 @@ class _TrackSimulation {
   Tracking progress([Iterable<String> ids = const []]) {
     Point location;
     double distance;
+    double speed;
+    Duration effort;
+
     if (tracking.devices.isEmpty)
       location = tracking.location;
     else if (tracking.devices.length == 1)
       location = devices[tracking.devices.first]?.location ?? tracking.location;
     else {
       // Calculate geometric centre of all devices as the arithmetic mean of the input coordinates
-      final sum = tracking.devices.fold<List<double>>(
-        [0.0, 0.0, 0.0].toList(),
+      final sum = tracking.devices.fold<List<num>>(
+        [0.0, 0.0, 0.0, DateTime.now().millisecondsSinceEpoch].toList(),
         (previous, next) => devices[next] == null
             ? previous
             : [
                 devices[next].location.lat + previous[0],
                 devices[next].location.lon + previous[1],
                 devices[next].location.acc + previous[2],
+                min(devices[next].location.timestamp.millisecondsSinceEpoch, previous[3])
               ],
       );
-      location = Point.now(
-        sum[0] / tracking.devices.length,
-        sum[1] / tracking.devices.length,
+      location = Point(
+        lat: sum[0] / tracking.devices.length,
+        lon: sum[1] / tracking.devices.length,
         acc: sum[2] / tracking.devices.length,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(sum[3]),
       );
     }
 
@@ -295,22 +300,33 @@ class _TrackSimulation {
       history = tracking.history;
     }
 
-    // Calculate distance
+    // Calculate effort, distance and speed
     if (history.length > 1) {
-      distance = ProjMath.eucledianDistance(
-        history.last.lat,
-        history.last.lon,
-        history[history.length - 2]?.lat ?? history.last.lat,
-        history[history.length - 2]?.lon ?? history.last.lon,
-      );
-      distance = (tracking.distance == null ? distance : tracking.distance + distance);
+      effort = asEffort(history);
+      distance = asDistance(distance, history);
+      speed = distance / effort.inSeconds;
     }
 
     // Limit history and tracks to maximum 10 items each (prevent unbounded memory usage in long-running app)
     return tracking.cloneWith(
         location: location,
         distance: distance ?? 0.0,
+        speed: speed ?? 0.0,
+        effort: effort ?? Duration.zero,
         history: history.skip(max(0, history.length - 10)).toList(),
         tracks: tracking.tracks.map((id, track) => MapEntry(id, track.skip(max(0, track.length - 10)).toList())));
   }
+
+  double asDistance(double distance, List<Point> history) {
+    distance = ProjMath.eucledianDistance(
+      history.last.lat,
+      history.last.lon,
+      history[history.length - 2]?.lat ?? history.last.lat,
+      history[history.length - 2]?.lon ?? history.last.lon,
+    );
+    distance = (tracking.distance == null ? distance : tracking.distance + distance);
+    return distance;
+  }
+
+  Duration asEffort(List<Point> history) => history.last.timestamp.difference(history.first.timestamp);
 }

@@ -12,6 +12,8 @@ class Tracking extends Equatable {
   final TrackingStatus status;
   final Point location;
   final double distance;
+  final double speed;
+  final Duration effort;
   final List<String> devices;
   final List<Point> history;
   final Map<String, List<Point>> tracks;
@@ -21,6 +23,8 @@ class Tracking extends Equatable {
     @required this.status,
     this.location,
     this.distance,
+    this.speed,
+    this.effort,
     this.devices,
     this.history,
     this.tracks = const {},
@@ -41,6 +45,8 @@ class Tracking extends Equatable {
     TrackingStatus status,
     Point location,
     double distance,
+    double speed,
+    Duration effort,
     List<Point> history,
     Map<String, List<Point>> tracks,
   }) {
@@ -50,6 +56,8 @@ class Tracking extends Equatable {
       devices: devices ?? this.devices,
       location: location ?? this.location,
       distance: distance ?? this.distance,
+      speed: speed ?? this.speed,
+      effort: effort ?? this.effort,
       history: history ?? this.history,
       tracks: tracks ?? this.tracks,
     );
