@@ -457,7 +457,7 @@ class ProjMath {
   static eucledianDistance(double lat1, double lon1, double lat2, double lon2) {
     final degLen = 110250;
     final x = lat1 - lat2;
-    final y = (lon1 - lon2) * math.cos(lat2);
+    final y = (lon1 - lon2) * math.cos(degToRad(lat2));
     return degLen * math.sqrt(x * x + y * y);
   }
 
