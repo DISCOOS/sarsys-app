@@ -311,7 +311,6 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final devices = _getActualDevices();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),

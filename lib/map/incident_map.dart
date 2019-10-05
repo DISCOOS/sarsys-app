@@ -172,16 +172,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
-    _init();
-  }
-
-  void _init() async {
-    _baseMaps = await _mapTileService.fetchMaps();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
 
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
@@ -189,7 +179,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
     // Configure location controller
     if (widget.withLocation) {
-      _locationController?.dispose();
       _locationController = LocationController(
         tickerProvider: this,
         configBloc: _configBloc,
@@ -204,7 +193,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
     // Configure map tool controller
     if (widget.withControls) {
-      _mapToolController?.dispose();
       _mapToolController = MapToolController(
         tools: [
           MeasureTool(),
@@ -229,6 +217,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
     // Only ensure center if not set already
     _center ??= _ensureCenter();
+
+    _init();
+  }
+
+  void _init() async {
+    _baseMaps = await _mapTileService.fetchMaps();
   }
 
   @override
