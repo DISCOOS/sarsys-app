@@ -40,9 +40,10 @@ abstract class ScreenState<T extends StatefulWidget> extends State<T> {
           appBar: AppBar(
             title: Text(title),
             centerTitle: false,
+            actions: buildAppBarActions(),
           ),
           extendBody: true,
-          resizeToAvoidBottomInset: true,
+          resizeToAvoidBottomInset: false,
           body: buildBody(context, constraints),
           floatingActionButtonLocation: floatingActionButtonLocation,
           floatingActionButton: buildFAB(context),
@@ -51,6 +52,8 @@ abstract class ScreenState<T extends StatefulWidget> extends State<T> {
       },
     );
   }
+
+  List<Widget> buildAppBarActions() => <Widget>[];
 
   void showMessage(
     String message, {
