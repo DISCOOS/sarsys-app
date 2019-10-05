@@ -96,9 +96,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
                       SizedBox(height: SPACING),
                       buildTwoCellRow(_buildTypeField(snapshot.data), _buildAliasField(), spacing: SPACING),
                       if (DeviceType.Tetra == actualType) ...[
+                        SizedBox(height: SPACING),
                         buildTwoCellRow(_buildDistrictField(snapshot.data), _buildFunctionField(snapshot.data),
                             spacing: SPACING),
-                        SizedBox(height: SPACING),
                       ],
                       SizedBox(height: MediaQuery.of(context).size.height / 2),
                     ],

@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/map/painters.dart';
@@ -19,13 +19,14 @@ class DeviceLayerOptions extends LayerOptions {
   double opacity;
   bool showLabels;
   bool showTail;
-  final DeviceBloc bloc;
+  final TrackingBloc bloc;
   final MessageCallback onMessage;
 
   DeviceLayerOptions({
     @required this.bloc,
     this.size = 8.0,
     this.opacity = 0.6,
+    this.showTail = false,
     this.showLabels = true,
     this.onMessage,
   }) : super(rebuild: bloc.state.map((_) => null));
@@ -54,16 +55,58 @@ class DeviceLayer extends MapPlugin {
 
   Widget _build(BuildContext context, Size size, DeviceLayerOptions options, MapState map) {
     final bounds = map.getBounds();
-    final devices = options.bloc.devices.values.where((device) => bounds.contains(toLatLng(device.location)));
+    final tracking = options.bloc.getTrackingByDeviceId();
+    final devices =
+        options.bloc.deviceBloc.devices.values.where((device) => bounds.contains(toLatLng(device.location)));
     return options.bloc.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
             children: [
+              if (options.showTail)
+                ...devices
+                    .map((device) => _buildTrack(
+                          context,
+                          size,
+                          options,
+                          map,
+                          device,
+                          tracking[device.id]?.first?.tracks[device.id],
+                        ))
+                    .toList(),
               if (options.showLabels) ...devices.map((device) => _buildLabel(context, options, map, device)).toList(),
               ...devices.map((device) => _buildPoint(context, options, map, device)).toList(),
             ],
           );
+  }
+
+  _buildTrack(
+    BuildContext context,
+    Size size,
+    DeviceLayerOptions options,
+    MapState map,
+    Device device,
+    List<Point> tracking,
+  ) {
+    if (tracking != null) {
+      var offsets = tracking.reversed.take(10).map((point) {
+        var pos = map.project(toLatLng(point));
+        pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+        return Offset(pos.x.toDouble(), pos.y.toDouble());
+      }).toList(growable: false);
+
+      final color = toPointStatusColor(tracking.last);
+      return CustomPaint(
+        painter: LineStringPainter(
+          offsets: offsets,
+          color: color,
+          borderColor: color,
+          opacity: options.opacity,
+        ),
+        size: size,
+      );
+    }
+    return Container();
   }
 
   Widget _buildPoint(BuildContext context, DeviceLayerOptions options, MapState map, Device device) {

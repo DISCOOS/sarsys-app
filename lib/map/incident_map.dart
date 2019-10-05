@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -27,17 +26,17 @@ import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/map/layers/poi_layer.dart';
+import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/map/layers/my_location.dart';
+
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
-
-import 'package:SarSys/map/layers/poi_layer.dart';
-import 'package:SarSys/map/map_search.dart';
-import 'package:SarSys/map/layers/my_location.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:latlong/latlong.dart';
 
 typedef ToolCallback = void Function(MapTool tool);
 
@@ -56,6 +55,7 @@ class IncidentMap extends StatefulWidget {
   final bool withPOIs;
   final bool withUnits;
   final bool withDevices;
+  final bool withTracking;
 
   final Incident incident;
   final TapCallback onTap;
@@ -96,6 +96,7 @@ class IncidentMap extends StatefulWidget {
     this.withControls = false,
     this.withLocation = false,
     this.withScaleBar = false,
+    this.withTracking = true,
     this.withCoordsPanel = false,
     this.showLayers = IncidentMapState.DEFAULT_LAYERS,
     this.onTap,
@@ -156,7 +157,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   // Prevent location updates after dispose
   bool _disposed = false;
 
-  DeviceBloc _deviceBloc;
   AppConfigBloc _configBloc;
   TrackingBloc _trackingBloc;
   IncidentBloc _incidentBloc;
@@ -183,7 +183,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
@@ -513,8 +512,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   DeviceLayerOptions _buildDeviceOptions() {
     return DeviceLayerOptions(
-      bloc: _deviceBloc,
+      bloc: _trackingBloc,
       onMessage: widget.onMessage,
+      showTail: _useLayers.contains(TRACKING_LAYER),
     );
   }
 
@@ -695,6 +695,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     if (!widget.withPOIs) layers.remove(POI_LAYER);
     if (!widget.withUnits) layers.remove(UNIT_LAYER);
     if (!widget.withDevices) layers.remove(DEVICE_LAYER);
+    if (!widget.withTracking) layers.remove(TRACKING_LAYER);
     return layers.toSet();
   }
 

@@ -129,6 +129,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
                   withUnits: false,
                   showLayers: [
                     IncidentMapState.DEVICE_LAYER,
+                    IncidentMapState.TRACKING_LAYER,
                   ],
                   mapController: _controller,
                 ),

@@ -163,7 +163,7 @@ class DeviceInfoPanel extends StatelessWidget {
             child: buildCopyableText(
               context: context,
               label: "Nummer",
-              icon: Icon(Icons.phone),
+              icon: Icon(Icons.looks_one),
               value: device?.number,
               onMessage: onMessage,
               onComplete: onComplete,
@@ -196,7 +196,7 @@ class DeviceInfoPanel extends StatelessWidget {
                     context: context,
                     label: "Funksjon",
                     icon: Icon(Icons.functions),
-                    value: snapshot.hasData ? snapshot.data.toDistrict(device.number) : '-',
+                    value: snapshot.hasData ? snapshot.data.toFunction(device.number) : '-',
                     onMessage: onMessage,
                     onComplete: onComplete,
                   ),

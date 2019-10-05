@@ -122,9 +122,10 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                   zoom: 16.0,
                   interactive: false,
                   withPOIs: false,
-                  withUnits: false,
+                  withDevices: false,
                   showLayers: [
-                    IncidentMapState.DEVICE_LAYER,
+                    IncidentMapState.UNIT_LAYER,
+                    IncidentMapState.TRACKING_LAYER,
                   ],
                   mapController: _controller,
                 ),
