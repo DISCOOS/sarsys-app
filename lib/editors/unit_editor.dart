@@ -51,16 +51,6 @@ class _UnitEditorState extends State<UnitEditor> {
   @override
   void initState() {
     super.initState();
-    _phoneController.text = _getDefaultPhone();
-    _numberController.text = _getDefaultNumber();
-    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
-    _numberController.addListener(
-      () => _onTypeOrNumberEdit(
-        translateUnitType(_getActualType(widget.type)),
-        _numberController.text,
-        true,
-      ),
-    );
     _set();
     _init();
   }
@@ -80,6 +70,16 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _init() async {
     _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.orgId));
+    _phoneController.text = _getDefaultPhone();
+    _numberController.text = _getDefaultNumber();
+    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
+    _numberController.addListener(
+      () => _onTypeOrNumberEdit(
+        translateUnitType(_getActualType(widget.type)),
+        _numberController.text,
+        true,
+      ),
+    );
     if (mounted) setState(() {});
   }
 

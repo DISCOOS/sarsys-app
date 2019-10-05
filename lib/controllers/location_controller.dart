@@ -164,7 +164,7 @@ class LocationController {
   void _onReady() async {
     final status = await _service.configure();
     if (_service.isReady.value) {
-      assert(_locationUpdateController == null);
+      assert(_locationUpdateController != null);
       _locationUpdateController = StreamController.broadcast();
 
       _options = MyLocationOptions(
