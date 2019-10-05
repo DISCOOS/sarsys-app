@@ -54,9 +54,12 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       .map((state) => state.data);
 
   /// Stream of incident changes
-  Stream<Incident> get changes => state
+  Stream<Incident> changes([Incident incident]) => state
       .where(
-        (state) => state.isCreated() || state.isUpdated() || state.isSelected(),
+        (state) =>
+            (incident == null || state.data is Incident && state.data.id == incident.id) && state.isCreated() ||
+            state.isUpdated() ||
+            state.isSelected(),
       )
       .map((state) => state.data);
 

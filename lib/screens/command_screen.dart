@@ -53,10 +53,10 @@ class _CommandScreenState extends State<CommandScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: _incidentBloc.changes,
+      stream: _incidentBloc.changes(),
       initialData: _incidentBloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final incident = snapshot.data is Incident ? snapshot.data : null;
+        final incident = (snapshot.hasData ? _incidentBloc.current : null);
         final title = _toName(incident);
         final tabs = [
           IncidentPage(),

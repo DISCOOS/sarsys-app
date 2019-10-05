@@ -58,6 +58,7 @@ class _IncidentPageState extends State<IncidentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = BlocProvider.of<IncidentBloc>(context);
     labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
     valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
     unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
@@ -68,34 +69,38 @@ class _IncidentPageState extends State<IncidentPage> {
         child: Stack(
           children: [
             StreamBuilder<Incident>(
-              stream: BlocProvider.of<IncidentBloc>(context).changes,
+              stream: bloc.changes(),
+              initialData: bloc.current,
               builder: (context, snapshot) {
-                return snapshot.hasData
-                    ? ListView(
+                final incident = (snapshot.hasData ? snapshot.data : null);
+                return incident == null
+                    ? Center(
+                        child: Text(snapshot.hasError ? "${snapshot.error}" : "Ingen data"),
+                      )
+                    : ListView(
                         controller: _controller,
                         padding: const EdgeInsets.all(IncidentPage.SPACING),
                         physics: AlwaysScrollableScrollPhysics(),
                         children: [
-                          _buildMapTile(context, snapshot.data),
+                          _buildMapTile(context, incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildGeneral(snapshot.data),
+                          _buildGeneral(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildJustification(snapshot.data),
+                          _buildJustification(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildIPP(snapshot.data),
+                          _buildIPP(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildMeetup(snapshot.data),
+                          _buildMeetup(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildReference(snapshot.data),
+                          _buildReference(incident),
                           SizedBox(height: IncidentPage.SPACING),
-                          _buildPasscodes(snapshot.data),
+                          _buildPasscodes(incident),
                           if (_userBloc?.user?.isCommander) ...[
                             SizedBox(height: IncidentPage.SPACING),
                             _buildActions(context)
                           ],
                         ],
-                      )
-                    : Center(child: Text("Ingen data"));
+                      );
               },
             ),
             SafeArea(
