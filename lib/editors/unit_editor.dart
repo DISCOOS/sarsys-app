@@ -51,12 +51,12 @@ class _UnitEditorState extends State<UnitEditor> {
   @override
   void initState() {
     super.initState();
-    _phoneController.text = widget?.unit?.phone ?? "";
-    _callsignController.text = widget?.unit?.callsign ?? "";
-    _numberController.text = "${widget?.unit?.number ?? ""}";
+    _phoneController.text = _getDefaultPhone();
+    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
+    _numberController.text = _getDefaultNumber();
     _numberController.addListener(
       () => _onTypeOrNumberEdit(
-        "${translateUnitType(widget?.unit?.type ?? widget.type)}",
+        translateUnitType(_getActualType(widget.type)),
         _numberController.text,
         true,
       ),
@@ -96,7 +96,7 @@ class _UnitEditorState extends State<UnitEditor> {
             child: Text(widget.unit == null ? 'OPPRETT' : 'OPPDATER',
                 style: TextStyle(fontSize: 14.0, color: Colors.white)),
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () => _submit(context),
+            onPressed: () => _submit(),
           ),
         ],
       ),
@@ -142,15 +142,11 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   FormBuilderTextField _buildNumberField() {
-    final actualType = _getActualType(UnitType.Team);
-    final defaultNumber = _getDefaultNumber(actualType);
-    final actualNumber = _getActualNumber(defaultNumber);
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
       maxLength: 2,
       maxLengthEnforced: true,
-      initialValue: "$actualNumber",
       controller: _numberController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -164,7 +160,7 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
           onTap: () => _setText(
             _numberController,
-            "${_getActualNumber(_getDefaultNumber(_getActualType(UnitType.Team)))}",
+            _getDefaultNumber(),
           ),
         ),
       ),
@@ -180,18 +176,14 @@ class _UnitEditorState extends State<UnitEditor> {
           return unit != null ? "Lag $value finnes allerede" : null;
         },
       ],
-      valueTransformer: (value) => int.tryParse(value) ?? actualNumber,
+      valueTransformer: (value) => int.tryParse(value ?? _getDefaultNumber()),
     );
   }
 
   FormBuilderTextField _buildCallsignField() {
-    final defaultValue = _getDefaultCallSign();
-    final actualValue = _getActualCallSign(defaultValue);
-    _callsignController.text = actualValue;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'callsign',
-      initialValue: actualValue,
       controller: _callsignController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -203,7 +195,10 @@ class _UnitEditorState extends State<UnitEditor> {
             color: Colors.grey,
             size: 20,
           ),
-          onTap: () => _setText(_callsignController, _getDefaultCallSign()),
+          onTap: () => _setText(
+            _callsignController,
+            _getDefaultCallSign(),
+          ),
         ),
       ),
       keyboardType: TextInputType.text,
@@ -226,15 +221,12 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   FormBuilderTextField _buildPhoneField() {
-    final value = (widget?.unit?.phone ?? "").toString();
-    _phoneController.text = value;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'phone',
       maxLength: 8,
       maxLengthEnforced: true,
       autofocus: true,
-      initialValue: value,
       controller: _phoneController,
       decoration: InputDecoration(
         filled: true,
@@ -246,7 +238,10 @@ class _UnitEditorState extends State<UnitEditor> {
             color: Colors.grey,
             size: 20,
           ),
-          onTap: () => _setText(_phoneController, value),
+          onTap: () => _setText(
+            _phoneController,
+            _getDefaultPhone(),
+          ),
         ),
       ),
       keyboardType: TextInputType.phone,
@@ -264,6 +259,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _onTypeOrNumberEdit(String type, String number, bool update) {
+    _formKey.currentState.save();
     if (type.isEmpty) type = translateUnitType(widget.type);
     if (number.isEmpty) number = "${_unitBloc.count + 1}";
     _editedName = "$type $number";
@@ -271,8 +267,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Widget _buildTypeField() {
-    final defaultValue = UnitType.Team;
-    final actualValue = _getActualType(defaultValue);
+    final actualValue = _getActualType(widget.type);
     return buildDropDownField(
       attribute: 'type',
       label: 'Type enhet',
@@ -284,9 +279,9 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
-      onChanged: (_) => _onTypeOrNumberEdit(
-        enumName(actualValue),
-        _formKey.currentState.value["number"],
+      onChanged: (value) => _onTypeOrNumberEdit(
+        translateUnitType(UnitType.values.firstWhere((test) => enumName(test) == value, orElse: () => widget.type)),
+        _getActualNumber(),
         true,
       ),
     );
@@ -366,7 +361,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  void _submit(BuildContext context) async {
+  void _submit() async {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
       List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
@@ -380,16 +375,16 @@ class _UnitEditorState extends State<UnitEditor> {
     }
   }
 
-  int _getDefaultNumber(UnitType type) {
-    return _unitBloc.units.length + 1;
-    //return _unitBloc.units.values.where((unit) => type == unit.type).length + 1;
+  String _getDefaultNumber() {
+    return "${widget?.unit?.number ?? _unitBloc.units.length + 1}";
+    //return _unitBloc.units.values.where((unit) => widget.type == unit.type).length + 1;
   }
 
-  int _getActualNumber(int defaultValue) {
+  String _getActualNumber() {
     final values = _formKey?.currentState?.value;
-    return (values == null ? widget?.unit?.number ?? defaultValue : values['number']) ??
-        widget?.unit?.number ??
-        defaultValue;
+    return (values == null ? "${widget?.unit?.number}" ?? _numberController.text : "${values['number']}") ??
+        "${widget?.unit?.number}" ??
+        _numberController.text;
   }
 
   UnitType _getActualType(UnitType defaultValue) {
@@ -400,13 +395,6 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
-
-  String _getActualCallSign(String defaultValue) {
-    final values = _formKey?.currentState?.value;
-    return (values == null ? widget?.unit?.callsign ?? defaultValue : values['callsign']) ??
-        widget?.unit?.callsign ??
-        defaultValue;
-  }
 
   String _getDefaultCallSign() {
     final String department = _departments[_appConfigBloc.config.department];
@@ -423,6 +411,10 @@ class _UnitEditorState extends State<UnitEditor> {
         widget?.unit?.number ??
         count + 1);
     return 20 + number;
+  }
+
+  String _getDefaultPhone() {
+    return widget?.unit?.phone ?? '';
   }
 }
 
