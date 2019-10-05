@@ -147,7 +147,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
         MapControl(
           icon: Icons.add,
           onPressed: () {
-            if (tracking != null) {
+            if (tracking?.location != null) {
               var zoom = min(_controller.zoom + 1, Defaults.maxZoom);
               _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
             }
@@ -156,7 +156,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
         MapControl(
           icon: Icons.remove,
           onPressed: () {
-            if (tracking != null) {
+            if (tracking?.location != null) {
               var zoom = max(_controller.zoom - 1, Defaults.minZoom);
               _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
             }
