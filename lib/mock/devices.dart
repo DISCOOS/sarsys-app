@@ -85,6 +85,61 @@ class DeviceServiceMock extends Mock implements DeviceService {
       }
       return ServiceResponse.ok(body: devices.values.toList());
     });
+    when(mock.attach(any, any)).thenAnswer((_) async {
+      var incidentId = _.positionalArguments[0] as String;
+      var devices = deviceRepo[incidentId];
+      if (devices == null) {
+        devices = deviceRepo.putIfAbsent(incidentId, () => {});
+      }
+      var device = _.positionalArguments[1] as Device;
+      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+      device = _simulate(
+        Device(
+          id: "${incidentId}d${devices.length + 1}",
+          type: device.type,
+          status: device.status,
+          location: device.location ??
+              Point.now(
+                center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
+                center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
+              ),
+          alias: device.alias,
+          number: device.number,
+        ),
+        rnd,
+        simulations,
+      );
+      final d = devices.putIfAbsent(device.id, () => device);
+      return ServiceResponse.ok(
+        body: d,
+      );
+    });
+    when(mock.update(any)).thenAnswer((_) async {
+      var device = _.positionalArguments[0] as Device;
+      var incident = deviceRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(device.id),
+        orElse: null,
+      );
+      if (incident == null)
+        ServiceResponse.notFound(
+          message: "Device ${device.id} not found",
+        );
+      incident.value.update(device.id, (_) => device);
+      return ServiceResponse.noContent();
+    });
+    when(mock.detach(any)).thenAnswer((_) async {
+      var device = _.positionalArguments[0] as Device;
+      var incident = deviceRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(device.id),
+        orElse: null,
+      );
+      if (incident == null)
+        ServiceResponse.notFound(
+          message: "Device ${device.id} not found",
+        );
+      incident.value.remove(device.id);
+      return ServiceResponse.noContent();
+    });
     return mock;
   }
 

@@ -111,5 +111,8 @@ double asDistance(List<Point> history, {double distance = 0, int tail = 2}) {
   return distance;
 }
 
-Duration asEffort(List<Point> history) =>
-    history.isNotEmpty ? history.last.timestamp.difference(history.first.timestamp) : Duration.zero;
+Duration asEffort(List<Point> history) => history.isNotEmpty
+    ? history.last.timestamp.difference(
+        history.first.timestamp,
+      )
+    : Duration.zero;

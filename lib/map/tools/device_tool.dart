@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/device_info_panel.dart';
@@ -85,6 +87,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                 device: device,
                 tracking: tracking,
                 onMessage: onMessage,
+                organization: AssetsService().fetchOrganization(Defaults.orgId),
                 onComplete: () => Navigator.pop(context),
               ),
             ),

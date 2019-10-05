@@ -10,6 +10,8 @@ Device _$DeviceFromJson(Map<String, dynamic> json) {
   return Device(
       id: json['id'] as String,
       type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
+      status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
+      alias: json['alias'] as String,
       number: json['number'] as String,
       location: json['location'] == null
           ? null
@@ -19,7 +21,9 @@ Device _$DeviceFromJson(Map<String, dynamic> json) {
 Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'id': instance.id,
       'type': _$DeviceTypeEnumMap[instance.type],
+      'status': _$DeviceStatusEnumMap[instance.status],
       'number': instance.number,
+      'alias': instance.alias,
       'location': instance.location?.toJson()
     };
 
@@ -48,4 +52,9 @@ const _$DeviceTypeEnumMap = <DeviceType, dynamic>{
   DeviceType.Mobile: 'Mobile',
   DeviceType.APRS: 'APRS',
   DeviceType.AIS: 'AIS'
+};
+
+const _$DeviceStatusEnumMap = <DeviceStatus, dynamic>{
+  DeviceStatus.Attached: 'Attached',
+  DeviceStatus.Detached: 'Detached'
 };

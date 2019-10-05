@@ -216,7 +216,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Gj.snitthastiget",
             icon: Icon(MdiIcons.speedometer),
-            value: "${(tracking.speed / 3.6).toStringAsFixed(1)} km/t",
+            value: "${(tracking?.speed ?? 0.0 * 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
             onComplete: onComplete,
           ),

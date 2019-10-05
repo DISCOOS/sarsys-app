@@ -30,4 +30,26 @@ class Organization extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$OrganizationToJson(this);
+
+  String toDistrict(String number) {
+    String id = number?.substring(2, 5);
+    return divisions?.entries
+            ?.firstWhere(
+              (entry) => entry.key == id,
+              orElse: () => null,
+            )
+            ?.value
+            ?.name ??
+        "Ingen";
+  }
+
+  String toFunction(String number) {
+    return functions?.entries
+            ?.firstWhere(
+              (entry) => RegExp(entry.key).hasMatch(number),
+              orElse: () => null,
+            )
+            ?.value ??
+        "Ingen";
+  }
 }

@@ -10,6 +10,7 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -151,6 +152,7 @@ class DevicesPageState extends State<DevicesPage> {
             actionExtentRatio: 0.2,
             child: _buildDeviceTile(device, status, units),
             secondaryActions: <Widget>[
+              _buildEditAction(device),
               if (status != TrackingStatus.None)
                 _buildRemoveAction(device, units)
               else ...[
@@ -177,6 +179,15 @@ class DevicesPageState extends State<DevicesPage> {
       color: Theme.of(context).buttonColor,
       icon: Icons.group_add,
       onTap: () async => await createUnit(context, devices: [device]),
+    );
+  }
+
+  IconSlideAction _buildEditAction(Device device) {
+    return IconSlideAction(
+      caption: 'ENDRE',
+      color: Theme.of(context).buttonColor,
+      icon: Icons.more_horiz,
+      onTap: () async => await editDevice(context, device),
     );
   }
 

@@ -1,7 +1,9 @@
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -15,6 +17,7 @@ class DeviceInfoPanel extends StatelessWidget {
   final Tracking tracking;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
+  final Future<Organization> organization;
 
   const DeviceInfoPanel({
     Key key,
@@ -24,6 +27,7 @@ class DeviceInfoPanel extends StatelessWidget {
     @required this.onMessage,
     this.onComplete,
     this.withHeader = true,
+    this.organization,
   }) : super(key: key);
 
   @override
@@ -38,6 +42,10 @@ class DeviceInfoPanel extends StatelessWidget {
         Divider(),
         _buildContactInfo(context),
         Divider(),
+        if (organization != null && DeviceType.Tetra == device.type) ...[
+          _buildTetraInfo(context),
+          Divider(),
+        ],
         _buildTrackingInfo(context),
         Divider(),
         _buildEffortInfo(context),
@@ -166,6 +174,39 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
+  Widget _buildTetraInfo(BuildContext context) {
+    return FutureBuilder<Organization>(
+        future: organization,
+        builder: (context, snapshot) {
+          return Row(
+            children: <Widget>[
+              Expanded(
+                child: buildCopyableText(
+                  context: context,
+                  label: "Distrikt",
+                  icon: Icon(Icons.home),
+                  value: snapshot.hasData ? snapshot.data.toDistrict(device.number) : '-',
+                  onMessage: onMessage,
+                  onComplete: onComplete,
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  child: buildCopyableText(
+                    context: context,
+                    label: "Funksjon",
+                    icon: Icon(Icons.functions),
+                    value: snapshot.hasData ? snapshot.data.toDistrict(device.number) : '-',
+                    onMessage: onMessage,
+                    onComplete: onComplete,
+                  ),
+                ),
+              ),
+            ],
+          );
+        });
+  }
+
   Row _buildTrackingInfo(BuildContext context) {
     final List<Point> track = _toTrack(tracking);
     return Row(
@@ -217,7 +258,7 @@ class DeviceInfoPanel extends StatelessWidget {
             context: context,
             label: "Gj.snitthastiget",
             icon: Icon(MdiIcons.speedometer),
-            value: "${(asSpeed(distance, effort) / 3.6).toStringAsFixed(1)} km/t",
+            value: "${(asSpeed(distance, effort) * 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
             onComplete: onComplete,
           ),
@@ -232,6 +273,7 @@ class DeviceInfoPanel extends StatelessWidget {
       child: ButtonBar(
         alignment: MainAxisAlignment.start,
         children: <Widget>[
+          _buildEditAction(context),
           if (unit != null)
             _buildRemoveAction(context, unit)
           else ...[
@@ -250,7 +292,7 @@ class DeviceInfoPanel extends StatelessWidget {
   FlatButton _buildAttachAction(BuildContext context, Unit unit) {
     return FlatButton(
         child: Text(
-          'KNYTT TIL ENHET',
+          'KNYTT',
           textAlign: TextAlign.center,
         ),
         onPressed: () async {
@@ -259,10 +301,23 @@ class DeviceInfoPanel extends StatelessWidget {
         });
   }
 
+  FlatButton _buildEditAction(BuildContext context) {
+    return FlatButton(
+      child: Text(
+        'ENDRE',
+        textAlign: TextAlign.center,
+      ),
+      onPressed: () async {
+        await editDevice(context, device);
+        if (onComplete != null) onComplete();
+      },
+    );
+  }
+
   FlatButton _buildCreateAction(BuildContext context) {
     return FlatButton(
       child: Text(
-        'OPPRETT ENHET',
+        'OPPRETT',
         textAlign: TextAlign.center,
       ),
       onPressed: () async {
@@ -275,7 +330,7 @@ class DeviceInfoPanel extends StatelessWidget {
   FlatButton _buildRemoveAction(BuildContext context, Unit unit) {
     return FlatButton(
         child: Text(
-          'FJERN FRA ENHET',
+          'FJERN',
           textAlign: TextAlign.center,
         ),
         onPressed: () async {

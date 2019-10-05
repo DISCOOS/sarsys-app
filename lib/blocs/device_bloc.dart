@@ -56,6 +56,21 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   /// Stream of device updates
   Stream<Device> get updates => state.where((state) => state.isUpdated()).map((state) => state.data);
 
+  /// Create given unit
+  Future<Device> attach(Device device) {
+    return _dispatch<Device>(AttachDevice(device));
+  }
+
+  /// Update given unit
+  Future<Device> update(Device device) {
+    return _dispatch<Device>(UpdateDevice(device));
+  }
+
+  /// Delete given unit
+  Future<void> detach(Device device) {
+    return _dispatch<void>(DetachDevice(device));
+  }
+
   /// Fetch devices from [service]
   Future<List<Device>> fetch() async {
     if (incidentBloc.isUnset) {
@@ -81,6 +96,12 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Stream<DeviceState> mapEventToState(DeviceCommand command) async* {
     if (command is LoadDevices) {
       yield _load(command);
+    } else if (command is AttachDevice) {
+      yield await _attach(command);
+    } else if (command is UpdateDevice) {
+      yield await _update(command);
+    } else if (command is DetachDevice) {
+      yield await _detach(command);
     } else if (command is HandleMessage) {
       yield _process(command.data);
     } else if (command is ClearDevices) {
@@ -97,6 +118,43 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
       (device) => MapEntry(device.id, device),
     ));
     return _toOK(command, DevicesLoaded(_devices.keys.toList()));
+  }
+
+  Future<DeviceState> _attach(AttachDevice event) async {
+    var response = await service.attach(incidentBloc.current.id, event.data);
+    if (response.is200) {
+      var device = _devices.putIfAbsent(
+        response.body.id,
+        () => response.body,
+      );
+      return _toOK(event, DeviceAttached(device), result: device);
+    }
+    return _toError(event, response);
+  }
+
+  Future<DeviceState> _update(UpdateDevice event) async {
+    var response = await service.update(event.data);
+    if (response.is204) {
+      _devices.update(
+        event.data.id,
+        (_) => event.data,
+        ifAbsent: () => event.data,
+      );
+      return _toOK(event, DeviceUpdated(event.data), result: event.data);
+    }
+    return _toError(event, response);
+  }
+
+  Future<DeviceState> _detach(DetachDevice event) async {
+    var response = await service.detach(event.data);
+    if (response.is204) {
+      if (_devices.remove(event.data.id) == null) {
+        return _toError(event, "Failed to detach device $event, not found locally");
+      }
+      // Any tracking is removed by listening to this event in TrackingBloc
+      return _toOK(event, DeviceDetached(event.data));
+    }
+    return _toError(event, response);
   }
 
   DeviceState _process(DeviceMessage event) {
@@ -168,6 +226,27 @@ abstract class DeviceCommand<T> extends Equatable {
   DeviceCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
+class AttachDevice extends DeviceCommand<Device> {
+  AttachDevice(Device data) : super(data);
+
+  @override
+  String toString() => 'AttachDevice';
+}
+
+class UpdateDevice extends DeviceCommand<Device> {
+  UpdateDevice(Device data) : super(data);
+
+  @override
+  String toString() => 'UpdateDevice';
+}
+
+class DetachDevice extends DeviceCommand<Device> {
+  DetachDevice(Device data) : super(data);
+
+  @override
+  String toString() => 'DetachDevice';
+}
+
 class LoadDevices extends DeviceCommand<List<Device>> {
   LoadDevices(List<Device> data) : super(data);
 
@@ -206,7 +285,9 @@ abstract class DeviceState<T> extends Equatable {
 
   isEmpty() => this is DevicesEmpty;
   isLoaded() => this is DevicesLoaded;
-  isUpdated() => this is DeviceUpdated;
+  isAttached() => this is DeviceUpdated;
+  isUpdated() => this is DeviceAttached;
+  isDetached() => this is DeviceDetached;
   isCleared() => this is DevicesCleared;
   isException() => this is DeviceException;
   isError() => this is DeviceError;
@@ -226,11 +307,25 @@ class DevicesLoaded extends DeviceState<List<String>> {
   String toString() => 'DevicesLoaded';
 }
 
+class DeviceAttached extends DeviceState<Device> {
+  DeviceAttached(Device device) : super(device);
+
+  @override
+  String toString() => 'DeviceAttached';
+}
+
 class DeviceUpdated extends DeviceState<Device> {
   DeviceUpdated(Device device) : super(device);
 
   @override
   String toString() => 'DeviceUpdated';
+}
+
+class DeviceDetached extends DeviceState<Device> {
+  DeviceDetached(Device device) : super(device);
+
+  @override
+  String toString() => 'DeviceDetached';
 }
 
 class DevicesCleared extends DeviceState<List<Device>> {

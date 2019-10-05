@@ -10,12 +10,16 @@ part 'Device.g.dart';
 class Device extends Equatable {
   final String id;
   final DeviceType type;
+  final DeviceStatus status;
   final String number;
+  final String alias;
   final Point location;
 
   Device({
     @required this.id,
     @required this.type,
+    @required this.status,
+    this.alias,
     this.number,
     this.location,
   }) : super([id, type, number]);
@@ -24,7 +28,7 @@ class Device extends Equatable {
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
 
   /// Device name
-  get name => "${translateDeviceType(type)} $number";
+  get name => this.alias ?? this.number;
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
@@ -32,14 +36,33 @@ class Device extends Equatable {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
 
+  /// Clone with json
+  Device withJson(Map<String, dynamic> json) {
+    var clone = Device.fromJson(json);
+    return Device(
+      id: clone.id ?? this.id,
+      type: clone.type ?? this.type,
+      status: clone.status ?? this.status,
+      alias: clone.alias ?? this.alias,
+      number: clone.number ?? this.number,
+      location: clone.location ?? this.location,
+    );
+  }
+
   /// Clone device and set given location
   Device cloneWith({
+    DeviceType type,
+    DeviceStatus status,
+    String alias,
+    String number,
     Point location,
   }) {
     return Device(
       id: this.id,
-      type: this.type,
-      number: this.number,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      alias: alias ?? this.alias,
+      number: number ?? this.number,
       location: location ?? this.location,
     );
   }
@@ -55,5 +78,18 @@ String translateDeviceType(DeviceType type) {
       return "Mobiltelefon";
     default:
       return enumName(type);
+  }
+}
+
+enum DeviceStatus { Attached, Detached }
+
+String translateDeviceStatus(DeviceStatus status) {
+  switch (status) {
+    case DeviceStatus.Attached:
+      return "I bruk";
+    case DeviceStatus.Detached:
+      return "Fjernet";
+    default:
+      return enumName(status);
   }
 }

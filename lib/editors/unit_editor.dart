@@ -17,7 +17,14 @@ class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Iterable<Device> devices;
 
-  const UnitEditor({Key key, this.unit, this.devices = const []}) : super(key: key);
+  final UnitType type;
+
+  const UnitEditor({
+    Key key,
+    this.unit,
+    this.type = UnitType.Team,
+    this.devices = const [],
+  }) : super(key: key);
 
   @override
   _UnitEditorState createState() => _UnitEditorState();
@@ -44,6 +51,16 @@ class _UnitEditorState extends State<UnitEditor> {
   @override
   void initState() {
     super.initState();
+    _phoneController.text = widget?.unit?.phone ?? "";
+    _callsignController.text = widget?.unit?.callsign ?? "";
+    _numberController.text = "${widget?.unit?.number ?? ""}";
+    _numberController.addListener(
+      () => _onTypeOrNumberEdit(
+        "${translateUnitType(widget?.unit?.type ?? widget.type)}",
+        _numberController.text,
+        true,
+      ),
+    );
     _init();
   }
 
@@ -128,19 +145,12 @@ class _UnitEditorState extends State<UnitEditor> {
     final actualType = _getActualType(UnitType.Team);
     final defaultNumber = _getDefaultNumber(actualType);
     final actualNumber = _getActualNumber(defaultNumber);
-    _numberController.text = "$actualNumber";
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
       maxLength: 2,
       maxLengthEnforced: true,
       initialValue: "$actualNumber",
-      onChanged: (number) => _onTypeOrNumberEdit(
-        enumName(_getActualType(UnitType.Team)),
-        number,
-        false,
-      ),
-      onEditingComplete: () => setState(() {}),
       controller: _numberController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -253,15 +263,10 @@ class _UnitEditorState extends State<UnitEditor> {
     _formKey.currentState.save();
   }
 
-  void _onTypeOrNumberEdit(String type, number, bool update) {
-    _formKey.currentState.save();
-    var unit = Unit.fromJson(_formKey.currentState.value);
-    // Type changed?
-    if (enumName(unit.type) != type) {
-      number = _getDefaultNumber(unit.type);
-      _setText(_numberController, "$number");
-    }
-    _editedName = "${translateUnitType(unit.type)} ${number ?? _getDefaultNumber(unit.type)}";
+  void _onTypeOrNumberEdit(String type, String number, bool update) {
+    if (type.isEmpty) type = translateUnitType(widget.type);
+    if (number.isEmpty) number = "${_unitBloc.count + 1}";
+    _editedName = "$type $number";
     if (update) setState(() {});
   }
 

@@ -30,9 +30,20 @@ class AssetsService {
     }
   }
 
-  Future _loadOrg(String orgId) async {
+  Future<Organization> _loadOrg(String orgId) async {
     await init();
-    _organizations.putIfAbsent(orgId, () => Organization.fromJson(_assets["organizations"][orgId]));
+    return _organizations.putIfAbsent(
+      orgId,
+      () => Organization.fromJson(_assets["organizations"][orgId]),
+    );
+  }
+
+  Future<Organization> fetchOrganization(String orgId) async {
+    final map = _organizations;
+    if (!map.containsKey(orgId)) {
+      await _loadOrg(orgId);
+    }
+    return _organizations[orgId];
   }
 
   Future<List<TalkGroup>> fetchTalkGroups(String orgId, String catalog) async {

@@ -4,6 +4,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
+import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
@@ -148,11 +149,20 @@ class _CommandScreenState extends State<CommandScreen> {
   }
 
   StatelessWidget _buildFAB() {
-    return _current == 1 && _userBloc?.user?.isCommander == true
-        ? FloatingActionButton(
+    if (_userBloc?.user?.isCommander == true) {
+      switch (_current) {
+        case 1:
+          return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createUnit(context),
-          )
-        : Container();
+          );
+        case 2:
+          return FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: () async => await attachDevice(context),
+          );
+      }
+    }
+    return Container();
   }
 }

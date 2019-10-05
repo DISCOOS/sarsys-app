@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -94,6 +95,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
                       unit: _unit,
                       device: actual,
                       tracking: _trackingBloc.tracking[_unit?.tracking],
+                      organization: AssetsService().fetchOrganization(Defaults.orgId),
                       withHeader: false,
                       onMessage: showMessage,
                     ),
