@@ -97,7 +97,7 @@ class DeviceLayer extends MapPlugin {
   ) {
     if (tracking != null) {
       final tracks = _toTrack(tracking, device);
-      if (tracks == null) {
+      if (tracks?.isNotEmpty == true) {
         var offsets = tracks.reversed.take(10).map((point) {
           var pos = map.project(toLatLng(point));
           pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
