@@ -35,7 +35,7 @@ class Organization extends Equatable {
     String id = number?.substring(2, 5);
     return divisions?.entries
             ?.firstWhere(
-              (entry) => entry.key == id,
+              (entry) => number != null && entry.key == id,
               orElse: () => null,
             )
             ?.value
@@ -46,7 +46,7 @@ class Organization extends Equatable {
   String toFunction(String number) {
     return functions?.entries
             ?.firstWhere(
-              (entry) => RegExp(entry.key).hasMatch(number),
+              (entry) => number != null && RegExp(entry.key).hasMatch(number),
               orElse: () => null,
             )
             ?.value ??
