@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/map/painters.dart';
+import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -56,8 +57,9 @@ class DeviceLayer extends MapPlugin {
   Widget _build(BuildContext context, Size size, DeviceLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracking = options.bloc.getTrackingByDeviceId();
-    final devices =
-        options.bloc.deviceBloc.devices.values.where((device) => bounds.contains(toLatLng(device.location)));
+    final devices = options.bloc.deviceBloc.devices.values.where(
+      (device) => bounds.contains(toLatLng(device.location)),
+    );
     return options.bloc.isEmpty
         ? Container()
         : Stack(
@@ -71,7 +73,7 @@ class DeviceLayer extends MapPlugin {
                           options,
                           map,
                           device,
-                          tracking[device.id]?.first?.tracks[device.id],
+                          tracking,
                         ))
                     .toList(),
               if (options.showLabels) ...devices.map((device) => _buildLabel(context, options, map, device)).toList(),
@@ -80,31 +82,39 @@ class DeviceLayer extends MapPlugin {
           );
   }
 
+  List<Point> _toTrack(Map<String, Set<Tracking>> tracking, Device device) {
+    final tracks = tracking[device.id]?.first?.tracks;
+    return tracks == null ? [] : tracks[device.id];
+  }
+
   _buildTrack(
     BuildContext context,
     Size size,
     DeviceLayerOptions options,
     MapState map,
     Device device,
-    List<Point> tracking,
+    Map<String, Set<Tracking>> tracking,
   ) {
     if (tracking != null) {
-      var offsets = tracking.reversed.take(10).map((point) {
-        var pos = map.project(toLatLng(point));
-        pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-        return Offset(pos.x.toDouble(), pos.y.toDouble());
-      }).toList(growable: false);
+      final tracks = _toTrack(tracking, device);
+      if (tracks == null) {
+        var offsets = tracks.reversed.take(10).map((point) {
+          var pos = map.project(toLatLng(point));
+          pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+          return Offset(pos.x.toDouble(), pos.y.toDouble());
+        }).toList(growable: false);
 
-      final color = toPointStatusColor(tracking.last);
-      return CustomPaint(
-        painter: LineStringPainter(
-          offsets: offsets,
-          color: color,
-          borderColor: color,
-          opacity: options.opacity,
-        ),
-        size: size,
-      );
+        final color = toPointStatusColor(tracks.last);
+        return CustomPaint(
+          painter: LineStringPainter(
+            offsets: offsets,
+            color: color,
+            borderColor: color,
+            opacity: options.opacity,
+          ),
+          size: size,
+        );
+      }
     }
     return Container();
   }
