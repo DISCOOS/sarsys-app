@@ -177,20 +177,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
 
-    // Configure location controller
-    if (widget.withLocation) {
-      _locationController = LocationController(
-        tickerProvider: this,
-        configBloc: _configBloc,
-        permissionController: Provider.of<PermissionController>(context).cloneWith(
-          onMessage: widget.onMessage,
-        ),
-        mapController: widget.mapController,
-        onTrackingChanged: _onTrackingChanged,
-        onLocationChanged: _onLocationChanged,
-      );
-      _locationController.init();
-    }
     // Configure map tool controller
     if (widget.withControls) {
       _mapToolController = MapToolController(
@@ -214,15 +200,34 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
-
-    // Only ensure center if not set already
-    _center ??= _ensureCenter();
-
     _init();
   }
 
   void _init() async {
     _baseMaps = await _mapTileService.fetchMaps();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Configure location controller
+    if (widget.withLocation) {
+      _locationController ??= LocationController(
+        tickerProvider: this,
+        configBloc: _configBloc,
+        permissionController: Provider.of<PermissionController>(context).cloneWith(
+          onMessage: widget.onMessage,
+        ),
+        mapController: widget.mapController,
+        onTrackingChanged: _onTrackingChanged,
+        onLocationChanged: _onLocationChanged,
+      );
+      _locationController.init();
+    }
+
+    // Only ensure center if not set already
+    _center ??= _ensureCenter();
   }
 
   @override
