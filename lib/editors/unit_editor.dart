@@ -52,8 +52,8 @@ class _UnitEditorState extends State<UnitEditor> {
   void initState() {
     super.initState();
     _phoneController.text = _getDefaultPhone();
-    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
     _numberController.text = _getDefaultNumber();
+    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
     _numberController.addListener(
       () => _onTypeOrNumberEdit(
         translateUnitType(_getActualType(widget.type)),
@@ -61,12 +61,17 @@ class _UnitEditorState extends State<UnitEditor> {
         true,
       ),
     );
+    _set();
     _init();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _set();
+  }
+
+  void _set() {
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
@@ -82,6 +87,8 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
+      extendBody: true,
       appBar: AppBar(
         title: Text(widget.unit == null ? 'Ny enhet' : 'Endre enhet'),
         centerTitle: false,
@@ -259,7 +266,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _onTypeOrNumberEdit(String type, String number, bool update) {
-    _formKey.currentState.save();
+    _formKey?.currentState?.save();
     if (type.isEmpty) type = translateUnitType(widget.type);
     if (number.isEmpty) number = "${_unitBloc.count + 1}";
     _editedName = "$type $number";
@@ -304,19 +311,14 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
-    final devices = (widget?.unit?.tracking != null
-        ? _trackingBloc.getDevicesFromTrackingId(
-            widget?.unit?.tracking,
-            // Include closed tracks
-            exclude: [],
-          )
-        : [])
-      ..addAll(widget.devices);
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final devices = _getActualDevices();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
         attribute: 'devices',
         maxChips: 5,
+        onChanged: (_) {},
         initialValue: devices,
         decoration: InputDecoration(
           labelText: "Sporing",
@@ -359,6 +361,17 @@ class _UnitEditorState extends State<UnitEditor> {
         valueTransformer: (values) => values.map((device) => device).toList(),
       ),
     );
+  }
+
+  List _getActualDevices() {
+    return (widget?.unit?.tracking != null
+        ? _trackingBloc.getDevicesFromTrackingId(
+            widget?.unit?.tracking,
+            // Include closed tracks
+            exclude: [],
+          )
+        : [])
+      ..addAll(widget.devices);
   }
 
   void _submit() async {
