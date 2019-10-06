@@ -216,15 +216,15 @@ class _UnitEditorState extends State<UnitEditor> {
             (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
             orElse: () => null,
           );
-          return unit != null ? "${unit.name} har likt" : null;
+          return unit != null ? "${unit.name} har samme" : null;
         },
       ],
     );
   }
 
   bool _isSameCallsign(String callsign1, String callsign2) {
-    return callsign1.toLowerCase().replaceAll(RegExp(r'\s|-'), '') ==
-        callsign2.toLowerCase().replaceAll(RegExp(r'\s|-'), '');
+    return callsign1?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
+        callsign2?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
   FormBuilderTextField _buildPhoneField() {
@@ -252,7 +252,21 @@ class _UnitEditorState extends State<UnitEditor> {
         ),
       ),
       keyboardType: TextInputType.phone,
+      validators: [
+        (value) {
+          Unit unit = _unitBloc.units.values.firstWhere(
+            (Unit unit) => unit != widget.unit && _isSamePhone(value as String, unit.phone),
+            orElse: () => null,
+          );
+          return unit != null ? "${unit.name} har samme" : null;
+        },
+      ],
     );
+  }
+
+  bool _isSamePhone(String phone1, String phone2) {
+    return phone1?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
+        phone2?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
   void _setText(TextEditingController controller, String value) {
