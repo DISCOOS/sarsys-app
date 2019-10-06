@@ -211,7 +211,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
   Widget _buildNameField() {
     return FormBuilderTextField(
       maxLines: 1,
-      autofocus: true,
       attribute: 'name',
       initialValue: widget?.incident?.name,
       decoration: new InputDecoration(
@@ -228,7 +227,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
   Widget _buildJustificationField() {
     return FormBuilderTextField(
       maxLines: 3,
-      autofocus: false,
       attribute: 'justification',
       initialValue: widget?.incident?.justification,
       decoration: new InputDecoration(
@@ -245,7 +243,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
   Widget _buildReferenceField() {
     return FormBuilderTextField(
       maxLines: 1,
-      autofocus: true,
       attribute: 'reference',
       initialValue: widget?.incident?.reference,
       decoration: new InputDecoration(
