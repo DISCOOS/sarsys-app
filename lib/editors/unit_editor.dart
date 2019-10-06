@@ -141,7 +141,7 @@ class _UnitEditorState extends State<UnitEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedName ?? widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${_unitBloc.units.length + 1}",
+          _editedName ?? widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${_unitBloc.count() + 1}",
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
@@ -175,16 +175,22 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
         FormBuilderValidators.numeric(errorText: "Må være et nummer"),
-        (value) {
-          Unit unit = _unitBloc.units.values.firstWhere(
-            (Unit unit) => unit != widget.unit && unit.number == value,
-            orElse: () => null,
-          );
-          return unit != null ? "Lag $value finnes allerede" : null;
-        },
+        _validateNumber,
       ],
       valueTransformer: (value) => int.tryParse(value ?? _getDefaultNumber()),
     );
+  }
+
+  _validateNumber(value) {
+    Unit unit = _unitBloc.units.values
+        .where(
+          (unit) => UnitStatus.Retired != unit.status,
+        )
+        .firstWhere(
+          (Unit unit) => unit != widget.unit && unit.number == value,
+          orElse: () => null,
+        );
+    return unit != null ? "Lag $value finnes allerede" : null;
   }
 
   FormBuilderTextField _buildCallsignField() {
@@ -211,15 +217,21 @@ class _UnitEditorState extends State<UnitEditor> {
       keyboardType: TextInputType.text,
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
-        (value) {
-          Unit unit = _unitBloc.units.values.firstWhere(
-            (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
-            orElse: () => null,
-          );
-          return unit != null ? "${unit.name} har samme" : null;
-        },
+        _validateCallsign,
       ],
     );
+  }
+
+  _validateCallsign(value) {
+    Unit unit = _unitBloc.units.values
+        .where(
+          (unit) => UnitStatus.Retired != unit.status,
+        )
+        .firstWhere(
+          (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
+          orElse: () => null,
+        );
+    return unit != null ? "${unit.name} har samme" : null;
   }
 
   bool _isSameCallsign(String callsign1, String callsign2) {
@@ -253,15 +265,21 @@ class _UnitEditorState extends State<UnitEditor> {
       ),
       keyboardType: TextInputType.phone,
       validators: [
-        (value) {
-          Unit unit = _unitBloc.units.values.firstWhere(
-            (Unit unit) => unit != widget.unit && _isSamePhone(value as String, unit.phone),
-            orElse: () => null,
-          );
-          return unit != null ? "${unit.name} har samme" : null;
-        },
+        _validatePhone,
       ],
     );
+  }
+
+  _validatePhone(value) {
+    Unit unit = _unitBloc.units.values
+        .where(
+          (unit) => UnitStatus.Retired != unit.status,
+        )
+        .firstWhere(
+          (Unit unit) => unit != widget.unit && _isSamePhone(value as String, unit.phone),
+          orElse: () => null,
+        );
+    return unit != null ? "${unit.name} har samme" : null;
   }
 
   bool _isSamePhone(String phone1, String phone2) {
@@ -402,7 +420,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _getDefaultNumber() {
-    return "${widget?.unit?.number ?? _unitBloc.units.length + 1}";
+    return "${widget?.unit?.number ?? _unitBloc.count() + 1}";
     //return _unitBloc.units.values.where((unit) => widget.type == unit.type).length + 1;
   }
 
@@ -430,7 +448,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   int _ensureCallSignSuffix() {
-    final count = _unitBloc.units.length;
+    final count = _unitBloc.count();
     final values = _formKey?.currentState?.value;
     // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
     final number = ((values == null ? (widget?.unit?.number ?? count + 1) : values['number']) ??
