@@ -282,7 +282,7 @@ class _UnitEditorState extends State<UnitEditor> {
   void _onTypeOrNumberEdit(String type, String number, bool update) {
     _formKey?.currentState?.save();
     if (type.isEmpty) type = translateUnitType(widget.type);
-    if (number.isEmpty) number = "${_unitBloc.count + 1}";
+    if (number.isEmpty) number = "${_unitBloc.count() + 1}";
     _editedName = "$type $number";
     if (update) setState(() {});
   }

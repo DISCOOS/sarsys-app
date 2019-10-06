@@ -49,7 +49,12 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   bool get isEmpty => units.isEmpty;
 
   /// Get count
-  int get count => _units.length;
+  int count({
+    List<UnitStatus> exclude: const [UnitStatus.Retired],
+  }) =>
+      exclude?.isNotEmpty == false
+          ? _units.length
+          : _units.values.where((unit) => !exclude.contains(unit.status)).length;
 
   /// Get units
   Map<String, Unit> get units => UnmodifiableMapView<String, Unit>(_units);
