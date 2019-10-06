@@ -173,8 +173,8 @@ class _UnitEditorState extends State<UnitEditor> {
       ),
       keyboardType: TextInputType.numberWithOptions(),
       validators: [
-        FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
-        FormBuilderValidators.numeric(errorText: "Verdi må være et nummer"),
+        FormBuilderValidators.required(errorText: 'Må fylles inn'),
+        FormBuilderValidators.numeric(errorText: "Må være et nummer"),
         (value) {
           Unit unit = _unitBloc.units.values.firstWhere(
             (Unit unit) => unit != widget.unit && unit.number == value,
@@ -210,13 +210,13 @@ class _UnitEditorState extends State<UnitEditor> {
       ),
       keyboardType: TextInputType.text,
       validators: [
-        FormBuilderValidators.required(errorText: 'Kallesignal må fylles inn'),
+        FormBuilderValidators.required(errorText: 'Må fylles inn'),
         (value) {
           Unit unit = _unitBloc.units.values.firstWhere(
             (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
             orElse: () => null,
           );
-          return unit != null ? "${unit.name} har kallesignal $value" : null;
+          return unit != null ? "${unit.name} har likt" : null;
         },
       ],
     );
