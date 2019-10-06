@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/map/coordinate_panel.dart';
 import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
@@ -12,6 +11,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/widgets/input_coordinate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -59,6 +59,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       key: _searchFieldKey,
       mapController: _mapController,
       onError: _onError,
+      withBorder: false,
     );
   }
 
@@ -110,14 +111,58 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           children: [
             _buildMap(),
             _buildCenterMark(),
-            _buildSearchField(),
+            _buildInputFields(),
             _buildControls(),
-            _buildCoordsPanel(),
           ],
         ),
         onTapDown: (_) => _clearSearchField(),
       ),
       resizeToAvoidBottomInset: false,
+    );
+  }
+
+  Widget _buildInputFields() {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        margin: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _buildSearchField(),
+            _buildUTMField(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Container(
+      margin: EdgeInsets.only(left: 8.0, right: 8.0),
+      child: _searchField,
+    );
+  }
+
+  Widget _buildUTMField() {
+    return Container(
+      margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
+      child: InputUTM(
+        point: LatLng(_current.lat, _current.lon),
+        onChanged: (point) {
+          _current = Point.now(point.latitude, point.longitude);
+        },
+        onEditingComplete: () => _mapController.animatedMove(
+          LatLng(_current.lat, _current.lon),
+          _mapController.zoom,
+          this,
+        ),
+      ),
     );
   }
 
@@ -180,17 +225,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     );
   }
 
-  Align _buildSearchField() {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: _searchField,
-    );
-  }
-
   Widget _buildControls() {
     Size size = Size(42.0, 42.0);
     return Positioned(
-      top: 100.0,
+      top: 172.0,
       right: 8.0,
       child: SafeArea(
         child: Column(
@@ -222,7 +260,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
                 child: IconButton(
                   icon: Icon(Icons.remove),
                   onPressed: () {
-                    _mapController.animatedMove(_mapController.center, _mapController.zoom - 1, this);
+                    _mapController.move(_mapController.center, _mapController.zoom);
                   },
                 ),
                 decoration: BoxDecoration(
@@ -259,20 +297,12 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     );
   }
 
-  Align _buildCoordsPanel() {
-    return Align(
-      alignment: Alignment.center,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 220.0),
-        child: CoordinatePanel(point: _current),
-      ),
-    );
-  }
-
   void _updatePoint(MapPosition point, bool hasGesture) {
-    _current = Point.now(point.center.latitude, point.center.longitude);
-    if (_init) setState(() {});
-    _init = true;
+    if (hasGesture) {
+      _current = Point.now(point.center.latitude, point.center.longitude);
+      if (_init) setState(() {});
+      _init = true;
+    }
   }
 
   void _onError(String message) {

@@ -920,6 +920,17 @@ class TransverseMercatorProjection extends Projection {
 
   static double _toUtmCentralMeridian(int zone) => (--zone + 0.5) * math.pi / 30.0 - math.pi;
 
+  static const UTM_BANDS = "CDEFGHJKLMNPQRSTUVWXX";
+
+  static String toBand(double lat, {bool isSouth = false}) {
+    var bands = "CDEFGHJKLMNPQRSTUVWXX";
+    if (isSouth) lat = lat * -1;
+    if (-80 <= lat && lat <= 84) {
+      return bands[((lat + 80) / 8).floor()];
+    }
+    throw "UTM is not valid for latitude $lat";
+  }
+
   static int getZoneFromNearestMeridianInDegrees(double longitude) {
     return getZoneFromNearestMeridianInRadians(longitude * ProjMath.DTR);
   }
@@ -1172,13 +1183,5 @@ class CoordinateFormat {
     final northing = utmOrdinalFormat.format(from.y);
     final easting = utmOrdinalFormat.format(from.x);
     return withLabels ? "$zone$band E$easting N$northing" : "$zone$band $easting $northing";
-  }
-
-  static String toUTMBand(double lat) {
-    var bands = "CDEFGHJKLMNPQRSTUVWXX";
-    if (-80 <= lat && lat <= 84) {
-      return bands[((lat + 80) / 8).floor()];
-    }
-    throw "UTM is not valid for latitude $lat";
   }
 }

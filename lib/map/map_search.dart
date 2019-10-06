@@ -30,6 +30,8 @@ class MapSearchField extends StatefulWidget {
 
   final bool withRetired;
 
+  final bool withBorder;
+
   const MapSearchField({
     Key key,
     @required this.onError,
@@ -39,6 +41,7 @@ class MapSearchField extends StatefulWidget {
     this.prefixIcon,
     this.zoom,
     this.hintText,
+    this.withBorder = true,
     this.withRetired = false,
   }) : super(key: key);
 
@@ -76,47 +79,57 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   Widget build(BuildContext context) {
     final theme = Theme.of(context).iconTheme;
     return Container(
-      margin: EdgeInsets.all(8.0),
-      padding: EdgeInsets.all(0.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
+      decoration: widget.withBorder
+          ? BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8.0),
+            )
+          : null,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: widget.prefixIcon,
-          ),
+          if (widget.prefixIcon != null)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: widget.prefixIcon,
+            ),
           Expanded(
-            child: TextField(
-              key: _searchKey,
-              focusNode: _focusNode,
-              autofocus: false,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintMaxLines: 1,
-                hintText: widget.hintText ?? "Søk her",
-                contentPadding: EdgeInsets.only(top: 16.0, bottom: 16.0),
+            child: Padding(
+              padding: EdgeInsets.all(widget.prefixIcon != null || !widget.withBorder ? 8.0 : 0.0),
+              child: TextField(
+                key: _searchKey,
+                focusNode: _focusNode,
+                autofocus: false,
+                decoration: InputDecoration(
+                  border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
+                  hintMaxLines: 1,
+                  hintText: widget.hintText ?? "Søk her",
+                  contentPadding: EdgeInsets.only(top: 16.0, bottom: 16.0),
+                  suffixIcon: widget.withBorder ? null : _buildClearButton(theme),
+                ),
+                controller: _controller,
+                onSubmitted: (value) => _search(context, value),
               ),
-              controller: _controller,
-              onSubmitted: (value) => _search(context, value),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: _focusNode.hasFocus || _match != null || _overlayEntry != null
-                ? GestureDetector(
-                    child: Icon(Icons.close, color: theme.color),
-                    onTap: () => clear(),
-                  )
-                : Icon(Icons.search, color: theme.color.withOpacity(0.4)),
-          ),
+          if (widget.withBorder)
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: _buildClearButton(theme),
+            ),
         ],
       ),
     );
+  }
+
+  StatelessWidget _buildClearButton(IconThemeData theme) {
+    return _focusNode.hasFocus || _match != null || _overlayEntry != null
+        ? GestureDetector(
+            child: Icon(Icons.close, color: theme.color),
+            onTap: () => clear(),
+          )
+        : Icon(Icons.search, color: theme.color.withOpacity(0.4));
   }
 
   /// Hide overlay with results if shown, clear content and unfocus textfield

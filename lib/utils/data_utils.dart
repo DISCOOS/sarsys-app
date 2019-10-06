@@ -17,13 +17,27 @@ String toDDM(Point point, {String prefix = "DDM", String empty = "Velg"}) {
   return ("$prefix ${CoordinateFormat.toDDM(ProjCoordinate.from2D(point.lon, point.lat))}").trim();
 }
 
-/// TODO: Make UTM zone and northing configurable
-final _utmProj = TransverseMercatorProjection.utm(32, false);
-String toUTM(Point point, {String prefix = "UTM", String empty = "Velg"}) {
+final _utmProjs = {"32.false": TransverseMercatorProjection.utm(32, false)};
+TransverseMercatorProjection toUTMProj({
+  int zone = 32,
+  bool isSouth = false,
+}) {
+  return _utmProjs.putIfAbsent("$zone.$isSouth", () => TransverseMercatorProjection.utm(zone, isSouth));
+}
+
+String toUTM(
+  Point point, {
+  int zone = 32,
+  bool isSouth = false,
+  String prefix = "UTM",
+  String empty = "Velg",
+}) {
   if (point == null) return empty;
   var src = ProjCoordinate.from2D(point.lon, point.lat);
-  var dst = _utmProj.project(src);
-  return ("$prefix ${CoordinateFormat.toUTM(dst)}").trim();
+  var proj = toUTMProj(zone: zone, isSouth: isSouth);
+  var dst = proj.project(src);
+  var band = TransverseMercatorProjection.toBand(point.lat);
+  return ("$prefix ${CoordinateFormat.toUTM(dst, zone: zone, band: band)}").trim();
 }
 
 String formatSince(DateTime timestamp, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {

@@ -396,21 +396,24 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         alignment: Alignment.topLeft,
         child: Container(
           constraints: BoxConstraints(maxWidth: maxWidth),
-          child: MapSearchField(
-            key: _searchFieldKey,
-            mapController: _mapController,
-            zoom: _zoom,
-            onError: (message) => widget.onMessage(message),
-            onMatch: _onSearchMatch,
-            onCleared: _onSearchCleared,
-            prefixIcon: GestureDetector(
-              child: Icon(Icons.menu),
-              onTap: () {
-                _searchFieldKey.currentState.clear();
-                if (widget.onOpenDrawer != null) {
-                  widget.onOpenDrawer();
-                }
-              },
+          child: Container(
+            margin: EdgeInsets.all(8.0),
+            child: MapSearchField(
+              key: _searchFieldKey,
+              mapController: _mapController,
+              zoom: _zoom,
+              onError: (message) => widget.onMessage(message),
+              onMatch: _onSearchMatch,
+              onCleared: _onSearchCleared,
+              prefixIcon: GestureDetector(
+                child: Icon(Icons.menu),
+                onTap: () {
+                  _searchFieldKey.currentState.clear();
+                  if (widget.onOpenDrawer != null) {
+                    widget.onOpenDrawer();
+                  }
+                },
+              ),
             ),
           ),
         ),
