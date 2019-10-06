@@ -1168,9 +1168,17 @@ class CoordinateFormat {
   }
 
   static final utmOrdinalFormat = NumberFormat("0000000")..maximumFractionDigits = 0;
-  static String toUTM(ProjCoordinate from, {bool withLabels = false}) {
+  static String toUTM(ProjCoordinate from, {int zone = 32, String band = "V", bool withLabels = false}) {
     final northing = utmOrdinalFormat.format(from.y);
     final easting = utmOrdinalFormat.format(from.x);
-    return withLabels ? "32V E$easting N$northing" : "32V $easting $northing";
+    return withLabels ? "$zone$band E$easting N$northing" : "$zone$band $easting $northing";
+  }
+
+  static String toUTMBand(double lat) {
+    var bands = "CDEFGHJKLMNPQRSTUVWXX";
+    if (-80 <= lat && lat <= 84) {
+      return bands[((lat + 80) / 8).floor()];
+    }
+    throw "UTM is not valid for latitude $lat";
   }
 }
