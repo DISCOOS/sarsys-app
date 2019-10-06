@@ -200,6 +200,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
+
+    // Ensure all controllers are set
+    _ensureMapToolController();
+    _ensureLocationControllers();
+
+    // Only ensure center if not set already
+    _center ??= _ensureCenter();
+
     _init();
   }
 
@@ -211,6 +219,40 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    // Ensure all controllers are set
+    _ensureMapToolController();
+    _ensureLocationControllers();
+
+    // Only ensure center if not set already
+    _center ??= _ensureCenter();
+  }
+
+  void _ensureMapToolController() {
+    if (widget.withControls) {
+      _mapToolController = MapToolController(
+        tools: [
+          MeasureTool(),
+          POITool(
+            _incidentBloc,
+            active: () => _useLayers.contains(POI_LAYER),
+            onMessage: widget.onMessage,
+          ),
+          UnitTool(
+            _trackingBloc,
+            active: () => _useLayers.contains(UNIT_LAYER),
+            onMessage: widget.onMessage,
+          ),
+          DeviceTool(
+            _trackingBloc,
+            active: () => _useLayers.contains(DEVICE_LAYER),
+            onMessage: widget.onMessage,
+          ),
+        ],
+      );
+    }
+  }
+
+  void _ensureLocationControllers() {
     // Configure location controller
     if (widget.withLocation) {
       _locationController ??= LocationController(
@@ -225,9 +267,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       );
       _locationController.init();
     }
-
-    // Only ensure center if not set already
-    _center ??= _ensureCenter();
   }
 
   @override
@@ -351,7 +390,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             widget?.incident?.meetup ?? _incidentBloc?.current?.meetup: "Oppmøte",
           }),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
-        if (widget.withLocation && _locationController.isReady) _locationController.options,
+        if (widget.withLocation && _locationController?.isReady == true) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
         if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),
