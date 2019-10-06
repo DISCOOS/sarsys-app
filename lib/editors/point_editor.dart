@@ -144,7 +144,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildSearchField() {
     return Container(
-      margin: EdgeInsets.only(left: 8.0, right: 8.0),
+      margin: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 4.0),
       child: _searchField,
     );
   }

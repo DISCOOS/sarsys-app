@@ -95,22 +95,23 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
               child: widget.prefixIcon,
             ),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(widget.prefixIcon != null || !widget.withBorder ? 8.0 : 0.0),
-              child: TextField(
-                key: _searchKey,
-                focusNode: _focusNode,
-                autofocus: false,
-                decoration: InputDecoration(
-                  border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
-                  hintMaxLines: 1,
-                  hintText: widget.hintText ?? "Søk her",
-                  contentPadding: EdgeInsets.only(top: 16.0, bottom: 16.0),
-                  suffixIcon: widget.withBorder ? null : _buildClearButton(theme),
+            child: TextField(
+              key: _searchKey,
+              focusNode: _focusNode,
+              autofocus: false,
+              decoration: InputDecoration(
+                border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
+                hintMaxLines: 1,
+                hintText: widget.hintText ?? "Søk her",
+                contentPadding: EdgeInsets.only(
+                  left: widget.withBorder ? 0.0 : 4.0,
+                  top: widget.withBorder ? 8.0 : 16.0,
+                  bottom: 8.0,
                 ),
-                controller: _controller,
-                onSubmitted: (value) => _search(context, value),
+                suffixIcon: widget.withBorder ? null : _buildClearButton(theme),
               ),
+              controller: _controller,
+              onSubmitted: (value) => _search(context, value),
             ),
           ),
           if (widget.withBorder)
