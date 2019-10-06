@@ -405,7 +405,7 @@ class IncidentSearch extends SearchDelegate<Incident> {
       builder: (BuildContext context, Set<String> suggestions, Widget child) {
         return _buildSuggestionList(
           context,
-          suggestions.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase())).toList(),
+          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
         );
       },
     );
@@ -447,14 +447,14 @@ class IncidentSearch extends SearchDelegate<Incident> {
   Widget buildResults(BuildContext context) {
     final recent = _recent.value.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet();
+    _recent.value = recent.toSet() ?? [];
     return IncidentsPage(query: query, filter: filter);
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
-    _recent.value = recent.toSet();
+    _recent.value = recent.toSet() ?? [];
     buildSuggestions(context);
   }
 }
