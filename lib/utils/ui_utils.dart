@@ -60,10 +60,12 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
 
 Widget buildDropDownField<T>({
   @required String attribute,
-  @required String label,
   @required T initialValue,
   @required List<DropdownMenuItem<T>> items,
   @required List<FormFieldValidator> validators,
+  String label,
+  bool isDense = false,
+  EdgeInsetsGeometry contentPadding,
   ValueChanged<T> onChanged,
 }) =>
     FormBuilderCustomField(
@@ -75,6 +77,8 @@ Widget buildDropDownField<T>({
           field: field,
           label: label,
           items: items,
+          isDense: isDense,
+          contentPadding: contentPadding,
           onChanged: onChanged,
         ),
       ),
@@ -83,8 +87,10 @@ Widget buildDropDownField<T>({
 
 Widget buildDropdown<T>({
   @required FormFieldState<T> field,
-  @required String label,
   @required List<DropdownMenuItem<T>> items,
+  String label,
+  EdgeInsetsGeometry contentPadding,
+  bool isDense = false,
   ValueChanged<T> onChanged,
 }) =>
     InputDecorator(
@@ -92,7 +98,9 @@ Widget buildDropdown<T>({
         hasFloatingPlaceholder: true,
         errorText: field.hasError ? field.errorText : null,
         filled: true,
+        isDense: isDense,
         labelText: label,
+        contentPadding: contentPadding,
       ),
       child: DropdownButtonHideUnderline(
         child: ButtonTheme(
