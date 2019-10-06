@@ -100,19 +100,20 @@ class MapScreenState extends State<MapScreen> {
                           Navigator.pop(context);
                         },
                       ),
-                    ListTile(
-                      dense: landscape,
-                      leading: Icon(Icons.warning),
-                      title: Text('Hendelse', style: style),
-                      onTap: () async {
-                        final result = await createIncident(
-                          context,
-                          ipp: toPoint(_mapController.center),
-                        );
-                        result.fold((_) => null, (incident) => jumpToIncident(context, incident));
-                        Navigator.pop(context);
-                      },
-                    ),
+                    if (bloc.isUnset)
+                      ListTile(
+                        dense: landscape,
+                        leading: Icon(Icons.warning),
+                        title: Text('Hendelse', style: style),
+                        onTap: () async {
+                          final result = await createIncident(
+                            context,
+                            ipp: toPoint(_mapController.center),
+                          );
+                          result.fold((_) => null, (incident) => jumpToIncident(context, incident));
+                          Navigator.pop(context);
+                        },
+                      ),
                   ],
                 );
               });
