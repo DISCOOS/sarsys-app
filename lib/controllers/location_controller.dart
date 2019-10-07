@@ -134,7 +134,7 @@ class LocationController {
         }
       } else if (_isMoved(point)) {
         if (onLocationChanged != null) onLocationChanged(point);
-        if (_options.point == null || tickerProvider == null) {
+        if (_options?.point == null || tickerProvider == null) {
           _locationUpdateController.add(null);
         } else {
           _options.animatedMove(point, onMove: (point) {

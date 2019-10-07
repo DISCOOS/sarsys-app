@@ -72,6 +72,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   @override
   void dispose() {
     _hideResults();
+    _focusNode.dispose();
     widget.mapController?.cancel();
     super.dispose();
   }
@@ -96,30 +97,29 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
               child: widget.prefixIcon,
             ),
           Expanded(
-            child: TextField(
-              key: _searchKey,
-              focusNode: _focusNode,
-              autofocus: false,
+            child: InputDecorator(
               decoration: InputDecoration(
                 border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
-                hintMaxLines: 1,
-                hintText: widget.hintText ?? "Søk her",
-                contentPadding: EdgeInsets.only(
-                  left: widget.withBorder ? 0.0 : 4.0,
-                  top: widget.withBorder ? 8.0 : 16.0,
-                  bottom: 8.0,
-                ),
-                suffixIcon: widget.withBorder ? null : _buildClearButton(theme),
+                suffixIcon: _buildClearButton(theme),
               ),
-              controller: _controller,
-              onSubmitted: (value) => _search(context, value),
+              child: TextField(
+                key: _searchKey,
+                focusNode: _focusNode,
+                autofocus: false,
+                controller: _controller,
+                onSubmitted: (value) => _search(context, value),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintMaxLines: 1,
+                  hintText: widget.hintText ?? "Søk her",
+                  contentPadding: EdgeInsets.only(
+                    top: 4.0,
+                    left: widget.withBorder ? 0.0 : 4.0,
+                  ),
+                ),
+              ),
             ),
           ),
-          if (widget.withBorder)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: _buildClearButton(theme),
-            ),
         ],
       ),
     );
@@ -127,22 +127,22 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
   StatelessWidget _buildClearButton(IconThemeData theme) {
     return _focusNode.hasFocus || _match != null || _overlayEntry != null
-        ? GestureDetector(
-            child: Icon(Icons.close, color: theme.color),
-            onTap: () => clear(),
+        ? IconButton(
+            icon: Icon(Icons.close, color: theme.color),
+            onPressed: () => clear(),
           )
         : Icon(Icons.search, color: theme.color.withOpacity(0.4));
   }
 
   /// Hide overlay with results if shown, clear content and unfocus textfield
-  void clear() {
+  void clear() async {
     setState(() {
       _match = null;
+      _hideResults();
+      _controller.clear();
+      if (widget.onCleared != null) widget.onCleared();
+      FocusScope.of(context).unfocus();
     });
-    _controller.clear();
-    FocusScope.of(context).unfocus();
-    _hideResults();
-    if (widget.onCleared != null) widget.onCleared();
   }
 
   void _hideResults() {

@@ -67,7 +67,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _locationController = LocationController(
+    _locationController ??= LocationController(
         mapController: _mapController,
         configBloc: BlocProvider.of<AppConfigBloc>(context),
         permissionController: widget.controller.cloneWith(
@@ -77,7 +77,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
         onLocationChanged: (_) {
           if (mounted) setState(() {});
         });
-    _locationController.init();
   }
 
   @override
@@ -112,16 +111,13 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           ),
         ],
       ),
-      body: GestureDetector(
-        child: Stack(
-          children: [
-            _buildMap(),
-            _buildCenterMark(),
-            _buildInputFields(),
-            _buildControls(),
-          ],
-        ),
-        onTapDown: (_) => _clearSearchField(),
+      body: Stack(
+        children: [
+          _buildMap(),
+          _buildCenterMark(),
+          _buildInputFields(),
+          _buildControls(),
+        ],
       ),
       resizeToAvoidBottomInset: false,
     );
@@ -129,10 +125,11 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildInputFields() {
     final size = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
     final maxWidth = min(min(size.width, size.height), 380.0);
     return SafeArea(
       child: Align(
-        alignment: Alignment.topRight,
+        alignment: orientation == Orientation.landscape ? Alignment.topRight : Alignment.topCenter,
         child: Container(
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: Container(
@@ -188,7 +185,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           zoom: 13,
           center: LatLng(_current.lat, _current.lon),
           onPositionChanged: _onPositionChanged,
-          onTap: (_) => _clearSearchField(),
           plugins: [
             POILayer(),
             ScaleBar(),
@@ -343,10 +339,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       ),
     );
     _scaffoldKey.currentState.showSnackBar(snackbar);
-  }
-
-  void _clearSearchField() {
-    _searchFieldKey?.currentState?.clear();
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {

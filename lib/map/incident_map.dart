@@ -222,7 +222,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _ensureMapToolController() {
     if (widget.withControls) {
-      _mapToolController = MapToolController(
+      _mapToolController ??= MapToolController(
         tools: [
           MeasureTool(),
           POITool(

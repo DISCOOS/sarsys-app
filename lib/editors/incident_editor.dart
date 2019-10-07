@@ -94,7 +94,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 physics: ClampingScrollPhysics(),
                 onStepTapped: (int step) {
                   setState(() => _currentStep = step);
-                  FocusScope.of(context).requestFocus(new FocusNode());
+                  FocusScope.of(context).unfocus();
                 },
                 onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
                 onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
