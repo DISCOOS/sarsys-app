@@ -160,7 +160,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
         FormBuilderValidators.numeric(errorText: "Må være et nummer"),
         (value) {
           Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) => device != widget.device && device.number == value,
+            (Device device) =>
+                (value as String).isNotEmpty == true && device != widget.device && device.number == value,
             orElse: () => null,
           );
           return device != null ? "Finnes allerede" : null;
@@ -179,7 +180,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedDistrict ?? org == null ? '-' : org.toDistrict(widget?.device?.number),
+          _editedDistrict ?? (org == null ? '-' : org.toDistrict(widget?.device?.number)),
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
@@ -228,10 +229,10 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validators: [
         (value) {
           Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) => device != widget.device && device.alias == value,
+            (Device device) => (value as String).isNotEmpty == true && device != widget.device && device.alias == value,
             orElse: () => null,
           );
-          return (value == null || device == null) == false ? "Finnes allerede" : null;
+          return device != null ? "Finnes allerede" : null;
         },
       ],
     );

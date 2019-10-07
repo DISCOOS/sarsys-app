@@ -64,6 +64,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   void dispose() {
     _group?.close();
     _onMoved?.cancel();
+    _controller?.cancel();
     _group = null;
     _onMoved = null;
     super.dispose();
@@ -93,6 +94,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                             bloc: _trackingBloc,
                             withHeader: false,
                             onMessage: showMessage,
+                            onComplete: () => Navigator.pop(context),
                           ),
                         ],
                       )
@@ -172,7 +174,11 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   }
 
   void _onMove(Tracking event) {
-    final center = toCenter(event);
-    if (center != null) _controller.animatedMove(center, _controller.zoom, this);
+    if (mounted) {
+      final center = toCenter(event);
+      if (center != null) {
+        _controller.animatedMove(center, _controller.zoom, this);
+      }
+    }
   }
 }

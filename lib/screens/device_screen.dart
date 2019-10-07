@@ -41,7 +41,6 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
 
   final _controller = IncidentMapController();
 
-  Unit _unit;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
@@ -57,9 +56,9 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
     super.didChangeDependencies();
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _unit = _trackingBloc.getUnitsByDeviceId()[widget.device.id];
     if (_group != null) _group.close();
-    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(widget.device))..add(_trackingBloc.changes(_unit));
+    final unit = _trackingBloc.getUnitsByDeviceId()[widget.device.id];
+    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(widget.device))..add(_trackingBloc.changes(unit));
     if (_onMoved != null) _onMoved.cancel();
     _onMoved = _deviceBloc.changes(widget.device).listen(_onMove);
   }
@@ -68,6 +67,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   void dispose() {
     _group?.close();
     _onMoved?.cancel();
+    _controller?.cancel();
     _group = null;
     _onMoved = null;
     super.dispose();
@@ -86,18 +86,20 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.data is Device) actual = snapshot.data;
+                final unit = _trackingBloc.getUnitsByDeviceId()[actual.id];
                 return ListView(
                   padding: const EdgeInsets.all(DeviceScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
                   children: [
                     _buildMapTile(context, actual),
                     DeviceInfoPanel(
-                      unit: _unit,
+                      unit: unit,
                       device: actual,
-                      tracking: _trackingBloc.tracking[_unit?.tracking],
+                      tracking: _trackingBloc.tracking[unit?.tracking],
                       organization: AssetsService().fetchOrganization(Defaults.orgId),
                       withHeader: false,
                       onMessage: showMessage,
+                      onComplete: () => Navigator.pop(context),
                     ),
                   ],
                 );
@@ -152,7 +154,12 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
           onPressed: () {
             if (device?.location != null) {
               var zoom = math.min(_controller.zoom + 1, Defaults.maxZoom);
-              _controller.animatedMove(toCenter(device?.location), zoom, this, milliSeconds: 250);
+              _controller.animatedMove(
+                toCenter(device?.location),
+                zoom,
+                this,
+                milliSeconds: 250,
+              );
             }
           },
         ),
@@ -161,7 +168,12 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
           onPressed: () {
             if (device?.location != null) {
               var zoom = math.max(_controller.zoom - 1, Defaults.minZoom);
-              _controller.animatedMove(toCenter(device?.location), zoom, this, milliSeconds: 250);
+              _controller.animatedMove(
+                toCenter(device?.location),
+                zoom,
+                this,
+                milliSeconds: 250,
+              );
             }
           },
         ),
@@ -175,6 +187,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
 
   void _onMove(Device event) {
     final center = toCenter(event?.location);
-    if (center != null) _controller.animatedMove(center, _controller.zoom, this);
+    if (center != null) {
+      _controller.animatedMove(center, _controller.zoom, this);
+    }
   }
 }

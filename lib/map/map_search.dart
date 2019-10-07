@@ -72,6 +72,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   @override
   void dispose() {
     _hideResults();
+    widget.mapController?.cancel();
     super.dispose();
   }
 

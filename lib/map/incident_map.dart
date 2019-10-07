@@ -201,13 +201,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       );
     }
 
-    // Ensure all controllers are set
-    _ensureMapToolController();
-    _ensureLocationControllers();
-
-    // Only ensure center if not set already
-    _center ??= _ensureCenter();
-
     _init();
   }
 
@@ -272,6 +265,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   @override
   void dispose() {
     _disposed = true;
+    _mapController.cancel();
     _mapController.progress.removeListener(_onMoveProgress);
     _mapToolController?.dispose();
     _locationController?.dispose();
@@ -759,17 +753,25 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
 /// Incident MapController that supports animated move operations
 class IncidentMapController extends MapControllerImpl {
-  bool isAnimating = false;
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
+
+  AnimationController _controller;
+  bool get isAnimating => _controller != null;
+
+  void cancel() {
+    if (_controller != null) {
+      _controller.dispose();
+      _controller = null;
+    }
+  }
 
   /// Move to given point and zoom
   void animatedMove(LatLng point, double zoom, TickerProvider provider,
-      {int milliSeconds: 500, void onMove(LatLng p)}) {
+      {int milliSeconds: 500, void onMove(LatLng point)}) {
     if (!ready) {
       move(point, zoom);
       progress.value = MapMoveState(point, zoom);
     } else if (!isAnimating) {
-      isAnimating = true;
       // Create some tweens. These serve to split up the transition from one location to another.
       // In our case, we want to split the transition be<tween> our current map center and the destination.
       final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
@@ -777,13 +779,13 @@ class IncidentMapController extends MapControllerImpl {
       final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
       // Create a animation controller that has a duration and a TickerProvider.
-      final controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+      _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
       // The animation determines what path the animation will take. You can try different Curves values, although I found
       // fastOutSlowIn to be my favorite.
-      Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
+      Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
-      controller.addListener(() {
+      _controller.addListener(() {
         final state = MapMoveState(
           LatLng(
             _latTween.evaluate(animation),
@@ -797,16 +799,11 @@ class IncidentMapController extends MapControllerImpl {
       });
 
       animation.addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          isAnimating = false;
-          controller.dispose();
-        } else if (status == AnimationStatus.dismissed) {
-          isAnimating = false;
-          controller.dispose();
+        if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
+          cancel();
         }
       });
-
-      controller.forward();
+      _controller.forward();
     }
   }
 }

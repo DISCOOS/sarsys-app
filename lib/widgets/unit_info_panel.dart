@@ -240,17 +240,6 @@ class UnitInfoPanel extends StatelessWidget {
             onPressed: () async {
               final result = await editUnit(context, unit);
               if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
-              if (onComplete != null) onComplete();
-            },
-          ),
-          FlatButton(
-            child: Text(
-              "OPPLØS",
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              await retireUnit(context, unit);
-              if (onComplete != null) onComplete();
             },
           ),
           if (devices.isNotEmpty)
@@ -260,10 +249,21 @@ class UnitInfoPanel extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               onPressed: () async {
-                await removeFromUnit(context, unit, devices: devices);
-                if (onComplete != null) onComplete();
+                final result = await removeFromUnit(context, unit, devices: devices);
+                if (result.isRight() && onMessage != null) onMessage("Apparater fjernet fra ${unit.name}");
               },
             ),
+          FlatButton(
+            child: Text(
+              "OPPLØS",
+              textAlign: TextAlign.center,
+            ),
+            onPressed: () async {
+              final result = await retireUnit(context, unit);
+              if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppløst");
+              if (result.isRight() && onComplete != null) onComplete();
+            },
+          ),
         ],
       ),
       data: ButtonBarThemeData(

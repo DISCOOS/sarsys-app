@@ -280,6 +280,7 @@ class DeviceInfoPanel extends StatelessWidget {
             _buildCreateAction(context),
             _buildAttachAction(context, unit),
           ],
+          _buildReleaseAction(context),
         ],
       ),
       data: ButtonBarThemeData(
@@ -296,8 +297,9 @@ class DeviceInfoPanel extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         onPressed: () async {
-          await addToUnit(context, [device], unit: unit);
-          if (onComplete != null) onComplete();
+          final result = await addToUnit(context, [device], unit: unit);
+          if (result.isRight() && onMessage != null) onMessage("${device.name} er tilknyttet ${unit.name}");
+          if (result.isRight() && onComplete != null) onComplete();
         });
   }
 
@@ -308,8 +310,8 @@ class DeviceInfoPanel extends StatelessWidget {
         textAlign: TextAlign.center,
       ),
       onPressed: () async {
-        await editDevice(context, device);
-        if (onComplete != null) onComplete();
+        final result = await editDevice(context, device);
+        if (result.isRight() && onMessage != null) onMessage("${device.name} er oppdatert");
       },
     );
   }
@@ -321,8 +323,9 @@ class DeviceInfoPanel extends StatelessWidget {
         textAlign: TextAlign.center,
       ),
       onPressed: () async {
-        await createUnit(context, devices: [device]);
-        if (onComplete != null) onComplete();
+        final result = await createUnit(context, devices: [device]);
+        if (result.isRight() && onMessage != null)
+          onMessage("${device.name} er tilknyttet ${result.toIterable().first.name}");
       },
     );
   }
@@ -334,8 +337,21 @@ class DeviceInfoPanel extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         onPressed: () async {
-          await removeFromUnit(context, unit, devices: [device]);
-          if (onComplete != null) onComplete();
+          final result = await removeFromUnit(context, unit, devices: [device]);
+          if (result.isRight() && onMessage != null) onMessage("${device.name} er fjernet fra ${unit.name}");
+        });
+  }
+
+  FlatButton _buildReleaseAction(BuildContext context) {
+    return FlatButton(
+        child: Text(
+          'FRIGI',
+          textAlign: TextAlign.center,
+        ),
+        onPressed: () async {
+          final result = await detachDevice(context, device);
+          if (result.isRight() && onMessage != null) onMessage("${device.name} er frigitt");
+          if (result.isRight() && onComplete != null) onComplete();
         });
   }
 }

@@ -79,7 +79,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   @override
   void dispose() {
-    _locationController.dispose();
+    _mapController?.cancel();
+    _locationController?.dispose();
+    _mapController = null;
+    _locationController = null;
     super.dispose();
   }
 
@@ -157,11 +160,13 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
         onChanged: (point) {
           _current = Point.now(point.latitude, point.longitude);
         },
-        onEditingComplete: () => _mapController.animatedMove(
-          LatLng(_current.lat, _current.lon),
-          _mapController.zoom,
-          this,
-        ),
+        onEditingComplete: () {
+          _mapController.animatedMove(
+            LatLng(_current.lat, _current.lon),
+            _mapController.zoom,
+            this,
+          );
+        },
       ),
     );
   }
@@ -240,7 +245,11 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
                 child: IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
-                    _mapController.animatedMove(_mapController.center, _mapController.zoom + 1, this);
+                    _mapController.animatedMove(
+                      _mapController.center,
+                      _mapController.zoom + 1,
+                      this,
+                    );
                   },
                 ),
                 decoration: BoxDecoration(
@@ -260,7 +269,11 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
                 child: IconButton(
                   icon: Icon(Icons.remove),
                   onPressed: () {
-                    _mapController.move(_mapController.center, _mapController.zoom);
+                    _mapController.animatedMove(
+                      _mapController.center,
+                      _mapController.zoom,
+                      this,
+                    );
                   },
                 ),
                 decoration: BoxDecoration(

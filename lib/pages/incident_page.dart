@@ -201,7 +201,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<UnitState>(
               stream: bloc.state,
               builder: (context, snapshot) {
-                return _buildValueTile("${snapshot.hasData ? bloc.count : "-"}", label: "Enheter");
+                return _buildValueTile("${snapshot.hasData ? bloc.count() : "-"}", label: "Enheter");
               }),
         ),
       ],

@@ -56,10 +56,12 @@ class LocationController {
   }
 
   void dispose() {
-    _options = null;
+    options?.cancel();
+    mapController?.cancel();
     _positionSubscription?.cancel();
-    _positionSubscription = null;
     _locationUpdateController?.close();
+    _options = null;
+    _positionSubscription = null;
     _locationUpdateController = null;
   }
 
@@ -122,7 +124,7 @@ class LocationController {
               mapController.zoom ?? Defaults.zoom,
               tickerProvider,
             );
-            options.animatedMove(point, onMove: (point) {
+            _options.animatedMove(point, onMove: (point) {
               // Synchronize map control state with my location animation
               if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
             });

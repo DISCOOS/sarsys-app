@@ -23,9 +23,8 @@ class MyLocationOptions extends LayerOptions {
   StreamController<Null> locationUpdateController;
   Color color;
 
-  bool _isAnimating = false;
-
-  bool get isAnimating => _isAnimating;
+  AnimationController _controller;
+  bool get isAnimating => _controller != null;
 
   MyLocationOptions(
     this.point, {
@@ -40,10 +39,18 @@ class MyLocationOptions extends LayerOptions {
     Stream<Null> rebuild,
   }) : super(rebuild: rebuild);
 
+  void cancel() {
+    if (_controller != null) {
+      _controller.dispose();
+      _controller = null;
+      next = null;
+      previous = null;
+    }
+  }
+
   /// Move icon to given point
   void animatedMove(LatLng point, {double bearing, void onMove(LatLng p)}) {
-    if (_isAnimating) return;
-    _isAnimating = true;
+    if (isAnimating) return;
 
     next = point;
     previous = this.point;
@@ -54,35 +61,29 @@ class MyLocationOptions extends LayerOptions {
     final _lngTween = Tween<double>(begin: previous.longitude, end: next.longitude);
 
     // Create a animation controller that has a duration and a TickerProvider.
-    var controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: tickerProvider);
+    _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: tickerProvider);
 
     // The animation determines what path the animation will take. You can try different Curves values, although I found
     // fastOutSlowIn to be my favorite.
-    Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
+    Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
-    controller.addListener(() {
+    _controller.addListener(() {
       this.point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
       if (onMove != null) onMove(this.point);
       if (!locationUpdateController.isClosed) locationUpdateController.add(null);
     });
 
     animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _dispose(controller, point);
-      } else if (status == AnimationStatus.dismissed) {
-        _dispose(controller, point);
+      if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
+        _finish(point);
       }
     });
-
-    controller.forward();
+    _controller.forward();
   }
 
-  void _dispose(AnimationController controller, LatLng point) {
-    controller.dispose();
+  void _finish(LatLng point) {
     this.point = point;
-    next = null;
-    previous = null;
-    _isAnimating = false;
+    cancel();
   }
 }
 

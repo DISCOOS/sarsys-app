@@ -181,7 +181,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  _validateNumber(value) {
+  String _validateNumber(value) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
@@ -222,7 +222,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  _validateCallsign(value) {
+  String _validateCallsign(value) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
@@ -270,7 +270,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  _validatePhone(value) {
+  String _validatePhone(value) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
