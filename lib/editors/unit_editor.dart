@@ -300,7 +300,7 @@ class _UnitEditorState extends State<UnitEditor> {
   void _onTypeOrNumberEdit(String type, String number, bool update) {
     _formKey?.currentState?.save();
     if (type.isEmpty) type = translateUnitType(widget.type);
-    if (number.isEmpty) number = "${_unitBloc.count() + 1}";
+    if (number.isEmpty) number = "${_unitBloc.count(exclude: []) + 1}";
     _editedName = "$type $number";
     if (update) setState(() {});
   }
@@ -410,7 +410,10 @@ class _UnitEditorState extends State<UnitEditor> {
       _formKey.currentState.save();
       List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
       var unit = widget.unit == null
-          ? Unit.fromJson(_formKey.currentState.value)
+          // Filter out empty text
+          ? Unit.fromJson(Map.fromIterable(_formKey.currentState.value.entries.where(
+              (test) => !(test.value is String) || (test.value as String).isNotEmpty,
+            )))
           : widget.unit.withJson(_formKey.currentState.value);
       Navigator.pop(context, UnitEditorResult(unit, devices));
     } else {
@@ -420,7 +423,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _getDefaultNumber() {
-    return "${widget?.unit?.number ?? _unitBloc.count() + 1}";
+    return "${widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1}";
     //return _unitBloc.units.values.where((unit) => widget.type == unit.type).length + 1;
   }
 
@@ -448,7 +451,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   int _ensureCallSignSuffix() {
-    final count = _unitBloc.count();
+    final count = _unitBloc.count(exclude: []);
     final values = _formKey?.currentState?.value;
     // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
     final number = ((values == null ? (widget?.unit?.number ?? count + 1) : values['number']) ??
@@ -458,7 +461,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _getDefaultPhone() {
-    return widget?.unit?.phone ?? '';
+    return widget?.unit?.phone;
   }
 }
 
