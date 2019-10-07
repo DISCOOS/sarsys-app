@@ -44,6 +44,7 @@ class IncidentsScreenState extends ScreenState {
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
+      height: constraints.maxHeight,
       color: Color.fromRGBO(168, 168, 168, 0.6),
       child: IncidentsPage(filter: _filter),
     );
