@@ -5,6 +5,7 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
+import 'package:random_string/random_string.dart';
 
 class UnitBuilder {
   static createUnitAsJson(String id, UnitType type, int number, String tracking) {
@@ -35,9 +36,9 @@ class UnitServiceMock extends Mock implements UnitService {
         units.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(
-                "${incidentId}u$i",
+                "$incidentId:u:$i",
                 Unit.fromJson(
-                  UnitBuilder.createUnitAsJson("${incidentId}u$i", UnitType.Team, i, "${incidentId}t$i"),
+                  UnitBuilder.createUnitAsJson("$incidentId:u:$i", UnitType.Team, i, "$incidentId:t:$i"),
                 )),
         ]);
       }
@@ -50,7 +51,7 @@ class UnitServiceMock extends Mock implements UnitService {
       if (units == null) {
         return ServiceResponse.notFound(message: "Not found. Incident $incidentId");
       }
-      final String id = "${incidentId}u${units.length + 1}";
+      final String id = "$incidentId:u${randomAlphaNumeric(8).toLowerCase()}";
       return ServiceResponse.ok(body: units.putIfAbsent(id, () => unit.cloneWith(id: id)));
     });
     when(mock.update(any)).thenAnswer((_) async {

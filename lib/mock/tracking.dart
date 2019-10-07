@@ -12,6 +12,7 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
+import 'package:random_string/random_string.dart';
 
 import 'devices.dart';
 
@@ -78,7 +79,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
           for (var i = 1; i <= count; i++)
             Tracking.fromJson(
               TracksBuilder.createTrackingAsJson(
-                "${incidentId}t$i",
+                "$incidentId:t:$i",
                 status: TrackingStatus.Tracking,
               ),
             ).cloneWith(devices: List.from(["${incidentId}d$i"])),
@@ -113,7 +114,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         return ServiceResponse.notFound(message: "Not found. Unit $unitId.");
       }
       final trackingList = trackingRepo[incident.key];
-      final trackingId = "${incident.key}t${trackingList.length + 1}";
+      final trackingId = "${incident.key}:t:${randomAlphaNumeric(8).toLowerCase()}";
       var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
         trackingId,
         status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty),

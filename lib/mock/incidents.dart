@@ -10,6 +10,7 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
+import 'package:random_string/random_string.dart';
 
 class IncidentBuilder {
   static Map<String, dynamic> createIncidentAsJson(String id, int since, String token, String passcode) {
@@ -68,12 +69,12 @@ class IncidentServiceMock extends Mock implements IncidentService {
         incidents.addEntries([
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
-              "aZ$i",
+              "a:x$i",
               Incident.fromJson(IncidentBuilder.createIncidentAsJson("aZ$i", i, response.body, passcode)),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
             MapEntry(
-              "By$i",
+              "a:y$i",
               Incident.fromJson(IncidentBuilder.createIncidentAsJson("By$i", i, unauthorized, passcode)),
             ),
         ]);
@@ -86,7 +87,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.claims.subject);
       final created = Incident(
-        id: "aZ${incidents.length + 1}",
+        id: "a:${randomAlphaNumeric(8).toLowerCase()}",
         type: incident.type,
         status: incident.status,
         created: author,

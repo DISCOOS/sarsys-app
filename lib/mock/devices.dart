@@ -10,6 +10,7 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:mockito/mockito.dart';
+import 'package:random_string/random_string.dart';
 
 class DeviceBuilder {
   static createDeviceAsJson(String id, DeviceType type, String number, Point center) {
@@ -69,7 +70,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
         devices.addAll({
           for (var i = 1; i <= count; i++)
-            "${incidentId}d$i": _simulate(
+            "$incidentId:d:$i": _simulate(
               Device.fromJson(
                 DeviceBuilder.createDeviceAsJson(
                   "${incidentId}d$i",
@@ -95,7 +96,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
       device = _simulate(
         Device(
-          id: "${incidentId}d${devices.length + 1}",
+          id: "$incidentId:d:${randomAlphaNumeric(8).toLowerCase()}",
           type: device.type,
           status: device.status,
           location: device.location ??
