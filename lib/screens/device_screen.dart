@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:async/async.dart';
 

@@ -66,7 +66,6 @@ class UnitsPageState extends State<UnitsPage> {
         return RefreshIndicator(
           onRefresh: () async {
             _unitBloc.fetch();
-            _trackingBloc.fetch();
           },
           child: Container(
             color: Color.fromRGBO(168, 168, 168, 0.6),

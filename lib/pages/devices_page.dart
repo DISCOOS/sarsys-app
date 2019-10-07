@@ -81,10 +81,7 @@ class DevicesPageState extends State<DevicesPage> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          await _unitBloc.fetch();
-          await _deviceBloc.fetch();
-          await _trackingBloc.fetch();
-          setState(() {});
+          _deviceBloc.fetch();
         },
         child: Container(
           color: Color.fromRGBO(168, 168, 168, 0.6),
