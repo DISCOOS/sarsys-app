@@ -138,11 +138,11 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   void clear() {
     setState(() {
       _match = null;
-      _controller.clear();
-      _focusNode?.unfocus();
-      _hideResults();
-      if (widget.onCleared != null) widget.onCleared();
     });
+    _controller.clear();
+    FocusScope.of(context).unfocus();
+    _hideResults();
+    if (widget.onCleared != null) widget.onCleared();
   }
 
   void _hideResults() {
@@ -403,7 +403,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     if (!kReleaseMode) print("Goto: $_match");
     widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
     if (widget.onMatch != null) widget.onMatch(_match);
-    _focusNode?.unfocus();
+    FocusScope.of(context).unfocus();
     _hideResults();
   }
 }

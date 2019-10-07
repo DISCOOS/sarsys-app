@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -125,21 +126,28 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   }
 
   Widget _buildInputFields() {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Container(
-        margin: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: Colors.grey),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _buildSearchField(),
-            _buildUTMField(),
-          ],
+    final size = MediaQuery.of(context).size;
+    final maxWidth = min(min(size.width, size.height), 380.0);
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Container(
+            margin: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: Colors.grey),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildSearchField(),
+                _buildUTMField(),
+              ],
+            ),
+          ),
         ),
       ),
     );
