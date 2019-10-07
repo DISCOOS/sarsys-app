@@ -143,7 +143,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
                       ],
                     ),
                     isActive: _currentStep >= 0,
-                    state: _isValid(['ipp'])
+                    state: _isValid(['ipp', 'meetup'])
                         ? (_currentStep > 2 ? StepState.complete : StepState.indexed)
                         : StepState.error,
                   ),
