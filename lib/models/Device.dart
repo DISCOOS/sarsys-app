@@ -22,13 +22,13 @@ class Device extends Equatable {
     this.alias,
     this.number,
     this.location,
-  }) : super([id, type, number]);
+  }) : super([id, type, status, number, alias, location]);
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
 
   /// Device name
-  get name => this.alias ?? this.number;
+  get name => this.alias?.isNotEmpty == true ? this.alias : this.number;
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
