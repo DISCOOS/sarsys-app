@@ -32,6 +32,8 @@ class MapSearchField extends StatefulWidget {
 
   final bool withBorder;
 
+  final offset;
+
   const MapSearchField({
     Key key,
     @required this.onError,
@@ -41,6 +43,7 @@ class MapSearchField extends StatefulWidget {
     this.prefixIcon,
     this.zoom,
     this.hintText,
+    this.offset = 16.0,
     this.withBorder = true,
     this.withRetired = false,
   }) : super(key: key);
@@ -165,7 +168,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         left: 8.0,
-        top: offset.dy + size.height + 5.0,
+        top: offset.dy + size.height + widget.offset,
         width: MediaQuery.of(context).size.width - 16.0,
         height: MediaQuery.of(context).size.height - (offset.dy + size.height + 16.0),
         child: Material(

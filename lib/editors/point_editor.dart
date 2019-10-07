@@ -58,6 +58,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
+      offset: 94.0,
       mapController: _mapController,
       onError: _onError,
       withBorder: false,
@@ -67,7 +68,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _locationController ??= LocationController(
+    if (_locationController == null) {
+      _locationController = LocationController(
         mapController: _mapController,
         configBloc: BlocProvider.of<AppConfigBloc>(context),
         permissionController: widget.controller.cloneWith(
@@ -76,7 +78,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
         tickerProvider: this,
         onLocationChanged: (_) {
           if (mounted) setState(() {});
-        });
+        },
+      );
+      _locationController.init();
+    }
   }
 
   @override
@@ -98,6 +103,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
         leading: GestureDetector(
           child: Icon(Icons.close),
           onTap: () {
+            _searchFieldKey.currentState.clear();
             Navigator.pop(context, widget.point);
           },
         ),
@@ -125,11 +131,10 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildInputFields() {
     final size = MediaQuery.of(context).size;
-    final orientation = MediaQuery.of(context).orientation;
     final maxWidth = min(min(size.width, size.height), 380.0);
     return SafeArea(
       child: Align(
-        alignment: orientation == Orientation.landscape ? Alignment.topRight : Alignment.topCenter,
+        alignment: Alignment.topCenter,
         child: Container(
           constraints: BoxConstraints(maxWidth: maxWidth),
           child: Container(

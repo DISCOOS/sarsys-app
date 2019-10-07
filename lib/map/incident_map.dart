@@ -246,9 +246,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _ensureLocationControllers() {
-    // Configure location controller
-    if (widget.withLocation) {
-      _locationController ??= LocationController(
+    // Configure location controller only once
+    if (widget.withLocation && _locationController == null) {
+      _locationController = LocationController(
         tickerProvider: this,
         configBloc: _configBloc,
         permissionController: Provider.of<PermissionController>(context).cloneWith(

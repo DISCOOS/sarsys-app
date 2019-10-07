@@ -29,7 +29,7 @@ class LocationController {
   LocationService _service;
   MyLocationOptions _options;
   StreamSubscription _positionSubscription;
-  StreamController<Null> _locationUpdateController;
+  StreamController<Null> _locationUpdateController = StreamController.broadcast();
 
   bool get isLocked => _locked;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
@@ -89,16 +89,18 @@ class LocationController {
   }
 
   void _subscribe() {
-    _positionSubscription = _service.stream.listen(
-      (position) => _updateLocation(position, false),
-    );
-    if (Platform.isIOS) {
-      // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
-      _positionSubscription.onError((e) {
-        Catcher.reportCheckedError(e, StackTrace.current);
-        _positionSubscription.cancel();
-        _subscribe();
-      });
+    if (_positionSubscription == null) {
+      _positionSubscription = _service.stream.listen(
+        (position) => _updateLocation(position, false),
+      );
+      if (Platform.isIOS) {
+        // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
+        _positionSubscription.onError((e) {
+          Catcher.reportCheckedError(e, StackTrace.current);
+          _positionSubscription.cancel();
+          _subscribe();
+        });
+      }
     }
   }
 
@@ -160,15 +162,15 @@ class LocationController {
 
   void _handle(PermissionStatus status) async {
     await permissionController.handle(
-        status, permissionController.locationWhenInUseRequest.copyWith(onReady: _onReady));
+      status,
+      permissionController.locationWhenInUseRequest.copyWith(onReady: _onReady),
+    );
   }
 
   void _onReady() async {
     final status = await _service.configure();
     if (_service.isReady.value) {
-      //assert(_locationUpdateController == null);
-      _locationUpdateController = StreamController.broadcast();
-
+      _options?.cancel();
       _options = MyLocationOptions(
         _toLatLng(_service.current),
         opacity: 0.5,
