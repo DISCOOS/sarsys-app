@@ -74,7 +74,9 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           onMessage: _showMessage,
         ),
         tickerProvider: this,
-        onLocationChanged: (_) => setState(() {}));
+        onLocationChanged: (_) {
+          if (mounted) setState(() {});
+        });
     _locationController.init();
   }
 
