@@ -98,6 +98,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
                       organization: AssetsService().fetchOrganization(Defaults.orgId),
                       withHeader: false,
                       onMessage: showMessage,
+                      onChanged: () => setState(() {}),
                       onComplete: () => Navigator.pop(context),
                     ),
                   ],

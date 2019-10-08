@@ -94,6 +94,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                             bloc: _trackingBloc,
                             withHeader: false,
                             onMessage: showMessage,
+                            onChanged: () => setState(() {}),
                             onComplete: () => Navigator.pop(context),
                           ),
                         ],

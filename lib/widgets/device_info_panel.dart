@@ -15,6 +15,7 @@ class DeviceInfoPanel extends StatelessWidget {
   final Unit unit;
   final Device device;
   final Tracking tracking;
+  final VoidCallback onChanged;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
   final Future<Organization> organization;
@@ -25,6 +26,7 @@ class DeviceInfoPanel extends StatelessWidget {
     @required this.device,
     @required this.tracking,
     @required this.onMessage,
+    this.onChanged,
     this.onComplete,
     this.withHeader = true,
     this.organization,
@@ -299,7 +301,7 @@ class DeviceInfoPanel extends StatelessWidget {
         onPressed: () async {
           final result = await addToUnit(context, [device], unit: unit);
           if (result.isRight() && onMessage != null) onMessage("${device.name} er tilknyttet ${unit.name}");
-          if (result.isRight() && onComplete != null) onComplete();
+          if (result.isRight() && onChanged != null) onChanged();
         });
   }
 
@@ -312,6 +314,7 @@ class DeviceInfoPanel extends StatelessWidget {
       onPressed: () async {
         final result = await editDevice(context, device);
         if (result.isRight() && onMessage != null) onMessage("${device.name} er oppdatert");
+        if (result.isRight() && onChanged != null) onChanged();
       },
     );
   }
@@ -326,6 +329,7 @@ class DeviceInfoPanel extends StatelessWidget {
         final result = await createUnit(context, devices: [device]);
         if (result.isRight() && onMessage != null)
           onMessage("${device.name} er tilknyttet ${result.toIterable().first.name}");
+        if (result.isRight() && onChanged != null) onChanged();
       },
     );
   }
@@ -339,6 +343,7 @@ class DeviceInfoPanel extends StatelessWidget {
         onPressed: () async {
           final result = await removeFromUnit(context, unit, devices: [device]);
           if (result.isRight() && onMessage != null) onMessage("${device.name} er fjernet fra ${unit.name}");
+          if (result.isRight() && onChanged != null) onChanged();
         });
   }
 

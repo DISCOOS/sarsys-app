@@ -14,6 +14,7 @@ class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
   final bool withHeader;
   final TrackingBloc bloc;
+  final VoidCallback onChanged;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
 
@@ -22,6 +23,7 @@ class UnitInfoPanel extends StatelessWidget {
     @required this.unit,
     @required this.bloc,
     @required this.onMessage,
+    this.onChanged,
     this.onComplete,
     this.withHeader = true,
   }) : super(key: key);
@@ -240,6 +242,7 @@ class UnitInfoPanel extends StatelessWidget {
             onPressed: () async {
               final result = await editUnit(context, unit);
               if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
+              if (result.isRight() && onChanged != null) onChanged();
             },
           ),
           if (devices.isNotEmpty)
@@ -250,7 +253,10 @@ class UnitInfoPanel extends StatelessWidget {
               ),
               onPressed: () async {
                 final result = await removeFromUnit(context, unit, devices: devices);
-                if (result.isRight() && onMessage != null) onMessage("Apparater fjernet fra ${unit.name}");
+                if (result.isRight() && onMessage != null) {
+                  onMessage("Apparater fjernet fra ${unit.name}");
+                  if (result.isRight() && onChanged != null) onChanged();
+                }
               },
             ),
           FlatButton(
