@@ -86,6 +86,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
                 unit: unit,
                 bloc: bloc,
                 onMessage: onMessage,
+                onChanged: () => Navigator.pop(context),
                 onComplete: () => Navigator.pop(context),
               ),
             ),

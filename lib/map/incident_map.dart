@@ -768,42 +768,44 @@ class IncidentMapController extends MapControllerImpl {
   /// Move to given point and zoom
   void animatedMove(LatLng point, double zoom, TickerProvider provider,
       {int milliSeconds: 500, void onMove(LatLng point)}) {
-    if (!ready) {
-      move(point, zoom);
-      progress.value = MapMoveState(point, zoom);
-    } else if (!isAnimating) {
-      // Create some tweens. These serve to split up the transition from one location to another.
-      // In our case, we want to split the transition be<tween> our current map center and the destination.
-      final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
-      final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
-      final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
+    if (!isAnimating) {
+      if (!ready) {
+        move(point, zoom);
+        progress.value = MapMoveState(point, zoom);
+      } else {
+        // Create some tweens. These serve to split up the transition from one location to another.
+        // In our case, we want to split the transition be<tween> our current map center and the destination.
+        final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+        final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
+        final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
-      // Create a animation controller that has a duration and a TickerProvider.
-      _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+        // Create a animation controller that has a duration and a TickerProvider.
+        _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
-      // The animation determines what path the animation will take. You can try different Curves values, although I found
-      // fastOutSlowIn to be my favorite.
-      Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+        // The animation determines what path the animation will take. You can try different Curves values, although I found
+        // fastOutSlowIn to be my favorite.
+        Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
-      _controller.addListener(() {
-        final state = MapMoveState(
-          LatLng(
-            _latTween.evaluate(animation),
-            _lngTween.evaluate(animation),
-          ),
-          _zoomTween.evaluate(animation),
-        );
-        move(state.center, state.zoom);
-        progress.value = state;
-        if (onMove != null) onMove(state.center);
-      });
+        _controller.addListener(() {
+          final state = MapMoveState(
+            LatLng(
+              _latTween.evaluate(animation),
+              _lngTween.evaluate(animation),
+            ),
+            _zoomTween.evaluate(animation),
+          );
+          move(state.center, state.zoom);
+          progress.value = state;
+          if (onMove != null) onMove(state.center);
+        });
 
-      animation.addStatusListener((status) {
-        if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
-          cancel();
-        }
-      });
-      _controller.forward();
+        animation.addStatusListener((status) {
+          if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
+            cancel();
+          }
+        });
+        _controller.forward();
+      }
     }
   }
 }
