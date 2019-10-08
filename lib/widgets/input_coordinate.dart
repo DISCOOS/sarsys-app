@@ -84,6 +84,7 @@ class _InputUTMState extends State<InputUTM> {
             )
           : null,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           SizedBox(
             width: 58.0,
@@ -127,17 +128,21 @@ class _InputUTMState extends State<InputUTM> {
         : null;
   }
 
-  TextField _buildEastingField() {
-    return TextField(
+  Widget _buildEastingField() {
+    return TextFormField(
       controller: _eastingController,
+      maxLength: 7,
+      autovalidate: true,
       decoration: InputDecoration(
         hintText: "Østlig",
         filled: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 8.0),
       ),
       autocorrect: true,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
       onChanged: (value) => _update(value, _northingController.text),
+      validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {
         FocusScope.of(context).unfocus();
         if (_update(_eastingController.text, _northingController.text)) {
@@ -149,18 +154,22 @@ class _InputUTMState extends State<InputUTM> {
     );
   }
 
-  TextField buildNorthingField() {
-    return TextField(
+  Widget buildNorthingField() {
+    return TextFormField(
       controller: _northingController,
+      maxLength: 7,
+      autovalidate: true,
       decoration: InputDecoration(
         hintText: "Nordlig",
         filled: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
       ),
       autocorrect: true,
       focusNode: _northingFocusNode,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
       onChanged: (value) => _update(_eastingController.text, value),
+      validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {
         FocusScope.of(context).unfocus();
         _update(_eastingController.text, _northingController.text);
@@ -173,7 +182,7 @@ class _InputUTMState extends State<InputUTM> {
     return buildDropDownField(
       attribute: 'zone',
       initialValue: 32,
-      isDense: true,
+      isDense: false,
       items: [31, 32, 33, 34, 35, 36, 37]
           .map(
             (zone) => DropdownMenuItem(value: zone, child: Text("$zone")),
@@ -191,7 +200,7 @@ class _InputUTMState extends State<InputUTM> {
     return buildDropDownField(
       attribute: 'band',
       initialValue: band,
-      isDense: true,
+      isDense: false,
       items: ["V", "W", "X"]
           .map(
             (band) => DropdownMenuItem(value: band, child: Text("$band")),

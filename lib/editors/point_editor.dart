@@ -40,7 +40,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  bool _init;
   Point _current;
   String _currentBaseMap;
   MapSearchField _searchField;
@@ -54,14 +53,14 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
     _mapController = IncidentMapController();
     // TODO: Use device location as default location
-    _init = false;
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
-      offset: 94.0,
-      mapController: _mapController,
-      onError: _onError,
+      offset: 106.0,
       withBorder: false,
+      onError: _onError,
+      mapController: _mapController,
+      onMatch: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
     );
   }
 
@@ -76,6 +75,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           onMessage: _showMessage,
         ),
         tickerProvider: this,
+        onLocationChanged: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
       );
       _locationController.init();
     }
@@ -163,13 +163,14 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildUTMField() {
     return Container(
-      margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
+      margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
       child: InputUTM(
         point: LatLng(_current.lat, _current.lon),
         onChanged: (point) {
           _current = Point.now(point.latitude, point.longitude);
         },
         onEditingComplete: () {
+          setState(() {});
           _mapController.animatedMove(
             LatLng(_current.lat, _current.lon),
             _mapController.zoom,
@@ -320,9 +321,9 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   void _updatePoint(MapPosition point, bool hasGesture) {
     if (hasGesture) {
-      _current = Point.now(point.center.latitude, point.center.longitude);
-      if (_init) setState(() {});
-      _init = true;
+      setState(() {
+        _current = Point.now(point.center.latitude, point.center.longitude);
+      });
     }
   }
 
