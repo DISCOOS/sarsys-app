@@ -37,6 +37,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong/latlong.dart';
+import 'package:wakelock/wakelock.dart';
 
 typedef ToolCallback = void Function(MapTool tool);
 
@@ -161,7 +162,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   TrackingBloc _trackingBloc;
   IncidentBloc _incidentBloc;
 
-  //
+  bool _wakeLockWasOn;
   bool _hasFitToBounds = false;
 
   @override
@@ -200,12 +201,13 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ],
       );
     }
-
     _init();
   }
 
   void _init() async {
     _baseMaps = await _mapTileService.fetchMaps();
+    _wakeLockWasOn = await Wakelock.isEnabled;
+    await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
   }
 
   @override
@@ -276,7 +278,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _mapController = null;
     _mapToolController = null;
     _locationController = null;
+    _restoreWakeLock();
+
     super.dispose();
+  }
+
+  void _restoreWakeLock() async {
+    final wakeLock = await Wakelock.isEnabled;
+    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: _wakeLockWasOn);
   }
 
   LatLng _ensureCenter() {

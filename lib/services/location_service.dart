@@ -35,8 +35,8 @@ class LocationService {
 
   Position get current => _current;
   Stream<Position> get stream => _stream;
-  ValueNotifier<bool> get isReady => _isReady;
   PermissionStatus get status => _status;
+  ValueNotifier<bool> get isReady => _isReady;
 
   Future<PermissionStatus> configure() async {
     _status = await PermissionHandler().checkPermissionStatus(PermissionGroup.locationWhenInUse);
@@ -45,6 +45,7 @@ class LocationService {
       var options = _toOptions(config);
       if (_isConfigChanged(options)) {
         _subscribe(options);
+        _configSubscription?.cancel();
         _configSubscription = _appConfigBloc.state.listen(
           (state) {
             if (state.data is AppConfig) {

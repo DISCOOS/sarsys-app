@@ -50,7 +50,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
       backgroundColor: Colors.white,
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Kartdata og oppsett"),
+        title: Text("Kartoppsett"),
         automaticallyImplyLeading: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
@@ -68,6 +68,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           _buildLocationAccuracyField(),
           _buildLocationFastestIntervalField(),
           _buildLocationSmallestDisplacementField(),
+          Divider(),
+          _buildKeepScreenOn(),
         ],
       ),
     );
@@ -169,7 +171,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         });
   }
 
-  _buildLocationAccuracyField() {
+  Widget _buildLocationAccuracyField() {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: Row(
@@ -265,6 +267,34 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               onChanged: (value) {
                 _bloc.update(locationFastestInterval: int.parse(value ?? 0) * 1000);
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKeepScreenOn() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 3,
+            child: ListTile(
+              title: Text("Hold skjermen påslått"),
+              subtitle: Text("Når kartet vises vil skjermen forbli påslått"),
+            ),
+          ),
+          Flexible(
+            child: Switch(
+              value: _bloc.config.keepScreenOn,
+              onChanged: (value) => setState(() {
+                _bloc.update(keepScreenOn: value);
+              }),
             ),
           ),
         ],

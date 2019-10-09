@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
+import 'package:wakelock/wakelock.dart';
 
 class PointEditor extends StatefulWidget {
   final Point point;
@@ -46,6 +47,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   IncidentMapController _mapController;
   LocationController _locationController;
 
+  bool _wakeLockWasOn;
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +65,12 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       mapController: _mapController,
       onMatch: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
     );
+    _init();
+  }
+
+  void _init() async {
+    _wakeLockWasOn = await Wakelock.isEnabled;
+    await Wakelock.toggle(on: BlocProvider.of<AppConfigBloc>(context).config.keepScreenOn);
   }
 
   @override
@@ -87,7 +96,14 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     _locationController?.dispose();
     _mapController = null;
     _locationController = null;
+    _restoreWakeLock();
+
     super.dispose();
+  }
+
+  void _restoreWakeLock() async {
+    final wakeLock = await Wakelock.isEnabled;
+    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: wakeLock);
   }
 
   @override

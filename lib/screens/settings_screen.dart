@@ -114,7 +114,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       Divider(),
       ListTile(
         title: Text(
-          "Kartdata og oppsett",
+          "Kartoppsett",
           style: Theme.of(context).textTheme.body1,
         ),
         trailing: Icon(Icons.keyboard_arrow_right),

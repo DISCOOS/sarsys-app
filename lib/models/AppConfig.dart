@@ -43,6 +43,8 @@ class AppConfig extends Equatable {
     LOCATION_SMALLEST_DISPLACEMENT: "int",
   };
 
+  final bool demo;
+  final String demoRole;
   final String sentryDns;
   final bool onboarding;
   final String division;
@@ -55,9 +57,7 @@ class AppConfig extends Equatable {
   final String locationAccuracy;
   final int locationFastestInterval;
   final int locationSmallestDisplacement;
-
-  final bool demo;
-  final String demoRole;
+  final bool keepScreenOn;
 
   AppConfig({
     @required this.sentryDns,
@@ -74,6 +74,7 @@ class AppConfig extends Equatable {
     this.locationAccuracy = Defaults.locationAccuracy,
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
+    this.keepScreenOn = Defaults.keepScreenOn,
   }) : super([
           sentryDns,
           demo,
@@ -88,7 +89,8 @@ class AppConfig extends Equatable {
           mapCacheCapacity,
           locationAccuracy,
           locationFastestInterval,
-          locationSmallestDisplacement
+          locationSmallestDisplacement,
+          keepScreenOn,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -112,6 +114,7 @@ class AppConfig extends Equatable {
     String locationAccuracy,
     int locationFastestInterval,
     int locationSmallestDisplacement,
+    bool keepScreenOn,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
@@ -128,6 +131,7 @@ class AppConfig extends Equatable {
       locationAccuracy: locationAccuracy ?? this.locationAccuracy,
       locationFastestInterval: locationFastestInterval ?? this.locationFastestInterval,
       locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
+      keepScreenOn: keepScreenOn ?? this.keepScreenOn,
     );
   }
 
