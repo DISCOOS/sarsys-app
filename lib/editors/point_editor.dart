@@ -146,7 +146,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildInputFields() {
     final size = MediaQuery.of(context).size;
-    final maxWidth = min(min(size.width, size.height), 380.0);
+    final maxWidth = min(min(size.width, size.height), 480.0);
     return SafeArea(
       child: Align(
         alignment: Alignment.topCenter,

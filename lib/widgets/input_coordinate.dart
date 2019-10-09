@@ -87,7 +87,7 @@ class _InputUTMState extends State<InputUTM> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           SizedBox(
-            width: 58.0,
+            width: 66.0,
             child: _buildZoneField(),
           ),
           SizedBox(width: 8.0),
