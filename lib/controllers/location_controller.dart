@@ -15,7 +15,7 @@ import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
-typedef LocationCallback = void Function(LatLng point);
+typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
 class LocationController {
   final AppConfigBloc configBloc;
@@ -116,9 +116,9 @@ class LocationController {
       _options?.accuracy = position?.accuracy;
       final point = _toLatLng(position);
       // Full refresh of map needed?
-      if (goto || isLocked) {
+      if (goto || _locked) {
         hasMoved = true;
-        if (onLocationChanged != null) onLocationChanged(point);
+        if (onLocationChanged != null) onLocationChanged(point, goto, _locked);
         if (goto || _locked) {
           if (tickerProvider != null) {
             mapController.animatedMove(
@@ -135,7 +135,7 @@ class LocationController {
           }
         }
       } else if (_isMoved(point)) {
-        if (onLocationChanged != null) onLocationChanged(point);
+        if (onLocationChanged != null) onLocationChanged(point, false, isLocked);
         if (_options?.point == null || tickerProvider == null) {
           _locationUpdateController.add(null);
         } else {

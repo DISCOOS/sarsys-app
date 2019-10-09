@@ -84,7 +84,9 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           onMessage: _showMessage,
         ),
         tickerProvider: this,
-        onLocationChanged: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
+        onLocationChanged: (point, goto, _) {
+          if (goto) setState(() => _current = Point.now(point.latitude, point.longitude));
+        },
       );
       _locationController.init();
     }

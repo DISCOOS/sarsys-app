@@ -687,7 +687,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _setLayerOptions();
   }
 
-  void _onLocationChanged(LatLng point) {
+  void _onLocationChanged(LatLng point, bool goto, bool locked) {
     _setLayerOptions();
   }
 
