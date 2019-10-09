@@ -130,3 +130,11 @@ Duration asEffort(List<Point> history) => history.isNotEmpty
         history.first.timestamp,
       )
     : Duration.zero;
+
+class Pair<L, R> {
+  final L left;
+  final R right;
+  Pair._(this.left, this.right);
+
+  factory Pair.of(L left, R right) => Pair._(left, right);
+}

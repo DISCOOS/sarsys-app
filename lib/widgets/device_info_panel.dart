@@ -300,7 +300,8 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
         onPressed: () async {
           final result = await addToUnit(context, [device], unit: unit);
-          if (result.isRight() && onMessage != null) onMessage("${device.name} er tilknyttet ${unit.name}");
+          if (result.isRight() && onMessage != null)
+            onMessage("${device.name} er tilknyttet ${result.toIterable().first.left.name}");
           if (result.isRight() && onChanged != null) onChanged();
         });
   }

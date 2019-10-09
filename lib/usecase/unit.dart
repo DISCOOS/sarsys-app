@@ -5,6 +5,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
@@ -71,7 +72,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
 }
 
 /// Add given devices tracking of given unit
-Future<dartz.Either<bool, Tracking>> addToUnit(
+Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit(
   BuildContext context,
   List<Device> devices, {
   Unit unit,
@@ -82,9 +83,9 @@ Future<dartz.Either<bool, Tracking>> addToUnit(
       devices: devices,
     ));
 
-class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
+class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
   @override
-  Future<dartz.Either<bool, Tracking>> call(params) async {
+  Future<dartz.Either<bool, Pair<Unit, Tracking>>> call(params) async {
     final bloc = BlocProvider.of<TrackingBloc>(params.context);
     var unit = params.data != null
         ? params.data
@@ -93,8 +94,8 @@ class AddToUnit extends UseCase<bool, Tracking, UnitParams> {
             where: (unit) => bloc.tracking[unit.tracking] == null || bloc.tracking[unit.tracking].devices.isEmpty,
           );
     if (unit == null) return dartz.Left(false);
-    final state = await _handleTracking(params, unit, params.devices);
-    return dartz.Right(state);
+    final tracking = await _handleTracking(params, unit, params.devices);
+    return dartz.Right(Pair.of(unit, tracking));
   }
 }
 
