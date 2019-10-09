@@ -161,7 +161,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         (value) {
           Device device = _deviceBloc.devices.values.firstWhere(
             (Device device) =>
-                (value as String).isNotEmpty == true && device != widget.device && device.number == value,
+                (value as String).isNotEmpty == true && device?.id != widget?.device?.id && device.number == value,
             orElse: () => null,
           );
           return device != null ? "Finnes allerede" : null;
@@ -229,7 +229,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validators: [
         (value) {
           Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) => (value as String).isNotEmpty == true && device != widget.device && device.alias == value,
+            (Device device) =>
+                (value as String).isNotEmpty == true && device?.id != widget?.device?.id && device.alias == value,
             orElse: () => null,
           );
           return device != null ? "Finnes allerede" : null;

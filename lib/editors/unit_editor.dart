@@ -228,7 +228,7 @@ class _UnitEditorState extends State<UnitEditor> {
           (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => unit != widget.unit && _isSameCallsign(value as String, unit.callsign),
+          (Unit unit) => unit?.id != widget?.unit?.id && _isSameCallsign(value as String, unit.callsign),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
@@ -276,7 +276,7 @@ class _UnitEditorState extends State<UnitEditor> {
           (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => unit != widget.unit && _isSamePhone(value as String, unit.phone),
+          (Unit unit) => unit?.id != widget?.unit?.id && _isSamePhone(value as String, unit.phone),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
