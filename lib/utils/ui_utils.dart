@@ -175,7 +175,7 @@ Color toUnitStatusColor(UnitStatus status) {
       return Colors.brown;
     case UnitStatus.Mobilized:
     default:
-      return Colors.grey;
+      return Colors.orange;
   }
 }
 

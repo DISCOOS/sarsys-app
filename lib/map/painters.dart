@@ -8,11 +8,15 @@ class PointPainter extends CustomPainter {
   final Color color;
   final double opacity;
   final double outer;
+  final double centerSize;
+  final Color centerColor;
 
   const PointPainter({
     this.size,
     this.color,
     this.outer,
+    this.centerColor,
+    this.centerSize = 2,
     this.opacity = 0.54,
   });
 
@@ -27,8 +31,10 @@ class PointPainter extends CustomPainter {
     paint.color = color.withOpacity(opacity);
     paint.style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, paint);
-    if (outer != null) canvas.drawCircle(center, outer - 2, paint);
-    canvas.drawCircle(center, 1, paint..color = Colors.black);
+    if (outer != null) {
+      canvas.drawCircle(center, outer - 2, paint);
+    }
+    canvas.drawCircle(center, centerSize, paint..color = centerColor ?? Colors.black);
   }
 
   @override

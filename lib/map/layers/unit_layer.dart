@@ -127,6 +127,7 @@ class UnitLayer extends MapPlugin {
           size: size,
           opacity: options.opacity,
           outer: pixelRadius,
+          centerColor: toUnitStatusColor(unit.status),
           color: toPointStatusColor(tracking.location),
         ),
       ),
