@@ -65,6 +65,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(widget.incident == null ? 'Ny hendelse' : 'Endre hendelse'),
         centerTitle: false,
@@ -427,6 +428,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
             validators: [
               FormBuilderValidators.required(errorText: 'Talegruppe(r) må oppgis'),
             ],
+            // BUG: These are required, no default values are given.
+            obscureText: false,
+            autocorrect: false,
+            inputType: TextInputType.text,
+            keyboardAppearance: Brightness.dark,
+            inputAction: TextInputAction.done,
+            textCapitalization: TextCapitalization.none,
           ),
         ),
       ),

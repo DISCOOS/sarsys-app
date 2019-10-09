@@ -44,11 +44,13 @@ PODS:
     - Flutter
   - url_launcher (0.0.1):
     - Flutter
+  - wakelock (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - catcher (from `.symlinks/plugins/catcher/ios`)
   - device_info (from `.symlinks/plugins/device_info/ios`)
-  - Flutter (from `.symlinks/flutter/ios-release`)
+  - Flutter (from `.symlinks/flutter/ios`)
   - flutter_email_sender (from `.symlinks/plugins/flutter_email_sender/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_mailer (from `.symlinks/plugins/flutter_mailer/ios`)
@@ -66,6 +68,7 @@ DEPENDENCIES:
   - system_setting (from `.symlinks/plugins/system_setting/ios`)
   - uni_links (from `.symlinks/plugins/uni_links/ios`)
   - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
+  - wakelock (from `.symlinks/plugins/wakelock/ios`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
@@ -78,7 +81,7 @@ EXTERNAL SOURCES:
   device_info:
     :path: ".symlinks/plugins/device_info/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios-release"
+    :path: ".symlinks/flutter/ios"
   flutter_email_sender:
     :path: ".symlinks/plugins/flutter_email_sender/ios"
   flutter_local_notifications:
@@ -113,6 +116,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/uni_links/ios"
   url_launcher:
     :path: ".symlinks/plugins/url_launcher/ios"
+  wakelock:
+    :path: ".symlinks/plugins/wakelock/ios"
 
 SPEC CHECKSUMS:
   catcher: e5585ed31458c849f4fd9c3719b2fcb0188b8918
@@ -137,6 +142,7 @@ SPEC CHECKSUMS:
   system_setting: 92cc591ade5113a6fd57ed0702dc5eaa9f5337e5
   uni_links: d97da20c7701486ba192624d99bffaaffcfc298a
   url_launcher: 0067ddb8f10d36786672aa0722a21717dba3a298
+  wakelock: da5012e206ec8978df58d8642e4cdd4fe506185f
 
 PODFILE CHECKSUM: ebd43b443038e611b86ede96e613bd6033c49497
 

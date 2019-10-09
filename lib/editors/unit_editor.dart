@@ -245,7 +245,6 @@ class _UnitEditorState extends State<UnitEditor> {
       attribute: 'phone',
       maxLength: 8,
       maxLengthEnforced: true,
-      autofocus: true,
       controller: _phoneController,
       decoration: InputDecoration(
         filled: true,
@@ -390,6 +389,13 @@ class _UnitEditorState extends State<UnitEditor> {
           );
         },
         valueTransformer: (values) => values.map((device) => device).toList(),
+        // BUG: These are required, no default values are given.
+        obscureText: false,
+        autocorrect: false,
+        inputType: TextInputType.text,
+        keyboardAppearance: Brightness.dark,
+        inputAction: TextInputAction.done,
+        textCapitalization: TextCapitalization.none,
       ),
     );
   }
