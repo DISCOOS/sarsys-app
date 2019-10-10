@@ -59,8 +59,8 @@ class _InputUTMState extends State<InputUTM> {
 
   void _setUTM() {
     final utm = _toUTM(widget.point);
-    _eastingController.text = utm?.x?.toStringAsFixed(0) ?? '';
-    _northingController.text = utm?.y?.toStringAsFixed(0) ?? '';
+    setText(_eastingController, utm?.x?.toStringAsFixed(0) ?? '');
+    setText(_northingController, utm?.y?.toStringAsFixed(0) ?? '');
   }
 
   @override

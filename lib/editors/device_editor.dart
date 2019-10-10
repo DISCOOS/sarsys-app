@@ -266,17 +266,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
       alias?.isNotEmpty == true && device?.id != widget?.device?.id && device.alias == alias;
 
   void _setText(TextEditingController controller, String value) {
-    // Workaround for errors when clearing TextField,
-    // see https://github.com/flutter/flutter/issues/17647
-    if (value?.isEmpty == true)
-      WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
-    else if (value != null) {
-      controller.value = TextEditingValue(
-        text: value,
-        selection: TextSelection.collapsed(offset: value?.length ?? 0),
-      );
-      _formKey?.currentState?.save();
-    }
+    setText(controller, value);
+    _formKey?.currentState?.save();
   }
 
   void _onNumberOrAliasEdit(
