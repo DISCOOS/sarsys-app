@@ -16,6 +16,7 @@ class Defaults {
   static const int locationFastestInterval = 1000;
   static const int locationSmallestDisplacement = 3;
   static const bool keepScreenOn = false;
+  static const bool callsignReuse = true;
 
   static final LatLng origo = LatLng(59.5, 10.09);
 }

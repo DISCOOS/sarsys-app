@@ -21,11 +21,14 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
       mapCacheCapacity: json['mapCacheCapacity'] as int,
       locationAccuracy: json['locationAccuracy'] as String,
       locationFastestInterval: json['locationFastestInterval'] as int,
-      locationSmallestDisplacement:
-          json['locationSmallestDisplacement'] as int);
+      locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
+      keepScreenOn: json['keepScreenOn'] as bool,
+      callsignReuse: json['callsignReuse'] as bool);
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
+      'demo': instance.demo,
+      'demoRole': instance.demoRole,
       'sentryDns': instance.sentryDns,
       'onboarding': instance.onboarding,
       'division': instance.division,
@@ -38,6 +41,6 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'locationAccuracy': instance.locationAccuracy,
       'locationFastestInterval': instance.locationFastestInterval,
       'locationSmallestDisplacement': instance.locationSmallestDisplacement,
-      'demo': instance.demo,
-      'demoRole': instance.demoRole
+      'keepScreenOn': instance.keepScreenOn,
+      'callsignReuse': instance.callsignReuse
     };

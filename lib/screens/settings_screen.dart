@@ -40,7 +40,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.white,
           key: _scaffoldKey,
           appBar: _buildAppBar(context),
-          body: _buildBody(bloc, context, viewportConstraints),
+          body: _buildBody(context, viewportConstraints),
         );
       },
     );
@@ -57,7 +57,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         ));
   }
 
-  Widget _buildBody(AppConfigBloc bloc, BuildContext context, BoxConstraints viewportConstraints) {
+  Widget _buildBody(BuildContext context, BoxConstraints viewportConstraints) {
     return RefreshIndicator(
       onRefresh: () async {
         await bloc.fetch();
@@ -86,7 +86,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                       padding: EdgeInsets.all(8.0),
                       child: ListView(
                         shrinkWrap: true,
-                        children: _buildSettings(context, bloc),
+                        children: _buildSettings(context),
                       ),
                     ),
                   ),
@@ -99,7 +99,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  List<Widget> _buildSettings(BuildContext context, AppConfigBloc bloc) {
+  List<Widget> _buildSettings(BuildContext context) {
     return <Widget>[
       ListTile(
         title: Text(
@@ -107,10 +107,11 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      _buildDistrictField(bloc),
-      _buildDepartmentField(bloc),
-      _buildTalkGroupsField(bloc),
+      _buildDistrictField(),
+      _buildDepartmentField(),
+      _buildTalkGroupsField(),
       SizedBox(height: 16.0),
+      _buildCallsignReuse(),
       Divider(),
       ListTile(
         title: Text(
@@ -131,7 +132,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      _buildOnboardingField(bloc),
+      _buildOnboardingField(),
       ListTile(
         title: Text(
           "Endre tilganger for app",
@@ -157,7 +158,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
-  Padding _buildDistrictField(AppConfigBloc bloc) {
+  Padding _buildDistrictField() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Row(
@@ -192,7 +193,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Padding _buildDepartmentField(AppConfigBloc bloc) {
+  Padding _buildDepartmentField() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Row(
@@ -227,7 +228,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Padding _buildTalkGroupsField(AppConfigBloc bloc) {
+  Padding _buildTalkGroupsField() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Row(
@@ -261,16 +262,39 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Padding _buildOnboardingField(AppConfigBloc bloc) {
+  Widget _buildCallsignReuse() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0),
-      child: Row(mainAxisSize: MainAxisSize.max, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: <Widget>[
-        Expanded(child: Text("Vis oppstartsveiviser")),
-        Switch(
-          value: bloc.config.onboarding,
-          onChanged: (value) => bloc.update(onboarding: value),
-        ),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(child: Text("Gjenbruk kallesignal")),
+          Switch(
+            value: bloc.config.callsignReuse,
+            onChanged: (value) => setState(() {
+              bloc.update(callsignReuse: value);
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding _buildOnboardingField() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(child: Text("Vis oppstartsveiviser")),
+          Switch(
+            value: bloc.config.onboarding,
+            onChanged: (value) => bloc.update(onboarding: value),
+          ),
+        ],
+      ),
     );
   }
 }

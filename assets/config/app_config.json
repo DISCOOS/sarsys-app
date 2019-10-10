@@ -12,5 +12,7 @@
   "locationAccuracy": "high",
   "locationFastestInterval": 1000,
   "locationSmallestDisplacement": 3,
+  "keepScreenOn": false,
+  "callsignReuse": true,
   "sentryDns": "https://2d6130375010466b9652b9e9efc415cc@sentry.io/1523681"
 }

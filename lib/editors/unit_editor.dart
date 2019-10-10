@@ -466,8 +466,20 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultNumber() {
-    return "${widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1}";
-    //return _unitBloc.units.values.where((unit) => widget.type == unit.type).length + 1;
+    int number;
+    if (_appConfigBloc.config.callsignReuse) {
+      var prev = 0;
+      final numbers = _unitBloc.units.values
+          .where((unit) => UnitStatus.Retired != unit.status)
+          .map((unit) => unit.number)
+          .toList()
+            ..sort((n1, n2) => n1.compareTo(n2));
+      final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
+      number = (candidates.length == 0 ? numbers.length : candidates.last) + 1;
+    } else {
+      number = widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1;
+    }
+    return "$number";
   }
 
   String _actualNumber() {

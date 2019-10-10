@@ -25,6 +25,8 @@ class AppConfig extends Equatable {
   static const LOCATION_ACCURACY = "locationAccuracy";
   static const LOCATION_FASTEST_INTERVAL = "locationFastestInterval";
   static const LOCATION_SMALLEST_DISPLACEMENT = "locationSmallestDisplacement";
+  static const KEEP_SCREEN_ON = "keepScreenOn";
+  static const CALLSIGN_REUSE = "callsignReuse";
 
   static const PARAMS = const {
     SENTRY_DNS: "string",
@@ -41,6 +43,8 @@ class AppConfig extends Equatable {
     LOCATION_ACCURACY: "string",
     LOCATION_FASTEST_INTERVAL: "int",
     LOCATION_SMALLEST_DISPLACEMENT: "int",
+    KEEP_SCREEN_ON: "bool",
+    CALLSIGN_REUSE: "bool",
   };
 
   final bool demo;
@@ -58,6 +62,7 @@ class AppConfig extends Equatable {
   final int locationFastestInterval;
   final int locationSmallestDisplacement;
   final bool keepScreenOn;
+  final bool callsignReuse;
 
   AppConfig({
     @required this.sentryDns,
@@ -75,6 +80,7 @@ class AppConfig extends Equatable {
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
     this.keepScreenOn = Defaults.keepScreenOn,
+    this.callsignReuse = Defaults.callsignReuse,
   }) : super([
           sentryDns,
           demo,
@@ -91,6 +97,7 @@ class AppConfig extends Equatable {
           locationFastestInterval,
           locationSmallestDisplacement,
           keepScreenOn,
+          callsignReuse,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -115,6 +122,7 @@ class AppConfig extends Equatable {
     int locationFastestInterval,
     int locationSmallestDisplacement,
     bool keepScreenOn,
+    bool callsignReuse,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
@@ -132,6 +140,7 @@ class AppConfig extends Equatable {
       locationFastestInterval: locationFastestInterval ?? this.locationFastestInterval,
       locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
+      callsignReuse: callsignReuse ?? this.callsignReuse,
     );
   }
 
