@@ -14,8 +14,8 @@ class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
   final bool withHeader;
   final TrackingBloc bloc;
-  final VoidCallback onChanged;
-  final VoidCallback onComplete;
+  final ValueChanged<Unit> onChanged;
+  final ValueChanged<Unit> onComplete;
   final MessageCallback onMessage;
 
   const UnitInfoPanel({
@@ -63,7 +63,7 @@ class UnitInfoPanel extends StatelessWidget {
           Text('${unit.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: onComplete,
+            onPressed: () => _onComplete(unit),
           )
         ],
       ),
@@ -106,7 +106,7 @@ class UnitInfoPanel extends StatelessWidget {
                       ? null
                       : () {
                           navigateToLatLng(context, toLatLng(tracking?.location));
-                          if (onComplete != null) onComplete();
+                          _onComplete();
                         },
                 ),
                 Text("Naviger", style: theme.caption),
@@ -136,7 +136,7 @@ class UnitInfoPanel extends StatelessWidget {
                 center: tracking.location,
               ),
       onMessage: onMessage,
-      onComplete: onComplete,
+      onComplete: _onComplete,
     );
   }
 
@@ -150,7 +150,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(Icons.headset_mic),
             value: unit.callsign,
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -161,7 +161,7 @@ class UnitInfoPanel extends StatelessWidget {
               icon: Icon(Icons.phone),
               value: unit?.phone ?? "Ukjent",
               onMessage: onMessage,
-              onComplete: onComplete,
+              onComplete: _onComplete,
             ),
             onTap: () {
               final number = unit?.phone ?? '';
@@ -183,7 +183,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.cellphoneBasic),
             value: tracking?.devices?.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -193,7 +193,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.tapeMeasure),
             value: formatDistance(tracking?.distance),
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
       ],
@@ -210,7 +210,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(Icons.timer),
             value: "${formatDuration(tracking.effort)}",
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -220,7 +220,7 @@ class UnitInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.speedometer),
             value: "${(tracking?.speed ?? 0.0 * 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
       ],
@@ -241,8 +241,11 @@ class UnitInfoPanel extends StatelessWidget {
             ),
             onPressed: () async {
               final result = await editUnit(context, unit);
-              if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppdatert");
-              if (result.isRight() && onChanged != null) onChanged();
+              if (result.isRight() && result.toIterable().first != unit) {
+                final actual = result.toIterable().first;
+                _onMessage("${actual.name} er oppdatert");
+                _onChanged(actual);
+              }
             },
           ),
           if (devices.isNotEmpty)
@@ -253,9 +256,9 @@ class UnitInfoPanel extends StatelessWidget {
               ),
               onPressed: () async {
                 final result = await removeFromUnit(context, unit, devices: devices);
-                if (result.isRight() && onMessage != null) {
-                  onMessage("Apparater fjernet fra ${unit.name}");
-                  if (result.isRight() && onChanged != null) onChanged();
+                if (result.isRight()) {
+                  _onMessage("Apparater fjernet fra ${unit.name}");
+                  _onChanged();
                 }
               },
             ),
@@ -266,8 +269,10 @@ class UnitInfoPanel extends StatelessWidget {
             ),
             onPressed: () async {
               final result = await retireUnit(context, unit);
-              if (result.isRight() && onMessage != null) onMessage("${unit.name} er oppløst");
-              if (result.isRight() && onComplete != null) onComplete();
+              if (result.isRight()) {
+                _onMessage("${unit.name} er oppløst");
+                _onComplete();
+              }
             },
           ),
         ],
@@ -277,5 +282,17 @@ class UnitInfoPanel extends StatelessWidget {
         buttonPadding: EdgeInsets.all(8.0),
       ),
     );
+  }
+
+  void _onMessage(String message) {
+    if (onMessage != null) onMessage(message);
+  }
+
+  void _onChanged([unit]) {
+    if (onChanged != null) onChanged(unit);
+  }
+
+  void _onComplete([unit]) {
+    if (onComplete != null) onComplete(unit ?? this.unit);
   }
 }

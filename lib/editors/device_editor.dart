@@ -29,8 +29,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
 
-  final _aliasController = TextEditingController();
-  final _numberController = TextEditingController();
+  final TextEditingController _aliasController = TextEditingController();
+  final TextEditingController _numberController = TextEditingController();
 
   String _editedName;
   String _editedDistrict;
@@ -41,15 +41,23 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   void initState() {
     super.initState();
-    _aliasController.text = widget.device?.alias ?? "";
+    _organization = AssetsService().fetchOrganization(Defaults.orgId);
+    _initAliasController();
+    _initNumberController();
+  }
+
+  void _initAliasController() {
+    _setText(_aliasController, widget.device?.alias);
     _aliasController.addListener(
       () => _onNumberOrAliasEdit(_aliasController.text, _numberController.text),
     );
-    _numberController.text = widget.device?.number ?? "";
+  }
+
+  void _initNumberController() {
+    _setText(_numberController, widget.device?.number);
     _numberController.addListener(
       () => _onNumberOrAliasEdit(_aliasController.text, _numberController.text),
     );
-    _organization = AssetsService().fetchOrganization(Defaults.orgId);
   }
 
   @override
@@ -120,27 +128,32 @@ class _DeviceEditorState extends State<DeviceEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedName ?? widget?.device?.name ?? "${translateDeviceType(widget.type)}",
+          _editedName ?? _defaultName(),
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
     );
   }
 
-  FormBuilderTextField _buildNumberField() {
-    var originalNumber = widget.device?.number ?? "";
+  String _defaultName() => widget?.device?.name ?? "";
+
+  Widget _buildNumberField() {
+    var originalNumber = widget.device?.number;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
       maxLength: 12,
-      autofocus: true,
       maxLengthEnforced: true,
       textInputAction: TextInputAction.next,
-      initialValue: originalNumber,
       controller: _numberController,
+      onChanged: (value) => _setText(
+        _numberController,
+        value,
+      ),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
+        enabled: true,
         labelText: 'Nummer',
         suffix: GestureDetector(
           child: Icon(
@@ -148,20 +161,22 @@ class _DeviceEditorState extends State<DeviceEditor> {
             color: Colors.grey,
             size: 20,
           ),
-          onTap: () => _setText(
-            _numberController,
-            originalNumber,
-          ),
+          onTap: () {
+            _setText(
+              _numberController,
+              originalNumber,
+            );
+          },
         ),
       ),
       keyboardType: TextInputType.numberWithOptions(),
+      valueTransformer: (value) => emptyAsNull(value),
       validators: [
         FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
         FormBuilderValidators.numeric(errorText: "Må være et nummer"),
-        (value) {
+        (number) {
           Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) =>
-                (value as String).isNotEmpty == true && device?.id != widget?.device?.id && device.number == value,
+            (Device device) => isSameNumber(device, number),
             orElse: () => null,
           );
           return device != null ? "Finnes allerede" : null;
@@ -169,6 +184,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
       ],
     );
   }
+
+  bool isSameNumber(Device device, String number) =>
+      number?.isNotEmpty == true && device?.id != widget?.device?.id && device.number?.toString() == number;
 
   InputDecorator _buildDistrictField(Organization org) {
     return InputDecorator(
@@ -197,21 +215,26 @@ class _DeviceEditorState extends State<DeviceEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedFunction ?? org == null ? '-' : org.toFunction(widget?.device?.number),
+          _editedFunction ?? _defaultFunction(org),
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
     );
   }
 
+  String _defaultFunction(Organization org) => org != null ? org.toFunction(widget?.device?.number) : '-';
+
   FormBuilderTextField _buildAliasField() {
-    var originalValue = widget.device?.alias ?? "";
+    var originalValue = widget.device?.alias;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'alias',
-      initialValue: originalValue,
       textInputAction: TextInputAction.done,
       controller: _aliasController,
+      onChanged: (value) => _setText(
+        _aliasController,
+        value,
+      ),
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
@@ -226,11 +249,11 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       ),
       keyboardType: TextInputType.text,
+      valueTransformer: (value) => emptyAsNull(value),
       validators: [
-        (value) {
+        (alias) {
           Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) =>
-                (value as String).isNotEmpty == true && device?.id != widget?.device?.id && device.alias == value,
+            (Device device) => _isSameAlias(device, alias),
             orElse: () => null,
           );
           return device != null ? "Finnes allerede" : null;
@@ -239,14 +262,21 @@ class _DeviceEditorState extends State<DeviceEditor> {
     );
   }
 
+  bool _isSameAlias(Device device, String alias) =>
+      alias?.isNotEmpty == true && device?.id != widget?.device?.id && device.alias == alias;
+
   void _setText(TextEditingController controller, String value) {
     // Workaround for errors when clearing TextField,
     // see https://github.com/flutter/flutter/issues/17647
-    if (value.isEmpty)
+    if (value?.isEmpty == true)
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
-    else
-      controller.text = value;
-    _formKey.currentState.save();
+    else if (value != null) {
+      controller.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value?.length ?? 0),
+      );
+      _formKey?.currentState?.save();
+    }
   }
 
   void _onNumberOrAliasEdit(
@@ -257,7 +287,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }) {
     if (alias.isEmpty) alias = null;
     if (number.isEmpty) number = null;
-    _editedName = alias ?? number ?? widget.device?.name ?? _editedName ?? translateDeviceType(widget.type);
+    _editedName = alias ?? number ?? _defaultName();
     _editedDistrict = org == null ? _editedDistrict : org.toDistrict(number);
     _editedFunction = org == null ? _editedFunction : org.toFunction(number);
     if (update) setState(() {});
@@ -303,22 +333,22 @@ class _DeviceEditorState extends State<DeviceEditor> {
 
   DeviceType _getActualType(DeviceType defaultValue) {
     final values = _formKey?.currentState?.value;
-    return (values == null ? widget?.device?.type ?? defaultValue : Device.fromJson(values).type) ??
-        widget?.device?.type ??
-        defaultValue;
+    return values?.containsKey('type') == true
+        ? Device.fromJson(values).type ?? defaultValue
+        : widget?.device?.type ?? defaultValue;
   }
 
   String _getActualAlias() {
     final values = _formKey?.currentState?.value;
-    return (values == null ? widget?.device?.alias ?? "" : Device.fromJson(values).alias) ??
-        widget?.device?.alias ??
-        "";
+    return values?.containsKey('alias') == true
+        ? Device.fromJson(values).alias ?? widget?.device?.alias
+        : widget?.device?.alias;
   }
 
   String _getActualNumber() {
     final values = _formKey?.currentState?.value;
-    return (values == null ? "${widget?.device?.number}" ?? "" : Device.fromJson(values).number) ??
-        widget?.device?.number ??
-        "";
+    return values?.containsKey('number') == true
+        ? Device.fromJson(values).number ?? widget?.device?.number
+        : widget?.device?.number;
   }
 }

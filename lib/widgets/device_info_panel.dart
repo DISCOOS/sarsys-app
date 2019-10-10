@@ -15,9 +15,9 @@ class DeviceInfoPanel extends StatelessWidget {
   final Unit unit;
   final Device device;
   final Tracking tracking;
-  final VoidCallback onChanged;
-  final VoidCallback onComplete;
   final MessageCallback onMessage;
+  final ValueChanged<Device> onChanged;
+  final ValueChanged<Device> onComplete;
   final Future<Organization> organization;
 
   const DeviceInfoPanel({
@@ -70,7 +70,7 @@ class DeviceInfoPanel extends StatelessWidget {
           Text('${device.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: onComplete,
+            onPressed: () => _onComplete(device),
           )
         ],
       ),
@@ -113,7 +113,7 @@ class DeviceInfoPanel extends StatelessWidget {
                       ? null
                       : () {
                           navigateToLatLng(context, toLatLng(device?.location));
-                          if (onComplete != null) onComplete();
+                          _onComplete(device);
                         },
                 ),
                 Text("Naviger", style: theme.caption),
@@ -143,7 +143,7 @@ class DeviceInfoPanel extends StatelessWidget {
                 center: location,
               ),
       onMessage: onMessage,
-      onComplete: onComplete,
+      onComplete: _onComplete,
     );
   }
 
@@ -157,7 +157,7 @@ class DeviceInfoPanel extends StatelessWidget {
             icon: Icon(Icons.headset_mic),
             value: translateDeviceType(device.type),
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -168,7 +168,7 @@ class DeviceInfoPanel extends StatelessWidget {
               icon: Icon(Icons.looks_one),
               value: device?.number,
               onMessage: onMessage,
-              onComplete: onComplete,
+              onComplete: _onComplete,
             ),
           ),
         ),
@@ -189,7 +189,7 @@ class DeviceInfoPanel extends StatelessWidget {
                   icon: Icon(Icons.home),
                   value: snapshot.hasData ? snapshot.data.toDistrict(device.number) : '-',
                   onMessage: onMessage,
-                  onComplete: onComplete,
+                  onComplete: _onComplete,
                 ),
               ),
               Expanded(
@@ -200,7 +200,7 @@ class DeviceInfoPanel extends StatelessWidget {
                     icon: Icon(Icons.functions),
                     value: snapshot.hasData ? snapshot.data.toFunction(device.number) : '-',
                     onMessage: onMessage,
-                    onComplete: onComplete,
+                    onComplete: _onComplete,
                   ),
                 ),
               ),
@@ -220,7 +220,7 @@ class DeviceInfoPanel extends StatelessWidget {
             icon: Icon(Icons.group),
             value: unit?.name ?? "Ingen",
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -230,7 +230,7 @@ class DeviceInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.tapeMeasure),
             value: formatDistance(asDistance(track, tail: track.length)),
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
       ],
@@ -252,7 +252,7 @@ class DeviceInfoPanel extends StatelessWidget {
             icon: Icon(Icons.timer),
             value: "${formatDuration(effort)}",
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
         Expanded(
@@ -262,7 +262,7 @@ class DeviceInfoPanel extends StatelessWidget {
             icon: Icon(MdiIcons.speedometer),
             value: "${(asSpeed(distance, effort) * 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
-            onComplete: onComplete,
+            onComplete: _onComplete,
           ),
         ),
       ],
@@ -300,9 +300,11 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
         onPressed: () async {
           final result = await addToUnit(context, [device], unit: unit);
-          if (result.isRight() && onMessage != null)
-            onMessage("${device.name} er tilknyttet ${result.toIterable().first.left.name}");
-          if (result.isRight() && onChanged != null) onChanged();
+          if (result.isRight()) {
+            var actual = result.toIterable().first.left;
+            _onMessage("${device.name} er tilknyttet ${actual.name}");
+            _onChanged(device);
+          }
         });
   }
 
@@ -314,8 +316,11 @@ class DeviceInfoPanel extends StatelessWidget {
       ),
       onPressed: () async {
         final result = await editDevice(context, device);
-        if (result.isRight() && onMessage != null) onMessage("${device.name} er oppdatert");
-        if (result.isRight() && onChanged != null) onChanged();
+        if (result.isRight() && result.toIterable().first != device) {
+          var actual = result.toIterable().first;
+          _onMessage("${actual.name} er oppdatert");
+          _onChanged(actual);
+        }
       },
     );
   }
@@ -328,9 +333,11 @@ class DeviceInfoPanel extends StatelessWidget {
       ),
       onPressed: () async {
         final result = await createUnit(context, devices: [device]);
-        if (result.isRight() && onMessage != null)
-          onMessage("${device.name} er tilknyttet ${result.toIterable().first.name}");
-        if (result.isRight() && onChanged != null) onChanged();
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${device.name} er tilknyttet ${actual.name}");
+          _onChanged(device);
+        }
       },
     );
   }
@@ -343,8 +350,10 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
         onPressed: () async {
           final result = await removeFromUnit(context, unit, devices: [device]);
-          if (result.isRight() && onMessage != null) onMessage("${device.name} er fjernet fra ${unit.name}");
-          if (result.isRight() && onChanged != null) onChanged();
+          if (result.isRight()) {
+            _onMessage("${device.name} er fjernet fra ${unit.name}");
+            _onChanged(device);
+          }
         });
   }
 
@@ -356,8 +365,22 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
         onPressed: () async {
           final result = await detachDevice(context, device);
-          if (result.isRight() && onMessage != null) onMessage("${device.name} er frigitt");
-          if (result.isRight() && onComplete != null) onComplete();
+          if (result.isRight()) {
+            _onMessage("${device.name} er frigitt");
+            _onComplete();
+          }
         });
+  }
+
+  void _onMessage(String message) {
+    if (onMessage != null) onMessage(message);
+  }
+
+  void _onChanged([device]) {
+    if (onChanged != null) onChanged(device);
+  }
+
+  void _onComplete([device]) {
+    if (onComplete != null) onComplete(device ?? this.device);
   }
 }

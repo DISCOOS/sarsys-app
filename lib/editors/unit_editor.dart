@@ -38,9 +38,9 @@ class _UnitEditorState extends State<UnitEditor> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
 
-  final _numberController = TextEditingController();
-  final _callsignController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final TextEditingController _numberController = TextEditingController();
+  final TextEditingController _callsignController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   String _editedName;
   UnitBloc _unitBloc;
@@ -70,17 +70,29 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _init() async {
     _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.orgId));
-    _phoneController.text = _getDefaultPhone();
-    _numberController.text = _getDefaultNumber();
-    _callsignController.text = widget?.unit?.callsign ?? _getDefaultCallSign();
+    _initPhoneController();
+    _initNumberController();
+    _initCallsignController();
+    if (mounted) setState(() {});
+  }
+
+  void _initCallsignController() {
+    _setText(_callsignController, _defaultCallSign());
+  }
+
+  void _initNumberController() {
+    _setText(_numberController, _defaultNumber());
     _numberController.addListener(
       () => _onTypeOrNumberEdit(
-        translateUnitType(_getActualType(widget.type)),
+        translateUnitType(_actualType(widget.type)),
         _numberController.text,
         true,
       ),
     );
-    if (mounted) setState(() {});
+  }
+
+  void _initPhoneController() {
+    _setText(_phoneController, _defaultPhone());
   }
 
   @override
@@ -141,12 +153,14 @@ class _UnitEditorState extends State<UnitEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedName ?? widget?.unit?.name ?? "${translateUnitType(UnitType.Team)} ${_unitBloc.count() + 1}",
+          _editedName ?? _defaultName(),
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
     );
   }
+
+  String _defaultName() => widget?.unit?.name ?? "${translateUnitType(widget.type)} ${_unitBloc.count() + 1}";
 
   FormBuilderTextField _buildNumberField() {
     return FormBuilderTextField(
@@ -167,31 +181,33 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
           onTap: () => _setText(
             _numberController,
-            _getDefaultNumber(),
+            _defaultNumber(),
           ),
         ),
       ),
       keyboardType: TextInputType.numberWithOptions(),
+      valueTransformer: (value) => int.tryParse(emptyAsNull(value) ?? _defaultNumber()),
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
         FormBuilderValidators.numeric(errorText: "Må være et nummer"),
         _validateNumber,
       ],
-      valueTransformer: (value) => int.tryParse(value ?? _getDefaultNumber()),
     );
   }
 
-  String _validateNumber(value) {
+  String _validateNumber(number) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => unit != widget.unit && unit.number == value,
+          (Unit unit) => isSameNumber(unit, number),
           orElse: () => null,
         );
-    return unit != null ? "Lag $value finnes allerede" : null;
+    return unit != null ? "Lag $number finnes allerede" : null;
   }
+
+  bool isSameNumber(Unit unit, number) => number?.isNotEmpty == true && unit != widget.unit && unit.number == number;
 
   FormBuilderTextField _buildCallsignField() {
     return FormBuilderTextField(
@@ -210,11 +226,12 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
           onTap: () => _setText(
             _callsignController,
-            _getDefaultCallSign(),
+            _defaultCallSign(),
           ),
         ),
       ),
       keyboardType: TextInputType.text,
+      valueTransformer: (value) => emptyAsNull(value),
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
         _validateCallsign,
@@ -222,21 +239,23 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _validateCallsign(value) {
+  String _validateCallsign(callsign) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => unit?.id != widget?.unit?.id && _isSameCallsign(value as String, unit.callsign),
+          (Unit unit) => _isSameCallsign(unit, callsign),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
   }
 
-  bool _isSameCallsign(String callsign1, String callsign2) {
-    return callsign1?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
-        callsign2?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
+  bool _isSameCallsign(Unit unit, String callsign) {
+    return callsign?.isNotEmpty == true &&
+        unit?.id != widget?.unit?.id &&
+        unit?.callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
+            callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
   FormBuilderTextField _buildPhoneField() {
@@ -258,42 +277,49 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
           onTap: () => _setText(
             _phoneController,
-            _getDefaultPhone(),
+            _defaultPhone(),
           ),
         ),
       ),
       keyboardType: TextInputType.phone,
+      valueTransformer: (value) => emptyAsNull(value),
       validators: [
         _validatePhone,
       ],
     );
   }
 
-  String _validatePhone(value) {
+  String _validatePhone(phone) {
     Unit unit = _unitBloc.units.values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => unit?.id != widget?.unit?.id && _isSamePhone(value as String, unit.phone),
+          (Unit unit) => _isSamePhone(unit, phone),
           orElse: () => null,
         );
     return unit != null ? "${unit.name} har samme" : null;
   }
 
-  bool _isSamePhone(String phone1, String phone2) {
-    return phone1?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
-        phone2?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
+  bool _isSamePhone(Unit unit, String phone) {
+    return phone?.isNotEmpty == true &&
+        unit?.id != widget?.unit?.id &&
+        unit?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
+            phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
 
   void _setText(TextEditingController controller, String value) {
     // Workaround for errors when clearing TextField,
     // see https://github.com/flutter/flutter/issues/17647
-    if (value.isEmpty)
+    if (value?.isEmpty == true)
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
-    else
-      controller.text = value;
-    _formKey.currentState.save();
+    else if (value != null) {
+      controller.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value?.length ?? 0),
+      );
+      _formKey?.currentState?.save();
+    }
   }
 
   void _onTypeOrNumberEdit(String type, String number, bool update) {
@@ -305,7 +331,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Widget _buildTypeField() {
-    final actualValue = _getActualType(widget.type);
+    final actualValue = _actualType(widget.type);
     return buildDropDownField(
       attribute: 'type',
       label: 'Type enhet',
@@ -318,8 +344,11 @@ class _UnitEditorState extends State<UnitEditor> {
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
       onChanged: (value) => _onTypeOrNumberEdit(
-        translateUnitType(UnitType.values.firstWhere((test) => enumName(test) == value, orElse: () => widget.type)),
-        _getActualNumber(),
+        translateUnitType(UnitType.values.firstWhere(
+          (test) => enumName(test) == value,
+          orElse: () => widget.type,
+        )),
+        _actualNumber(),
         true,
       ),
     );
@@ -414,42 +443,50 @@ class _UnitEditorState extends State<UnitEditor> {
   void _submit() async {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
-      List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
       var unit = widget.unit == null
           // Filter out empty text
-          ? Unit.fromJson(Map.fromIterable(_formKey.currentState.value.entries.where(
-              (test) => !(test.value is String) || (test.value as String).isNotEmpty,
-            )))
+          ? Unit.fromJson(_formKey.currentState.value)
           : widget.unit.withJson(_formKey.currentState.value);
-      Navigator.pop(context, UnitEditorResult(unit, devices));
+      var response = true;
+      if (UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status) {
+        response = await prompt(
+          context,
+          "Oppløs ${unit.name}",
+          "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
+        );
+      }
+      if (response) {
+        List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
+        Navigator.pop(context, Pair.of(unit, devices));
+      }
     } else {
       // Show errors
       setState(() {});
     }
   }
 
-  String _getDefaultNumber() {
+  String _defaultNumber() {
     return "${widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1}";
     //return _unitBloc.units.values.where((unit) => widget.type == unit.type).length + 1;
   }
 
-  String _getActualNumber() {
+  String _actualNumber() {
     final values = _formKey?.currentState?.value;
-    return (values == null ? "${widget?.unit?.number}" ?? _numberController.text : "${values['number']}") ??
-        "${widget?.unit?.number}" ??
-        _numberController.text;
+    return values?.containsKey('number') == true
+        ? "${values['number']}" ?? "${widget?.unit?.number ?? _numberController.text}"
+        : "${widget?.unit?.number ?? _numberController.text}";
   }
 
-  UnitType _getActualType(UnitType defaultValue) {
+  UnitType _actualType(UnitType defaultValue) {
     final values = _formKey?.currentState?.value;
-    return (values == null ? widget?.unit?.type ?? defaultValue : Unit.fromJson(values).type) ??
-        widget?.unit?.type ??
-        defaultValue;
+    return values?.containsKey('type') == true
+        ? Unit.fromJson(values).type ?? widget?.unit?.type ?? defaultValue
+        : widget?.unit?.type ?? defaultValue;
   }
 
   final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
 
-  String _getDefaultCallSign() {
+  String _defaultCallSign() {
     final String department = _departments[_appConfigBloc.config.department];
     int number = _ensureCallSignSuffix();
     final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
@@ -460,20 +497,13 @@ class _UnitEditorState extends State<UnitEditor> {
     final count = _unitBloc.count(exclude: []);
     final values = _formKey?.currentState?.value;
     // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
-    final number = ((values == null ? (widget?.unit?.number ?? count + 1) : values['number']) ??
-        widget?.unit?.number ??
-        count + 1);
+    final number = values?.containsKey('number') == true
+        ? values['number'] ?? widget?.unit?.number ?? count + 1
+        : widget?.unit?.number ?? count + 1;
     return 20 + number;
   }
 
-  String _getDefaultPhone() {
+  String _defaultPhone() {
     return widget?.unit?.phone;
   }
-}
-
-class UnitEditorResult {
-  final Unit unit;
-  final List<Device> devices;
-
-  UnitEditorResult(this.unit, this.devices);
 }

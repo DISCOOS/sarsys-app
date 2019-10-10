@@ -39,14 +39,19 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   final _controller = IncidentMapController();
 
+  Unit _unit;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Tracking> _onMoved;
 
+  /// Use current unit name
+  String get title => _unit?.name;
+
   @override
   void initState() {
     super.initState();
+    _unit = widget.unit;
   }
 
   @override
@@ -72,30 +77,29 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    var actual = widget.unit;
     return Container(
       child: Padding(
         padding: const EdgeInsets.all(0),
         child: Stack(
           children: [
             StreamBuilder(
-              initialData: actual,
+              initialData: _unit,
               stream: _group.stream,
               builder: (context, snapshot) {
-                if (snapshot.data is Unit) actual = snapshot.data;
+                if (snapshot.data is Unit) _unit = snapshot.data;
                 return snapshot.hasData
                     ? ListView(
                         padding: const EdgeInsets.all(UnitScreen.SPACING),
                         physics: AlwaysScrollableScrollPhysics(),
                         children: [
-                          _buildMapTile(context, actual),
+                          _buildMapTile(context, _unit),
                           UnitInfoPanel(
-                            unit: actual,
+                            unit: _unit,
                             bloc: _trackingBloc,
                             withHeader: false,
                             onMessage: showMessage,
-                            onChanged: () => setState(() {}),
-                            onComplete: () => Navigator.pop(context),
+                            onChanged: (unit) => setState(() => _unit = unit),
+                            onComplete: (_) => Navigator.pop(context),
                           ),
                         ],
                       )

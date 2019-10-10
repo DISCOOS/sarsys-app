@@ -36,18 +36,23 @@ class DeviceScreen extends Screen<_DeviceScreenState> {
 }
 
 class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderStateMixin {
-  _DeviceScreenState(Device unit) : super(title: "${unit.name}", withDrawer: false);
+  _DeviceScreenState(Device device) : super(title: "${device.name}", withDrawer: false);
 
   final _controller = IncidentMapController();
 
+  Device _device;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Device> _onMoved;
 
+  /// Use current device name
+  String get title => _device?.name;
+
   @override
   void initState() {
     super.initState();
+    _device = widget.device;
   }
 
   @override
@@ -56,10 +61,10 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    final unit = _trackingBloc.getUnitsByDeviceId()[widget.device.id];
-    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(widget.device))..add(_trackingBloc.changes(unit));
+    final unit = _trackingBloc.getUnitsByDeviceId()[_device.id];
+    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(_device))..add(_trackingBloc.changes(unit));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _deviceBloc.changes(widget.device).listen(_onMove);
+    _onMoved = _deviceBloc.changes(_device).listen(_onMove);
   }
 
   @override
@@ -74,32 +79,31 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    var actual = widget.device;
     return Container(
       child: Padding(
         padding: const EdgeInsets.all(0),
         child: Stack(
           children: [
             StreamBuilder(
-              initialData: actual,
+              initialData: _device,
               stream: _group.stream,
               builder: (context, snapshot) {
-                if (snapshot.data is Device) actual = snapshot.data;
-                final unit = _trackingBloc.getUnitsByDeviceId()[actual.id];
+                if (snapshot.data is Device) _device = snapshot.data;
+                final unit = _trackingBloc.getUnitsByDeviceId()[_device.id];
                 return ListView(
                   padding: const EdgeInsets.all(DeviceScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
                   children: [
-                    _buildMapTile(context, actual),
+                    _buildMapTile(context, _device),
                     DeviceInfoPanel(
                       unit: unit,
-                      device: actual,
+                      device: _device,
                       tracking: _trackingBloc.tracking[unit?.tracking],
                       organization: AssetsService().fetchOrganization(Defaults.orgId),
                       withHeader: false,
                       onMessage: showMessage,
-                      onChanged: () => setState(() {}),
-                      onComplete: () => Navigator.pop(context),
+                      onChanged: (device) => setState(() => _device = device),
+                      onComplete: (_) => Navigator.pop(context),
                     ),
                   ],
                 );

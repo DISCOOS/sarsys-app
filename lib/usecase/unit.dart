@@ -33,14 +33,14 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data == null, "Unit should not be supplied");
-    var result = await showDialog<UnitEditorResult>(
+    var result = await showDialog<Pair<Unit, List<Device>>>(
       context: params.context,
       builder: (context) => UnitEditor(devices: params.devices),
     );
     if (result == null) return dartz.Left(false);
 
-    final unit = await params.bloc.create(result.unit);
-    await _handleTracking(params, unit, result.devices);
+    final unit = await params.bloc.create(result.left);
+    await _handleTracking(params, unit, result.right);
     return dartz.Right(unit);
   }
 }
@@ -59,15 +59,14 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
-    var result = await showDialog<UnitEditorResult>(
+    var result = await showDialog<Pair<Unit, List<Device>>>(
       context: params.context,
       builder: (context) => UnitEditor(unit: params.data, devices: params.devices),
     );
     if (result == null) return dartz.Left(false);
-
-    await params.bloc.update(result.unit);
-    await _handleTracking(params, result.unit, result.devices);
-    return dartz.Right(result.unit);
+    await params.bloc.update(result.left);
+    await _handleTracking(params, result.left, result.right);
+    return dartz.Right(result.left);
   }
 }
 

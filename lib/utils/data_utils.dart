@@ -138,3 +138,7 @@ class Pair<L, R> {
 
   factory Pair.of(L left, R right) => Pair._(left, right);
 }
+
+emptyAsNull(value) => value is String
+    ? (value.isNotEmpty == true ? value : null)
+    : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);
