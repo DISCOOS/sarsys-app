@@ -32,7 +32,7 @@ class Organization extends Equatable {
   Map<String, dynamic> toJson() => _$OrganizationToJson(this);
 
   String toDistrict(String number) {
-    String id = number?.substring(2, 5);
+    String id = number?.isEmpty == false && number.length >= 5 ? number?.substring(2, 5) : null;
     return divisions?.entries
             ?.firstWhere(
               (entry) => number != null && entry.key == id,
@@ -44,12 +44,12 @@ class Organization extends Equatable {
   }
 
   String toFunction(String number) {
-    return functions?.entries
-            ?.firstWhere(
-              (entry) => number != null && RegExp(entry.key).hasMatch(number),
-              orElse: () => null,
-            )
-            ?.value ??
-        "Ingen";
+    final match = functions?.entries
+        ?.firstWhere(
+          (entry) => number != null && RegExp(entry.key).hasMatch(number),
+          orElse: () => null,
+        )
+        ?.value;
+    return match ?? "Ingen";
   }
 }
