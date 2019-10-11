@@ -160,7 +160,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  String _defaultName() => widget?.unit?.name ?? "${translateUnitType(widget.type)} ${_unitBloc.count() + 1}";
+  String _defaultName() => widget?.unit?.name ?? "${translateUnitType(widget.type)} ${_defaultNumber()}";
 
   FormBuilderTextField _buildNumberField() {
     return FormBuilderTextField(
@@ -457,7 +457,10 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultNumber() {
-    int number;
+    return "${widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1}";
+  }
+
+  int _nextNumber() {
     if (_appConfigBloc.config.callsignReuse) {
       var prev = 0;
       final numbers = _unitBloc.units.values
@@ -466,11 +469,9 @@ class _UnitEditorState extends State<UnitEditor> {
           .toList()
             ..sort((n1, n2) => n1.compareTo(n2));
       final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
-      number = (candidates.length == 0 ? numbers.length : candidates.last) + 1;
-    } else {
-      number = widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1;
+      return (candidates.length == 0 ? numbers.length : candidates.last) + 1;
     }
-    return "$number";
+    return widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1;
   }
 
   String _actualNumber() {
@@ -490,6 +491,10 @@ class _UnitEditorState extends State<UnitEditor> {
   final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
 
   String _defaultCallSign() {
+    return "${widget?.unit?.callsign ?? _nextCallSign()}";
+  }
+
+  String _nextCallSign() {
     final String department = _departments[_appConfigBloc.config.department];
     int number = _ensureCallSignSuffix();
     final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
@@ -497,12 +502,12 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   int _ensureCallSignSuffix() {
-    final count = _unitBloc.count(exclude: []);
+    final next = _nextNumber();
     final values = _formKey?.currentState?.value;
     // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
     final number = values?.containsKey('number') == true
-        ? values['number'] ?? widget?.unit?.number ?? count + 1
-        : widget?.unit?.number ?? count + 1;
+        ? values['number'] ?? widget?.unit?.number ?? next
+        : widget?.unit?.number ?? next;
     return 20 + number;
   }
 
