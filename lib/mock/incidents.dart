@@ -87,7 +87,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.claims.subject);
       final created = Incident(
-        id: "a:${randomAlphaNumeric(8).toLowerCase()}",
+        id: "m:${randomAlphaNumeric(8).toLowerCase()}",
         type: incident.type,
         status: incident.status,
         created: author,
@@ -104,7 +104,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         talkgroups: incident.talkgroups,
         reference: incident.reference,
       );
-      incidents.putIfAbsent(created.id, () => incident);
+      incidents.putIfAbsent(created.id, () => created);
       return ServiceResponse.ok(body: created);
     });
     when(mock.update(any)).thenAnswer((_) async {

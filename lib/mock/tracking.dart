@@ -68,12 +68,13 @@ class TrackingServiceMock extends Mock implements TrackingService {
     final mock = TrackingServiceMock();
     when(mock.messages).thenAnswer((_) => controller.stream);
     when(mock.fetch(any)).thenAnswer((_) async {
-      var incidentId = _.positionalArguments[0];
+      final String incidentId = _.positionalArguments[0];
       var trackingList = trackingRepo[incidentId];
       if (trackingList == null) {
         trackingList = trackingRepo.putIfAbsent(incidentId, () => {});
       }
-      if (trackingList.isEmpty) {
+      // Only generate tracking for automatically generated incidents
+      if (incidentId.startsWith('a:') && trackingList.isEmpty) {
         // Create trackingList
         trackingList.addEntries([
           for (var i = 1; i <= count; i++)

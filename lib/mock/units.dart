@@ -27,12 +27,13 @@ class UnitServiceMock extends Mock implements UnitService {
     final UnitServiceMock mock = UnitServiceMock();
     final unitsRepo = mock.unitsRepo;
     when(mock.fetch(any)).thenAnswer((_) async {
-      var incidentId = _.positionalArguments[0];
+      final String incidentId = _.positionalArguments[0];
       var units = unitsRepo[incidentId];
       if (units == null) {
         units = unitsRepo.putIfAbsent(incidentId, () => {});
       }
-      if (units.isEmpty) {
+      // Only generate devices for automatically generated incidents
+      if (incidentId.startsWith('a:') && units.isEmpty) {
         units.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(

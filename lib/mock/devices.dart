@@ -60,12 +60,13 @@ class DeviceServiceMock extends Mock implements DeviceService {
     when(mock.messages).thenAnswer((_) => controller.stream);
     // Mock all service methods
     when(mock.fetch(any)).thenAnswer((_) async {
-      var incidentId = _.positionalArguments[0];
+      final String incidentId = _.positionalArguments[0];
       var devices = deviceRepo[incidentId];
       if (devices == null) {
         devices = deviceRepo.putIfAbsent(incidentId, () => {});
       }
-      if (devices.isEmpty) {
+      // Only generate devices for automatically generated incidents
+      if (incidentId.startsWith('a:') && devices.isEmpty) {
         int number = 6114000;
         Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
         devices.addAll({
