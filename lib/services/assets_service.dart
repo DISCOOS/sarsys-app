@@ -50,10 +50,7 @@ class AssetsService {
     if (!_organizations.containsKey(orgId)) {
       await _loadOrg(orgId);
     }
-    return _organizations[orgId]
-        .talkGroups[catalog]
-        .map((name) => TalkGroup(name: name, type: TalkGroupType.Tetra))
-        .toList(growable: false);
+    return _organizations[orgId].talkGroups[catalog];
   }
 
   Future<List<String>> fetchTalkGroupCatalogs(String orgId) async {

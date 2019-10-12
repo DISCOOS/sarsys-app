@@ -4,7 +4,7 @@
   "onboarding": true,
   "division": "140",
   "department": "141",
-  "talkGroups": "Nasjonal",
+  "talkGroupCatalog": "Oslo",
   "storage": false,
   "locationWhenInUse": false,
   "mapCacheTTL": 30,

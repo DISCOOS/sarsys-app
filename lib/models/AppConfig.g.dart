@@ -16,7 +16,9 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
       locationWhenInUse: json['locationWhenInUse'] as bool,
       division: json['division'] as String,
       department: json['department'] as String,
-      talkGroups: json['talkGroups'] as String,
+      talkGroups:
+          (json['talkGroups'] as List)?.map((e) => e as String)?.toList(),
+      talkGroupCatalog: json['talkGroupCatalog'] as String,
       mapCacheTTL: json['mapCacheTTL'] as int,
       mapCacheCapacity: json['mapCacheCapacity'] as int,
       locationAccuracy: json['locationAccuracy'] as String,
@@ -34,6 +36,7 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'division': instance.division,
       'department': instance.department,
       'talkGroups': instance.talkGroups,
+      'talkGroupCatalog': instance.talkGroupCatalog,
       'storage': instance.storage,
       'locationWhenInUse': instance.locationWhenInUse,
       'mapCacheTTL': instance.mapCacheTTL,

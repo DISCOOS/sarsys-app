@@ -9,7 +9,7 @@ class Defaults {
   static const String orgId = "61"; // Røde Kors Hjelpekorps
   static const String division = "140"; // Oslo
   static const String department = "141"; // Oslo
-  static const String talkGroups = "Nasjonal";
+  static const String talkGroupCatalog = "Nasjonal";
   static const int mapCacheTTL = 30;
   static const int mapCacheCapacity = 15000;
   static const String locationAccuracy = "high";

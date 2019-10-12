@@ -14,6 +14,7 @@ class AppConfig extends Equatable {
   static const DEMO = 'demo';
   static const DEMO_ROLE = 'demoRole';
   static const ONBOARDING = 'onboarding';
+  static const TALK_GROUP_CATALOG = 'talkGroupCatalog';
   static const TALK_GROUPS = 'talkGroups';
   static const DIVISION = 'division';
   static const DEPARTMENT = 'department';
@@ -35,7 +36,8 @@ class AppConfig extends Equatable {
     ONBOARDING: "bool",
     DIVISION: "string",
     DEPARTMENT: "string",
-    TALK_GROUPS: "string",
+    TALK_GROUPS: "stringlist",
+    TALK_GROUP_CATALOG: "string",
     LOCATION_WHEN_IN_USE: "bool",
     STORAGE: "bool",
     MAP_CACHE_TTL: "int",
@@ -53,7 +55,8 @@ class AppConfig extends Equatable {
   final bool onboarding;
   final String division;
   final String department;
-  final String talkGroups;
+  final List<String> talkGroups;
+  final String talkGroupCatalog;
   final bool storage;
   final bool locationWhenInUse;
   final int mapCacheTTL;
@@ -73,7 +76,8 @@ class AppConfig extends Equatable {
     this.locationWhenInUse = false,
     this.division = Defaults.division,
     this.department = Defaults.department,
-    this.talkGroups = Defaults.talkGroups,
+    this.talkGroups = const <String>[],
+    this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
     this.mapCacheCapacity = Defaults.mapCacheCapacity,
     this.locationAccuracy = Defaults.locationAccuracy,
@@ -89,6 +93,7 @@ class AppConfig extends Equatable {
           division,
           department,
           talkGroups,
+          talkGroupCatalog,
           storage,
           locationWhenInUse,
           mapCacheTTL,
@@ -113,7 +118,8 @@ class AppConfig extends Equatable {
     bool onboarding,
     String district,
     String department,
-    String talkGroups,
+    List<String> talkGroups,
+    String talkGroupCatalog,
     bool storage,
     bool locationWhenInUse,
     int mapCacheTTL,
@@ -132,6 +138,7 @@ class AppConfig extends Equatable {
       division: district ?? this.division,
       department: department ?? this.department,
       talkGroups: talkGroups ?? this.talkGroups,
+      talkGroupCatalog: talkGroupCatalog ?? this.talkGroupCatalog,
       storage: storage ?? this.storage,
       locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,

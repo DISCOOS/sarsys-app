@@ -5,6 +5,7 @@ import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/map_config_screen.dart';
+import 'package:SarSys/screens/tetra_config_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -21,7 +22,7 @@ class SettingsScreen extends StatefulWidget {
 class SettingsScreenState extends State<SettingsScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  AppConfigBloc bloc;
+  AppConfigBloc _bloc;
 
   Future<Organization> _organization;
   ValueNotifier<Division> _division = ValueNotifier(null);
@@ -30,13 +31,13 @@ class SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _organization = AssetsService().fetchOrganization(Defaults.orgId)
-      ..then((org) => _division.value = org.divisions[bloc?.config?.division]);
+      ..then((org) => _division.value = org.divisions[_bloc?.config?.division]);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    bloc = BlocProvider.of<AppConfigBloc>(context);
+    _bloc = BlocProvider.of<AppConfigBloc>(context);
   }
 
   @override //new
@@ -67,17 +68,20 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBody(BuildContext context, BoxConstraints viewportConstraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        bloc.fetch();
+        _bloc.fetch();
         setState(() {});
       },
       child: StreamBuilder(
-        stream: bloc.state,
+        stream: _bloc.state,
         builder: (context, snapshot) {
           return toRefreshable(
             viewportConstraints,
-            child: ListView(
-              shrinkWrap: true,
-              children: _buildSettings(context),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView(
+                shrinkWrap: true,
+                children: _buildSettings(context),
+              ),
             ),
           );
         },
@@ -89,28 +93,20 @@ class SettingsScreenState extends State<SettingsScreen> {
     return <Widget>[
       ListTile(
         title: Text(
-          "Generelt",
+          "Tilhørighet",
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       _buildDivisionField(),
       _buildDepartmentField(),
-      _buildTalkGroupsField(),
-      SizedBox(height: 16.0),
-      _buildCallsignReuse(),
-      Divider(),
       ListTile(
         title: Text(
-          "Kartoppsett",
-          style: Theme.of(context).textTheme.body1,
+          "Oppsett",
+          style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
-        trailing: Icon(Icons.keyboard_arrow_right),
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-            return MapConfigScreen();
-          }));
-        },
       ),
+      _buildGotoMapConfig(),
+      _buildGotoTetraConfig(),
       Divider(),
       ListTile(
         title: Text(
@@ -144,6 +140,32 @@ class SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
+  ListTile _buildGotoMapConfig() {
+    return ListTile(
+      title: Text("Kart"),
+      subtitle: Text('Endre innstillinger for sporing og lagring'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return MapConfigScreen();
+        }));
+      },
+    );
+  }
+
+  ListTile _buildGotoTetraConfig() {
+    return ListTile(
+      title: Text("Nødnett"),
+      subtitle: Text('Endre standardsverdier og oppførsel'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return TetraConfigScreen();
+        }));
+      },
+    );
+  }
+
   Padding _buildDivisionField() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
@@ -151,7 +173,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Expanded(child: Text("Distrikt")),
+          Expanded(flex: 2, child: Text("Distrikt")),
           FutureBuilder<Organization>(
             future: _organization,
             builder: (context, snapshot) {
@@ -170,9 +192,9 @@ class SettingsScreenState extends State<SettingsScreen> {
                       : null,
                   onChanged: (value) {
                     _division.value = snapshot.data.divisions[value];
-                    bloc.update(district: value);
+                    _bloc.update(district: value);
                   },
-                  value: bloc.config?.division ?? Defaults.division,
+                  value: _bloc.config?.division ?? Defaults.division,
                 ),
               );
             },
@@ -189,7 +211,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Expanded(child: Text("Hjelpkorps")),
+          Expanded(flex: 2, child: Text("Hjelpkorps")),
           ValueListenableBuilder<Division>(
             valueListenable: _division,
             builder: (context, division, _) {
@@ -198,7 +220,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                   isExpanded: true,
                   disabledHint: Text("Velg distrikt"),
                   items: _ensureDepartments(division),
-                  onChanged: (value) => bloc.update(department: value),
+                  onChanged: (value) => _bloc.update(department: value),
                   value: _ensureDepartment(division),
                 ),
               );
@@ -222,66 +244,13 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _ensureDepartment(Division division) {
-    final value = division?.departments?.containsKey(bloc.config?.department ?? Defaults.department) == true
-        ? bloc.config?.department ?? Defaults.department
+    final value = division?.departments?.containsKey(_bloc.config?.department ?? Defaults.department) == true
+        ? _bloc.config?.department ?? Defaults.department
         : division?.departments?.keys?.first;
-    if (value != null && bloc.config?.department != value) {
-      bloc.update(department: value);
+    if (value != null && _bloc.config?.department != value) {
+      _bloc.update(department: value);
     }
     return value;
-  }
-
-  Padding _buildTalkGroupsField() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Expanded(child: Text("Nødnett")),
-          FutureBuilder<List<String>>(
-            future: AssetsService().fetchTalkGroupCatalogs(Defaults.orgId),
-            initialData: [],
-            builder: (context, snapshot) {
-              return Expanded(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  items: snapshot.hasData
-                      ? sortList(snapshot.data)
-                          .map((name) => DropdownMenuItem<String>(
-                                value: "$name",
-                                child: Text("$name"),
-                              ))
-                          .toList()
-                      : [],
-                  onChanged: (value) => bloc.update(talkGroups: value),
-                  value: bloc.config?.talkGroups ?? Defaults.talkGroups,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCallsignReuse() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Expanded(child: Text("Gjenbruk kallesignal")),
-          Switch(
-            value: bloc.config.callsignReuse,
-            onChanged: (value) => setState(() {
-              bloc.update(callsignReuse: value);
-            }),
-          ),
-        ],
-      ),
-    );
   }
 
   Padding _buildOnboardingField() {
@@ -293,8 +262,8 @@ class SettingsScreenState extends State<SettingsScreen> {
         children: <Widget>[
           Expanded(child: Text("Vis oppstartsveiviser")),
           Switch(
-            value: bloc.config.onboarding,
-            onChanged: (value) => bloc.update(onboarding: value),
+            value: _bloc.config.onboarding,
+            onChanged: (value) => _bloc.update(onboarding: value),
           ),
         ],
       ),

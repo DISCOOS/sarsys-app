@@ -195,11 +195,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
                         child: Text("${_toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _bloc.update(locationAccuracy: enumName(value));
-                });
-              },
+              onChanged: (value) => setState(() => _bloc.update(locationAccuracy: enumName(value))),
               value: _bloc.config?.toLocationAccuracy(),
             ),
           ),

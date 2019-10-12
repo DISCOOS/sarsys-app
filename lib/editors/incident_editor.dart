@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/services/assets_service.dart';
@@ -385,7 +386,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
           child: FormBuilderChipsInput(
             attribute: 'talkgroups',
             maxChips: 5,
-            initialValue: widget?.incident?.talkgroups,
+            initialValue:
+                widget?.incident?.talkgroups ?? FleetMapTalkGroupConverter.toList(_configBloc.config.talkGroups),
             decoration: InputDecoration(
               labelText: "Talegrupper",
               hintText: "Søk etter talegrupper",
@@ -455,7 +457,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         return buildDropDownField(
           attribute: 'tgCatalog',
           label: 'Nødnett',
-          initialValue: _configBloc?.config?.talkGroups ?? Defaults.talkGroups,
+          initialValue: _configBloc?.config?.talkGroupCatalog ?? Defaults.talkGroupCatalog,
           items: _tgCatalog.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
           validators: [
             FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
