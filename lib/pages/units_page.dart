@@ -80,22 +80,14 @@ class UnitsPageState extends State<UnitsPage> {
                         .where((unit) => widget.where == null || widget.where(unit))
                         .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
                         .toList();
-                return AnimatedCrossFade(
-                  duration: Duration(milliseconds: 300),
-                  crossFadeState: _unitBloc.units.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                  firstChild: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  secondChild: units.isEmpty || snapshot.hasError
-                      ? Center(
-                          child: Text(
-                          snapshot.hasError
-                              ? snapshot.error
-                              : widget.query == null ? "Legg til en enhet" : "Ingen enheter funnet",
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ))
-                      : _buildList(units),
-                );
+                return units.isEmpty || snapshot.hasError
+                    ? toRefreshable(
+                        viewportConstraints,
+                        message: snapshot.hasError
+                            ? snapshot.error
+                            : widget.query == null ? "Legg til en enhet" : "Ingen enheter funnet",
+                      )
+                    : _buildList(units);
               },
             ),
           ),

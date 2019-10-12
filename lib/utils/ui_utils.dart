@@ -350,3 +350,29 @@ void setText(TextEditingController controller, String value) {
     );
   }
 }
+
+SingleChildScrollView toRefreshable(BoxConstraints viewportConstraints, {List<Widget> children, String message}) {
+  return SingleChildScrollView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: viewportConstraints.maxHeight,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: children ??
+            [
+              Container(
+                alignment: Alignment.center,
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+      ),
+    ),
+  );
+}

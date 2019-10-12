@@ -96,26 +96,20 @@ class DevicesPageState extends State<DevicesPage> {
                         _filter.contains(device.type) &&
                         (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
                     .toList();
-                return AnimatedCrossFade(
-                  duration: Duration(milliseconds: 300),
-                  crossFadeState: _deviceBloc.devices.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                  firstChild: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  secondChild: devices.isEmpty || snapshot.hasError
-                      ? Center(
-                          child: Text(
-                          snapshot.hasError ? snapshot.error : "Ingen apparater innen rekkevidde",
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ))
-                      : ListView.builder(
-                          itemCount: devices.length + 1,
-                          itemExtent: 72.0,
-                          itemBuilder: (context, index) {
-                            return _buildDevice(devices, index, units, tracked);
-                          },
-                        ),
-                );
+                return devices.isEmpty || snapshot.hasError
+                    ? toRefreshable(
+                        viewportConstraints,
+                        message: snapshot.hasError
+                            ? snapshot.error
+                            : "Ingen apparater innen rekkevidde\n\n Legg til et apparat manuelt",
+                      )
+                    : ListView.builder(
+                        itemCount: devices.length + 1,
+                        itemExtent: 72.0,
+                        itemBuilder: (context, index) {
+                          return _buildDevice(devices, index, units, tracked);
+                        },
+                      );
               }),
         ),
       );

@@ -165,48 +165,46 @@ class _IncidentsPageState extends State<IncidentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        await _incidentBloc.fetch();
-        setState(() {});
-      },
-      child: StreamBuilder(
-        stream: _incidentBloc.state,
-        builder: (context, snapshot) {
-          if (snapshot.hasData == false) return Container();
-          var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
-              ? _incidentBloc.incidents
-                  .where((incident) => widget.filter.contains(incident.status))
-                  .where((incident) => widget.query == null || _prepare(incident).contains(widget.query.toLowerCase()))
-                  .map((incident) => _buildCard(incident))
-                  .toList()
-              : [];
-          return AnimatedCrossFade(
-            duration: Duration(milliseconds: 300),
-            crossFadeState: _incidentBloc.incidents.isEmpty ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Center(
-              child: CircularProgressIndicator(),
-            ),
-            secondChild: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
-                child: cards.isNotEmpty
-                    ? Column(
-                        children: cards,
-                      )
-                    : Center(
-                        child: Text(
-                          "0 av ${_incidentBloc.incidents.length} hendelser vises",
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-              ),
-            ),
-          );
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          await _incidentBloc.fetch();
+          setState(() {});
         },
-      ),
-    );
+        child: StreamBuilder(
+          stream: _incidentBloc.state,
+          builder: (context, snapshot) {
+            if (snapshot.hasData == false) return Container();
+            var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
+                ? _incidentBloc.incidents
+                    .where((incident) => widget.filter.contains(incident.status))
+                    .where(
+                        (incident) => widget.query == null || _prepare(incident).contains(widget.query.toLowerCase()))
+                    .map((incident) => _buildCard(incident))
+                    .toList()
+                : [];
+            return cards.isEmpty
+                ? toRefreshable(viewportConstraints, message: "0 av ${_incidentBloc.incidents.length} hendelser vises")
+                : SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
+                      child: cards.isNotEmpty
+                          ? Column(
+                              children: cards,
+                            )
+                          : Center(
+                              child: Text(
+                                "0 av ${_incidentBloc.incidents.length} hendelser vises",
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                    ),
+                  );
+          },
+        ),
+      );
+    });
   }
 
   String _prepare(Incident incident) => "${incident.searchable}".toLowerCase();
