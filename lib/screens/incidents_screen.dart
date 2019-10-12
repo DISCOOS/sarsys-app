@@ -184,7 +184,10 @@ class _IncidentsPageState extends State<IncidentsPage> {
                     .toList()
                 : [];
             return cards.isEmpty
-                ? toRefreshable(viewportConstraints, message: "0 av ${_incidentBloc.incidents.length} hendelser vises")
+                ? toRefreshable(
+                    viewportConstraints,
+                    message: "0 av ${_incidentBloc.incidents.length} hendelser vises",
+                  )
                 : toRefreshable(
                     viewportConstraints,
                     child: Padding(

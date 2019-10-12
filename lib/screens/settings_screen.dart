@@ -2,11 +2,13 @@ import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Division.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/map_config_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,9 +23,14 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   AppConfigBloc bloc;
 
+  Future<Organization> _organization;
+  ValueNotifier<Division> _division = ValueNotifier(null);
+
   @override
   void initState() {
     super.initState();
+    _organization = AssetsService().fetchOrganization(Defaults.orgId)
+      ..then((org) => _division.value = org.divisions[bloc?.config?.division]);
   }
 
   @override
@@ -60,41 +67,20 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBody(BuildContext context, BoxConstraints viewportConstraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        await bloc.fetch();
+        bloc.fetch();
         setState(() {});
       },
-      child: Container(
-        color: Color.fromRGBO(168, 168, 168, 0.6),
-        child: StreamBuilder(
-          stream: bloc.state,
-          builder: (context, snapshot) {
-            return AnimatedCrossFade(
-              duration: Duration(milliseconds: 300),
-              crossFadeState: snapshot.hasData && bloc.isReady ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-              firstChild: Center(
-                child: CircularProgressIndicator(),
-              ),
-              secondChild: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: viewportConstraints.maxHeight,
-                  ),
-                  child: Container(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: ListView(
-                        shrinkWrap: true,
-                        children: _buildSettings(context),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+      child: StreamBuilder(
+        stream: bloc.state,
+        builder: (context, snapshot) {
+          return toRefreshable(
+            viewportConstraints,
+            child: ListView(
+              shrinkWrap: true,
+              children: _buildSettings(context),
+            ),
+          );
+        },
       ),
     );
   }
@@ -107,7 +93,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      _buildDistrictField(),
+      _buildDivisionField(),
       _buildDepartmentField(),
       _buildTalkGroupsField(),
       SizedBox(height: 16.0),
@@ -158,7 +144,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
-  Padding _buildDistrictField() {
+  Padding _buildDivisionField() {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Row(
@@ -166,23 +152,26 @@ class SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Expanded(child: Text("Distrikt")),
-          FutureBuilder<Map<String, Division>>(
-            future: AssetsService().fetchDivisions(Defaults.orgId),
-            initialData: {},
+          FutureBuilder<Organization>(
+            future: _organization,
             builder: (context, snapshot) {
               return Expanded(
                 child: DropdownButton<String>(
                   isExpanded: true,
+                  disabledHint: Text("Laster..."),
                   items: snapshot.hasData
-                      ? sortMapValues<String, Division, String>(snapshot.data, (division) => division.name)
+                      ? sortMapValues<String, Division, String>(snapshot.data.divisions, (division) => division.name)
                           .entries
                           .map((division) => DropdownMenuItem<String>(
                                 value: "${division.key}",
                                 child: Text("${division.value.name}"),
                               ))
                           .toList()
-                      : [],
-                  onChanged: (value) => bloc.update(district: value),
+                      : null,
+                  onChanged: (value) {
+                    _division.value = snapshot.data.divisions[value];
+                    bloc.update(district: value);
+                  },
                   value: bloc.config?.division ?? Defaults.division,
                 ),
               );
@@ -201,24 +190,16 @@ class SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Expanded(child: Text("Hjelpkorps")),
-          FutureBuilder<Map<String, String>>(
-            future: AssetsService().fetchAllDepartments(Defaults.orgId),
-            initialData: {},
-            builder: (context, snapshot) {
+          ValueListenableBuilder<Division>(
+            valueListenable: _division,
+            builder: (context, division, _) {
               return Expanded(
                 child: DropdownButton<String>(
                   isExpanded: true,
-                  items: snapshot.hasData
-                      ? sortMapValues<String, String, String>(snapshot.data)
-                          .entries
-                          .map((department) => DropdownMenuItem<String>(
-                                value: "${department.key}",
-                                child: Text("${department.value}"),
-                              ))
-                          .toList()
-                      : [],
+                  disabledHint: Text("Velg distrikt"),
+                  items: _ensureDepartments(division),
                   onChanged: (value) => bloc.update(department: value),
-                  value: bloc.config?.department ?? Defaults.department,
+                  value: _ensureDepartment(division),
                 ),
               );
             },
@@ -226,6 +207,28 @@ class SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  List<DropdownMenuItem<String>> _ensureDepartments(Division division) {
+    return division != null
+        ? sortMapValues<String, String, String>(division.departments)
+            .entries
+            .map((department) => DropdownMenuItem<String>(
+                  value: "${department.key}",
+                  child: Text("${department.value}"),
+                ))
+            .toList()
+        : null;
+  }
+
+  String _ensureDepartment(Division division) {
+    final value = division?.departments?.containsKey(bloc.config?.department ?? Defaults.department) == true
+        ? bloc.config?.department ?? Defaults.department
+        : division?.departments?.keys?.first;
+    if (value != null && bloc.config?.department != value) {
+      bloc.update(department: value);
+    }
+    return value;
   }
 
   Padding _buildTalkGroupsField() {
