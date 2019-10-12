@@ -110,6 +110,61 @@ class IncidentMap extends StatefulWidget {
 
   @override
   IncidentMapState createState() => IncidentMapState();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is IncidentMap &&
+          runtimeType == other.runtimeType &&
+          url == other.url &&
+          offline == other.offline &&
+          interactive == other.interactive &&
+          withSearch == other.withSearch &&
+          withControls == other.withControls &&
+          withLocation == other.withLocation &&
+          withScaleBar == other.withScaleBar &&
+          withCoordsPanel == other.withCoordsPanel &&
+          withPOIs == other.withPOIs &&
+          withUnits == other.withUnits &&
+          withDevices == other.withDevices &&
+          withTracking == other.withTracking &&
+          incident == other.incident &&
+          onTap == other.onTap &&
+          onMessage == other.onMessage &&
+          onToolChange == other.onToolChange &&
+          mapController == other.mapController &&
+          onOpenDrawer == other.onOpenDrawer &&
+          zoom == other.zoom &&
+          center == other.center &&
+          fitBounds == other.fitBounds &&
+          fitBoundOptions == other.fitBoundOptions &&
+          showLayers == other.showLayers;
+
+  @override
+  int get hashCode =>
+      url.hashCode ^
+      offline.hashCode ^
+      interactive.hashCode ^
+      withSearch.hashCode ^
+      withControls.hashCode ^
+      withLocation.hashCode ^
+      withScaleBar.hashCode ^
+      withCoordsPanel.hashCode ^
+      withPOIs.hashCode ^
+      withUnits.hashCode ^
+      withDevices.hashCode ^
+      withTracking.hashCode ^
+      incident.hashCode ^
+      onTap.hashCode ^
+      onMessage.hashCode ^
+      onToolChange.hashCode ^
+      mapController.hashCode ^
+      onOpenDrawer.hashCode ^
+      zoom.hashCode ^
+      center.hashCode ^
+      fitBounds.hashCode ^
+      fitBoundOptions.hashCode ^
+      showLayers.hashCode;
 }
 
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
@@ -168,40 +223,33 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   @override
   void initState() {
     super.initState();
-    _zoom = widget.zoom ?? Defaults.zoom;
-    _currentBaseMap = widget.url;
-    _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
-    _mapController = widget.mapController;
-    _mapController.progress.addListener(_onMoveProgress);
+    _setup();
+    _init();
+  }
+
+  @override
+  void didUpdateWidget(IncidentMap old) {
+    super.didUpdateWidget(old);
+    if (widget != old) {
+      _setup();
+      _init();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
 
-    // Configure map tool controller
-    if (widget.withControls) {
-      _mapToolController = MapToolController(
-        tools: [
-          MeasureTool(),
-          POITool(
-            _incidentBloc,
-            active: () => _useLayers.contains(POI_LAYER),
-            onMessage: widget.onMessage,
-          ),
-          UnitTool(
-            _trackingBloc,
-            active: () => _useLayers.contains(UNIT_LAYER),
-            onMessage: widget.onMessage,
-          ),
-          DeviceTool(
-            _trackingBloc,
-            active: () => _useLayers.contains(DEVICE_LAYER),
-            onMessage: widget.onMessage,
-          ),
-        ],
-      );
-    }
-    _init();
+    // Ensure all controllers are set
+    _ensureMapToolController();
+    _ensureLocationControllers();
+
+    // Only ensure center if not set already
+    _center ??= _ensureCenter();
   }
 
   void _init() async {
@@ -210,16 +258,15 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    // Ensure all controllers are set
-    _ensureMapToolController();
-    _ensureLocationControllers();
-
-    // Only ensure center if not set already
-    _center ??= _ensureCenter();
+  void _setup() {
+    _zoom = widget.zoom ?? Defaults.zoom;
+    _currentBaseMap = widget.url;
+    _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
+    if (_mapController != null) {
+      _mapController.progress.removeListener(_onMoveProgress);
+    }
+    _mapController = widget.mapController;
+    _mapController.progress.addListener(_onMoveProgress);
   }
 
   void _ensureMapToolController() {
@@ -347,10 +394,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _fitBounds() {
-    _mapController.fitBounds(
-      widget.fitBounds,
-      options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
-    );
+    if (_mapController?.ready == true) {
+      _mapController.fitBounds(
+        widget.fitBounds,
+        options: widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS,
+      );
+    }
   }
 
   /*

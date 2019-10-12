@@ -185,20 +185,13 @@ class _IncidentsPageState extends State<IncidentsPage> {
                 : [];
             return cards.isEmpty
                 ? toRefreshable(viewportConstraints, message: "0 av ${_incidentBloc.incidents.length} hendelser vises")
-                : SingleChildScrollView(
-                    physics: AlwaysScrollableScrollPhysics(),
+                : toRefreshable(
+                    viewportConstraints,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 96.0),
-                      child: cards.isNotEmpty
-                          ? Column(
-                              children: cards,
-                            )
-                          : Center(
-                              child: Text(
-                                "0 av ${_incidentBloc.incidents.length} hendelser vises",
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ),
+                      child: Column(
+                        children: cards,
+                      ),
                     ),
                   );
           },
