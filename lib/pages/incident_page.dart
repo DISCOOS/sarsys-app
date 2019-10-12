@@ -62,78 +62,83 @@ class _IncidentPageState extends State<IncidentPage> {
     labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
     valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
     unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
-    return Container(
-      color: Color.fromRGBO(168, 168, 168, 0.6),
-      child: Padding(
-        padding: const EdgeInsets.all(0),
-        child: Stack(
-          children: [
-            StreamBuilder<Incident>(
-              stream: bloc.changes(),
-              initialData: bloc.current,
-              builder: (context, snapshot) {
-                final incident = (snapshot.hasData ? snapshot.data : null);
-                return incident == null
-                    ? Center(
-                        child: Text(snapshot.hasError ? "${snapshot.error}" : "Ingen data"),
-                      )
-                    : ListView(
-                        controller: _controller,
-                        padding: const EdgeInsets.all(IncidentPage.SPACING),
-                        physics: AlwaysScrollableScrollPhysics(),
-                        children: [
-                          _buildMapTile(context, incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildGeneral(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildJustification(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildIPP(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildMeetup(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildReference(incident),
-                          SizedBox(height: IncidentPage.SPACING),
-                          _buildPasscodes(incident),
-                          if (_userBloc?.user?.isCommander) ...[
+    return RefreshIndicator(
+      onRefresh: () async {
+        bloc.fetch();
+      },
+      child: Container(
+        color: Color.fromRGBO(168, 168, 168, 0.6),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: Stack(
+            children: [
+              StreamBuilder<Incident>(
+                stream: bloc.changes(),
+                initialData: bloc.current,
+                builder: (context, snapshot) {
+                  final incident = (snapshot.hasData ? snapshot.data : null);
+                  return incident == null
+                      ? Center(
+                          child: Text(snapshot.hasError ? "${snapshot.error}" : "Ingen data"),
+                        )
+                      : ListView(
+                          controller: _controller,
+                          padding: const EdgeInsets.all(IncidentPage.SPACING),
+                          physics: AlwaysScrollableScrollPhysics(),
+                          children: [
+                            _buildMapTile(context, incident),
                             SizedBox(height: IncidentPage.SPACING),
-                            _buildActions(context)
+                            _buildGeneral(incident),
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildJustification(incident),
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildIPP(incident),
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildMeetup(incident),
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildReference(incident),
+                            SizedBox(height: IncidentPage.SPACING),
+                            _buildPasscodes(incident),
+                            if (_userBloc?.user?.isCommander) ...[
+                              SizedBox(height: IncidentPage.SPACING),
+                              _buildActions(context)
+                            ],
                           ],
-                        ],
-                      );
-              },
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: IgnorePointer(
-                      ignoring: !_showHint,
-                      child: AnimatedOpacity(
-                        child: FloatingActionButton.extended(
-                          icon: Icon(Icons.arrow_downward),
-                          label: Text("Gå til bunn"),
-                          onPressed: () {
-                            setState(() {
-                              _showHint = false;
-                            });
-                            if (_controller.hasClients) {
-                              _controller.animateTo(
-                                _controller.position.maxScrollExtent,
-                                curve: Curves.easeOut,
-                                duration: const Duration(milliseconds: 250),
-                              );
-                            }
-                          },
-                        ),
-                        opacity: _showHint ? 1.0 : 0.0,
-                        duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
-                      ),
-                    )),
+                        );
+                },
               ),
-            ),
-          ],
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: IgnorePointer(
+                        ignoring: !_showHint,
+                        child: AnimatedOpacity(
+                          child: FloatingActionButton.extended(
+                            icon: Icon(Icons.arrow_downward),
+                            label: Text("Gå til bunn"),
+                            onPressed: () {
+                              setState(() {
+                                _showHint = false;
+                              });
+                              if (_controller.hasClients) {
+                                _controller.animateTo(
+                                  _controller.position.maxScrollExtent,
+                                  curve: Curves.easeOut,
+                                  duration: const Duration(milliseconds: 250),
+                                );
+                              }
+                            },
+                          ),
+                          opacity: _showHint ? 1.0 : 0.0,
+                          duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
+                        ),
+                      )),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
