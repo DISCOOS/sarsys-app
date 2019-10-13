@@ -79,7 +79,7 @@ class AppConfig extends Equatable {
     this.locationWhenInUse = false,
     this.division = Defaults.division,
     this.department = Defaults.department,
-    this.talkGroups = const <String>[],
+    List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
     this.mapCacheCapacity = Defaults.mapCacheCapacity,
@@ -88,15 +88,17 @@ class AppConfig extends Equatable {
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
     this.keepScreenOn = Defaults.keepScreenOn,
     this.callsignReuse = Defaults.callsignReuse,
-    this.units = const <String>[],
-  }) : super([
+    List<String> units = const <String>[],
+  })  : this.talkGroups = talkGroups ?? const <String>[],
+        this.units = units ?? const <String>[],
+        super([
           sentryDns,
           demo,
           demoRole,
           onboarding,
           division,
           department,
-          talkGroups,
+          talkGroups ?? const <String>[],
           talkGroupCatalog,
           storage,
           locationWhenInUse,
@@ -107,7 +109,7 @@ class AppConfig extends Equatable {
           locationSmallestDisplacement,
           keepScreenOn,
           callsignReuse,
-          units,
+          units ?? const <String>[],
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance

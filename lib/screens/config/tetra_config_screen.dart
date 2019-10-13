@@ -120,6 +120,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                   maxChips: 5,
                   initialValue: FleetMapTalkGroupConverter.toList(_bloc.config.talkGroups),
                   decoration: InputDecoration(
+                    labelText: "Lytt til",
                     hintText: "Søk etter talegrupper",
                     hintStyle: Theme.of(context).textTheme.body1.copyWith(color: Colors.grey),
                     filled: true,
