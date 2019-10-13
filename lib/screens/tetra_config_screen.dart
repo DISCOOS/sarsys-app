@@ -183,12 +183,22 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
 
   Widget _buildCallsignReuse() {
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+      padding: const EdgeInsets.only(left: 0.0, right: 8.0),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Expanded(flex: 2, child: Text("Gjenbruk kallesignal")),
+          Expanded(
+              flex: 2,
+              child: ListTile(
+                title: Text(
+                  "Gjenbruk kallesignal",
+                  style: Theme.of(context).textTheme.body1,
+                ),
+                subtitle: Text(
+                  "Kallesignal til oppløste enheter gjenbrukes",
+                ),
+              )),
           Switch(
             value: _bloc.config.callsignReuse,
             onChanged: (value) => setState(() {
