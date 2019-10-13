@@ -51,12 +51,6 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
         child: ListView(
           shrinkWrap: true,
           children: <Widget>[
-            ListTile(
-              title: Text(
-                "Generelt",
-                style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
             _buildTGCatalogField(),
             _buildTGField(),
             _buildCallsignReuse(),

@@ -41,6 +41,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   int _currentStep = 0;
   AppConfigBloc _configBloc;
   IncidentBloc _incidentBloc;
+  bool _rememberUnits = true;
 
   @override
   void initState() {
@@ -86,6 +87,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ],
       ),
       body: SingleChildScrollView(
+        reverse: _currentStep > 1,
         child: FormBuilder(
           key: _formKey,
           child: Column(
@@ -104,75 +106,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
                   return Container();
                 },
                 steps: [
-                  Step(
-                    title: Text('Generelt'),
-                    subtitle: Text('Oppgi stedsnavn og begrunnelse'),
-                    content: Column(
-                      children: [
-                        _buildNameField(),
-                        SizedBox(height: 16.0),
-                        _buildJustificationField(),
-                        SizedBox(height: 16.0),
-                        _buildOccurredField(),
-                      ],
-                    ),
-                    isActive: _currentStep >= 0,
-                    state: _isValid(['name', 'justification', 'occurred'])
-                        ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
-                        : StepState.error,
-                  ),
-                  Step(
-                    title: Text('Klassifisering'),
-                    subtitle: Text('Oppgi type og status'),
-                    content: Column(
-                      children: [
-                        buildTwoCellRow(_buildTypeField(), _buildStatusField()),
-                      ],
-                    ),
-                    isActive: _currentStep >= 0,
-                    state: _isValid(['type', 'status'])
-                        ? (_currentStep > 1 ? StepState.complete : StepState.indexed)
-                        : StepState.error,
-                  ),
-                  Step(
-                    title: Text('Plasseringer'),
-                    subtitle: Text('Oppgi hendelsens plasseringer'),
-                    content: Column(
-                      children: <Widget>[
-                        _buildLocationField(),
-                        SizedBox(height: 16.0),
-                        _buildMeetupField(),
-                      ],
-                    ),
-                    isActive: _currentStep >= 0,
-                    state: _isValid(['ipp', 'meetup'])
-                        ? (_currentStep > 2 ? StepState.complete : StepState.indexed)
-                        : StepState.error,
-                  ),
-                  Step(
-                    title: Text('Talegrupper'),
-                    subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
-                    content: Column(
-                      children: <Widget>[
-                        _buildTGField(),
-                        SizedBox(height: 16.0),
-                        _buildTgCatalogField(),
-                      ],
-                    ),
-                    isActive: _currentStep >= 0,
-                    state: _isValid(['talkgroups'])
-                        ? (_currentStep > 3 ? StepState.complete : StepState.indexed)
-                        : StepState.error,
-                  ),
-                  Step(
-                    title: Text('Referanser'),
-                    subtitle: Text('Oppgi hendelsesnummer oppgitt fra rekvirent'),
-                    content: _buildReferenceField(),
-                    isActive: _currentStep >= 0,
-                    state: _isValid(['reference'])
-                        ? (_currentStep > 4 ? StepState.complete : StepState.indexed)
-                        : StepState.error,
-                  ),
+                  _buildGeneralStep(),
+                  _buildClassificationStep(),
+                  _buildPoiStep(),
+                  _buildTGStep(),
+                  if (widget.incident == null) _buildPreparationStep(),
+                  _buildReferenceStep(),
                 ],
               ),
               Container(
@@ -182,6 +121,101 @@ class _IncidentEditorState extends State<IncidentEditor> {
           ),
         ),
       ),
+    );
+  }
+
+  Step _buildReferenceStep() {
+    return Step(
+      title: Text('Referanser'),
+      subtitle: Text('Oppgi hendelsesnummer oppgitt fra rekvirent'),
+      content: _buildReferenceField(),
+      isActive: _currentStep >= 0,
+      state: _isValid(['reference'])
+          ? (_currentStep > (widget.incident == null ? 5 : 4) ? StepState.complete : StepState.indexed)
+          : StepState.error,
+    );
+  }
+
+  Step _buildPreparationStep() {
+    return Step(
+      title: Text('Forberedelser'),
+      subtitle: Text('Oppgi enheter som skal opprettes automatisk'),
+      content: Column(
+        children: <Widget>[
+          _buildUnitsField(),
+          _buildRememberUnitsField(),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state: (_currentStep > 4 ? StepState.complete : StepState.indexed),
+    );
+  }
+
+  Step _buildTGStep() {
+    return Step(
+      title: Text('Talegrupper'),
+      subtitle: Text('Oppgi hvilke talegrupper som skal spores'),
+      content: Column(
+        children: <Widget>[
+          _buildTGField(),
+          SizedBox(height: 16.0),
+          _buildTgCatalogField(),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state: _isValid(['talkgroups']) ? (_currentStep > 3 ? StepState.complete : StepState.indexed) : StepState.error,
+    );
+  }
+
+  Step _buildPoiStep() {
+    return Step(
+      title: Text('Plasseringer'),
+      subtitle: Text('Oppgi hendelsens plasseringer'),
+      content: Column(
+        children: <Widget>[
+          _buildLocationField(),
+          SizedBox(height: 16.0),
+          _buildMeetupField(),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state:
+          _isValid(['ipp', 'meetup']) ? (_currentStep > 2 ? StepState.complete : StepState.indexed) : StepState.error,
+    );
+  }
+
+  Step _buildClassificationStep() {
+    return Step(
+      title: Text('Klassifisering'),
+      subtitle: Text('Oppgi type og status'),
+      content: Column(
+        children: [
+          buildTwoCellRow(_buildTypeField(), _buildStatusField()),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state:
+          _isValid(['type', 'status']) ? (_currentStep > 1 ? StepState.complete : StepState.indexed) : StepState.error,
+    );
+  }
+
+  Step _buildGeneralStep() {
+    return Step(
+      title: Text('Generelt'),
+      subtitle: Text('Oppgi stedsnavn og begrunnelse'),
+      content: Column(
+        children: [
+          _buildNameField(),
+          SizedBox(height: 16.0),
+          _buildJustificationField(),
+          SizedBox(height: 16.0),
+          _buildOccurredField(),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state: _isValid(['name', 'justification', 'occurred'])
+          ? (_currentStep > 0 ? StepState.complete : StepState.indexed)
+          : StepState.error,
     );
   }
 
@@ -443,13 +477,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
-  _isValid(List<String> fields) {
-    var state = _formKey.currentState;
-    return _formKey.currentState == null ||
-        fields.where((name) => state.fields[name] == null || !state.fields[name].currentState.hasError).length ==
-            fields.length;
-  }
-
   Widget _buildTgCatalogField() {
     return ValueListenableBuilder(
       valueListenable: _tgCatalog,
@@ -467,6 +494,94 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
+  Widget _buildUnitsField() {
+    final style = Theme.of(context).textTheme.caption;
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: FormBuilderChipsInput(
+        attribute: 'units',
+        maxChips: 15,
+        initialValue: _configBloc.config.units,
+        decoration: InputDecoration(
+          labelText: "Opprett enheter",
+          hintText: "Søk etter enheter",
+          filled: true,
+          contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
+        ),
+        findSuggestions: (String query) async {
+          if (query.length != 0) {
+            var lowercaseQuery = query.toLowerCase();
+            final templates = asUnitTemplates(query, 15);
+            return templates
+                .where((template) => template.toLowerCase().contains(lowercaseQuery))
+                .toList(growable: false);
+          } else {
+            return const <String>[];
+          }
+        },
+        chipBuilder: (context, state, template) {
+          return InputChip(
+            key: ObjectKey(template),
+            label: Text(template, style: style),
+            onDeleted: () => state.deleteChip(template),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          );
+        },
+        suggestionBuilder: (context, state, template) {
+          return ListTile(
+            key: ObjectKey(template),
+            title: Text(template),
+            onTap: () => state.selectSuggestion(template),
+          );
+        },
+        // BUG: These are required, no default values are given.
+        obscureText: false,
+        autocorrect: false,
+        inputType: TextInputType.text,
+        keyboardAppearance: Brightness.dark,
+        inputAction: TextInputAction.done,
+        textCapitalization: TextCapitalization.none,
+      ),
+    );
+  }
+
+  Widget _buildRememberUnitsField() {
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 3,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                "Husk enheter",
+                style: Theme.of(context).textTheme.body1,
+              ),
+              subtitle: Text(
+                "Liste kan endres i Hendelsesoppsett",
+              ),
+            ),
+          ),
+          Switch(
+            value: _rememberUnits,
+            onChanged: (value) => setState(() {
+              _rememberUnits = !_rememberUnits;
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _isValid(List<String> fields) {
+    var state = _formKey.currentState;
+    return _formKey.currentState == null ||
+        fields.where((name) => state.fields[name] == null || !state.fields[name].currentState.hasError).length ==
+            fields.length;
+  }
+
   void _submit(BuildContext context) {
     if (_formKey.currentState.validate()) {
       const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
@@ -475,6 +590,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
       Incident incident;
       _formKey.currentState.save();
       if (widget.incident == null) {
+        if (_rememberUnits) {
+          final units = List<String>.from(_formKey.currentState.value['units']);
+          _configBloc.update(units: units);
+        }
         Navigator.pop(
           context,
           Incident.fromJson(_formKey.currentState.value).withAuthor(userId),

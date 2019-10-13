@@ -4,8 +4,8 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/screens/about_screen.dart';
-import 'package:SarSys/screens/map_config_screen.dart';
-import 'package:SarSys/screens/tetra_config_screen.dart';
+import 'package:SarSys/screens/config/map_config_screen.dart';
+import 'package:SarSys/screens/config/tetra_config_screen.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -13,6 +13,8 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import 'incident_config_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -74,15 +76,9 @@ class SettingsScreenState extends State<SettingsScreen> {
       child: StreamBuilder(
         stream: _bloc.state,
         builder: (context, snapshot) {
-          return toRefreshable(
-            viewportConstraints,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListView(
-                shrinkWrap: true,
-                children: _buildSettings(context),
-              ),
-            ),
+          return ListView(
+            shrinkWrap: true,
+            children: _buildSettings(context),
           );
         },
       ),
@@ -105,6 +101,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
+      _buildGotoIncidentConfig(),
       _buildGotoMapConfig(),
       _buildGotoTetraConfig(),
       Divider(),
@@ -138,6 +135,19 @@ class SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     ];
+  }
+
+  ListTile _buildGotoIncidentConfig() {
+    return ListTile(
+      title: Text("Hendelse"),
+      subtitle: Text('Endre innstillinger for hendelse'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return IncidentConfigScreen();
+        }));
+      },
+    );
   }
 
   ListTile _buildGotoMapConfig() {

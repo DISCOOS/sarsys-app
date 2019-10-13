@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:latlong/latlong.dart';
 
 String enumName(Object o) => o.toString().split('.').last;
@@ -131,6 +132,34 @@ Duration asEffort(List<Point> history) => history.isNotEmpty
       )
     : Duration.zero;
 
+emptyAsNull(value) => value is String
+    ? (value.isNotEmpty == true ? value : null)
+    : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);
+
+List<String> asUnitTemplates(String prefix, int count) {
+  final types = UnitType.values.where(
+    (type) {
+      final name = translateUnitType(type).toLowerCase();
+      final match =
+          prefix.length >= name.length ? prefix.substring(0, min(name.length, prefix.length))?.trim() : prefix;
+      return name.startsWith(match.toLowerCase());
+    },
+  );
+  final templates = types.fold<List<String>>(
+    <String>[],
+    (templates, type) {
+      final name = translateUnitType(type);
+      final suffix = prefix.substring(min(name.length, prefix.length))?.trim();
+      final offset = (suffix is num) ? int.parse(suffix) : 1;
+      templates.addAll(
+        List<String>.generate(count, (index) => "$name ${index + offset}"),
+      );
+      return templates;
+    },
+  )?.toList();
+  return templates ?? <String>[];
+}
+
 class Pair<L, R> {
   final L left;
   final R right;
@@ -138,7 +167,3 @@ class Pair<L, R> {
 
   factory Pair.of(L left, R right) => Pair._(left, right);
 }
-
-emptyAsNull(value) => value is String
-    ? (value.isNotEmpty == true ? value : null)
-    : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);

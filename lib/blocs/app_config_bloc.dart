@@ -53,6 +53,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     int locationSmallestDisplacement,
     bool keepScreenOn,
     bool callsignReuse,
+    List<String> units,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
@@ -72,6 +73,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           locationSmallestDisplacement: locationSmallestDisplacement,
           keepScreenOn: keepScreenOn,
           callsignReuse: callsignReuse,
+          units: units,
         );
     var response = await service.save(config);
     if (response.is204) {

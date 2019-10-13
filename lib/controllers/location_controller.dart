@@ -176,7 +176,7 @@ class LocationController {
         opacity: 0.5,
         tickerProvider: tickerProvider,
         locationUpdateController: _locationUpdateController,
-        rebuild: _locationUpdateController.stream,
+        rebuild: _locationUpdateController?.stream,
       );
       _subscribe();
       if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);

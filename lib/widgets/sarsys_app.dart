@@ -5,7 +5,7 @@ import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
-import 'package:SarSys/screens/settings_screen.dart';
+import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/widgets/permission_checker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

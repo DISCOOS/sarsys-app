@@ -25,7 +25,8 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
       locationFastestInterval: json['locationFastestInterval'] as int,
       locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
       keepScreenOn: json['keepScreenOn'] as bool,
-      callsignReuse: json['callsignReuse'] as bool);
+      callsignReuse: json['callsignReuse'] as bool,
+      units: (json['units'] as List)?.map((e) => e as String)?.toList());
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
@@ -45,5 +46,6 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'locationFastestInterval': instance.locationFastestInterval,
       'locationSmallestDisplacement': instance.locationSmallestDisplacement,
       'keepScreenOn': instance.keepScreenOn,
-      'callsignReuse': instance.callsignReuse
+      'callsignReuse': instance.callsignReuse,
+      'units': instance.units
     };

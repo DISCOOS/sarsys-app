@@ -28,6 +28,7 @@ class AppConfig extends Equatable {
   static const LOCATION_SMALLEST_DISPLACEMENT = "locationSmallestDisplacement";
   static const KEEP_SCREEN_ON = "keepScreenOn";
   static const CALLSIGN_REUSE = "callsignReuse";
+  static const UNITS = "units";
 
   static const PARAMS = const {
     SENTRY_DNS: "string",
@@ -47,6 +48,7 @@ class AppConfig extends Equatable {
     LOCATION_SMALLEST_DISPLACEMENT: "int",
     KEEP_SCREEN_ON: "bool",
     CALLSIGN_REUSE: "bool",
+    UNITS: "stringlist",
   };
 
   final bool demo;
@@ -66,6 +68,7 @@ class AppConfig extends Equatable {
   final int locationSmallestDisplacement;
   final bool keepScreenOn;
   final bool callsignReuse;
+  final List<String> units;
 
   AppConfig({
     @required this.sentryDns,
@@ -85,6 +88,7 @@ class AppConfig extends Equatable {
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
     this.keepScreenOn = Defaults.keepScreenOn,
     this.callsignReuse = Defaults.callsignReuse,
+    this.units = const <String>[],
   }) : super([
           sentryDns,
           demo,
@@ -103,6 +107,7 @@ class AppConfig extends Equatable {
           locationSmallestDisplacement,
           keepScreenOn,
           callsignReuse,
+          units,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -129,6 +134,7 @@ class AppConfig extends Equatable {
     int locationSmallestDisplacement,
     bool keepScreenOn,
     bool callsignReuse,
+    List<String> units,
   }) {
     return AppConfig(
       sentryDns: sentry ?? this.sentryDns,
@@ -148,6 +154,7 @@ class AppConfig extends Equatable {
       locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       callsignReuse: callsignReuse ?? this.callsignReuse,
+      units: units ?? this.units,
     );
   }
 
