@@ -590,13 +590,16 @@ class _IncidentEditorState extends State<IncidentEditor> {
       Incident incident;
       _formKey.currentState.save();
       if (widget.incident == null) {
+        final units = List<String>.from(_formKey.currentState.value['units']);
         if (_rememberUnits) {
-          final units = List<String>.from(_formKey.currentState.value['units']);
           _configBloc.update(units: units);
         }
         Navigator.pop(
           context,
-          Incident.fromJson(_formKey.currentState.value).withAuthor(userId),
+          Pair<Incident, List<String>>.of(
+            Incident.fromJson(_formKey.currentState.value).withAuthor(userId),
+            units,
+          ),
         );
       } else {
         incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);

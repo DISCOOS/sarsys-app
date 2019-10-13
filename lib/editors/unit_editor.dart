@@ -1,6 +1,5 @@
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:intl/intl.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -9,6 +8,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -316,7 +316,7 @@ class _UnitEditorState extends State<UnitEditor> {
   void _onTypeOrNumberEdit(String type, String number, bool update) {
     _formKey?.currentState?.save();
     if (type.isEmpty) type = translateUnitType(widget.type);
-    if (number.isEmpty) number = "${_unitBloc.count(exclude: []) + 1}";
+    if (number.isEmpty) number = "${_nextNumber()}";
     _editedName = "$type $number";
     if (update) setState(() {});
   }
@@ -457,21 +457,11 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultNumber() {
-    return "${widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1}";
+    return "${widget?.unit?.number ?? _nextNumber()}";
   }
 
   int _nextNumber() {
-    if (_appConfigBloc.config.callsignReuse) {
-      var prev = 0;
-      final numbers = _unitBloc.units.values
-          .where((unit) => UnitStatus.Retired != unit.status)
-          .map((unit) => unit.number)
-          .toList()
-            ..sort((n1, n2) => n1.compareTo(n2));
-      final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
-      return (candidates.length == 0 ? numbers.length : candidates.last) + 1;
-    }
-    return widget?.unit?.number ?? _unitBloc.count(exclude: []) + 1;
+    return _unitBloc.nextAvailableNumber(_appConfigBloc.config.callsignReuse);
   }
 
   String _actualNumber() {
@@ -488,8 +478,6 @@ class _UnitEditorState extends State<UnitEditor> {
         : widget?.unit?.type ?? defaultValue;
   }
 
-  final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
-
   String _defaultCallSign() {
     return "${widget?.unit?.callsign ?? _nextCallSign()}";
   }
@@ -497,14 +485,12 @@ class _UnitEditorState extends State<UnitEditor> {
   String _nextCallSign() {
     final String department = _departments[_appConfigBloc.config.department];
     int number = _ensureCallSignSuffix();
-    final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
-    return "$department ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
+    return toCallsign(department, number);
   }
 
   int _ensureCallSignSuffix() {
     final next = _nextNumber();
     final values = _formKey?.currentState?.value;
-    // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
     final number = values?.containsKey('number') == true
         ? values['number'] ?? widget?.unit?.number ?? next
         : widget?.unit?.number ?? next;

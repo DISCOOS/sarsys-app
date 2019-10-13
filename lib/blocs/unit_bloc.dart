@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
@@ -58,6 +60,45 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   /// Get units
   Map<String, Unit> get units => UnmodifiableMapView<String, Unit>(_units);
+
+  /// Creating a new 'Unit' instance from template string
+  Unit fromTemplate(String department, String template, {int offset = 20}) {
+    final type = UnitType.values.firstWhere((type) {
+      final name = translateUnitType(type).toLowerCase();
+      final match =
+          template.length >= name.length ? template.substring(0, min(name.length, template.length))?.trim() : template;
+      return name.startsWith(match.toLowerCase());
+    });
+
+    if (type != null) {
+      final name = translateUnitType(type).toLowerCase();
+      final suffix = template.substring(min(name.length, template.length))?.trim();
+      final number = int.tryParse(suffix) ?? 1;
+
+      return Unit.fromJson({
+        "type": enumName(type),
+        "number": number,
+        "status": enumName(UnitStatus.Mobilized),
+        "callsign": toCallsign(department, offset + number),
+      });
+    }
+    return null;
+  }
+
+  /// Get next available number
+  int nextAvailableNumber(bool reuse) {
+    if (reuse) {
+      var prev = 0;
+      final numbers = _units.values
+          .where((unit) => UnitStatus.Retired != unit.status)
+          .map((unit) => unit.number)
+          .toList()
+            ..sort((n1, n2) => n1.compareTo(n2));
+      final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
+      return (candidates.length == 0 ? numbers.length : candidates.last) + 1;
+    }
+    return count(exclude: []) + 1;
+  }
 
   /// Create given unit
   Future<Unit> create(Unit unit) {

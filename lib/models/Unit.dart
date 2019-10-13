@@ -33,7 +33,7 @@ class Unit extends Equatable {
           prop is UnitType ? translateUnitType(prop) : (prop is UnitStatus ? translateUnitStatus(prop) : prop))
       .join(' ');
 
-  /// Factory constructor for creating a new `Unit` instance
+  /// Factory constructor for creating a new `Unit` instance from json data
   factory Unit.fromJson(Map<String, dynamic> json) => _$UnitFromJson(json);
 
   /// Declare support for serialization to JSON

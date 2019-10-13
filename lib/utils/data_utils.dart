@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Unit.dart';
+
+import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
 
 String enumName(Object o) => o.toString().split('.').last;
@@ -158,6 +160,14 @@ List<String> asUnitTemplates(String prefix, int count) {
     },
   )?.toList();
   return templates ?? <String>[];
+}
+
+final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
+
+String toCallsign(String prefix, int number) {
+  // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
+  final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
+  return "$prefix ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
 }
 
 class Pair<L, R> {

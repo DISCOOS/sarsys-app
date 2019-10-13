@@ -128,12 +128,12 @@ class UnitInfoPanel extends StatelessWidget {
       context: context,
       label: label,
       icon: Icon(icon),
-      value: formatter(tracking.location),
+      value: formatter(tracking?.location),
       onTap: tracking?.location == null
           ? null
           : () => jumpToPoint(
                 context,
-                center: tracking.location,
+                center: tracking?.location,
               ),
       onMessage: onMessage,
       onComplete: _onComplete,
@@ -208,7 +208,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Innsatstid",
             icon: Icon(Icons.timer),
-            value: "${formatDuration(tracking.effort)}",
+            value: "${formatDuration(tracking?.effort)}",
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
