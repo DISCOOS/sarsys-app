@@ -42,6 +42,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   AppConfigBloc _configBloc;
   IncidentBloc _incidentBloc;
   bool _rememberUnits = true;
+  bool _rememberTalkGroups = true;
 
   @override
   void initState() {
@@ -160,6 +161,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
           _buildTGField(),
           SizedBox(height: 16.0),
           _buildTgCatalogField(),
+          _buildRememberTalkGroupsField(),
         ],
       ),
       isActive: _currentStep >= 0,
@@ -494,6 +496,36 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
+  Widget _buildRememberTalkGroupsField() {
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 3,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                "Husk talegrupper",
+                style: Theme.of(context).textTheme.body1,
+              ),
+              subtitle: Text(
+                "Liste kan endres i Nødnettsoppsett",
+              ),
+            ),
+          ),
+          Switch(
+            value: _rememberTalkGroups,
+            onChanged: (value) => setState(() {
+              _rememberTalkGroups = !_rememberTalkGroups;
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUnitsField() {
     final style = Theme.of(context).textTheme.caption;
     return Padding(
@@ -589,6 +621,15 @@ class _IncidentEditorState extends State<IncidentEditor> {
       final current = widget?.incident?.status;
       Incident incident;
       _formKey.currentState.save();
+
+      if (_rememberTalkGroups) {
+        final list = _formKey.currentState.value['talkgroups'];
+        final talkGroups = List<String>.from(
+          list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
+        );
+        _configBloc.update(talkGroups: talkGroups);
+      }
+
       if (widget.incident == null) {
         final units = List<String>.from(_formKey.currentState.value['units']);
         if (_rememberUnits) {
