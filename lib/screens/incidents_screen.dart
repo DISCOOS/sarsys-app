@@ -211,6 +211,8 @@ class _IncidentsPageState extends State<IncidentsPage> {
   }
 
   Widget _buildCard(Incident incident) {
+    final title = Theme.of(context).textTheme.title;
+    final caption = Theme.of(context).textTheme.caption;
     final userBloc = BlocProvider.of<UserBloc>(context);
 
     return StreamBuilder(
@@ -221,26 +223,20 @@ class _IncidentsPageState extends State<IncidentsPage> {
           return Card(
             child: Column(
               key: ObjectKey(incident.id),
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListTile(
                   selected: _incidentBloc.current == incident,
-                  leading: CircleAvatar(
-                    child: Text(
-                      "${formatSince(incident.occurred, withUnits: false)}",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    backgroundColor: Colors.redAccent,
-                  ),
                   title: Text(
                     incident.name,
-                    style: TextStyle(fontSize: 20.0),
+                    style: title,
                   ),
                   subtitle: Text(
                     incident.reference ?? 'Ingen referanse',
-                    style: TextStyle(fontSize: 14.0, color: Colors.black.withOpacity(0.5)),
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.black.withOpacity(0.5),
+                    ),
                   ),
                   trailing: Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -249,8 +245,12 @@ class _IncidentsPageState extends State<IncidentsPage> {
                       children: [
                         Text(
                           translateIncidentStatus(incident.status),
-                          style: Theme.of(context).textTheme.caption,
-                        )
+                          style: caption,
+                        ),
+                        Text(
+                          "${formatSince(incident.occurred)}",
+                          style: caption,
+                        ),
                       ],
                     ),
                   ),
@@ -259,14 +259,9 @@ class _IncidentsPageState extends State<IncidentsPage> {
                 if (isAuthorized)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
-                    child: Row(
-                      children: [
-                        Wrap(
-                          children: [
-                            Text(incident.justification),
-                          ],
-                        )
-                      ],
+                    child: Text(
+                      "${_replaceLast(incident.justification)}.\nOppmøte ${toUTM(incident.ipp.point)}.",
+                      softWrap: true,
                     ),
                   ),
                 Row(
@@ -278,7 +273,9 @@ class _IncidentsPageState extends State<IncidentsPage> {
                         alignment: MainAxisAlignment.start,
                         children: <Widget>[
                           FlatButton(
-                            child: Text(isAuthorized ? 'VELG' : 'LÅS OPP', style: TextStyle(fontSize: 14.0)),
+                            child: Text(
+                                isAuthorized ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG') : 'LÅS OPP',
+                                style: TextStyle(fontSize: 14.0)),
                             padding: EdgeInsets.only(left: 16.0),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             onPressed: () {
@@ -316,26 +313,30 @@ class _IncidentsPageState extends State<IncidentsPage> {
         });
   }
 
+  String _replaceLast(String text) => text.replaceFirst(r'.', "", text.length - 1);
+
   Widget _buildMapTile(Incident incident) {
     final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
     final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
     final fitBounds = (ipp == null || meetup == null) == false ? LatLngBounds(ipp, meetup) : null;
-    return GestureDetector(
-      child: Container(
-        height: 240.0,
-        child: IncidentMap(
-          center: meetup ?? ipp,
-          fitBounds: fitBounds,
-          fitBoundOptions: FitBoundsOptions(
-            zoom: Defaults.zoom,
-            maxZoom: Defaults.zoom,
-            padding: EdgeInsets.all(48.0),
+    return ClipRect(
+      child: GestureDetector(
+        child: Container(
+          height: 240.0,
+          child: IncidentMap(
+            center: meetup ?? ipp,
+            fitBounds: fitBounds,
+            fitBoundOptions: FitBoundsOptions(
+              zoom: Defaults.zoom,
+              maxZoom: Defaults.zoom,
+              padding: EdgeInsets.all(48.0),
+            ),
+            incident: incident,
+            interactive: false,
           ),
-          incident: incident,
-          interactive: false,
         ),
+        onTap: () => _selectAndReroute(incident),
       ),
-      onTap: () => _selectAndReroute(incident),
     );
   }
 
