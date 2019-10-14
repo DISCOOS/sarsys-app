@@ -23,6 +23,7 @@ class CommandScreen extends StatefulWidget {
 
 class _CommandScreenState extends State<CommandScreen> {
   final _unitsKey = GlobalKey<UnitsPageState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
   int _current;
@@ -59,11 +60,12 @@ class _CommandScreenState extends State<CommandScreen> {
         final incident = (snapshot.hasData ? _incidentBloc.current : null);
         final title = _toName(incident);
         final tabs = [
-          IncidentPage(),
+          IncidentPage(onMessage: _showMessage),
           UnitsPage(key: _unitsKey),
           DevicesPage(key: _devicesKey),
         ];
         return Scaffold(
+          key: _scaffoldKey,
           drawer: AppDrawer(),
           appBar: AppBar(
             actions: _buildActions(incident),
@@ -164,5 +166,32 @@ class _CommandScreenState extends State<CommandScreen> {
       }
     }
     return Container();
+  }
+
+  void _showMessage(
+    String message, {
+    String action = "OK",
+    VoidCallback onPressed,
+    dynamic data,
+  }) {
+    final snackbar = SnackBar(
+      duration: Duration(seconds: 2),
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(message),
+      ),
+      action: _buildAction(action, () {
+        if (onPressed != null) onPressed();
+        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+      }),
+    );
+    _scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
+  Widget _buildAction(String label, VoidCallback onPressed) {
+    return SnackBarAction(
+      label: label,
+      onPressed: onPressed,
+    );
   }
 }

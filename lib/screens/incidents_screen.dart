@@ -260,7 +260,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
                     child: Text(
-                      "${_replaceLast(incident.justification)}.\nOppmøte ${toUTM(incident.ipp.point)}.",
+                      _toDescription(incident),
                       softWrap: true,
                     ),
                   ),
@@ -311,6 +311,13 @@ class _IncidentsPageState extends State<IncidentsPage> {
             ),
           );
         });
+  }
+
+  String _toDescription(Incident incident) {
+    String meetup = incident.meetup.description;
+    return "${_replaceLast(incident.justification)}.\n"
+        "Oppmøte ${toUTM(incident.meetup.point)}"
+        "${meetup == null ? "." : ", ${meetup.toLowerCase()}."}";
   }
 
   String _replaceLast(String text) => text.replaceFirst(r'.', "", text.length - 1);

@@ -18,7 +18,12 @@ class IncidentPage extends StatefulWidget {
   static const ELEVATION = 4.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
-  const IncidentPage({Key key}) : super(key: key);
+  final MessageCallback onMessage;
+
+  const IncidentPage({
+    Key key,
+    @required this.onMessage,
+  }) : super(key: key);
 
   @override
   _IncidentPageState createState() => _IncidentPageState();
@@ -237,9 +242,15 @@ class _IncidentPageState extends State<IncidentPage> {
           child: _buildValueTile(
             toUTM(incident.ipp?.point),
             label: "IPP",
+            subtitle: incident?.ipp?.description,
             icon: Icons.navigation,
             onIconTap: () => navigateToLatLng(context, toLatLng(incident?.ipp?.point)),
             onValueTap: () => jumpToPoint(context, center: incident?.ipp?.point, incident: incident),
+            onValueLongPress: () => copy(
+              toUTM(incident?.ipp?.point, prefix: "", empty: "Ingen"),
+              widget.onMessage,
+              message: 'IPP kopiert til utklippstavlen',
+            ),
           ),
         ),
       ],
@@ -254,9 +265,15 @@ class _IncidentPageState extends State<IncidentPage> {
           child: _buildValueTile(
             toUTM(incident?.meetup?.point, empty: "Ikke oppgitt"),
             label: "Oppmøte",
+            subtitle: incident?.meetup?.description,
             icon: Icons.navigation,
             onIconTap: () => navigateToLatLng(context, toLatLng(incident?.meetup?.point)),
             onValueTap: () => jumpToPoint(context, center: incident?.meetup?.point, incident: incident),
+            onValueLongPress: () => copy(
+              toUTM(incident?.meetup?.point, prefix: "", empty: "Ingen"),
+              widget.onMessage,
+              message: 'Oppmøte kopiert til utklippstavlen',
+            ),
           ),
         ),
       ],
@@ -320,10 +337,12 @@ class _IncidentPageState extends State<IncidentPage> {
   Widget _buildValueTile(
     String value, {
     String label,
+    String subtitle,
     String unit,
     IconData icon,
     GestureTapCallback onIconTap,
     GestureTapCallback onValueTap,
+    GestureTapCallback onValueLongPress,
   }) {
     Widget tile = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,8 +353,25 @@ class _IncidentPageState extends State<IncidentPage> {
           Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
           if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle),
         ]),
+        if (emptyAsNull(subtitle) != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              subtitle,
+              style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 14, color: Colors.grey),
+            ),
+          )
       ],
     );
+
+    // Value detector?
+    tile = onValueTap != null || onValueLongPress != null
+        ? GestureDetector(
+            child: tile,
+            onTap: onValueTap,
+            onLongPress: onValueLongPress,
+          )
+        : tile;
 
     if (icon != null) {
       Widget action = Padding(
@@ -378,22 +414,15 @@ class _IncidentPageState extends State<IncidentPage> {
             );
     }
 
-    tile = Material(
+    return Material(
       child: Container(
-        height: IncidentPage.HEIGHT,
+        height: IncidentPage.HEIGHT * (emptyAsNull(subtitle) == null ? 1.0 : 1.25),
         padding: IncidentPage.PADDING,
         child: tile,
       ),
       elevation: IncidentPage.ELEVATION,
       borderRadius: BorderRadius.circular(IncidentPage.CORNER),
     );
-
-    return onValueTap == null
-        ? tile
-        : GestureDetector(
-            child: tile,
-            onTap: onValueTap,
-          );
   }
 
   void _onCancel(BuildContext context) async {

@@ -176,9 +176,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
       subtitle: Text('Oppgi hendelsens plasseringer'),
       content: Column(
         children: <Widget>[
-          _buildLocationField(),
+          _buildIPPField(),
+          _buildIPPDescriptionField(),
           SizedBox(height: 16.0),
           _buildMeetupField(),
+          _buildMeetupDescriptionField(),
         ],
       ),
       isActive: _currentStep >= 0,
@@ -321,7 +323,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
-  Widget _buildLocationField() => PointField(
+  Widget _buildIPPField() => PointField(
         attribute: 'ipp',
         initialValue: widget?.incident?.ipp?.point ?? widget.ipp,
         labelText: "IPP",
@@ -329,6 +331,16 @@ class _IncidentEditorState extends State<IncidentEditor> {
         errorText: 'IPP må oppgis',
         controller: widget.controller,
         onChanged: (point) => setState(() {}),
+      );
+
+  Widget _buildIPPDescriptionField() => FormBuilderTextField(
+        maxLines: 1,
+        attribute: 'ipp_description',
+        initialValue: widget?.incident?.ipp?.description,
+        decoration: InputDecoration(
+          labelText: "Stedsnavn",
+          filled: true,
+        ),
       );
 
   Widget _buildMeetupField() => PointField(
@@ -339,6 +351,16 @@ class _IncidentEditorState extends State<IncidentEditor> {
         errorText: 'Oppmøtested må oppgis',
         controller: widget.controller,
         onChanged: (point) => setState(() {}),
+      );
+
+  Widget _buildMeetupDescriptionField() => FormBuilderTextField(
+        maxLines: 1,
+        attribute: 'meetup_description',
+        initialValue: widget?.incident?.meetup?.description,
+        decoration: InputDecoration(
+          labelText: "Stedsnavn",
+          filled: true,
+        ),
       );
 
   Widget _buildTGField() {
@@ -545,8 +567,14 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Map<String, dynamic> _toJson() {
     Map<String, dynamic> json = Map.from(_formKey.currentState.value);
-    json['ipp'] = Location(point: Point.fromJson(json['ipp'])).toJson();
-    json['meetup'] = Location(point: Point.fromJson(json['meetup'])).toJson();
+    json['ipp'] = Location(
+      point: Point.fromJson(json['ipp']),
+      description: emptyAsNull(json['ipp_description']),
+    ).toJson();
+    json['meetup'] = Location(
+      point: Point.fromJson(json['meetup']),
+      description: emptyAsNull(json['meetup_description']),
+    ).toJson();
     return json;
   }
 
