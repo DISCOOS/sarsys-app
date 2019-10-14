@@ -31,14 +31,6 @@ class TracksBuilder {
         '}');
   }
 
-  static String createPointAsJson(double lat, double lon) {
-    return json.encode(Point.now(lat, lon).toJson());
-  }
-
-  static String createRandomPointAsJson(rnd, Point center) {
-    return TracksBuilder.createPointAsJson(center.lat + nextDouble(rnd, 0.03), center.lon + nextDouble(rnd, 0.03));
-  }
-
   static double nextDouble(rnd, double fraction, {negative: true}) {
     return (negative ? (-100 + rnd.nextInt(200)).toDouble() : rnd.nextInt(100)) / 100 * fraction;
   }
@@ -135,15 +127,28 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: tracking);
     });
     when(mock.update(any)).thenAnswer((_) async {
-      var tracking = _.positionalArguments[0] as Tracking;
+      var original = _.positionalArguments[0] as Tracking;
       var incident = trackingRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(tracking.id),
+        (entry) => entry.value.containsKey(original.id),
         orElse: () => null,
       );
       if (incident != null) {
         // Ensure only valid statuses are persisted
-        tracking = tracking.cloneWith(status: _toStatus(tracking.status, tracking.devices.isNotEmpty));
-        // Update trackings
+        var tracking = original.cloneWith(status: _toStatus(original.status, original.devices.isNotEmpty));
+
+        // Append position to history if manual and does not exist in track
+        if (!tracking.history.contains(original.point)) {
+          if (tracking.point?.type == PointType.Manual) {
+            tracking = tracking.cloneWith(point: original.point, history: tracking.history..add(original.point));
+          } else {
+            return ServiceResponse.badRequest(
+              message: "Bad request. "
+                  "Only point of type 'Manual' is allowed, "
+                  "found ${enumName(original.point?.type)}",
+            );
+          }
+        }
+        // Update tracking instance
         var trackingList = incident.value;
         trackingList.update(
           tracking.id,
@@ -160,9 +165,9 @@ class TrackingServiceMock extends Mock implements TrackingService {
         // Configure simulation
         _simulate(tracking.id, trackingList, deviceServiceMock.deviceRepo[incident.key], simulations);
 
-        return ServiceResponse.ok(body: tracking.status);
+        return ServiceResponse.ok(body: tracking);
       }
-      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
+      return ServiceResponse.notFound(message: "Not found. Tracking ${original.id}");
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
@@ -276,6 +281,7 @@ class _TrackSimulation {
               ],
       );
       point = Point(
+        type: PointType.Aggregated,
         lat: sum[0] / tracking.devices.length,
         lon: sum[1] / tracking.devices.length,
         acc: sum[2] / tracking.devices.length,
@@ -289,14 +295,20 @@ class _TrackSimulation {
       ids.forEach(
         (id) => tracking.tracks.update(
           id,
-          (track) => track..add(devices[id].point),
+          // Only add point if not added already
+          (track) => track.contains(devices[id].point) ? track : track
+            ..add(devices[id].point),
           ifAbsent: () => [devices[id].point],
         ),
       );
-      history = List.of(
-        tracking.history,
-        growable: true,
-      )..add(point);
+      // Only add point if not added already
+      history = tracking.history.contains(point)
+          ? tracking.history
+          : List.of(
+              tracking.history,
+              growable: true,
+            )
+        ..add(point);
     } else {
       history = tracking.history;
     }

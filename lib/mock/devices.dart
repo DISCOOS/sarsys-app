@@ -29,7 +29,7 @@ class DeviceBuilder {
   }
 
   static String createPointAsJson(double lat, double lon) {
-    return json.encode(Point.now(lat, lon).toJson());
+    return json.encode(Point.now(lat, lon, type: PointType.Device).toJson());
   }
 }
 
@@ -104,6 +104,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
               Point.now(
                 center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
                 center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
+                type: PointType.Device,
               ),
           alias: device.alias,
           number: device.number,
@@ -209,6 +210,7 @@ class _DeviceSimulation {
           point.lat,
           point.lon + delta / steps,
           acc: acc,
+          type: PointType.Device,
         );
         break;
       case 2:
@@ -216,6 +218,7 @@ class _DeviceSimulation {
           point.lat - delta / steps,
           point.lon,
           acc: acc,
+          type: PointType.Device,
         );
         break;
       case 3:
@@ -223,6 +226,7 @@ class _DeviceSimulation {
           point.lat,
           point.lon - delta / steps,
           acc: acc,
+          type: PointType.Device,
         );
         break;
       case 4:
@@ -230,6 +234,7 @@ class _DeviceSimulation {
           point.lat + delta / steps,
           point.lon,
           acc: acc,
+          type: PointType.Device,
         );
         break;
     }

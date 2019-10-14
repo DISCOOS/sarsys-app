@@ -1,3 +1,5 @@
+import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -6,8 +8,10 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,11 +20,13 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Iterable<Device> devices;
+  final PermissionController controller;
 
   final UnitType type;
 
   const UnitEditor({
     Key key,
+    @required this.controller,
     this.unit,
     this.type = UnitType.Team,
     this.devices = const [],
@@ -134,6 +140,8 @@ class _UnitEditorState extends State<UnitEditor> {
                 buildTwoCellRow(_buildStatusField(), _buildPhoneField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
+                SizedBox(height: SPACING),
+                _buildPointField(),
                 SizedBox(height: MediaQuery.of(context).size.height / 2),
               ],
             ),
@@ -420,6 +428,22 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
+  Widget _buildPointField() => PointField(
+        attribute: 'point',
+        initialValue: _toPoint(),
+        labelText: "Siste posissjon",
+        hintText: 'Velg posisjon',
+        errorText: 'Posisjon må oppgis',
+        controller: widget.controller,
+        onChanged: (point) => setState(() {}),
+      );
+
+  Point _toPoint() {
+    final bloc = BlocProvider.of<TrackingBloc>(context);
+    final tracking = bloc.tracking[widget?.unit?.tracking];
+    return tracking?.point;
+  }
+
   List _getActualDevices() {
     return (widget?.unit?.tracking != null
         ? _trackingBloc.getDevicesFromTrackingId(
@@ -447,8 +471,13 @@ class _UnitEditorState extends State<UnitEditor> {
         );
       }
       if (response) {
+        Point point = _formKey.currentState.value["point"] == null
+            ? null
+            : Point.fromJson(
+                _formKey.currentState.value["point"],
+              );
         List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
-        Navigator.pop(context, Pair.of(unit, devices));
+        Navigator.pop(context, UnitParams(context, unit: unit, devices: devices, point: point));
       }
     } else {
       // Show errors

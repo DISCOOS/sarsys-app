@@ -22,6 +22,13 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  static ServiceResponse<T> badRequest<T>({message: 'Bad request'}) {
+    return ServiceResponse<T>(
+      code: 400,
+      message: message,
+    );
+  }
+
   static ServiceResponse<T> unauthorized<T>({message: 'Unauthorized'}) {
     return ServiceResponse<T>(
       code: 401,

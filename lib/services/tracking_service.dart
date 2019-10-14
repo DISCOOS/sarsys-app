@@ -27,12 +27,13 @@ class TrackingService {
     throw "Not implemented";
   }
 
-  Future<ServiceResponse<TrackingStatus>> update(Tracking tracking) async {
+  /// PATCH ../incident/tracking/{trackingId}
+  Future<ServiceResponse<Tracking>> update(Tracking tracking) async {
     // TODO: Implement update tracking
     throw "Not implemented";
   }
 
-  /// DELETE ../units/{unitId}
+  /// DELETE ../incident/tracking/{trackingId}
   Future<ServiceResponse<void>> delete(Tracking unit) async {
     // TODO: Implement delete unit
     throw "Not implemented";

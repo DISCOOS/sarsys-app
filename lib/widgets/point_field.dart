@@ -13,6 +13,7 @@ class PointField extends StatelessWidget {
   final String errorText;
   final Point initialValue;
   final Incident incident;
+  final bool optional;
   final ValueChanged<Point> onChanged;
   final PermissionController controller;
 
@@ -26,6 +27,7 @@ class PointField extends StatelessWidget {
     this.incident,
     this.initialValue,
     this.onChanged,
+    this.optional = true,
   }) : super(key: key);
 
   @override
@@ -44,19 +46,22 @@ class PointField extends StatelessWidget {
               contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
               errorText: field.hasError ? field.errorText : null,
             ),
-            child: field.value == null
-                ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
-                : Text(
-                    toUTM(field.value),
-                    style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: field.value == null
+                  ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                  : Text(
+                      toUTM(field.value),
+                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
+                    ),
+            ),
           ),
           onTap: () => _selectLocation(context, field),
         ),
       ),
-      valueTransformer: (point) => point.toJson(),
+      valueTransformer: (point) => point?.toJson(),
       validators: [
-        FormBuilderValidators.required(errorText: errorText),
+        if (optional == false) FormBuilderValidators.required(errorText: errorText),
       ],
     );
   }

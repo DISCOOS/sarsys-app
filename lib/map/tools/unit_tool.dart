@@ -70,7 +70,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
     }
   }
 
-  void _showInfo(BuildContext context, Unit unit) {
+  void _showInfo(BuildContext context, Unit unit) async {
     showDialog(
       context: context,
       barrierDismissible: true,

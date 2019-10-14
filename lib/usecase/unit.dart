@@ -1,7 +1,11 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
@@ -11,10 +15,12 @@ import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class UnitParams extends BlocParams<UnitBloc, Unit> {
+  final Point point;
   final List<Device> devices;
-  UnitParams(BuildContext context, {Unit unit, List<Device> devices})
+  UnitParams(BuildContext context, {Unit unit, List<Device> devices, this.point})
       : this.devices = devices ?? const [],
         super(context, unit);
 }
@@ -33,14 +39,17 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data == null, "Unit should not be supplied");
-    var result = await showDialog<Pair<Unit, List<Device>>>(
+    var result = await showDialog<UnitParams>(
       context: params.context,
-      builder: (context) => UnitEditor(devices: params.devices),
+      builder: (context) => UnitEditor(
+        devices: params.devices,
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+      ),
     );
     if (result == null) return dartz.Left(false);
 
-    final unit = await params.bloc.create(result.left);
-    await _handleTracking(params, unit, result.right);
+    final unit = await params.bloc.create(result.data);
+    await _handleTracking(params, unit, devices: result.devices, point: result.point);
     return dartz.Right(unit);
   }
 }
@@ -59,14 +68,46 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
-    var result = await showDialog<Pair<Unit, List<Device>>>(
+    var result = await showDialog<UnitParams>(
       context: params.context,
-      builder: (context) => UnitEditor(unit: params.data, devices: params.devices),
+      builder: (context) => UnitEditor(
+        unit: params.data,
+        devices: params.devices,
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+      ),
     );
     if (result == null) return dartz.Left(false);
-    await params.bloc.update(result.left);
-    await _handleTracking(params, result.left, result.right);
-    return dartz.Right(result.left);
+    await params.bloc.update(result.data);
+    await _handleTracking(params, result.data, devices: result.devices, point: result.point);
+    return dartz.Right(result.data);
+  }
+}
+
+/// Edit last known unit location
+Future<dartz.Either<bool, Point>> editUnitLocation(
+  BuildContext context,
+  Unit unit,
+) =>
+    EditUnitLocation()(UnitParams(
+      context,
+      unit: unit,
+    ));
+
+class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
+  @override
+  Future<dartz.Either<bool, Point>> call(params) async {
+    assert(params.data != null, "Unit must be supplied");
+    var result = await showDialog<Point>(
+      context: params.context,
+      builder: (context) => PointEditor(
+        params.point,
+        title: "Sett siste kjente posisjon",
+        controller: Provider.of<PermissionController>(params.context),
+      ),
+    );
+    if (result == null) return dartz.Left(false);
+    await _handleTracking(params, params.data, point: result);
+    return dartz.Right(result);
   }
 }
 
@@ -93,7 +134,7 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
             where: (unit) => bloc.tracking[unit.tracking] == null || bloc.tracking[unit.tracking].devices.isEmpty,
           );
     if (unit == null) return dartz.Left(false);
-    final tracking = await _handleTracking(params, unit, params.devices);
+    final tracking = await _handleTracking(params, unit, devices: params.devices);
     return dartz.Right(Pair.of(unit, tracking));
   }
 }
@@ -134,14 +175,19 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   }
 }
 
-Future<Tracking> _handleTracking(UnitParams params, Unit unit, List<Device> devices) async {
-  var tracking;
+Future<Tracking> _handleTracking(
+  UnitParams params,
+  Unit unit, {
+  List<Device> devices,
+  Point point,
+}) async {
+  Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (unit.tracking == null) {
     tracking = await trackingBloc.create(unit, devices);
   } else if (trackingBloc.tracking.containsKey(unit.tracking)) {
     tracking = trackingBloc.tracking[unit.tracking];
-    tracking = await trackingBloc.update(tracking, devices: devices);
+    tracking = await trackingBloc.update(tracking, devices: devices, point: point);
   }
   return tracking;
 }

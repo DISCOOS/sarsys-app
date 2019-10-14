@@ -11,6 +11,7 @@ class Point extends Equatable {
   final double alt;
   final double acc;
   final DateTime timestamp;
+  final PointType type;
 
   Point({
     @required this.lat,
@@ -18,24 +19,34 @@ class Point extends Equatable {
     @required this.timestamp,
     this.alt,
     this.acc,
-  }) : super([
+    PointType type,
+  })  : this.type = type ?? PointType.Manual,
+        super([
           lat,
           lon,
-          timestamp,
           alt,
           acc,
+          timestamp,
+          type,
         ]);
 
   bool get isEmpty => lat == 0 && lon == 0;
   bool get isNotEmpty => !isEmpty;
 
   /// Factory constructor for empty `Point`
-  factory Point.now(double lat, double lon, {double acc, double alt}) {
+  factory Point.now(
+    double lat,
+    double lon, {
+    double acc,
+    double alt,
+    PointType type,
+  }) {
     return Point(
       lat: lat,
       lon: lon,
       acc: acc,
       alt: alt,
+      type: type,
       timestamp: DateTime.now(),
     );
   }
@@ -45,4 +56,21 @@ class Point extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$PointToJson(this);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is Point &&
+          runtimeType == other.runtimeType &&
+          lat == other.lat &&
+          lon == other.lon &&
+          alt == other.alt &&
+          acc == other.acc &&
+          timestamp == other.timestamp;
+
+  @override
+  int get hashCode => super.hashCode ^ lat.hashCode ^ lon.hashCode ^ alt.hashCode ^ acc.hashCode ^ timestamp.hashCode;
 }
+
+enum PointType { Manual, Device, Aggregated }

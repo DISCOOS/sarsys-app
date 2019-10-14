@@ -73,8 +73,12 @@ LatLng toLatLng(Point point) {
   return LatLng(point?.lat ?? 0.0, point?.lon ?? 0.0);
 }
 
-Point toPoint(LatLng point) {
-  return Point.now(point?.latitude ?? 0, point?.longitude ?? 0);
+Point toPoint(LatLng point, {PointType type}) {
+  return Point.now(
+    point?.latitude ?? 0,
+    point?.longitude ?? 0,
+    type: type,
+  );
 }
 
 List<T> sortList<T>(List<T> data, [int compare(T a, T b)]) {

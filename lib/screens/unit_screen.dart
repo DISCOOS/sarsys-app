@@ -98,8 +98,12 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                             bloc: _trackingBloc,
                             withHeader: false,
                             onMessage: showMessage,
-                            onChanged: (unit) => setState(() => _unit = unit),
-                            onComplete: (_) => Navigator.pop(context),
+                            onChanged: (unit) => setState(() {
+                              _unit = unit;
+                              if (unit.status == UnitStatus.Retired) {
+                                Navigator.pop(context);
+                              }
+                            }),
                           ),
                         ],
                       )

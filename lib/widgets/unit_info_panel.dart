@@ -246,6 +246,7 @@ class UnitInfoPanel extends StatelessWidget {
                 _onMessage("${actual.name} er oppdatert");
                 _onChanged(actual);
               }
+              _onComplete();
             },
           ),
           if (devices.isNotEmpty)
@@ -258,8 +259,9 @@ class UnitInfoPanel extends StatelessWidget {
                 final result = await removeFromUnit(context, unit, devices: devices);
                 if (result.isRight()) {
                   _onMessage("Apparater fjernet fra ${unit.name}");
-                  _onChanged();
+                  _onChanged(unit);
                 }
+                _onComplete();
               },
             ),
           FlatButton(
@@ -271,8 +273,8 @@ class UnitInfoPanel extends StatelessWidget {
               final result = await retireUnit(context, unit);
               if (result.isRight()) {
                 _onMessage("${unit.name} er oppløst");
-                _onComplete();
               }
+              _onComplete();
             },
           ),
         ],

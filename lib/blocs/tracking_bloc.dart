@@ -210,9 +210,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Update given tracking
-  Future<Tracking> update(Tracking tracking, {List<Device> devices, TrackingStatus status}) {
+  Future<Tracking> update(Tracking tracking, {List<Device> devices, Point point, TrackingStatus status}) {
     return _dispatch<Tracking>(UpdateTracking(tracking.cloneWith(
       status: status,
+      point: point == null ? tracking.point : point,
       devices: devices == null ? tracking.devices : devices.map((device) => device.id).toList(),
     )));
   }
@@ -302,7 +303,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<TrackingState> _update(UpdateTracking event) async {
     var response = await service.update(event.data);
     if (response.is200) {
-      final tracking = event.data.cloneWith(status: response.body);
+      final tracking = response.body;
       _tracking.update(
         tracking.id,
         (_) => tracking,
