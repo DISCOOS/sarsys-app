@@ -216,8 +216,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
         ),
         if (widget.incident != null)
           _buildPoiOptions({
-            widget?.incident?.ipp: "IPP",
-            widget?.incident?.meetup: "Oppmøte",
+            widget?.incident?.ipp?.point: "IPP",
+            widget?.incident?.meetup?.point: "Oppmøte",
           }),
         ScalebarOption(
           lineColor: Colors.black54,

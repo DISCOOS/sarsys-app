@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/incident_service.dart';
@@ -24,8 +25,8 @@ class IncidentBuilder {
       '"reference": "2019-RKH-245$since",'
       '"occurred": "${DateTime.now().subtract(Duration(hours: since)).toIso8601String()}",'
       '"justification": "Mann, 32 år, økt selvmordsfare.",'
-      '"ipp": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
-      '"meetup": ${createPointAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
+      '"ipp": ${createLocationAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
+      '"meetup": ${createLocationAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
       '"talkgroups": ['
       '{"name": "RK-RIKS-1", "type": "Tetra"}'
       '],'
@@ -36,12 +37,8 @@ class IncidentBuilder {
     );
   }
 
-  static createPointAsJson(double lat, double lon) {
-    return json.encode(Point.now(lat, lon).toJson());
-  }
-
-  static createEmptyPointAsJson() {
-    return json.encode(Point.now(0, 0).toJson());
+  static createLocationAsJson(double lat, double lon) {
+    return json.encode(Location(point: Point.now(lat, lon)).toJson());
   }
 
   static createRandomPasscodesAsJson() {

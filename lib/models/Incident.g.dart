@@ -22,10 +22,10 @@ Incident _$IncidentFromJson(Map<String, dynamic> json) {
       justification: json['justification'] as String,
       ipp: json['ipp'] == null
           ? null
-          : Point.fromJson(json['ipp'] as Map<String, dynamic>),
+          : Location.fromJson(json['ipp'] as Map<String, dynamic>),
       meetup: json['meetup'] == null
           ? null
-          : Point.fromJson(json['meetup'] as Map<String, dynamic>),
+          : Location.fromJson(json['meetup'] as Map<String, dynamic>),
       passcodes: json['passcodes'] == null
           ? null
           : Passcodes.fromJson(json['passcodes'] as Map<String, dynamic>),

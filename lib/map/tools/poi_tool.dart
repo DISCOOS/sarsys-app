@@ -30,8 +30,8 @@ class POITool extends MapTool with MapSelectable<POI> {
   Iterable<POI> get targets => bloc.isUnset
       ? []
       : [
-          POI(name: "IPP", point: bloc.current.ipp),
-          POI(name: "Oppmøte", point: bloc.current.meetup),
+          POI(name: "IPP", point: bloc?.current?.ipp?.point),
+          POI(name: "Oppmøte", point: bloc?.current?.meetup?.point),
         ];
 
   @override

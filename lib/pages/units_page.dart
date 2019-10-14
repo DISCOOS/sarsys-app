@@ -161,13 +161,13 @@ class UnitsPageState extends State<UnitsPage> {
             ),
             SizedBox(width: 4.0),
             Chip(
-              label: Text("${formatSince(tracking?.location?.timestamp, defaultValue: "Ingen")}"),
+              label: Text("${formatSince(tracking?.point?.timestamp, defaultValue: "Ingen")}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(tracking?.location),
+                color: toPointStatusColor(tracking?.point),
               ),
             ),
             if (widget.withActions && _userBloc?.user?.isCommander == true)

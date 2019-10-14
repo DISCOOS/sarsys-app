@@ -150,8 +150,8 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Widget _buildMapTile(BuildContext context, Incident incident) {
-    final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
-    final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+    final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+    final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
     final fitBounds = LatLngBounds(ipp, meetup);
     return Container(
       height: 240.0,
@@ -235,11 +235,11 @@ class _IncidentPageState extends State<IncidentPage> {
         Expanded(
           flex: 5,
           child: _buildValueTile(
-            toUTM(incident.ipp),
+            toUTM(incident.ipp?.point),
             label: "IPP",
             icon: Icons.navigation,
-            onIconTap: () => navigateToLatLng(context, toLatLng(incident.ipp)),
-            onValueTap: () => jumpToPoint(context, center: incident?.ipp, incident: incident),
+            onIconTap: () => navigateToLatLng(context, toLatLng(incident?.ipp?.point)),
+            onValueTap: () => jumpToPoint(context, center: incident?.ipp?.point, incident: incident),
           ),
         ),
       ],
@@ -252,11 +252,11 @@ class _IncidentPageState extends State<IncidentPage> {
         Expanded(
           flex: 5,
           child: _buildValueTile(
-            toUTM(incident?.meetup, empty: "Ikke oppgitt"),
+            toUTM(incident?.meetup?.point, empty: "Ikke oppgitt"),
             label: "Oppmøte",
             icon: Icons.navigation,
-            onIconTap: () => navigateToLatLng(context, toLatLng(incident.meetup)),
-            onValueTap: () => jumpToPoint(context, center: incident?.meetup, incident: incident),
+            onIconTap: () => navigateToLatLng(context, toLatLng(incident?.meetup?.point)),
+            onValueTap: () => jumpToPoint(context, center: incident?.meetup?.point, incident: incident),
           ),
         ),
       ],

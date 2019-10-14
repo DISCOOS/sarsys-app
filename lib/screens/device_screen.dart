@@ -116,7 +116,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   }
 
   Widget _buildMapTile(BuildContext context, Device device) {
-    final center = toCenter(device.location);
+    final center = toCenter(device.point);
     return Material(
       elevation: DeviceScreen.ELEVATION,
       borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
@@ -156,10 +156,10 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
         MapControl(
           icon: Icons.add,
           onPressed: () {
-            if (device?.location != null) {
+            if (device?.point != null) {
               var zoom = math.min(_controller.zoom + 1, Defaults.maxZoom);
               _controller.animatedMove(
-                toCenter(device?.location),
+                toCenter(device?.point),
                 zoom,
                 this,
                 milliSeconds: 250,
@@ -170,10 +170,10 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
         MapControl(
           icon: Icons.remove,
           onPressed: () {
-            if (device?.location != null) {
+            if (device?.point != null) {
               var zoom = math.max(_controller.zoom - 1, Defaults.minZoom);
               _controller.animatedMove(
-                toCenter(device?.location),
+                toCenter(device?.point),
                 zoom,
                 this,
                 milliSeconds: 250,
@@ -190,7 +190,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   }
 
   void _onMove(Device event) {
-    final center = toCenter(event?.location);
+    final center = toCenter(event?.point);
     if (center != null) {
       _controller.animatedMove(center, _controller.zoom, this);
     }

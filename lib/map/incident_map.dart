@@ -338,7 +338,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   LatLng _ensureCenter() {
     final current = widget.withLocation ? _locationController.current : null;
     return widget.center ??
-        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup) : null) ??
+        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
   }
 
@@ -438,8 +438,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions({
-            widget?.incident?.ipp ?? _incidentBloc?.current?.ipp: "IPP",
-            widget?.incident?.meetup ?? _incidentBloc?.current?.meetup: "Oppmøte",
+            widget?.incident?.ipp?.point ?? _incidentBloc?.current?.ipp?.point: "IPP",
+            widget?.incident?.meetup?.point ?? _incidentBloc?.current?.meetup?.point: "Oppmøte",
           }),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withLocation && _locationController?.isReady == true) _locationController.options,

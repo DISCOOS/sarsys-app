@@ -2,8 +2,8 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
@@ -323,7 +323,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildLocationField() => PointField(
         attribute: 'ipp',
-        initialValue: widget?.incident?.ipp ?? widget.ipp,
+        initialValue: widget?.incident?.ipp?.point ?? widget.ipp,
         labelText: "IPP",
         hintText: 'Velg IPP',
         errorText: 'IPP må oppgis',
@@ -333,7 +333,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildMeetupField() => PointField(
         attribute: 'meetup',
-        initialValue: widget?.incident?.meetup ?? widget.ipp,
+        initialValue: widget?.incident?.meetup?.point ?? widget.ipp,
         labelText: "Oppmøtested",
         hintText: 'Velg oppmøtested',
         errorText: 'Oppmøtested må oppgis',
@@ -543,12 +543,20 @@ class _IncidentEditorState extends State<IncidentEditor> {
             fields.length;
   }
 
+  Map<String, dynamic> _toJson() {
+    Map<String, dynamic> json = Map.from(_formKey.currentState.value);
+    json['ipp'] = Location(point: Point.fromJson(json['ipp'])).toJson();
+    json['meetup'] = Location(point: Point.fromJson(json['meetup'])).toJson();
+    return json;
+  }
+
   void _submit(BuildContext context) {
     if (_formKey.currentState.validate()) {
-      const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
-      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
-      final current = widget?.incident?.status;
       Incident incident;
+      const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
+      final current = widget?.incident?.status;
+      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
+
       _formKey.currentState.save();
 
       if (_rememberTalkGroups) {
@@ -566,13 +574,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
         }
         Navigator.pop(
           context,
-          Pair<Incident, List<String>>.of(
-            Incident.fromJson(_formKey.currentState.value).withAuthor(userId),
-            units,
-          ),
+          Pair<Incident, List<String>>.of(Incident.fromJson(_toJson()).withAuthor(userId), units),
         );
       } else {
-        incident = widget.incident.withJson(_formKey.currentState.value, userId: userId);
+        incident = widget.incident.withJson(_toJson(), userId: userId);
         if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
           prompt(
             context,

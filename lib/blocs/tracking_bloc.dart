@@ -291,7 +291,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         var id = event.json['id'];
         if (_tracking.containsKey(id)) {
           return TrackingUpdated(
-            _tracking.update(id, (tracking) => tracking.cloneWith(location: Point.fromJson(event.json))),
+            _tracking.update(id, (tracking) => tracking.cloneWith(point: Point.fromJson(event.json))),
           );
         }
         break;

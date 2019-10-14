@@ -13,7 +13,7 @@ class Device extends Equatable {
   final DeviceStatus status;
   final String number;
   final String alias;
-  final Point location;
+  final Point point;
 
   Device({
     @required this.id,
@@ -21,8 +21,8 @@ class Device extends Equatable {
     @required this.status,
     this.alias,
     this.number,
-    this.location,
-  }) : super([id, type, status, number, alias, location]);
+    this.point,
+  }) : super([id, type, status, number, alias, point]);
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
@@ -45,7 +45,7 @@ class Device extends Equatable {
       status: clone.status ?? this.status,
       alias: clone.alias ?? this.alias,
       number: clone.number ?? this.number,
-      location: clone.location ?? this.location,
+      point: clone.point ?? this.point,
     );
   }
 
@@ -55,7 +55,7 @@ class Device extends Equatable {
     DeviceStatus status,
     String alias,
     String number,
-    Point location,
+    Point point,
   }) {
     return Device(
       id: this.id,
@@ -63,7 +63,7 @@ class Device extends Equatable {
       status: status ?? this.status,
       alias: alias ?? this.alias,
       number: number ?? this.number,
-      location: location ?? this.location,
+      point: point ?? this.point,
     );
   }
 }

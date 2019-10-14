@@ -39,7 +39,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
 
   @override
   LatLng toPoint(Unit unit) {
-    return toLatLng(bloc.tracking[unit.tracking].location);
+    return toLatLng(bloc.tracking[unit.tracking].point);
   }
 
   void _show(BuildContext context, List<Unit> units) {

@@ -233,8 +233,8 @@ void jumpToIncident(
   Incident incident, {
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
-  final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
-  final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+  final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+  final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
   final fitBounds = LatLngBounds(ipp, meetup);
   if (ipp == null || meetup == null || fitBounds.isValid == false)
     jumpToLatLng(context, center: meetup ?? ipp, incident: incident);

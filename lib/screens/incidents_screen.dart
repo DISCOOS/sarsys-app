@@ -317,8 +317,8 @@ class _IncidentsPageState extends State<IncidentsPage> {
   }
 
   Widget _buildMapTile(Incident incident) {
-    final ipp = incident.ipp != null ? toLatLng(incident.ipp) : null;
-    final meetup = incident.meetup != null ? toLatLng(incident.meetup) : null;
+    final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+    final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
     final fitBounds = (ipp == null || meetup == null) == false ? LatLngBounds(ipp, meetup) : null;
     return GestureDetector(
       child: Container(

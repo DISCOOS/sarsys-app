@@ -253,15 +253,15 @@ class _TrackSimulation {
   _TrackSimulation({this.id, this.trackingList, this.devices = const {}});
 
   Tracking progress([Iterable<String> ids = const []]) {
-    Point location;
+    Point point;
     double distance;
     double speed;
     Duration effort;
 
     if (tracking.devices.isEmpty)
-      location = tracking.location;
+      point = tracking.point;
     else if (tracking.devices.length == 1)
-      location = devices[tracking.devices.first]?.location ?? tracking.location;
+      point = devices[tracking.devices.first]?.point ?? tracking.point;
     else {
       // Calculate geometric centre of all devices as the arithmetic mean of the input coordinates
       final sum = tracking.devices.fold<List<num>>(
@@ -269,13 +269,13 @@ class _TrackSimulation {
         (previous, next) => devices[next] == null
             ? previous
             : [
-                devices[next].location.lat + previous[0],
-                devices[next].location.lon + previous[1],
-                devices[next].location.acc + previous[2],
-                min(devices[next].location.timestamp.millisecondsSinceEpoch, previous[3])
+                devices[next].point.lat + previous[0],
+                devices[next].point.lon + previous[1],
+                devices[next].point.acc + previous[2],
+                min(devices[next].point.timestamp.millisecondsSinceEpoch, previous[3])
               ],
       );
-      location = Point(
+      point = Point(
         lat: sum[0] / tracking.devices.length,
         lon: sum[1] / tracking.devices.length,
         acc: sum[2] / tracking.devices.length,
@@ -289,14 +289,14 @@ class _TrackSimulation {
       ids.forEach(
         (id) => tracking.tracks.update(
           id,
-          (track) => track..add(devices[id].location),
-          ifAbsent: () => [devices[id].location],
+          (track) => track..add(devices[id].point),
+          ifAbsent: () => [devices[id].point],
         ),
       );
       history = List.of(
         tracking.history,
         growable: true,
-      )..add(location);
+      )..add(point);
     } else {
       history = tracking.history;
     }
@@ -310,7 +310,7 @@ class _TrackSimulation {
 
     // Limit history and tracks to maximum 10 items each (prevent unbounded memory usage in long-running app)
     return tracking.cloneWith(
-        location: location,
+        point: point,
         distance: distance ?? 0.0,
         speed: speed ?? 0.0,
         effort: effort ?? Duration.zero,

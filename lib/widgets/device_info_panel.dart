@@ -88,20 +88,20 @@ class DeviceInfoPanel extends StatelessWidget {
                 context,
                 label: "UTM",
                 icon: Icons.my_location,
-                location: device?.location,
-                formatter: (point) => toUTM(device?.location, prefix: "", empty: "Ingen"),
+                location: device?.point,
+                formatter: (point) => toUTM(device?.point, prefix: "", empty: "Ingen"),
               ),
               buildCopyableLocation(
                 context,
                 label: "Desimalgrader (DD)",
                 icon: Icons.my_location,
-                location: device?.location,
-                formatter: (point) => toDD(device?.location, prefix: "", empty: "Ingen"),
+                location: device?.point,
+                formatter: (point) => toDD(device?.point, prefix: "", empty: "Ingen"),
               ),
             ],
           ),
         ),
-        if (device?.location != null)
+        if (device?.point != null)
           Expanded(
             flex: 2,
             child: Column(
@@ -109,10 +109,10 @@ class DeviceInfoPanel extends StatelessWidget {
               children: <Widget>[
                 IconButton(
                   icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: device?.location == null
+                  onPressed: device?.point == null
                       ? null
                       : () {
-                          navigateToLatLng(context, toLatLng(device?.location));
+                          navigateToLatLng(context, toLatLng(device?.point));
                           _onComplete(device);
                         },
                 ),

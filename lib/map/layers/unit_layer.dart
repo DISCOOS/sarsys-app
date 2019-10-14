@@ -64,9 +64,9 @@ class UnitLayer extends MapPlugin {
             (unit) => tracks[unit.tracking].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((unit) => tracks[unit.tracking]?.location?.isNotEmpty == true)
+        .where((unit) => tracks[unit.tracking]?.point?.isNotEmpty == true)
         .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
-        .where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].location)));
+        .where((unit) => bounds.contains(toLatLng(tracks[unit.tracking].point)));
     return options.bloc.isEmpty
         ? Container()
         : Stack(
@@ -75,9 +75,7 @@ class UnitLayer extends MapPlugin {
               if (options.showTail)
                 ...units.map((unit) => _buildTrack(context, size, options, map, unit, tracks[unit.tracking])).toList(),
               if (options.showLabels)
-                ...units
-                    .map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].location))
-                    .toList(),
+                ...units.map((unit) => _buildLabel(context, options, map, unit, tracks[unit.tracking].point)).toList(),
               ...units.map((unit) => _buildPoint(context, options, map, unit, tracks[unit.tracking])).toList(),
             ],
           );
@@ -97,7 +95,7 @@ class UnitLayer extends MapPlugin {
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
 
-    final color = toPointStatusColor(tracking.location);
+    final color = toPointStatusColor(tracking.point);
 
     return CustomPaint(
       painter: LineStringPainter(
@@ -112,7 +110,7 @@ class UnitLayer extends MapPlugin {
 
   Widget _buildPoint(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Tracking tracking) {
     var size = options.size;
-    var location = tracking.location;
+    var location = tracking.point;
     var pos = map.project(toLatLng(location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
@@ -128,7 +126,7 @@ class UnitLayer extends MapPlugin {
           opacity: options.opacity,
           outer: pixelRadius,
           centerColor: toUnitStatusColor(unit.status),
-          color: toPointStatusColor(tracking.location),
+          color: toPointStatusColor(tracking.point),
         ),
       ),
     );

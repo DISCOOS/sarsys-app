@@ -15,12 +15,12 @@ import 'package:random_string/random_string.dart';
 class DeviceBuilder {
   static createDeviceAsJson(String id, DeviceType type, String number, Point center) {
     final rnd = math.Random();
-    final location = createPointAsJson(center.lat + nextDouble(rnd, 0.03), center.lon + nextDouble(rnd, 0.03));
+    final point = createPointAsJson(center.lat + nextDouble(rnd, 0.03), center.lon + nextDouble(rnd, 0.03));
     return json.decode('{'
         '"id": "$id",'
         '"type": "${enumName(type)}",'
         '"number": "$number",'
-        '"location": $location'
+        '"point": $point'
         '}');
   }
 
@@ -68,7 +68,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       // Only generate devices for automatically generated incidents
       if (incidentId.startsWith('a:') && devices.isEmpty) {
         int number = 6114000;
-        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp?.point;
         devices.addAll({
           for (var i = 1; i <= count; i++)
             "$incidentId:d:$i": _simulate(
@@ -94,13 +94,13 @@ class DeviceServiceMock extends Mock implements DeviceService {
         devices = deviceRepo.putIfAbsent(incidentId, () => {});
       }
       var device = _.positionalArguments[1] as Device;
-      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp;
+      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp?.point;
       device = _simulate(
         Device(
           id: "$incidentId:d:${randomAlphaNumeric(8).toLowerCase()}",
           type: device.type,
           status: device.status,
-          location: device.location ??
+          point: device.point ??
               Point.now(
                 center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
                 center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
@@ -152,7 +152,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   ) {
     final simulation = _DeviceSimulation(
       id: device.id,
-      location: device.location,
+      point: device.point,
       steps: 16,
       delta: DeviceBuilder.nextDouble(rnd, 0.02),
     );
@@ -175,9 +175,9 @@ class DeviceServiceMock extends Mock implements DeviceService {
       devices.take(min).forEach((device) {
         if (simulations.containsKey(device.id)) {
           var simulation = simulations[device.id];
-          var location = simulation.progress(rnd.nextDouble() * 20.0);
+          var point = simulation.progress(rnd.nextDouble() * 20.0);
           device = device.cloneWith(
-            location: location,
+            point: point,
           );
           devicesMap[incidentId].update(
             device.id,
@@ -197,43 +197,43 @@ class _DeviceSimulation {
   final double delta;
 
   int current;
-  Point location;
+  Point point;
 
-  _DeviceSimulation({this.delta, this.id, this.location, this.steps}) : current = 0;
+  _DeviceSimulation({this.delta, this.id, this.point, this.steps}) : current = 0;
 
   Point progress(double acc) {
     var leg = ((current / 4.0) % 4 + 1).toInt();
     switch (leg) {
       case 1:
-        location = Point.now(
-          location.lat,
-          location.lon + delta / steps,
+        point = Point.now(
+          point.lat,
+          point.lon + delta / steps,
           acc: acc,
         );
         break;
       case 2:
-        location = Point.now(
-          location.lat - delta / steps,
-          location.lon,
+        point = Point.now(
+          point.lat - delta / steps,
+          point.lon,
           acc: acc,
         );
         break;
       case 3:
-        location = Point.now(
-          location.lat,
-          location.lon - delta / steps,
+        point = Point.now(
+          point.lat,
+          point.lon - delta / steps,
           acc: acc,
         );
         break;
       case 4:
-        location = Point.now(
-          location.lat + delta / steps,
-          location.lon,
+        point = Point.now(
+          point.lat + delta / steps,
+          point.lon,
           acc: acc,
         );
         break;
     }
     current = (current + 1) % steps;
-    return location;
+    return point;
   }
 }

@@ -82,19 +82,19 @@ class UnitInfoPanel extends StatelessWidget {
                 label: "UTM",
                 icon: Icons.my_location,
                 tracking: tracking,
-                formatter: (point) => toUTM(tracking?.location, prefix: "", empty: "Ingen"),
+                formatter: (point) => toUTM(tracking?.point, prefix: "", empty: "Ingen"),
               ),
               buildCopyableLocation(
                 context,
                 label: "Desimalgrader (DD)",
                 icon: Icons.my_location,
                 tracking: tracking,
-                formatter: (point) => toDD(tracking?.location, prefix: "", empty: "Ingen"),
+                formatter: (point) => toDD(tracking?.point, prefix: "", empty: "Ingen"),
               ),
             ],
           ),
         ),
-        if (tracking?.location != null)
+        if (tracking?.point != null)
           Expanded(
             flex: 2,
             child: Column(
@@ -102,10 +102,10 @@ class UnitInfoPanel extends StatelessWidget {
               children: <Widget>[
                 IconButton(
                   icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: tracking?.location == null
+                  onPressed: tracking?.point == null
                       ? null
                       : () {
-                          navigateToLatLng(context, toLatLng(tracking?.location));
+                          navigateToLatLng(context, toLatLng(tracking?.point));
                           _onComplete();
                         },
                 ),
@@ -128,12 +128,12 @@ class UnitInfoPanel extends StatelessWidget {
       context: context,
       label: label,
       icon: Icon(icon),
-      value: formatter(tracking?.location),
-      onTap: tracking?.location == null
+      value: formatter(tracking?.point),
+      onTap: tracking?.point == null
           ? null
           : () => jumpToPoint(
                 context,
-                center: tracking?.location,
+                center: tracking?.point,
               ),
       onMessage: onMessage,
       onComplete: _onComplete,

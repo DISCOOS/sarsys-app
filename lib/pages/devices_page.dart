@@ -202,7 +202,7 @@ class DevicesPageState extends State<DevicesPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             CircleAvatar(
-              backgroundColor: toPointStatusColor(device.location),
+              backgroundColor: toPointStatusColor(device.point),
               child: Icon(MdiIcons.cellphoneBasic),
               foregroundColor: Colors.white,
             ),
@@ -224,13 +224,13 @@ class DevicesPageState extends State<DevicesPage> {
             SizedBox(width: 4.0),
             Chip(
               label: Text("${units[device.id]?.name ?? ""} "
-                  "${formatSince(device?.location?.timestamp, defaultValue: "ingen")}"),
+                  "${formatSince(device?.point?.timestamp, defaultValue: "ingen")}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(device?.location),
+                color: toPointStatusColor(device?.point),
               ),
             ),
             if (widget.withActions && _userBloc?.user?.isCommander == true)

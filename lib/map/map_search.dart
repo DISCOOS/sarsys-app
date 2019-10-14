@@ -353,13 +353,13 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         var matches = [
           _AddressLookup(
             context: context,
-            point: incident.ipp,
+            point: incident.ipp?.point,
             title: "${incident.name} > IPP",
             icon: Icons.location_on,
           ),
           _AddressLookup(
             context: context,
-            point: incident.meetup,
+            point: incident.meetup?.point,
             title: "${incident.name} > Oppmøte",
             icon: Icons.location_on,
           ),
@@ -381,10 +381,10 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
                 _prepare(unit.searchable).contains(match) ||
                 // Search in devices tracked with this unit
                 tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-            .where((unit) => tracks[unit.tracking].location != null)
+            .where((unit) => tracks[unit.tracking].point != null)
             .map((unit) => _AddressLookup(
                   context: context,
-                  point: tracks[unit.tracking].location,
+                  point: tracks[unit.tracking].point,
                   title: unit.name,
                   icon: Icons.group,
                 )),

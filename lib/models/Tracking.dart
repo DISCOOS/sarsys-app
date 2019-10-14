@@ -10,7 +10,7 @@ part 'Tracking.g.dart';
 class Tracking extends Equatable {
   final String id;
   final TrackingStatus status;
-  final Point location;
+  final Point point;
   final double distance;
   final double speed;
   final Duration effort;
@@ -21,14 +21,14 @@ class Tracking extends Equatable {
   Tracking({
     @required this.id,
     @required this.status,
-    this.location,
+    this.point,
     this.distance,
     this.speed,
     this.effort,
     this.devices,
     this.history,
     this.tracks = const {},
-  }) : super([id, status, location, distance, devices, history, tracks]);
+  }) : super([id, status, point, distance, devices, history, tracks]);
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
@@ -43,7 +43,7 @@ class Tracking extends Equatable {
   Tracking cloneWith({
     List<String> devices,
     TrackingStatus status,
-    Point location,
+    Point point,
     double distance,
     double speed,
     Duration effort,
@@ -54,7 +54,7 @@ class Tracking extends Equatable {
       id: this.id,
       status: status ?? this.status,
       devices: devices ?? this.devices,
-      location: location ?? this.location,
+      point: point ?? this.point,
       distance: distance ?? this.distance,
       speed: speed ?? this.speed,
       effort: effort ?? this.effort,

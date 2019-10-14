@@ -1,6 +1,6 @@
 import 'package:SarSys/models/Author.dart';
+import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -17,8 +17,8 @@ class Incident extends Equatable {
   final DateTime occurred;
   final String justification;
   final List<TalkGroup> talkgroups;
-  final Point ipp;
-  final Point meetup;
+  final Location ipp;
+  final Location meetup;
   final Passcodes passcodes;
   final String reference;
   final Author created;
@@ -90,8 +90,8 @@ class Incident extends Equatable {
       justification: clone.justification ?? this.justification,
       reference: clone.reference ?? this.reference,
       passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
-      ipp: clone.ipp ?? Point.fromJson(this.ipp.toJson()),
-      meetup: clone.meetup ?? Point.fromJson(this.meetup.toJson()),
+      ipp: clone.ipp ?? Location.fromJson(this.ipp.toJson()),
+      meetup: clone.meetup ?? Location.fromJson(this.meetup.toJson()),
       talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg?.toJson())).toList(),
     );
   }
