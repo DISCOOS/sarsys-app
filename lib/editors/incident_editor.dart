@@ -11,6 +11,7 @@ import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/point_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -320,97 +321,25 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
-  Widget _buildLocationField() => FormBuilderCustomField(
+  Widget _buildLocationField() => PointField(
         attribute: 'ipp',
-        formField: FormField<Point>(
-          enabled: true,
-          initialValue: widget?.incident?.ipp ?? widget.ipp,
-          builder: (FormFieldState<Point> field) => GestureDetector(
-            child: InputDecorator(
-              decoration: InputDecoration(
-                filled: true,
-                labelText: "IPP",
-                suffixIcon: Icon(Icons.map),
-                contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
-                errorText: field.hasError ? field.errorText : null,
-              ),
-              child: field.value == null
-                  ? Text('Velg IPP', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
-                  : Text(
-                      toUTM(field.value),
-                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
-                    ),
-            ),
-            onTap: () => _selectLocation(field),
-          ),
-        ),
-        valueTransformer: (point) => point.toJson(),
-        validators: [
-          FormBuilderValidators.required(errorText: 'IPP må oppgis'),
-        ],
+        initialValue: widget?.incident?.ipp ?? widget.ipp,
+        labelText: "IPP",
+        hintText: 'Velg IPP',
+        errorText: 'IPP må oppgis',
+        controller: widget.controller,
+        onChanged: (point) => setState(() {}),
       );
 
-  void _selectLocation(FormFieldState<Point> field) async {
-    final selected = await showDialog(
-      context: context,
-      builder: (context) => PointEditor(
-        field.value,
-        title: 'Velg IPP',
-        incident: widget.incident,
-        controller: widget.controller,
-      ),
-    );
-    if (selected != field.value) {
-      field.didChange(selected);
-      setState(() {});
-    }
-  }
-
-  Widget _buildMeetupField() => FormBuilderCustomField(
+  Widget _buildMeetupField() => PointField(
         attribute: 'meetup',
-        formField: FormField<Point>(
-          enabled: true,
-          initialValue: widget?.incident?.meetup,
-          builder: (FormFieldState<Point> field) => GestureDetector(
-            child: InputDecorator(
-              decoration: InputDecoration(
-                filled: true,
-                labelText: "Oppmøtested",
-                suffixIcon: Icon(Icons.map),
-                contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
-                errorText: field.hasError ? field.errorText : null,
-              ),
-              child: field.value == null
-                  ? Text('Velg oppmøtested', style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
-                  : Text(
-                      toUTM(field.value),
-                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
-                    ),
-            ),
-            onTap: () => _selectMeetup(field),
-          ),
-        ),
-        valueTransformer: (point) => point.toJson(),
-        validators: [
-          FormBuilderValidators.required(errorText: 'Oppmøtested må oppgis'),
-        ],
-      );
-
-  void _selectMeetup(FormFieldState<Point> field) async {
-    final selected = await showDialog(
-      context: context,
-      builder: (context) => PointEditor(
-        field.value,
-        title: 'Velg oppmøtested',
-        incident: widget.incident,
+        initialValue: widget?.incident?.meetup ?? widget.ipp,
+        labelText: "Oppmøtested",
+        hintText: 'Velg oppmøtested',
+        errorText: 'Oppmøtested må oppgis',
         controller: widget.controller,
-      ),
-    );
-    if (selected != field.value) {
-      field.didChange(selected);
-      setState(() {});
-    }
-  }
+        onChanged: (point) => setState(() {}),
+      );
 
   Widget _buildTGField() {
     final style = Theme.of(context).textTheme.caption;
