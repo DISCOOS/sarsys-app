@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -14,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';
 
 class DeviceTool extends MapTool with MapSelectable<Device> {
+  final User user;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
   final bool Function() _active;
@@ -23,6 +25,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
 
   DeviceTool(
     this.bloc, {
+    @required this.user,
     @required bool Function() active,
     this.onMessage,
   }) : _active = active;
@@ -87,6 +90,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                 device: device,
                 tracking: tracking,
                 onMessage: onMessage,
+                withActions: user.isCommander,
                 organization: AssetsService().fetchOrganization(Defaults.orgId),
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),

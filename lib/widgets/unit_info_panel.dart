@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -12,8 +11,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UnitInfoPanel extends StatelessWidget {
   final Unit unit;
+  final Tracking tracking;
+  final Iterable<Device> devices;
   final bool withHeader;
-  final TrackingBloc bloc;
+  final bool withActions;
   final ValueChanged<Unit> onChanged;
   final ValueChanged<Unit> onComplete;
   final MessageCallback onMessage;
@@ -21,17 +22,18 @@ class UnitInfoPanel extends StatelessWidget {
   const UnitInfoPanel({
     Key key,
     @required this.unit,
-    @required this.bloc,
+    @required this.tracking,
+    @required this.devices,
     @required this.onMessage,
     this.onChanged,
     this.onComplete,
     this.withHeader = true,
+    this.withActions = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    final tracking = bloc.tracking[unit.tracking];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -45,11 +47,12 @@ class UnitInfoPanel extends StatelessWidget {
         Divider(),
         _buildEffortInfo(context, tracking),
         Divider(),
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-          child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
-        ),
-        _buildActions(context, unit)
+        if (withActions)
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+            child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
+          ),
+        if (withActions) _buildActions(context, unit)
       ],
     );
   }
@@ -181,7 +184,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Apparater",
             icon: Icon(MdiIcons.cellphoneBasic),
-            value: tracking?.devices?.map((id) => bloc.deviceBloc.devices[id]?.number)?.join(', ') ?? '',
+            value: devices?.map((device) => device.number)?.join(', ') ?? '',
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -227,55 +230,63 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, Unit unit) {
-    List<Device> devices = bloc.getDevicesFromTrackingId(unit.tracking);
+  Widget _buildActions(BuildContext context, Unit unit1) {
     return ButtonBarTheme(
       // make buttons use the appropriate styles for cards
       child: ButtonBar(
         alignment: MainAxisAlignment.start,
         children: <Widget>[
-          FlatButton(
-            child: Text(
-              "ENDRE",
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              final result = await editUnit(context, unit);
-              if (result.isRight() && result.toIterable().first != unit) {
-                final actual = result.toIterable().first;
-                _onMessage("${actual.name} er oppdatert");
-                _onChanged(actual);
-              }
-              _onComplete();
-            },
-          ),
-          if (devices.isNotEmpty)
-            FlatButton(
+          Tooltip(
+            message: "Endre enhet",
+            child: FlatButton(
               child: Text(
-                "FJERN APPARATER",
+                "ENDRE",
                 textAlign: TextAlign.center,
               ),
               onPressed: () async {
-                final result = await removeFromUnit(context, unit, devices: devices);
-                if (result.isRight()) {
-                  _onMessage("Apparater fjernet fra ${unit.name}");
-                  _onChanged(unit);
+                final result = await editUnit(context, unit);
+                if (result.isRight() && result.toIterable().first != unit) {
+                  final actual = result.toIterable().first;
+                  _onMessage("${actual.name} er oppdatert");
+                  _onChanged(actual);
                 }
                 _onComplete();
               },
             ),
-          FlatButton(
-            child: Text(
-              "OPPLØS",
-              textAlign: TextAlign.center,
+          ),
+          if (devices.isNotEmpty)
+            Tooltip(
+              message: "Fjern apparater fra enhet",
+              child: FlatButton(
+                child: Text(
+                  "FJERN",
+                  textAlign: TextAlign.center,
+                ),
+                onPressed: () async {
+                  final result = await removeFromUnit(context, unit, devices: devices);
+                  if (result.isRight()) {
+                    _onMessage("Apparater fjernet fra ${unit.name}");
+                    _onChanged(unit);
+                  }
+                  _onComplete();
+                },
+              ),
             ),
-            onPressed: () async {
-              final result = await retireUnit(context, unit);
-              if (result.isRight()) {
-                _onMessage("${unit.name} er oppløst");
-              }
-              _onComplete();
-            },
+          Tooltip(
+            message: "Oppløs enhet og avslutt sporing",
+            child: FlatButton(
+              child: Text(
+                "OPPLØS",
+                textAlign: TextAlign.center,
+              ),
+              onPressed: () async {
+                final result = await retireUnit(context, unit);
+                if (result.isRight()) {
+                  _onMessage("${unit.name} er oppløst");
+                }
+                _onComplete();
+              },
+            ),
           ),
         ],
       ),

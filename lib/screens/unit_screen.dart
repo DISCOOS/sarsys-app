@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:async/async.dart';
@@ -40,6 +41,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   final _controller = IncidentMapController();
 
   Unit _unit;
+  UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
@@ -57,6 +59,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
@@ -87,6 +90,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.data is Unit) _unit = snapshot.data;
+                final tracking = _trackingBloc.tracking[_unit.tracking];
                 return snapshot.hasData
                     ? ListView(
                         padding: const EdgeInsets.all(UnitScreen.SPACING),
@@ -95,8 +99,10 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                           _buildMapTile(context, _unit),
                           UnitInfoPanel(
                             unit: _unit,
-                            bloc: _trackingBloc,
+                            tracking: tracking,
+                            devices: tracking.devices.map((id) => _trackingBloc.deviceBloc.devices[id]),
                             withHeader: false,
+                            withActions: _userBloc.user.isCommander,
                             onMessage: showMessage,
                             onChanged: (unit) => setState(() {
                               _unit = unit;

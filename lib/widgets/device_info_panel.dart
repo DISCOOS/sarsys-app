@@ -11,9 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class DeviceInfoPanel extends StatelessWidget {
-  final bool withHeader;
   final Unit unit;
   final Device device;
+  final bool withHeader;
+  final bool withActions;
   final Tracking tracking;
   final MessageCallback onMessage;
   final ValueChanged<Device> onChanged;
@@ -29,6 +30,7 @@ class DeviceInfoPanel extends StatelessWidget {
     this.onChanged,
     this.onComplete,
     this.withHeader = true,
+    this.withActions = true,
     this.organization,
   }) : super(key: key);
 
@@ -52,11 +54,12 @@ class DeviceInfoPanel extends StatelessWidget {
         Divider(),
         _buildEffortInfo(context),
         Divider(),
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-          child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
-        ),
-        _buildActions(context, unit)
+        if (withActions)
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+            child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
+          ),
+        if (withActions) _buildActions(context, unit)
       ],
     );
   }
@@ -292,84 +295,99 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  FlatButton _buildAttachAction(BuildContext context, Unit unit) {
-    return FlatButton(
+  Widget _buildAttachAction(BuildContext context, Unit unit) {
+    return Tooltip(
+      message: "Knytt apparat til enhet",
+      child: FlatButton(
+          child: Text(
+            'KNYTT',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await addToUnit(context, [device], unit: unit);
+            if (result.isRight()) {
+              var actual = result.toIterable().first.left;
+              _onMessage("${device.name} er tilknyttet ${actual.name}");
+              _onChanged(device);
+            }
+          }),
+    );
+  }
+
+  Widget _buildEditAction(BuildContext context) {
+    return Tooltip(
+      message: "Endre apparat",
+      child: FlatButton(
         child: Text(
-          'KNYTT',
+          'ENDRE',
           textAlign: TextAlign.center,
         ),
         onPressed: () async {
-          final result = await addToUnit(context, [device], unit: unit);
+          final result = await editDevice(context, device);
+          if (result.isRight() && result.toIterable().first != device) {
+            var actual = result.toIterable().first;
+            _onMessage("${actual.name} er oppdatert");
+            _onChanged(actual);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildCreateAction(BuildContext context) {
+    return Tooltip(
+      message: "Opprett enhet fra apparat",
+      child: FlatButton(
+        child: Text(
+          'OPPRETT',
+          textAlign: TextAlign.center,
+        ),
+        onPressed: () async {
+          final result = await createUnit(context, devices: [device]);
           if (result.isRight()) {
-            var actual = result.toIterable().first.left;
+            final actual = result.toIterable().first;
             _onMessage("${device.name} er tilknyttet ${actual.name}");
             _onChanged(device);
           }
-        });
-  }
-
-  FlatButton _buildEditAction(BuildContext context) {
-    return FlatButton(
-      child: Text(
-        'ENDRE',
-        textAlign: TextAlign.center,
+        },
       ),
-      onPressed: () async {
-        final result = await editDevice(context, device);
-        if (result.isRight() && result.toIterable().first != device) {
-          var actual = result.toIterable().first;
-          _onMessage("${actual.name} er oppdatert");
-          _onChanged(actual);
-        }
-      },
     );
   }
 
-  FlatButton _buildCreateAction(BuildContext context) {
-    return FlatButton(
-      child: Text(
-        'OPPRETT',
-        textAlign: TextAlign.center,
-      ),
-      onPressed: () async {
-        final result = await createUnit(context, devices: [device]);
-        if (result.isRight()) {
-          final actual = result.toIterable().first;
-          _onMessage("${device.name} er tilknyttet ${actual.name}");
-          _onChanged(device);
-        }
-      },
+  Widget _buildRemoveAction(BuildContext context, Unit unit) {
+    return Tooltip(
+      message: "Fjern apparat fra enhet",
+      child: FlatButton(
+          child: Text(
+            'FJERN',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await removeFromUnit(context, unit, devices: [device]);
+            if (result.isRight()) {
+              _onMessage("${device.name} er fjernet fra ${unit.name}");
+              _onChanged(device);
+            }
+          }),
     );
   }
 
-  FlatButton _buildRemoveAction(BuildContext context, Unit unit) {
-    return FlatButton(
-        child: Text(
-          'FJERN',
-          textAlign: TextAlign.center,
-        ),
-        onPressed: () async {
-          final result = await removeFromUnit(context, unit, devices: [device]);
-          if (result.isRight()) {
-            _onMessage("${device.name} er fjernet fra ${unit.name}");
-            _onChanged(device);
-          }
-        });
-  }
-
-  FlatButton _buildReleaseAction(BuildContext context) {
-    return FlatButton(
-        child: Text(
-          'FRIGI',
-          textAlign: TextAlign.center,
-        ),
-        onPressed: () async {
-          final result = await detachDevice(context, device);
-          if (result.isRight()) {
-            _onMessage("${device.name} er frigitt");
-            _onComplete();
-          }
-        });
+  Widget _buildReleaseAction(BuildContext context) {
+    return Tooltip(
+      message: "Frigi apparat fra hendelse",
+      child: FlatButton(
+          child: Text(
+            'FRIGI',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await detachDevice(context, device);
+            if (result.isRight()) {
+              _onMessage("${device.name} er frigitt");
+              _onComplete();
+            }
+          }),
+    );
   }
 
   void _onMessage(String message) {

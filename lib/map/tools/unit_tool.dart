@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';
 
 class UnitTool extends MapTool with MapSelectable<Unit> {
+  final User user;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
   final bool includeRetired;
@@ -24,6 +26,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
 
   UnitTool(
     this.bloc, {
+    @required this.user,
     @required bool Function() active,
     this.onMessage,
     this.includeRetired = false,
@@ -75,6 +78,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
+        final tracking = bloc.tracking[unit.tracking];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
@@ -84,8 +88,10 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
             child: SingleChildScrollView(
               child: UnitInfoPanel(
                 unit: unit,
-                bloc: bloc,
+                tracking: tracking,
+                devices: tracking.devices.map((id) => bloc.deviceBloc.devices[id]),
                 onMessage: onMessage,
+                withActions: user.isCommander,
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
               ),

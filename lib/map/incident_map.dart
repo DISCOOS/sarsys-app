@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
@@ -213,6 +214,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   // Prevent location updates after dispose
   bool _disposed = false;
 
+  UserBloc _userBloc;
   AppConfigBloc _configBloc;
   TrackingBloc _trackingBloc;
   IncidentBloc _incidentBloc;
@@ -240,6 +242,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
@@ -281,11 +284,13 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           ),
           UnitTool(
             _trackingBloc,
+            user: _userBloc.user,
             active: () => _useLayers.contains(UNIT_LAYER),
             onMessage: widget.onMessage,
           ),
           DeviceTool(
             _trackingBloc,
+            user: _userBloc.user,
             active: () => _useLayers.contains(DEVICE_LAYER),
             onMessage: widget.onMessage,
           ),
