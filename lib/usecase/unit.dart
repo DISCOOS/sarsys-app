@@ -192,6 +192,25 @@ Future<Tracking> _handleTracking(
   return tracking;
 }
 
+Future<dartz.Either<bool, UnitState>> deployUnit(
+  BuildContext context,
+  Unit unit,
+) =>
+    DeployUnit()(UnitParams(
+      context,
+      unit: unit,
+    ));
+
+class DeployUnit extends UseCase<bool, UnitState, UnitParams> {
+  @override
+  Future<dartz.Either<bool, UnitState>> call(params) async {
+    return await _transitionUnit(
+      params,
+      UnitStatus.Deployed,
+    );
+  }
+}
+
 Future<dartz.Either<bool, UnitState>> retireUnit(
   BuildContext context,
   Unit unit,
@@ -204,15 +223,22 @@ Future<dartz.Either<bool, UnitState>> retireUnit(
 class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
   @override
   Future<dartz.Either<bool, UnitState>> call(params) async {
-    assert(params.data != null, "Unit must be supplied");
-    var response = await prompt(
-      params.context,
-      "Oppløs ${params.data.name}",
-      "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
+    return await _transitionUnit(
+      params,
+      UnitStatus.Retired,
+      action: "Oppløs ${params.data.name}",
+      message: "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
     );
-    if (!response) return dartz.Left(false);
-
-    await params.bloc.update(params.data.cloneWith(status: UnitStatus.Retired));
-    return dartz.Right(params.bloc.currentState);
   }
+}
+
+Future<dartz.Either<bool, UnitState>> _transitionUnit(UnitParams params, UnitStatus status,
+    {String action, String message}) async {
+  assert(params.data != null, "Unit must be supplied");
+  if (action != null) {
+    var response = await prompt(params.context, action, message);
+    if (!response) return dartz.Left(false);
+  }
+  await params.bloc.update(params.data.cloneWith(status: status));
+  return dartz.Right(params.bloc.currentState);
 }

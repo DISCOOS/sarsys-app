@@ -127,7 +127,7 @@ class UnitsPageState extends State<UnitsPage> {
             child: _buildUnitTile(unit, status, tracking),
             secondaryActions: <Widget>[
               _buildEditAction(context, unit),
-              if (tracking?.status != TrackingStatus.Closed) _buildCloseAction(context, unit),
+              if (tracking?.status != TrackingStatus.Closed) _buildTransitionAction(context, unit),
             ],
           )
         : _buildUnitTile(unit, status, tracking);
@@ -202,13 +202,23 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  IconSlideAction _buildCloseAction(BuildContext context, Unit unit) {
-    return IconSlideAction(
-      caption: 'OPPLØS',
-      color: Colors.red,
-      icon: Icons.delete,
-      onTap: () async => await retireUnit(context, unit),
-    );
+  IconSlideAction _buildTransitionAction(BuildContext context, Unit unit) {
+    switch (unit.status) {
+      case UnitStatus.Mobilized:
+        return IconSlideAction(
+          caption: 'DEPLOYER',
+          color: Colors.green,
+          icon: Icons.send,
+          onTap: () async => await deployUnit(context, unit),
+        );
+      default:
+        return IconSlideAction(
+          caption: 'OPPLØS',
+          color: Colors.red,
+          icon: Icons.delete,
+          onTap: () async => await retireUnit(context, unit),
+        );
+    }
   }
 
   void showFilterSheet(BuildContext context) {
