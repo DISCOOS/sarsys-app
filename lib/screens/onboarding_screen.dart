@@ -49,6 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backText: Text('TILBAKE'),
       nextText: Text('NESTE'),
       onTapDoneButton: () async {
+        await BlocProvider.of<UserBloc>(context).logout();
         final configBloc = BlocProvider.of<AppConfigBloc>(context);
         await configBloc.update(
           onboarding: _onboard,

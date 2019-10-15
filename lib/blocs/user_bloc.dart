@@ -62,7 +62,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   Future<bool> logout() {
-    return _dispatch<bool>(_assertAuthenticated(UnsetUser()));
+    return _dispatch<bool>(UnsetUser());
   }
 
   UserCommand _assertAuthenticated(UserCommand command) {
