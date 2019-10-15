@@ -1,10 +1,12 @@
 import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/point_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -12,9 +14,11 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 class DeviceEditor extends StatefulWidget {
   final Device device;
   final DeviceType type;
+  final PermissionController controller;
 
   const DeviceEditor({
     Key key,
+    @required this.controller,
     this.device,
     this.type = DeviceType.Tetra,
   }) : super(key: key);
@@ -108,6 +112,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
                         buildTwoCellRow(_buildDistrictField(snapshot.data), _buildFunctionField(snapshot.data),
                             spacing: SPACING),
                       ],
+                      SizedBox(height: SPACING),
+                      _buildPointField(),
                       SizedBox(height: MediaQuery.of(context).size.height / 2),
                     ],
                   ),
@@ -276,12 +282,18 @@ class _DeviceEditorState extends State<DeviceEditor> {
     bool update = true,
     Organization org,
   }) {
-    if (alias.isEmpty) alias = null;
-    if (number.isEmpty) number = null;
-    _editedName = alias ?? number ?? _defaultName();
-    _editedDistrict = org == null ? _editedDistrict : org.toDistrict(number);
-    _editedFunction = org == null ? _editedFunction : org.toFunction(number);
-    if (update) setState(() {});
+    if (org == null)
+      _organization.then(
+        (org) => _onNumberOrAliasEdit(alias, number, update: update, org: org),
+      );
+    else {
+      if (alias.isEmpty) alias = null;
+      if (number.isEmpty) number = null;
+      _editedName = alias ?? number ?? _defaultName();
+      _editedDistrict = org == null ? _editedDistrict : org.toDistrict(number);
+      _editedFunction = org == null ? _editedFunction : org.toFunction(number);
+      if (update) setState(() {});
+    }
   }
 
   Widget _buildTypeField(Organization org) {
@@ -308,6 +320,16 @@ class _DeviceEditorState extends State<DeviceEditor> {
       },
     );
   }
+
+  Widget _buildPointField() => PointField(
+        attribute: 'point',
+        initialValue: widget?.device?.point,
+        labelText: "Siste posissjon",
+        hintText: 'Velg posisjon',
+        errorText: 'Posisjon må oppgis',
+        controller: widget.controller,
+        onChanged: (point) => setState(() {}),
+      );
 
   void _submit(BuildContext context) async {
     if (_formKey.currentState.validate()) {
