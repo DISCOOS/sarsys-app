@@ -270,7 +270,7 @@ class _UnitEditorState extends State<UnitEditor> {
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'phone',
-      maxLength: 8,
+      maxLength: 12,
       maxLengthEnforced: true,
       controller: _phoneController,
       decoration: InputDecoration(
@@ -289,10 +289,12 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-      keyboardType: TextInputType.phone,
+      keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
         _validatePhone,
+        FormBuilderValidators.numeric(errorText: "Kun talltegn"),
+        FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn"),
       ],
     );
   }
