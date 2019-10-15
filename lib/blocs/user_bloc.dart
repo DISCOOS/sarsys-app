@@ -82,9 +82,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         yield UserAuthenticating(command.data);
         yield await _authenticate(command);
       } else if (command is UnsetUser) {
-        if (_user != null) {
-          yield await _logout(command);
-        }
+        yield await _logout(command);
       } else if (command is AuthorizeUser) {
         if (_user != null) {
           yield _authorize(command);
