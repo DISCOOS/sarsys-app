@@ -46,13 +46,14 @@ class UnitInfoPanel extends StatelessWidget {
         _buildTrackingInfo(context, tracking),
         Divider(),
         _buildEffortInfo(context, tracking),
-        Divider(),
-        if (withActions)
+        if (withActions) ...[
+          Divider(),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
             child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
           ),
-        if (withActions) _buildActions(context, unit)
+          _buildActions(context, unit)
+        ]
       ],
     );
   }

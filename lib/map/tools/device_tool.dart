@@ -90,7 +90,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                 device: device,
                 tracking: tracking,
                 onMessage: onMessage,
-                withActions: user.isCommander,
+                withActions: user?.isCommander == true,
                 organization: AssetsService().fetchOrganization(Defaults.orgId),
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),

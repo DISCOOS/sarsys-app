@@ -104,7 +104,7 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
                                 .map((id) => _trackingBloc.deviceBloc.devices[id])
                                 .where((unit) => unit != null),
                             withHeader: false,
-                            withActions: _userBloc.user.isCommander,
+                            withActions: _userBloc.user?.isCommander,
                             onMessage: showMessage,
                             onChanged: (unit) => setState(() {
                               _unit = unit;

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/assets_service.dart';
@@ -41,6 +42,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   final _controller = IncidentMapController();
 
   Device _device;
+  UserBloc _userBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
@@ -58,6 +60,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
@@ -101,6 +104,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
                       tracking: _trackingBloc.tracking[unit?.tracking],
                       organization: AssetsService().fetchOrganization(Defaults.orgId),
                       withHeader: false,
+                      withActions: _userBloc.user?.isCommander == true,
                       onMessage: showMessage,
                       onChanged: (device) => setState(() => _device = device),
                       onComplete: (_) => Navigator.pop(context),
