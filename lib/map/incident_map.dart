@@ -233,7 +233,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void didUpdateWidget(IncidentMap old) {
     super.didUpdateWidget(old);
     if (widget != old) {
-      _setup();
+      _setup(
+        wasZoom: widget.zoom != old.zoom,
+        wasBaseMap: widget.url != old.url,
+      );
       _init();
     }
   }
@@ -261,9 +264,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
   }
 
-  void _setup() {
-    _zoom = widget.zoom ?? Defaults.zoom;
-    _currentBaseMap = widget.url;
+  void _setup({bool wasZoom = true, bool wasBaseMap = true}) {
+    if (wasZoom) _zoom = widget.zoom ?? Defaults.zoom;
+    if (wasBaseMap) _currentBaseMap = widget.url;
     _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
