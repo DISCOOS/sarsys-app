@@ -294,7 +294,9 @@ class _UnitEditorState extends State<UnitEditor> {
       validators: [
         _validatePhone,
         FormBuilderValidators.numeric(errorText: "Kun talltegn"),
-        FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn"),
+        (value) => emptyAsNull(value) != null
+            ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
+            : null,
       ],
     );
   }
