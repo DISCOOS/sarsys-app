@@ -64,7 +64,7 @@ class _MapControlsState extends State<MapControls> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final active = widget._controller?.tools?.firstWhere((tool) => tool.active()) != null;
+    final active = widget._controller?.tools?.firstWhere((tool) => tool.active(), orElse: () => null) != null;
     final count = ((height - (active ? PADDING : PADDING + FAB)) / (SIZE + SPACING)).floor();
 
     final visible = widget._controls

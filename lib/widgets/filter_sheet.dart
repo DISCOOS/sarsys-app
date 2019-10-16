@@ -7,6 +7,9 @@ class FilterSheet<T> extends StatefulWidget {
   final void Function(Set<T> selected) onChanged;
   final Iterable<FilterData<T>> Function() onBuild;
 
+  final String identifier;
+  final PageStorageBucket bucket;
+
   const FilterSheet({
     Key key,
     @required this.initial,
@@ -14,6 +17,8 @@ class FilterSheet<T> extends StatefulWidget {
     @required this.onChanged,
     this.title = "Vis",
     this.allowNone = false,
+    this.bucket,
+    this.identifier,
   }) : super(key: key);
 
   @override
@@ -26,7 +31,7 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
   @override
   void initState() {
     super.initState();
-    _selected.addAll(widget.initial);
+    _selected.addAll(_read());
   }
 
   @override
@@ -68,12 +73,35 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
   }
 
   void _onFilterChanged(T name, bool value) {
-    if (value) {
-      _selected.add(name);
-    } else if (widget.allowNone || _selected.length > 1) {
-      _selected.remove(name);
+    setState(() {
+      if (value) {
+        _selected.add(name);
+      } else if (widget.allowNone || _selected.length > 1) {
+        _selected.remove(name);
+      }
+      widget.onChanged(_write());
+    });
+  }
+
+  Set<T> _read() {
+    return widget.bucket == null
+        ? widget.initial
+        : widget.bucket.readState(
+              context,
+              identifier: widget.identifier,
+            ) as Set<T> ??
+            widget.initial;
+  }
+
+  Set<T> _write() {
+    if (widget.bucket != null) {
+      widget.bucket.writeState(
+        context,
+        _selected,
+        identifier: widget.identifier,
+      );
     }
-    widget.onChanged(Set<T>.from(_selected));
+    return Set<T>.from(_selected);
   }
 }
 

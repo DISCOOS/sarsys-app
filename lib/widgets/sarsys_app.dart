@@ -19,9 +19,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SarSysApp extends StatefulWidget {
   final Key navigatorKey;
+  final PageStorageBucket bucket;
   final BlocProviderController controller;
   const SarSysApp({
     Key key,
+    @required this.bucket,
     @required this.controller,
     @required this.navigatorKey,
   }) : super(key: key);
@@ -118,14 +120,20 @@ class _SarSysAppState extends State<SarSysApp> {
   }
 
   WidgetBuilder _toChecked(Widget child) {
-    return (context) => PermissionChecker(
-          key: _checkerKey,
-          child: child,
+    return (context) => PageStorage(
+          bucket: widget.bucket,
+          child: PermissionChecker(
+            key: _checkerKey,
+            child: child,
+          ),
         );
   }
 
   WidgetBuilder _toUnchecked(Widget child) {
-    return (context) => child;
+    return (context) => PageStorage(
+          bucket: widget.bucket,
+          child: child,
+        );
   }
 
   Widget _toMapScreen(RouteSettings settings) {

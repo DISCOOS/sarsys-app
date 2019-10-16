@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
@@ -172,6 +173,14 @@ String toCallsign(String prefix, int number) {
   // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
   final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
   return "$prefix ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
+}
+
+T readState<T>(BuildContext context, String identifier, T defaultValue) =>
+    PageStorage.of(context).readState(context, identifier: identifier) ?? defaultValue;
+
+T writeState<T>(BuildContext context, String identifier, T value) {
+  PageStorage.of(context).writeState(context, value, identifier: identifier);
+  return value;
 }
 
 class Pair<L, R> {

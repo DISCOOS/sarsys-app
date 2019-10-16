@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
 void main() async {
-  final Client client = Client();
+  final client = Client();
+  final bucket = PageStorageBucket();
 
   // Required since provider need access to service bindings prior to calling 'runApp()'
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +18,7 @@ void main() async {
   final controller = BlocProviderController.build(client, demo: DemoParams(true));
   controller.init().then((_) {
     runAppWithCatcher(
-      _buildApp(controller),
+      _buildApp(controller, bucket),
       controller.configProvider.bloc.config.sentryDns,
     );
 //  runApp(_buildApp(controller));
@@ -30,17 +31,21 @@ void main() async {
 }
 
 // Build SarSys app with given controller
-Widget _buildApp(BlocProviderController controller) {
+Widget _buildApp(BlocProviderController controller, PageStorageBucket bucket) {
   // Listen for controller build events
   controller.onChange.listen(
-    (state) => _rebuildApp(state, controller),
+    (state) => _rebuildApp(state, controller, bucket),
   );
 
   // Called once upon start of app
-  return _createApp(controller);
+  return _createApp(controller, bucket);
 }
 
-Future _rebuildApp(BlocProviderControllerState state, BlocProviderController controller) async {
+Future _rebuildApp(
+  BlocProviderControllerState state,
+  BlocProviderController controller,
+  PageStorageBucket bucket,
+) async {
   if (BlocProviderControllerState.Built == state) {
     // Wait for user and config blocs to initialize
     await controller.init().catchError(
@@ -49,16 +54,20 @@ Future _rebuildApp(BlocProviderControllerState state, BlocProviderController con
 
     // Restart app to rehydrate with blocs just built and initiated
     runAppWithCatcher(
-      _createApp(controller),
+      _createApp(controller, bucket),
       controller.configProvider.bloc.config.sentryDns,
     );
   }
 }
 
 // Convenience method for creating SarSysApp
-SarSysApp _createApp(BlocProviderController controller) {
+Widget _createApp(
+  BlocProviderController controller,
+  PageStorageBucket bucket,
+) {
   return SarSysApp(
     key: UniqueKey(),
+    bucket: bucket,
     controller: controller,
     navigatorKey: Catcher.navigatorKey,
   );

@@ -33,7 +33,8 @@ class DevicesPage extends StatefulWidget {
 }
 
 class DevicesPageState extends State<DevicesPage> {
-  Set<DeviceType> _filter = DeviceType.values.toSet();
+  static const DEVICE_FILTER = "devices_filter";
+  Set<DeviceType> _filter;
 
   UserBloc _userBloc;
   UnitBloc _unitBloc;
@@ -47,6 +48,7 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void initState() {
     super.initState();
+    _filter = readState(context, DEVICE_FILTER, DeviceType.values.toSet());
     _init();
   }
 
@@ -269,6 +271,8 @@ class DevicesPageState extends State<DevicesPage> {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<DeviceType>(
         initial: _filter,
+        identifier: DEVICE_FILTER,
+        bucket: PageStorage.of(context),
         onBuild: () => DeviceType.values.map(
           (type) => FilterData(
             key: type,

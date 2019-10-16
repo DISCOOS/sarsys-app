@@ -170,6 +170,7 @@ class IncidentMap extends StatefulWidget {
 }
 
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
+  static const MAP_FILTER = "map_filter";
   static const POI_LAYER = "Interessepunkt";
   static const UNIT_LAYER = "Enheter";
   static const DEVICE_LAYER = "Apparater";
@@ -267,8 +268,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _setup({bool wasZoom = true, bool wasBaseMap = true}) {
     if (wasZoom) _zoom = widget.zoom ?? Defaults.zoom;
-    if (wasBaseMap) _currentBaseMap = widget.url;
-    _useLayers = _withLayers()..retainAll(widget.showLayers.toSet());
+    if (wasBaseMap) _currentBaseMap = readState(context, "base_map", widget.url);
+    _useLayers = readState(context, MAP_FILTER, _withLayers()..retainAll(widget.showLayers.toSet()));
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
     }
@@ -725,7 +726,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
             () {
-              _currentBaseMap = map.url;
+              _currentBaseMap = writeState(context, "base_map", map.url);
               _setLayerOptions();
               Navigator.pop(context);
             },
@@ -756,6 +757,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       builder: (BuildContext bc) => FilterSheet<String>(
         allowNone: true,
         initial: _useLayers,
+        identifier: MAP_FILTER,
+        bucket: PageStorage.of(context),
         onBuild: () => _withLayers().map(
           (name) => FilterData(
             key: name,

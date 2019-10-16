@@ -22,19 +22,30 @@ class IncidentsScreen extends Screen<IncidentsScreenState> {
 }
 
 class IncidentsScreenState extends ScreenState {
+  static const INCIDENTS_FILTER = "incidents_filter";
+
   UserBloc _userBloc;
 
-  Set<IncidentStatus> _filter = Set.of([
-    IncidentStatus.Registered,
-    IncidentStatus.Handling,
-    IncidentStatus.Other,
-  ]);
+  Set<IncidentStatus> _filter;
 
   IncidentsScreenState()
       : super(
           title: "Velg hendelse",
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
+
+  @override
+  void initState() {
+    super.initState();
+    _filter = readState(
+        context,
+        INCIDENTS_FILTER,
+        Set.of([
+          IncidentStatus.Registered,
+          IncidentStatus.Handling,
+          IncidentStatus.Other,
+        ]));
+  }
 
   @override
   void didChangeDependencies() {
@@ -88,6 +99,8 @@ class IncidentsScreenState extends ScreenState {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<IncidentStatus>(
         initial: _filter,
+        identifier: INCIDENTS_FILTER,
+        bucket: PageStorage.of(context),
         onBuild: () => IncidentStatus.values.map((status) => FilterData(
               key: status,
               title: translateIncidentStatus(status),

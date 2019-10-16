@@ -36,12 +36,19 @@ class UnitsPage extends StatefulWidget {
 }
 
 class UnitsPageState extends State<UnitsPage> {
+  static const UNITS_FILTER = "units_filter";
   UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
-  Set<UnitStatus> _filter = UnitStatus.values.toSet()..remove(UnitStatus.Retired);
+  Set<UnitStatus> _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _filter = readState(context, UNITS_FILTER, UnitStatus.values.toSet()..remove(UnitStatus.Retired));
+  }
 
   @override
   void didChangeDependencies() {
@@ -228,6 +235,8 @@ class UnitsPageState extends State<UnitsPage> {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<UnitStatus>(
         initial: _filter,
+        identifier: UNITS_FILTER,
+        bucket: PageStorage.of(context),
         onBuild: () => UnitStatus.values.map(
           (status) => FilterData(
             key: status,
