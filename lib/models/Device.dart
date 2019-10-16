@@ -68,14 +68,14 @@ class Device extends Equatable {
   }
 }
 
-enum DeviceType { Tetra, Mobile, APRS, AIS }
+enum DeviceType { Tetra, App, APRS, AIS }
 
 String translateDeviceType(DeviceType type) {
   switch (type) {
     case DeviceType.Tetra:
       return "Nødnett";
-    case DeviceType.Mobile:
-      return "Mobiltelefon";
+    case DeviceType.App:
+      return "App";
     default:
       return enumName(type);
   }
