@@ -126,7 +126,7 @@ class _CommandScreenState extends State<CommandScreen> {
           IconButton(
             icon: Icon(Icons.filter_list),
             onPressed: () async {
-              _unitsKey.currentState.showFilterSheet(context);
+              _unitsKey.currentState.showFilterSheet();
             },
           )
         ];
@@ -141,7 +141,7 @@ class _CommandScreenState extends State<CommandScreen> {
           IconButton(
             icon: Icon(Icons.filter_list),
             onPressed: () async {
-              _devicesKey.currentState.showFilterSheet(context);
+              _devicesKey.currentState.showFilterSheet();
             },
           )
         ];

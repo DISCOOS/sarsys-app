@@ -30,6 +30,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/layers/my_location.dart';
+import 'package:SarSys/widgets/filter_sheet.dart';
 
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/material.dart';
@@ -749,43 +750,20 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _showLayerSheet(context) {
-    final title = Theme.of(context).textTheme.title;
-    final filter = Theme.of(context).textTheme.subtitle;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext bc) {
-        return StatefulBuilder(builder: (context, state) {
-          return DraggableScrollableSheet(
-              expand: false,
-              builder: (context, controller) {
-                return ListView(
-                  padding: EdgeInsets.only(bottom: 56.0),
-                  children: <Widget>[
-                    ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.only(left: 16.0, right: 0),
-                      title: Text("Vis", style: title),
-                      trailing: FlatButton(
-                        child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    Divider(),
-                    ..._withLayers()
-                        .map((layer) => ListTile(
-                            dense: true,
-                            title: Text(layer, style: filter),
-                            trailing: Switch(
-                              value: _useLayers.contains(layer),
-                              onChanged: (value) => _onFilterChanged(layer, value, state),
-                            )))
-                        .toList(),
-                  ],
-                );
-              });
-        });
-      },
+      builder: (BuildContext bc) => FilterSheet<String>(
+        allowNone: true,
+        initial: _useLayers,
+        onBuild: () => _withLayers().map(
+          (name) => FilterData(
+            key: name,
+            title: name,
+          ),
+        ),
+        onChanged: (Set<String> selected) => setState(() => _useLayers = selected),
+      ),
     );
   }
 
@@ -798,17 +776,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     if (!widget.withDevices) layers.remove(DEVICE_LAYER);
     if (!widget.withTracking) layers.remove(TRACKING_LAYER);
     return layers.toSet();
-  }
-
-  void _onFilterChanged(String layer, bool value, StateSetter update) {
-    update(() {
-      if (value) {
-        _useLayers.add(layer);
-      } else {
-        _useLayers.remove(layer);
-      }
-      setState(() {});
-    });
   }
 
   void _onMoveProgress() {

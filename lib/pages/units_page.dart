@@ -8,6 +8,7 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,7 +41,7 @@ class UnitsPageState extends State<UnitsPage> {
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
-  List<UnitStatus> _filter = UnitStatus.values.toList()..remove(UnitStatus.Retired);
+  Set<UnitStatus> _filter = UnitStatus.values.toSet()..remove(UnitStatus.Retired);
 
   @override
   void didChangeDependencies() {
@@ -221,60 +222,21 @@ class UnitsPageState extends State<UnitsPage> {
     }
   }
 
-  void showFilterSheet(BuildContext context) {
-    final style = Theme.of(context).textTheme.title;
+  void showFilterSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext bc) {
-        return StatefulBuilder(builder: (context, state) {
-          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
-          return DraggableScrollableSheet(
-              expand: false,
-              builder: (context, controller) {
-                return ListView(
-                  padding: EdgeInsets.only(bottom: 56.0),
-                  children: <Widget>[
-                    ListTile(
-                      dense: landscape,
-                      contentPadding: EdgeInsets.only(left: 16.0, right: 0),
-                      title: Text("Vis", style: style),
-                      trailing: FlatButton(
-                        child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
-                        onPressed: () => setState(
-                          () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ),
-                    ),
-                    Divider(),
-                    ...UnitStatus.values
-                        .map((status) => ListTile(
-                            dense: landscape,
-                            title: Text(translateUnitStatus(status), style: style),
-                            trailing: Switch(
-                              value: _filter.contains(status),
-                              onChanged: (value) => _onFilterChanged(status, value, state),
-                            )))
-                        .toList(),
-                  ],
-                );
-              });
-        });
-      },
+      builder: (BuildContext bc) => FilterSheet<UnitStatus>(
+        initial: _filter,
+        onBuild: () => UnitStatus.values.map(
+          (status) => FilterData(
+            key: status,
+            title: translateUnitStatus(status),
+          ),
+        ),
+        onChanged: (Set<UnitStatus> selected) => setState(() => _filter = selected),
+      ),
     );
-  }
-
-  void _onFilterChanged(UnitStatus status, bool value, StateSetter update) {
-    update(() {
-      if (value) {
-        _filter.add(status);
-      } else if (_filter.length > 1) {
-        _filter.remove(status);
-      }
-      setState(() {});
-    });
   }
 }
 
