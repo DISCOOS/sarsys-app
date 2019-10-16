@@ -5,6 +5,8 @@ class FilterSheet<T> extends StatefulWidget {
   final bool allowNone;
   final Iterable<T> initial;
   final void Function(Set<T> selected) onChanged;
+  final T Function(dynamic value) onRead;
+  final dynamic Function(T value) onWrite;
   final Iterable<FilterData<T>> Function() onBuild;
 
   final String identifier;
@@ -19,10 +21,21 @@ class FilterSheet<T> extends StatefulWidget {
     this.allowNone = false,
     this.bucket,
     this.identifier,
+    this.onRead,
+    this.onWrite,
   }) : super(key: key);
 
   @override
   _FilterSheetState<T> createState() => _FilterSheetState<T>();
+
+  static Set<T> read<T>(BuildContext context, String identifier, {Set<T> defaultValue, T onRead(e)}) =>
+      (PageStorage.of(context)?.readState(
+        context,
+        identifier: identifier,
+      ) as List)
+          ?.map((e) => onRead != null ? onRead(e) : e as T)
+          ?.toSet() ??
+      defaultValue;
 }
 
 class _FilterSheetState<T> extends State<FilterSheet<T>> {
@@ -86,10 +99,12 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
   Set<T> _read() {
     return widget.bucket == null
         ? widget.initial
-        : widget.bucket.readState(
+        : (widget.bucket.readState(
               context,
               identifier: widget.identifier,
-            ) as Set<T> ??
+            ) as List)
+                ?.map((e) => widget.onRead != null ? widget.onRead(e) : e as T)
+                ?.toSet() ??
             widget.initial;
   }
 
@@ -97,7 +112,7 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
     if (widget.bucket != null) {
       widget.bucket.writeState(
         context,
-        _selected,
+        _selected.map((e) => widget.onWrite != null ? widget.onWrite(e) : e).toList(),
         identifier: widget.identifier,
       );
     }

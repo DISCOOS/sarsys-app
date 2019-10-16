@@ -44,8 +44,6 @@ import 'package:wakelock/wakelock.dart';
 typedef ToolCallback = void Function(MapTool tool);
 
 class IncidentMap extends StatefulWidget {
-  static const BASEMAP = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
-
   final String url;
   final bool offline;
   final bool interactive;
@@ -89,7 +87,7 @@ class IncidentMap extends StatefulWidget {
     this.incident,
     this.fitBounds,
     this.fitBoundOptions = FIT_BOUNDS_OPTIONS,
-    this.url = BASEMAP,
+    this.url = Defaults.baseMap,
     this.offline = false,
     this.interactive = true,
     this.withPOIs = true,
@@ -170,7 +168,8 @@ class IncidentMap extends StatefulWidget {
 }
 
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
-  static const MAP_FILTER = "map_filter";
+  static const FILTER = "map_filter";
+  static const BASE_MAP = "base_map";
   static const POI_LAYER = "Interessepunkt";
   static const UNIT_LAYER = "Enheter";
   static const DEVICE_LAYER = "Apparater";
@@ -268,8 +267,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _setup({bool wasZoom = true, bool wasBaseMap = true}) {
     if (wasZoom) _zoom = widget.zoom ?? Defaults.zoom;
-    if (wasBaseMap) _currentBaseMap = readState(context, "base_map", widget.url);
-    _useLayers = readState(context, MAP_FILTER, _withLayers()..retainAll(widget.showLayers.toSet()));
+    if (wasBaseMap) _currentBaseMap = readState(context, BASE_MAP, defaultValue: widget.url);
+    _useLayers = FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet()));
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
     }
@@ -726,7 +725,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
             () {
-              _currentBaseMap = writeState(context, "base_map", map.url);
+              _currentBaseMap = writeState(context, BASE_MAP, map.url);
               _setLayerOptions();
               Navigator.pop(context);
             },
@@ -757,7 +756,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       builder: (BuildContext bc) => FilterSheet<String>(
         allowNone: true,
         initial: _useLayers,
-        identifier: MAP_FILTER,
+        identifier: FILTER,
         bucket: PageStorage.of(context),
         onBuild: () => _withLayers().map(
           (name) => FilterData(

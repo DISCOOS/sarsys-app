@@ -6,15 +6,15 @@ import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/permission_checker.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/login_screen.dart';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SarSysApp extends StatefulWidget {
@@ -32,8 +32,30 @@ class SarSysApp extends StatefulWidget {
   _SarSysAppState createState() => _SarSysAppState();
 }
 
-class _SarSysAppState extends State<SarSysApp> {
+class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   final _checkerKey = UniqueKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused) {
+      writeAppState(widget.bucket);
+    } else if (state == AppLifecycleState.resumed) {
+      readAppState(widget.bucket);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,14 +186,20 @@ class _SarSysAppState extends State<SarSysApp> {
   }
 
   Widget _toHome(BlocProviderController providers) {
-    if (providers.configProvider.bloc.config.onboarding)
-      return OnboardingScreen();
-    else if (providers.userProvider.bloc.isAuthenticated)
-      return PermissionChecker(
+    Widget child;
+    if (providers.configProvider.bloc.config.onboarding) {
+      child = OnboardingScreen();
+    } else if (providers.userProvider.bloc.isAuthenticated) {
+      child = PermissionChecker(
         key: _checkerKey,
         child: IncidentsScreen(),
       );
-    else
-      return LoginScreen();
+    } else {
+      child = LoginScreen();
+    }
+    return PageStorage(
+      bucket: widget.bucket,
+      child: child,
+    );
   }
 }

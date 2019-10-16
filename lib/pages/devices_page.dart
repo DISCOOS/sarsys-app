@@ -33,7 +33,7 @@ class DevicesPage extends StatefulWidget {
 }
 
 class DevicesPageState extends State<DevicesPage> {
-  static const DEVICE_FILTER = "devices_filter";
+  static const FILTER = "devices_filter";
   Set<DeviceType> _filter;
 
   UserBloc _userBloc;
@@ -48,7 +48,7 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void initState() {
     super.initState();
-    _filter = readState(context, DEVICE_FILTER, DeviceType.values.toSet());
+    _filter = FilterSheet.read(context, FILTER, defaultValue: DeviceType.values.toSet(), onRead: _onRead);
     _init();
   }
 
@@ -271,8 +271,10 @@ class DevicesPageState extends State<DevicesPage> {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<DeviceType>(
         initial: _filter,
-        identifier: DEVICE_FILTER,
+        identifier: FILTER,
         bucket: PageStorage.of(context),
+        onRead: (value) => _onRead(value),
+        onWrite: (value) => enumName(value),
         onBuild: () => DeviceType.values.map(
           (type) => FilterData(
             key: type,
@@ -283,6 +285,8 @@ class DevicesPageState extends State<DevicesPage> {
       ),
     );
   }
+
+  DeviceType _onRead(value) => DeviceType.values.firstWhere((e) => value == enumName(e));
 }
 
 class DeviceSearch extends SearchDelegate<Device> {

@@ -1,9 +1,16 @@
-import 'dart:collection';
+import 'dart:io';
 import 'dart:math';
+import 'dart:convert';
+import 'dart:collection';
 
+import 'package:SarSys/map/incident_map.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/pages/devices_page.dart';
+import 'package:SarSys/pages/units_page.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:intl/intl.dart';
@@ -175,12 +182,49 @@ String toCallsign(String prefix, int number) {
   return "$prefix ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
 }
 
-T readState<T>(BuildContext context, String identifier, T defaultValue) =>
-    PageStorage.of(context).readState(context, identifier: identifier) ?? defaultValue;
+T readState<T>(BuildContext context, String identifier, {T defaultValue}) =>
+    PageStorage.of(context)?.readState(context, identifier: identifier) ?? defaultValue;
 
 T writeState<T>(BuildContext context, String identifier, T value) {
-  PageStorage.of(context).writeState(context, value, identifier: identifier);
+  PageStorage.of(context)?.writeState(context, value, identifier: identifier);
   return value;
+}
+
+Future<void> readAppState(PageStorageBucket bucket, {BuildContext context}) async {
+  final json = readFromFile(await getApplicationDocumentsDirectory(), "app_state.json");
+  if (json != null) {
+    bucket.writeState(context, json[UnitsPageState.FILTER], identifier: UnitsPageState.FILTER);
+    bucket.writeState(context, json[IncidentMapState.FILTER], identifier: IncidentMapState.FILTER);
+    bucket.writeState(context, json[DevicesPageState.FILTER], identifier: DevicesPageState.FILTER);
+    bucket.writeState(context, json[IncidentMapState.BASE_MAP], identifier: IncidentMapState.BASE_MAP);
+  }
+}
+
+Map<String, dynamic> readFromFile(Directory dir, String fileName) {
+  var values;
+  File file = new File(dir.path + "/" + fileName);
+  if (file.existsSync()) {
+    values = json.decode(file.readAsStringSync());
+  }
+  return values;
+}
+
+Future<void> writeAppState(PageStorageBucket bucket, {BuildContext context}) async {
+  final json = {
+    UnitsPageState.FILTER: bucket.readState(context, identifier: UnitsPageState.FILTER),
+    IncidentMapState.FILTER: bucket.readState(context, identifier: IncidentMapState.FILTER),
+    DevicesPageState.FILTER: bucket.readState(context, identifier: DevicesPageState.FILTER),
+    IncidentMapState.BASE_MAP: bucket.readState(context, identifier: IncidentMapState.BASE_MAP),
+  };
+  writeToFile(json, await getApplicationDocumentsDirectory(), "app_state.json");
+}
+
+void writeToFile(Map<String, dynamic> content, Directory dir, String fileName) {
+  File file = new File(dir.path + "/" + fileName);
+  if (!file.existsSync()) {
+    file.createSync();
+  }
+  file.writeAsStringSync(json.encode(content));
 }
 
 class Pair<L, R> {

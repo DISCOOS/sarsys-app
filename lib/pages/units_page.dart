@@ -36,7 +36,7 @@ class UnitsPage extends StatefulWidget {
 }
 
 class UnitsPageState extends State<UnitsPage> {
-  static const UNITS_FILTER = "units_filter";
+  static const FILTER = "units_filter";
   UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
@@ -47,7 +47,12 @@ class UnitsPageState extends State<UnitsPage> {
   @override
   void initState() {
     super.initState();
-    _filter = readState(context, UNITS_FILTER, UnitStatus.values.toSet()..remove(UnitStatus.Retired));
+    _filter = FilterSheet.read(
+      context,
+      FILTER,
+      defaultValue: UnitStatus.values.toSet()..remove(UnitStatus.Retired),
+      onRead: _onRead,
+    );
   }
 
   @override
@@ -235,8 +240,10 @@ class UnitsPageState extends State<UnitsPage> {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<UnitStatus>(
         initial: _filter,
-        identifier: UNITS_FILTER,
+        identifier: FILTER,
         bucket: PageStorage.of(context),
+        onRead: (value) => _onRead(value),
+        onWrite: (value) => enumName(value),
         onBuild: () => UnitStatus.values.map(
           (status) => FilterData(
             key: status,
@@ -247,6 +254,8 @@ class UnitsPageState extends State<UnitsPage> {
       ),
     );
   }
+
+  UnitStatus _onRead(value) => UnitStatus.values.firstWhere((e) => value == enumName(e));
 }
 
 class UnitAvatar extends StatelessWidget {

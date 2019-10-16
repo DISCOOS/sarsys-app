@@ -22,7 +22,7 @@ class IncidentsScreen extends Screen<IncidentsScreenState> {
 }
 
 class IncidentsScreenState extends ScreenState {
-  static const INCIDENTS_FILTER = "incidents_filter";
+  static const FILTER = "incidents_filter";
 
   UserBloc _userBloc;
 
@@ -37,14 +37,13 @@ class IncidentsScreenState extends ScreenState {
   @override
   void initState() {
     super.initState();
-    _filter = readState(
-        context,
-        INCIDENTS_FILTER,
-        Set.of([
+    _filter = FilterSheet.read(context, FILTER,
+        defaultValue: Set.of([
           IncidentStatus.Registered,
           IncidentStatus.Handling,
           IncidentStatus.Other,
-        ]));
+        ]),
+        onRead: _onRead);
   }
 
   @override
@@ -99,8 +98,10 @@ class IncidentsScreenState extends ScreenState {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<IncidentStatus>(
         initial: _filter,
-        identifier: INCIDENTS_FILTER,
+        identifier: FILTER,
         bucket: PageStorage.of(context),
+        onRead: (value) => _onRead(value),
+        onWrite: (value) => enumName(value),
         onBuild: () => IncidentStatus.values.map((status) => FilterData(
               key: status,
               title: translateIncidentStatus(status),
@@ -109,6 +110,8 @@ class IncidentsScreenState extends ScreenState {
       ),
     );
   }
+
+  IncidentStatus _onRead(value) => IncidentStatus.values.firstWhere((e) => value == enumName(e));
 }
 
 class IncidentsPage extends StatefulWidget {

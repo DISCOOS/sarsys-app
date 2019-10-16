@@ -1,3 +1,4 @@
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
@@ -13,6 +14,8 @@ void main() async {
 
   // Required since provider need access to service bindings prior to calling 'runApp()'
   WidgetsFlutterBinding.ensureInitialized();
+
+  await readAppState(bucket);
 
   // Build and initialize bloc provider
   final controller = BlocProviderController.build(client, demo: DemoParams(true));
