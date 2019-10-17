@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -9,7 +10,7 @@ class LoginScreen extends StatefulWidget {
   LoginScreenState createState() => new LoginScreenState();
 }
 
-class LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends RouteWriter<LoginScreen, void> {
   final _formKey = new GlobalKey<FormState>();
 
   String _username = "";

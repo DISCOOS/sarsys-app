@@ -7,12 +7,18 @@ import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/usecase/unit.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class CommandScreen extends StatefulWidget {
+  static const INCIDENT = 0;
+  static const UNITS = 1;
+  static const DEVICES = 2;
+  static const ROUTES = ["incident", "units", "devices"];
+
   final int tabIndex;
 
   CommandScreen({Key key, @required this.tabIndex}) : super(key: key);
@@ -21,19 +27,19 @@ class CommandScreen extends StatefulWidget {
   _CommandScreenState createState() => _CommandScreenState();
 }
 
-class _CommandScreenState extends State<CommandScreen> {
+class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   final _unitsKey = GlobalKey<UnitsPageState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
-  int _current;
   UserBloc _userBloc;
   IncidentBloc _incidentBloc;
 
   @override
   void initState() {
     super.initState();
-    _current = widget.tabIndex;
+    id = widget.tabIndex;
+    name = CommandScreen.ROUTES[id];
   }
 
   @override
@@ -47,7 +53,7 @@ class _CommandScreenState extends State<CommandScreen> {
   void didUpdateWidget(CommandScreen old) {
     super.didUpdateWidget(old);
     if (old.tabIndex != widget.tabIndex) {
-      _current = widget.tabIndex;
+      write(widget.tabIndex, name: CommandScreen.ROUTES[widget.tabIndex]);
     }
   }
 
@@ -71,10 +77,10 @@ class _CommandScreenState extends State<CommandScreen> {
             actions: _buildActions(incident),
             title: Text(title),
           ),
-          body: tabs[_current],
+          body: tabs[id],
           resizeToAvoidBottomInset: false,
           bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _current,
+            currentIndex: id,
             elevation: 4.0,
             selectedItemColor: Theme.of(context).colorScheme.primary,
             type: BottomNavigationBarType.fixed,
@@ -84,7 +90,7 @@ class _CommandScreenState extends State<CommandScreen> {
               BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
-              _current = index;
+              write(index, name: CommandScreen.ROUTES[index]);
             }),
           ),
           floatingActionButton: _buildFAB(),
@@ -94,20 +100,20 @@ class _CommandScreenState extends State<CommandScreen> {
   }
 
   _toName(Incident incident, {ifEmpty: "Hendelse"}) {
-    switch (_current) {
-      case 0:
-        String name = incident?.name;
+    switch (id) {
+      case CommandScreen.INCIDENT:
+        String name = incident?.name ?? "Hendelse";
         return name == null || name.isEmpty ? ifEmpty : name;
-      case 1:
+      case CommandScreen.UNITS:
         return "Enheter";
-      case 2:
+      case CommandScreen.DEVICES:
         return "Apparater";
     }
   }
 
   List<Widget> _buildActions(incident) {
-    switch (_current) {
-      case 0:
+    switch (id) {
+      case CommandScreen.INCIDENT:
         return [
           if (_userBloc?.user?.isCommander == true)
             IconButton(
@@ -115,7 +121,7 @@ class _CommandScreenState extends State<CommandScreen> {
               onPressed: () async => await editIncident(context, incident),
             )
         ];
-      case 1:
+      case CommandScreen.UNITS:
         return [
           IconButton(
             icon: Icon(Icons.search),
@@ -130,7 +136,7 @@ class _CommandScreenState extends State<CommandScreen> {
             },
           )
         ];
-      case 2:
+      case CommandScreen.DEVICES:
         return [
           IconButton(
             icon: Icon(Icons.search),
@@ -152,13 +158,13 @@ class _CommandScreenState extends State<CommandScreen> {
 
   StatelessWidget _buildFAB() {
     if (_userBloc?.user?.isCommander == true) {
-      switch (_current) {
-        case 1:
+      switch (id) {
+        case CommandScreen.UNITS:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createUnit(context),
           );
-        case 2:
+        case CommandScreen.DEVICES:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await attachDevice(context),

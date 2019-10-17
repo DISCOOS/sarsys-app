@@ -7,6 +7,7 @@ import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/permission_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
@@ -16,6 +17,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class SarSysApp extends StatefulWidget {
   final Key navigatorKey;
@@ -61,6 +63,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: widget.navigatorKey,
+      navigatorObservers: [RouteWriter.observer],
       debugShowCheckedModeBanner: false,
       title: 'SarSys',
       theme: ThemeData(
@@ -97,40 +100,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     WidgetBuilder builder;
 
     // Ensure logged in
-    if (widget.controller.userProvider.bloc.isAuthenticated) {
-      switch (settings.name) {
-        case 'login':
-          builder = _toUnchecked(LoginScreen());
-          break;
-        case 'incident':
-          builder = _toChecked(CommandScreen(tabIndex: 0));
-          break;
-        case 'unit':
-          builder = _toChecked(_toUnitScreen(settings));
-          break;
-        case 'units':
-          builder = _toChecked(CommandScreen(tabIndex: 1));
-          break;
-        case 'device':
-          builder = _toChecked(_toDeviceScreen(settings));
-          break;
-        case 'devices':
-          builder = _toChecked(CommandScreen(tabIndex: 2));
-          break;
-        case 'incidents':
-          builder = _toChecked(IncidentsScreen());
-          break;
-        case 'settings':
-          builder = _toChecked(SettingsScreen());
-          break;
-        case 'map':
-          builder = _toChecked(_toMapScreen(settings));
-          break;
-        case 'onboarding':
-          builder = _toUnchecked(OnboardingScreen());
-          break;
-      }
-    } else {
+    if (widget.controller.userProvider.bloc.isAuthenticated)
+      builder = _toBuilder(settings, _toScreen(settings));
+    else {
       final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
       builder = _toUnchecked(onboarding == true ? OnboardingScreen() : LoginScreen());
     }
@@ -139,6 +111,57 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       builder: builder,
       settings: settings,
     );
+  }
+
+  WidgetBuilder _toBuilder(RouteSettings settings, Widget child) {
+    WidgetBuilder builder;
+    switch (settings.name) {
+      case 'login':
+      case 'onboarding':
+        builder = _toUnchecked(child);
+        break;
+      default:
+        builder = _toChecked(child);
+        break;
+    }
+    return builder;
+  }
+
+  Widget _toScreen(RouteSettings settings) {
+    Widget child;
+    switch (settings.name) {
+      case 'login':
+        child = LoginScreen();
+        break;
+      case 'incident':
+        child = CommandScreen(tabIndex: 0);
+        break;
+      case 'unit':
+        child = _toUnitScreen(settings);
+        break;
+      case 'units':
+        child = CommandScreen(tabIndex: 1);
+        break;
+      case 'device':
+        child = _toDeviceScreen(settings);
+        break;
+      case 'devices':
+        child = CommandScreen(tabIndex: 2);
+        break;
+      case 'settings':
+        child = SettingsScreen();
+        break;
+      case 'map':
+        child = _toMapScreen(settings);
+        break;
+      case 'onboarding':
+        child = OnboardingScreen();
+        break;
+      default:
+        child = IncidentsScreen();
+        break;
+    }
+    return child;
   }
 
   WidgetBuilder _toChecked(Widget child) {
@@ -172,17 +195,25 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   }
 
   Widget _toUnitScreen(RouteSettings settings) {
-    final unit = settings?.arguments as Unit;
-    return UnitScreen(
-      unit: unit,
-    );
+    var unit;
+    if (settings?.arguments is Unit) {
+      unit = settings?.arguments;
+    } else if (settings?.arguments is Map) {
+      final Map<String, dynamic> route = settings?.arguments;
+      unit = widget.controller.unitProvider.bloc.units[route['id']];
+    }
+    return unit == null ? CommandScreen(tabIndex: CommandScreen.UNITS) : UnitScreen(unit: unit);
   }
 
   Widget _toDeviceScreen(RouteSettings settings) {
-    final device = settings?.arguments as Device;
-    return DeviceScreen(
-      device: device,
-    );
+    var device;
+    if (settings?.arguments is Device) {
+      device = settings?.arguments;
+    } else if (settings?.arguments is Map) {
+      final Map<String, dynamic> route = settings?.arguments;
+      device = widget.controller.deviceProvider.bloc.devices[route['id']];
+    }
+    return device == null ? CommandScreen(tabIndex: CommandScreen.DEVICES) : DeviceScreen(device: device);
   }
 
   Widget _toHome(BlocProviderController providers) {
@@ -190,9 +221,35 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (providers.configProvider.bloc.config.onboarding) {
       child = OnboardingScreen();
     } else if (providers.userProvider.bloc.isAuthenticated) {
+      final route = widget.bucket.readState(context, identifier: RouteWriter.NAME);
+      if (route != null) {
+        if (route['incident'] != null) {
+          final id = route['incident'];
+          providers.incidentProvider.bloc.select(id);
+        }
+        bool isUnset = providers.incidentProvider.bloc.isUnset;
+        child = _toScreen(
+          RouteSettings(
+            name: isUnset ? 'incidents' : route['name'],
+            isInitialRoute: true,
+            arguments: isUnset ? null : route,
+          ),
+        );
+      } else if (providers.incidentProvider.bloc.isUnset) {
+        child = IncidentsScreen();
+      } else {
+        final incident = providers.incidentProvider.bloc.current;
+        final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+        final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
+        final fitBounds = LatLngBounds(ipp, meetup);
+        child = MapScreen(
+          incident: incident,
+          fitBounds: fitBounds,
+        );
+      }
       child = PermissionChecker(
         key: _checkerKey,
-        child: IncidentsScreen(),
+        child: child,
       );
     } else {
       child = LoginScreen();

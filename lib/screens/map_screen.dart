@@ -20,13 +20,19 @@ class MapScreen extends StatefulWidget {
   final LatLngBounds fitBounds;
   final FitBoundsOptions fitBoundOptions;
 
-  const MapScreen({Key key, this.center, this.fitBounds, this.fitBoundOptions, this.incident}) : super(key: key);
+  const MapScreen({
+    Key key,
+    this.center,
+    this.fitBounds,
+    this.fitBoundOptions,
+    this.incident,
+  }) : super(key: key);
 
   @override
   MapScreenState createState() => MapScreenState();
 }
 
-class MapScreenState extends State<MapScreen> {
+class MapScreenState extends RouteWriter<MapScreen, String> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _mapController = IncidentMapController();
 

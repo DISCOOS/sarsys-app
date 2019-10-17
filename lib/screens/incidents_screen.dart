@@ -21,7 +21,7 @@ class IncidentsScreen extends Screen<IncidentsScreenState> {
   IncidentsScreenState createState() => IncidentsScreenState();
 }
 
-class IncidentsScreenState extends ScreenState {
+class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
   static const FILTER = "incidents_filter";
 
   UserBloc _userBloc;

@@ -8,6 +8,7 @@ class AboutScreen extends StatefulWidget {
   _AboutScreenState createState() => _AboutScreenState();
 }
 
+/// Screen state which records route to PageStorage
 class _AboutScreenState extends State<AboutScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 

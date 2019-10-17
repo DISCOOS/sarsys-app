@@ -43,6 +43,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Get current incident
   Incident get current => _incidents[this._given];
 
+  /// Get incident from id
+  Incident at(String id) => _incidents[id];
+
   /// Get incidents
   List<Incident> get incidents => UnmodifiableListView<Incident>(_incidents.values);
 

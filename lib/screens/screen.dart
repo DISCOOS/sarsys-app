@@ -1,3 +1,4 @@
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +8,7 @@ abstract class Screen<S extends ScreenState> extends StatefulWidget {
   S createState();
 }
 
-abstract class ScreenState<T extends StatefulWidget> extends State<T> {
+abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T> {
   final String title;
   final bool withDrawer;
 

@@ -36,7 +36,7 @@ class DeviceScreen extends Screen<_DeviceScreenState> {
   _DeviceScreenState createState() => _DeviceScreenState(device);
 }
 
-class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderStateMixin {
+class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerProviderStateMixin {
   _DeviceScreenState(Device device) : super(title: "${device.name}", withDrawer: false);
 
   final _controller = IncidentMapController();
@@ -54,6 +54,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen> with TickerProviderSt
   @override
   void initState() {
     super.initState();
+    writeEnabled = false;
+    id = widget?.device?.id;
     _device = widget.device;
   }
 

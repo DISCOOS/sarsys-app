@@ -9,13 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
 void main() async {
-  final client = Client();
-  final bucket = PageStorageBucket();
-
   // Required since provider need access to service bindings prior to calling 'runApp()'
   WidgetsFlutterBinding.ensureInitialized();
 
-  await readAppState(bucket);
+  final client = Client();
+  final bucket = await readAppState(PageStorageBucket());
 
   // Build and initialize bloc provider
   final controller = BlocProviderController.build(client, demo: DemoParams(true));

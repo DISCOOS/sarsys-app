@@ -35,7 +35,7 @@ class UnitScreen extends Screen<_UnitScreenState> {
   _UnitScreenState createState() => _UnitScreenState(unit);
 }
 
-class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateMixin {
+class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProviderStateMixin {
   _UnitScreenState(Unit unit) : super(title: "${unit.name}", withDrawer: false);
 
   final _controller = IncidentMapController();
@@ -53,7 +53,9 @@ class _UnitScreenState extends ScreenState<UnitScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+    writeEnabled = false;
     _unit = widget.unit;
+    id = widget?.unit?.id;
   }
 
   @override
