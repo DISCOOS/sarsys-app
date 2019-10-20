@@ -10,12 +10,13 @@ Device _$DeviceFromJson(Map<String, dynamic> json) {
   return Device(
       id: json['id'] as String,
       type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
-      status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
       alias: json['alias'] as String,
       number: json['number'] as String,
       point: json['point'] == null
           ? null
-          : Point.fromJson(json['point'] as Map<String, dynamic>));
+          : Point.fromJson(json['point'] as Map<String, dynamic>),
+      manual: json['manual'] as bool,
+      status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']));
 }
 
 Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
@@ -24,7 +25,8 @@ Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'status': _$DeviceStatusEnumMap[instance.status],
       'number': instance.number,
       'alias': instance.alias,
-      'point': instance.point?.toJson()
+      'point': instance.point?.toJson(),
+      'manual': instance.manual
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

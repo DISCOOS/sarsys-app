@@ -244,7 +244,7 @@ class DeviceInfoPanel extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Spores av",
+            label: "Knyttet til",
             icon: Icon(Icons.group),
             value: unit?.name ?? personnel?.formal ?? "Ingen",
             onMessage: onMessage,
@@ -298,24 +298,27 @@ class DeviceInfoPanel extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, Unit unit) {
-    return ButtonBarTheme(
-      // make buttons use the appropriate styles for cards
-      child: ButtonBar(
-        alignment: MainAxisAlignment.start,
-        children: <Widget>[
-          _buildEditAction(context),
-          if (unit != null)
-            _buildRemoveAction(context, unit)
-          else ...[
-            _buildCreateAction(context),
-            _buildAttachAction(context, unit),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ButtonBarTheme(
+        // make buttons use the appropriate styles for cards
+        child: ButtonBar(
+          alignment: MainAxisAlignment.start,
+          children: <Widget>[
+            _buildEditAction(context),
+            if (unit != null)
+              _buildRemoveAction(context, unit)
+            else ...[
+              _buildCreateAction(context),
+              _buildAttachAction(context, unit),
+            ],
+            if (device.manual) _buildDeleteAction(context),
           ],
-          _buildReleaseAction(context),
-        ],
-      ),
-      data: ButtonBarThemeData(
-        layoutBehavior: ButtonBarLayoutBehavior.constrained,
-        buttonPadding: EdgeInsets.all(8.0),
+        ),
+        data: ButtonBarThemeData(
+          layoutBehavior: ButtonBarLayoutBehavior.constrained,
+          buttonPadding: EdgeInsets.all(0.0),
+        ),
       ),
     );
   }
@@ -397,18 +400,20 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildReleaseAction(BuildContext context) {
+  Widget _buildDeleteAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
     return Tooltip(
-      message: "Frigi apparat fra hendelse",
+      message: "Slett apparat lagt til manuelt",
       child: FlatButton(
           child: Text(
-            'FRIGI',
+            'SLETT',
             textAlign: TextAlign.center,
+            style: button.copyWith(color: Colors.red),
           ),
           onPressed: () async {
-            final result = await detachDevice(context, device);
+            final result = await deleteDevice(context, device);
             if (result.isRight()) {
-              _onMessage("${device.name} er frigitt");
+              _onMessage("${device.name} er slettet");
               _onComplete();
             }
           }),

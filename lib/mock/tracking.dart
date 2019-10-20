@@ -209,7 +209,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     return mock;
   }
 
-  static ServiceResponse _create({
+  static ServiceResponse<Tracking> _create({
     String type,
     String trackedId,
     List<String> devices,
@@ -221,11 +221,11 @@ class TrackingServiceMock extends Mock implements TrackingService {
     Map<String, String> trackedDevices,
   }) {
     if (tracked.containsKey(trackedId)) {
-      return ServiceResponse.noContent();
+      return ServiceResponse.noContent<Tracking>();
     }
 
     if (incidentId == null) {
-      return ServiceResponse.notFound(message: "Not found. $type $trackedId.");
+      return ServiceResponse.notFound<Tracking>(message: "Not found. $type $trackedId.");
     }
 
     final prefix = type.toLowerCase().substring(0, 1);
@@ -247,7 +247,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     trackedDevices.addEntries(
       tracking.devices.map((deviceId) => MapEntry(deviceId, trackingId)),
     );
-    return ServiceResponse.ok(body: tracking);
+    return ServiceResponse.ok<Tracking>(body: tracking);
   }
 
   static Iterable<MapEntry<String, Tracking>> _createTrackingPersonnel(

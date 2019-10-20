@@ -178,6 +178,7 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
   }
 }
 
+// TODO: Move to tracking service and convert to internal TrackingMessage
 Future<Tracking> _handleTracking(
   PersonnelParams params,
   Personnel personnel, {
@@ -244,4 +245,29 @@ Future<dartz.Either<bool, PersonnelState>> _transitionPersonnel(PersonnelParams 
   }
   await params.bloc.update(params.data.cloneWith(status: status));
   return dartz.Right(params.bloc.currentState);
+}
+
+/// Delete personnel
+Future<dartz.Either<bool, PersonnelState>> deletePersonnel(
+  BuildContext context,
+  Personnel personnel,
+) =>
+    DeletePersonnel()(PersonnelParams(
+      context,
+      personnel: personnel,
+    ));
+
+class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
+  @override
+  Future<dartz.Either<bool, PersonnelState>> call(params) async {
+    assert(params.data != null, "Personnel must be supplied");
+    var response = await prompt(
+      params.context,
+      "Slett ${params.data.name}",
+      "Dette vil slette alle data fra sporinger og fjerne mannskapet fra hendelsen. Vil du fortsette?",
+    );
+    if (!response) return dartz.Left(false);
+    await params.bloc.delete(params.data);
+    return dartz.Right(params.bloc.currentState);
+  }
 }

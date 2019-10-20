@@ -22,8 +22,8 @@ class DeviceService {
   }
 
   /// POST ../devices
-  Future<ServiceResponse<Device>> attach(String incidentId, Device device) async {
-    // TODO: Implement attach device
+  Future<ServiceResponse<Device>> create(String incidentId, Device device) async {
+    // TODO: Implement create device
     throw "Not implemented";
   }
 
@@ -34,8 +34,8 @@ class DeviceService {
   }
 
   /// DELETE ../devices/{deviceId}
-  Future<ServiceResponse<void>> detach(Device device) async {
-    // TODO: Implement detach device
+  Future<ServiceResponse<void>> delete(Device device) async {
+    // TODO: Implement delete device
     throw "Not implemented";
   }
 

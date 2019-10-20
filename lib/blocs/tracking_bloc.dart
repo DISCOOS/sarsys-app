@@ -65,6 +65,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
                 IncidentStatus.Cancelled,
                 IncidentStatus.Resolved,
               ].contains((state as IncidentUpdated).data.status))) {
+        // TODO: Mark as internal event, no message from tracking service expected
         dispatch(ClearTracking(_tracking.keys.toList()));
       } else if (state.isSelected()) {
         _fetch(state.data.id);
@@ -73,14 +74,37 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   void _handleDevice(DeviceState state) {
-    if (state.isDetached()) {
-      final device = (state as DeviceDetached).data;
+    if (state.isUpdated()) {
+      final device = (state as DeviceUpdated).data;
+      if (DeviceStatus.Detached == device.status) {
+        final tracking = find(device);
+        // Remove device from active list of tracked devices? This will not impact history!
+        if (tracking?.devices?.contains(device.id) == true) {
+          // TODO: Move to tracking service and convert to internal TrackingMessage
+          dispatch(
+            UpdateTracking(
+              tracking.cloneWith(
+                devices: List.from(tracking.devices)..remove(device.id),
+              ),
+            ),
+          );
+        }
+      }
+    } else if (state.isDeleted()) {
+      final device = (state as DeviceDeleted).data;
       final tracking = find(device);
-      // Remove device from active list of tracked devices? This will not impact history!
-      if (tracking != null) {
-        dispatch(UpdateTracking(tracking.cloneWith(
-          devices: List.from(tracking.devices)..remove(device.id),
-        )));
+      // Delete device data from tracking? This will impact history!
+      if (tracking != null && tracking.devices.contains(device.id)) {
+        // TODO: Move to tracking service and convert to internal TrackingMessage
+        // TODO: Recalculate history, point, effort, distance and speed after device is removed
+        dispatch(
+          UpdateTracking(
+            tracking.cloneWith(
+              devices: List.from(tracking.devices)..remove(device.id),
+              tracks: Map.from(tracking.tracks)..remove(device.id),
+            ),
+          ),
+        );
       }
     }
   }
@@ -92,19 +116,30 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       // Close tracking?
       if (tracking != null) {
         if (UnitStatus.Retired == event.data.status) {
-          dispatch(UpdateTracking(tracking.cloneWith(
-            status: TrackingStatus.Closed,
-            devices: [],
-          )));
+          // TODO: Move to tracking service and convert to internal TrackingMessage
+          dispatch(
+            UpdateTracking(
+              tracking.cloneWith(
+                status: TrackingStatus.Closed,
+                devices: [],
+              ),
+            ),
+          );
         } else if (TrackingStatus.Closed == tracking.status) {
-          dispatch(UpdateTracking(tracking.cloneWith(
-            status: TrackingStatus.Tracking,
-          )));
+          // TODO: Move to tracking service and convert to internal TrackingMessage
+          dispatch(
+            UpdateTracking(
+              tracking.cloneWith(
+                status: TrackingStatus.Tracking,
+              ),
+            ),
+          );
         }
       }
     } else if (state.isDeleted()) {
       final event = state as UnitDeleted;
       final tracking = _tracking[event.data.tracking];
+      // TODO: Move to tracking service and convert to internal TrackingMessage
       if (tracking != null) dispatch(DeleteTracking(tracking));
     }
   }
@@ -116,19 +151,30 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       // Close tracking?
       if (tracking != null) {
         if (PersonnelStatus.Retired == event.data.status) {
-          dispatch(UpdateTracking(tracking.cloneWith(
-            status: TrackingStatus.Closed,
-            devices: [],
-          )));
+          // TODO: Move to tracking service and convert to internal TrackingMessage
+          dispatch(
+            UpdateTracking(
+              tracking.cloneWith(
+                status: TrackingStatus.Closed,
+                devices: [],
+              ),
+            ),
+          );
         } else if (TrackingStatus.Closed == tracking.status) {
-          dispatch(UpdateTracking(tracking.cloneWith(
-            status: TrackingStatus.Tracking,
-          )));
+          // TODO: Move to tracking service and convert to internal TrackingMessage
+          dispatch(
+            UpdateTracking(
+              tracking.cloneWith(
+                status: TrackingStatus.Tracking,
+              ),
+            ),
+          );
         }
       }
     } else if (state.isDeleted()) {
       final event = state as PersonnelDeleted;
       final tracking = _tracking[event.data.tracking];
+      // TODO: Move to tracking service and convert to internal TrackingMessage
       if (tracking != null) dispatch(DeleteTracking(tracking));
     }
   }
@@ -172,15 +218,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }) =>
       find(device) != null;
 
-  /// Find tracking from given device
+  /// Find tracking from given device. Returns null if not found.
   Tracking find(
     Device device, {
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
   }) =>
       _tracking.entries
           .where((entry) => !exclude.contains(entry.value.status))
-          .firstWhere((entry) => entry.value.devices.contains(device.id))
-          .value;
+          .firstWhere((entry) => entry.value.devices.contains(device.id), orElse: () => null)
+          ?.value;
 
   /// Get devices being tracked by given tracking id
   List<Device> devices(

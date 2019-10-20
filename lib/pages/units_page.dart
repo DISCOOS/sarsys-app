@@ -121,11 +121,8 @@ class UnitsPageState extends State<UnitsPage> {
 
   Widget _buildUnit(List<Unit> units, int index) {
     if (index == units.length) {
-      return SizedBox(
-        height: 88,
-        child: Center(
-          child: Text("Antall enheter: $index"),
-        ),
+      return Center(
+        child: Text("Antall enheter: $index"),
       );
     }
     var unit = units[index];

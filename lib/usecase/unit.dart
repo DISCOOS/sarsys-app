@@ -176,6 +176,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   }
 }
 
+// TODO: Move to tracking service and convert to internal TrackingMessage
 Future<Tracking> _handleTracking(
   UnitParams params,
   Unit unit, {
@@ -212,6 +213,7 @@ class DeployUnit extends UseCase<bool, UnitState, UnitParams> {
   }
 }
 
+/// Transition unit to state Retired
 Future<dartz.Either<bool, UnitState>> retireUnit(
   BuildContext context,
   Unit unit,
@@ -242,4 +244,29 @@ Future<dartz.Either<bool, UnitState>> _transitionUnit(UnitParams params, UnitSta
   }
   await params.bloc.update(params.data.cloneWith(status: status));
   return dartz.Right(params.bloc.currentState);
+}
+
+/// Delete unit
+Future<dartz.Either<bool, UnitState>> deleteUnit(
+  BuildContext context,
+  Unit unit,
+) =>
+    DeleteUnit()(UnitParams(
+      context,
+      unit: unit,
+    ));
+
+class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
+  @override
+  Future<dartz.Either<bool, UnitState>> call(params) async {
+    assert(params.data != null, "Unit must be supplied");
+    var response = await prompt(
+      params.context,
+      "Slett ${params.data.name}",
+      "Dette vil slette alle data fra sporinger og fjerne enheten fra hendelsen. Vil du fortsette?",
+    );
+    if (!response) return dartz.Left(false);
+    await params.bloc.delete(params.data);
+    return dartz.Right(params.bloc.currentState);
+  }
 }

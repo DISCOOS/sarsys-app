@@ -15,8 +15,8 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<void> noContent() {
-    return ServiceResponse<void>(
+  static ServiceResponse<T> noContent<T>() {
+    return ServiceResponse<T>(
       code: 204,
       message: 'No content',
     );

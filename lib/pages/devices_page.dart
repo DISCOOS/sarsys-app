@@ -140,11 +140,8 @@ class DevicesPageState extends State<DevicesPage> {
     Map<String, Set<Tracking>> tracked,
   ) {
     if (index == devices.length) {
-      return SizedBox(
-        height: 88,
-        child: Center(
-          child: Text("Antall apparater: $index"),
-        ),
+      return Center(
+        child: Text("Antall apparater: $index"),
       );
     }
     final device = devices[index];

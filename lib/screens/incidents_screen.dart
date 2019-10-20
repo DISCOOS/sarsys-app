@@ -243,30 +243,33 @@ class _IncidentsPageState extends State<IncidentsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    ButtonBarTheme(
-                      // make buttons use the appropriate styles for cards
-                      child: ButtonBar(
-                        alignment: MainAxisAlignment.start,
-                        children: <Widget>[
-                          FlatButton(
-                            child: Text(
-                                isAuthorized ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG') : 'LÅS OPP',
-                                style: TextStyle(fontSize: 14.0)),
-                            padding: EdgeInsets.only(left: 16.0),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            onPressed: () {
-                              if (isAuthorized) {
-                                _selectAndReroute(incident);
-                              } else {
-                                Navigator.push(context, PasscodeRoute(incident));
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      data: ButtonBarThemeData(
-                        layoutBehavior: ButtonBarLayoutBehavior.constrained,
-                        buttonPadding: EdgeInsets.only(right: 0.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: ButtonBarTheme(
+                        // make buttons use the appropriate styles for cards
+                        child: ButtonBar(
+                          alignment: MainAxisAlignment.start,
+                          children: <Widget>[
+                            FlatButton(
+                              child: Text(
+                                  isAuthorized ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG') : 'LÅS OPP',
+                                  style: TextStyle(fontSize: 14.0)),
+                              padding: EdgeInsets.only(left: 16.0),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              onPressed: () {
+                                if (isAuthorized) {
+                                  _selectAndReroute(incident);
+                                } else {
+                                  Navigator.push(context, PasscodeRoute(incident));
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        data: ButtonBarThemeData(
+                          layoutBehavior: ButtonBarLayoutBehavior.constrained,
+                          buttonPadding: EdgeInsets.only(right: 0.0),
+                        ),
                       ),
                     ),
                     Padding(

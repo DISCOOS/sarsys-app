@@ -15,13 +15,17 @@ class Device extends Equatable {
   final String alias;
   final Point point;
 
+  /// Flag indication that device is added manually
+  final bool manual;
+
   Device({
     @required this.id,
     @required this.type,
-    @required this.status,
     this.alias,
     this.number,
     this.point,
+    this.manual = true,
+    this.status = DeviceStatus.Attached,
   }) : super([id, type, status, number, alias, point]);
 
   /// Factory constructor for creating a new `Device` instance
@@ -46,6 +50,7 @@ class Device extends Equatable {
       alias: clone.alias ?? this.alias,
       number: clone.number ?? this.number,
       point: clone.point ?? this.point,
+      manual: clone.manual ?? this.manual,
     );
   }
 
@@ -56,6 +61,7 @@ class Device extends Equatable {
     String alias,
     String number,
     Point point,
+    bool manual,
   }) {
     return Device(
       id: this.id,
@@ -64,6 +70,7 @@ class Device extends Equatable {
       alias: alias ?? this.alias,
       number: number ?? this.number,
       point: point ?? this.point,
+      manual: manual ?? this.manual,
     );
   }
 }

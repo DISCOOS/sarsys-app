@@ -15,10 +15,10 @@ class DeviceParams extends BlocParams<DeviceBloc, Device> {
   DeviceParams(BuildContext context, {Device device}) : super(context, device);
 }
 
-/// Attach an device
-Future<dartz.Either<bool, Device>> attachDevice(BuildContext context) => AttachDevice()(DeviceParams(context));
+/// Create an device
+Future<dartz.Either<bool, Device>> createDevice(BuildContext context) => CreateDevice()(DeviceParams(context));
 
-class AttachDevice extends UseCase<bool, Device, DeviceParams> {
+class CreateDevice extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data == null, "Device should not be supplied");
@@ -30,7 +30,25 @@ class AttachDevice extends UseCase<bool, Device, DeviceParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    final device = await params.bloc.attach(result);
+    final device = await params.bloc.create(result);
+    return dartz.Right(device);
+  }
+}
+
+/// Attach an device to incident
+Future<dartz.Either<bool, Device>> attachDevice(BuildContext context) => AttachDevice()(DeviceParams(context));
+
+class AttachDevice extends UseCase<bool, Device, DeviceParams> {
+  @override
+  Future<dartz.Either<bool, Device>> call(params) async {
+    assert(params.data == null, "Device should not be supplied");
+    var result = await prompt(
+      params.context,
+      "Tilknytt hendelse",
+      "Dette vil knytte apparatet til hendelsen. Vil du fortsette?",
+    );
+    if (!result) return dartz.left(false);
+    final device = await params.bloc.attach(params.data);
     return dartz.Right(device);
   }
 }
@@ -91,13 +109,14 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
   }
 }
 
+/// Detach device from incident
 Future<dartz.Either<bool, DeviceState>> detachDevice(
   BuildContext context,
-  Device unit,
+  Device device,
 ) =>
     DetachDevice()(DeviceParams(
       context,
-      device: unit,
+      device: device,
     ));
 
 class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
@@ -107,10 +126,35 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
     var response = await prompt(
       params.context,
       "Fjern ${params.data.name}",
-      "Dette vil stoppe sporing og fjerne apparatet fra hendelse. Vil du fortsette?",
+      "Dette vil fjerne apparatet fra sporing og hendelsen. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.detach(params.data.cloneWith(status: DeviceStatus.Detached));
+    await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Detached));
+    return dartz.Right(params.bloc.currentState);
+  }
+}
+
+/// Delete device
+Future<dartz.Either<bool, DeviceState>> deleteDevice(
+  BuildContext context,
+  Device device,
+) =>
+    DeleteDevice()(DeviceParams(
+      context,
+      device: device,
+    ));
+
+class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
+  @override
+  Future<dartz.Either<bool, DeviceState>> call(params) async {
+    assert(params.data != null, "Unit must be supplied");
+    var response = await prompt(
+      params.context,
+      "Slett ${params.data.name}",
+      "Dette vil slette alle data fra sporinger og fjerne apparatet fra hendelsen. Vil du fortsette?",
+    );
+    if (!response) return dartz.Left(false);
+    await params.bloc.delete(params.data);
     return dartz.Right(params.bloc.currentState);
   }
 }

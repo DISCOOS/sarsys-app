@@ -255,70 +255,99 @@ class PersonnelInfoPanel extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, Personnel personnel1) {
-    return ButtonBarTheme(
-      // make buttons use the appropriate styles for cards
-      child: ButtonBar(
-        alignment: MainAxisAlignment.start,
-        children: <Widget>[
-          Tooltip(
-            message: "Endre mannskap",
-            child: FlatButton(
-              child: Text(
-                "ENDRE",
-                textAlign: TextAlign.center,
-              ),
-              onPressed: () async {
-                final result = await editPersonnel(context, personnel);
-                if (result.isRight() && result.toIterable().first != personnel) {
-                  final actual = result.toIterable().first;
-                  _onMessage("${actual.name} er oppdatert");
-                  _onChanged(actual);
-                }
-                _onComplete();
-              },
-            ),
-          ),
-          if (devices.isNotEmpty)
-            Tooltip(
-              message: "Fjern apparater fra mannskap",
-              child: FlatButton(
-                child: Text(
-                  "FJERN",
-                  textAlign: TextAlign.center,
-                ),
-                onPressed: () async {
-                  final result = await removeFromPersonnel(context, personnel, devices: devices);
-                  if (result.isRight()) {
-                    _onMessage("Apparater fjernet fra ${personnel.name}");
-                    _onChanged(personnel);
-                  }
-                  _onComplete();
-                },
-              ),
-            ),
-          Tooltip(
-            message: "Dimitter og avslutt sporing",
-            child: FlatButton(
-              child: Text(
-                "DIMITTERT",
-                textAlign: TextAlign.center,
-              ),
-              onPressed: () async {
-                final result = await retirePersonnel(context, personnel);
-                if (result.isRight()) {
-                  _onMessage("${personnel.name} er dimmitert");
-                  _onChanged(personnel);
-                }
-                _onComplete();
-              },
-            ),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ButtonBarTheme(
+        // make buttons use the appropriate styles for cards
+        child: ButtonBar(
+          alignment: MainAxisAlignment.start,
+          children: <Widget>[
+            _buildEditAction(context),
+            if (devices.isNotEmpty) _buildRemoveAction(context),
+            _buildRetireAction(context),
+            _buildDeleteAction(context),
+          ],
+        ),
+        data: ButtonBarThemeData(
+          layoutBehavior: ButtonBarLayoutBehavior.constrained,
+          buttonPadding: EdgeInsets.all(0.0),
+        ),
       ),
-      data: ButtonBarThemeData(
-        layoutBehavior: ButtonBarLayoutBehavior.constrained,
-        buttonPadding: EdgeInsets.all(8.0),
-      ),
+    );
+  }
+
+  Widget _buildEditAction(BuildContext context) => Tooltip(
+        message: "Endre mannskap",
+        child: FlatButton(
+          child: Text(
+            "ENDRE",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await editPersonnel(context, personnel);
+            if (result.isRight() && result.toIterable().first != personnel) {
+              final actual = result.toIterable().first;
+              _onMessage("${actual.name} er oppdatert");
+              _onChanged(actual);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildRemoveAction(BuildContext context) => Tooltip(
+        message: "Fjern apparater fra mannskap",
+        child: FlatButton(
+          child: Text(
+            "FJERN",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await removeFromPersonnel(context, personnel, devices: devices);
+            if (result.isRight()) {
+              _onMessage("Apparater fjernet fra ${personnel.name}");
+              _onChanged(personnel);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildRetireAction(BuildContext context) => Tooltip(
+        message: "Dimitter og avslutt sporing",
+        child: FlatButton(
+          child: Text(
+            "DIMITTERT",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await retirePersonnel(context, personnel);
+            if (result.isRight()) {
+              _onMessage("${personnel.name} er dimmitert");
+              _onChanged(personnel);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildDeleteAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    return Tooltip(
+      message: "Slett mannskap",
+      child: FlatButton(
+          child: Text(
+            'SLETT',
+            textAlign: TextAlign.center,
+            style: button.copyWith(color: Colors.red),
+          ),
+          onPressed: () async {
+            final result = await deletePersonnel(context, personnel);
+            if (result.isRight()) {
+              _onMessage("${personnel.name} er slettet");
+              _onComplete();
+            }
+          }),
     );
   }
 

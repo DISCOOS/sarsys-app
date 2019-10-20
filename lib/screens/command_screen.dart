@@ -189,7 +189,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         case CommandScreen.DEVICES:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await attachDevice(context),
+            onPressed: () async => await createDevice(context),
           );
       }
     }

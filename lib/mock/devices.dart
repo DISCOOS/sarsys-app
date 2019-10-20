@@ -21,7 +21,8 @@ class DeviceBuilder {
         '"type": "${enumName(type)}",'
         '"status": "${enumName(DeviceStatus.Attached)}",'
         '"number": "$number",'
-        '"point": $point'
+        '"point": $point,'
+        '"manual": false'
         '}');
   }
 
@@ -74,7 +75,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       }
       return ServiceResponse.ok(body: devices.values.toList());
     });
-    when(mock.attach(any, any)).thenAnswer((_) async {
+    when(mock.create(any, any)).thenAnswer((_) async {
       var incidentId = _.positionalArguments[0] as String;
       var devices = deviceRepo[incidentId];
       if (devices == null) {
@@ -117,7 +118,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       incident.value.update(device.id, (_) => device);
       return ServiceResponse.noContent();
     });
-    when(mock.detach(any)).thenAnswer((_) async {
+    when(mock.delete(any)).thenAnswer((_) async {
       var device = _.positionalArguments[0] as Device;
       var incident = deviceRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(device.id),

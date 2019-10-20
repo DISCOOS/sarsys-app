@@ -19,14 +19,31 @@ class Tracking extends Equatable {
   final Map<String, List<Point>> tracks;
 
   Tracking({
+    /// Tracking id
     @required this.id,
+
+    /// Tracking status
     @required this.status,
+
+    /// Last known position
     this.point,
+
+    /// Total distance in meter
     this.distance,
+
+    /// Average speed in m/s
     this.speed,
+
+    /// Total effort in time units
     this.effort,
+
+    /// List tracked devices
     this.devices,
+
+    /// List of historical points aggregated from temporally and spatially related points in tracks
     this.history,
+
+    /// Map from device to list of points
     this.tracks = const {},
   }) : super([id, status, point, distance, devices, history, tracks]);
 

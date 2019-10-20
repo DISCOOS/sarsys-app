@@ -368,12 +368,14 @@ void copy(String value, MessageCallback onMessage, {String message: 'Kopiert til
 void setText(TextEditingController controller, String value) {
   // Workaround for errors when clearing TextField,
   // see https://github.com/flutter/flutter/issues/17647
-  if (value?.isEmpty == true)
+  if (emptyAsNull(value) == null)
     WidgetsBinding.instance.addPostFrameCallback((_) => controller.clear());
   else if (value != null) {
+    final selection = controller.selection;
+
     controller.value = TextEditingValue(
       text: value,
-      selection: TextSelection.collapsed(offset: value?.length ?? 0),
+      selection: selection.end > value?.length ?? 0 ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
     );
   }
 }

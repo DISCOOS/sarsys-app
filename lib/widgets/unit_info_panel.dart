@@ -232,70 +232,99 @@ class UnitInfoPanel extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, Unit unit1) {
-    return ButtonBarTheme(
-      // make buttons use the appropriate styles for cards
-      child: ButtonBar(
-        alignment: MainAxisAlignment.start,
-        children: <Widget>[
-          Tooltip(
-            message: "Endre enhet",
-            child: FlatButton(
-              child: Text(
-                "ENDRE",
-                textAlign: TextAlign.center,
-              ),
-              onPressed: () async {
-                final result = await editUnit(context, unit);
-                if (result.isRight() && result.toIterable().first != unit) {
-                  final actual = result.toIterable().first;
-                  _onMessage("${actual.name} er oppdatert");
-                  _onChanged(actual);
-                }
-                _onComplete();
-              },
-            ),
-          ),
-          if (devices.isNotEmpty)
-            Tooltip(
-              message: "Fjern apparater fra enhet",
-              child: FlatButton(
-                child: Text(
-                  "FJERN",
-                  textAlign: TextAlign.center,
-                ),
-                onPressed: () async {
-                  final result = await removeFromUnit(context, unit, devices: devices);
-                  if (result.isRight()) {
-                    _onMessage("Apparater fjernet fra ${unit.name}");
-                    _onChanged(unit);
-                  }
-                  _onComplete();
-                },
-              ),
-            ),
-          Tooltip(
-            message: "Oppløs enhet og avslutt sporing",
-            child: FlatButton(
-              child: Text(
-                "OPPLØST",
-                textAlign: TextAlign.center,
-              ),
-              onPressed: () async {
-                final result = await retireUnit(context, unit);
-                if (result.isRight()) {
-                  _onMessage("${unit.name} er oppløst");
-                  _onChanged(unit);
-                }
-                _onComplete();
-              },
-            ),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ButtonBarTheme(
+        // make buttons use the appropriate styles for cards
+        child: ButtonBar(
+          alignment: MainAxisAlignment.start,
+          children: <Widget>[
+            _buildEditAction(context),
+            if (devices?.isNotEmpty == true) _buildRemove1Action(context),
+            _buildRetireAction(context),
+            _buildDeleteAction(context),
+          ],
+        ),
+        data: ButtonBarThemeData(
+          layoutBehavior: ButtonBarLayoutBehavior.constrained,
+          buttonPadding: EdgeInsets.all(0.0),
+        ),
       ),
-      data: ButtonBarThemeData(
-        layoutBehavior: ButtonBarLayoutBehavior.constrained,
-        buttonPadding: EdgeInsets.all(8.0),
-      ),
+    );
+  }
+
+  Widget _buildEditAction(BuildContext context) => Tooltip(
+        message: "Endre enhet",
+        child: FlatButton(
+          child: Text(
+            "ENDRE",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await editUnit(context, unit);
+            if (result.isRight() && result.toIterable().first != unit) {
+              final actual = result.toIterable().first;
+              _onMessage("${actual.name} er oppdatert");
+              _onChanged(actual);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildRemove1Action(BuildContext context) => Tooltip(
+        message: "Fjern apparater fra enhet",
+        child: FlatButton(
+          child: Text(
+            "FJERN",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await removeFromUnit(context, unit, devices: devices);
+            if (result.isRight()) {
+              _onMessage("Apparater fjernet fra ${unit.name}");
+              _onChanged(unit);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildRetireAction(BuildContext context) => Tooltip(
+        message: "Oppløs enhet og avslutt sporing",
+        child: FlatButton(
+          child: Text(
+            "OPPLØST",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await retireUnit(context, unit);
+            if (result.isRight()) {
+              _onMessage("${unit.name} er oppløst");
+              _onChanged(unit);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildDeleteAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    return Tooltip(
+      message: "Slett enhet",
+      child: FlatButton(
+          child: Text(
+            'SLETT',
+            textAlign: TextAlign.center,
+            style: button.copyWith(color: Colors.red),
+          ),
+          onPressed: () async {
+            final result = await deleteUnit(context, unit);
+            if (result.isRight()) {
+              _onMessage("${unit.name} er slettet");
+              _onComplete();
+            }
+          }),
     );
   }
 

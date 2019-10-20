@@ -152,7 +152,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 _buildDeviceListField(),
                 SizedBox(height: SPACING),
                 _buildPointField(),
-                SizedBox(height: MediaQuery.of(context).size.height / 2),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.75),
               ],
             ),
           ),
@@ -283,7 +283,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   String _toShort(String fname, String lname) {
     fname ??= '';
     lname ??= '';
-    final short = fname.substring(0, 1).toUpperCase();
+    final short = fname?.isNotEmpty == true ? fname.substring(0, 1).toUpperCase() : '';
     return "${short.isNotEmpty ? '$short.' : short} $lname";
   }
 
@@ -314,7 +314,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         decoration: InputDecoration(
           labelText: "Sporing",
           hintText: "Søk etter apparater",
-          helperText: "Kun sanntid, ingen lagring",
+          helperText: "Posisjon beregnes som gjennomsnitt",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(12.0, 8.0, 8.0, 16.0),
         ),

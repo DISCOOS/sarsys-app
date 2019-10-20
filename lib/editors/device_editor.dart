@@ -37,7 +37,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
   final TextEditingController _numberController = TextEditingController();
 
   String _editedName;
-  String _editedDistrict;
+  String _editedOrgAlias;
+  String _editedAffiliation;
   String _editedFunction;
   DeviceBloc _deviceBloc;
   Future<Organization> _organization;
@@ -109,8 +110,13 @@ class _DeviceEditorState extends State<DeviceEditor> {
                       buildTwoCellRow(_buildTypeField(snapshot.data), _buildAliasField(), spacing: SPACING),
                       if (DeviceType.Tetra == actualType) ...[
                         SizedBox(height: SPACING),
-                        buildTwoCellRow(_buildDistrictField(snapshot.data), _buildFunctionField(snapshot.data),
-                            spacing: SPACING),
+                        buildTwoCellRow(
+                          _buildOrgAliasField(snapshot.data),
+                          _buildFunctionField(snapshot.data),
+                          spacing: SPACING,
+                        ),
+                        SizedBox(height: SPACING),
+                        _buildAffiliationInfo(snapshot.data),
                       ],
                       SizedBox(height: SPACING),
                       _buildPointField(),
@@ -150,7 +156,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
       attribute: 'number',
       maxLength: 12,
       maxLengthEnforced: true,
-      textInputAction: TextInputAction.next,
       controller: _numberController,
       onChanged: (value) => _setText(
         _numberController,
@@ -194,41 +199,56 @@ class _DeviceEditorState extends State<DeviceEditor> {
   bool isSameNumber(Device device, String number) =>
       number?.isNotEmpty == true && device?.id != widget?.device?.id && device.number?.toString() == number;
 
-  InputDecorator _buildDistrictField(Organization org) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: "Distrikt",
-        filled: true,
-        enabled: false,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Text(
-          _editedDistrict ?? (org == null ? '-' : org.toDivision(widget?.device?.number)),
-          style: Theme.of(context).textTheme.subhead,
+  Widget _buildAffiliationInfo(Organization org) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: "Tilhørighet",
+          filled: true,
+          enabled: false,
         ),
-      ),
-    );
-  }
-
-  InputDecorator _buildFunctionField(Organization org) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: "Funksjon",
-        filled: true,
-        enabled: false,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Text(
-          _editedFunction ?? _defaultFunction(org),
-          style: Theme.of(context).textTheme.subhead,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _editedAffiliation ?? _defaultAffiliation(org),
+            style: Theme.of(context).textTheme.subhead,
+          ),
         ),
-      ),
-    );
-  }
+      );
 
-  String _defaultFunction(Organization org) => org != null ? org.toFunction(widget?.device?.number) : '-';
+  String _defaultAffiliation(Organization org) => org?.toAffiliationAsString(widget?.device?.number) ?? '-';
+
+  InputDecorator _buildOrgAliasField(Organization org) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: "Kortnavn org.",
+          filled: true,
+          enabled: false,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _editedOrgAlias ?? _defaultOrgAlias(org),
+            style: Theme.of(context).textTheme.subhead,
+          ),
+        ),
+      );
+
+  String _defaultOrgAlias(Organization org) => org?.alias ?? '-';
+
+  InputDecorator _buildFunctionField(Organization org) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: "Kortnavn",
+          filled: true,
+          enabled: false,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _editedFunction ?? _defaultFunction(org),
+            style: Theme.of(context).textTheme.subhead,
+          ),
+        ),
+      );
+
+  String _defaultFunction(Organization org) => org?.toFunction(widget?.device?.number) ?? '-';
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -287,11 +307,12 @@ class _DeviceEditorState extends State<DeviceEditor> {
         (org) => _onNumberOrAliasEdit(alias, number, update: update, org: org),
       );
     else {
-      if (alias.isEmpty) alias = null;
-      if (number.isEmpty) number = null;
+      alias = emptyAsNull(alias);
+      number = emptyAsNull(number);
       _editedName = alias ?? number ?? _defaultName();
-      _editedDistrict = org == null ? _editedDistrict : org.toDivision(number);
-      _editedFunction = org == null ? _editedFunction : org.toFunction(number);
+      _editedAffiliation = org?.toAffiliationAsString(number, empty: '-') ?? _editedAffiliation;
+      _editedOrgAlias = org?.alias ?? _editedOrgAlias;
+      _editedFunction = org?.toFunction(number) ?? _editedFunction;
       if (update) setState(() {});
     }
   }
@@ -335,7 +356,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
       var device = widget.device == null
-          ? Device.fromJson(_formKey.currentState.value)
+          ? Device.fromJson(_formKey.currentState.value).cloneWith(
+              status: DeviceStatus.Attached,
+            )
           : widget.device.withJson(_formKey.currentState.value);
       Navigator.pop(context, device);
     } else {

@@ -122,11 +122,8 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   Widget _buildPersonnel(List<Personnel> items, int index) {
     if (index == items.length) {
-      return SizedBox(
-        height: 88,
-        child: Center(
-          child: Text("Antall mannskaper: $index"),
-        ),
+      return Center(
+        child: Text("Antall mannskaper: $index"),
       );
     }
     var personnel = items[index];

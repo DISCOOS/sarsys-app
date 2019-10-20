@@ -388,6 +388,7 @@ class _UnitEditorState extends State<UnitEditor> {
         decoration: InputDecoration(
           labelText: "Sporing",
           hintText: "Søk etter apparater",
+          helperText: "Posisjon beregnes som gjennomsnitt",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
