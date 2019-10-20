@@ -166,6 +166,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
     final choices = results
         .map((result) => result is _AddressLookup ? _buildListTileFromLookup(result) : _buildListTile(context, result))
+        .take(10)
         .toList();
 
     _overlayEntry = OverlayEntry(
