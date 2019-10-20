@@ -66,6 +66,8 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       fitBounds: widget.fitBounds,
       fitBoundOptions: widget.fitBoundOptions,
       mapController: _mapController,
+      keepZoom: true,
+      keepCenter: true,
       withSearch: true,
       withControls: true,
       withLocation: true,
