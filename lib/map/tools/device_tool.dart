@@ -72,7 +72,8 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   }
 
   void _showInfo(BuildContext context, Device device) {
-    final unit = bloc.getUnitsByDeviceId()[device.id];
+    final unit = bloc.units.find(device);
+    final personnel = bloc.personnel.find(device);
     final tracking = bloc.tracking[unit?.tracking];
     showDialog(
       context: context,
@@ -87,11 +88,12 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
             child: SingleChildScrollView(
               child: DeviceInfoPanel(
                 unit: unit,
+                personnel: personnel,
                 device: device,
                 tracking: tracking,
                 onMessage: onMessage,
                 withActions: user?.isCommander == true,
-                organization: AssetsService().fetchOrganization(Defaults.orgId),
+                organization: AssetsService().fetchOrganization(Defaults.organization),
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
               ),

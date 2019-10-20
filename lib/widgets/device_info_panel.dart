@@ -1,5 +1,6 @@
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -12,6 +13,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 class DeviceInfoPanel extends StatelessWidget {
   final Unit unit;
+  final Personnel personnel;
   final Device device;
   final bool withHeader;
   final bool withActions;
@@ -24,6 +26,7 @@ class DeviceInfoPanel extends StatelessWidget {
   const DeviceInfoPanel({
     Key key,
     @required this.unit,
+    @required this.personnel,
     @required this.device,
     @required this.tracking,
     @required this.onMessage,
@@ -40,16 +43,17 @@ class DeviceInfoPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(device, theme, context),
-        if (withHeader) Divider(),
-        _buildLocationInfo(context, device, theme),
-        Divider(),
-        _buildContactInfo(context),
+        if (withHeader) _buildHeader(theme, context),
+        if (withHeader) Divider() else SizedBox(height: 8.0),
+        _buildTypeAndStatusInfo(context),
+        if (organization != null && DeviceType.Tetra == device.type) _buildTetraInfo(context),
         Divider(),
         if (organization != null && DeviceType.Tetra == device.type) ...[
-          _buildTetraInfo(context),
+          _buildAffiliationInfo(context),
           Divider(),
         ],
+        _buildLocationInfo(context, theme),
+        Divider(),
         _buildTrackingInfo(context),
         Divider(),
         _buildEffortInfo(context),
@@ -65,7 +69,7 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  Padding _buildHeader(Device device, TextTheme theme, BuildContext context) {
+  Padding _buildHeader(TextTheme theme, BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(left: 16, top: 8),
       child: Row(
@@ -81,7 +85,7 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildLocationInfo(BuildContext context, Device device, TextTheme theme) {
+  Row _buildLocationInfo(BuildContext context, TextTheme theme) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -151,7 +155,7 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildContactInfo(BuildContext context) {
+  Row _buildTypeAndStatusInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -165,15 +169,13 @@ class DeviceInfoPanel extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: GestureDetector(
-            child: buildCopyableText(
-              context: context,
-              label: "Nummer",
-              icon: Icon(Icons.looks_one),
-              value: device?.number,
-              onMessage: onMessage,
-              onComplete: _onComplete,
-            ),
+          child: buildCopyableText(
+            context: context,
+            label: "Status",
+            icon: Icon(Icons.live_help),
+            value: translateDeviceStatus(device.status),
+            onMessage: onMessage,
+            onComplete: _onComplete,
           ),
         ),
       ],
@@ -189,29 +191,51 @@ class DeviceInfoPanel extends StatelessWidget {
               Expanded(
                 child: buildCopyableText(
                   context: context,
-                  label: "Distrikt",
-                  icon: Icon(Icons.home),
-                  value: snapshot.hasData ? snapshot.data.toDistrict(device.number) : '-',
+                  label: "Number",
+                  icon: Icon(Icons.looks_one),
+                  value: device?.number ?? 'Ingen',
                   onMessage: onMessage,
                   onComplete: _onComplete,
                 ),
               ),
               Expanded(
-                child: GestureDetector(
-                  child: buildCopyableText(
-                    context: context,
-                    label: "Funksjon",
-                    icon: Icon(Icons.functions),
-                    value: snapshot.hasData ? snapshot.data.toFunction(device.number) : '-',
-                    onMessage: onMessage,
-                    onComplete: _onComplete,
-                  ),
+                child: buildCopyableText(
+                  context: context,
+                  label: "Funksjon",
+                  icon: Icon(Icons.functions),
+                  value: snapshot.hasData ? snapshot.data.toFunction(device.number) : '-',
+                  onMessage: onMessage,
+                  onComplete: _onComplete,
                 ),
               ),
             ],
           );
         });
   }
+
+  Widget _buildAffiliationInfo(BuildContext context) {
+    return FutureBuilder<Organization>(
+        future: organization,
+        builder: (context, snapshot) {
+          return Row(
+            children: <Widget>[
+              Expanded(
+                child: buildCopyableText(
+                  context: context,
+                  label: "Tilhørighet",
+                  icon: Icon(MdiIcons.graph),
+                  value: _ensureAffiliation(snapshot),
+                  onMessage: onMessage,
+                  onComplete: _onComplete,
+                ),
+              ),
+            ],
+          );
+        });
+  }
+
+  String _ensureAffiliation(AsyncSnapshot<Organization> snapshot) =>
+      snapshot.hasData ? snapshot.data.toAffiliationAsString(device.number) : "-";
 
   Row _buildTrackingInfo(BuildContext context) {
     final List<Point> track = _toTrack(tracking);
@@ -222,7 +246,7 @@ class DeviceInfoPanel extends StatelessWidget {
             context: context,
             label: "Spores av",
             icon: Icon(Icons.group),
-            value: unit?.name ?? "Ingen",
+            value: unit?.name ?? personnel?.formal ?? "Ingen",
             onMessage: onMessage,
             onComplete: _onComplete,
           ),

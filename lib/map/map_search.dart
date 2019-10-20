@@ -2,8 +2,11 @@ import 'dart:collection';
 
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -338,10 +341,11 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   bool _searchBlocs(BuildContext context, String value) {
     final results = <_AddressLookup>[];
     final match = RegExp("${_prepare(value)}");
-    final units = BlocProvider.of<TrackingBloc>(context).getTrackedUnits(
-      exclude: widget.withRetired ? [] : [TrackingStatus.Closed],
-    );
-    final tracks = BlocProvider.of<TrackingBloc>(context).tracking;
+    final units = BlocProvider.of<TrackingBloc>(context).units.asTrackingIds(
+          exclude: widget.withRetired ? [] : [TrackingStatus.Closed],
+        );
+    final tracking = BlocProvider.of<TrackingBloc>(context).tracking;
+    final personnel = BlocProvider.of<PersonnelBloc>(context).personnel;
     final devices = BlocProvider.of<DeviceBloc>(context).devices;
     final incident = BlocProvider.of<IncidentBloc>(context).current;
 
@@ -372,23 +376,17 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         }
       }
 
-      // Search for matches in units
-      results.addAll(
-        units.values
-            .where((unit) => widget.withRetired || unit.status != UnitStatus.Retired)
-            .where((unit) =>
-                // Search in unit
-                _prepare(unit.searchable).contains(match) ||
-                // Search in devices tracked with this unit
-                tracks[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
-            .where((unit) => tracks[unit.tracking].point != null)
-            .map((unit) => _AddressLookup(
-                  context: context,
-                  point: tracks[unit.tracking].point,
-                  title: unit.name,
-                  icon: Icons.group,
-                )),
-      );
+      // Search for matches in units and personnel
+      results
+        ..addAll(
+          _findUnits(units, match, tracking, devices, context),
+        )
+        ..addAll(
+          _findPersonnel(personnel, match, tracking, devices, context),
+        )
+        ..addAll(
+          _findDevices(devices, match, tracking, context),
+        );
 
       if (results.length > 0) {
         _showResults(results);
@@ -398,6 +396,63 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     }
     return found;
   }
+
+  Iterable<_AddressLookup> _findUnits(
+    Map<String, Unit> units,
+    RegExp match,
+    Map<String, Tracking> tracking,
+    Map<String, Device> devices,
+    BuildContext context,
+  ) =>
+      units.values
+          .where((unit) => widget.withRetired || unit.status != UnitStatus.Retired)
+          .where((unit) =>
+              // Search in unit
+              _prepare(unit.searchable).contains(match) ||
+              // Search in devices tracked with this unit
+              tracking[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+          .where((unit) => tracking[unit.tracking].point != null)
+          .map((unit) => _AddressLookup(
+                context: context,
+                point: tracking[unit.tracking].point,
+                title: unit.name,
+                icon: Icons.group,
+              ));
+
+  Iterable<_AddressLookup> _findPersonnel(
+    Map<String, Personnel> personnel,
+    RegExp match,
+    Map<String, Tracking> tracking,
+    Map<String, Device> devices,
+    BuildContext context,
+  ) =>
+      personnel.values
+          .where((p) => widget.withRetired || p.status != PersonnelStatus.Retired)
+          .where((p) =>
+              // Search in personnel
+              _prepare(p.searchable).contains(match) ||
+              // Search in devices tracked with this personnel
+              tracking[p.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+          .where((p) => tracking[p.tracking].point != null)
+          .map((p) => _AddressLookup(
+                context: context,
+                point: tracking[p.tracking].point,
+                title: p.name,
+                icon: Icons.person,
+              ));
+
+  Iterable<_AddressLookup> _findDevices(
+    Map<String, Device> devices,
+    RegExp match,
+    Map<String, Tracking> tracking,
+    BuildContext context,
+  ) =>
+      devices.values.where((p) => _prepare(p).contains(match)).where((p) => p.point != null).map((p) => _AddressLookup(
+            context: context,
+            point: p.point,
+            title: p.name,
+            icon: Icons.person,
+          ));
 
   String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 

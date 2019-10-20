@@ -3,7 +3,9 @@ import 'dart:math' as math;
 
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:async/async.dart';
 
@@ -66,8 +68,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    final unit = _trackingBloc.getUnitsByDeviceId()[_device.id];
-    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(_device))..add(_trackingBloc.changes(unit));
+    final unit = _trackingBloc.units.find(_device);
+    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(_device))..add(_trackingBloc.changes(unit?.tracking));
     if (_onMoved != null) _onMoved.cancel();
     _onMoved = _deviceBloc.changes(_device).listen(_onMove);
   }
@@ -94,23 +96,14 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.data is Device) _device = snapshot.data;
-                final unit = _trackingBloc.getUnitsByDeviceId()[_device.id];
+                final unit = _trackingBloc.units.find(_device);
+                final personnel = _trackingBloc.personnel.find(_device);
                 return ListView(
                   padding: const EdgeInsets.all(DeviceScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
                   children: [
                     _buildMapTile(context, _device),
-                    DeviceInfoPanel(
-                      unit: unit,
-                      device: _device,
-                      tracking: _trackingBloc.tracking[unit?.tracking],
-                      organization: AssetsService().fetchOrganization(Defaults.orgId),
-                      withHeader: false,
-                      withActions: _userBloc.user?.isCommander == true,
-                      onMessage: showMessage,
-                      onChanged: (device) => setState(() => _device = device),
-                      onComplete: (_) => Navigator.pop(context),
-                    ),
+                    _buildInfoPanel(unit, personnel, context),
                   ],
                 );
               },
@@ -118,6 +111,21 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
           ],
         ),
       ),
+    );
+  }
+
+  DeviceInfoPanel _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) {
+    return DeviceInfoPanel(
+      unit: unit,
+      personnel: personnel,
+      device: _device,
+      tracking: _trackingBloc.tracking[unit?.tracking],
+      organization: AssetsService().fetchOrganization(Defaults.organization),
+      withHeader: false,
+      withActions: _userBloc.user?.isCommander == true,
+      onMessage: showMessage,
+      onChanged: (device) => setState(() => _device = device),
+      onComplete: (_) => Navigator.pop(context),
     );
   }
 
@@ -139,6 +147,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                   interactive: false,
                   withPOIs: false,
                   withUnits: false,
+                  usePersisted: false,
                   showLayers: [
                     IncidentMapState.DEVICE_LAYER,
                     IncidentMapState.TRACKING_LAYER,

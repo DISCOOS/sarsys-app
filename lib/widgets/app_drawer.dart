@@ -19,7 +19,7 @@ class AppDrawer extends StatelessWidget {
         children: <Widget>[
           UserAccountsDrawerHeader(
             accountName: Text("User ${user?.userId}"),
-            accountEmail: Text(user?.roles?.map((role) => translateUserRole(role))?.join(", ")),
+            accountEmail: Text(user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? ""),
             decoration: BoxDecoration(
               color: Colors.grey[800],
             ),
@@ -33,7 +33,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.format_list_bulleted),
             title: Text('Velg hendelse', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'incidents');
+              Navigator.pushReplacementNamed(context, 'incident/list');
             },
           ),
           Divider(),
@@ -58,7 +58,15 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.people),
             title: Text('Enheter', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'units');
+              Navigator.pushReplacementNamed(context, 'unit/list');
+            },
+          ),
+          ListTile(
+            enabled: !isUnset,
+            leading: const Icon(Icons.person),
+            title: Text('Mannskap', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, 'personnel/list');
             },
           ),
           ListTile(
@@ -66,7 +74,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(MdiIcons.cellphoneBasic),
             title: Text('Apparater', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'devices');
+              Navigator.pushReplacementNamed(context, 'device/list');
             },
           ),
           Divider(),

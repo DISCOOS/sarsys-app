@@ -45,7 +45,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   void initState() {
     super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.orgId);
+    _organization = AssetsService().fetchOrganization(Defaults.organization);
     _initAliasController();
     _initNumberController();
   }
@@ -93,13 +93,13 @@ class _DeviceEditorState extends State<DeviceEditor> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: SingleChildScrollView(
-          child: FutureBuilder<Organization>(
-              future: _organization,
-              builder: (context, snapshot) {
-                return FormBuilder(
+      body: SingleChildScrollView(
+        child: FutureBuilder<Organization>(
+            future: _organization,
+            builder: (context, snapshot) {
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: FormBuilder(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -117,9 +117,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
                       SizedBox(height: MediaQuery.of(context).size.height / 2),
                     ],
                   ),
-                );
-              }),
-        ),
+                ),
+              );
+            }),
       ),
     );
   }
@@ -204,7 +204,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
-          _editedDistrict ?? (org == null ? '-' : org.toDistrict(widget?.device?.number)),
+          _editedDistrict ?? (org == null ? '-' : org.toDivision(widget?.device?.number)),
           style: Theme.of(context).textTheme.subhead,
         ),
       ),
@@ -290,7 +290,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       if (alias.isEmpty) alias = null;
       if (number.isEmpty) number = null;
       _editedName = alias ?? number ?? _defaultName();
-      _editedDistrict = org == null ? _editedDistrict : org.toDistrict(number);
+      _editedDistrict = org == null ? _editedDistrict : org.toDivision(number);
       _editedFunction = org == null ? _editedFunction : org.toFunction(number);
       if (update) setState(() {});
     }
@@ -324,7 +324,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   Widget _buildPointField() => PointField(
         attribute: 'point',
         initialValue: widget?.device?.point,
-        labelText: "Siste posissjon",
+        labelText: "Siste posisjon",
         hintText: 'Velg posisjon',
         errorText: 'Posisjon må oppgis',
         controller: widget.controller,

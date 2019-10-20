@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/assets_service.dart';
@@ -48,6 +49,8 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _callsignController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
+  ValueNotifier<List<Device>> _devices;
+
   String _editedName;
   UnitBloc _unitBloc;
   DeviceBloc _deviceBloc;
@@ -72,10 +75,11 @@ class _UnitEditorState extends State<UnitEditor> {
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
+    _devices ??= ValueNotifier(_getActualDevices());
   }
 
   void _init() async {
-    _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.orgId));
+    _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.organization));
     _initPhoneController();
     _initNumberController();
     _initCallsignController();
@@ -125,9 +129,9 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
           child: FormBuilder(
             key: _formKey,
             child: Column(
@@ -374,34 +378,20 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
-    final devices = _getActualDevices();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
         attribute: 'devices',
         maxChips: 5,
-        onChanged: (_) {},
-        initialValue: devices,
+        initialValue: _getActualDevices(),
+        onChanged: (devices) => _devices.value = List.from(devices),
         decoration: InputDecoration(
           labelText: "Sporing",
           hintText: "Søk etter apparater",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
-        findSuggestions: (String query) async {
-          if (query.length != 0) {
-            var lowercaseQuery = query.toLowerCase();
-            return _deviceBloc.devices.values
-                .where((devices) => _trackingBloc.isTrackingDeviceById(devices.id) == false)
-                .where((device) =>
-                    device.number.toLowerCase().contains(lowercaseQuery) ||
-                    device.type.toString().toLowerCase().contains(lowercaseQuery))
-                .take(5)
-                .toList(growable: false);
-          } else {
-            return const <Device>[];
-          }
-        },
+        findSuggestions: _findDevices,
         chipBuilder: (context, state, device) {
           return InputChip(
             key: ObjectKey(device),
@@ -432,15 +422,42 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  Widget _buildPointField() => PointField(
-        attribute: 'point',
-        initialValue: _toPoint(),
-        labelText: "Siste posissjon",
-        hintText: 'Velg posisjon',
-        errorText: 'Posisjon må oppgis',
-        controller: widget.controller,
-        onChanged: (point) => setState(() {}),
-      );
+  FutureOr<List<Device>> _findDevices(String query) async {
+    if (query.length != 0) {
+      var actual = _getActualDevices().map((device) => device.id);
+      var local = _getLocalDevices().map((device) => device.id);
+      var lowercaseQuery = query.toLowerCase();
+      return _deviceBloc.devices.values
+          .where((device) =>
+              // Add locally removed devices
+              actual.contains(device.id) && !local.contains(device.id) || _trackingBloc.contains(device) == false)
+          .where((device) =>
+              device.number.toLowerCase().contains(lowercaseQuery) ||
+              device.type.toString().toLowerCase().contains(lowercaseQuery))
+          .take(5)
+          .toList(growable: false);
+    }
+    return const <Device>[];
+  }
+
+  Widget _buildPointField() {
+    return ValueListenableBuilder<List<Device>>(
+        valueListenable: _devices,
+        builder: (context, devices, _) {
+          return PointField(
+            attribute: 'point',
+            enabled: devices.isEmpty,
+            initialValue: _toPoint(),
+            labelText: "Siste posisjon",
+            hintText: devices.isEmpty ? 'Velg posisjon' : 'Ingen',
+            errorText: 'Posisjon må oppgis',
+            helperText:
+                devices.isEmpty ? "Klikk på posisjon for å endre" : "Kan kun endres når sporing ikke er oppgitt",
+            controller: widget.controller,
+            onChanged: (point) => setState(() {}),
+          );
+        });
+  }
 
   Point _toPoint() {
     final bloc = BlocProvider.of<TrackingBloc>(context);
@@ -448,9 +465,11 @@ class _UnitEditorState extends State<UnitEditor> {
     return tracking?.point;
   }
 
-  List _getActualDevices() {
+  List<Device> _getLocalDevices() => List.from(_devices.value ?? <Device>[]);
+
+  List<Device> _getActualDevices() {
     return (widget?.unit?.tracking != null
-        ? _trackingBloc.getDevicesFromTrackingId(
+        ? _trackingBloc.devices(
             widget?.unit?.tracking,
             // Include closed tracks
             exclude: [],
@@ -459,34 +478,11 @@ class _UnitEditorState extends State<UnitEditor> {
       ..addAll(widget.devices);
   }
 
-  void _submit() async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
-      var unit = widget.unit == null
-          // Filter out empty text
-          ? Unit.fromJson(_formKey.currentState.value)
-          : widget.unit.withJson(_formKey.currentState.value);
-      var response = true;
-      if (UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status) {
-        response = await prompt(
-          context,
-          "Oppløs ${unit.name}",
-          "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
-        );
-      }
-      if (response) {
-        Point point = _formKey.currentState.value["point"] == null
-            ? null
-            : Point.fromJson(
-                _formKey.currentState.value["point"],
-              );
-        List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
-        Navigator.pop(context, UnitParams(context, unit: unit, devices: devices, point: point));
-      }
-    } else {
-      // Show errors
-      setState(() {});
-    }
+  Point _preparePoint() {
+    final point =
+        _formKey.currentState.value["point"] == null ? null : Point.fromJson(_formKey.currentState.value["point"]);
+    // Only manually added points are allowed
+    return PointType.Manual == point?.type ? point : null;
   }
 
   String _defaultNumber() {
@@ -532,5 +528,38 @@ class _UnitEditorState extends State<UnitEditor> {
 
   String _defaultPhone() {
     return widget?.unit?.phone;
+  }
+
+  void _submit() async {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      var unit = widget.unit == null
+          // Filter out empty text
+          ? Unit.fromJson(_formKey.currentState.value)
+          : widget.unit.withJson(_formKey.currentState.value);
+      var response = true;
+      if (UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status) {
+        response = await prompt(
+          context,
+          "Oppløs ${unit.name}",
+          "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
+        );
+      }
+      if (response) {
+        List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
+        Navigator.pop(
+          context,
+          UnitParams(
+            context,
+            unit: unit,
+            devices: devices,
+            point: devices.isEmpty ? _preparePoint() : null,
+          ),
+        );
+      }
+    } else {
+      // Show errors
+      setState(() {});
+    }
   }
 }

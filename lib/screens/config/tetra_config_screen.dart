@@ -24,7 +24,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   @override
   void initState() {
     super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.orgId);
+    _organization = AssetsService().fetchOrganization(Defaults.organization);
   }
 
   @override

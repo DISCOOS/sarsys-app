@@ -11,9 +11,11 @@ class PointField extends StatelessWidget {
   final String hintText;
   final String labelText;
   final String errorText;
+  final String helperText;
   final Point initialValue;
   final Incident incident;
   final bool optional;
+  final bool enabled;
   final ValueChanged<Point> onChanged;
   final PermissionController controller;
 
@@ -27,6 +29,8 @@ class PointField extends StatelessWidget {
     this.incident,
     this.initialValue,
     this.onChanged,
+    this.helperText,
+    this.enabled = true,
     this.optional = true,
   }) : super(key: key);
 
@@ -35,16 +39,19 @@ class PointField extends StatelessWidget {
     return FormBuilderCustomField(
       attribute: attribute,
       formField: FormField<Point>(
-        enabled: true,
+        enabled: enabled,
         initialValue: initialValue,
         builder: (FormFieldState<Point> field) => GestureDetector(
           child: InputDecorator(
             decoration: InputDecoration(
               filled: true,
+              enabled: true,
               labelText: labelText,
-              suffixIcon: Icon(Icons.map),
+              helperText: helperText,
+              suffixIcon: enabled ? Icon(Icons.map) : null,
               contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
               errorText: field.hasError ? field.errorText : null,
+              border: enabled ? UnderlineInputBorder() : InputBorder.none,
             ),
             child: Padding(
               padding: const EdgeInsets.only(top: 4.0),
@@ -56,7 +63,7 @@ class PointField extends StatelessWidget {
                     ),
             ),
           ),
-          onTap: () => _selectLocation(context, field),
+          onTap: enabled ? () => _selectLocation(context, field) : null,
         ),
       ),
       valueTransformer: (point) => point?.toJson(),

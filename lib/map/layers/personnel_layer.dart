@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -15,7 +15,7 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 
-class UnitLayerOptions extends LayerOptions {
+class PersonnelLayerOptions extends LayerOptions {
   double size;
   double opacity;
   bool showLabels;
@@ -24,7 +24,7 @@ class UnitLayerOptions extends LayerOptions {
   final TrackingBloc bloc;
   final MessageCallback onMessage;
 
-  UnitLayerOptions({
+  PersonnelLayerOptions({
     @required this.bloc,
     this.size = 8.0,
     this.opacity = 0.6,
@@ -35,10 +35,10 @@ class UnitLayerOptions extends LayerOptions {
   }) : super(rebuild: bloc.state.map((_) => null));
 }
 
-class UnitLayer extends MapPlugin {
+class PersonnelLayer extends MapPlugin {
   @override
   bool supportsLayer(LayerOptions options) {
-    return options is UnitLayerOptions;
+    return options is PersonnelLayerOptions;
   }
 
   @override
@@ -49,38 +49,42 @@ class UnitLayer extends MapPlugin {
         return StreamBuilder<void>(
           stream: stream, // a Stream<int> or null
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return _build(context, size, options as UnitLayerOptions, map);
+            return _build(context, size, options as PersonnelLayerOptions, map);
           },
         );
       },
     );
   }
 
-  Widget _build(BuildContext context, Size size, UnitLayerOptions options, MapState map) {
+  Widget _build(BuildContext context, Size size, PersonnelLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final tracking = options.bloc.tracking;
-    final units = sortMapValues<String, Unit, TrackingStatus>(
-            options.bloc.units.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
-            (unit) => tracking[unit.tracking].status,
+    final personnel = sortMapValues<String, Personnel, TrackingStatus>(
+            options.bloc.personnel.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
+            (personnel) => tracking[personnel.tracking].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((unit) => tracking[unit.tracking]?.point?.isNotEmpty == true)
-        .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
-        .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking].point)));
+        .where((personnel) => tracking[personnel.tracking]?.point?.isNotEmpty == true)
+        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
+        .where((personnel) => bounds.contains(toLatLng(tracking[personnel.tracking].point)));
     return options.bloc.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
             children: [
               if (options.showTail)
-                ...units
-                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit.tracking]))
+                ...personnel
+                    .map((personnel) =>
+                        _buildTrack(context, size, options, map, personnel, tracking[personnel.tracking]))
                     .toList(),
               if (options.showLabels)
-                ...units
-                    .map((unit) => _buildLabel(context, options, map, unit, tracking[unit.tracking].point))
+                ...personnel
+                    .map((personnel) =>
+                        _buildLabel(context, options, map, personnel, tracking[personnel.tracking].point))
                     .toList(),
-              ...units.map((unit) => _buildPoint(context, options, map, unit, tracking[unit.tracking])).toList(),
+              ...personnel
+                  .map((personnel) => _buildPoint(context, options, map, personnel, tracking[personnel.tracking]))
+                  .toList(),
             ],
           );
   }
@@ -88,9 +92,9 @@ class UnitLayer extends MapPlugin {
   _buildTrack(
     BuildContext context,
     Size size,
-    UnitLayerOptions options,
+    PersonnelLayerOptions options,
     MapState map,
-    Unit unit,
+    Personnel personnel,
     Tracking tracking,
   ) {
     var offsets = tracking.history.reversed.take(10).map((point) {
@@ -112,7 +116,8 @@ class UnitLayer extends MapPlugin {
     );
   }
 
-  Widget _buildPoint(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Tracking tracking) {
+  Widget _buildPoint(
+      BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnel, Tracking tracking) {
     var size = options.size;
     var location = tracking.point;
     var pos = map.project(toLatLng(location));
@@ -129,14 +134,14 @@ class UnitLayer extends MapPlugin {
           size: size,
           opacity: options.opacity,
           outer: pixelRadius,
-          centerColor: toUnitStatusColor(unit.status),
+          centerColor: toPersonnelStatusColor(personnel.status),
           color: toPointStatusColor(tracking.point),
         ),
       ),
     );
   }
 
-  _buildLabel(BuildContext context, UnitLayerOptions options, MapState map, Unit unit, Point point) {
+  _buildLabel(BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnel, Point point) {
     var size = options.size;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
@@ -145,7 +150,7 @@ class UnitLayer extends MapPlugin {
       top: pos.y + size,
       left: pos.x,
       child: CustomPaint(
-        painter: LabelPainter(unit.name, top: size),
+        painter: LabelPainter(personnel.name, top: size),
         size: Size(size, size),
       ),
     );

@@ -1,14 +1,12 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/models/Division.dart';
-import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/config/map_config_screen.dart';
 import 'package:SarSys/screens/config/tetra_config_screen.dart';
-import 'package:SarSys/services/assets_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/widgets/affilliation_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,18 +20,9 @@ class SettingsScreen extends StatefulWidget {
 
 class SettingsScreenState extends State<SettingsScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  var _affiliationKey = GlobalKey<AffiliationFormState>();
 
   AppConfigBloc _bloc;
-
-  Future<Organization> _organization;
-  ValueNotifier<Division> _division = ValueNotifier(null);
-
-  @override
-  void initState() {
-    super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.orgId)
-      ..then((org) => _division.value = org.divisions[_bloc?.config?.division]);
-  }
 
   @override
   void didChangeDependencies() {
@@ -75,9 +64,12 @@ class SettingsScreenState extends State<SettingsScreen> {
       child: StreamBuilder(
         stream: _bloc.state,
         builder: (context, snapshot) {
-          return ListView(
-            shrinkWrap: true,
-            children: _buildSettings(context),
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ListView(
+              shrinkWrap: true,
+              children: _buildSettings(context),
+            ),
           );
         },
       ),
@@ -92,8 +84,13 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      _buildDivisionField(),
-      _buildDepartmentField(),
+      Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: AffiliationForm(
+          key: _affiliationKey,
+          initialValue: _ensureAffiliation(),
+        ),
+      ),
       ListTile(
         title: Text(
           "Oppsett",
@@ -136,6 +133,12 @@ class SettingsScreenState extends State<SettingsScreen> {
     ];
   }
 
+  Affiliation _ensureAffiliation() => Affiliation(
+        organization: Defaults.organization,
+        division: _bloc.config.division ?? Defaults.division,
+        department: _bloc.config?.department ?? Defaults.department,
+      );
+
   ListTile _buildGotoIncidentConfig() {
     return ListTile(
       title: Text("Hendelse"),
@@ -173,93 +176,6 @@ class SettingsScreenState extends State<SettingsScreen> {
         }));
       },
     );
-  }
-
-  Padding _buildDivisionField() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Expanded(flex: 2, child: Text("Distrikt")),
-          FutureBuilder<Organization>(
-            future: _organization,
-            builder: (context, snapshot) {
-              return Expanded(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  disabledHint: Text("Laster..."),
-                  items: snapshot.hasData
-                      ? sortMapValues<String, Division, String>(snapshot.data.divisions, (division) => division.name)
-                          .entries
-                          .map((division) => DropdownMenuItem<String>(
-                                value: "${division.key}",
-                                child: Text("${division.value.name}"),
-                              ))
-                          .toList()
-                      : null,
-                  onChanged: (value) {
-                    _division.value = snapshot.data.divisions[value];
-                    _bloc.update(district: value);
-                  },
-                  value: _bloc.config?.division ?? Defaults.division,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Padding _buildDepartmentField() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Expanded(flex: 2, child: Text("Hjelpkorps")),
-          ValueListenableBuilder<Division>(
-            valueListenable: _division,
-            builder: (context, division, _) {
-              return Expanded(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  disabledHint: Text("Velg distrikt"),
-                  items: _ensureDepartments(division),
-                  onChanged: (value) => _bloc.update(department: value),
-                  value: _ensureDepartment(division),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<DropdownMenuItem<String>> _ensureDepartments(Division division) {
-    return division != null
-        ? sortMapValues<String, String, String>(division.departments)
-            .entries
-            .map((department) => DropdownMenuItem<String>(
-                  value: "${department.key}",
-                  child: Text("${department.value}"),
-                ))
-            .toList()
-        : null;
-  }
-
-  String _ensureDepartment(Division division) {
-    final value = division?.departments?.containsKey(_bloc.config?.department ?? Defaults.department) == true
-        ? _bloc.config?.department ?? Defaults.department
-        : division?.departments?.keys?.first;
-    if (value != null && _bloc.config?.department != value) {
-      _bloc.update(department: value);
-    }
-    return value;
   }
 
   Padding _buildOnboardingField() {

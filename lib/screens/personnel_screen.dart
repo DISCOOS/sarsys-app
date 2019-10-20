@@ -4,72 +4,73 @@ import 'dart:math';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/map/incident_map.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/unit_info_panel.dart';
+import 'package:SarSys/widgets/personnel_info_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
-class UnitScreen extends Screen<_UnitScreenState> {
+class PersonnelScreen extends Screen<_PersonnelScreenState> {
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
   static const ELEVATION = 2.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
-  final Unit unit;
+  final Personnel personnel;
 
-  const UnitScreen({Key key, @required this.unit}) : super(key: key);
+  const PersonnelScreen({Key key, @required this.personnel}) : super(key: key);
 
   @override
-  _UnitScreenState createState() => _UnitScreenState(unit);
+  _PersonnelScreenState createState() => _PersonnelScreenState(personnel);
 }
 
-class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProviderStateMixin {
-  _UnitScreenState(Unit unit) : super(title: "${unit.name}", withDrawer: false);
+class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with TickerProviderStateMixin {
+  _PersonnelScreenState(Personnel personnel) : super(title: "${personnel.name}", withDrawer: false);
 
   final _controller = IncidentMapController();
 
-  Unit _unit;
+  Personnel _personnel;
   UserBloc _userBloc;
-  UnitBloc _unitBloc;
+  PersonnelBloc _personnelBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Tracking> _onMoved;
 
-  /// Use current unit name
-  String get title => _unit?.name;
+  /// Use current personnel name
+  String get title => _personnel?.name;
 
   @override
   void initState() {
     super.initState();
     writeEnabled = false;
-    _unit = widget.unit;
-    id = widget?.unit?.id;
+    _personnel = widget.personnel;
+    id = widget?.personnel?.id;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(_unitBloc.changes(widget.unit))
-      ..add(_trackingBloc.changes(widget?.unit?.tracking));
+      ..add(_personnelBloc.changes(widget.personnel))
+      ..add(_trackingBloc.changes(widget.personnel?.tracking));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _trackingBloc.changes(widget?.unit?.tracking).listen(_onMove);
+    _onMoved = _trackingBloc.changes(widget.personnel?.tracking).listen(_onMove);
   }
 
   @override
@@ -90,17 +91,17 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         child: Stack(
           children: [
             StreamBuilder(
-              initialData: _unit,
+              initialData: _personnel,
               stream: _group.stream,
               builder: (context, snapshot) {
-                if (snapshot.data is Unit) _unit = snapshot.data;
-                final tracking = _trackingBloc.tracking[_unit.tracking];
+                if (snapshot.data is Personnel) _personnel = snapshot.data;
+                final tracking = _trackingBloc.tracking[_personnel.tracking];
                 return snapshot.hasData
                     ? ListView(
-                        padding: const EdgeInsets.all(UnitScreen.SPACING),
+                        padding: const EdgeInsets.all(PersonnelScreen.SPACING),
                         physics: AlwaysScrollableScrollPhysics(),
                         children: [
-                          _buildMapTile(context, _unit),
+                          _buildMapTile(context, _personnel),
                           _buildInfoPanel(tracking, context),
                         ],
                       )
@@ -113,39 +114,44 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     );
   }
 
-  UnitInfoPanel _buildInfoPanel(Tracking tracking, BuildContext context) {
-    return UnitInfoPanel(
-      unit: _unit,
+  PersonnelInfoPanel _buildInfoPanel(Tracking tracking, BuildContext context) {
+    return PersonnelInfoPanel(
+      personnel: _personnel,
       tracking: tracking,
-      devices: tracking.devices.map((id) => _trackingBloc.deviceBloc.devices[id]).where((unit) => unit != null),
+      devices: tracking?.devices
+              ?.map((id) => _trackingBloc.deviceBloc.devices[id])
+              ?.where((personnel) => personnel != null) ??
+          {},
       withHeader: false,
       withActions: _userBloc.user?.isCommander,
       onMessage: showMessage,
-      onChanged: (unit) => setState(() => _unit = unit),
+      onChanged: (personnel) => setState(() => _personnel = personnel),
+      organization: AssetsService().fetchOrganization(Defaults.organization),
       onComplete: (_) => Navigator.pop(context),
     );
   }
 
-  Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(_trackingBloc.tracking[unit.tracking]);
+  Widget _buildMapTile(BuildContext context, Personnel personnel) {
+    final center = toCenter(_trackingBloc.tracking[personnel.tracking]);
     return Material(
-      elevation: UnitScreen.ELEVATION,
-      borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+      elevation: PersonnelScreen.ELEVATION,
+      borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
       child: Container(
         height: 240.0,
         child: Stack(
           children: <Widget>[
             ClipRRect(
-              borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+              borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
               child: GestureDetector(
                 child: IncidentMap(
                   center: center,
                   zoom: 16.0,
                   interactive: false,
                   withPOIs: false,
-                  withDevices: false,
+                  withUnits: false,
+                  usePersisted: false,
                   showLayers: [
-                    IncidentMapState.UNIT_LAYER,
+                    IncidentMapState.PERSONNEL_LAYER,
                     IncidentMapState.TRACKING_LAYER,
                   ],
                   mapController: _controller,
@@ -161,7 +167,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   }
 
   Widget _buildControls() {
-    var tracking = _trackingBloc.tracking[widget.unit.tracking];
+    var tracking = _trackingBloc.tracking[widget.personnel.tracking];
     return MapControls(
       top: 16.0,
       controls: [

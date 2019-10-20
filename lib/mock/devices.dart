@@ -19,6 +19,7 @@ class DeviceBuilder {
     return json.decode('{'
         '"id": "$id",'
         '"type": "${enumName(type)}",'
+        '"status": "${enumName(DeviceStatus.Attached)}",'
         '"number": "$number",'
         '"point": $point'
         '}');
@@ -39,7 +40,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
 
   DeviceServiceMock._internal(this.deviceRepo, this.simulator);
 
-  static DeviceService build(final IncidentBloc bloc, final int count) {
+  static DeviceService build(final IncidentBloc bloc, final int tetraCount, final int appCount) {
     final rnd = math.Random();
     final Map<String, Map<String, Device>> deviceRepo = {}; // incidentId -> devices
     final Map<String, _DeviceSimulation> simulations = {}; // deviceId -> simulation
@@ -67,23 +68,9 @@ class DeviceServiceMock extends Mock implements DeviceService {
       }
       // Only generate devices for automatically generated incidents
       if (incidentId.startsWith('a:') && devices.isEmpty) {
-        int number = 6114000;
         Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp?.point;
-        devices.addAll({
-          for (var i = 1; i <= count; i++)
-            "$incidentId:d:$i": _simulate(
-              Device.fromJson(
-                DeviceBuilder.createDeviceAsJson(
-                  "${incidentId}d$i",
-                  DeviceType.Tetra,
-                  "${++number % 10 == 0 ? ++number : number}",
-                  center,
-                ),
-              ),
-              rnd,
-              simulations,
-            ),
-        });
+        _createDevices(DeviceType.Tetra, devices, tetraCount, incidentId, 6114000, center, rnd, simulations);
+        _createDevices(DeviceType.App, devices, appCount, incidentId, 91500000, center, rnd, simulations);
       }
       return ServiceResponse.ok(body: devices.values.toList());
     });
@@ -144,6 +131,34 @@ class DeviceServiceMock extends Mock implements DeviceService {
       return ServiceResponse.noContent();
     });
     return mock;
+  }
+
+  static void _createDevices(
+    DeviceType type,
+    Map<String, Device> devices,
+    int count,
+    String incidentId,
+    int number,
+    Point center,
+    math.Random rnd,
+    Map<String, _DeviceSimulation> simulations,
+  ) {
+    final prefix = enumName(type).substring(0, 1).toLowerCase();
+    return devices.addAll({
+      for (var i = 1; i <= count; i++)
+        "$incidentId:d:$prefix:$i": _simulate(
+          Device.fromJson(
+            DeviceBuilder.createDeviceAsJson(
+              "$incidentId:d:$prefix:$i",
+              type,
+              "${++number % 10 == 0 ? ++number : number}",
+              center,
+            ),
+          ),
+          rnd,
+          simulations,
+        ),
+    });
   }
 
   static Device _simulate(

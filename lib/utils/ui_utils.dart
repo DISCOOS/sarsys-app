@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,7 @@ Widget buildDropDownField<T>({
   @required List<DropdownMenuItem<T>> items,
   @required List<FormFieldValidator> validators,
   String label,
+  String helperText,
   bool isDense = false,
   EdgeInsetsGeometry contentPadding,
   ValueChanged<T> onChanged,
@@ -77,8 +79,10 @@ Widget buildDropDownField<T>({
         builder: (FormFieldState<T> field) => buildDropdown<T>(
           field: field,
           label: label,
+          helperText: helperText,
           items: items,
           isDense: isDense,
+          initialValue: initialValue,
           contentPadding: contentPadding,
           onChanged: onChanged,
         ),
@@ -90,47 +94,52 @@ Widget buildDropdown<T>({
   @required FormFieldState<T> field,
   @required List<DropdownMenuItem<T>> items,
   String label,
+  String helperText,
   EdgeInsetsGeometry contentPadding,
   bool isDense = false,
+  T initialValue,
   ValueChanged<T> onChanged,
-}) =>
-    InputDecorator(
-      decoration: InputDecoration(
-        hasFloatingPlaceholder: true,
-        errorText: field.hasError ? field.errorText : null,
-        filled: true,
-        isDense: isDense,
-        labelText: label,
-        contentPadding: contentPadding,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: ButtonTheme(
-          alignedDropdown: false,
-          child: DropdownButton<T>(
-            value: field.value,
-            isDense: true,
-            onChanged: (T newValue) {
-              field.didChange(newValue);
-              if (onChanged != null) onChanged(newValue);
-            },
-            items: items,
-          ),
+}) {
+  T value = items.firstWhere((item) => item.value == field.value, orElse: () => null)?.value ?? initialValue;
+  return InputDecorator(
+    decoration: InputDecoration(
+      hasFloatingPlaceholder: true,
+      errorText: field.hasError ? field.errorText : null,
+      filled: true,
+      isDense: isDense,
+      labelText: label,
+      helperText: helperText,
+      contentPadding: contentPadding,
+    ),
+    child: DropdownButtonHideUnderline(
+      child: ButtonTheme(
+        alignedDropdown: false,
+        child: DropdownButton<T>(
+          value: value,
+          isDense: true,
+          onChanged: (T newValue) {
+            field.didChange(newValue);
+            if (onChanged != null) onChanged(newValue);
+          },
+          items: items,
         ),
       ),
-    );
+    ),
+  );
+}
 
-Widget buildTwoCellRow(Widget left, Widget right, {double spacing = 16.0}) {
+Widget buildTwoCellRow(Widget left, Widget right, {double spacing = 16.0, int lflex = 6, rflex = 6}) {
   return Row(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
       Expanded(
-        flex: 6,
+        flex: lflex,
         child: left,
       ),
       SizedBox(width: spacing),
       Expanded(
-        flex: 6,
+        flex: rflex,
         child: right,
       ),
     ],
@@ -196,6 +205,51 @@ IconData toUnitIconData(UnitType type) {
     case UnitType.Other:
     default:
       return Icons.people;
+  }
+}
+
+IconData toDeviceIconData(DeviceType type) {
+  switch (type) {
+    case DeviceType.App:
+      return Icons.phone_android;
+    case DeviceType.AIS:
+      return MdiIcons.ferry;
+    case DeviceType.APRS:
+      return MdiIcons.radioHandheld;
+    case DeviceType.Tetra:
+    default:
+      return MdiIcons.cellphoneBasic;
+  }
+}
+
+IconData toDialerIconData(DeviceType type) {
+  switch (type) {
+    case DeviceType.App:
+      return Icons.phone;
+    case DeviceType.AIS:
+    case DeviceType.APRS:
+    case DeviceType.Tetra:
+    default:
+      return Icons.headset_mic;
+  }
+}
+
+Color toPersonnelStatusColor(PersonnelStatus status) {
+  switch (status) {
+    case PersonnelStatus.OnScene:
+      return Colors.green;
+    case PersonnelStatus.Retired:
+      return Colors.brown;
+    case PersonnelStatus.Mobilized:
+    default:
+      return Colors.orange;
+  }
+}
+
+IconData toPersonnelIconData(Personnel personnel) {
+  switch (personnel.affiliation.organization) {
+    default:
+      return MdiIcons.bolnisiCross;
   }
 }
 
@@ -267,34 +321,6 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
     }
   }
   return success;
-}
-
-Future<Unit> selectUnit(
-  BuildContext context, {
-  bool where(Unit unit),
-  String query,
-}) async {
-  return await showDialog<Unit>(
-    context: context,
-    builder: (BuildContext context) {
-      // return object of type Dialog
-      return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text("Velg enhet", textAlign: TextAlign.start),
-        ),
-        body: UnitsPage(
-          where: where,
-          query: query,
-          withActions: false,
-          onSelection: (unit) => Navigator.pop(context, unit),
-        ),
-      );
-    },
-  );
 }
 
 Widget buildCopyableText({

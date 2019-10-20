@@ -33,7 +33,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
     }
     subscription = bloc.authenticated.listen((isAuthenticated) {
       if (isAuthenticated) {
-        Navigator.pushReplacementNamed(context, 'incidents');
+        Navigator.pushReplacementNamed(context, 'incident/list');
       }
     });
     return bloc;

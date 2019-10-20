@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/unit.dart';
+import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
@@ -15,13 +15,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class UnitsPage extends StatefulWidget {
+class PersonnelPage extends StatefulWidget {
   final bool withActions;
   final String query;
-  final bool Function(Unit unit) where;
-  final void Function(Unit unit) onSelection;
+  final bool Function(Personnel personnel) where;
+  final void Function(Personnel personnel) onSelection;
 
-  const UnitsPage({
+  const PersonnelPage({
     Key key,
     this.query,
     this.withActions = true,
@@ -30,17 +30,17 @@ class UnitsPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  UnitsPageState createState() => UnitsPageState();
+  PersonnelPageState createState() => PersonnelPageState();
 }
 
-class UnitsPageState extends State<UnitsPage> {
-  static const FILTER = "units_filter";
+class PersonnelPageState extends State<PersonnelPage> {
+  static const FILTER = "personnel_filter";
   UserBloc _userBloc;
-  UnitBloc _unitBloc;
+  PersonnelBloc _personnelBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
-  Set<UnitStatus> _filter;
+  Set<PersonnelStatus> _filter;
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class UnitsPageState extends State<UnitsPage> {
     _filter = FilterSheet.read(
       context,
       FILTER,
-      defaultValue: UnitStatus.values.toSet()..remove(UnitStatus.Retired),
+      defaultValue: PersonnelStatus.values.toSet()..remove(PersonnelStatus.Retired),
       onRead: _onRead,
     );
   }
@@ -57,10 +57,10 @@ class UnitsPageState extends State<UnitsPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
+    _group = StreamGroup.broadcast()..add(_personnelBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
   }
 
   @override
@@ -76,7 +76,7 @@ class UnitsPageState extends State<UnitsPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            _unitBloc.fetch();
+            _personnelBloc.fetch();
           },
           child: Container(
             color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -84,21 +84,22 @@ class UnitsPageState extends State<UnitsPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = _unitBloc.units.isEmpty || snapshot.hasError
+                var personnel = _personnelBloc.personnel.isEmpty || snapshot.hasError
                     ? []
-                    : _unitBloc.units.values
-                        .where((unit) => _filter.contains(unit.status))
-                        .where((unit) => widget.where == null || widget.where(unit))
-                        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
+                    : _personnelBloc.personnel.values
+                        .where((personnel) => _filter.contains(personnel.status))
+                        .where((personnel) => widget.where == null || widget.where(personnel))
+                        .where((personnel) =>
+                            widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
                         .toList();
-                return units.isEmpty || snapshot.hasError
+                return personnel.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
                         message: snapshot.hasError
                             ? snapshot.error
-                            : widget.query == null ? "Legg til enhet" : "Ingen enheter funnet",
+                            : widget.query == null ? "Legg til mannskap" : "Ingen mannskap funnet",
                       )
-                    : _buildList(units);
+                    : _buildList(personnel);
               },
             ),
           ),
@@ -107,46 +108,46 @@ class UnitsPageState extends State<UnitsPage> {
     );
   }
 
-  String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();
+  String _prepare(Personnel personnel) => "${personnel.searchable}".toLowerCase();
 
-  ListView _buildList(List units) {
+  ListView _buildList(List personnel) {
     return ListView.builder(
-      itemCount: units.length + 1,
+      itemCount: personnel.length + 1,
       itemExtent: 72.0,
       itemBuilder: (context, index) {
-        return _buildUnit(units, index);
+        return _buildPersonnel(personnel, index);
       },
     );
   }
 
-  Widget _buildUnit(List<Unit> units, int index) {
-    if (index == units.length) {
+  Widget _buildPersonnel(List<Personnel> items, int index) {
+    if (index == items.length) {
       return SizedBox(
         height: 88,
         child: Center(
-          child: Text("Antall enheter: $index"),
+          child: Text("Antall mannskaper: $index"),
         ),
       );
     }
-    var unit = units[index];
-    var tracking = unit.tracking == null ? null : _trackingBloc.tracking[unit.tracking];
+    var personnel = items[index];
+    var tracking = personnel.tracking == null ? null : _trackingBloc.tracking[personnel.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions && _userBloc?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
-            child: _buildUnitTile(unit, status, tracking),
+            child: _buildPersonnelTile(personnel, status, tracking),
             secondaryActions: <Widget>[
-              _buildEditAction(context, unit),
-              if (tracking?.status != TrackingStatus.Closed) _buildTransitionAction(context, unit),
+              _buildEditAction(context, personnel),
+              if (tracking?.status != TrackingStatus.Closed) _buildTransitionAction(context, personnel),
             ],
           )
-        : _buildUnitTile(unit, status, tracking);
+        : _buildPersonnelTile(personnel, status, tracking);
   }
 
-  Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
+  Widget _buildPersonnelTile(Personnel personnel, TrackingStatus status, Tracking tracking) {
     return Container(
-      key: ObjectKey(unit.id),
+      key: ObjectKey(personnel.id),
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
@@ -154,25 +155,24 @@ class UnitsPageState extends State<UnitsPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            UnitAvatar(unit: unit, tracking: tracking),
+            PersonnelAvatar(personnel: personnel, tracking: tracking),
             SizedBox(width: 16.0),
             Chip(
-              label: Text("${unit.callsign}"),
+              label: Text("${personnel.name}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
-                Icons.headset_mic,
+                Icons.person,
                 size: 16.0,
                 color: Colors.black38,
               ),
             ),
-            SizedBox(width: 16.0),
-            Expanded(
-              child: Text(unit.name, overflow: TextOverflow.ellipsis),
-            ),
-            SizedBox(width: 4.0),
+            Spacer(),
             Chip(
-              label: Text("${formatSince(tracking?.point?.timestamp, defaultValue: "Ingen")}"),
+              label: Text(
+                "${formatSince(tracking?.point?.timestamp, defaultValue: "Ingen")}",
+                textAlign: TextAlign.end,
+              ),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
@@ -191,43 +191,43 @@ class UnitsPageState extends State<UnitsPage> {
               ),
           ],
         ),
-        onTap: () => _onTap(unit),
+        onTap: () => _onTap(personnel),
       ),
     );
   }
 
-  _onTap(Unit unit) {
+  _onTap(Personnel personnel) {
     if (widget.onSelection == null) {
-      Navigator.pushNamed(context, 'unit', arguments: unit);
+      Navigator.pushNamed(context, 'personnel', arguments: personnel);
     } else {
-      widget.onSelection(unit);
+      widget.onSelection(personnel);
     }
   }
 
-  IconSlideAction _buildEditAction(BuildContext context, Unit unit) {
+  IconSlideAction _buildEditAction(BuildContext context, Personnel personnel) {
     return IconSlideAction(
       caption: 'ENDRE',
       color: Theme.of(context).buttonColor,
       icon: Icons.more_horiz,
-      onTap: () async => await editUnit(context, unit),
+      onTap: () async => await editPersonnel(context, personnel),
     );
   }
 
-  IconSlideAction _buildTransitionAction(BuildContext context, Unit unit) {
-    switch (unit.status) {
-      case UnitStatus.Mobilized:
+  IconSlideAction _buildTransitionAction(BuildContext context, Personnel personnel) {
+    switch (personnel.status) {
+      case PersonnelStatus.Mobilized:
         return IconSlideAction(
-          caption: 'DEPLOYERT',
+          caption: 'ANKOMMET',
           color: Colors.green,
-          icon: Icons.send,
-          onTap: () async => await deployUnit(context, unit),
+          icon: Icons.check_circle,
+          onTap: () async => await deployPersonnel(context, personnel),
         );
       default:
         return IconSlideAction(
-          caption: 'OPPLØST',
-          color: toUnitStatusColor(UnitStatus.Retired),
-          icon: Icons.delete,
-          onTap: () async => await retireUnit(context, unit),
+          caption: 'DIMMITERT',
+          color: toPersonnelStatusColor(PersonnelStatus.Retired),
+          icon: Icons.archive,
+          onTap: () async => await retirePersonnel(context, personnel),
         );
     }
   }
@@ -236,58 +236,59 @@ class UnitsPageState extends State<UnitsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext bc) => FilterSheet<UnitStatus>(
+      builder: (BuildContext bc) => FilterSheet<PersonnelStatus>(
         initial: _filter,
         identifier: FILTER,
         bucket: PageStorage.of(context),
         onRead: (value) => _onRead(value),
         onWrite: (value) => enumName(value),
-        onBuild: () => UnitStatus.values.map(
+        onBuild: () => PersonnelStatus.values.map(
           (status) => FilterData(
             key: status,
-            title: translateUnitStatus(status),
+            title: translatePersonnelStatus(status),
           ),
         ),
-        onChanged: (Set<UnitStatus> selected) => setState(() => _filter = selected),
+        onChanged: (Set<PersonnelStatus> selected) => setState(() => _filter = selected),
       ),
     );
   }
 
-  UnitStatus _onRead(value) => UnitStatus.values.firstWhere((e) => value == enumName(e));
+  PersonnelStatus _onRead(value) => PersonnelStatus.values.firstWhere((e) => value == enumName(e));
 }
 
-class UnitAvatar extends StatelessWidget {
-  final Unit unit;
+class PersonnelAvatar extends StatelessWidget {
+  final Personnel personnel;
   final Tracking tracking;
-  const UnitAvatar({
+  const PersonnelAvatar({
     Key key,
-    this.unit,
+    this.personnel,
     this.tracking,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: toUnitStatusColor(unit.status),
+      backgroundColor: toPersonnelStatusColor(personnel.status),
       child: Stack(
         children: <Widget>[
-          Center(child: Icon(toUnitIconData(unit.type))),
-          Positioned(
-            left: 20,
-            top: 20,
-            child: Container(
-              padding: EdgeInsets.all(0.0),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              child: Icon(
-                toTrackingIconData(tracking?.status),
-                size: 20,
-                color: toTrackingStatusColor(tracking?.status),
+          Center(child: Icon(toPersonnelIconData(personnel))),
+          if (tracking != null)
+            Positioned(
+              left: 20,
+              top: 20,
+              child: Container(
+                padding: EdgeInsets.all(0.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Icon(
+                  toTrackingIconData(tracking?.status),
+                  size: 20,
+                  color: toTrackingStatusColor(tracking?.status),
+                ),
               ),
             ),
-          ),
         ],
       ),
       foregroundColor: Colors.white,
@@ -295,13 +296,13 @@ class UnitAvatar extends StatelessWidget {
   }
 }
 
-class UnitSearch extends SearchDelegate<Unit> {
+class PersonnelSearch extends SearchDelegate<Personnel> {
   static final _storage = new FlutterSecureStorage();
-  static const RECENT_KEY = "search/unit/recent";
+  static const RECENT_KEY = "search/personnel/recent";
 
   ValueNotifier<Set<String>> _recent = ValueNotifier(null);
 
-  UnitSearch() {
+  PersonnelSearch() {
     _init();
   }
 
@@ -310,9 +311,9 @@ class UnitSearch extends SearchDelegate<Unit> {
     final List recent = stored != null
         ? json.decode(stored)
         : [
-            translateUnitType(UnitType.Team),
-            translateUnitType(UnitType.Vehicle),
-            translateUnitStatus(UnitStatus.Mobilized)
+            translatePersonnelStatus(PersonnelStatus.Mobilized),
+            translatePersonnelStatus(PersonnelStatus.OnScene),
+            translatePersonnelStatus(PersonnelStatus.Retired)
           ];
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }
@@ -391,7 +392,7 @@ class UnitSearch extends SearchDelegate<Unit> {
     final recent = _recent.value.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
     _recent.value = recent.toSet() ?? [];
-    return UnitsPage(query: query);
+    return PersonnelPage(query: query);
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {
@@ -402,12 +403,12 @@ class UnitSearch extends SearchDelegate<Unit> {
   }
 }
 
-Future<Unit> selectUnit(
+Future<Personnel> selectPersonnel(
   BuildContext context, {
-  bool where(Unit unit),
+  bool where(Personnel personnel),
   String query,
 }) async {
-  return await showDialog<Unit>(
+  return await showDialog<Personnel>(
     context: context,
     builder: (BuildContext context) {
       // return object of type Dialog
@@ -419,11 +420,11 @@ Future<Unit> selectUnit(
           ),
           title: Text("Velg enhet", textAlign: TextAlign.start),
         ),
-        body: UnitsPage(
+        body: PersonnelPage(
           where: where,
           query: query,
           withActions: false,
-          onSelection: (unit) => Navigator.pop(context, unit),
+          onSelection: (personnel) => Navigator.pop(context, personnel),
         ),
       );
     },

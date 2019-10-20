@@ -8,6 +8,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -184,7 +185,7 @@ Future<Tracking> _handleTracking(
   Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (unit.tracking == null) {
-    tracking = await trackingBloc.create(unit, devices);
+    tracking = await trackingBloc.trackUnit(unit, devices);
   } else if (trackingBloc.tracking.containsKey(unit.tracking)) {
     tracking = trackingBloc.tracking[unit.tracking];
     tracking = await trackingBloc.update(tracking, devices: devices, point: point);

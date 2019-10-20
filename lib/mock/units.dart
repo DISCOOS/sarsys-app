@@ -39,7 +39,7 @@ class UnitServiceMock extends Mock implements UnitService {
             MapEntry(
                 "$incidentId:u:$i",
                 Unit.fromJson(
-                  UnitBuilder.createUnitAsJson("$incidentId:u:$i", UnitType.Team, i, "$incidentId:t:$i"),
+                  UnitBuilder.createUnitAsJson("$incidentId:u:$i", UnitType.Team, i, "$incidentId:t:u:$i"),
                 )),
         ]);
       }
@@ -57,7 +57,7 @@ class UnitServiceMock extends Mock implements UnitService {
     });
     when(mock.update(any)).thenAnswer((_) async {
       final Unit unit = _.positionalArguments[0];
-      var incident = unitsRepo.entries.firstWhere((entry) => entry.value.containsKey(unit.id), orElse: null);
+      var incident = unitsRepo.entries.firstWhere((entry) => entry.value.containsKey(unit.id), orElse: () => null);
       if (incident != null) {
         incident.value.update(unit.id, (_) => unit, ifAbsent: () => unit);
         return ServiceResponse.noContent();
@@ -66,7 +66,7 @@ class UnitServiceMock extends Mock implements UnitService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       final Unit unit = _.positionalArguments[0];
-      var incident = unitsRepo.entries.firstWhere((entry) => entry.value.containsKey(unit.id), orElse: null);
+      var incident = unitsRepo.entries.firstWhere((entry) => entry.value.containsKey(unit.id), orElse: () => null);
       if (incident != null) {
         incident.value.remove(unit.id);
         return ServiceResponse.noContent();

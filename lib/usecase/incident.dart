@@ -47,7 +47,7 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     if (result == null) return dartz.Left(false);
     final incident = await params.bloc.create(result.left);
     if (result.right.isNotEmpty) {
-      final org = await AssetsService().fetchOrganization(Defaults.orgId);
+      final org = await AssetsService().fetchOrganization(Defaults.organization);
       final unitBloc = BlocProvider.of<UnitBloc>(params.context);
       final configBloc = BlocProvider.of<AppConfigBloc>(params.context);
       final department = org.divisions[configBloc.config.division]?.departments[configBloc.config.department] ?? '';

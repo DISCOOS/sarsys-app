@@ -433,7 +433,7 @@ class _IncidentPageState extends State<IncidentPage> {
     );
     if (cancel) {
       _setIncidentStatus(context, IncidentStatus.Cancelled);
-      Navigator.pushReplacementNamed(context, "incidents");
+      Navigator.pushReplacementNamed(context, "incident/list");
     }
   }
 
@@ -445,7 +445,7 @@ class _IncidentPageState extends State<IncidentPage> {
     );
     if (finish) {
       _setIncidentStatus(context, IncidentStatus.Resolved);
-      Navigator.pushReplacementNamed(context, "incidents");
+      Navigator.pushReplacementNamed(context, "incident/list");
     }
   }
 

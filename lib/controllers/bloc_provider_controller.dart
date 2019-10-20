@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/mock/personnel.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
@@ -41,6 +44,7 @@ class BlocProviderController {
   BlocProvider<UserBloc> _userProvider;
   BlocProvider<IncidentBloc> _incidentProvider;
   BlocProvider<UnitBloc> _unitProvider;
+  BlocProvider<PersonnelBloc> _personnelProvider;
   BlocProvider<DeviceBloc> _deviceProvider;
   BlocProvider<TrackingBloc> _trackingProvider;
 
@@ -48,6 +52,7 @@ class BlocProviderController {
   BlocProvider<UserBloc> get userProvider => _userProvider;
   BlocProvider<IncidentBloc> get incidentProvider => _incidentProvider;
   BlocProvider<UnitBloc> get unitProvider => _unitProvider;
+  BlocProvider<PersonnelBloc> get personnelProvider => _personnelProvider;
   BlocProvider<DeviceBloc> get deviceProvider => _deviceProvider;
   BlocProvider<TrackingBloc> get trackingProvider => _trackingProvider;
 
@@ -63,6 +68,7 @@ class BlocProviderController {
         _userProvider,
         _incidentProvider,
         _unitProvider,
+        _personnelProvider,
         _deviceProvider,
         _trackingProvider,
       ];
@@ -106,10 +112,16 @@ class BlocProviderController {
         !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
     final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
 
+    // Configure Personnel service
+    final PersonnelService personnelService = !demo.active
+        ? PersonnelService('$baseRestUrl/api/personnel', client)
+        : PersonnelServiceMock.build(demo.personnelCount);
+    final PersonnelBloc personnelBloc = PersonnelBloc(personnelService, incidentBloc);
+
     // Configure Device service
     final DeviceService deviceService = !demo.active
         ? DeviceService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
-        : DeviceServiceMock.build(incidentBloc, demo.deviceCount);
+        : DeviceServiceMock.build(incidentBloc, demo.tetraCount, demo.appCount);
     final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
 
     // Configure Tracking service
@@ -118,10 +130,18 @@ class BlocProviderController {
         : TrackingServiceMock.build(
             incidentBloc,
             unitService as UnitServiceMock,
+            personnelService as PersonnelServiceMock,
             deviceService as DeviceServiceMock,
+            demo.personnelCount,
             demo.unitCount,
           );
-    final TrackingBloc trackingBloc = TrackingBloc(trackingService, incidentBloc, unitBloc, deviceBloc);
+    final TrackingBloc trackingBloc = TrackingBloc(
+      service: trackingService,
+      incidentBloc: incidentBloc,
+      unitBloc: unitBloc,
+      personnelBloc: personnelBloc,
+      deviceBloc: deviceBloc,
+    );
 
     return providers._set(
       demo: demo,
@@ -129,6 +149,7 @@ class BlocProviderController {
       userBloc: userBloc,
       incidentBloc: incidentBloc,
       unitBloc: unitBloc,
+      personnelBloc: personnelBloc,
       deviceBloc: deviceBloc,
       trackingBloc: trackingBloc,
     );
@@ -177,6 +198,7 @@ class BlocProviderController {
     @required UserBloc userBloc,
     @required IncidentBloc incidentBloc,
     @required UnitBloc unitBloc,
+    @required PersonnelBloc personnelBloc,
     @required DeviceBloc deviceBloc,
     @required TrackingBloc trackingBloc,
   }) {
@@ -188,6 +210,7 @@ class BlocProviderController {
     _userProvider = BlocProvider<UserBloc>(bloc: userBloc);
     _incidentProvider = BlocProvider<IncidentBloc>(bloc: incidentBloc);
     _unitProvider = BlocProvider<UnitBloc>(bloc: unitBloc);
+    _personnelProvider = BlocProvider<PersonnelBloc>(bloc: personnelBloc);
     _deviceProvider = BlocProvider<DeviceBloc>(bloc: deviceBloc);
     _trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
 
@@ -270,14 +293,18 @@ class DemoParams {
   final bool active;
   final UserRole role;
   final int unitCount;
-  final int deviceCount;
+  final int personnelCount;
+  final int tetraCount;
+  final int appCount;
 
   static const NONE = const DemoParams(false);
 
   const DemoParams(
     this.active, {
-    this.unitCount = 15,
-    this.deviceCount = 30,
+    this.unitCount = 10,
+    this.personnelCount = 30,
+    this.tetraCount = 15,
+    this.appCount = 30,
     this.role = UserRole.Commander,
   });
 
@@ -289,8 +316,11 @@ class DemoParams {
           active == other.active &&
           role == other.role &&
           unitCount == other.unitCount &&
-          deviceCount == other.deviceCount;
+          personnelCount == other.personnelCount &&
+          tetraCount == other.tetraCount &&
+          appCount == other.appCount;
 
   @override
-  int get hashCode => active.hashCode ^ role.hashCode ^ unitCount.hashCode ^ deviceCount.hashCode;
+  int get hashCode =>
+      active.hashCode ^ role.hashCode ^ unitCount.hashCode ^ personnelCount.hashCode ^ tetraCount.hashCode;
 }

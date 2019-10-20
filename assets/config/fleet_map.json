@@ -14,31 +14,37 @@
   },
   "organizations": {
     "1": {
+      "id": "1",
       "name": "Brann",
       "alias": "BR",
       "pattern": "1\\d{6}"
     },
     "2": {
+      "id": "2",
       "name": "Politi",
       "alias": "PO",
       "pattern": "2\\d{6}"
     },
     "3": {
+      "id": "3",
       "name": "Helse",
       "alias": "HE",
       "pattern": "3\\d{6}"
     },
     "59": {
+      "id": "59",
       "name": "Forsvaret",
       "alias": "FO",
       "pattern": "59\\d{5}"
     },
     "60": {
+      "id": "60",
       "name": "Redningsselskapet",
       "alias": "RS",
       "pattern": "60\\d{5}"
     },
     "61": {
+      "id": "61",
       "name": "Røde Kors Hjelpekors",
       "alias": "RK",
       "pattern": "61\\d{5}",
@@ -1373,36 +1379,43 @@
       }
     },
     "62": {
+      "id": "62",
       "name": "Norsk Folkehjelp Sanitet",
       "alias": "NF",
       "pattern": "62\\d{5}"
     },
     "63": {
+      "id": "63",
       "name": "Norske Redningshunder",
       "alias": "RH",
       "pattern": "63\\d{5}"
     },
     "645": {
+      "id": "645",
       "name": "NAKs Flytjeneste",
       "alias": "NA",
       "pattern": "645\\d{4}"
     },
     "646": {
+      "id": "646",
       "name": "NARG",
       "alias": "AR",
       "pattern": "646\\d{4}"
     },
     "647": {
+      "id": "647",
       "name": "Speidernes beredskapsgruppe",
       "alias": "SB",
       "pattern": "647\\d{4}"
     },
     "648": {
+      "id": "648",
       "name": "Norsk Grotteforbund",
       "alias": "NG",
       "pattern": "648\\d{4}"
     },
     "649": {
+      "id": "649",
       "name": "Norsk Radio Ræle Liga",
       "alias": "NR",
       "pattern": "649\\d{4}"

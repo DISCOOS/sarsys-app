@@ -110,7 +110,6 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
       "Dette vil stoppe sporing og fjerne apparatet fra hendelse. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-
     await params.bloc.detach(params.data.cloneWith(status: DeviceStatus.Detached));
     return dartz.Right(params.bloc.currentState);
   }

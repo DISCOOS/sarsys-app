@@ -1,6 +1,8 @@
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/device_screen.dart';
+import 'package:SarSys/screens/personnel_screen.dart';
 import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
@@ -134,19 +136,25 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child = LoginScreen();
         break;
       case 'incident':
-        child = CommandScreen(tabIndex: 0);
+        child = CommandScreen(tabIndex: CommandScreen.INCIDENT);
         break;
       case 'unit':
         child = _toUnitScreen(settings);
         break;
-      case 'units':
-        child = CommandScreen(tabIndex: 1);
+      case 'unit/list':
+        child = CommandScreen(tabIndex: CommandScreen.UNITS);
+        break;
+      case 'personnel':
+        child = _toPersonnelScreen(settings);
+        break;
+      case 'personnel/list':
+        child = CommandScreen(tabIndex: CommandScreen.PERSONNEL);
         break;
       case 'device':
         child = _toDeviceScreen(settings);
         break;
-      case 'devices':
-        child = CommandScreen(tabIndex: 2);
+      case 'device/list':
+        child = CommandScreen(tabIndex: CommandScreen.DEVICES);
         break;
       case 'settings':
         child = SettingsScreen();
@@ -157,6 +165,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case 'onboarding':
         child = OnboardingScreen();
         break;
+      case 'incident/list':
       default:
         child = IncidentsScreen();
         break;
@@ -199,10 +208,21 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (settings?.arguments is Unit) {
       unit = settings?.arguments;
     } else if (settings?.arguments is Map) {
-      final Map<String, dynamic> route = settings?.arguments;
+      final Map<String, dynamic> route = Map.from(settings?.arguments);
       unit = widget.controller.unitProvider.bloc.units[route['id']];
     }
     return unit == null ? CommandScreen(tabIndex: CommandScreen.UNITS) : UnitScreen(unit: unit);
+  }
+
+  Widget _toPersonnelScreen(RouteSettings settings) {
+    var personnel;
+    if (settings?.arguments is Personnel) {
+      personnel = settings?.arguments;
+    } else if (settings?.arguments is Map) {
+      final Map<String, dynamic> route = Map.from(settings?.arguments);
+      personnel = widget.controller.personnelProvider.bloc.personnel[route['id']];
+    }
+    return personnel == null ? CommandScreen(tabIndex: CommandScreen.PERSONNEL) : PersonnelScreen(personnel: personnel);
   }
 
   Widget _toDeviceScreen(RouteSettings settings) {
@@ -210,7 +230,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (settings?.arguments is Device) {
       device = settings?.arguments;
     } else if (settings?.arguments is Map) {
-      final Map<String, dynamic> route = settings?.arguments;
+      final Map<String, dynamic> route = Map.from(settings?.arguments);
       device = widget.controller.deviceProvider.bloc.devices[route['id']];
     }
     return device == null ? CommandScreen(tabIndex: CommandScreen.DEVICES) : DeviceScreen(device: device);
@@ -221,11 +241,13 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (providers.configProvider.bloc.config.onboarding) {
       child = OnboardingScreen();
     } else if (providers.userProvider.bloc.isAuthenticated) {
-      final route = widget.bucket.readState(context, identifier: RouteWriter.NAME);
+      var route = widget.bucket.readState(context, identifier: RouteWriter.NAME);
       if (route != null) {
         if (route['incident'] != null) {
           final id = route['incident'];
           providers.incidentProvider.bloc.select(id);
+          route = Map.from(route);
+          route['incident'] = providers.incidentProvider.bloc.current;
         }
         bool isUnset = providers.incidentProvider.bloc.isUnset;
         child = _toScreen(

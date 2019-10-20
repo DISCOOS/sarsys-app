@@ -1,19 +1,21 @@
 import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
-import 'package:SarSys/widgets/unit_info_panel.dart';
+import 'package:SarSys/widgets/personnel_info_panel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';
 
-class UnitTool extends MapTool with MapSelectable<Unit> {
+class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   final User user;
   final TrackingBloc bloc;
   final MessageCallback onMessage;
@@ -24,7 +26,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
   @override
   bool active() => _active();
 
-  UnitTool(
+  PersonnelTool(
     this.bloc, {
     @required this.user,
     @required bool Function() active,
@@ -33,21 +35,25 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
   }) : _active = active;
 
   @override
-  Iterable<Unit> get targets => bloc.units.asTrackingIds(exclude: includeRetired ? [] : [TrackingStatus.Closed]).values;
+  Iterable<Personnel> get targets => bloc.personnel
+      .asTrackingIds(
+        exclude: includeRetired ? [] : [TrackingStatus.Closed],
+      )
+      .values;
 
   @override
-  void doProcessTap(BuildContext context, List<Unit> units) {
-    _show(context, units);
+  void doProcessTap(BuildContext context, List<Personnel> personnel) {
+    _show(context, personnel);
   }
 
   @override
-  LatLng toPoint(Unit unit) {
-    return toLatLng(bloc.tracking[unit.tracking].point);
+  LatLng toPoint(Personnel personnel) {
+    return toLatLng(bloc.tracking[personnel.tracking].point);
   }
 
-  void _show(BuildContext context, List<Unit> units) {
-    if (units.length == 1) {
-      _showInfo(context, units.first);
+  void _show(BuildContext context, List<Personnel> personnel) {
+    if (personnel.length == 1) {
+      _showInfo(context, personnel.first);
     } else {
       final style = Theme.of(context).textTheme.title;
       final size = MediaQuery.of(context).size;
@@ -58,14 +64,14 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorPanel<Unit>(
+            child: SelectorPanel<Personnel>(
               size: size,
               style: style,
               icon: Icons.group,
-              title: "Velg enhet",
-              items: units,
+              title: "Velg personnel",
+              items: personnel,
               onSelected: _showInfo,
-              itemBuilder: (BuildContext context, Unit unit) => Text("${unit.name}"),
+              itemBuilder: (BuildContext context, Personnel personnel) => Text("${personnel.name}"),
             ),
           );
         },
@@ -73,12 +79,12 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
     }
   }
 
-  void _showInfo(BuildContext context, Unit unit) async {
+  void _showInfo(BuildContext context, Personnel personnel) async {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        final tracking = bloc.tracking[unit.tracking];
+        final tracking = bloc.tracking[personnel.tracking];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
@@ -86,12 +92,14 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
             height: min(494.0, MediaQuery.of(context).size.height - 96),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
-              child: UnitInfoPanel(
-                unit: unit,
+              child: PersonnelInfoPanel(
+                personnel: personnel,
                 tracking: tracking,
-                devices: tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((unit) => unit != null),
+                devices:
+                    tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((personnel) => personnel != null),
                 onMessage: onMessage,
                 withActions: user?.isCommander == true,
+                organization: AssetsService().fetchOrganization(Defaults.organization),
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
               ),

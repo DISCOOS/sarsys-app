@@ -1,16 +1,19 @@
 import 'dart:convert';
 
 import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Division.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/usecase/device.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -20,7 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class DevicesPage extends StatefulWidget {
   final String query;
@@ -38,6 +40,7 @@ class DevicesPageState extends State<DevicesPage> {
 
   UserBloc _userBloc;
   UnitBloc _unitBloc;
+  PersonnelBloc _personnelBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
@@ -57,19 +60,21 @@ class DevicesPageState extends State<DevicesPage> {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _unitBloc = BlocProvider.of<UnitBloc>(context);
+    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(_userBloc.state)
       ..add(_unitBloc.state)
+      ..add(_personnelBloc.state)
       ..add(_deviceBloc.state)
       ..add(_trackingBloc.state);
   }
 
   void _init() async {
-    _divisions = await AssetsService().fetchDivisions(Defaults.orgId);
-    _functions = await AssetsService().fetchFunctions(Defaults.orgId);
+    _divisions = await AssetsService().fetchDivisions(Defaults.organization);
+    _functions = await AssetsService().fetchFunctions(Defaults.organization);
     if (mounted) setState(() {});
   }
 
@@ -92,13 +97,10 @@ class DevicesPageState extends State<DevicesPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = _trackingBloc.getUnitsByDeviceId();
-                var tracked = _trackingBloc.getTrackingByDeviceId();
-                var devices = _deviceBloc.devices.values
-                    .where((device) =>
-                        _filter.contains(device.type) &&
-                        (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
-                    .toList();
+                var units = _trackingBloc.units.asDeviceIds();
+                var personnel = _trackingBloc.personnel.asDeviceIds();
+                var tracked = _trackingBloc.asDeviceIds();
+                var devices = _filteredDevices();
                 return devices.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
@@ -110,7 +112,7 @@ class DevicesPageState extends State<DevicesPage> {
                         itemCount: devices.length + 1,
                         itemExtent: 72.0,
                         itemBuilder: (context, index) {
-                          return _buildDevice(devices, index, units, tracked);
+                          return _buildDevice(devices, index, units, personnel, tracked);
                         },
                       );
               }),
@@ -118,6 +120,12 @@ class DevicesPageState extends State<DevicesPage> {
       );
     });
   }
+
+  List<Device> _filteredDevices() => _deviceBloc.devices.values
+      .where((device) =>
+          _filter.contains(device.type) &&
+          (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
+      .toList();
 
   String _prepare(Device device) => "${device.searchable} "
           "${_toDistrict(device.number)} "
@@ -128,6 +136,7 @@ class DevicesPageState extends State<DevicesPage> {
     List<Device> devices,
     int index,
     Map<String, Unit> units,
+    Map<String, Personnel> personnel,
     Map<String, Set<Tracking>> tracked,
   ) {
     if (index == devices.length) {
@@ -144,18 +153,18 @@ class DevicesPageState extends State<DevicesPage> {
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
-            child: _buildDeviceTile(device, status, units),
+            child: _buildDeviceTile(device, status, units, personnel),
             secondaryActions: <Widget>[
               _buildEditAction(device),
               if (status != TrackingStatus.None)
-                _buildRemoveAction(device, units)
+                _buildRemoveAction(device, units, personnel)
               else ...[
                 _buildCreateAction(device),
                 _buildAttachAction(device),
               ]
             ],
           )
-        : _buildDeviceTile(device, status, units);
+        : _buildDeviceTile(device, status, units, personnel);
   }
 
   IconSlideAction _buildAttachAction(Device device) {
@@ -185,16 +194,33 @@ class DevicesPageState extends State<DevicesPage> {
     );
   }
 
-  IconSlideAction _buildRemoveAction(Device device, Map<String, Unit> units) {
+  IconSlideAction _buildRemoveAction(
+    Device device,
+    Map<String, Unit> units,
+    Map<String, Personnel> personnel,
+  ) {
     return IconSlideAction(
       caption: 'FJERN',
       color: Colors.red,
       icon: Icons.people,
-      onTap: () async => await removeFromUnit(context, units[device.id], devices: [device]),
+      onTap: () async {
+        final unit = units[device.id];
+        if (unit != null) {
+          final result = await removeFromUnit(context, unit, devices: [device]);
+          if (result.isLeft()) return;
+        }
+        final p = personnel[device.id];
+        if (p != null) await removeFromPersonnel(context, p, devices: [device]);
+      },
     );
   }
 
-  Widget _buildDeviceTile(Device device, TrackingStatus status, Map<String, Unit> units) {
+  Widget _buildDeviceTile(
+    Device device,
+    TrackingStatus status,
+    Map<String, Unit> units,
+    Map<String, Personnel> personnel,
+  ) {
     return Container(
       key: ObjectKey(device.id),
       color: Colors.white,
@@ -206,7 +232,7 @@ class DevicesPageState extends State<DevicesPage> {
           children: <Widget>[
             CircleAvatar(
               backgroundColor: toPointStatusColor(device.point),
-              child: Icon(MdiIcons.cellphoneBasic),
+              child: Icon(toDeviceIconData(device.type)),
               foregroundColor: Colors.white,
             ),
             SizedBox(width: 16.0),
@@ -215,19 +241,14 @@ class DevicesPageState extends State<DevicesPage> {
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
-                Icons.headset_mic,
+                toDialerIconData(device.type),
                 size: 16.0,
                 color: Colors.black38,
               ),
             ),
-            SizedBox(width: 16.0),
-            Expanded(
-              child: Text(translateDeviceType(device.type), overflow: TextOverflow.ellipsis),
-            ),
-            SizedBox(width: 4.0),
+            Spacer(),
             Chip(
-              label: Text("${units[device.id]?.name ?? ""} "
-                  "${formatSince(device?.point?.timestamp, defaultValue: "ingen")}"),
+              label: Text(_toUsage(units, personnel, device)),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
@@ -249,6 +270,15 @@ class DevicesPageState extends State<DevicesPage> {
         onTap: () => Navigator.pushNamed(context, 'device', arguments: device),
       ),
     );
+  }
+
+  String _toUsage(
+    Map<String, Unit> units,
+    Map<String, Personnel> personnel,
+    Device device,
+  ) {
+    final name = units[device.id]?.name ?? personnel[device.id]?.formal ?? '';
+    return "$name ${formatSince(device?.point?.timestamp, defaultValue: "ingen")}";
   }
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {

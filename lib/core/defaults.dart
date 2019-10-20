@@ -6,7 +6,7 @@ class Defaults {
   static const double zoom = 13.0;
   static const double maxZoom = 20.0;
   static const double minZoom = 3.0;
-  static const String orgId = "61"; // Røde Kors Hjelpekorps
+  static const String organization = "61"; // Røde Kors Hjelpekorps
   static const String division = "140"; // Oslo
   static const String department = "141"; // Oslo
   static const String talkGroupCatalog = "Nasjonal";

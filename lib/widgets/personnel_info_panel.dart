@@ -1,27 +1,28 @@
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/unit.dart';
+import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class UnitInfoPanel extends StatelessWidget {
-  final Unit unit;
+class PersonnelInfoPanel extends StatelessWidget {
+  final Personnel personnel;
   final Tracking tracking;
   final Iterable<Device> devices;
   final bool withHeader;
   final bool withActions;
-  final ValueChanged<Unit> onChanged;
-  final ValueChanged<Unit> onComplete;
+  final ValueChanged<Personnel> onChanged;
+  final ValueChanged<Personnel> onComplete;
   final MessageCallback onMessage;
+  final Future<Organization> organization;
 
-  const UnitInfoPanel({
+  const PersonnelInfoPanel({
     Key key,
-    @required this.unit,
+    @required this.personnel,
     @required this.tracking,
     @required this.devices,
     @required this.onMessage,
@@ -29,6 +30,7 @@ class UnitInfoPanel extends StatelessWidget {
     this.onComplete,
     this.withHeader = true,
     this.withActions = true,
+    this.organization,
   }) : super(key: key);
 
   @override
@@ -37,44 +39,45 @@ class UnitInfoPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(unit, theme, context),
+        if (withHeader) _buildHeader(personnel, theme, context),
         if (withHeader) Divider() else SizedBox(height: 8.0),
-        _buildContactInfo(context, unit),
+        _buildContactInfo(context),
+        if (organization != null) _buildAffiliationInfo(context),
         Divider(),
-        _buildLocationInfo(context, tracking, theme),
+        _buildLocationInfo(context, theme),
         Divider(),
-        _buildTrackingInfo(context, tracking),
+        _buildTrackingInfo(context),
         Divider(),
-        _buildEffortInfo(context, tracking),
+        _buildEffortInfo(context),
         if (withActions) ...[
           Divider(),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
             child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
           ),
-          _buildActions(context, unit)
+          _buildActions(context, personnel)
         ]
       ],
     );
   }
 
-  Padding _buildHeader(Unit unit, TextTheme theme, BuildContext context) {
+  Padding _buildHeader(Personnel personnel, TextTheme theme, BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(left: 16, top: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text('${unit.name}', style: theme.title),
+          Text('${personnel.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: () => _onComplete(unit),
+            onPressed: () => _onComplete(personnel),
           )
         ],
       ),
     );
   }
 
-  Row _buildLocationInfo(BuildContext context, Tracking tracking, TextTheme theme) {
+  Row _buildLocationInfo(BuildContext context, TextTheme theme) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -144,40 +147,60 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildContactInfo(BuildContext context, Unit unit) {
+  Row _buildContactInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Kallesignal",
-            icon: Icon(Icons.headset_mic),
-            value: unit.callsign,
+            label: "Navn",
+            icon: Icon(Icons.person),
+            value: personnel.name,
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
         ),
         Expanded(
-          child: GestureDetector(
-            child: buildCopyableText(
-              context: context,
-              label: "Mobil",
-              icon: Icon(Icons.phone),
-              value: unit?.phone ?? "Ukjent",
-              onMessage: onMessage,
-              onComplete: _onComplete,
-            ),
-            onTap: () {
-              final number = unit?.phone ?? '';
-              if (number.isNotEmpty) launch("tel:$number");
-            },
+          child: buildCopyableText(
+            context: context,
+            label: "Status",
+            icon: Icon(MdiIcons.accountQuestionOutline),
+            value: translatePersonnelStatus(personnel.status),
+            onMessage: onMessage,
+            onComplete: _onComplete,
           ),
         ),
       ],
     );
   }
 
-  Row _buildTrackingInfo(BuildContext context, Tracking tracking) {
+  Widget _buildAffiliationInfo(BuildContext context) {
+    return FutureBuilder<Organization>(
+        future: organization,
+        builder: (context, snapshot) {
+          return Row(
+            children: <Widget>[
+              Expanded(
+                child: buildCopyableText(
+                  context: context,
+                  label: "Tilhørighet",
+                  icon: Icon(MdiIcons.graph),
+                  value: _ensureAffiliation(snapshot),
+                  onMessage: onMessage,
+                  onComplete: _onComplete,
+                ),
+              ),
+            ],
+          );
+        });
+  }
+
+  String _ensureAffiliation(AsyncSnapshot<Organization> snapshot) => snapshot.hasData
+      ? "${snapshot.data.name}, ${snapshot.data.divisions[personnel.affiliation.division].name}, "
+          "${snapshot.data.divisions[personnel.affiliation.division].departments[personnel.affiliation.department]}"
+      : "-";
+
+  Row _buildTrackingInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -185,7 +208,7 @@ class UnitInfoPanel extends StatelessWidget {
             context: context,
             label: "Apparater",
             icon: Icon(MdiIcons.cellphoneBasic),
-            value: devices?.map((device) => device.number)?.join(', ') ?? '',
+            value: devices?.map((device) => device.number)?.join(', ') ?? 'Ingen',
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -204,7 +227,7 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildEffortInfo(BuildContext context, Tracking tracking) {
+  Row _buildEffortInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -231,22 +254,22 @@ class UnitInfoPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, Unit unit1) {
+  Widget _buildActions(BuildContext context, Personnel personnel1) {
     return ButtonBarTheme(
       // make buttons use the appropriate styles for cards
       child: ButtonBar(
         alignment: MainAxisAlignment.start,
         children: <Widget>[
           Tooltip(
-            message: "Endre enhet",
+            message: "Endre mannskap",
             child: FlatButton(
               child: Text(
                 "ENDRE",
                 textAlign: TextAlign.center,
               ),
               onPressed: () async {
-                final result = await editUnit(context, unit);
-                if (result.isRight() && result.toIterable().first != unit) {
+                final result = await editPersonnel(context, personnel);
+                if (result.isRight() && result.toIterable().first != personnel) {
                   final actual = result.toIterable().first;
                   _onMessage("${actual.name} er oppdatert");
                   _onChanged(actual);
@@ -257,34 +280,34 @@ class UnitInfoPanel extends StatelessWidget {
           ),
           if (devices.isNotEmpty)
             Tooltip(
-              message: "Fjern apparater fra enhet",
+              message: "Fjern apparater fra mannskap",
               child: FlatButton(
                 child: Text(
                   "FJERN",
                   textAlign: TextAlign.center,
                 ),
                 onPressed: () async {
-                  final result = await removeFromUnit(context, unit, devices: devices);
+                  final result = await removeFromPersonnel(context, personnel, devices: devices);
                   if (result.isRight()) {
-                    _onMessage("Apparater fjernet fra ${unit.name}");
-                    _onChanged(unit);
+                    _onMessage("Apparater fjernet fra ${personnel.name}");
+                    _onChanged(personnel);
                   }
                   _onComplete();
                 },
               ),
             ),
           Tooltip(
-            message: "Oppløs enhet og avslutt sporing",
+            message: "Dimitter og avslutt sporing",
             child: FlatButton(
               child: Text(
-                "OPPLØST",
+                "DIMITTERT",
                 textAlign: TextAlign.center,
               ),
               onPressed: () async {
-                final result = await retireUnit(context, unit);
+                final result = await retirePersonnel(context, personnel);
                 if (result.isRight()) {
-                  _onMessage("${unit.name} er oppløst");
-                  _onChanged(unit);
+                  _onMessage("${personnel.name} er dimmitert");
+                  _onChanged(personnel);
                 }
                 _onComplete();
               },
@@ -303,11 +326,11 @@ class UnitInfoPanel extends StatelessWidget {
     if (onMessage != null) onMessage(message);
   }
 
-  void _onChanged([unit]) {
-    if (onChanged != null) onChanged(unit);
+  void _onChanged([personnel]) {
+    if (onChanged != null) onChanged(personnel);
   }
 
-  void _onComplete([unit]) {
-    if (onComplete != null) onComplete(unit ?? this.unit);
+  void _onComplete([personnel]) {
+    if (onComplete != null) onComplete(personnel ?? this.personnel);
   }
 }

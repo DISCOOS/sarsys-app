@@ -1,11 +1,16 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
+import 'package:SarSys/pages/personnel_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
@@ -16,8 +21,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 class CommandScreen extends StatefulWidget {
   static const INCIDENT = 0;
   static const UNITS = 1;
-  static const DEVICES = 2;
-  static const ROUTES = ["incident", "units", "devices"];
+  static const PERSONNEL = 2;
+  static const DEVICES = 3;
+  static const ROUTES = ["incident", "units", "devices", "personnel"];
 
   final int tabIndex;
 
@@ -30,6 +36,7 @@ class CommandScreen extends StatefulWidget {
 class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   final _unitsKey = GlobalKey<UnitsPageState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _personnelKey = GlobalKey<PersonnelPageState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
   UserBloc _userBloc;
@@ -68,6 +75,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         final tabs = [
           IncidentPage(onMessage: _showMessage),
           UnitsPage(key: _unitsKey),
+          PersonnelPage(key: _personnelKey),
           DevicesPage(key: _devicesKey),
         ];
         return Scaffold(
@@ -87,6 +95,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             items: [
               BottomNavigationBarItem(title: Text("Hendelse"), icon: Icon(Icons.warning)),
               BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
+              BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
               BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
@@ -106,6 +115,8 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         return name == null || name.isEmpty ? ifEmpty : name;
       case CommandScreen.UNITS:
         return "Enheter";
+      case CommandScreen.PERSONNEL:
+        return "Mannskap";
       case CommandScreen.DEVICES:
         return "Apparater";
     }
@@ -122,38 +133,44 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             )
         ];
       case CommandScreen.UNITS:
-        return [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () async {
-              showSearch(context: context, delegate: UnitSearch());
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () async {
-              _unitsKey.currentState.showFilterSheet();
-            },
-          )
-        ];
+        return _buildListActions<Unit>(
+          delegate: UnitSearch(),
+          onPressed: () async {
+            _unitsKey.currentState.showFilterSheet();
+          },
+        );
+      case CommandScreen.PERSONNEL:
+        return _buildListActions<Personnel>(
+          delegate: PersonnelSearch(),
+          onPressed: () async {
+            _personnelKey.currentState.showFilterSheet();
+          },
+        );
       case CommandScreen.DEVICES:
-        return [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () async {
-              showSearch(context: context, delegate: DeviceSearch());
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () async {
-              _devicesKey.currentState.showFilterSheet();
-            },
-          )
-        ];
+        return _buildListActions<Device>(
+          delegate: DeviceSearch(),
+          onPressed: () async {
+            _devicesKey.currentState.showFilterSheet();
+          },
+        );
       default:
         return [Container()];
     }
+  }
+
+  List<Widget> _buildListActions<T>({SearchDelegate<T> delegate, VoidCallback onPressed}) {
+    return [
+      IconButton(
+        icon: Icon(Icons.search),
+        onPressed: () async {
+          showSearch<T>(context: context, delegate: delegate);
+        },
+      ),
+      IconButton(
+        icon: Icon(Icons.filter_list),
+        onPressed: onPressed,
+      )
+    ];
   }
 
   StatelessWidget _buildFAB() {
@@ -163,6 +180,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createUnit(context),
+          );
+        case CommandScreen.PERSONNEL:
+          return FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: () async => await createPersonnel(context),
           );
         case CommandScreen.DEVICES:
           return FloatingActionButton(

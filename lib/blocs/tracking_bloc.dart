@@ -3,9 +3,11 @@ import 'dart:collection';
 
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -13,12 +15,14 @@ import 'package:SarSys/services/tracking_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/foundation.dart';
 
 typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   final TrackingService service;
   final UnitBloc unitBloc;
+  final PersonnelBloc personnelBloc;
   final DeviceBloc deviceBloc;
   final IncidentBloc incidentBloc;
 
@@ -26,14 +30,27 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   List<StreamSubscription> _subscriptions = [];
 
-  TrackingBloc(this.service, this.incidentBloc, this.unitBloc, this.deviceBloc) {
+  TrackingBloc({
+    this.service,
+    this.incidentBloc,
+    this.deviceBloc,
+    this.unitBloc,
+    this.personnelBloc,
+  }) {
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
     assert(unitBloc != null, "unitBloc can not be null");
+    assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
     _subscriptions
       ..add(incidentBloc.state.listen(_init))
-      ..add(unitBloc.state.listen(_cleanup))
+      // Manages tracking state for units
+      ..add(unitBloc.state.listen(_handleUnit))
+      // Manages tracking state for devices
+      ..add(deviceBloc.state.listen(_handleDevice))
+      // Manages tracking state for personnel
+      ..add(personnelBloc.state.listen(_handlePersonnel))
+      // Process tracking messages
       ..add(service.messages.listen((event) => dispatch(HandleMessage(event))));
   }
 
@@ -55,7 +72,20 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     }
   }
 
-  void _cleanup(UnitState state) {
+  void _handleDevice(DeviceState state) {
+    if (state.isDetached()) {
+      final device = (state as DeviceDetached).data;
+      final tracking = find(device);
+      // Remove device from active list of tracked devices? This will not impact history!
+      if (tracking != null) {
+        dispatch(UpdateTracking(tracking.cloneWith(
+          devices: List.from(tracking.devices)..remove(device.id),
+        )));
+      }
+    }
+  }
+
+  void _handleUnit(UnitState state) {
     if (state.isUpdated()) {
       final event = state as UnitUpdated;
       final tracking = _tracking[event.data.tracking];
@@ -79,81 +109,81 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     }
   }
 
+  void _handlePersonnel(PersonnelState state) {
+    if (state.isUpdated()) {
+      final event = state as PersonnelUpdated;
+      final tracking = _tracking[event.data.tracking];
+      // Close tracking?
+      if (tracking != null) {
+        if (PersonnelStatus.Retired == event.data.status) {
+          dispatch(UpdateTracking(tracking.cloneWith(
+            status: TrackingStatus.Closed,
+            devices: [],
+          )));
+        } else if (TrackingStatus.Closed == tracking.status) {
+          dispatch(UpdateTracking(tracking.cloneWith(
+            status: TrackingStatus.Tracking,
+          )));
+        }
+      }
+    } else if (state.isDeleted()) {
+      final event = state as PersonnelDeleted;
+      final tracking = _tracking[event.data.tracking];
+      if (tracking != null) dispatch(DeleteTracking(tracking));
+    }
+  }
+
   @override
   TrackingState get initialState => TrackingEmpty();
 
-  /// Stream of tracking changes for to given unit
-  Stream<Tracking> changes(Unit unit) => state
+  /// Stream of tracking changes for test
+  Stream<Tracking> changes(String tracking) => state
       .where(
         (state) =>
-            (state is TrackingUpdated && state.data.id == unit.tracking) ||
-            (state is TrackingLoaded && state.data.contains(unit.tracking)),
+            (state is TrackingUpdated && state.data.id == tracking) ||
+            (state is TrackingLoaded && state.data.contains(tracking)),
       )
-      .map((state) => state is TrackingLoaded ? _tracking[unit.tracking] : state.data);
+      .map((state) => state is TrackingLoaded ? _tracking[tracking] : state.data);
 
   /// Check if [tracking] is empty
   bool get isEmpty => _tracking.isEmpty;
 
-  /// Get tracks
+  /// Get all tracking objects
   Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracking);
 
   /// Get units being tracked
-  Map<String, Unit> getTrackedUnits({
-    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
-  }) =>
-      UnmodifiableMapView(
-        Map.fromEntries(
-          unitBloc.units.entries.where((entry) => isTrackingUnit(entry.value, exclude: exclude)),
-        ),
+  Entities<Unit> get units => Entities<Unit>(
+        bloc: this,
+        data: this.unitBloc.units,
+        asId: (unit) => unit?.tracking,
       );
 
-  /// Test if unit is being tracked
-  bool isTrackingUnit(
-    Unit unit, {
-    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
-  }) =>
-      unit?.tracking != null &&
-      _tracking.containsKey(unit?.tracking) &&
-      !exclude.contains(_tracking[unit?.tracking].status);
-
-  /// Get units being tracked
-  Unit getUnitFromTrackingId(
-    String id, {
-    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
-  }) =>
-      unitBloc.units.values.firstWhere(
-        (unit) => isTrackingUnit(unit, exclude: exclude) && id == unit?.tracking,
+  /// Get personnel being tracked
+  Entities<Personnel> get personnel => Entities<Personnel>(
+        bloc: this,
+        data: this.personnelBloc.personnel,
+        asId: (personnel) => personnel?.tracking,
       );
 
-  /// Get units for all tracked devices.
-  Map<String, Unit> getUnitsByDeviceId({
-    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
-  }) {
-    final Map<String, Unit> map = {};
-    getTrackedUnits(exclude: exclude).values.forEach((unit) {
-      getDevicesFromTrackingId(unit.tracking, exclude: exclude).forEach((device) {
-        map.update(device.id, (set) => unit, ifAbsent: () => unit);
-      });
-    });
-    return UnmodifiableMapView(map);
-  }
-
-  /// Get devices being tracked
-  Map<String, Device> getTrackedDevices({
+  /// Test if device is being tracked
+  bool contains(
+    Device device, {
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
   }) =>
-      UnmodifiableMapView(
-        Map.fromEntries(
-          unitBloc.units.values
-              .where((unit) => isTrackingUnit(unit, exclude: exclude))
-              .map((unit) => _tracking[unit.tracking]?.devices ?? [])
-              .reduce((l1, l2) => List.from(l1)..addAll(l2))
-              .map((id) => MapEntry(id, deviceBloc.devices[id])),
-        ),
-      );
+      find(device) != null;
 
-  /// Get devices being tracked by given id
-  List<Device> getDevicesFromTrackingId(
+  /// Find tracking from given device
+  Tracking find(
+    Device device, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      _tracking.entries
+          .where((entry) => !exclude.contains(entry.value.status))
+          .firstWhere((entry) => entry.value.devices.contains(device.id))
+          .value;
+
+  /// Get devices being tracked by given tracking id
+  List<Device> devices(
     String id, {
     List<TrackingStatus> exclude = const [TrackingStatus.Closed],
   }) =>
@@ -165,11 +195,12 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
               .toList()
           : [];
 
-  /// Get tracking for all tracked devices.
-  Map<String, Set<Tracking>> getTrackingByDeviceId() {
+  /// Get tracking for all tracked devices as a map from device id to all [Tracking] instances tracking the device
+  /// TODO: Implement validation of restriction "a device can only be tracked by one tracking instance"
+  Map<String, Set<Tracking>> asDeviceIds() {
     final Map<String, Set<Tracking>> map = {};
     _tracking.values.forEach((tracking) {
-      getDevicesFromTrackingId(tracking.id).forEach((device) {
+      devices(tracking.id).forEach((device) {
         map.update(device.id, (set) {
           set.add(tracking);
           return set;
@@ -178,9 +209,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     });
     return UnmodifiableMapView(map);
   }
-
-  /// Test if unit is being tracked
-  bool isTrackingDeviceById(String id) => getTrackingByDeviceId().containsKey(id);
 
   /// Fetch tracks from [service]
   Future<List<Tracking>> fetch() async {
@@ -205,8 +233,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Create tracking for given Unit
-  Future<Tracking> create(Unit unit, List<Device> devices) {
-    return _dispatch<Tracking>(CreateTracking(unit, devices.map((device) => device.id).toList()));
+  Future<Tracking> trackUnit(Unit unit, List<Device> devices) {
+    return _dispatch<Tracking>(TrackUnit(unit, devices.map((device) => device.id).toList()));
+  }
+
+  /// Create tracking for given personnel
+  Future<Tracking> trackPersonnel(Personnel personnel, List<Device> devices) {
+    return _dispatch<Tracking>(TrackPersonnel(personnel, devices.map((device) => device.id).toList()));
   }
 
   /// Update given tracking
@@ -239,8 +272,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Stream<TrackingState> mapEventToState(TrackingCommand command) async* {
     if (command is LoadTracking) {
       yield _load(command.data);
-    } else if (command is CreateTracking) {
-      yield await _create(command);
+    } else if (command is TrackUnit) {
+      yield await _trackUnit(command);
+    } else if (command is TrackPersonnel) {
+      yield await _trackPersonnel(command);
     } else if (command is UpdateTracking) {
       yield await _update(command);
     } else if (command is DeleteTracking) {
@@ -263,11 +298,26 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return TrackingLoaded(_tracking.keys.toList());
   }
 
-  Future<TrackingState> _create(CreateTracking event) async {
-    var response = await service.create(event.unit.id, event.data);
+  Future<TrackingState> _trackUnit(TrackUnit event) async {
+    var response = await service.trackUnits(event.unit.id, event.data);
     if (response.is200) {
       await unitBloc.update(
         event.unit.cloneWith(tracking: response.body.id),
+      );
+      final tracking = _tracking.putIfAbsent(
+        response.body.id,
+        () => response.body,
+      );
+      return _toOK(event, TrackingCreated(tracking), result: tracking);
+    }
+    return _toError(event, response);
+  }
+
+  Future<TrackingState> _trackPersonnel(TrackPersonnel event) async {
+    var response = await service.trackPersonnel(event.personnel.id, event.data);
+    if (response.is200) {
+      await personnelBloc.update(
+        event.personnel.cloneWith(tracking: response.body.id),
       );
       final tracking = _tracking.putIfAbsent(
         response.body.id,
@@ -387,12 +437,20 @@ class LoadTracking extends TrackingCommand<List<Tracking>, void> {
   String toString() => 'LoadTracking';
 }
 
-class CreateTracking extends TrackingCommand<List<String>, Tracking> {
+class TrackUnit extends TrackingCommand<List<String>, Tracking> {
   final Unit unit;
-  CreateTracking(this.unit, List<String> devices) : super(devices);
+  TrackUnit(this.unit, List<String> devices) : super(devices);
 
   @override
-  String toString() => 'CreateTracking';
+  String toString() => 'TrackUnit';
+}
+
+class TrackPersonnel extends TrackingCommand<List<String>, Tracking> {
+  final Personnel personnel;
+  TrackPersonnel(this.personnel, List<String> devices) : super(devices);
+
+  @override
+  String toString() => 'TrackPersonnel';
 }
 
 class UpdateTracking extends TrackingCommand<Tracking, Tracking> {
@@ -508,4 +566,94 @@ class TrackingError extends TrackingException {
 
   @override
   String toString() => 'TrackingError {data: $data}';
+}
+
+/// Helper class for querying tracked entities
+class Entities<T> {
+  final TrackingBloc bloc;
+  final Map<String, T> _data;
+  final String Function(T entity) asId;
+
+  Entities({
+    /// [TrackingBloc] managing tracking objects
+    @required this.bloc,
+
+    /// Mapping from entity id to value object
+    @required Map<String, T> data,
+
+    /// Mapping from entity to tracking id
+    @required this.asId,
+  }) : this._data = data;
+
+  /// Test if entity is being tracked
+  bool contains(
+    T entity, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      asId(entity) != null &&
+      bloc.tracking.containsKey(asId(entity)) &&
+      !exclude.contains(bloc.tracking[asId(entity)].status);
+
+  /// Get entry with given tracking id
+  T elementAt(
+    String tracking, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      _data.values.firstWhere(
+        (entity) => contains(entity, exclude: exclude) && tracking == asId(entity),
+      );
+
+  /// Find entity tracking given device
+  T find(
+    Device device, {
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      asTrackingIds(exclude: exclude).values.firstWhere(
+            (entity) =>
+                null !=
+                bloc.devices(asId(entity), exclude: exclude).firstWhere(
+                      (match) => device.id == match.id,
+                      orElse: () => null,
+                    ),
+            orElse: () => null,
+          );
+
+  /// Check if given entity is
+
+  /// Get entities being tracked as a map of tracking id to entity object
+  Map<String, T> asTrackingIds({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      UnmodifiableMapView(
+        Map.fromEntries(
+          _data.entries.where((entry) => contains(entry.value, exclude: exclude)),
+        ),
+      );
+
+  /// Get entities for all tracked devices.
+  Map<String, T> asDeviceIds({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) {
+    final Map<String, T> map = {};
+    asTrackingIds(exclude: exclude).values.forEach((entity) {
+      bloc.devices(asId(entity), exclude: exclude).forEach((device) {
+        map.update(device.id, (set) => entity, ifAbsent: () => entity);
+      });
+    });
+    return UnmodifiableMapView(map);
+  }
+
+  /// Get devices being tracked by entities of given type
+  Map<String, Device> devices({
+    List<TrackingStatus> exclude: const [TrackingStatus.Closed],
+  }) =>
+      UnmodifiableMapView(
+        Map.fromEntries(
+          _data.values
+              .where((entity) => contains(entity, exclude: exclude))
+              .map((entry) => bloc.tracking[asId(entry)]?.devices ?? [])
+              .reduce((l1, l2) => List.from(l1)..addAll(l2))
+              .map((id) => MapEntry(id, bloc.deviceBloc.devices[id])),
+        ),
+      );
 }

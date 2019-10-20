@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/mock/personnel.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
@@ -42,14 +43,19 @@ class TrackingServiceMock extends Mock implements TrackingService {
   factory TrackingServiceMock.build(
     final IncidentBloc incidentBloc,
     final UnitServiceMock unitServiceMock,
+    final PersonnelServiceMock personnelServiceMock,
     final DeviceServiceMock deviceServiceMock,
-    final count,
+    final personnelCount,
+    final unitCount,
   ) {
-    final Map<String, String> trackedUnits = {}; // unitId -> trackingId
+    final Map<String, String> units = {}; // unitId -> trackingId
+    final Map<String, String> personnel = {}; // personnelId -> trackingId
     final Map<String, String> trackedDevices = {}; // deviceId -> trackingId
     final Map<String, _TrackSimulation> simulations = {}; // trackingId -> simulation
     final Map<String, Map<String, Tracking>> trackingRepo = {}; // incidentId -> trackingId -> tracking
+
     final StreamController<TrackingMessage> controller = StreamController.broadcast();
+
     deviceServiceMock.messages.listen((message) => _progress(
           message,
           trackingRepo,
@@ -58,7 +64,9 @@ class TrackingServiceMock extends Mock implements TrackingService {
           controller,
         ));
     final mock = TrackingServiceMock();
+
     when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.fetch(any)).thenAnswer((_) async {
       final String incidentId = _.positionalArguments[0];
       var trackingList = trackingRepo[incidentId];
@@ -67,65 +75,78 @@ class TrackingServiceMock extends Mock implements TrackingService {
       }
       // Only generate tracking for automatically generated incidents
       if (incidentId.startsWith('a:') && trackingList.isEmpty) {
-        // Create trackingList
-        trackingList.addEntries([
-          for (var i = 1; i <= count; i++)
-            Tracking.fromJson(
-              TracksBuilder.createTrackingAsJson(
-                "$incidentId:t:$i",
-                status: TrackingStatus.Tracking,
-              ),
-            ).cloneWith(devices: List.from(["${incidentId}d$i"])),
-        ].map((tracking) => MapEntry(tracking.id, tracking)));
+        // Create unit tracking
+        trackingList.addEntries(
+          _createTrackingUnits(
+            incidentId,
+            units,
+            trackedDevices,
+            unitCount,
+          ),
+        );
+
+        // Create personnel tracking
+        trackingList.addEntries(
+          _createTrackingPersonnel(
+            incidentId,
+            personnel,
+            trackedDevices,
+            personnelCount,
+          ),
+        );
+
         // Create simulations
         trackingList.keys.forEach(
-          (id) => _simulate(id, trackingList, deviceServiceMock.deviceRepo[incidentId], simulations),
-        );
-        var i = 0;
-        trackedUnits.addEntries(
-          trackingList.map((trackingId, tracking) => MapEntry("${incidentId}u${++i}", trackingId)).entries,
-        );
-        i = 0;
-        trackedDevices.addEntries(
-          trackingList.map((trackingId, tracking) => MapEntry("${incidentId}d${++i}", trackingId)).entries,
+          (id) => _simulate(
+            id,
+            trackingList,
+            deviceServiceMock.deviceRepo[incidentId],
+            simulations,
+          ),
         );
       }
       trackingRepo.putIfAbsent(incidentId, () => trackingList);
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
-    when(mock.create(any, any)).thenAnswer((_) async {
-      var unitId = _.positionalArguments[0];
-      if (trackedUnits.containsKey(unitId)) {
-        return ServiceResponse.noContent();
-      }
-      var devices = _.positionalArguments[1] as List<String>;
+
+    when(mock.trackUnits(any, any)).thenAnswer((_) async {
+      final unitId = _.positionalArguments[0];
       final incident = unitServiceMock.unitsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(unitId),
         orElse: () => null,
       );
-      if (incident == null) {
-        return ServiceResponse.notFound(message: "Not found. Unit $unitId.");
-      }
-      final trackingList = trackingRepo[incident.key];
-      final trackingId = "${incident.key}:t:${randomAlphaNumeric(8).toLowerCase()}";
-      var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
-        trackingId,
-        status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty),
-      )).cloneWith(devices: devices);
-      trackingList.putIfAbsent(tracking.id, () => tracking);
-      tracking = _simulate(
-        trackingId,
-        trackingList,
-        deviceServiceMock.deviceRepo[incident.key],
-        simulations,
+      return _create(
+        type: 'Unit',
+        trackedId: unitId,
+        incidentId: incident.key,
+        devices: _.positionalArguments[1] as List<String>,
+        tracked: units,
+        trackingRepo: trackingRepo,
+        deviceServiceMock: deviceServiceMock,
+        simulations: simulations,
+        trackedDevices: trackedDevices,
       );
-      trackingList.putIfAbsent(tracking.id, () => tracking);
-      trackedUnits.putIfAbsent(unitId, () => tracking.id);
-      trackedDevices.addEntries(
-        tracking.devices.map((deviceId) => MapEntry(deviceId, trackingId)),
-      );
-      return ServiceResponse.ok(body: tracking);
     });
+
+    when(mock.trackPersonnel(any, any)).thenAnswer((_) async {
+      final personnelId = _.positionalArguments[0];
+      final incident = personnelServiceMock.personnelRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(personnelId),
+        orElse: () => null,
+      );
+      return _create(
+        type: 'Personnel',
+        trackedId: personnelId,
+        incidentId: incident.key,
+        devices: _.positionalArguments[1] as List<String>,
+        tracked: units,
+        trackingRepo: trackingRepo,
+        deviceServiceMock: deviceServiceMock,
+        simulations: simulations,
+        trackedDevices: trackedDevices,
+      );
+    });
+
     when(mock.update(any)).thenAnswer((_) async {
       var original = _.positionalArguments[0] as Tracking;
       var incident = trackingRepo.entries.firstWhere(
@@ -179,13 +200,113 @@ class TrackingServiceMock extends Mock implements TrackingService {
         var trackingList = incident.value;
         trackingList.remove(tracking.id);
         simulations.remove(tracking.id);
-        trackedUnits.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
+        units.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
         trackedDevices.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
         return ServiceResponse.noContent();
       }
       return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
     });
     return mock;
+  }
+
+  static ServiceResponse _create({
+    String type,
+    String trackedId,
+    List<String> devices,
+    String incidentId,
+    Map<String, String> tracked,
+    Map<String, Map<String, Tracking>> trackingRepo,
+    DeviceServiceMock deviceServiceMock,
+    Map<String, _TrackSimulation> simulations,
+    Map<String, String> trackedDevices,
+  }) {
+    if (tracked.containsKey(trackedId)) {
+      return ServiceResponse.noContent();
+    }
+
+    if (incidentId == null) {
+      return ServiceResponse.notFound(message: "Not found. $type $trackedId.");
+    }
+
+    final prefix = type.toLowerCase().substring(0, 1);
+    final trackingList = trackingRepo[incidentId];
+    final trackingId = "$incidentId:t:$prefix:${randomAlphaNumeric(8).toLowerCase()}";
+    var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
+      trackingId,
+      status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty),
+    )).cloneWith(devices: devices);
+    trackingList.putIfAbsent(trackingId, () => tracking);
+    tracking = _simulate(
+      trackingId,
+      trackingList,
+      deviceServiceMock.deviceRepo[incidentId],
+      simulations,
+    );
+    trackingList.putIfAbsent(trackingId, () => tracking);
+    tracked.putIfAbsent(trackedId, () => trackingId);
+    trackedDevices.addEntries(
+      tracking.devices.map((deviceId) => MapEntry(deviceId, trackingId)),
+    );
+    return ServiceResponse.ok(body: tracking);
+  }
+
+  static Iterable<MapEntry<String, Tracking>> _createTrackingPersonnel(
+    String incidentId,
+    Map<String, String> personnel, // personnelId -> trackingId
+    Map<String, String> trackedDevices, // deviceId -> trackingId
+    int count,
+  ) {
+    // Track devices from app-series (tracking incidentId:t:p:$i -> device incidentId:d:a:$i)
+    final tracking = _createTracking(incidentId, 'p', 'd:a', count);
+    // Map personnel incidentId:p:$i -> tracking incidentId:t:p:$i
+    _addEntries(incidentId, 'p', personnel, tracking);
+    // Map device incidentId:d:a:$i -> tracking incidentId:t:p:$i
+    _addEntries(incidentId, 'd:a', trackedDevices, tracking);
+    return tracking;
+  }
+
+  static Iterable<MapEntry<String, Tracking>> _createTrackingUnits(
+    String incidentId,
+    Map<String, String> units, // unitId -> trackingId
+    Map<String, String> trackedDevices, // deviceId -> trackingId
+    int unitCount,
+  ) {
+    // Track devices from tetra-series (tracking incidentId:t:u:$i -> device incidentId:d:t:$i)
+    final tracking = _createTracking(incidentId, 'u', 'd:t', unitCount);
+    // Map personnel incidentId:u:$i -> tracking incidentId:t:u:$i
+    _addEntries(incidentId, 'u', units, tracking);
+    // Map device incidentId:d:t:$i -> tracking incidentId:t:u:$i
+    _addEntries(incidentId, 'd:t', trackedDevices, tracking);
+    return tracking;
+  }
+
+  static Iterable<MapEntry<String, Tracking>> _createTracking<T>(
+    String incidentId,
+    String entity,
+    String device,
+    int count,
+  ) {
+    return [
+      for (var i = 1; i <= count; i++)
+        Tracking.fromJson(
+          TracksBuilder.createTrackingAsJson(
+            "$incidentId:t:$entity:$i",
+            status: TrackingStatus.Tracking,
+          ),
+        ).cloneWith(devices: List.from(["$incidentId:$device:$i"])),
+    ].map((tracking) => MapEntry(tracking.id, tracking));
+  }
+
+  static void _addEntries(
+    String incidentId,
+    String type,
+    Map<String, String> tracked,
+    Iterable<MapEntry<String, Tracking>> items,
+  ) {
+    int i = 0;
+    tracked.addEntries(
+      items.map((entry) => MapEntry("$incidentId:$type:${++i}", entry.key)),
+    );
   }
 
   static TrackingStatus _toStatus(TrackingStatus status, bool hasDevices) {

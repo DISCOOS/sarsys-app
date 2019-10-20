@@ -9,6 +9,7 @@ import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/layers/device_layer.dart';
 import 'package:SarSys/map/layers/measure_layer.dart';
+import 'package:SarSys/map/layers/personnel_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
@@ -17,6 +18,7 @@ import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/device_tool.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/map/tools/measure_tool.dart';
+import 'package:SarSys/map/tools/personnel_tool.dart';
 import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
@@ -55,8 +57,11 @@ class IncidentMap extends StatefulWidget {
 
   final bool withPOIs;
   final bool withUnits;
+  final bool withPersonnel;
   final bool withDevices;
   final bool withTracking;
+
+  final bool usePersisted;
 
   final Incident incident;
   final TapCallback onTap;
@@ -92,6 +97,7 @@ class IncidentMap extends StatefulWidget {
     this.interactive = true,
     this.withPOIs = true,
     this.withUnits = true,
+    this.withPersonnel = true,
     this.withDevices = true,
     this.withSearch = false,
     this.withControls = false,
@@ -99,6 +105,7 @@ class IncidentMap extends StatefulWidget {
     this.withScaleBar = false,
     this.withTracking = true,
     this.withCoordsPanel = false,
+    this.usePersisted = true,
     this.showLayers = IncidentMapState.DEFAULT_LAYERS,
     this.onTap,
     this.onMessage,
@@ -126,8 +133,10 @@ class IncidentMap extends StatefulWidget {
           withCoordsPanel == other.withCoordsPanel &&
           withPOIs == other.withPOIs &&
           withUnits == other.withUnits &&
+          withPersonnel == other.withPersonnel &&
           withDevices == other.withDevices &&
           withTracking == other.withTracking &&
+          usePersisted == other.usePersisted &&
           incident == other.incident &&
           onTap == other.onTap &&
           onMessage == other.onMessage &&
@@ -152,8 +161,10 @@ class IncidentMap extends StatefulWidget {
       withCoordsPanel.hashCode ^
       withPOIs.hashCode ^
       withUnits.hashCode ^
+      withPersonnel.hashCode ^
       withDevices.hashCode ^
       withTracking.hashCode ^
+      usePersisted.hashCode ^
       incident.hashCode ^
       onTap.hashCode ^
       onMessage.hashCode ^
@@ -172,6 +183,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   static const BASE_MAP = "base_map";
   static const POI_LAYER = "Interessepunkt";
   static const UNIT_LAYER = "Enheter";
+  static const PERSONNEL_LAYER = "Mannskap";
   static const DEVICE_LAYER = "Apparater";
   static const TRACKING_LAYER = "Sporing";
   static const COORDS_LAYER = "Koordinater";
@@ -180,6 +192,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   static const ALL_LAYERS = [
     POI_LAYER,
     UNIT_LAYER,
+    PERSONNEL_LAYER,
     TRACKING_LAYER,
     DEVICE_LAYER,
     SCALE_LAYER,
@@ -268,13 +281,18 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _setup({bool wasZoom = true, bool wasBaseMap = true}) {
     if (wasZoom) _zoom = widget.zoom ?? Defaults.zoom;
     if (wasBaseMap) _currentBaseMap = readState(context, BASE_MAP, defaultValue: widget.url);
-    _useLayers = FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet()));
+    _useLayers = _resolveLayers();
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
     }
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
   }
+
+  Set<String> _resolveLayers() => widget.usePersisted
+      ? FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet()))
+      : _withLayers()
+    ..retainAll(widget.showLayers.toSet());
 
   void _ensureMapToolController() {
     if (widget.withControls) {
@@ -290,6 +308,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             _trackingBloc,
             user: _userBloc.user,
             active: () => _useLayers.contains(UNIT_LAYER),
+            onMessage: widget.onMessage,
+          ),
+          PersonnelTool(
+            _trackingBloc,
+            user: _userBloc.user,
+            active: () => _useLayers.contains(PERSONNEL_LAYER),
             onMessage: widget.onMessage,
           ),
           DeviceTool(
@@ -381,6 +405,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           MyLocation(),
           POILayer(),
           DeviceLayer(),
+          PersonnelLayer(),
           UnitLayer(),
           CoordinateLayer(),
           ScaleBar(),
@@ -444,6 +469,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           tileProvider: _buildTileProvider(),
         ),
         if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
+        if (_useLayers.contains(PERSONNEL_LAYER)) _buildPersonnelOptions(),
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER))
           _buildPoiOptions({
@@ -620,6 +646,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     );
   }
 
+  PersonnelLayerOptions _buildPersonnelOptions() {
+    return PersonnelLayerOptions(
+      bloc: _trackingBloc,
+      onMessage: widget.onMessage,
+      showTail: _useLayers.contains(TRACKING_LAYER),
+    );
+  }
+
   UnitLayerOptions _buildUnitOptions() {
     return UnitLayerOptions(
       bloc: _trackingBloc,
@@ -775,6 +809,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     if (!widget.withCoordsPanel) layers.remove(COORDS_LAYER);
     if (!widget.withPOIs) layers.remove(POI_LAYER);
     if (!widget.withUnits) layers.remove(UNIT_LAYER);
+    if (!widget.withPersonnel) layers.remove(PERSONNEL_LAYER);
     if (!widget.withDevices) layers.remove(DEVICE_LAYER);
     if (!widget.withTracking) layers.remove(TRACKING_LAYER);
     return layers.toSet();

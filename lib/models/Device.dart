@@ -86,9 +86,9 @@ enum DeviceStatus { Attached, Detached }
 String translateDeviceStatus(DeviceStatus status) {
   switch (status) {
     case DeviceStatus.Attached:
-      return "I bruk";
+      return "Tilknyttet";
     case DeviceStatus.Detached:
-      return "Fjernet";
+      return "Ikke tilknyttet";
     default:
       return enumName(status);
   }
