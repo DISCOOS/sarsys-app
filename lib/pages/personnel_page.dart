@@ -84,14 +84,7 @@ class PersonnelPageState extends State<PersonnelPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var personnel = _personnelBloc.personnel.isEmpty || snapshot.hasError
-                    ? []
-                    : _personnelBloc.personnel.values
-                        .where((personnel) => _filter.contains(personnel.status))
-                        .where((personnel) => widget.where == null || widget.where(personnel))
-                        .where((personnel) =>
-                            widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
-                        .toList();
+                var personnel = _filteredPersonnel();
                 return personnel.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
@@ -106,6 +99,15 @@ class PersonnelPageState extends State<PersonnelPage> {
         );
       },
     );
+  }
+
+  List<Personnel> _filteredPersonnel() {
+    return _personnelBloc.personnel.values
+        .where((personnel) => _filter.contains(personnel.status))
+        .where((personnel) => widget.where == null || widget.where(personnel))
+        .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
+        .toList()
+          ..sort((p1, p2) => p1.name.compareTo(p2.name));
   }
 
   String _prepare(Personnel personnel) => "${personnel.searchable}".toLowerCase();

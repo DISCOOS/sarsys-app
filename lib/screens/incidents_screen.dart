@@ -152,12 +152,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
             var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
-                ? _incidentBloc.incidents
-                    .where((incident) => widget.filter.contains(incident.status))
-                    .where(
-                        (incident) => widget.query == null || _prepare(incident).contains(widget.query.toLowerCase()))
-                    .map((incident) => _buildCard(incident))
-                    .toList()
+                ? _filteredIncidents().map((incident) => _buildCard(incident)).toList()
                 : [];
             return cards.isEmpty
                 ? toRefreshable(
@@ -177,6 +172,16 @@ class _IncidentsPageState extends State<IncidentsPage> {
         ),
       );
     });
+  }
+
+  List<Incident> _filteredIncidents() {
+    return _incidentBloc.incidents
+        .where((incident) => widget.filter.contains(incident.status))
+        .where((incident) => widget.query == null || _prepare(incident).contains(widget.query.toLowerCase()))
+        .toList()
+          ..sort(
+            (i1, i2) => i2.occurred.compareTo(i1.occurred),
+          );
   }
 
   String _prepare(Incident incident) => "${incident.searchable}".toLowerCase();

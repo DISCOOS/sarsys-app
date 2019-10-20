@@ -125,7 +125,8 @@ class DevicesPageState extends State<DevicesPage> {
       .where((device) =>
           _filter.contains(device.type) &&
           (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
-      .toList();
+      .toList()
+        ..sort((d1, d2) => d1.number.compareTo(d2.number));
 
   String _prepare(Device device) => "${device.searchable} "
           "${_toDistrict(device.number)} "

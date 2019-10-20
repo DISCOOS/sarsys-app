@@ -84,13 +84,7 @@ class UnitsPageState extends State<UnitsPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = _unitBloc.units.isEmpty || snapshot.hasError
-                    ? []
-                    : _unitBloc.units.values
-                        .where((unit) => _filter.contains(unit.status))
-                        .where((unit) => widget.where == null || widget.where(unit))
-                        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
-                        .toList();
+                var units = _filteredUnits();
                 return units.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
@@ -105,6 +99,15 @@ class UnitsPageState extends State<UnitsPage> {
         );
       },
     );
+  }
+
+  List<Unit> _filteredUnits() {
+    return _unitBloc.units.values
+        .where((unit) => _filter.contains(unit.status))
+        .where((unit) => widget.where == null || widget.where(unit))
+        .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
+        .toList()
+          ..sort((u1, u2) => u1.callsign.compareTo(u2.callsign));
   }
 
   String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();

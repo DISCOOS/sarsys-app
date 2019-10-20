@@ -32,10 +32,10 @@ class Device extends Equatable {
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
 
   /// Device name
-  get name => this.alias?.isNotEmpty == true ? this.alias : this.number;
+  String get name => this.alias?.isNotEmpty == true ? this.alias : this.number;
 
   /// Get searchable string
-  get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
+  String get searchable => props.map((prop) => prop is DeviceType ? translateDeviceType(prop) : prop).join(' ');
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DeviceToJson(this);
