@@ -20,13 +20,15 @@ class UnitsPage extends StatefulWidget {
   final String query;
   final bool Function(Unit unit) where;
   final void Function(Unit unit) onSelection;
+  final Comparator<Unit> compareTo;
 
   const UnitsPage({
     Key key,
-    this.query,
     this.withActions = true,
     this.onSelection,
+    this.query,
     this.where,
+    this.compareTo,
   }) : super(key: key);
 
   @override
@@ -107,7 +109,9 @@ class UnitsPageState extends State<UnitsPage> {
         .where((unit) => widget.where == null || widget.where(unit))
         .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
         .toList()
-          ..sort((u1, u2) => u1.callsign.compareTo(u2.callsign));
+          ..sort(
+            (u1, u2) => widget.compareTo == null ? u1.callsign.compareTo(u2.callsign) : widget.compareTo(u1, u2),
+          );
   }
 
   String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();
@@ -412,8 +416,9 @@ class UnitSearch extends SearchDelegate<Unit> {
 
 Future<Unit> selectUnit(
   BuildContext context, {
-  bool where(Unit unit),
   String query,
+  bool where(Unit unit),
+  Comparator<Unit> compareTo,
 }) async {
   return await showDialog<Unit>(
     context: context,
@@ -430,6 +435,7 @@ Future<Unit> selectUnit(
         body: UnitsPage(
           where: where,
           query: query,
+          compareTo: compareTo,
           withActions: false,
           onSelection: (unit) => Navigator.pop(context, unit),
         ),

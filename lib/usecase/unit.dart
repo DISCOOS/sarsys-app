@@ -21,8 +21,13 @@ import 'package:provider/provider.dart';
 class UnitParams extends BlocParams<UnitBloc, Unit> {
   final Point point;
   final List<Device> devices;
-  UnitParams(BuildContext context, {Unit unit, List<Device> devices, this.point})
-      : this.devices = devices ?? const [],
+
+  UnitParams(
+    BuildContext context, {
+    Unit unit,
+    List<Device> devices,
+    this.point,
+  })  : this.devices = devices ?? const [],
         super(context, unit);
 }
 
@@ -132,7 +137,12 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
         ? params.data
         : await selectUnit(
             params.context,
-            where: (unit) => bloc.tracking[unit.tracking] == null || bloc.tracking[unit.tracking].devices.isEmpty,
+            where: (unit) =>
+                // Unit is not tracking any devices or personnel?
+                bloc.tracking[unit.tracking] == null ||
+                // Unit is not tracking given devices?
+                bloc.tracking[unit.tracking].devices.any((device) => params.devices.contains(device)) == false,
+            // Sort units with less amount of devices on top
           );
     if (unit == null) return dartz.Left(false);
     final tracking = await _handleTracking(params, unit, devices: params.devices);
