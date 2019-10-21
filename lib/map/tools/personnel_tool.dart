@@ -98,7 +98,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
                 devices:
                     tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((personnel) => personnel != null),
                 onMessage: onMessage,
-                withActions: user?.isCommander == true,
+                withActions: user.isCommander == true,
                 organization: AssetsService().fetchOrganization(Defaults.organization),
                 onChanged: (_) => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),

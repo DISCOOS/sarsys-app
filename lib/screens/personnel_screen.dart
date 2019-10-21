@@ -123,7 +123,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               ?.where((personnel) => personnel != null) ??
           {},
       withHeader: false,
-      withActions: _userBloc.user?.isCommander,
+      withActions: _userBloc.user.isCommander,
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
       organization: AssetsService().fetchOrganization(Defaults.organization),
