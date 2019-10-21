@@ -65,11 +65,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    assert(
-      // Added debugging information, see https://github.com/DISCOOS/sarsys-app/issues/16
-      (_userBloc = BlocProvider.of<UserBloc>(context))?.isAuthenticated == true,
-      "User must be authenicated, bloc: $_userBloc, state: ${_userBloc?.currentState}",
-    );
+
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
 
