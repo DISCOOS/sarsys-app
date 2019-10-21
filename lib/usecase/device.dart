@@ -151,7 +151,8 @@ class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
     var response = await prompt(
       params.context,
       "Slett ${params.data.name}",
-      "Dette vil slette alle data fra sporinger og fjerne apparatet fra hendelsen. Vil du fortsette?",
+      "Dette vil slette alle data fra sporinger og fjerne apparatet fra hendelsen. "
+          "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
     await params.bloc.delete(params.data);

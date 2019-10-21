@@ -17,6 +17,7 @@ class PersonnelInfoPanel extends StatelessWidget {
   final bool withActions;
   final ValueChanged<Personnel> onChanged;
   final ValueChanged<Personnel> onComplete;
+  final VoidCallback onDelete;
   final MessageCallback onMessage;
   final Future<Organization> organization;
 
@@ -28,6 +29,7 @@ class PersonnelInfoPanel extends StatelessWidget {
     @required this.onMessage,
     this.onChanged,
     this.onComplete,
+    this.onDelete,
     this.withHeader = true,
     this.withActions = true,
     this.organization,
@@ -396,7 +398,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             final result = await deletePersonnel(context, personnel);
             if (result.isRight()) {
               _onMessage("${personnel.name} er slettet");
-              _onComplete();
+              _onDelete();
             }
           }),
     );
@@ -412,5 +414,9 @@ class PersonnelInfoPanel extends StatelessWidget {
 
   void _onComplete([personnel]) {
     if (onComplete != null) onComplete(personnel ?? this.personnel);
+  }
+
+  void _onDelete() {
+    if (onDelete != null) onDelete();
   }
 }

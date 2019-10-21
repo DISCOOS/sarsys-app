@@ -125,7 +125,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       withActions: _userBloc.user?.isCommander == true,
       onMessage: showMessage,
       onChanged: (device) => setState(() => _device = device),
-      onComplete: (_) => Navigator.pop(context),
+      onDelete: () => Navigator.pop(context),
     );
   }
 

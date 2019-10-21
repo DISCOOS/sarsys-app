@@ -17,6 +17,7 @@ class UnitInfoPanel extends StatelessWidget {
   final bool withActions;
   final ValueChanged<Unit> onChanged;
   final ValueChanged<Unit> onComplete;
+  final VoidCallback onDelete;
   final MessageCallback onMessage;
 
   const UnitInfoPanel({
@@ -27,6 +28,7 @@ class UnitInfoPanel extends StatelessWidget {
     @required this.onMessage,
     this.onChanged,
     this.onComplete,
+    this.onDelete,
     this.withHeader = true,
     this.withActions = true,
   }) : super(key: key);
@@ -385,7 +387,7 @@ class UnitInfoPanel extends StatelessWidget {
             final result = await deleteUnit(context, unit);
             if (result.isRight()) {
               _onMessage("${unit.name} er slettet");
-              _onComplete();
+              _onDelete();
             }
           }),
     );
@@ -401,5 +403,9 @@ class UnitInfoPanel extends StatelessWidget {
 
   void _onComplete([unit]) {
     if (onComplete != null) onComplete(unit ?? this.unit);
+  }
+
+  void _onDelete() {
+    if (onDelete != null) onDelete();
   }
 }

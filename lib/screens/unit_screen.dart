@@ -120,6 +120,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
       withActions: _userBloc.user?.isCommander,
       onMessage: showMessage,
       onChanged: (unit) => setState(() => _unit = unit),
+      onDelete: () => Navigator.pop(context),
     );
   }
 

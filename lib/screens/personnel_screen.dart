@@ -133,9 +133,10 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           {},
       withHeader: false,
       withActions: _userBloc.user.isCommander,
+      organization: AssetsService().fetchOrganization(Defaults.organization),
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
-      organization: AssetsService().fetchOrganization(Defaults.organization),
+      onDelete: () => Navigator.pop(context),
     );
   }
 
