@@ -8,6 +8,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/point_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -180,7 +181,11 @@ class _DeviceEditorState extends State<DeviceEditor> {
           },
         ),
       ),
-      keyboardType: TextInputType.numberWithOptions(),
+      autovalidate: true,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
+      keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
         FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),

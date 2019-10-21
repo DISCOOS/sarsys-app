@@ -2,6 +2,7 @@ import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:latlong/latlong.dart';
 
@@ -131,16 +132,18 @@ class _InputUTMState extends State<InputUTM> {
   Widget _buildEastingField() {
     return TextFormField(
       controller: _eastingController,
-      maxLength: 7,
-      autovalidate: true,
       decoration: InputDecoration(
         hintText: "Østlig",
         filled: true,
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 8.0),
       ),
-      autocorrect: true,
+      maxLength: 7,
+      autovalidate: true,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
       onChanged: (value) => _update(value, _northingController.text),
       validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {
@@ -157,17 +160,19 @@ class _InputUTMState extends State<InputUTM> {
   Widget buildNorthingField() {
     return TextFormField(
       controller: _northingController,
-      maxLength: 7,
-      autovalidate: true,
       decoration: InputDecoration(
         hintText: "Nordlig",
         filled: true,
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
       ),
-      autocorrect: true,
+      maxLength: 7,
+      autovalidate: true,
       focusNode: _northingFocusNode,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
       onChanged: (value) => _update(_eastingController.text, value),
       validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {

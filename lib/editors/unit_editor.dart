@@ -15,6 +15,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -197,7 +198,11 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-      keyboardType: TextInputType.numberWithOptions(),
+      autovalidate: true,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
+      keyboardType: TextInputType.number,
       valueTransformer: (value) => int.tryParse(emptyAsNull(value) ?? _defaultNumber()),
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
@@ -219,7 +224,8 @@ class _UnitEditorState extends State<UnitEditor> {
     return unit != null ? "Lag $number finnes allerede" : null;
   }
 
-  bool isSameNumber(Unit unit, number) => number?.isNotEmpty == true && unit != widget.unit && unit.number == number;
+  bool isSameNumber(Unit unit, number) =>
+      number?.isNotEmpty == true && unit != widget.unit && unit.number == int.tryParse(number);
 
   FormBuilderTextField _buildCallsignField() {
     return FormBuilderTextField(
@@ -242,6 +248,7 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
+      autovalidate: true,
       keyboardType: TextInputType.text,
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
@@ -293,6 +300,10 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
+      autovalidate: true,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       validators: [

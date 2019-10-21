@@ -92,12 +92,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: TextField(
-              controller: _ttl,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(filled: true, counterText: ""),
               maxLength: 3,
-              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              controller: _ttl,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                WhitelistingTextInputFormatter.digitsOnly,
+              ],
+              decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
                 _bloc.update(mapCacheTTL: int.parse(value ?? 0));
               },
@@ -125,12 +127,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: TextField(
-              controller: _capacity,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(filled: true, counterText: ""),
               maxLength: 5,
-              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              controller: _capacity,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                WhitelistingTextInputFormatter.digitsOnly,
+              ],
+              decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
                 _bloc.update(mapCacheCapacity: int.parse(value ?? 0));
               },
@@ -221,12 +225,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: TextField(
-              controller: _displacement,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(filled: true, counterText: ""),
               maxLength: 2,
-              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              controller: _displacement,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                WhitelistingTextInputFormatter.digitsOnly,
+              ],
+              decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
                 _bloc.update(locationSmallestDisplacement: int.parse(value ?? 0));
               },
@@ -254,12 +260,14 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
           Flexible(
             child: TextField(
-              controller: _interval,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(filled: true, counterText: ""),
               maxLength: 2,
-              inputFormatters: [WhitelistingTextInputFormatter(RegExp("[0-9]"))],
+              controller: _interval,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                WhitelistingTextInputFormatter.digitsOnly,
+              ],
+              decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
                 _bloc.update(locationFastestInterval: int.parse(value ?? 0) * 1000);
               },
