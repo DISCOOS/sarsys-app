@@ -324,6 +324,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
             ),
             incident: incident,
             interactive: false,
+            withRead: true,
           ),
         ),
         onTap: () => _selectAndReroute(incident),

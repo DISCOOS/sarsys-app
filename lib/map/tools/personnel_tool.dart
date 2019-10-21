@@ -32,7 +32,9 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
     @required bool Function() active,
     this.onMessage,
     this.includeRetired = false,
-  }) : _active = active;
+    // Added debugging information, see https://github.com/DISCOOS/sarsys-app/issues/16
+  })  : assert(user != null, "User must be authenicated"),
+        _active = active;
 
   @override
   Iterable<Personnel> get targets => bloc.personnel

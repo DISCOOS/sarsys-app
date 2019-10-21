@@ -136,12 +136,12 @@ class PersonnelInfoPanel extends StatelessWidget {
       label: label,
       icon: Icon(icon),
       value: formatter(tracking?.point),
-      onTap: tracking?.point == null
-          ? null
-          : () => jumpToPoint(
-                context,
-                center: tracking?.point,
-              ),
+      onTap: () => tracking?.point == null
+          ? Navigator.pushReplacementNamed(context, 'map')
+          : jumpToPoint(
+              context,
+              center: tracking?.point,
+            ),
       onMessage: onMessage,
       onComplete: _onComplete,
     );

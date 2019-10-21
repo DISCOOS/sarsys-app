@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:async/async.dart';
 
@@ -17,7 +15,6 @@ import 'package:SarSys/widgets/unit_info_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
 class UnitScreen extends Screen<_UnitScreenState> {
@@ -133,57 +130,29 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
       borderRadius: BorderRadius.circular(UnitScreen.CORNER),
       child: Container(
         height: 240.0,
-        child: Stack(
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(UnitScreen.CORNER),
-              child: GestureDetector(
-                child: IncidentMap(
-                  center: center,
-                  zoom: 16.0,
-                  interactive: false,
-                  withPOIs: false,
-                  withDevices: false,
-                  showLayers: [
-                    IncidentMapState.UNIT_LAYER,
-                    IncidentMapState.TRACKING_LAYER,
-                  ],
-                  mapController: _controller,
-                ),
-                onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(UnitScreen.CORNER),
+          child: GestureDetector(
+            child: IncidentMap(
+              center: center,
+              zoom: 16.0,
+              interactive: false,
+              withPOIs: false,
+              withDevices: false,
+              withRead: true,
+              withControls: true,
+              withControlsZoom: true,
+              withControlsOffset: 16.0,
+              showLayers: [
+                IncidentMapState.UNIT_LAYER,
+                IncidentMapState.TRACKING_LAYER,
+              ],
+              mapController: _controller,
             ),
-            _buildControls(),
-          ],
+            onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildControls() {
-    var tracking = _trackingBloc.tracking[widget.unit.tracking];
-    return MapControls(
-      top: 16.0,
-      controls: [
-        MapControl(
-          icon: Icons.add,
-          onPressed: () {
-            if (tracking?.point != null) {
-              var zoom = min(_controller.zoom + 1, Defaults.maxZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
-            }
-          },
-        ),
-        MapControl(
-          icon: Icons.remove,
-          onPressed: () {
-            if (tracking?.point != null) {
-              var zoom = max(_controller.zoom - 1, Defaults.minZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
-            }
-          },
-        ),
-      ],
     );
   }
 

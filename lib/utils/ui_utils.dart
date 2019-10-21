@@ -462,16 +462,18 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
 
   /// Write route information to PageStorage
   void write(T id, {String name}) {
-    this.id = id;
-    this.name = name ?? this.name;
-    final route = this.name ?? ModalRoute.of(context)?.settings?.name;
-    if (route != '/') {
-      final incident = BlocProvider.of<IncidentBloc>(context)?.current?.id;
-      writeState(context, NAME, {
-        "name": route,
-        "id": id,
-        "incident": incident,
-      });
+    if (writeEnabled) {
+      this.id = id;
+      this.name = name ?? this.name;
+      final route = this.name ?? ModalRoute.of(context)?.settings?.name;
+      if (route != '/') {
+        final incident = BlocProvider.of<IncidentBloc>(context)?.current?.id;
+        writeState(context, NAME, {
+          "name": route,
+          "id": id,
+          "incident": incident,
+        });
+      }
     }
   }
 }

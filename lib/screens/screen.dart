@@ -16,9 +16,13 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  @override
+  final writeEnabled;
+
   ScreenState({
     @required this.title,
     this.withDrawer = true,
+    this.writeEnabled = true,
     this.floatingActionButtonLocation = FloatingActionButtonLocation.endFloat,
   });
 

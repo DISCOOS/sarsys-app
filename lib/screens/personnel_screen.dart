@@ -37,7 +37,12 @@ class PersonnelScreen extends Screen<_PersonnelScreenState> {
 }
 
 class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with TickerProviderStateMixin {
-  _PersonnelScreenState(Personnel personnel) : super(title: "${personnel.name}", withDrawer: false);
+  _PersonnelScreenState(Personnel personnel)
+      : super(
+          title: "${personnel.name}",
+          withDrawer: false,
+          writeEnabled: false,
+        );
 
   final _controller = IncidentMapController();
 
@@ -54,7 +59,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void initState() {
     super.initState();
-    writeEnabled = false;
     _personnel = widget.personnel;
     id = widget?.personnel?.id;
   }
@@ -62,9 +66,14 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
+    assert(
+      // Added debugging information, see https://github.com/DISCOOS/sarsys-app/issues/16
+      (_userBloc = BlocProvider.of<UserBloc>(context))?.isAuthenticated == true,
+      "User must be authenicated, bloc: $_userBloc, state: ${_userBloc?.currentState}",
+    );
     _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(_personnelBloc.changes(widget.personnel))
@@ -94,18 +103,17 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               initialData: _personnel,
               stream: _group.stream,
               builder: (context, snapshot) {
+                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
                 if (snapshot.data is Personnel) _personnel = snapshot.data;
                 final tracking = _trackingBloc.tracking[_personnel.tracking];
-                return snapshot.hasData
-                    ? ListView(
-                        padding: const EdgeInsets.all(PersonnelScreen.SPACING),
-                        physics: AlwaysScrollableScrollPhysics(),
-                        children: [
-                          _buildMapTile(context, _personnel),
-                          _buildInfoPanel(tracking, context),
-                        ],
-                      )
-                    : Center(child: Text("Ingen data"));
+                return ListView(
+                  padding: const EdgeInsets.all(PersonnelScreen.SPACING),
+                  physics: AlwaysScrollableScrollPhysics(),
+                  children: [
+                    _buildMapTile(context, _personnel),
+                    _buildInfoPanel(tracking, context),
+                  ],
+                );
               },
             ),
           ],
@@ -149,14 +157,16 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
                   interactive: false,
                   withPOIs: false,
                   withUnits: false,
-                  usePersisted: false,
+                  withRead: true,
                   showLayers: [
                     IncidentMapState.PERSONNEL_LAYER,
                     IncidentMapState.TRACKING_LAYER,
                   ],
                   mapController: _controller,
                 ),
-                onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+                onTap: () => center == null
+                    ? Navigator.pushReplacementNamed(context, 'map')
+                    : jumpToLatLng(context, center: center),
               ),
             ),
             _buildControls(),

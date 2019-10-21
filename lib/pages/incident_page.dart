@@ -174,6 +174,7 @@ class _IncidentPageState extends State<IncidentPage> {
               ),
               incident: incident,
               interactive: false,
+              withRead: true,
             ),
             onTap: () => jumpToIncident(context, incident),
           ),

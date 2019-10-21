@@ -147,7 +147,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                   interactive: false,
                   withPOIs: false,
                   withUnits: false,
-                  usePersisted: false,
+                  withRead: true,
                   showLayers: [
                     IncidentMapState.DEVICE_LAYER,
                     IncidentMapState.TRACKING_LAYER,
