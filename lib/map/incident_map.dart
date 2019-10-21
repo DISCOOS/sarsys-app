@@ -347,9 +347,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   Set<String> _resolveLayers() => widget.withRead && widget.readLayers
-      ? FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet()))
-      : _withLayers()
-    ..retainAll(widget.showLayers.toSet());
+      ? (FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
+      : (_withLayers()..retainAll(widget.showLayers.toSet()));
 
   void _ensureMapToolController() {
     if (widget.withControlsTool) {

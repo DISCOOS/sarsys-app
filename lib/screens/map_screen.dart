@@ -59,33 +59,32 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
     );
   }
 
-  Widget _buildMap() {
-    return IncidentMap(
-      center: widget.center,
-      incident: widget.incident,
-      fitBounds: widget.fitBounds,
-      fitBoundOptions: widget.fitBoundOptions,
-      mapController: _mapController,
-      readZoom: true,
-      readCenter: true,
-      withRead: true,
-      withWrite: true,
-      withSearch: true,
-      withControls: true,
-      withControlsZoom: true,
-      withControlsTool: true,
-      withControlsLayer: true,
-      withControlsBaseMap: true,
-      withControlsLocateMe: true,
-      withScaleBar: true,
-      withCoordsPanel: true,
-      onMessage: _showMessage,
-      onToolChange: (tool) => setState(() {
-        _showFAB = !tool.active();
-      }),
-      onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
-    );
-  }
+  Widget _buildMap() => IncidentMap(
+        center: widget.center,
+        incident: widget.incident,
+        fitBounds: widget.fitBounds,
+        fitBoundOptions: widget.fitBoundOptions,
+        mapController: _mapController,
+        readZoom: true,
+        readCenter: widget.center == null,
+        readLayers: true,
+        withRead: true,
+        withWrite: true,
+        withSearch: true,
+        withControls: true,
+        withControlsZoom: true,
+        withControlsTool: true,
+        withControlsLayer: true,
+        withControlsBaseMap: true,
+        withControlsLocateMe: true,
+        withScaleBar: true,
+        withCoordsPanel: true,
+        onMessage: _showMessage,
+        onToolChange: (tool) => setState(() {
+          _showFAB = !tool.active();
+        }),
+        onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
+      );
 
   void _showCreateItemSheet(context) {
     final style = Theme.of(context).textTheme.title;
