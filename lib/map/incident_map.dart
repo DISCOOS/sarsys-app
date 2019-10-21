@@ -91,6 +91,7 @@ class IncidentMap extends StatefulWidget {
   /// If [fitBounds] is given, control who bounds is fitted with [fitBoundOptions]
   final FitBoundsOptions fitBoundOptions;
 
+  final bool showRetired;
   final List<String> showLayers;
 
   final double withControlsOffset;
@@ -125,6 +126,7 @@ class IncidentMap extends StatefulWidget {
     this.readZoom = false,
     this.readCenter = false,
     this.readLayers = false,
+    this.showRetired = false,
     this.showLayers = IncidentMapState.DEFAULT_LAYERS,
     this.onTap,
     this.onMessage,
@@ -175,7 +177,8 @@ class IncidentMap extends StatefulWidget {
           center == other.center &&
           fitBounds == other.fitBounds &&
           fitBoundOptions == other.fitBoundOptions &&
-          showLayers == other.showLayers;
+          showLayers == other.showLayers &&
+          showRetired == other.showRetired;
 
   @override
   int get hashCode =>
@@ -212,7 +215,8 @@ class IncidentMap extends StatefulWidget {
       center.hashCode ^
       fitBounds.hashCode ^
       fitBoundOptions.hashCode ^
-      showLayers.hashCode;
+      showLayers.hashCode ^
+      showRetired.hashCode;
 }
 
 class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
@@ -711,6 +715,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return PersonnelLayerOptions(
       bloc: _trackingBloc,
       onMessage: widget.onMessage,
+      showRetired: widget.showRetired,
       showTail: _useLayers.contains(TRACKING_LAYER),
     );
   }
@@ -719,6 +724,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return UnitLayerOptions(
       bloc: _trackingBloc,
       onMessage: widget.onMessage,
+      showRetired: widget.showRetired,
       showTail: _useLayers.contains(TRACKING_LAYER),
     );
   }

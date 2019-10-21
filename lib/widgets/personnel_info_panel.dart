@@ -264,7 +264,7 @@ class PersonnelInfoPanel extends StatelessWidget {
           children: <Widget>[
             _buildEditAction(context),
             if (devices.isNotEmpty) _buildRemoveAction(context),
-            _buildRetireAction(context),
+            _buildTransitionAction(context),
             _buildDeleteAction(context),
           ],
         ),
@@ -313,6 +313,56 @@ class PersonnelInfoPanel extends StatelessWidget {
         ),
       );
 
+  Widget _buildTransitionAction(BuildContext context) {
+    switch (personnel.status) {
+      case PersonnelStatus.Retired:
+        return _buildMobilizeAction(context);
+      case PersonnelStatus.Mobilized:
+        return _buildOnSceneAction(context);
+      case PersonnelStatus.OnScene:
+      default:
+        return _buildRetireAction(context);
+    }
+  }
+
+  Widget _buildMobilizeAction(BuildContext context) => Tooltip(
+        message: "Registrer som mobilisert",
+        child: FlatButton(
+          child: Text(
+            "MOBILISERT",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await mobilizePersonnel(context, personnel);
+            if (result.isRight()) {
+              final actual = result.toIterable().first;
+              _onMessage("${actual.name} er registert mobilisert");
+              _onChanged(actual);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
+  Widget _buildOnSceneAction(BuildContext context) => Tooltip(
+        message: "Registrer som ankommet",
+        child: FlatButton(
+          child: Text(
+            "ANKOMMET",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: () async {
+            final result = await checkInPersonnel(context, personnel);
+            if (result.isRight()) {
+              final actual = result.toIterable().first;
+              _onMessage("${actual.name} er registert ankommet");
+              _onChanged(actual);
+            }
+            _onComplete();
+          },
+        ),
+      );
+
   Widget _buildRetireAction(BuildContext context) => Tooltip(
         message: "Dimitter og avslutt sporing",
         child: FlatButton(
@@ -323,8 +373,9 @@ class PersonnelInfoPanel extends StatelessWidget {
           onPressed: () async {
             final result = await retirePersonnel(context, personnel);
             if (result.isRight()) {
-              _onMessage("${personnel.name} er dimmitert");
-              _onChanged(personnel);
+              final actual = result.toIterable().first;
+              _onMessage("${actual.name} er dimmitert");
+              _onChanged(actual);
             }
             _onComplete();
           },

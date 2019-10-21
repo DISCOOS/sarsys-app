@@ -31,6 +31,7 @@ class Personnel extends Equatable {
   }) : super([
           id,
           userId,
+          status,
           fname,
           lname,
           affiliation,

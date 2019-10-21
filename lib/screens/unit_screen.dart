@@ -90,18 +90,19 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               initialData: _unit,
               stream: _group.stream,
               builder: (context, snapshot) {
-                if (snapshot.data is Unit) _unit = snapshot.data;
+                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+                if (snapshot.data is Unit) {
+                  _unit = snapshot.data;
+                }
                 final tracking = _trackingBloc.tracking[_unit.tracking];
-                return snapshot.hasData
-                    ? ListView(
-                        padding: const EdgeInsets.all(UnitScreen.SPACING),
-                        physics: AlwaysScrollableScrollPhysics(),
-                        children: [
-                          _buildMapTile(context, _unit),
-                          _buildInfoPanel(tracking, context),
-                        ],
-                      )
-                    : Center(child: Text("Ingen data"));
+                return ListView(
+                  padding: const EdgeInsets.all(UnitScreen.SPACING),
+                  physics: AlwaysScrollableScrollPhysics(),
+                  children: [
+                    _buildMapTile(context, _unit),
+                    _buildInfoPanel(tracking, context),
+                  ],
+                );
               },
             ),
           ],
@@ -119,7 +120,6 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
       withActions: _userBloc.user?.isCommander,
       onMessage: showMessage,
       onChanged: (unit) => setState(() => _unit = unit),
-      onComplete: (_) => Navigator.pop(context),
     );
   }
 
@@ -143,6 +143,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               withControls: true,
               withControlsZoom: true,
               withControlsOffset: 16.0,
+              showRetired: UnitStatus.Retired == unit.status,
               showLayers: [
                 IncidentMapState.UNIT_LAYER,
                 IncidentMapState.TRACKING_LAYER,

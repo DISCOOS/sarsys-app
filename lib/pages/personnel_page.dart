@@ -214,13 +214,21 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   IconSlideAction _buildTransitionAction(BuildContext context, Personnel personnel) {
     switch (personnel.status) {
+      case PersonnelStatus.Retired:
+        return IconSlideAction(
+          caption: 'MOBILISERT',
+          color: toPersonnelStatusColor(PersonnelStatus.Mobilized),
+          icon: Icons.check_circle,
+          onTap: () async => await checkInPersonnel(context, personnel),
+        );
       case PersonnelStatus.Mobilized:
         return IconSlideAction(
           caption: 'ANKOMMET',
-          color: Colors.green,
+          color: toPersonnelStatusColor(PersonnelStatus.OnScene),
           icon: Icons.check_circle,
-          onTap: () async => await deployPersonnel(context, personnel),
+          onTap: () async => await checkInPersonnel(context, personnel),
         );
+      case PersonnelStatus.OnScene:
       default:
         return IconSlideAction(
           caption: 'DIMMITERT',

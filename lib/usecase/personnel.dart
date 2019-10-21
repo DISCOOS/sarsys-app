@@ -196,7 +196,27 @@ Future<Tracking> _handleTracking(
   return tracking;
 }
 
-Future<dartz.Either<bool, PersonnelState>> deployPersonnel(
+/// Transition personnel to mobilized state
+Future<dartz.Either<bool, Personnel>> mobilizePersonnel(
+  BuildContext context,
+  Personnel personnel,
+) =>
+    MobilizePersonnel()(PersonnelParams(
+      context,
+      personnel: personnel,
+    ));
+
+class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+  @override
+  Future<dartz.Either<bool, Personnel>> call(params) async {
+    return await _transitionPersonnel(
+      params,
+      PersonnelStatus.Mobilized,
+    );
+  }
+}
+
+Future<dartz.Either<bool, Personnel>> checkInPersonnel(
   BuildContext context,
   Personnel personnel,
 ) =>
@@ -205,9 +225,9 @@ Future<dartz.Either<bool, PersonnelState>> deployPersonnel(
       personnel: personnel,
     ));
 
-class DeployPersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
+class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, PersonnelState>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> call(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.OnScene,
@@ -215,7 +235,8 @@ class DeployPersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
   }
 }
 
-Future<dartz.Either<bool, PersonnelState>> retirePersonnel(
+/// Transition personnel to retired state
+Future<dartz.Either<bool, Personnel>> retirePersonnel(
   BuildContext context,
   Personnel personnel,
 ) =>
@@ -224,9 +245,9 @@ Future<dartz.Either<bool, PersonnelState>> retirePersonnel(
       personnel: personnel,
     ));
 
-class RetirePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
+class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, PersonnelState>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> call(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.Retired,
@@ -236,15 +257,15 @@ class RetirePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
   }
 }
 
-Future<dartz.Either<bool, PersonnelState>> _transitionPersonnel(PersonnelParams params, PersonnelStatus status,
+Future<dartz.Either<bool, Personnel>> _transitionPersonnel(PersonnelParams params, PersonnelStatus status,
     {String action, String message}) async {
   assert(params.data != null, "Personnel must be supplied");
   if (action != null) {
     var response = await prompt(params.context, action, message);
     if (!response) return dartz.Left(false);
   }
-  await params.bloc.update(params.data.cloneWith(status: status));
-  return dartz.Right(params.bloc.currentState);
+  final personnel = await params.bloc.update(params.data.cloneWith(status: status));
+  return dartz.Right(personnel);
 }
 
 /// Delete personnel

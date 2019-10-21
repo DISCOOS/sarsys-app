@@ -138,7 +138,7 @@ class UnitsPageState extends State<UnitsPage> {
             child: _buildUnitTile(unit, status, tracking),
             secondaryActions: <Widget>[
               _buildEditAction(context, unit),
-              if (tracking?.status != TrackingStatus.Closed) _buildTransitionAction(context, unit),
+              _buildTransitionAction(context, unit),
             ],
           )
         : _buildUnitTile(unit, status, tracking);
@@ -215,6 +215,13 @@ class UnitsPageState extends State<UnitsPage> {
 
   IconSlideAction _buildTransitionAction(BuildContext context, Unit unit) {
     switch (unit.status) {
+      case UnitStatus.Retired:
+        return IconSlideAction(
+          caption: 'MOBILISERT',
+          color: toUnitStatusColor(UnitStatus.Mobilized),
+          icon: Icons.send,
+          onTap: () async => await mobilizeUnit(context, unit),
+        );
       case UnitStatus.Mobilized:
         return IconSlideAction(
           caption: 'DEPLOYERT',
@@ -222,6 +229,7 @@ class UnitsPageState extends State<UnitsPage> {
           icon: Icons.send,
           onTap: () async => await deployUnit(context, unit),
         );
+      case UnitStatus.Deployed:
       default:
         return IconSlideAction(
           caption: 'OPPLØST',

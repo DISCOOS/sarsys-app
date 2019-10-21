@@ -194,7 +194,28 @@ Future<Tracking> _handleTracking(
   return tracking;
 }
 
-Future<dartz.Either<bool, UnitState>> deployUnit(
+/// Transition unit to mobilized state
+Future<dartz.Either<bool, Unit>> mobilizeUnit(
+  BuildContext context,
+  Unit unit,
+) =>
+    MobilizeUnit()(UnitParams(
+      context,
+      unit: unit,
+    ));
+
+class MobilizeUnit extends UseCase<bool, Unit, UnitParams> {
+  @override
+  Future<dartz.Either<bool, Unit>> call(params) async {
+    return await _transitionUnit(
+      params,
+      UnitStatus.Mobilized,
+    );
+  }
+}
+
+/// Transition unit to deployed state
+Future<dartz.Either<bool, Unit>> deployUnit(
   BuildContext context,
   Unit unit,
 ) =>
@@ -203,9 +224,9 @@ Future<dartz.Either<bool, UnitState>> deployUnit(
       unit: unit,
     ));
 
-class DeployUnit extends UseCase<bool, UnitState, UnitParams> {
+class DeployUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, UnitState>> call(params) async {
+  Future<dartz.Either<bool, Unit>> call(params) async {
     return await _transitionUnit(
       params,
       UnitStatus.Deployed,
@@ -214,7 +235,7 @@ class DeployUnit extends UseCase<bool, UnitState, UnitParams> {
 }
 
 /// Transition unit to state Retired
-Future<dartz.Either<bool, UnitState>> retireUnit(
+Future<dartz.Either<bool, Unit>> retireUnit(
   BuildContext context,
   Unit unit,
 ) =>
@@ -223,9 +244,9 @@ Future<dartz.Either<bool, UnitState>> retireUnit(
       unit: unit,
     ));
 
-class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
+class RetireUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, UnitState>> call(params) async {
+  Future<dartz.Either<bool, Unit>> call(params) async {
     return await _transitionUnit(
       params,
       UnitStatus.Retired,
@@ -235,15 +256,15 @@ class RetireUnit extends UseCase<bool, UnitState, UnitParams> {
   }
 }
 
-Future<dartz.Either<bool, UnitState>> _transitionUnit(UnitParams params, UnitStatus status,
+Future<dartz.Either<bool, Unit>> _transitionUnit(UnitParams params, UnitStatus status,
     {String action, String message}) async {
   assert(params.data != null, "Unit must be supplied");
   if (action != null) {
     var response = await prompt(params.context, action, message);
     if (!response) return dartz.Left(false);
   }
-  await params.bloc.update(params.data.cloneWith(status: status));
-  return dartz.Right(params.bloc.currentState);
+  final unit = await params.bloc.update(params.data.cloneWith(status: status));
+  return dartz.Right(unit);
 }
 
 /// Delete unit

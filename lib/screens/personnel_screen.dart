@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -18,7 +17,6 @@ import 'package:SarSys/widgets/personnel_info_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
 class PersonnelScreen extends Screen<_PersonnelScreenState> {
@@ -59,6 +57,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void initState() {
     super.initState();
+
     _personnel = widget.personnel;
     id = widget?.personnel?.id;
   }
@@ -104,7 +103,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                if (snapshot.data is Personnel) _personnel = snapshot.data;
+                if (snapshot.data is Personnel) {
+                  _personnel = snapshot.data;
+                }
                 final tracking = _trackingBloc.tracking[_personnel.tracking];
                 return ListView(
                   padding: const EdgeInsets.all(PersonnelScreen.SPACING),
@@ -135,7 +136,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
       organization: AssetsService().fetchOrganization(Defaults.organization),
-      onComplete: (_) => Navigator.pop(context),
     );
   }
 
@@ -146,60 +146,31 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
       child: Container(
         height: 240.0,
-        child: Stack(
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
-              child: GestureDetector(
-                child: IncidentMap(
-                  center: center,
-                  zoom: 16.0,
-                  interactive: false,
-                  withPOIs: false,
-                  withUnits: false,
-                  withRead: true,
-                  showLayers: [
-                    IncidentMapState.PERSONNEL_LAYER,
-                    IncidentMapState.TRACKING_LAYER,
-                  ],
-                  mapController: _controller,
-                ),
-                onTap: () => center == null
-                    ? Navigator.pushReplacementNamed(context, 'map')
-                    : jumpToLatLng(context, center: center),
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
+          child: GestureDetector(
+            child: IncidentMap(
+              center: center,
+              zoom: 16.0,
+              interactive: false,
+              withPOIs: false,
+              withUnits: false,
+              withRead: true,
+              withControls: true,
+              withControlsZoom: true,
+              withControlsOffset: 16.0,
+              showRetired: PersonnelStatus.Retired == personnel.status,
+              showLayers: [
+                IncidentMapState.PERSONNEL_LAYER,
+                IncidentMapState.TRACKING_LAYER,
+              ],
+              mapController: _controller,
             ),
-            _buildControls(),
-          ],
+            onTap: () =>
+                center == null ? Navigator.pushReplacementNamed(context, 'map') : jumpToLatLng(context, center: center),
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildControls() {
-    var tracking = _trackingBloc.tracking[widget.personnel.tracking];
-    return MapControls(
-      top: 16.0,
-      controls: [
-        MapControl(
-          icon: Icons.add,
-          onPressed: () {
-            if (tracking?.point != null) {
-              var zoom = min(_controller.zoom + 1, Defaults.maxZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
-            }
-          },
-        ),
-        MapControl(
-          icon: Icons.remove,
-          onPressed: () {
-            if (tracking?.point != null) {
-              var zoom = max(_controller.zoom - 1, Defaults.minZoom);
-              _controller.animatedMove(toCenter(tracking), zoom, this, milliSeconds: 250);
-            }
-          },
-        ),
-      ],
     );
   }
 

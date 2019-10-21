@@ -13,7 +13,11 @@ class Affiliation extends Equatable {
     this.organization,
     this.division,
     this.department,
-  });
+  }) : super([
+          organization,
+          division,
+          division,
+        ]);
 
   /// Factory constructor for creating a new `Affiliation` instance
   factory Affiliation.fromJson(Map<String, dynamic> json) => _$AffiliationFromJson(json);
