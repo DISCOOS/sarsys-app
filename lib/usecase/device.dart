@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/device_editor.dart';
@@ -9,6 +10,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 class DeviceParams extends BlocParams<DeviceBloc, Device> {
@@ -25,7 +27,7 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
     var result = await showDialog<Device>(
       context: params.context,
       builder: (context) => DeviceEditor(
-        controller: Provider.of<PermissionController>(params.context),
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -67,11 +69,13 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data != null, "Device must be supplied");
+    // The widget returned by the builder does not share a context with the location that
+    // showDialog is originally called from. Provider.of will therefore fail.
     var result = await showDialog<Device>(
       context: params.context,
       builder: (context) => DeviceEditor(
         device: params.data,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -100,7 +104,7 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
       builder: (context) => PointEditor(
         params.data.point,
         title: "Sett siste kjente posisjon",
-        controller: Provider.of<PermissionController>(params.context),
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
       ),
     );
     if (result == null) return dartz.Left(false);

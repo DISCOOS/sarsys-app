@@ -83,7 +83,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: min(494.0, MediaQuery.of(context).size.height - 96),
+            height: min(tracking == null ? 496 : 680.0, MediaQuery.of(context).size.height),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
               child: DeviceInfoPanel(

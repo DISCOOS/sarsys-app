@@ -108,7 +108,7 @@ class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
       builder: (context) => PointEditor(
         params.point,
         title: "Sett siste kjente posisjon",
-        controller: Provider.of<PermissionController>(params.context),
+        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
       ),
     );
     if (result == null) return dartz.Left(false);

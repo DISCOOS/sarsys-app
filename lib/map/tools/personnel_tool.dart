@@ -91,7 +91,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: min(494.0, MediaQuery.of(context).size.height - 96),
+            height: min(550.0, MediaQuery.of(context).size.height - 96),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
               child: PersonnelInfoPanel(
