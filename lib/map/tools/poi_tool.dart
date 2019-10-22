@@ -72,8 +72,8 @@ class POITool extends MapTool with MapSelectable<POI> {
     }
   }
 
-  void _showInfo(BuildContext context, POI poi) {
-    showDialog(
+  void _showInfo(BuildContext context, POI poi) async {
+    await showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {

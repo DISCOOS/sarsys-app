@@ -82,7 +82,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   }
 
   void _showInfo(BuildContext context, Personnel personnel) async {
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {
@@ -102,7 +102,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
                 onMessage: onMessage,
                 withActions: user.isCommander == true,
                 organization: AssetsService().fetchOrganization(Defaults.organization),
-                onChanged: (_) => Navigator.pop(context),
+                onDelete: () => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
               ),
             ),
