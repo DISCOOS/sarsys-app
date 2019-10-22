@@ -89,6 +89,10 @@ class SettingsScreenState extends State<SettingsScreen> {
         child: AffiliationForm(
           key: _affiliationKey,
           initialValue: _ensureAffiliation(),
+          onChanged: (affiliation) => _bloc.update(
+            division: affiliation.division,
+            department: affiliation.department,
+          ),
         ),
       ),
       ListTile(
