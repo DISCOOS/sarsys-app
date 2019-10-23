@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
+import 'package:SarSys/usecase/poi.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/poi_info_panel.dart';
@@ -11,8 +12,8 @@ import 'package:latlong/latlong.dart';
 
 class POITool extends MapTool with MapSelectable<POI> {
   final IncidentBloc bloc;
-  final MessageCallback onMessage;
   final bool includeRetired;
+  final MessageCallback onMessage;
 
   final bool Function() _active;
 
@@ -27,12 +28,7 @@ class POITool extends MapTool with MapSelectable<POI> {
   }) : _active = active;
 
   @override
-  Iterable<POI> get targets => bloc.isUnset
-      ? []
-      : [
-          POI(name: "IPP", point: bloc?.current?.ipp?.point),
-          POI(name: "Oppmøte", point: bloc?.current?.meetup?.point),
-        ];
+  Iterable<POI> get targets => bloc.isUnset ? [] : POILayer.toItems(bloc?.current);
 
   @override
   void doProcessTap(BuildContext context, List<POI> items) {
@@ -73,6 +69,7 @@ class POITool extends MapTool with MapSelectable<POI> {
   }
 
   void _showInfo(BuildContext context, POI poi) async {
+    var actual = poi.point;
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -80,11 +77,27 @@ class POITool extends MapTool with MapSelectable<POI> {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: POIInfoPanel(
-            poi: poi,
-            onMessage: onMessage,
-            onComplete: () => Navigator.pop(context),
-          ),
+          child: StatefulBuilder(builder: (context, StateSetter setState) {
+            actual ??= poi.point;
+            return POIInfoPanel(
+              poi: POIType.IPP == poi.type
+                  ? POI(
+                      name: "IPP",
+                      point: actual,
+                      type: POIType.IPP,
+                    )
+                  : POI(
+                      name: "Meetup",
+                      point: actual,
+                      type: POIType.Meetup,
+                    ),
+              onMessage: onMessage,
+              onEdit: () async =>
+                  (poi.type == POIType.IPP ? editIPP(context, bloc.current) : editMeetup(context, bloc.current)),
+              onChanged: (changed) => setState(() => actual = changed),
+              onComplete: () => Navigator.pop(context),
+            );
+          }),
         );
       },
     );

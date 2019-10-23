@@ -115,6 +115,38 @@ class Incident extends Equatable {
       talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
     );
   }
+
+  /// Clone with author
+  Incident cloneWith({
+    String name,
+    IncidentType type,
+    IncidentStatus status,
+    Author created,
+    Author changed,
+    DateTime occured,
+    String justification,
+    String reference,
+    Passcodes passcodes,
+    Location ipp,
+    Location meetu,
+    List<TalkGroup> talkGroups,
+  }) {
+    return Incident(
+      id: this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      created: created ?? this.created,
+      changed: changed ?? this.changed,
+      occurred: occured ?? this.occurred,
+      justification: justification ?? this.justification,
+      reference: reference ?? this.reference,
+      passcodes: passcodes ?? Passcodes.fromJson(this.passcodes.toJson()),
+      ipp: ipp ?? Location.fromJson(this.ipp.toJson()),
+      meetup: meetup ?? Location.fromJson(this.meetup.toJson()),
+      talkgroups: talkGroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
+    );
+  }
 }
 
 enum IncidentType { Lost, Distress, Other }

@@ -23,7 +23,6 @@ import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/maptile_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -528,11 +527,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(PERSONNEL_LAYER)) _buildPersonnelOptions(),
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
-        if (_useLayers.contains(POI_LAYER))
-          _buildPoiOptions({
-            widget?.incident?.ipp?.point ?? _incidentBloc?.current?.ipp?.point: "IPP",
-            widget?.incident?.meetup?.point ?? _incidentBloc?.current?.meetup?.point: "Oppmøte",
-          }),
+        if (_useLayers.contains(POI_LAYER)) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
@@ -684,22 +679,21 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return _mapControls;
   }
 
-  POILayerOptions _buildPoiOptions(Map<Point, String> points) {
-    return POILayerOptions(
-      List.from(points.entries.where((entry) => entry.key != null).map(
-            (entry) => POI(
-              name: entry.value,
-              point: entry.key,
+  POILayerOptions _buildPoiOptions() {
+    final incident = widget.incident ?? _incidentBloc.current;
+    return incident == null
+        ? null
+        : POILayerOptions(
+            _incidentBloc,
+            incidentId: incident?.id,
+            align: AnchorAlign.top,
+            icon: Icon(
+              Icons.location_on,
+              size: 30,
+              color: Colors.red,
             ),
-          )),
-      align: AnchorAlign.top,
-      icon: Icon(
-        Icons.location_on,
-        size: 30,
-        color: Colors.red,
-      ),
-      rebuild: _incidentBloc.state.map((_) => null),
-    );
+            rebuild: _incidentBloc.state.map((_) => null),
+          );
   }
 
   DeviceLayerOptions _buildDeviceOptions() {

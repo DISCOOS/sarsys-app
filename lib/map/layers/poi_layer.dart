@@ -1,6 +1,8 @@
 import 'dart:ui';
 
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/painters.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:badges/badges.dart';
@@ -16,15 +18,20 @@ typedef IconBuilder = Icon Function(BuildContext context, int index);
 class POI extends Equatable {
   final String name;
   final Point point;
+  final POIType type;
 
   POI({
+    this.type,
     @required this.name,
     @required this.point,
   });
 }
 
+enum POIType { IPP, Meetup }
+
 class POILayerOptions extends LayerOptions {
-  List<POI> items;
+  IncidentBloc bloc;
+  String incidentId;
   double bearing;
   double opacity;
   Icon icon;
@@ -35,7 +42,8 @@ class POILayerOptions extends LayerOptions {
   IconBuilder builder;
 
   POILayerOptions(
-    this.items, {
+    this.bloc, {
+    this.incidentId,
     this.icon,
     this.builder,
     this.bearing,
@@ -69,7 +77,7 @@ class POILayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, POILayerOptions params, MapState map) {
     int index = 0;
-    List<Widget> icons = params.items
+    List<Widget> icons = toItems(params.bloc.at(params.incidentId) ?? params.bloc.current)
         .where((poi) => map.bounds.contains(toLatLng(poi.point)))
         .map((poi) => _buildIcon(context, map, params, toLatLng(poi.point), poi.name, index++))
         .toList();
@@ -78,6 +86,31 @@ class POILayer implements MapPlugin {
         : Stack(
             children: icons,
           );
+  }
+
+  static POI toItem(Incident incident, POIType type) {
+    switch (type) {
+      case POIType.Meetup:
+        return POI(
+          name: "Oppmøte",
+          point: incident.meetup.point,
+          type: POIType.Meetup,
+        );
+      case POIType.IPP:
+      default:
+        return POI(
+          name: "IPP",
+          point: incident.ipp.point,
+          type: POIType.IPP,
+        );
+    }
+  }
+
+  static List<POI> toItems(Incident incident) {
+    return [
+      toItem(incident, POIType.IPP),
+      toItem(incident, POIType.Meetup),
+    ];
   }
 
   Widget _buildIcon(

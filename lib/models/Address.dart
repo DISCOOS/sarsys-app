@@ -13,7 +13,11 @@ class Address extends Equatable {
     this.lines,
     this.postalCode,
     this.countryCode,
-  });
+  }) : super([
+          lines,
+          postalCode,
+          countryCode,
+        ]);
 
   /// Factory constructor for creating a new `Address` instance
   factory Address.fromJson(Map<String, dynamic> json) => _$AddressFromJson(json);

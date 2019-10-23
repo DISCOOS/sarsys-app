@@ -16,7 +16,6 @@ import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 
 class UnitParams extends BlocParams<UnitBloc, Unit> {
   final Point point;
