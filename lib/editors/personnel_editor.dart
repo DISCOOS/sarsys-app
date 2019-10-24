@@ -17,6 +17,7 @@ import 'package:SarSys/widgets/affilliation_form.dart';
 import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -48,9 +49,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   final TextEditingController _fnameController = TextEditingController();
   final TextEditingController _lnameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   ValueNotifier<String> _editedName = ValueNotifier(null);
-  ValueNotifier<List<Device>> _devices;
+  List<Device> _devices;
 
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
@@ -62,6 +64,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     super.initState();
     _initFNameController();
     _initLNameController();
+    _initPhoneController();
   }
 
   @override
@@ -71,7 +74,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
     _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _devices ??= ValueNotifier(_getActualDevices());
+    _devices ??= _getActualDevices();
   }
 
   void _initFNameController() {
@@ -92,6 +95,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         _lnameController.text,
       ),
     );
+  }
+
+  void _initPhoneController() {
+    _setText(_phoneController, _defaultPhone());
   }
 
   @override
@@ -131,6 +138,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 buildTwoCellRow(_buildNameField(), _buildStatusField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 buildTwoCellRow(_buildFNameField(), _buildLNameField(), spacing: SPACING),
+                SizedBox(height: SPACING),
+                buildTwoCellRow(_buildFunctionField(), _buildPhoneField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 Divider(),
                 Padding(
@@ -217,7 +226,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
-        (value) => _validateName(value, _lnameController.text),
+        (value) => _validateName(value, _fnameController.text),
       ],
     );
   }
@@ -302,6 +311,84 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
+  Widget _buildFunctionField() {
+    return buildDropDownField(
+      attribute: 'function',
+      label: 'Funksjon',
+      initialValue: enumName(widget?.personnel?.function ?? OperationalFunction.Personnel),
+      items: OperationalFunction.values
+          .map((function) => [enumName(function), translateOperationalFunction(function)])
+          .map((function) => DropdownMenuItem(value: function[0], child: Text("${function[1]}")))
+          .toList(),
+      validators: [
+        FormBuilderValidators.required(errorText: 'Funksjon må velges'),
+      ],
+    );
+  }
+
+  FormBuilderTextField _buildPhoneField() {
+    return FormBuilderTextField(
+      maxLines: 1,
+      attribute: 'phone',
+      maxLength: 12,
+      maxLengthEnforced: true,
+      controller: _phoneController,
+      initialValue: _defaultPhone(),
+      decoration: InputDecoration(
+        filled: true,
+        hintText: 'Skriv inn',
+        labelText: 'Mobiltelefon',
+        suffix: GestureDetector(
+          child: Icon(
+            Icons.clear,
+            color: Colors.grey,
+            size: 20,
+          ),
+          onTap: () => _setText(
+            _phoneController,
+            _defaultPhone(),
+          ),
+        ),
+      ),
+      autovalidate: true,
+      inputFormatters: [
+        WhitelistingTextInputFormatter.digitsOnly,
+      ],
+      keyboardType: TextInputType.number,
+      valueTransformer: (value) => emptyAsNull(value),
+      validators: [
+        _validatePhone,
+        FormBuilderValidators.numeric(errorText: "Kun talltegn"),
+        (value) => emptyAsNull(value) != null
+            ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
+            : null,
+      ],
+    );
+  }
+
+  String _validatePhone(phone) {
+    Personnel match = _personnelBloc.personnel.values
+        .where(
+          (unit) => PersonnelStatus.Retired != unit.status,
+        )
+        .firstWhere(
+          (Personnel personnel) => _isSamePhone(personnel, phone),
+          orElse: () => null,
+        );
+    return match != null ? "${match.name} har samme" : null;
+  }
+
+  bool _isSamePhone(Personnel personnel, String phone) {
+    return phone?.isNotEmpty == true &&
+        personnel?.id != widget?.personnel?.id &&
+        personnel?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
+            phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
+  }
+
+  String _defaultPhone() {
+    return widget?.personnel?.phone;
+  }
+
   Widget _buildDeviceListField() {
     final style = Theme.of(context).textTheme.caption;
     return Padding(
@@ -310,7 +397,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         attribute: 'devices',
         maxChips: 5,
         initialValue: _getActualDevices(),
-        onChanged: (devices) => _devices.value = List.from(devices),
+        onChanged: (devices) => _devices = List.from(devices),
         decoration: InputDecoration(
           labelText: "Sporing",
           hintText: "Søk etter apparater",
@@ -368,22 +455,23 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Widget _buildPointField() {
-    return ValueListenableBuilder<List<Device>>(
-        valueListenable: _devices,
-        builder: (context, devices, _) {
-          return PointField(
-            attribute: 'point',
-            enabled: devices.isEmpty,
-            initialValue: _toPoint(),
-            labelText: "Siste posisjon",
-            hintText: devices.isEmpty ? 'Velg posisjon' : 'Ingen',
-            errorText: 'Posisjon må oppgis',
-            helperText:
-                devices.isEmpty ? "Klikk på posisjon for å endre" : "Kan kun endres når sporing ikke er oppgitt",
-            controller: widget.controller,
-            onChanged: (point) => setState(() {}),
-          );
-        });
+    final point = _toPoint();
+    return PointField(
+      attribute: 'point',
+      initialValue: point,
+      labelText: "Siste posisjon",
+      hintText: 'Velg posisjon',
+      errorText: 'Posisjon må oppgis',
+      helperText: _toTrackingHelperText(point),
+      controller: widget.controller,
+      onChanged: (point) => setState(() {}),
+    );
+  }
+
+  String _toTrackingHelperText(Point point) {
+    return point != null
+        ? (PointType.Manual == point.type ? 'Manuell lagt inn.' : 'Gjennomsnitt av siste posisjoner fra apparater.')
+        : '';
   }
 
   Point _toPoint() {

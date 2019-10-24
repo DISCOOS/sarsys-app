@@ -77,7 +77,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
+      builder: (_) {
         final tracking = bloc.tracking[unit.tracking];
         return Dialog(
           elevation: 0,

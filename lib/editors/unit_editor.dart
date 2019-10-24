@@ -1,5 +1,6 @@
-import 'dart:async';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -22,6 +23,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Iterable<Device> devices;
+  final Iterable<Personnel> personnel;
   final PermissionController controller;
 
   final UnitType type;
@@ -32,6 +34,7 @@ class UnitEditor extends StatefulWidget {
     this.unit,
     this.type = UnitType.Team,
     this.devices = const [],
+    this.personnel = const [],
   }) : super(key: key);
 
   @override
@@ -50,13 +53,15 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _callsignController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  ValueNotifier<List<Device>> _devices;
+  List<Device> _devices;
+  List<Personnel> _personnel;
 
   String _editedName;
   UnitBloc _unitBloc;
   DeviceBloc _deviceBloc;
   TrackingBloc _trackingBloc;
   AppConfigBloc _appConfigBloc;
+  PersonnelBloc _personnelBloc;
 
   @override
   void initState() {
@@ -76,7 +81,9 @@ class _UnitEditorState extends State<UnitEditor> {
     _deviceBloc = BlocProvider.of<DeviceBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
-    _devices ??= ValueNotifier(_getActualDevices());
+    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
+    _devices ??= _getActualDevices();
+    _personnel ??= _getActualPersonnel();
   }
 
   void _init() async {
@@ -143,6 +150,8 @@ class _UnitEditorState extends State<UnitEditor> {
                 buildTwoCellRow(_buildTypeField(), _buildCallsignField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 buildTwoCellRow(_buildStatusField(), _buildPhoneField(), spacing: SPACING),
+                SizedBox(height: SPACING),
+                _buildPersonnelListField(),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
                 SizedBox(height: SPACING),
@@ -395,11 +404,11 @@ class _UnitEditorState extends State<UnitEditor> {
         attribute: 'devices',
         maxChips: 5,
         initialValue: _getActualDevices(),
-        onChanged: (devices) => _devices.value = List.from(devices),
+        onChanged: (devices) => _devices = List.from(devices),
         decoration: InputDecoration(
-          labelText: "Sporing",
+          labelText: "Apparater",
           hintText: "Søk etter apparater",
-          helperText: "Posisjon beregnes som gjennomsnitt",
+          helperText: "Posisjon til apparater blir lagret",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
@@ -434,7 +443,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  FutureOr<List<Device>> _findDevices(String query) async {
+  List<Device> _findDevices(String query) {
     if (query.length != 0) {
       var actual = _getActualDevices().map((device) => device.id);
       var local = _getLocalDevices().map((device) => device.id);
@@ -452,23 +461,92 @@ class _UnitEditorState extends State<UnitEditor> {
     return const <Device>[];
   }
 
-  Widget _buildPointField() {
-    return ValueListenableBuilder<List<Device>>(
-        valueListenable: _devices,
-        builder: (context, devices, _) {
-          return PointField(
-            attribute: 'point',
-            enabled: devices.isEmpty,
-            initialValue: _toPoint(),
-            labelText: "Siste posisjon",
-            hintText: devices.isEmpty ? 'Velg posisjon' : 'Ingen',
-            errorText: 'Posisjon må oppgis',
-            helperText:
-                devices.isEmpty ? "Klikk på posisjon for å endre" : "Kan kun endres når sporing ikke er oppgitt",
-            controller: widget.controller,
-            onChanged: (point) => setState(() {}),
+  Widget _buildPersonnelListField() {
+    final style = Theme.of(context).textTheme.caption;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
+      child: FormBuilderChipsInput(
+        attribute: 'personnel',
+        maxChips: 15,
+        initialValue: _getActualPersonnel(),
+        onChanged: (personnel) => _personnel = List.from(personnel),
+        decoration: InputDecoration(
+          labelText: "Mannskap",
+          hintText: "Søk etter mannskap",
+          helperText: "Posisjon til mannskap blir lagret",
+          filled: true,
+          contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
+        ),
+        findSuggestions: _findPersonnel,
+        chipBuilder: (context, state, personnel) {
+          return InputChip(
+            key: ObjectKey(personnel),
+            label: Text(personnel.formal, style: style),
+            onDeleted: () => state.deleteChip(personnel),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
-        });
+        },
+        suggestionBuilder: (context, state, personnel) {
+          return ListTile(
+            key: ObjectKey(personnel),
+            leading: CircleAvatar(
+              child: Text(enumName(personnel.initials)),
+            ),
+            title: Text(personnel.name),
+            onTap: () => state.selectSuggestion(personnel),
+          );
+        },
+        valueTransformer: (values) => values.map((personnel) => personnel.toJson()).toList(),
+        // BUG: These are required, no default values are given.
+        obscureText: false,
+        autocorrect: false,
+        inputType: TextInputType.text,
+        keyboardAppearance: Brightness.dark,
+        inputAction: TextInputAction.done,
+        textCapitalization: TextCapitalization.none,
+      ),
+    );
+  }
+
+  List<Personnel> _findPersonnel(String query) {
+    if (query.length != 0) {
+      var actual = _getActualPersonnel().map((personnel) => personnel.id);
+      var local = _getLocalPersonnel().map((personnel) => personnel.id);
+      var lowercaseQuery = query.toLowerCase();
+      return _personnelBloc.personnel.values
+          .where((personnel) =>
+              // Add locally removed devices
+              actual.contains(personnel.id) && !local.contains(personnel.id) ||
+              _trackingBloc.tracking.containsKey(personnel.tracking))
+          .where((personnel) =>
+              personnel.name.toLowerCase().contains(lowercaseQuery) ||
+              translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
+          .take(5)
+          .toList(growable: false);
+    }
+    return const <Personnel>[];
+  }
+
+  Widget _buildPointField() {
+    final point = _toPoint();
+    return PointField(
+      attribute: 'point',
+      initialValue: point,
+      labelText: "Siste posisjon",
+      hintText: 'Velg posisjon',
+      errorText: 'Posisjon må oppgis',
+      helperText: _toTrackingHelperText(point),
+      controller: widget.controller,
+      onChanged: (point) => setState(() {}),
+    );
+  }
+
+  String _toTrackingHelperText(Point point) {
+    return point != null
+        ? (PointType.Manual == point.type
+            ? 'Manuell lagt inn.'
+            : 'Gjennomsnitt av siste posisjoner fra mannskap og apparater.')
+        : '';
   }
 
   Point _toPoint() {
@@ -477,7 +555,7 @@ class _UnitEditorState extends State<UnitEditor> {
     return tracking?.point;
   }
 
-  List<Device> _getLocalDevices() => List.from(_devices.value ?? <Device>[]);
+  List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
 
   List<Device> _getActualDevices() {
     return (widget?.unit?.tracking != null
@@ -488,6 +566,12 @@ class _UnitEditorState extends State<UnitEditor> {
           )
         : [])
       ..addAll(widget.devices);
+  }
+
+  List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);
+
+  List<Personnel> _getActualPersonnel() {
+    return (widget?.unit?.personnel ?? [])..addAll(widget.personnel);
   }
 
   Point _preparePoint() {
@@ -558,14 +642,14 @@ class _UnitEditorState extends State<UnitEditor> {
         );
       }
       if (response) {
-        List<Device> devices = List<Device>.from(_formKey.currentState.value["devices"]);
         Navigator.pop(
           context,
           UnitParams(
             context,
             unit: unit,
-            devices: devices,
-            point: devices.isEmpty ? _preparePoint() : null,
+            devices: _devices,
+            personnel: _personnel,
+            point: _preparePoint(),
           ),
         );
       }

@@ -73,11 +73,11 @@ class POITool extends MapTool with MapSelectable<POI> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
+      builder: (_) {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: StatefulBuilder(builder: (context, StateSetter setState) {
+          child: StatefulBuilder(builder: (_, StateSetter setState) {
             actual ??= poi.point;
             return POIInfoPanel(
               poi: POIType.IPP == poi.type

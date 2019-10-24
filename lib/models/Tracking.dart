@@ -1,4 +1,5 @@
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -16,7 +17,8 @@ class Tracking extends Equatable {
   final Duration effort;
   final List<String> devices;
   final List<Point> history;
-  final Map<String, List<Point>> tracks;
+  final List<String> aggregates;
+  final Map<String, Track> tracks;
 
   Tracking({
     /// Tracking id
@@ -43,9 +45,21 @@ class Tracking extends Equatable {
     /// List of historical points aggregated from temporally and spatially related points in tracks
     this.history,
 
-    /// Map from device to list of points
+    /// Map from device id to list of points
     this.tracks = const {},
-  }) : super([id, status, point, distance, devices, history, tracks]);
+
+    /// List of ids of tracking objects being aggregated by this tracking object
+    this.aggregates = const [],
+  }) : super([
+          id,
+          status,
+          point,
+          distance,
+          devices,
+          history,
+          tracks,
+          aggregates,
+        ]);
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
@@ -65,7 +79,8 @@ class Tracking extends Equatable {
     double speed,
     Duration effort,
     List<Point> history,
-    Map<String, List<Point>> tracks,
+    List<String> aggregates,
+    Map<String, Track> tracks,
   }) {
     return Tracking(
       id: this.id,
@@ -76,6 +91,7 @@ class Tracking extends Equatable {
       speed: speed ?? this.speed,
       effort: effort ?? this.effort,
       history: history ?? this.history,
+      aggregates: aggregates ?? this.aggregates,
       tracks: tracks ?? this.tracks,
     );
   }

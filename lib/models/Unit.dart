@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -14,6 +15,7 @@ class Unit extends Equatable {
   final String phone;
   final String callsign;
   final String tracking;
+  final List<Personnel> personnel;
 
   String get name => "${translateUnitType(type)} $number";
 
@@ -25,7 +27,17 @@ class Unit extends Equatable {
     @required this.callsign,
     this.phone,
     this.tracking,
-  }) : super([id, type, number, status, phone, callsign, tracking]);
+    this.personnel,
+  }) : super([
+          id,
+          type,
+          number,
+          status,
+          phone,
+          callsign,
+          tracking,
+          personnel,
+        ]);
 
   /// Get searchable string
   get searchable => props
@@ -50,6 +62,7 @@ class Unit extends Equatable {
       phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
+      personnel: clone.personnel,
     );
   }
 
@@ -61,6 +74,7 @@ class Unit extends Equatable {
     String phone,
     String callsign,
     String tracking,
+    List<Personnel> personnel,
   }) {
     return Unit(
       id: id ?? this.id,
@@ -70,6 +84,7 @@ class Unit extends Equatable {
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
+      personnel: personnel ?? this.personnel,
     );
   }
 }

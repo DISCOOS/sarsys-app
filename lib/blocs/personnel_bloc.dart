@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:bloc/bloc.dart';
@@ -17,33 +18,47 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   final LinkedHashMap<String, Personnel> _personnel = LinkedHashMap();
 
   // only set once to prevent reentrant error loop
-  StreamSubscription _subscription;
+  List<StreamSubscription> _subscriptions = [];
 
   PersonnelBloc(this.service, this.incidentBloc) {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
-    _subscription = incidentBloc.state.listen(_init);
+    _subscriptions
+      ..add(incidentBloc.state.listen(_init))
+      // Process tracking messages
+      ..add(service.messages.listen((event) => dispatch(_HandleMessage(event))));
   }
 
   void _init(IncidentState state) {
-    if (_subscription != null) {
-      if (state.isUnset() || state.isCreated() || state.isDeleted())
-        dispatch(ClearPersonnels(_personnel.keys.toList()));
-      else if (state.isSelected()) _fetch(state.data.id);
+    if (_subscriptions.isNotEmpty) {
+      // Clear out current tracking upon states given below
+      if (state.isUnset() ||
+          state.isCreated() ||
+          state.isDeleted() ||
+          (state.isUpdated() &&
+              [
+                IncidentStatus.Cancelled,
+                IncidentStatus.Resolved,
+              ].contains((state as IncidentUpdated).data.status))) {
+        // TODO: Mark as internal event, no message from personnel service expected
+        dispatch(ClearPersonnel(_personnel.keys.toList()));
+      } else if (state.isSelected()) {
+        _fetch(state.data.id);
+      }
     }
   }
 
   @override
-  PersonnelState get initialState => PersonnelsEmpty();
+  PersonnelState get initialState => PersonnelEmpty();
 
   /// Stream of changes on given Personnel
   Stream<Personnel> changes(Personnel personnel) => state
       .where(
         (state) =>
             (state is PersonnelUpdated && state.data.id == personnel.id) ||
-            (state is PersonnelsLoaded && state.data.contains(personnel.id)),
+            (state is PersonnelLoaded && state.data.contains(personnel.id)),
       )
-      .map((state) => state is PersonnelsLoaded ? _personnel[personnel.id] : state.data);
+      .map((state) => state is PersonnelLoaded ? _personnel[personnel.id] : state.data);
 
   /// Check if [personnel] is empty
   bool get isEmpty => personnel.isEmpty;
@@ -88,8 +103,8 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   Future<List<Personnel>> _fetch(String id) async {
     var response = await service.fetch(id);
     if (response.is200) {
-      dispatch(ClearPersonnels(_personnel.keys.toList()));
-      return _dispatch(LoadPersonnels(response.body));
+      dispatch(ClearPersonnel(_personnel.keys.toList()));
+      return _dispatch(LoadPersonnel(response.body));
     }
     dispatch(RaisePersonnelError(response));
     return Future.error(response);
@@ -97,7 +112,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   @override
   Stream<PersonnelState> mapEventToState(PersonnelCommand command) async* {
-    if (command is LoadPersonnels) {
+    if (command is LoadPersonnel) {
       yield _load(command.data);
     } else if (command is CreatePersonnel) {
       yield await _create(command);
@@ -105,8 +120,10 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
       yield await _update(command);
     } else if (command is DeletePersonnel) {
       yield await _delete(command);
-    } else if (command is ClearPersonnels) {
+    } else if (command is ClearPersonnel) {
       yield _clear(command);
+    } else if (command is _HandleMessage) {
+      yield _process(command.data);
     } else if (command is RaisePersonnelError) {
       yield command.data;
     } else {
@@ -114,11 +131,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     }
   }
 
-  PersonnelsLoaded _load(List<Personnel> personnel) {
+  PersonnelLoaded _load(List<Personnel> personnel) {
     _personnel.addEntries(personnel.map(
       (personnel) => MapEntry(personnel.id, personnel),
     ));
-    return PersonnelsLoaded(_personnel.keys.toList());
+    return PersonnelLoaded(_personnel.keys.toList());
   }
 
   Future<PersonnelState> _create(CreatePersonnel event) async {
@@ -131,6 +148,20 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
       return _toOK(event, PersonnelCreated(personnel), result: personnel);
     }
     return _toError(event, response);
+  }
+
+  PersonnelState _process(PersonnelMessage event) {
+    switch (event.type) {
+      case PersonnelMessageType.PersonnelChanged:
+        // Only handle personnel in current incident
+        if (event.incidentId == incidentBloc?.current?.id) {
+          var personnel = Personnel.fromJson(event.json);
+          // Update or add as new
+          return PersonnelUpdated(_personnel.update(personnel.id, (_) => personnel, ifAbsent: () => personnel));
+        }
+        break;
+    }
+    return PersonnelError("Personnel message not recognized: $event");
   }
 
   Future<PersonnelState> _update(UpdatePersonnel event) async {
@@ -159,10 +190,10 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     return _toError(event, response);
   }
 
-  PersonnelState _clear(ClearPersonnels command) {
+  PersonnelState _clear(ClearPersonnel command) {
     List<Personnel> cleared = [];
     command.data.forEach((id) => {if (_personnel.containsKey(id)) cleared.add(_personnel.remove(id))});
-    return PersonnelsCleared(cleared);
+    return PersonnelCleared(cleared);
   }
 
   // Dispatch and return future
@@ -189,7 +220,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    if (_subscription != null) {
+    if (_subscriptions.isNotEmpty) {
       dispatch(RaisePersonnelError(PersonnelError(error, trace: stacktrace)));
     } else {
       throw "Bad state: PersonnelBloc is disposed. Unexpected ${PersonnelError(error, trace: stacktrace)}";
@@ -199,8 +230,8 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   @override
   void dispose() {
     super.dispose();
-    _subscription?.cancel();
-    _subscription = null;
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
   }
 }
 
@@ -214,11 +245,11 @@ abstract class PersonnelCommand<T> extends Equatable {
   PersonnelCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadPersonnels extends PersonnelCommand<List<Personnel>> {
-  LoadPersonnels(List<Personnel> data) : super(data);
+class LoadPersonnel extends PersonnelCommand<List<Personnel>> {
+  LoadPersonnel(List<Personnel> data) : super(data);
 
   @override
-  String toString() => 'LoadPersonnels';
+  String toString() => 'LoadPersonnel';
 }
 
 class CreatePersonnel extends PersonnelCommand<Personnel> {
@@ -242,11 +273,18 @@ class DeletePersonnel extends PersonnelCommand<Personnel> {
   String toString() => 'DeletePersonnel';
 }
 
-class ClearPersonnels extends PersonnelCommand<List<String>> {
-  ClearPersonnels(List<String> data) : super(data);
+class _HandleMessage extends PersonnelCommand<PersonnelMessage> {
+  _HandleMessage(PersonnelMessage data) : super(data);
 
   @override
-  String toString() => 'ClearPersonnels';
+  String toString() => '_HandleMessage';
+}
+
+class ClearPersonnel extends PersonnelCommand<List<String>> {
+  ClearPersonnel(List<String> data) : super(data);
+
+  @override
+  String toString() => 'ClearPersonnel';
 }
 
 class RaisePersonnelError extends PersonnelCommand<PersonnelError> {
@@ -264,28 +302,28 @@ abstract class PersonnelState<T> extends Equatable {
 
   PersonnelState(this.data, [props = const []]) : super([data, ...props]);
 
-  isEmpty() => this is PersonnelsEmpty;
-  isLoaded() => this is PersonnelsLoaded;
+  isEmpty() => this is PersonnelEmpty;
+  isLoaded() => this is PersonnelLoaded;
   isCreated() => this is PersonnelCreated;
   isUpdated() => this is PersonnelUpdated;
   isDeleted() => this is PersonnelDeleted;
-  isCleared() => this is PersonnelsCleared;
+  isCleared() => this is PersonnelCleared;
   isException() => this is PersonnelException;
   isError() => this is PersonnelError;
 }
 
-class PersonnelsEmpty extends PersonnelState<Null> {
-  PersonnelsEmpty() : super(null);
+class PersonnelEmpty extends PersonnelState<Null> {
+  PersonnelEmpty() : super(null);
 
   @override
-  String toString() => 'PersonnelsEmpty';
+  String toString() => 'PersonnelEmpty';
 }
 
-class PersonnelsLoaded extends PersonnelState<List<String>> {
-  PersonnelsLoaded(List<String> data) : super(data);
+class PersonnelLoaded extends PersonnelState<List<String>> {
+  PersonnelLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'PersonnelsLoaded';
+  String toString() => 'PersonnelLoaded';
 }
 
 class PersonnelCreated extends PersonnelState<Personnel> {
@@ -309,11 +347,11 @@ class PersonnelDeleted extends PersonnelState<Personnel> {
   String toString() => 'PersonnelDeleted';
 }
 
-class PersonnelsCleared extends PersonnelState<List<Personnel>> {
-  PersonnelsCleared(List<Personnel> personnel) : super(personnel);
+class PersonnelCleared extends PersonnelState<List<Personnel>> {
+  PersonnelCleared(List<Personnel> personnel) : super(personnel);
 
   @override
-  String toString() => 'PersonnelsCleared';
+  String toString() => 'PersonnelCleared';
 }
 
 /// ---------------------

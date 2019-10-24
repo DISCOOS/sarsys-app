@@ -22,7 +22,7 @@ class TrackingService {
   }
 
   /// POST ../incident/{incidentId}/units/track
-  Future<ServiceResponse<Tracking>> trackUnits(String unitId, List<String> devices) async {
+  Future<ServiceResponse<Tracking>> trackUnits(String unitId, List<String> devices, List<String> aggregates) async {
     // TODO: Implement create unit tracking
     throw "Not implemented";
   }

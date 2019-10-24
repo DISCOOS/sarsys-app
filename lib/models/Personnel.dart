@@ -13,7 +13,9 @@ class Personnel extends Equatable {
   final PersonnelStatus status;
   final String fname;
   final String lname;
+  final String phone;
   final Affiliation affiliation;
+  final OperationalFunction function;
   final String tracking;
 
   String get name => "${fname ?? ''} ${lname ?? ''}";
@@ -26,7 +28,9 @@ class Personnel extends Equatable {
     this.status,
     this.fname,
     this.lname,
+    this.phone,
     this.affiliation,
+    this.function,
     this.tracking,
   }) : super([
           id,
@@ -34,12 +38,17 @@ class Personnel extends Equatable {
           status,
           fname,
           lname,
+          phone,
           affiliation,
+          function,
           tracking,
         ]);
 
   /// Get searchable string
-  get searchable => props.map((prop) => prop is PersonnelStatus ? translatePersonnelStatus(prop) : prop).join(' ');
+  get searchable => props
+      .map((prop) => prop is PersonnelStatus ? translatePersonnelStatus(prop) : prop)
+      .map((prop) => prop is OperationalFunction ? translateOperationalFunction(prop) : prop)
+      .join(' ');
 
   /// Factory constructor for creating a new `Personnel` instance from json data
   factory Personnel.fromJson(Map<String, dynamic> json) => _$PersonnelFromJson(json);
@@ -56,7 +65,9 @@ class Personnel extends Equatable {
       status: clone.status,
       fname: clone.fname,
       lname: clone.lname,
+      phone: clone.phone,
       affiliation: clone.affiliation,
+      function: clone.function,
       tracking: clone.tracking,
     );
   }
@@ -67,7 +78,9 @@ class Personnel extends Equatable {
     PersonnelStatus status,
     String fname,
     String lname,
+    String phone,
     Affiliation affiliation,
+    OperationalFunction function,
     String tracking,
   }) {
     return Personnel(
@@ -76,7 +89,9 @@ class Personnel extends Equatable {
       status: status ?? this.status,
       fname: fname ?? this.fname,
       lname: lname ?? this.lname,
+      phone: phone ?? this.phone,
       affiliation: affiliation ?? this.affiliation,
+      function: function ?? this.function,
       tracking: tracking ?? this.tracking,
     );
   }
@@ -94,5 +109,19 @@ String translatePersonnelStatus(PersonnelStatus status) {
       return "Dimittert";
     default:
       return enumName(status);
+  }
+}
+
+enum OperationalFunction { Commander, UnitLeader, Personnel }
+
+String translateOperationalFunction(OperationalFunction function) {
+  switch (function) {
+    case OperationalFunction.Commander:
+      return "Aksjonsleder";
+    case OperationalFunction.Personnel:
+      return "Mannskap";
+    case OperationalFunction.UnitLeader:
+    default:
+      return "Lagleder";
   }
 }

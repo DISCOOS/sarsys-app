@@ -13,9 +13,12 @@ Personnel _$PersonnelFromJson(Map<String, dynamic> json) {
       status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
       fname: json['fname'] as String,
       lname: json['lname'] as String,
+      phone: json['phone'] as String,
       affiliation: json['affiliation'] == null
           ? null
           : Affiliation.fromJson(json['affiliation'] as Map<String, dynamic>),
+      function:
+          _$enumDecodeNullable(_$OperationalFunctionEnumMap, json['function']),
       tracking: json['tracking'] as String);
 }
 
@@ -25,7 +28,9 @@ Map<String, dynamic> _$PersonnelToJson(Personnel instance) => <String, dynamic>{
       'status': _$PersonnelStatusEnumMap[instance.status],
       'fname': instance.fname,
       'lname': instance.lname,
+      'phone': instance.phone,
       'affiliation': instance.affiliation?.toJson(),
+      'function': _$OperationalFunctionEnumMap[instance.function],
       'tracking': instance.tracking
     };
 
@@ -53,4 +58,10 @@ const _$PersonnelStatusEnumMap = <PersonnelStatus, dynamic>{
   PersonnelStatus.Mobilized: 'Mobilized',
   PersonnelStatus.OnScene: 'OnScene',
   PersonnelStatus.Retired: 'Retired'
+};
+
+const _$OperationalFunctionEnumMap = <OperationalFunction, dynamic>{
+  OperationalFunction.Commander: 'Commander',
+  OperationalFunction.UnitLeader: 'UnitLeader',
+  OperationalFunction.Personnel: 'Personnel'
 };

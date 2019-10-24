@@ -114,7 +114,7 @@ class BlocProviderController {
 
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active
-        ? PersonnelService('$baseRestUrl/api/personnel', client)
+        ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
         : PersonnelServiceMock.build(demo.personnelCount);
     final PersonnelBloc personnelBloc = PersonnelBloc(personnelService, incidentBloc);
 

@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -29,9 +30,20 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
 
   void _init(IncidentState state) {
     if (_subscriptions.isNotEmpty) {
-      if (state.isUnset() || state.isCreated() || state.isDeleted())
+      // Clear out current tracking upon states given below
+      if (state.isUnset() ||
+          state.isCreated() ||
+          state.isDeleted() ||
+          (state.isUpdated() &&
+              [
+                IncidentStatus.Cancelled,
+                IncidentStatus.Resolved,
+              ].contains((state as IncidentUpdated).data.status))) {
+        // TODO: Mark as internal event, no message from devices service expected
         dispatch(ClearDevices(_devices.keys.toList()));
-      else if (state.isSelected()) _fetch(state.data.id);
+      } else if (state.isSelected()) {
+        _fetch(state.data.id);
+      }
     }
   }
 

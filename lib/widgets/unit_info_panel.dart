@@ -43,11 +43,11 @@ class UnitInfoPanel extends StatelessWidget {
         if (withHeader) Divider() else SizedBox(height: 8.0),
         _buildMetaInfo(context),
         _buildContactInfo(context),
+        _buildPersonnelInfo(context),
         Divider(),
         _buildLocationInfo(context, theme),
         Divider(),
         _buildTrackingInfo(context),
-        Divider(),
         _buildEffortInfo(context),
         if (withActions) ...[
           Divider(),
@@ -193,6 +193,21 @@ class UnitInfoPanel extends StatelessWidget {
                 final number = unit?.phone ?? '';
                 if (number.isNotEmpty) launch("tel:$number");
               },
+            ),
+          ),
+        ],
+      );
+
+  Row _buildPersonnelInfo(BuildContext context) => Row(
+        children: <Widget>[
+          Expanded(
+            child: buildCopyableText(
+              context: context,
+              label: "Mannskaper",
+              icon: Icon(Icons.group_work),
+              value: unit.personnel.map((p) => p.formal).join(', '),
+              onMessage: onMessage,
+              onComplete: _onComplete,
             ),
           ),
         ],

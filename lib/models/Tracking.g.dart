@@ -10,28 +10,17 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
   return Tracking(
       id: json['id'] as String,
       status: _$enumDecodeNullable(_$TrackingStatusEnumMap, json['status']),
-      point: json['point'] == null
-          ? null
-          : Point.fromJson(json['point'] as Map<String, dynamic>),
+      point: json['point'] == null ? null : Point.fromJson(json['point'] as Map<String, dynamic>),
       distance: (json['distance'] as num)?.toDouble(),
       speed: (json['speed'] as num)?.toDouble(),
-      effort: json['effort'] == null
-          ? null
-          : Duration(microseconds: json['effort'] as int),
+      effort: json['effort'] == null ? null : Duration(microseconds: json['effort'] as int),
       devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
-      history: (json['history'] as List)
-          ?.map((e) =>
-              e == null ? null : Point.fromJson(e as Map<String, dynamic>))
-          ?.toList(),
+      history:
+          (json['history'] as List)?.map((e) => e == null ? null : Point.fromJson(e as Map<String, dynamic>))?.toList(),
       tracks: (json['tracks'] as Map<String, dynamic>)?.map(
-        (k, e) => MapEntry(
-            k,
-            (e as List)
-                ?.map((e) => e == null
-                    ? null
-                    : Point.fromJson(e as Map<String, dynamic>))
-                ?.toList()),
-      ));
+        (k, e) => MapEntry(k, e == null ? null : Track.fromJson(e as Map<String, dynamic>)),
+      ),
+      aggregates: (json['personnel'] as List)?.map((e) => e as String)?.toList());
 }
 
 Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
@@ -43,8 +32,8 @@ Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
       'effort': instance.effort?.inMicroseconds,
       'devices': instance.devices,
       'history': instance.history?.map((e) => e?.toJson())?.toList(),
-      'tracks': instance.tracks
-          ?.map((k, e) => MapEntry(k, e?.map((e) => e?.toJson())?.toList()))
+      'personnel': instance.aggregates,
+      'tracks': instance.tracks?.map((k, e) => MapEntry(k, e?.toJson()))
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
@@ -54,8 +43,7 @@ T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
   }
   return enumValues.entries
       .singleWhere((e) => e.value == source,
-          orElse: () => throw ArgumentError(
-              '`$source` is not one of the supported values: '
+          orElse: () => throw ArgumentError('`$source` is not one of the supported values: '
               '${enumValues.values.join(', ')}'))
       .key;
 }

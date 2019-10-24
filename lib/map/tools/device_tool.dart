@@ -71,14 +71,14 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
     }
   }
 
-  void _showInfo(BuildContext context, Device device) {
+  void _showInfo(BuildContext context, Device device) async {
     final unit = bloc.units.find(device);
     final personnel = bloc.personnel.find(device);
     final tracking = bloc.tracking[unit?.tracking];
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
+      builder: (_) {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,

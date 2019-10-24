@@ -5,6 +5,7 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -20,13 +21,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class UnitParams extends BlocParams<UnitBloc, Unit> {
   final Point point;
   final List<Device> devices;
+  final List<Personnel> personnel;
 
   UnitParams(
     BuildContext context, {
     Unit unit,
     List<Device> devices,
+    List<Personnel> personnel,
     this.point,
   })  : this.devices = devices ?? const [],
+        this.personnel = personnel ?? const [],
         super(context, unit);
 }
 
@@ -34,10 +38,12 @@ class UnitParams extends BlocParams<UnitBloc, Unit> {
 Future<dartz.Either<bool, Unit>> createUnit(
   BuildContext context, {
   List<Device> devices,
+  List<Personnel> personnel,
 }) =>
     CreateUnit()(UnitParams(
       context,
       devices: devices,
+      personnel: personnel,
     ));
 
 class CreateUnit extends UseCase<bool, Unit, UnitParams> {
@@ -48,13 +54,20 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
       context: params.context,
       builder: (context) => UnitEditor(
         devices: params.devices,
+        personnel: params.personnel,
         controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
       ),
     );
     if (result == null) return dartz.Left(false);
 
     final unit = await params.bloc.create(result.data);
-    await _handleTracking(params, unit, devices: result.devices, point: result.point);
+    await _handleTracking(
+      params,
+      unit,
+      point: result.point,
+      devices: result.devices,
+      personnel: result.personnel,
+    );
     return dartz.Right(unit);
   }
 }
@@ -83,7 +96,13 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
     );
     if (result == null) return dartz.Left(false);
     await params.bloc.update(result.data);
-    await _handleTracking(params, result.data, devices: result.devices, point: result.point);
+    await _handleTracking(
+      params,
+      result.data,
+      point: result.point,
+      devices: result.devices,
+      personnel: result.personnel,
+    );
     return dartz.Right(result.data);
   }
 }
@@ -177,8 +196,13 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     final devices = params.devices.map((device) => device.id).toList();
     final tracking = await bloc.update(
       bloc.tracking[unit.tracking].cloneWith(
-        devices:
-            devices.isEmpty ? [] : bloc.tracking[unit.tracking].devices.where((id) => !devices.contains(id)).toList(),
+        devices: devices.isEmpty
+            ? []
+            : bloc.tracking[unit.tracking].devices
+                .where(
+                  (id) => !devices.contains(id),
+                )
+                .toList(),
       ),
     );
     return dartz.right(tracking);
@@ -190,15 +214,25 @@ Future<Tracking> _handleTracking(
   UnitParams params,
   Unit unit, {
   List<Device> devices,
+  List<Personnel> personnel,
   Point point,
 }) async {
   Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (unit.tracking == null) {
-    tracking = await trackingBloc.trackUnit(unit, devices);
+    tracking = await trackingBloc.trackUnit(
+      unit,
+      devices: devices,
+      personnel: personnel,
+    );
   } else if (trackingBloc.tracking.containsKey(unit.tracking)) {
     tracking = trackingBloc.tracking[unit.tracking];
-    tracking = await trackingBloc.update(tracking, devices: devices, point: point);
+    tracking = await trackingBloc.update(
+      tracking,
+      point: point,
+      devices: devices,
+      personnel: personnel,
+    );
   }
   return tracking;
 }

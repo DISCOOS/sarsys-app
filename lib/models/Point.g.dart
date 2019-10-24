@@ -49,6 +49,7 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
 
 const _$PointTypeEnumMap = <PointType, dynamic>{
   PointType.Manual: 'Manual',
+  PointType.Personnel: 'Personnel',
   PointType.Device: 'Device',
   PointType.Aggregated: 'Aggregated'
 };

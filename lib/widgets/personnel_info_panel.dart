@@ -8,6 +8,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PersonnelInfoPanel extends StatelessWidget {
   final Personnel personnel;
@@ -43,7 +44,8 @@ class PersonnelInfoPanel extends StatelessWidget {
       children: <Widget>[
         if (withHeader) _buildHeader(personnel, theme, context),
         if (withHeader) Divider() else SizedBox(height: 8.0),
-        _buildContactInfo(context),
+        _buildPersonalInfo(context),
+        _buildOperationalInfo(context),
         if (organization != null) _buildAffiliationInfo(context),
         Divider(),
         _buildLocationInfo(context, theme),
@@ -149,7 +151,7 @@ class PersonnelInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildContactInfo(BuildContext context) {
+  Row _buildPersonalInfo(BuildContext context) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -170,6 +172,37 @@ class PersonnelInfoPanel extends StatelessWidget {
             value: translatePersonnelStatus(personnel.status),
             onMessage: onMessage,
             onComplete: _onComplete,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row _buildOperationalInfo(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Funksjon",
+            icon: Icon(Icons.functions),
+            value: translateOperationalFunction(personnel.function),
+            onMessage: onMessage,
+            onComplete: _onComplete,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Mobil",
+            icon: Icon(Icons.phone),
+            value: personnel.phone ?? "Ukjent",
+            onMessage: onMessage,
+            onComplete: _onComplete,
+            onTap: () {
+              final number = personnel?.phone ?? '';
+              if (number.isNotEmpty) launch("tel:$number");
+            },
           ),
         ),
       ],

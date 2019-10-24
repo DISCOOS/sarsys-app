@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -29,9 +30,20 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   void _init(IncidentState state) {
     if (_subscription != null) {
-      if (state.isUnset() || state.isCreated() || state.isDeleted())
+      // Clear out current tracking upon states given below
+      if (state.isUnset() ||
+          state.isCreated() ||
+          state.isDeleted() ||
+          (state.isUpdated() &&
+              [
+                IncidentStatus.Cancelled,
+                IncidentStatus.Resolved,
+              ].contains((state as IncidentUpdated).data.status))) {
+        // TODO: Mark as internal event, no message from units service expected
         dispatch(ClearUnits(_units.keys.toList()));
-      else if (state.isSelected()) _fetch(state.data.id);
+      } else if (state.isSelected()) {
+        _fetch(state.data.id);
+      }
     }
   }
 

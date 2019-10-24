@@ -14,7 +14,11 @@ Unit _$UnitFromJson(Map<String, dynamic> json) {
       status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
       callsign: json['callsign'] as String,
       phone: json['phone'] as String,
-      tracking: json['tracking'] as String);
+      tracking: json['tracking'] as String,
+      personnel: (json['personnel'] as List)
+          ?.map((e) =>
+              e == null ? null : Personnel.fromJson(e as Map<String, dynamic>))
+          ?.toList());
 }
 
 Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
@@ -24,7 +28,8 @@ Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
       'status': _$UnitStatusEnumMap[instance.status],
       'phone': instance.phone,
       'callsign': instance.callsign,
-      'tracking': instance.tracking
+      'tracking': instance.tracking,
+      'personnel': instance.personnel?.map((e) => e?.toJson())?.toList()
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {

@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -197,7 +198,8 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Row _buildGeneral(Incident incident) {
-    final bloc = BlocProvider.of<UnitBloc>(context);
+    final unitBloc = BlocProvider.of<UnitBloc>(context);
+    final personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     return Row(
       children: <Widget>[
         Expanded(
@@ -214,10 +216,18 @@ class _IncidentPageState extends State<IncidentPage> {
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
-          child: StreamBuilder<UnitState>(
-              stream: bloc.state,
+          child: StreamBuilder<PersonnelState>(
+              stream: personnelBloc.state,
               builder: (context, snapshot) {
-                return _buildValueTile("${snapshot.hasData ? bloc.count() : "-"}", label: "Enheter");
+                return _buildValueTile("${snapshot.hasData ? personnelBloc.count() : "-"}", label: "Mnsk");
+              }),
+        ),
+        SizedBox(width: IncidentPage.SPACING),
+        Expanded(
+          child: StreamBuilder<UnitState>(
+              stream: unitBloc.state,
+              builder: (context, snapshot) {
+                return _buildValueTile("${snapshot.hasData ? unitBloc.count() : "-"}", label: "Enheter");
               }),
         ),
       ],

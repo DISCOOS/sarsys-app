@@ -187,10 +187,10 @@ Future<Tracking> _handleTracking(
   Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (personnel.tracking == null) {
-    tracking = await trackingBloc.trackPersonnel(personnel, devices);
+    tracking = await trackingBloc.trackPersonnel(personnel, devices: devices);
   } else if (trackingBloc.tracking.containsKey(personnel.tracking)) {
     tracking = trackingBloc.tracking[personnel.tracking];
-    tracking = await trackingBloc.update(tracking, devices: devices, point: point);
+    tracking = await trackingBloc.update(tracking, point: point, devices: devices);
   }
   return tracking;
 }

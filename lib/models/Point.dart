@@ -56,21 +56,20 @@ class Point extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$PointToJson(this);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      super == other &&
-          other is Point &&
-          runtimeType == other.runtimeType &&
-          lat == other.lat &&
-          lon == other.lon &&
-          alt == other.alt &&
-          acc == other.acc &&
-          timestamp == other.timestamp;
-
-  @override
-  int get hashCode => super.hashCode ^ lat.hashCode ^ lon.hashCode ^ alt.hashCode ^ acc.hashCode ^ timestamp.hashCode;
 }
 
-enum PointType { Manual, Device, Aggregated }
+enum PointType { Manual, Personnel, Device, Aggregated }
+
+String translatePointType(PointType type) {
+  switch (type) {
+    case PointType.Manual:
+      return "Manuell";
+    case PointType.Device:
+      return "Apparat";
+    case PointType.Device:
+      return "Mannskap";
+    case PointType.Aggregated:
+    default:
+      return "Aggregert";
+  }
+}

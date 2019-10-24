@@ -51,7 +51,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       // Manages tracking state for personnel
       ..add(personnelBloc.state.listen(_handlePersonnel))
       // Process tracking messages
-      ..add(service.messages.listen((event) => dispatch(HandleMessage(event))));
+      ..add(service.messages.listen((event) => dispatch(_HandleMessage(event))));
   }
 
   void _init(IncidentState state) {
@@ -279,21 +279,41 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   /// Create tracking for given Unit
-  Future<Tracking> trackUnit(Unit unit, List<Device> devices) {
-    return _dispatch<Tracking>(TrackUnit(unit, devices.map((device) => device.id).toList()));
+  Future<Tracking> trackUnit(
+    Unit unit, {
+    List<Device> devices,
+    List<Personnel> personnel,
+  }) {
+    return _dispatch<Tracking>(TrackUnit(
+      unit,
+      devices: devices.map((device) => device.id).toList(),
+      personnel: personnel,
+    ));
   }
 
   /// Create tracking for given personnel
-  Future<Tracking> trackPersonnel(Personnel personnel, List<Device> devices) {
-    return _dispatch<Tracking>(TrackPersonnel(personnel, devices.map((device) => device.id).toList()));
+  Future<Tracking> trackPersonnel(Personnel personnel, {List<Device> devices}) {
+    return _dispatch<Tracking>(TrackPersonnel(
+      personnel,
+      devices: devices.map((device) => device.id).toList(),
+    ));
   }
 
   /// Update given tracking
-  Future<Tracking> update(Tracking tracking, {List<Device> devices, Point point, TrackingStatus status}) {
+  Future<Tracking> update(
+    Tracking tracking, {
+    List<Device> devices,
+    List<Personnel> personnel,
+    Point point,
+    TrackingStatus status,
+  }) {
     return _dispatch<Tracking>(UpdateTracking(tracking.cloneWith(
       status: status,
       point: point == null ? tracking.point : point,
-      devices: devices == null ? tracking.devices : devices.map((device) => device.id).toList(),
+      devices: devices?.isNotEmpty == true ? devices.map((d) => d.id).toList() : tracking.devices,
+      aggregates: personnel?.isNotEmpty == true
+          ? personnel.map((p) => p.tracking).where((id) => id != null).toList()
+          : tracking.aggregates,
     )));
   }
 
@@ -328,7 +348,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       yield await _delete(command);
     } else if (command is ClearTracking) {
       yield _clear(command);
-    } else if (command is HandleMessage) {
+    } else if (command is _HandleMessage) {
       yield _process(command.data);
     } else if (command is RaiseTrackingError) {
       yield command.data;
@@ -345,7 +365,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Future<TrackingState> _trackUnit(TrackUnit event) async {
-    var response = await service.trackUnits(event.unit.id, event.data);
+    var response = await service
+        .trackUnits(
+          event.unit.id,
+          event.data,
+          event.personnel.map((p) => p.tracking).where((id) => id != null),
+        )
+        .catchError((e) => print(e));
     if (response.is200) {
       await unitBloc.update(
         event.unit.cloneWith(tracking: response.body.id),
@@ -485,7 +511,8 @@ class LoadTracking extends TrackingCommand<List<Tracking>, void> {
 
 class TrackUnit extends TrackingCommand<List<String>, Tracking> {
   final Unit unit;
-  TrackUnit(this.unit, List<String> devices) : super(devices);
+  final List<Personnel> personnel;
+  TrackUnit(this.unit, {List<String> devices, this.personnel}) : super(devices);
 
   @override
   String toString() => 'TrackUnit';
@@ -493,7 +520,7 @@ class TrackUnit extends TrackingCommand<List<String>, Tracking> {
 
 class TrackPersonnel extends TrackingCommand<List<String>, Tracking> {
   final Personnel personnel;
-  TrackPersonnel(this.personnel, List<String> devices) : super(devices);
+  TrackPersonnel(this.personnel, {List<String> devices}) : super(devices);
 
   @override
   String toString() => 'TrackPersonnel';
@@ -506,11 +533,11 @@ class UpdateTracking extends TrackingCommand<Tracking, Tracking> {
   String toString() => 'UpdateTracking';
 }
 
-class HandleMessage extends TrackingCommand<TrackingMessage, void> {
-  HandleMessage(TrackingMessage data) : super(data);
+class _HandleMessage extends TrackingCommand<TrackingMessage, void> {
+  _HandleMessage(TrackingMessage data) : super(data);
 
   @override
-  String toString() => 'HandleMessage';
+  String toString() => '_HandleMessage';
 }
 
 class DeleteTracking extends TrackingCommand<Tracking, void> {

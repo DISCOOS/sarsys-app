@@ -93,14 +93,14 @@ class POILayer implements MapPlugin {
       case POIType.Meetup:
         return POI(
           name: "Oppmøte",
-          point: incident.meetup.point,
+          point: incident?.meetup?.point,
           type: POIType.Meetup,
         );
       case POIType.IPP:
       default:
         return POI(
           name: "IPP",
-          point: incident.ipp.point,
+          point: incident?.ipp?.point,
           type: POIType.IPP,
         );
     }

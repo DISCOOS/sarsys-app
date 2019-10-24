@@ -4,10 +4,16 @@ import 'package:SarSys/services/service_response.dart';
 import 'package:http/http.dart' show Client;
 
 class PersonnelService {
-  final String url;
+  final String wsUrl;
+  final String restUrl;
   final Client client;
 
-  PersonnelService(this.url, this.client);
+  final StreamController _controller = StreamController.broadcast();
+
+  PersonnelService(this.restUrl, this.wsUrl, this.client);
+
+  /// Get stream of personnel messages
+  Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
   Future<ServiceResponse<List<Personnel>>> fetch(String incidentId) async {
@@ -32,4 +38,17 @@ class PersonnelService {
     // TODO: Implement delete Personnel
     throw "Not implemented";
   }
+
+  void dispose() {
+    _controller.close();
+  }
+}
+
+enum PersonnelMessageType { PersonnelChanged }
+
+class PersonnelMessage {
+  final String incidentId;
+  final PersonnelMessageType type;
+  final Map<String, dynamic> json;
+  PersonnelMessage(this.incidentId, this.type, this.json);
 }

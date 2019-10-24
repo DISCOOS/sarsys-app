@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/defaults.dart';
@@ -18,6 +19,7 @@ class PersonnelBuilder {
       '"lname": "${faker.person.lastName()}",'
       '"status": "${enumName(PersonnelStatus.Mobilized)}",'
       '"affiliation": ${json.encode(createAffiliation())},'
+      '"tracking": "${translateOperationalFunction(OperationalFunction.Personnel)}",'
       '"tracking": "$tracking"'
       '}');
 
@@ -29,11 +31,17 @@ class PersonnelBuilder {
 }
 
 class PersonnelServiceMock extends Mock implements PersonnelService {
+  PersonnelServiceMock();
   final Map<String, Map<String, Personnel>> personnelRepo = {};
 
-  static PersonnelService build(final int count) {
+  factory PersonnelServiceMock.build(final int count) {
     final PersonnelServiceMock mock = PersonnelServiceMock();
     final personnelRepo = mock.personnelRepo;
+
+    // ignore: close_sinks
+    final StreamController<PersonnelMessage> controller = StreamController.broadcast();
+
+    when(mock.messages).thenAnswer((_) => controller.stream);
 
     when(mock.fetch(any)).thenAnswer((_) async {
       final String incidentId = _.positionalArguments[0];
