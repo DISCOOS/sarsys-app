@@ -1,4 +1,5 @@
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
@@ -8,6 +9,28 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+
+class AffiliationAvatar extends StatelessWidget {
+  final Affiliation affiliation;
+  final double size;
+  final double maxRadius;
+
+  const AffiliationAvatar({
+    Key key,
+    @required this.affiliation,
+    this.size = 8.0,
+    this.maxRadius,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      child: SarSysIcons.of(affiliation.organization, size: size),
+      maxRadius: maxRadius,
+      backgroundColor: Colors.white,
+    );
+  }
+}
 
 class AffiliationForm extends StatefulWidget {
   final Affiliation initialValue;

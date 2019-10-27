@@ -132,6 +132,10 @@ flutter:
     - assets/mapspreview/hybrid.png
     - assets/mapspreview/sjokart.png
 
+  fonts:
+    - family: SarSysIcons
+      fonts:
+        - asset: assets/icons/SarSys.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
