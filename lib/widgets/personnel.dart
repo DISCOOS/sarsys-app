@@ -386,12 +386,14 @@ class PersonnelInfoPanel extends StatelessWidget {
           ),
           onPressed: () async {
             final result = await editPersonnel(context, personnel);
-            if (result.isRight() && result.toIterable().first != personnel) {
+            if (result.isRight()) {
               final actual = result.toIterable().first;
-              _onMessage("${actual.name} er oppdatert");
-              _onChanged(actual);
+              if (actual != personnel) {
+                _onMessage("${actual.name} er oppdatert");
+                _onChanged(actual);
+              }
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -408,8 +410,8 @@ class PersonnelInfoPanel extends StatelessWidget {
             if (result.isRight()) {
               _onMessage("Apparater fjernet fra ${personnel.name}");
               _onChanged(personnel);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -439,8 +441,8 @@ class PersonnelInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert mobilisert");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -458,8 +460,8 @@ class PersonnelInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert ankommet");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -477,8 +479,8 @@ class PersonnelInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er dimmitert");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -498,6 +500,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             if (result.isRight()) {
               _onMessage("${personnel.name} er slettet");
               _onDelete();
+              _onComplete();
             }
           }),
     );

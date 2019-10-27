@@ -331,8 +331,8 @@ class UnitInfoPanel extends StatelessWidget {
             if (result.isRight()) {
               _onMessage("Mannskap og apparater fjernet fra ${unit.name}");
               _onChanged(unit);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
