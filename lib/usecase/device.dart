@@ -5,6 +5,7 @@ import 'package:SarSys/editors/device_editor.dart';
 import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';
@@ -13,7 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DeviceParams extends BlocParams<DeviceBloc, Device> {
-  DeviceParams(BuildContext context, {Device device}) : super(context, device);
+  final Unit unit;
+  DeviceParams(BuildContext context, {Device device, this.unit}) : super(context, device);
 }
 
 /// Create an device

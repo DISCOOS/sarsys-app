@@ -306,14 +306,23 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     List<Personnel> personnel,
     Point point,
     TrackingStatus status,
+    bool append = false,
   }) {
+    // Only use parameter 'devices' or 'personnel' if not null, otherwise use existing values
+    var deviceIds = (devices?.map((d) => d.id) ?? tracking.devices)?.toList();
+    var aggregateIds = (personnel?.map((p) => p.tracking)?.where((id) => id != null) ?? tracking.aggregates)?.toList();
+
+    // Append unique ids
+    if (append) {
+      deviceIds = Set<String>.from(deviceIds..addAll(tracking.devices)).toList();
+      aggregateIds = Set<String>.from(aggregateIds..addAll(tracking.aggregates)).toList();
+    }
+
     return _dispatch<Tracking>(UpdateTracking(tracking.cloneWith(
       status: status,
       point: point == null ? tracking.point : point,
-      devices: devices?.isNotEmpty == true ? devices.map((d) => d.id).toList() : tracking.devices,
-      aggregates: personnel?.isNotEmpty == true
-          ? personnel.map((p) => p.tracking).where((id) => id != null).toList()
-          : tracking.aggregates,
+      devices: deviceIds,
+      aggregates: aggregateIds,
     )));
   }
 
@@ -365,13 +374,11 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Future<TrackingState> _trackUnit(TrackUnit event) async {
-    var response = await service
-        .trackUnits(
-          event.unit.id,
-          event.data,
-          event.personnel.map((p) => p.tracking).where((id) => id != null),
-        )
-        .catchError((e) => print(e));
+    var response = await service.create(
+      incidentBloc.current.id,
+      devices: event.data,
+      aggregates: event.personnel.map((p) => p.tracking).where((id) => id != null).toList(),
+    );
     if (response.is200) {
       await unitBloc.update(
         event.unit.cloneWith(tracking: response.body.id),
@@ -386,7 +393,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Future<TrackingState> _trackPersonnel(TrackPersonnel event) async {
-    var response = await service.trackPersonnel(event.personnel.id, event.data);
+    var response = await service.create(
+      incidentBloc.current.id,
+      devices: event.data,
+    );
     if (response.is200) {
       await personnelBloc.update(
         event.personnel.cloneWith(tracking: response.body.id),

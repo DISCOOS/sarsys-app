@@ -3,10 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/mock/personnel.dart';
-import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -30,6 +27,7 @@ class TracksBuilder {
         '"status": "${enumName(status)}",'
         '"distance": 0,'
         '"devices": [],'
+        '"aggregates": [],'
         '"history": [],'
         '"tracks": {}'
         '}');
@@ -45,16 +43,12 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   factory TrackingServiceMock.build(
     final IncidentBloc incidentBloc,
-    final UnitServiceMock unitServiceMock,
-    final PersonnelServiceMock personnelServiceMock,
     final DeviceServiceMock deviceServiceMock,
     final personnelCount,
     final unitCount,
   ) {
-    final Map<String, String> u2t = {}; // unitId -> trackingId
-    final Map<String, String> p2t = {}; // personnelId -> trackingId
     final Map<String, String> d2t = {}; // deviceId -> trackingId
-    final Map<String, String> t2t = {}; // trackingId -> trackingId
+    final Map<String, String> a2t = {}; // aggregate trackingId -> trackingId
     final Map<String, _TrackSimulation> simulations = {}; // trackingId -> simulation
     final Map<String, Map<String, Tracking>> trackingRepo = {}; // incidentId -> trackingId -> tracking
 
@@ -63,6 +57,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     deviceServiceMock.messages.listen((message) => _handle(
           message,
           d2t,
+          a2t,
           trackingRepo,
           simulations,
           controller,
@@ -84,7 +79,6 @@ class TrackingServiceMock extends Mock implements TrackingService {
         trackingList.addEntries(
           _createTrackingUnits(
             incidentId,
-            u2t,
             d2t,
             unitCount,
           ),
@@ -94,7 +88,6 @@ class TrackingServiceMock extends Mock implements TrackingService {
         trackingList.addEntries(
           _createTrackingPersonnel(
             incidentId,
-            p2t,
             d2t,
             personnelCount,
           ),
@@ -106,7 +99,6 @@ class TrackingServiceMock extends Mock implements TrackingService {
             id,
             trackingList,
             deviceServiceMock.deviceRepo[incidentId],
-            personnelServiceMock.personnelRepo[incidentId],
             simulations,
           ),
         );
@@ -115,88 +107,70 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
 
-    when(mock.trackUnits(any, any, any)).thenAnswer((_) async {
-      final unitId = _.positionalArguments[0];
-      final incident = unitServiceMock.unitsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(unitId),
-        orElse: () => null,
-      );
+    when(mock.create(any, devices: anyNamed("devices"), aggregates: anyNamed("aggregates"))).thenAnswer((_) async {
+      final incidentId = _.positionalArguments[0];
       return _create(
-        type: 'Unit',
-        xId: unitId,
-        incidentId: incident.key,
-        x2t: u2t,
+        incidentId: incidentId,
         d2t: d2t,
-        t2t: t2t,
-        devices: _.positionalArguments[1] as List<String>,
-        aggregates: _.positionalArguments[2] as List<String>,
+        a2t: a2t,
+        devices: _.namedArguments[Symbol("devices")] as List<String> ?? <String>[],
+        aggregates: _.namedArguments[Symbol("aggregates")] as List<String> ?? <String>[],
         simulations: simulations,
         trackingRepo: trackingRepo,
         deviceRepo: deviceServiceMock.deviceRepo,
-        personnelRepo: personnelServiceMock.personnelRepo,
-      );
-    });
-
-    when(mock.trackPersonnel(any, any)).thenAnswer((_) async {
-      final personnelId = _.positionalArguments[0];
-      final incident = personnelServiceMock.personnelRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(personnelId),
-        orElse: () => null,
-      );
-      return _create(
-        type: 'Personnel',
-        xId: personnelId,
-        incidentId: incident.key,
-        x2t: p2t,
-        d2t: d2t,
-        t2t: t2t,
-        devices: _.positionalArguments[1] as List<String>,
-        simulations: simulations,
-        deviceRepo: deviceServiceMock.deviceRepo,
-        personnelRepo: personnelServiceMock.personnelRepo,
-        trackingRepo: trackingRepo,
       );
     });
 
     when(mock.update(any)).thenAnswer((_) async {
-      var original = _.positionalArguments[0] as Tracking;
+      var request = _.positionalArguments[0] as Tracking;
+      // Assumes that a device is attached to a single incident only
       var incident = trackingRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(original.id),
+        (entry) => entry.value.containsKey(request.id),
         orElse: () => null,
       );
       if (incident != null) {
+        // Update tracking instance
+        var trackingList = incident.value;
+
+        // Tracking does exists?
+        if (!trackingList.containsKey(request.id))
+          return ServiceResponse.notFound(
+            message: "Not found. Tracking ${request.id}",
+          );
+        final original = trackingList[request.id];
+
         // Ensure only valid statuses are persisted
-        var tracking = original.cloneWith(
+        var tracking = request.cloneWith(
             status: _toStatus(
-          original.status,
-          original.devices.isNotEmpty,
-          original.aggregates.isNotEmpty,
+          request.status,
+          request.devices.isNotEmpty,
+          request.aggregates.isNotEmpty,
         ));
 
         // Append position to history if manual and does not exist in track
-        if (!tracking.history.contains(original.point)) {
+        if (tracking.point != null && !tracking.history.contains(tracking.point)) {
           if (tracking.point?.type == PointType.Manual) {
-            tracking = tracking.cloneWith(point: original.point, history: tracking.history..add(original.point));
+            tracking = tracking.cloneWith(point: request.point, history: tracking.history..add(request.point));
           } else {
             return ServiceResponse.badRequest(
               message: "Bad request. "
                   "Only point of type 'Manual' is allowed, "
-                  "found ${enumName(original.point?.type)}",
+                  "found ${enumName(request.point?.type)}",
             );
           }
-
-          final dd = original.devices.where(((id) => d2t.containsKey(id)));
-          if (dd.isNotEmpty) {
-            return ServiceResponse.badRequest<Tracking>(message: "Bad request, devices $dd are tracked already");
-          }
-
-          final dt = original.aggregates.where(((id) => d2t.containsKey(id)));
-          if (dt.isNotEmpty) {
-            return ServiceResponse.badRequest<Tracking>(message: "Bad request, aggregates $dt are tracked already");
-          }
         }
-        // Update tracking instance
-        var trackingList = incident.value;
+
+        final dd = request.devices.where(((id) => !original.devices.contains(id) && d2t.containsKey(id)));
+        if (dd.isNotEmpty) {
+          return ServiceResponse.badRequest<Tracking>(message: "Bad request, devices $dd are tracked already");
+        }
+
+        final dt = request.aggregates.where(((id) => !original.aggregates.contains(id) && d2t.containsKey(id)));
+        if (dt.isNotEmpty) {
+          return ServiceResponse.badRequest<Tracking>(message: "Bad request, aggregates $dt are tracked already");
+        }
+
+        // Update tracking list
         trackingList.update(
           tracking.id,
           (_) => tracking,
@@ -204,14 +178,14 @@ class TrackingServiceMock extends Mock implements TrackingService {
         );
 
         // Remove all and add again
-        d2t.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
+        d2t.removeWhere((_, trackingId) => trackingId == tracking.id);
         d2t.addEntries(
           tracking.devices.map((deviceId) => MapEntry(deviceId, tracking.id)),
         );
 
         // Remove all and add again
-        t2t.removeWhere((_, trackingId) => trackingId == tracking.id);
-        t2t.addEntries(
+        a2t.removeWhere((_, trackingId) => trackingId == tracking.id);
+        a2t.addEntries(
           tracking.aggregates.map((trackingId) => MapEntry(trackingId, tracking.id)),
         );
 
@@ -220,16 +194,16 @@ class TrackingServiceMock extends Mock implements TrackingService {
           tracking.id,
           trackingList,
           deviceServiceMock.deviceRepo[incident.key],
-          personnelServiceMock.personnelRepo[incident.key],
           simulations,
         );
 
         return ServiceResponse.ok(body: tracking);
       }
-      return ServiceResponse.notFound(message: "Not found. Tracking ${original.id}");
+      return ServiceResponse.notFound(message: "Not found. Tracking ${request.id}");
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
+      // Assumes that a device is attached to a single incident only
       var incident = trackingRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(tracking.id),
         orElse: () => null,
@@ -238,7 +212,6 @@ class TrackingServiceMock extends Mock implements TrackingService {
         var trackingList = incident.value;
         trackingList.remove(tracking.id);
         simulations.remove(tracking.id);
-        u2t.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
         d2t.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
         return ServiceResponse.noContent();
       }
@@ -248,69 +221,57 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   static ServiceResponse<Tracking> _create({
-    String type,
-    String xId,
     String incidentId,
-    List<String> devices,
+    List<String> devices = const [],
     List<String> aggregates = const [],
-    Map<String, String> x2t,
     Map<String, String> d2t,
-    Map<String, String> t2t,
+    Map<String, String> a2t,
     Map<String, Map<String, Device>> deviceRepo,
-    Map<String, Map<String, Personnel>> personnelRepo,
     Map<String, Map<String, Tracking>> trackingRepo,
     Map<String, _TrackSimulation> simulations,
   }) {
-    if (x2t.containsKey(xId)) {
-      return ServiceResponse.noContent<Tracking>();
-    }
-
-    if (incidentId == null) {
-      return ServiceResponse.notFound<Tracking>(message: "Not found. $type $xId.");
-    }
-
     final dd = devices.where(((id) => d2t.containsKey(id)));
     if (dd.isNotEmpty) {
       return ServiceResponse.badRequest<Tracking>(message: "Bad request, devices $dd are tracked already");
     }
-    final td = aggregates.where(((id) => t2t.containsKey(id)));
+    final td = aggregates.where(((id) => a2t.containsKey(id)));
     if (td.isNotEmpty) {
       return ServiceResponse.badRequest<Tracking>(message: "Bad request, aggregates $td are tracked already");
     }
 
-    final prefix = type.toLowerCase().substring(0, 1);
     final trackingList = trackingRepo[incidentId];
-    final trackingId = "$incidentId:t:$prefix:${randomAlphaNumeric(8).toLowerCase()}";
+    final trackingId = "$incidentId:t:${randomAlphaNumeric(8).toLowerCase()}";
     var tracking = Tracking.fromJson(TracksBuilder.createTrackingAsJson(
       trackingId,
       status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty, aggregates.isNotEmpty),
-    )).cloneWith(devices: devices);
+    )).cloneWith(
+      devices: devices,
+      aggregates: aggregates,
+    );
     trackingList.putIfAbsent(trackingId, () => tracking);
     tracking = _simulate(
       trackingId,
       trackingList,
       deviceRepo[incidentId],
-      personnelRepo[incidentId],
       simulations,
     );
     trackingList.putIfAbsent(trackingId, () => tracking);
-    x2t.putIfAbsent(xId, () => trackingId);
     d2t.addEntries(
       tracking.devices.map((deviceId) => MapEntry(deviceId, trackingId)),
+    );
+    a2t.addEntries(
+      tracking.aggregates.map((aggregateId) => MapEntry(aggregateId, trackingId)),
     );
     return ServiceResponse.ok<Tracking>(body: tracking);
   }
 
   static Iterable<MapEntry<String, Tracking>> _createTrackingPersonnel(
     String incidentId,
-    Map<String, String> p2t, // personnelId -> trackingId
     Map<String, String> d2t, // deviceId -> trackingId
     int count,
   ) {
     // Track devices from app-series (tracking incidentId:t:p:$i -> device incidentId:d:a:$i)
     final tracking = _createTracking(incidentId, 'p', 'd:a', count);
-    // Map personnel incidentId:p:$i -> tracking incidentId:t:p:$i
-    _addEntries(incidentId, 'p', p2t, tracking);
     // Map device incidentId:d:a:$i -> tracking incidentId:t:p:$i
     _addEntries(incidentId, 'd:a', d2t, tracking);
     return tracking;
@@ -318,14 +279,11 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   static Iterable<MapEntry<String, Tracking>> _createTrackingUnits(
     String incidentId,
-    Map<String, String> u2t, // unitId -> trackingId
     Map<String, String> d2t, // deviceId -> trackingId
     int unitCount,
   ) {
     // Track devices from tetra-series (tracking incidentId:t:u:$i -> device incidentId:d:t:$i)
     final tracking = _createTracking(incidentId, 'u', 'd:t', unitCount);
-    // Map personnel incidentId:u:$i -> tracking incidentId:t:u:$i
-    _addEntries(incidentId, 'u', u2t, tracking);
     // Map device incidentId:d:t:$i -> tracking incidentId:t:u:$i
     _addEntries(incidentId, 'd:t', d2t, tracking);
     return tracking;
@@ -372,23 +330,20 @@ class TrackingServiceMock extends Mock implements TrackingService {
     String id,
     Map<String, Tracking> trackingList,
     Map<String, Device> devices,
-    Map<String, Personnel> personnel,
     Map<String, _TrackSimulation> simulations,
   ) {
     var tracking = trackingList[id];
     if (tracking != null) {
       // Only simulate aggregated position for tracking with devices
-      if (tracking.devices.isNotEmpty &&
-          [
-            TrackingStatus.Created,
-            TrackingStatus.Tracking,
-            TrackingStatus.Paused,
-          ].contains(tracking.status)) {
+      if ([
+        TrackingStatus.Created,
+        TrackingStatus.Tracking,
+        TrackingStatus.Paused,
+      ].contains(tracking.status)) {
         final simulation = _TrackSimulation(
           id: id,
           trackingList: trackingList,
           devices: devices,
-          personnel: personnel,
         );
         tracking = simulation.progress();
         simulations.update(id, (_) => simulation, ifAbsent: () => simulation);
@@ -402,6 +357,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
   static void _handle(
     DeviceMessage message,
     Map<String, String> d2t,
+    Map<String, String> a2t,
     Map<String, Map<String, Tracking>> trackingRepo,
     Map<String, _TrackSimulation> simulations,
     StreamController<TrackingMessage> controller,
@@ -409,27 +365,85 @@ class TrackingServiceMock extends Mock implements TrackingService {
     final device = Device.fromJson(message.json);
     if (d2t.containsKey(device.id)) {
       final trackingId = d2t[device.id];
-      final incident = trackingRepo.entries.firstWhere((entry) => entry.value.containsKey(trackingId));
+      // Assumes that a device is attached to a single incident only
+      final incident = trackingRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(trackingId),
+        orElse: () => null,
+      );
       if (incident != null) {
-        final simulation = simulations[trackingId];
-        if (simulation != null) {
-          simulation.devices[device.id] = device;
-          // Append to tracks, calculate new position, update and notify
-          final next = simulation.progress(
-            deviceIds: [device.id],
-          );
-          trackingRepo[incident.key][trackingId] = next;
-          controller.add(TrackingMessage(incident.key, TrackingMessageType.TrackingChanged, next.toJson()));
-        }
+        // 2) Append new position to track, calculate new position, update and notify
+        _progress(
+          device,
+          incident.key,
+          trackingId,
+          a2t,
+          simulations,
+          trackingRepo,
+          controller,
+        );
       }
     }
   }
+
+  static void _progress(
+    Device device,
+    String incidentId,
+    String trackingId,
+    Map<String, String> a2t,
+    Map<String, _TrackSimulation> simulations,
+    Map<String, Map<String, Tracking>> trackingRepo,
+    StreamController<TrackingMessage> controller,
+  ) {
+    // Calculate
+    final simulation = simulations[trackingId];
+    if (simulation != null) {
+      // Update aggregates first
+      final aggregateIds = _toAggregateIds(device.id, trackingId, trackingRepo[incidentId], a2t)
+        ..forEach(
+          (aggregateId) => _progress(
+            device,
+            incidentId,
+            aggregateId,
+            a2t,
+            simulations,
+            trackingRepo,
+            controller,
+          ),
+        );
+
+      // Update device position
+      simulation.devices[device.id] = device;
+
+      // Append to track, calculate next position, effort and speed
+      final trackingList = trackingRepo[incidentId];
+      final next = simulation.progress(
+        deviceIds: [device.id],
+        aggregateIds: aggregateIds,
+      );
+      trackingList[trackingId] = next;
+      trackingRepo.update(incidentId, (_) => trackingList);
+
+      // Notify listeners
+      controller.add(TrackingMessage(incidentId, TrackingMessageType.TrackingChanged, next.toJson()));
+    }
+  }
+
+  static List<String> _toAggregateIds(
+    String deviceId,
+    String trackingId,
+    Map<String, Tracking> trackingList,
+    Map<String, String> a2t,
+  ) =>
+      a2t.entries
+          .where((e) => trackingId == e.key)
+          .where((e) => trackingList[e.key]?.devices?.contains(deviceId) == true)
+          .map((e) => e.value)
+          .toList();
 }
 
 class _TrackSimulation {
   final String id;
   final Map<String, Device> devices;
-  final Map<String, Personnel> personnel;
   final Map<String, Tracking> trackingList;
 
   Tracking get tracking => trackingList[id];
@@ -438,12 +452,11 @@ class _TrackSimulation {
     @required this.id,
     @required this.trackingList,
     @required this.devices,
-    @required this.personnel,
   });
 
   Tracking progress({
     Iterable<String> deviceIds = const [],
-    Iterable<String> personnelIds = const [],
+    Iterable<String> aggregateIds = const [],
   }) {
     Point point;
     double distance;
@@ -459,14 +472,14 @@ class _TrackSimulation {
     // Tracking devices only?
     else if (devices.isNotEmpty && aggregates.isEmpty)
       point = _fromDevice(tracking.devices.first) ?? tracking.point;
-    // Tracking personnel only?
+    // Tracking aggregates only?
     else if (devices.isEmpty && aggregates.isNotEmpty)
-      point = _fromPersonnel(aggregates.first) ?? tracking.point;
+      point = _fromAggregate(aggregates.first) ?? tracking.point;
     else {
       // Calculate geometric centre of all devices and personnel as the arithmetic mean of the input coordinates
       var sum = [0.0, 0.0, 0.0, DateTime.now().millisecondsSinceEpoch].toList();
       sum = devices.fold<List<num>>(sum, (sum, next) => _aggregate(sum, _fromDevice(next)));
-      sum = aggregates.fold<List<num>>(sum, (sum, next) => _aggregate(sum, _fromPersonnel(next)));
+      sum = aggregates.fold<List<num>>(sum, (sum, next) => _aggregate(sum, _fromAggregate(next)));
       final count = (devices.length + aggregates.length);
       point = Point(
         type: PointType.Aggregated,
@@ -480,8 +493,8 @@ class _TrackSimulation {
     // Only add to device track and tracking history if status is Tracking
     List<Point> history;
     if (tracking.status == TrackingStatus.Tracking) {
-      _update(deviceIds, (id) => _fromDevice(id));
-      _update(personnelIds, (id) => _fromPersonnel(id));
+      _update(deviceIds, TrackType.Device, (id) => _fromDevice(id));
+      _update(aggregateIds, TrackType.Aggregate, (id) => _fromAggregate(id));
       // Only add point if not added already
       history = tracking.history.contains(point)
           ? tracking.history
@@ -517,7 +530,7 @@ class _TrackSimulation {
     );
   }
 
-  void _update(Iterable<String> ids, Point toPoint(String id)) {
+  void _update(Iterable<String> ids, TrackType type, Point toPoint(String id)) {
     return ids.forEach(
       (id) => tracking.tracks.update(
         id,
@@ -525,23 +538,23 @@ class _TrackSimulation {
         (Track track) => track.points.contains(toPoint(id))
             ? track
             : Track(
-                points: track.points..add(devices[id].point),
-                type: TrackType.Device,
+                points: track.points..add(toPoint(id)),
+                type: type,
               ),
-        ifAbsent: () => Track(points: [devices[id].point], type: TrackType.Device),
+        ifAbsent: () => Track(points: [toPoint(id)], type: TrackType.Device),
       ),
     );
   }
 
   Point _fromDevice(String id) => devices[id]?.point;
-  Point _fromPersonnel(String id) => trackingList[personnel[id]?.tracking]?.point;
+  Point _fromAggregate(String id) => trackingList[id]?.point;
 
   List<num> _aggregate(List<num> sum, Point point) => point == null
       ? sum
       : [
           point.lat + sum[0],
           point.lon + sum[1],
-          point.acc + sum[2],
+          (point.acc ?? 0.0) + sum[2],
           min(point.timestamp.millisecondsSinceEpoch, sum[3])
         ];
 }

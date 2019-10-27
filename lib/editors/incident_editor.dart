@@ -109,8 +109,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
                 },
                 steps: [
                   _buildGeneralStep(),
-                  _buildClassificationStep(),
                   _buildPoiStep(),
+                  _buildClassificationStep(),
                   _buildTGStep(),
                   if (widget.incident == null) _buildPreparationStep(),
                   _buildReferenceStep(),

@@ -33,14 +33,14 @@ class Track extends Equatable {
   Track truncate(int count) => Track(points: this.points.skip(max(0, points.length - count)).toList(), type: this.type);
 }
 
-enum TrackType { Device, Personnel }
+enum TrackType { Device, Aggregate }
 
 String translateTrackType(TrackType type) {
   switch (type) {
     case TrackType.Device:
       return "Apparat";
-    case TrackType.Personnel:
+    case TrackType.Aggregate:
     default:
-      return "Mannskap";
+      return "Aggregert";
   }
 }

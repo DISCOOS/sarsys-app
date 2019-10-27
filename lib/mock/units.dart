@@ -15,6 +15,7 @@ class UnitBuilder {
         '"type": "${enumName(type)}",'
         '"callsign": "${translateUnitType(type)} $number",'
         '"status": "${enumName(UnitStatus.Mobilized)}",'
+        '"personnel": [],'
         '"tracking": "$tracking"'
         '}');
   }

@@ -20,9 +20,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Point point;
   final List<Device> devices;
-  PersonnelParams(BuildContext context, {Personnel personnel, List<Device> devices, this.point})
-      : this.devices = devices ?? const [],
-        super(context, personnel);
+  PersonnelParams(
+    BuildContext context, {
+    Personnel personnel,
+    this.point,
+    this.devices,
+  }) : super(context, personnel);
 }
 
 /// Create personnel with tracking of given devices
@@ -78,7 +81,13 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
     if (result == null) return dartz.Left(false);
     await params.bloc.update(result.data);
-    await _handleTracking(params, result.data, devices: result.devices, point: result.point);
+    await _handleTracking(
+      params,
+      result.data,
+      devices: result.devices,
+      point: result.point,
+      append: false,
+    );
     return dartz.Right(result.data);
   }
 }
@@ -132,10 +141,20 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
         : await selectPersonnel(
             params.context,
             where: (personnel) =>
-                bloc.tracking[personnel.tracking] == null || bloc.tracking[personnel.tracking].devices.isEmpty,
+                // Personnel is not tracking any devices?
+                bloc.tracking[personnel.tracking] == null ||
+                // Personnel is not tracking given devices?
+                !bloc.tracking[personnel.tracking].devices.any(
+                  (device) => params.devices?.contains(device) == true,
+                ),
           );
     if (personnel == null) return dartz.Left(false);
-    final tracking = await _handleTracking(params, personnel, devices: params.devices);
+    final tracking = await _handleTracking(
+      params,
+      personnel,
+      devices: params.devices,
+      append: true,
+    );
     return dartz.Right(Pair.of(personnel, tracking));
   }
 }
@@ -144,34 +163,38 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
 Future<dartz.Either<bool, Tracking>> removeFromPersonnel(
   BuildContext context,
   Personnel personnel, {
-  List<Device> devices = const [],
+  List<Device> devices,
 }) =>
     RemoveFromPersonnel()(PersonnelParams(
       context,
       personnel: personnel,
-      devices: devices ?? [],
+      devices: devices,
     ));
 
 class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Tracking>> call(PersonnelParams params) async {
     final personnel = params.data;
+    final devices = params.devices ?? [];
+
+    // Notify intent
     var proceed = await prompt(
       params.context,
       "Bekreft fjerning",
-      "Dette vil fjerne ${params.devices.map((device) => device.name).join((', '))} fra ${personnel.name}",
+      "Dette vil fjerne ${devices.map((device) => device.name).join((', '))} fra ${personnel.name}",
     );
-
     if (!proceed) return dartz.left(false);
 
+    // Prepare removal
     final bloc = BlocProvider.of<TrackingBloc>(params.context);
-    final devices = params.devices.map((device) => device.id).toList();
+
+    // Collect kept devices and personnel
+    final keepDevices = bloc.devices(personnel.tracking).where((test) => !devices.contains(test)).toList();
+
     final tracking = await bloc.update(
-      bloc.tracking[personnel.tracking].cloneWith(
-        devices: devices.isEmpty
-            ? []
-            : bloc.tracking[personnel.tracking].devices.where((id) => !devices.contains(id)).toList(),
-      ),
+      bloc.tracking[personnel.tracking],
+      devices: keepDevices,
+      append: false,
     );
     return dartz.right(tracking);
   }
@@ -183,14 +206,23 @@ Future<Tracking> _handleTracking(
   Personnel personnel, {
   List<Device> devices,
   Point point,
+  bool append,
 }) async {
   Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (personnel.tracking == null) {
-    tracking = await trackingBloc.trackPersonnel(personnel, devices: devices);
+    tracking = await trackingBloc.trackPersonnel(
+      personnel,
+      devices: devices,
+    );
   } else if (trackingBloc.tracking.containsKey(personnel.tracking)) {
     tracking = trackingBloc.tracking[personnel.tracking];
-    tracking = await trackingBloc.update(tracking, point: point, devices: devices);
+    tracking = await trackingBloc.update(
+      tracking,
+      point: point,
+      devices: devices,
+      append: append,
+    );
   }
   return tracking;
 }

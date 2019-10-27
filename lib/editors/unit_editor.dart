@@ -13,6 +13,8 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/device.dart';
+import 'package:SarSys/widgets/personnel.dart';
 import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
@@ -224,7 +226,7 @@ class _UnitEditorState extends State<UnitEditor> {
   String _validateNumber(number) {
     Unit unit = _unitBloc.units.values
         .where(
-          (unit) => UnitStatus.Retired != unit.status,
+          (unit) => widget.unit?.id != unit.id && UnitStatus.Retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => isSameNumber(unit, number),
@@ -397,7 +399,6 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Widget _buildDeviceListField() {
-    final style = Theme.of(context).textTheme.caption;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
@@ -413,24 +414,14 @@ class _UnitEditorState extends State<UnitEditor> {
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
         findSuggestions: _findDevices,
-        chipBuilder: (context, state, device) {
-          return InputChip(
-            key: ObjectKey(device),
-            label: Text(device.number, style: style),
-            onDeleted: () => state.deleteChip(device),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        },
-        suggestionBuilder: (context, state, device) {
-          return ListTile(
-            key: ObjectKey(device),
-            leading: CircleAvatar(
-              child: Text(enumName(device.type).substring(0, 1)),
-            ),
-            title: Text(device.number),
-            onTap: () => state.selectSuggestion(device),
-          );
-        },
+        chipBuilder: (context, state, device) => DeviceChip(
+          device: device,
+          state: state,
+        ),
+        suggestionBuilder: (context, state, device) => DeviceTile(
+          device: device,
+          state: state,
+        ),
         valueTransformer: (values) => values.map((device) => device).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
@@ -462,7 +453,6 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Widget _buildPersonnelListField() {
-    final style = Theme.of(context).textTheme.caption;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
@@ -478,24 +468,14 @@ class _UnitEditorState extends State<UnitEditor> {
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
         findSuggestions: _findPersonnel,
-        chipBuilder: (context, state, personnel) {
-          return InputChip(
-            key: ObjectKey(personnel),
-            label: Text(personnel.formal, style: style),
-            onDeleted: () => state.deleteChip(personnel),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        },
-        suggestionBuilder: (context, state, personnel) {
-          return ListTile(
-            key: ObjectKey(personnel),
-            leading: CircleAvatar(
-              child: Text(enumName(personnel.initials)),
-            ),
-            title: Text(personnel.name),
-            onTap: () => state.selectSuggestion(personnel),
-          );
-        },
+        chipBuilder: (context, state, personnel) => PersonnelChip(
+          personnel: personnel,
+          state: state,
+        ),
+        suggestionBuilder: (context, state, personnel) => PersonnelTile(
+          personnel: personnel,
+          state: state,
+        ),
         valueTransformer: (values) => values.map((personnel) => personnel.toJson()).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
@@ -558,14 +538,9 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null
-        ? _trackingBloc.devices(
-            widget?.unit?.tracking,
-            // Include closed tracks
-            exclude: [],
-          )
-        : [])
-      ..addAll(widget.devices);
+    return (widget?.unit?.tracking != null ? _trackingBloc.devices(widget?.unit?.tracking,
+        // Include closed tracks
+        exclude: []) : [])..addAll(widget.devices ?? []);
   }
 
   List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);

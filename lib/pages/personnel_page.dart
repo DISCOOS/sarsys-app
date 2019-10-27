@@ -5,9 +5,12 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/personnel.dart';
+import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/affilliation.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -129,22 +132,28 @@ class PersonnelPageState extends State<PersonnelPage> {
       );
     }
     var personnel = items[index];
-    var tracking = personnel.tracking == null ? null : _trackingBloc.tracking[personnel.tracking];
+    var unit = _toUnit(personnel);
+    var tracking = _trackingBloc.tracking[personnel.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions && _userBloc?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
-            child: _buildPersonnelTile(personnel, status, tracking),
+            child: _buildPersonnelTile(unit, personnel, status, tracking),
             secondaryActions: <Widget>[
               _buildEditAction(context, personnel),
-              if (tracking?.status != TrackingStatus.Closed) _buildTransitionAction(context, personnel),
+              _buildTransitionAction(context, personnel),
+              if (unit == null) ...[
+                _buildCreateUnitAction(personnel),
+                _buildAddToUnitAction(personnel),
+              ] else
+                _buildRemoveFromUnitAction(unit, personnel)
             ],
           )
-        : _buildPersonnelTile(personnel, status, tracking);
+        : _buildPersonnelTile(unit, personnel, status, tracking);
   }
 
-  Widget _buildPersonnelTile(Personnel personnel, TrackingStatus status, Tracking tracking) {
+  Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
     return Container(
       key: ObjectKey(personnel.id),
       color: Colors.white,
@@ -160,16 +169,16 @@ class PersonnelPageState extends State<PersonnelPage> {
               label: Text("${personnel.name}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.person,
-                size: 16.0,
-                color: Colors.black38,
+              avatar: new AffiliationAvatar(
+                size: 6.0,
+                maxRadius: 10.0,
+                affiliation: personnel?.affiliation,
               ),
             ),
             Spacer(),
             Chip(
               label: Text(
-                "${formatSince(tracking?.point?.timestamp, defaultValue: "Ingen")}",
+                _toUsage(unit, personnel, tracking),
                 textAlign: TextAlign.end,
               ),
               labelPadding: EdgeInsets.only(right: 4.0),
@@ -195,6 +204,16 @@ class PersonnelPageState extends State<PersonnelPage> {
     );
   }
 
+  String _toUsage(
+    Unit unit,
+    Personnel personnel,
+    Tracking tracking,
+  ) =>
+      [
+        unit?.name ?? '',
+        formatSince(tracking?.point?.timestamp, defaultValue: "Ingen"),
+      ].where((value) => emptyAsNull(value) != null).join(' ');
+
   _onTap(Personnel personnel) {
     if (widget.onSelection == null) {
       Navigator.pushNamed(context, 'personnel', arguments: personnel);
@@ -203,14 +222,51 @@ class PersonnelPageState extends State<PersonnelPage> {
     }
   }
 
-  IconSlideAction _buildEditAction(BuildContext context, Personnel personnel) {
-    return IconSlideAction(
-      caption: 'ENDRE',
-      color: Theme.of(context).buttonColor,
-      icon: Icons.more_horiz,
-      onTap: () async => await editPersonnel(context, personnel),
-    );
-  }
+  IconSlideAction _buildEditAction(BuildContext context, Personnel personnel) => IconSlideAction(
+        caption: 'ENDRE',
+        color: Theme.of(context).buttonColor,
+        icon: Icons.more_horiz,
+        onTap: () async => await editPersonnel(context, personnel),
+      );
+
+  Widget _buildAddToUnitAction(Personnel personnel) => Tooltip(
+        message: "Knytt til enhet",
+        child: IconSlideAction(
+          caption: 'KNYTT',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.people,
+          onTap: () async => await addToUnit(context, personnel: [personnel]),
+        ),
+      );
+
+  Widget _buildRemoveFromUnitAction(Unit unit, Personnel personnel) => Tooltip(
+        message: "Fjern fra enhet",
+        child: IconSlideAction(
+          caption: 'FJERN',
+          color: Colors.red,
+          icon: Icons.people,
+          onTap: () async {
+            if (unit != null) {
+              await removeFromUnit(context, unit, personnel: [personnel]);
+            }
+          },
+        ),
+      );
+
+  Unit _toUnit(Personnel personnel) => _trackingBloc.unitBloc.units.values.firstWhere(
+        (unit) => unit.personnel.contains(personnel),
+        orElse: () => null,
+      );
+
+  Widget _buildCreateUnitAction(Personnel personnel) => Tooltip(
+        message: "Opprett enhet med mannskap",
+        child: IconSlideAction(
+          caption: 'OPPRETT',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.group_add,
+          onTap: () async => await createUnit(context, personnel: [personnel]),
+        ),
+      );
 
   IconSlideAction _buildTransitionAction(BuildContext context, Personnel personnel) {
     switch (personnel.status) {
@@ -239,26 +295,24 @@ class PersonnelPageState extends State<PersonnelPage> {
     }
   }
 
-  void showFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext bc) => FilterSheet<PersonnelStatus>(
-        initial: _filter,
-        identifier: FILTER,
-        bucket: PageStorage.of(context),
-        onRead: (value) => _onRead(value),
-        onWrite: (value) => enumName(value),
-        onBuild: () => PersonnelStatus.values.map(
-          (status) => FilterData(
-            key: status,
-            title: translatePersonnelStatus(status),
+  void showFilterSheet() => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext bc) => FilterSheet<PersonnelStatus>(
+          initial: _filter,
+          identifier: FILTER,
+          bucket: PageStorage.of(context),
+          onRead: (value) => _onRead(value),
+          onWrite: (value) => enumName(value),
+          onBuild: () => PersonnelStatus.values.map(
+            (status) => FilterData(
+              key: status,
+              title: translatePersonnelStatus(status),
+            ),
           ),
+          onChanged: (Set<PersonnelStatus> selected) => setState(() => _filter = selected),
         ),
-        onChanged: (Set<PersonnelStatus> selected) => setState(() => _filter = selected),
-      ),
-    );
-  }
+      );
 
   PersonnelStatus _onRead(value) => PersonnelStatus.values.firstWhere((e) => value == enumName(e));
 }
@@ -425,7 +479,7 @@ Future<Personnel> selectPersonnel(
             icon: Icon(Icons.close),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Text("Velg enhet", textAlign: TextAlign.start),
+          title: Text("Velg mannskap", textAlign: TextAlign.start),
         ),
         body: PersonnelPage(
           where: where,

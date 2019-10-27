@@ -19,7 +19,7 @@ class PersonnelBuilder {
       '"lname": "${faker.person.lastName()}",'
       '"status": "${enumName(PersonnelStatus.Mobilized)}",'
       '"affiliation": ${json.encode(createAffiliation())},'
-      '"tracking": "${translateOperationalFunction(OperationalFunction.Personnel)}",'
+      '"function": "${enumName(OperationalFunction.Personnel)}",'
       '"tracking": "$tracking"'
       '}');
 

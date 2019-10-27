@@ -247,10 +247,7 @@ Color toPersonnelStatusColor(PersonnelStatus status) {
 }
 
 IconData toPersonnelIconData(Personnel personnel) {
-  switch (personnel.affiliation.organization) {
-    default:
-      return MdiIcons.bolnisiCross;
-  }
+  return Icons.person;
 }
 
 Color toPointStatusColor(Point point) {

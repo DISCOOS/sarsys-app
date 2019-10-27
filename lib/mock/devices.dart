@@ -188,7 +188,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     if (incidentId != null) {
       final devices = devicesMap[incidentId].values.toList()..shuffle();
       // only update 10% each iteration
-      final min = math.min((devices.length * 0.2).toInt(), 3);
+      final min = math.min(math.max((devices.length * 0.2).toInt(), 1), 3);
       devices.take(min).forEach((device) {
         if (simulations.containsKey(device.id)) {
           var simulation = simulations[device.id];

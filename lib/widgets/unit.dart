@@ -205,13 +205,18 @@ class UnitInfoPanel extends StatelessWidget {
               context: context,
               label: "Mannskaper",
               icon: Icon(Icons.group_work),
-              value: unit.personnel.map((p) => p.formal).join(', '),
+              value: _toPersonnel(),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
           ),
         ],
       );
+
+  String _toPersonnel() {
+    final personnel = unit.personnel.map((p) => p.formal).join(', ');
+    return personnel.isEmpty ? 'Ingen' : personnel;
+  }
 
   Row _buildTrackingInfo(BuildContext context) => Row(
         children: <Widget>[
@@ -220,7 +225,7 @@ class UnitInfoPanel extends StatelessWidget {
               context: context,
               label: "Apparater",
               icon: Icon(MdiIcons.cellphoneBasic),
-              value: devices?.map((device) => device.number)?.join(', ') ?? '',
+              value: _toDeviceNumbers(),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -237,6 +242,11 @@ class UnitInfoPanel extends StatelessWidget {
           ),
         ],
       );
+
+  String _toDeviceNumbers() {
+    final numbers = devices?.map((device) => device.number);
+    return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
+  }
 
   Row _buildEffortInfo(BuildContext context) => Row(
         children: <Widget>[
@@ -271,7 +281,7 @@ class UnitInfoPanel extends StatelessWidget {
             alignment: MainAxisAlignment.start,
             children: <Widget>[
               _buildEditAction(context),
-              if (devices?.isNotEmpty == true) _buildRemove1Action(context),
+              if (devices?.isNotEmpty == true) _buildRemoveAction(context),
               _buildTransitionAction(context),
               _buildDeleteAction(context),
             ],
@@ -292,27 +302,34 @@ class UnitInfoPanel extends StatelessWidget {
           ),
           onPressed: () async {
             final result = await editUnit(context, unit);
-            if (result.isRight() && result.toIterable().first != unit) {
+            if (result.isRight()) {
               final actual = result.toIterable().first;
-              _onMessage("${actual.name} er oppdatert");
-              _onChanged(actual);
+              if (actual != unit) {
+                _onMessage("${actual.name} er oppdatert");
+                _onChanged(actual);
+              }
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
 
-  Widget _buildRemove1Action(BuildContext context) => Tooltip(
-        message: "Fjern apparater fra enhet",
+  Widget _buildRemoveAction(BuildContext context) => Tooltip(
+        message: "Fjern mannskap og apparater fra enhet",
         child: FlatButton(
           child: Text(
             "FJERN",
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await removeFromUnit(context, unit, devices: devices);
+            final result = await removeFromUnit(
+              context,
+              unit,
+              devices: devices.toList(),
+              personnel: unit.personnel,
+            );
             if (result.isRight()) {
-              _onMessage("Apparater fjernet fra ${unit.name}");
+              _onMessage("Mannskap og apparater fjernet fra ${unit.name}");
               _onChanged(unit);
             }
             _onComplete();
@@ -345,8 +362,8 @@ class UnitInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert mobilisert");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -363,8 +380,8 @@ class UnitInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert deployert");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -382,8 +399,8 @@ class UnitInfoPanel extends StatelessWidget {
               final actual = result.toIterable().first;
               _onMessage("${unit.name} er oppløst");
               _onChanged(actual);
+              _onComplete();
             }
-            _onComplete();
           },
         ),
       );
@@ -403,6 +420,7 @@ class UnitInfoPanel extends StatelessWidget {
             if (result.isRight()) {
               _onMessage("${unit.name} er slettet");
               _onDelete();
+              _onComplete();
             }
           }),
     );

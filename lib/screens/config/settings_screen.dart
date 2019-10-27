@@ -6,7 +6,7 @@ import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/config/map_config_screen.dart';
 import 'package:SarSys/screens/config/tetra_config_screen.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/widgets/affilliation_form.dart';
+import 'package:SarSys/widgets/affilliation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';

@@ -9,7 +9,72 @@ import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+class DeviceTile extends StatelessWidget {
+  final Device device;
+  final ChipsInputState state;
+  const DeviceTile({
+    Key key,
+    @required this.device,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: ObjectKey(device),
+      leading: CircleAvatar(
+        child: Icon(
+          toDeviceIconData(device.type),
+          color: Colors.white,
+        ),
+        backgroundColor: toPointStatusColor(device.point),
+      ),
+      title: Text([device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' ')),
+      onTap: () => state.selectSuggestion(device),
+    );
+  }
+}
+
+class DeviceChip extends StatelessWidget {
+  final Device device;
+  final ChipsInputState state;
+
+  const DeviceChip({
+    Key key,
+    @required this.device,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.caption;
+    return InputChip(
+      key: ObjectKey(device),
+      labelPadding: EdgeInsets.only(left: 4.0),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          CircleAvatar(
+            child: Icon(
+              toDeviceIconData(device.type),
+              size: 14.0,
+              color: Colors.white,
+            ),
+            maxRadius: 10.0,
+            backgroundColor: toPointStatusColor(device.point),
+          ),
+          SizedBox(width: 6.0),
+          Text(device.number, style: style),
+        ],
+      ),
+      onDeleted: () => state.deleteChip(device),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+}
 
 class DeviceInfoPanel extends StatelessWidget {
   final Unit unit;
@@ -297,10 +362,10 @@ class DeviceInfoPanel extends StatelessWidget {
             children: <Widget>[
               _buildEditAction(context),
               if (unit != null)
-                _buildRemoveAction(context)
+                _buildRemoveFromUnitAction(context)
               else ...[
                 _buildCreateAction(context),
-                _buildAttachAction(context),
+                _buildAddToUnitAction(context),
               ],
               if (device.manual) _buildDeleteAction(context),
             ],
@@ -312,7 +377,7 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
       );
 
-  Widget _buildAttachAction(BuildContext context) => Tooltip(
+  Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
         message: "Knytt apparat til enhet",
         child: FlatButton(
             child: Text(
@@ -320,7 +385,7 @@ class DeviceInfoPanel extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              final result = await addToUnit(context, [device], unit: unit);
+              final result = await addToUnit(context, devices: [device], unit: unit);
               if (result.isRight()) {
                 var actual = result.toIterable().first.left;
                 _onMessage("${device.name} er tilknyttet ${actual.name}");
@@ -365,7 +430,7 @@ class DeviceInfoPanel extends StatelessWidget {
         ),
       );
 
-  Widget _buildRemoveAction(BuildContext context) => Tooltip(
+  Widget _buildRemoveFromUnitAction(BuildContext context) => Tooltip(
         message: "Fjern apparat fra enhet",
         child: FlatButton(
             child: Text(

@@ -157,61 +157,60 @@ class DevicesPageState extends State<DevicesPage> {
               if (status != TrackingStatus.None)
                 _buildRemoveAction(device, units, personnel)
               else ...[
-                _buildCreateAction(device),
-                _buildAttachAction(device),
+                _buildAddToUnitAction(device),
+                _buildAddToPersonnelAction(device),
               ]
             ],
           )
         : _buildDeviceTile(device, status, units, personnel);
   }
 
-  IconSlideAction _buildAttachAction(Device device) {
-    return IconSlideAction(
-      caption: 'KNYTT',
-      color: Theme.of(context).buttonColor,
-      icon: Icons.people,
-      onTap: () async => await addToUnit(context, [device]),
-    );
-  }
+  Widget _buildAddToUnitAction(Device device) => Tooltip(
+        message: "Knytt til enhet",
+        child: IconSlideAction(
+          caption: 'KNYTT',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.people,
+          onTap: () async => await addToUnit(context, devices: [device]),
+        ),
+      );
 
-  IconSlideAction _buildCreateAction(Device device) {
-    return IconSlideAction(
-      caption: 'OPPRETT',
-      color: Theme.of(context).buttonColor,
-      icon: Icons.group_add,
-      onTap: () async => await createUnit(context, devices: [device]),
-    );
-  }
+  Widget _buildAddToPersonnelAction(Device device) => Tooltip(
+        message: "Knytt til mannskap",
+        child: IconSlideAction(
+          caption: 'KNYTT',
+          color: Theme.of(context).buttonColor,
+          icon: Icons.person,
+          onTap: () async => await addToPersonnel(context, [device]),
+        ),
+      );
 
-  IconSlideAction _buildEditAction(Device device) {
-    return IconSlideAction(
-      caption: 'ENDRE',
-      color: Theme.of(context).buttonColor,
-      icon: Icons.more_horiz,
-      onTap: () async => await editDevice(context, device),
-    );
-  }
+  IconSlideAction _buildEditAction(Device device) => IconSlideAction(
+        caption: 'ENDRE',
+        color: Theme.of(context).buttonColor,
+        icon: Icons.more_horiz,
+        onTap: () async => await editDevice(context, device),
+      );
 
   IconSlideAction _buildRemoveAction(
     Device device,
     Map<String, Unit> units,
     Map<String, Personnel> personnel,
-  ) {
-    return IconSlideAction(
-      caption: 'FJERN',
-      color: Colors.red,
-      icon: Icons.people,
-      onTap: () async {
-        final unit = units[device.id];
-        if (unit != null) {
-          final result = await removeFromUnit(context, unit, devices: [device]);
-          if (result.isLeft()) return;
-        }
-        final p = personnel[device.id];
-        if (p != null) await removeFromPersonnel(context, p, devices: [device]);
-      },
-    );
-  }
+  ) =>
+      IconSlideAction(
+        caption: 'FJERN',
+        color: Colors.red,
+        icon: Icons.people,
+        onTap: () async {
+          final unit = units[device.id];
+          if (unit != null) {
+            final result = await removeFromUnit(context, unit, devices: [device]);
+            if (result.isLeft()) return;
+          }
+          final p = personnel[device.id];
+          if (p != null) await removeFromPersonnel(context, p, devices: [device]);
+        },
+      );
 
   Widget _buildDeviceTile(
     Device device,
@@ -235,7 +234,9 @@ class DevicesPageState extends State<DevicesPage> {
             ),
             SizedBox(width: 16.0),
             Chip(
-              label: Text("${device.number}"),
+              label: Text(
+                [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
+              ),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(

@@ -129,8 +129,6 @@ class BlocProviderController {
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : TrackingServiceMock.build(
             incidentBloc,
-            unitService as UnitServiceMock,
-            personnelService as PersonnelServiceMock,
             deviceService as DeviceServiceMock,
             demo.personnelCount,
             demo.unitCount,

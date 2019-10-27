@@ -1,3 +1,4 @@
+import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
@@ -6,9 +7,69 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/affilliation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+class PersonnelTile extends StatelessWidget {
+  final Personnel personnel;
+  final ChipsInputState state;
+
+  const PersonnelTile({
+    Key key,
+    @required this.personnel,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: ObjectKey(personnel),
+      leading: AffiliationAvatar(
+        affiliation: personnel?.affiliation,
+        size: 10.0,
+      ),
+      title: Text(personnel.name),
+      onTap: state != null ? () => state.selectSuggestion(personnel) : null,
+    );
+  }
+}
+
+class PersonnelChip extends StatelessWidget {
+  final Personnel personnel;
+  final ChipsInputState state;
+
+  const PersonnelChip({
+    Key key,
+    @required this.personnel,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.caption;
+    return InputChip(
+      key: ObjectKey(personnel),
+      labelPadding: EdgeInsets.only(left: 4.0),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          AffiliationAvatar(
+            affiliation: personnel.affiliation,
+            size: 6.0,
+            maxRadius: 10.0,
+          ),
+          SizedBox(width: 6.0),
+          Text(personnel.formal, style: style),
+        ],
+      ),
+      onDeleted: () => state.deleteChip(personnel),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+}
 
 class PersonnelInfoPanel extends StatelessWidget {
   final Personnel personnel;
@@ -219,7 +280,7 @@ class PersonnelInfoPanel extends StatelessWidget {
                 child: buildCopyableText(
                   context: context,
                   label: "Tilhørighet",
-                  icon: Icon(MdiIcons.graph),
+                  icon: SarSysIcons.of(snapshot.data?.id),
                   value: _ensureAffiliation(snapshot),
                   onMessage: onMessage,
                   onComplete: _onComplete,
@@ -243,7 +304,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             context: context,
             label: "Apparater",
             icon: Icon(MdiIcons.cellphoneBasic),
-            value: devices?.map((device) => device.number)?.join(', ') ?? 'Ingen',
+            value: _toDeviceNumbers(),
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -260,6 +321,11 @@ class PersonnelInfoPanel extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _toDeviceNumbers() {
+    final numbers = devices?.map((device) => device.number);
+    return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
   }
 
   Row _buildEffortInfo(BuildContext context) {
@@ -338,7 +404,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await removeFromPersonnel(context, personnel, devices: devices);
+            final result = await removeFromPersonnel(context, personnel, devices: devices.toList());
             if (result.isRight()) {
               _onMessage("Apparater fjernet fra ${personnel.name}");
               _onChanged(personnel);

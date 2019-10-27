@@ -141,7 +141,7 @@ double asDistance(List<Point> history, {double distance = 0, int tail = 2}) {
   return distance;
 }
 
-Duration asEffort(List<Point> history) => history.isNotEmpty
+Duration asEffort(List<Point> history) => history?.isNotEmpty == true
     ? history.last.timestamp.difference(
         history.first.timestamp,
       )

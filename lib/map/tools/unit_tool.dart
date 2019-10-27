@@ -8,7 +8,7 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
-import 'package:SarSys/widgets/unit_info_panel.dart';
+import 'package:SarSys/widgets/unit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';

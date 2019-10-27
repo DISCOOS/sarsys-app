@@ -13,7 +13,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/affilliation_form.dart';
+import 'package:SarSys/widgets/affilliation.dart';
 import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
@@ -490,7 +490,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             exclude: [],
           )
         : [])
-      ..addAll(widget.devices);
+      ..addAll(widget.devices ?? []);
   }
 
   void _submit() async {

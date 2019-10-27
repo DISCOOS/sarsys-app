@@ -40,10 +40,10 @@ class Tracking extends Equatable {
     this.effort,
 
     /// List tracked devices
-    this.devices,
+    this.devices = const [],
 
     /// List of historical points aggregated from temporally and spatially related points in tracks
-    this.history,
+    this.history = const [],
 
     /// Map from device id to list of points
     this.tracks = const {},
@@ -56,9 +56,9 @@ class Tracking extends Equatable {
           point,
           distance,
           devices,
+          aggregates,
           history,
           tracks,
-          aggregates,
         ]);
 
   /// Get searchable string
@@ -72,26 +72,26 @@ class Tracking extends Equatable {
 
   /// Clone with given devices and state
   Tracking cloneWith({
-    List<String> devices,
     TrackingStatus status,
     Point point,
     double distance,
     double speed,
     Duration effort,
-    List<Point> history,
+    List<String> devices,
     List<String> aggregates,
+    List<Point> history,
     Map<String, Track> tracks,
   }) {
     return Tracking(
       id: this.id,
       status: status ?? this.status,
-      devices: devices ?? this.devices,
       point: point ?? this.point,
       distance: distance ?? this.distance,
       speed: speed ?? this.speed,
       effort: effort ?? this.effort,
-      history: history ?? this.history,
+      devices: devices ?? this.devices,
       aggregates: aggregates ?? this.aggregates,
+      history: history ?? this.history,
       tracks: tracks ?? this.tracks,
     );
   }

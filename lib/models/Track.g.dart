@@ -39,5 +39,5 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
 
 const _$TrackTypeEnumMap = <TrackType, dynamic>{
   TrackType.Device: 'Device',
-  TrackType.Personnel: 'Personnel'
+  TrackType.Aggregate: 'Aggregate'
 };

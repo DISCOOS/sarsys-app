@@ -150,7 +150,7 @@ class PersonnelLayer extends MapPlugin {
       top: pos.y + size,
       left: pos.x,
       child: CustomPaint(
-        painter: LabelPainter(personnel.name, top: size),
+        painter: LabelPainter("${personnel.fname}\n${personnel.lname}", top: size),
         size: Size(size, size),
       ),
     );

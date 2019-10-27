@@ -18,7 +18,7 @@ import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class UnitParams extends BlocParams<UnitBloc, Unit> {
+class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final Point point;
   final List<Device> devices;
   final List<Personnel> personnel;
@@ -26,12 +26,10 @@ class UnitParams extends BlocParams<UnitBloc, Unit> {
   UnitParams(
     BuildContext context, {
     Unit unit,
-    List<Device> devices,
-    List<Personnel> personnel,
     this.point,
-  })  : this.devices = devices ?? const [],
-        this.personnel = personnel ?? const [],
-        super(context, unit);
+    this.devices,
+    this.personnel,
+  }) : super(context, unit);
 }
 
 /// Create unit with tracking of given devices
@@ -102,6 +100,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
       point: result.point,
       devices: result.devices,
       personnel: result.personnel,
+      append: false,
     );
     return dartz.Right(result.data);
   }
@@ -135,75 +134,128 @@ class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
   }
 }
 
-/// Add given devices tracking of given unit
+/// Add given devices and personnel to tracking of given unit
 Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit(
-  BuildContext context,
-  List<Device> devices, {
+  BuildContext context, {
+  List<Device> devices,
+  List<Personnel> personnel,
   Unit unit,
 }) =>
     AddToUnit()(UnitParams(
       context,
       unit: unit,
       devices: devices,
+      personnel: personnel,
     ));
 
 class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
   @override
   Future<dartz.Either<bool, Pair<Unit, Tracking>>> call(params) async {
     final bloc = BlocProvider.of<TrackingBloc>(params.context);
-    var unit = params.data != null
-        ? params.data
-        : await selectUnit(
-            params.context,
-            where: (unit) =>
-                // Unit is not tracking any devices or personnel?
-                bloc.tracking[unit.tracking] == null ||
-                // Unit is not tracking given devices?
-                bloc.tracking[unit.tracking].devices.any((device) => params.devices.contains(device)) == false,
-            // Sort units with less amount of devices on top
-          );
+
+    // Get or select unit?
+    var unit = await _toUnit(params, bloc);
     if (unit == null) return dartz.Left(false);
-    final tracking = await _handleTracking(params, unit, devices: params.devices);
+
+    // Add personnel to Unit?
+    if (params.personnel?.isNotEmpty == true) {
+      params.bloc.update(
+        unit.cloneWith(
+          personnel: List.from(unit.personnel ?? [])..addAll(params.personnel),
+        ),
+      );
+    }
+
+    // Update tracking
+    final tracking = await _handleTracking(
+      params,
+      unit,
+      devices: params.devices,
+      personnel: params.personnel,
+      append: true,
+    );
     return dartz.Right(Pair.of(unit, tracking));
   }
+
+  Future<Unit> _toUnit(
+    UnitParams params,
+    TrackingBloc bloc,
+  ) async =>
+      params.data != null
+          ? params.data
+          : await selectUnit(
+              params.context,
+              where: (unit) =>
+                  // Unit is not tracking any devices or personnel?
+                  bloc.tracking[unit.tracking] == null ||
+                  // Unit is not tracking given devices?
+                  !bloc.tracking[unit.tracking].devices.any(
+                    (device) => params.devices?.contains(device) == true,
+                  ) ||
+                  // Unit is not tracking given personnel?
+                  !unit.personnel.any(
+                    (personnel) => params.personnel?.contains(personnel) == true,
+                  ),
+              // Sort units with less amount of devices on top
+            );
 }
 
-/// Remove given devices from unit. If no devices are supplied, all devices tracked by unit is removed
+/// Remove tracking of given devices and personnel from unit.
+/// If a list is empty or null it is ignored (current list is kept)
 Future<dartz.Either<bool, Tracking>> removeFromUnit(
   BuildContext context,
   Unit unit, {
-  List<Device> devices = const [],
+  List<Device> devices,
+  List<Personnel> personnel,
 }) =>
     RemoveFromUnit()(UnitParams(
       context,
       unit: unit,
-      devices: devices ?? [],
+      devices: devices,
+      personnel: personnel,
     ));
 
 class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   @override
   Future<dartz.Either<bool, Tracking>> call(UnitParams params) async {
     final unit = params.data;
+    final devices = params.devices ?? [];
+    final personnel = params.personnel ?? [];
+
+    // Notify intent
+    final names = List.from([
+      ...devices.map((device) => device.name).toList(),
+      ...personnel.map((personnel) => personnel.name).toList(),
+    ]).join((', '));
     var proceed = await prompt(
       params.context,
       "Bekreft fjerning",
-      "Dette vil fjerne ${params.devices.map((device) => device.name).join((', '))} fra ${unit.name}",
+      "Dette vil fjerne $names fra ${unit.name}",
     );
-
     if (!proceed) return dartz.left(false);
 
+    // Prepare removal
     final bloc = BlocProvider.of<TrackingBloc>(params.context);
-    final devices = params.devices.map((device) => device.id).toList();
+
+    // Collect kept devices and personnel
+    final keepDevices = bloc.devices(unit.tracking).where((test) => !devices.contains(test)).toList();
+    final keepPersonnel = unit.personnel.where((test) => !personnel.contains(test)).toList();
+
+    // Remove personnel from Unit?
+    if (params.personnel?.isNotEmpty == true) {
+      params.bloc.update(
+        unit.cloneWith(
+          personnel: keepPersonnel,
+        ),
+      );
+    }
+
+    // Perform tracking update
     final tracking = await bloc.update(
-      bloc.tracking[unit.tracking].cloneWith(
-        devices: devices.isEmpty
-            ? []
-            : bloc.tracking[unit.tracking].devices
-                .where(
-                  (id) => !devices.contains(id),
-                )
-                .toList(),
-      ),
+      bloc.tracking[unit.tracking],
+      devices: keepDevices,
+      personnel: keepPersonnel,
+      append: false,
     );
     return dartz.right(tracking);
   }
@@ -216,6 +268,7 @@ Future<Tracking> _handleTracking(
   List<Device> devices,
   List<Personnel> personnel,
   Point point,
+  bool append,
 }) async {
   Tracking tracking;
   final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
@@ -232,6 +285,7 @@ Future<Tracking> _handleTracking(
       point: point,
       devices: devices,
       personnel: personnel,
+      append: append,
     );
   }
   return tracking;

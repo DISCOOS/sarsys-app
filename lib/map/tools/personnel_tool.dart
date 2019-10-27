@@ -10,7 +10,7 @@ import 'package:SarSys/services/assets_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
-import 'package:SarSys/widgets/personnel_info_panel.dart';
+import 'package:SarSys/widgets/personnel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong/latlong.dart';
