@@ -321,7 +321,7 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  List<Point> _toTrack(Tracking tracking) => tracking != null ? tracking.tracks[device.id] ?? [] : [];
+  List<Point> _toTrack(Tracking tracking) => tracking != null ? tracking.tracks[device.id].points ?? [] : [];
 
   Row _buildEffortInfo(BuildContext context) {
     final List<Point> track = _toTrack(tracking);
