@@ -7,26 +7,26 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:SarSys/models/TalkGroup.dart';
 
-class AssetsService {
-  static const FLEET_MAP = "assets/config/fleet_map.json";
+class FleetMapService {
+  static const ASSET = "assets/config/fleet_map.json";
 
-  static final _singleton = AssetsService._internal();
+  static final _singleton = FleetMapService._internal();
 
   final Map<String, Organization> _organizations = LinkedHashMap();
 
   Map<String, dynamic> _assets = {};
 
-  factory AssetsService() {
+  factory FleetMapService() {
     return _singleton;
   }
 
-  AssetsService._internal() {
+  FleetMapService._internal() {
     init();
   }
 
   Future<void> init() async {
     if (_assets.isEmpty) {
-      _assets = json.decode(await rootBundle.loadString(FLEET_MAP));
+      _assets = json.decode(await rootBundle.loadString(ASSET));
     }
   }
 

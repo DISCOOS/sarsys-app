@@ -1,3 +1,4 @@
+import 'package:SarSys/models/BaseMap.dart';
 import 'package:latlong/latlong.dart';
 
 class Defaults {
@@ -17,8 +18,10 @@ class Defaults {
   static const int locationSmallestDisplacement = 3;
   static const bool keepScreenOn = false;
   static const bool callsignReuse = true;
-  static const String baseMap =
-      "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
+  static final BaseMap baseMap = BaseMap(
+    name: "Topografisk",
+    url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+  );
 
   static final LatLng origo = LatLng(59.5, 10.09);
 }

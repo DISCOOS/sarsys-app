@@ -6,7 +6,7 @@ import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
@@ -101,7 +101,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
                     tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((personnel) => personnel != null),
                 onMessage: onMessage,
                 withActions: user.isCommander == true,
-                organization: AssetsService().fetchOrganization(Defaults.organization),
+                organization: FleetMapService().fetchOrganization(Defaults.organization),
                 onDelete: () => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
               ),

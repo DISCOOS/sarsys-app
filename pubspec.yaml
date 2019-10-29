@@ -118,8 +118,9 @@ flutter:
 
   assets:
     - logo.png
-    - assets/config/app_config.json
+    - assets/config/base_map.json
     - assets/config/fleet_map.json
+    - assets/config/app_config.json
     - assets/images/map.png
     - assets/images/cabin.png
     - assets/images/sar-team 2.png

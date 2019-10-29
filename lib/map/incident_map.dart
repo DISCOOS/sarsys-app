@@ -22,9 +22,10 @@ import 'package:SarSys/map/tools/personnel_tool.dart';
 import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
+import 'package:SarSys/models/BaseMap.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/services/image_cache_service.dart';
-import 'package:SarSys/services/maptile_service.dart';
+import 'package:SarSys/services/base_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -45,8 +46,6 @@ import 'package:wakelock/wakelock.dart';
 typedef ToolCallback = void Function(MapTool tool);
 
 class IncidentMap extends StatefulWidget {
-  final String url;
-  final bool offline;
   final bool interactive;
   final bool withSearch;
   final bool withControls;
@@ -102,8 +101,6 @@ class IncidentMap extends StatefulWidget {
     this.incident,
     this.fitBounds,
     this.fitBoundOptions = FIT_BOUNDS_OPTIONS,
-    this.url = Defaults.baseMap,
-    this.offline = false,
     this.interactive = true,
     this.withPOIs = true,
     this.withUnits = true,
@@ -143,8 +140,6 @@ class IncidentMap extends StatefulWidget {
       identical(this, other) ||
       other is IncidentMap &&
           runtimeType == other.runtimeType &&
-          url == other.url &&
-          offline == other.offline &&
           interactive == other.interactive &&
           withSearch == other.withSearch &&
           withControls == other.withControls &&
@@ -181,8 +176,6 @@ class IncidentMap extends StatefulWidget {
 
   @override
   int get hashCode =>
-      url.hashCode ^
-      offline.hashCode ^
       interactive.hashCode ^
       withSearch.hashCode ^
       withControls.hashCode ^
@@ -248,9 +241,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  String _currentBaseMap;
-  List<BaseMap> _baseMaps;
-  MaptileService _mapTileService = MaptileService();
+  BaseMap _currentBaseMap;
+  BaseMapService _baseMapService;
 
   LatLng _center;
   LatLng _searchMatch;
@@ -293,7 +285,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     if (widget != old) {
       _setup(
         wasZoom: widget.zoom != old.zoom,
-        wasBaseMap: widget.url != old.url,
       );
       _init();
     }
@@ -307,6 +298,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _configBloc = BlocProvider.of<AppConfigBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
+
+    _baseMapService = BaseMapService(_configBloc);
 
     // Ensure all controllers are set
     _ensureMapToolController();
@@ -323,12 +316,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   void _init() async {
-    _baseMaps = await _mapTileService.fetchMaps();
     _wakeLockWasOn = await Wakelock.isEnabled;
     await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
   }
 
-  void _setup({bool wasZoom = true, bool wasBaseMap = true}) {
+  void _setup({bool wasZoom = true}) {
     if (wasZoom)
       _zoom = _readState(
         ZOOM,
@@ -336,7 +328,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         orElse: _zoom,
         defaultValue: widget.zoom ?? Defaults.zoom,
       );
-    if (wasBaseMap) _currentBaseMap = _readState(BASE_MAP, defaultValue: widget.url);
+    _currentBaseMap = _readState(BASE_MAP, defaultValue: Defaults.baseMap);
     _useLayers = _resolveLayers();
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
@@ -521,7 +513,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       ..clear()
       ..addAll([
         TileLayerOptions(
-          urlTemplate: _currentBaseMap,
+          urlTemplate: _currentBaseMap.url,
+          maxZoom: _currentBaseMap.maxZoom,
+          subdomains: _currentBaseMap.subdomains,
+          tms: _currentBaseMap.tms,
           tileProvider: _buildTileProvider(),
         ),
         if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
@@ -792,7 +787,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text("Internettkart", style: Theme.of(context).textTheme.title),
+                child: Text("Kart", style: Theme.of(context).textTheme.title),
               ),
               Divider(),
               Expanded(
@@ -813,13 +808,13 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   List<Widget> _mapBottomSheetCards() {
     List<Widget> _mapCards = [];
 
-    for (BaseMap map in _baseMaps) {
+    for (BaseMap map in _baseMapService.baseMaps) {
       _mapCards.add(
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
             () {
-              _currentBaseMap = _writeState(BASE_MAP, map.url);
+              _currentBaseMap = _writeState(BASE_MAP, map);
               _setLayerOptions();
               Navigator.pop(context);
             },
@@ -881,10 +876,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) => (widget.withRead && read)
-      ? readState(context, identifier, defaultValue: defaultValue)
+      ? readState<T>(context, identifier, defaultValue: defaultValue)
       : read ? defaultValue : orElse ?? defaultValue;
 
-  T _writeState<T>(String identifier, T value) => widget.withWrite ? writeState(context, identifier, value) : value;
+  T _writeState<T>(String identifier, T value) => widget.withWrite ? writeState<T>(context, identifier, value) : value;
 }
 
 /// Incident MapController that supports animated move operations

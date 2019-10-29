@@ -10,7 +10,7 @@ import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/personnel.dart';
@@ -73,8 +73,8 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   void _init() async {
-    _divisions = await AssetsService().fetchDivisions(Defaults.organization);
-    _functions = await AssetsService().fetchFunctions(Defaults.organization);
+    _divisions = await FleetMapService().fetchDivisions(Defaults.organization);
+    _functions = await FleetMapService().fetchFunctions(Defaults.organization);
     if (mounted) setState(() {});
   }
 

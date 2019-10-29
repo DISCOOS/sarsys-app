@@ -3,7 +3,9 @@ import 'dart:math';
 import 'dart:convert';
 import 'dart:collection';
 
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/models/BaseMap.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -198,7 +200,11 @@ Future<PageStorageBucket> readAppState(PageStorageBucket bucket, {BuildContext c
     bucket.writeState(context, json[UnitsPageState.FILTER], identifier: UnitsPageState.FILTER);
     bucket.writeState(context, json[IncidentMapState.FILTER], identifier: IncidentMapState.FILTER);
     bucket.writeState(context, json[DevicesPageState.FILTER], identifier: DevicesPageState.FILTER);
-    bucket.writeState(context, json[IncidentMapState.BASE_MAP], identifier: IncidentMapState.BASE_MAP);
+    bucket.writeState(
+      context,
+      json[IncidentMapState.BASE_MAP] == null ? Defaults.baseMap : BaseMap.fromJson(json[IncidentMapState.BASE_MAP]),
+      identifier: IncidentMapState.BASE_MAP,
+    );
   }
   return bucket;
 }

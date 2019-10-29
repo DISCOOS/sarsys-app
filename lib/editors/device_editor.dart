@@ -3,7 +3,7 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/point_field.dart';
@@ -47,7 +47,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   void initState() {
     super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.organization);
+    _organization = FleetMapService().fetchOrganization(Defaults.organization);
     _initAliasController();
     _initNumberController();
   }

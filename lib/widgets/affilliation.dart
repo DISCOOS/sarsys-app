@@ -3,7 +3,7 @@ import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +57,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   @override
   void initState() {
     super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.organization)
+    _organization = FleetMapService().fetchOrganization(Defaults.organization)
       ..then((org) => _division.value = org.divisions[widget.initialValue.division]);
   }
 

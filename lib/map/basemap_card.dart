@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/services/maptile_service.dart';
+import 'package:SarSys/models/BaseMap.dart';
 import 'package:flutter/material.dart';
 
 class BaseMapCard extends StatelessWidget {
@@ -8,7 +8,7 @@ class BaseMapCard extends StatelessWidget {
 
   BaseMapCard({this.map});
 
-  Image previewImage() {
+  Image toImage() {
     String basePath = "assets/mapspreview";
     // TODO: Check if file exists in filesystem before returning
     if (map.previewFile != null && !map.offline) {
@@ -43,7 +43,7 @@ class BaseMapCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: previewImage(),
+                  child: toImage(),
                 ),
               ),
               Text(

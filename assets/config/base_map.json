@@ -1,0 +1,96 @@
+[
+  {
+    "name": "topo4",
+    "description": "Topografisk",
+    "previewFile": "topo4.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    "subdomains": [
+      "opencache",
+      "opencache2",
+      "opencache3"
+    ]
+  },
+  {
+    "name": "normaphd",
+    "description": "Topogafisk HD",
+    "previewFile": "normaphd.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://maptiles.finncdn.no/tileService/1.0.3/normaphd/{z}/{x}/{y}.png",
+    "subdomains": [
+      "maptiles",
+      "maptiles2",
+      "maptiles3",
+      "maptiles4"
+    ]
+  },
+  {
+    "name": "norortho",
+    "description": "Flyfoto",
+    "previewFile": "ortofoto.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://maptiles.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
+    "subdomains": [
+      "maptiles",
+      "maptiles2",
+      "maptiles3",
+      "maptiles4"
+    ]
+  },
+  {
+    "name": "norhybrid",
+    "description": "Hybrid",
+    "previewFile": "hybrid.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://maptiles.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
+    "subdomains": [
+      "maptiles",
+      "maptiles2",
+      "maptiles3",
+      "maptiles4"
+    ]
+  },
+  {
+    "name": "toporaster3",
+    "description": "Papirkart N50",
+    "previewFile": "toporaster3.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
+    "subdomains": [
+      "opencache",
+      "opencache2",
+      "opencache3"
+    ]
+  },
+  {
+    "name": "sjokart",
+    "description": "Sjøkart N50",
+    "previewFile": "sjokart.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=sjokartraster&zoom={z}&x={x}&y={y}",
+    "subdomains": [
+      "opencache",
+      "opencache2",
+      "opencache3"
+    ]
+  }
+]
+

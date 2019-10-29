@@ -6,7 +6,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -120,7 +120,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       personnel: personnel,
       device: _device,
       tracking: _trackingBloc.tracking[unit?.tracking],
-      organization: AssetsService().fetchOrganization(Defaults.organization),
+      organization: FleetMapService().fetchOrganization(Defaults.organization),
       withHeader: false,
       withActions: _userBloc.user?.isCommander == true,
       onMessage: showMessage,

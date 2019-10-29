@@ -18,7 +18,6 @@ class FileCacheService extends BaseCacheManager {
       _mapCacheTTL = config.mapCacheTTL;
       _mapCacheCapacity = config.mapCacheCapacity;
     }
-
     return _instance;
   }
 

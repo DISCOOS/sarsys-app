@@ -2,7 +2,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/TalkGroup.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,7 +24,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   @override
   void initState() {
     super.initState();
-    _organization = AssetsService().fetchOrganization(Defaults.organization);
+    _organization = FleetMapService().fetchOrganization(Defaults.organization);
   }
 
   @override

@@ -6,7 +6,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/widgets.dart';
@@ -47,7 +47,7 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     if (result == null) return dartz.Left(false);
     final incident = await params.bloc.create(result.left);
     if (result.right.isNotEmpty) {
-      final org = await AssetsService().fetchOrganization(Defaults.organization);
+      final org = await FleetMapService().fetchOrganization(Defaults.organization);
       final unitBloc = BlocProvider.of<UnitBloc>(params.context);
       final configBloc = BlocProvider.of<AppConfigBloc>(params.context);
       final department = org.divisions[configBloc.config.division]?.departments[configBloc.config.department] ?? '';

@@ -7,7 +7,7 @@ import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/TalkGroup.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -52,7 +52,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   void _init() async {
-    var catalogs = await AssetsService().fetchTalkGroupCatalogs(Defaults.organization)
+    var catalogs = await FleetMapService().fetchTalkGroupCatalogs(Defaults.organization)
       ..sort();
     _tgCatalog.value = catalogs;
   }
@@ -367,7 +367,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildTGField() {
     final style = Theme.of(context).textTheme.caption;
-    final service = AssetsService();
+    final service = FleetMapService();
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),

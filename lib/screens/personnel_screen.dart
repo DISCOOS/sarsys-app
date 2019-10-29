@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -130,7 +130,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           {},
       withHeader: false,
       withActions: _userBloc.user.isCommander,
-      organization: AssetsService().fetchOrganization(Defaults.organization),
+      organization: FleetMapService().fetchOrganization(Defaults.organization),
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
       onDelete: () => Navigator.pop(context),

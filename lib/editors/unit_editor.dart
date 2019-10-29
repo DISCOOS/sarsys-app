@@ -2,7 +2,7 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
@@ -89,7 +89,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _init() async {
-    _departments.addAll(await AssetsService().fetchAllDepartments(Defaults.organization));
+    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.organization));
     _initPhoneController();
     _initNumberController();
     _initCallsignController();

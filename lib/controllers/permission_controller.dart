@@ -32,7 +32,7 @@ class PermissionController {
     @required this.configBloc,
     this.onPrompt,
     this.onMessage,
-  });
+  }) : assert(configBloc != null, "AppConfigBloc is required");
 
   /// Clone with given parameters.
   ///

@@ -5,7 +5,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/services/assets_service.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/device.dart';
@@ -93,7 +93,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                 tracking: tracking,
                 onMessage: onMessage,
                 withActions: user?.isCommander == true,
-                organization: AssetsService().fetchOrganization(Defaults.organization),
+                organization: FleetMapService().fetchOrganization(Defaults.organization),
                 onComplete: (_) => Navigator.pop(context),
               ),
             ),
