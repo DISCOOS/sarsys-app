@@ -203,11 +203,12 @@ class _IncidentPageState extends State<IncidentPage> {
     return Row(
       children: <Widget>[
         Expanded(
-          flex: 2,
+          flex: 6,
           child: _buildValueTile(translateIncidentType(incident.type), label: "Type"),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
+          flex: 5,
           child: StreamBuilder<int>(
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
@@ -216,6 +217,7 @@ class _IncidentPageState extends State<IncidentPage> {
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
+          flex: 5,
           child: StreamBuilder<PersonnelState>(
               stream: personnelBloc.state,
               builder: (context, snapshot) {
@@ -224,6 +226,7 @@ class _IncidentPageState extends State<IncidentPage> {
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
+          flex: 5,
           child: StreamBuilder<UnitState>(
               stream: unitBloc.state,
               builder: (context, snapshot) {
