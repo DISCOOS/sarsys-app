@@ -28,8 +28,9 @@ class BaseMap extends Equatable {
     this.offline = false,
     this.previewFile,
     this.tms = false,
-    this.subdomains = const [],
-  }) : super([
+    List<String> subdomains = const [],
+  })  : this.subdomains = subdomains ?? const [],
+        super([
           name,
           description,
           url,
@@ -47,4 +48,17 @@ class BaseMap extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$BaseMapToJson(this);
+
+  BaseMap cloneWith({String url, String previewFile}) => BaseMap(
+        name: this.name,
+        url: url ?? this.url,
+        description: this.description,
+        maxZoom: this.maxZoom,
+        minZoom: this.minZoom,
+        attribution: this.attribution,
+        subdomains: this.subdomains,
+        offline: this.offline,
+        previewFile: previewFile ?? this.previewFile,
+        tms: this.tms,
+      );
 }

@@ -1,0 +1,9 @@
+{
+  "name": "Oslo",
+  "description": "Oslo Offline",
+  "previewFile": "Oslo.png",
+  "minZoom": 3,
+  "maxZoom": 20,
+  "offline": true,
+  "tms": false
+}

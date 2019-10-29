@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -11,5 +14,13 @@ class ManagedCacheTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     return CachedNetworkImageProvider(getTileUrl(coords, options), cacheManager: this.cacheManager);
+  }
+}
+
+class OfflineTileProvider extends TileProvider {
+  @override
+  ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
+    final file = File(getTileUrl(coords, options));
+    return file.existsSync() ? FileImage(file) : Image.asset("assets/placeholder.png").image;
   }
 }

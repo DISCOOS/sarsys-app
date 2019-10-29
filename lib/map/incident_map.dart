@@ -13,7 +13,7 @@ import 'package:SarSys/map/layers/personnel_layer.dart';
 import 'package:SarSys/map/map_controls.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
-import 'package:SarSys/map/map_caching.dart';
+import 'package:SarSys/map/tile_providers.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/map/tools/device_tool.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
@@ -512,13 +512,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _layerOptions
       ..clear()
       ..addAll([
-        TileLayerOptions(
-          urlTemplate: _currentBaseMap.url,
-          maxZoom: _currentBaseMap.maxZoom,
-          subdomains: _currentBaseMap.subdomains,
-          tms: _currentBaseMap.tms,
-          tileProvider: _buildTileProvider(),
-        ),
+        _buildBaseMapLayer(),
         if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(PERSONNEL_LAYER)) _buildPersonnelOptions(),
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
@@ -532,8 +526,17 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return _layerOptions;
   }
 
-  TileProvider _buildTileProvider() {
-    return ManagedCacheTileProvider(FileCacheService(_configBloc.config));
+  TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
+        urlTemplate: _currentBaseMap.url,
+        maxZoom: _currentBaseMap.maxZoom,
+        subdomains: _currentBaseMap.subdomains,
+        tms: _currentBaseMap.tms,
+        placeholderImage: Image.asset("assets/placeholder.png").image,
+        tileProvider: _buildTileProvider(_currentBaseMap.offline),
+      );
+
+  TileProvider _buildTileProvider(bool offline) {
+    return offline ? OfflineTileProvider() : ManagedCacheTileProvider(FileCacheService(_configBloc.config));
   }
 
   void _onTap(LatLng point) {

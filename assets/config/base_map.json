@@ -7,7 +7,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    "url": "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     "subdomains": [
       "opencache",
       "opencache2",
@@ -38,7 +38,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://maptiles.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
+    "url": "https://{s}.finncdn.no/tileService/1.0.3/norortho/{z}/{x}/{y}.png",
     "subdomains": [
       "maptiles",
       "maptiles2",
@@ -54,7 +54,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://maptiles.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
+    "url": "https://{s}.finncdn.no/tileService/1.0.3/norhybrid/{z}/{x}/{y}.png",
     "subdomains": [
       "maptiles",
       "maptiles2",
@@ -70,7 +70,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
+    "url": "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=toporaster3&zoom={z}&x={x}&y={y}",
     "subdomains": [
       "opencache",
       "opencache2",
@@ -85,7 +85,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=sjokartraster&zoom={z}&x={x}&y={y}",
+    "url": "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=sjokartraster&zoom={z}&x={x}&y={y}",
     "subdomains": [
       "opencache",
       "opencache2",
