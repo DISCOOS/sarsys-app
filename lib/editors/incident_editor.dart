@@ -330,6 +330,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         hintText: 'Velg IPP',
         errorText: 'IPP må oppgis',
         controller: widget.controller,
+        optional: false,
         onChanged: (point) => setState(() {}),
       );
 
@@ -350,6 +351,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         hintText: 'Velg oppmøtested',
         errorText: 'Oppmøtested må oppgis',
         controller: widget.controller,
+        optional: false,
         onChanged: (point) => setState(() {}),
       );
 
