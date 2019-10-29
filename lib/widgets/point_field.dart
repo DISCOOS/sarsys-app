@@ -74,7 +74,7 @@ class PointField extends StatelessWidget {
   }
 
   void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
-    final selected = await showDialog(
+    final selected = await showDialog<Point>(
       context: context,
       builder: (context) => PointEditor(
         field.value,
@@ -85,7 +85,7 @@ class PointField extends StatelessWidget {
     );
     if (selected != field.value) {
       field.didChange(selected);
-      if (onChanged != null) onChanged(field.value);
+      if (onChanged != null) onChanged(selected);
     }
   }
 }
