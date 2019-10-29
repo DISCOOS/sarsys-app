@@ -85,7 +85,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (_) {
+      builder: (context) {
         final tracking = bloc.tracking[personnel.tracking];
         return Dialog(
           elevation: 0,

@@ -60,7 +60,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
               size: size,
               style: style,
               icon: Icons.group,
-              title: "Velg enhet",
+              title: "Velg appparat",
               items: devices,
               onSelected: _showInfo,
               itemBuilder: (BuildContext context, Device unit) => Text("${unit.name}"),
@@ -78,7 +78,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (_) {
+      builder: (context) {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
