@@ -84,7 +84,7 @@ class DeviceLayer extends MapPlugin {
 
   List<Point> _toTrack(Map<String, Set<Tracking>> tracking, Device device) {
     final tracks = tracking[device.id]?.first?.tracks;
-    return tracks == null ? [] : tracks[device.id].points;
+    return tracks[device.id]?.points ?? [];
   }
 
   _buildTrack(
