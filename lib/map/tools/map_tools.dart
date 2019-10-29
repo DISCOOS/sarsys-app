@@ -19,7 +19,7 @@ class MapToolController {
   MapToolController({
     @required this.tools,
     this.onMatch,
-    this.tapTargetSize = 120.0,
+    this.tapTargetSize = 60.0,
   });
 
   T of<T extends MapTool>() => tools.whereType<T>().first;
