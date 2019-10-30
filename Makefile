@@ -72,7 +72,7 @@ else ifeq ($(OSNAME),OSX)
 	echo "Installing dependencies..."
 	if hash bundletool 2>/dev/null; \
 		then echo "[✓] bundletool is installed."; \
-		else echo "[!] Installing bundletool"; brew itall bundletool; fi
+		else echo "[!] Installing bundletool"; brew install bundletool; fi
 	if hash fastlane 2>/dev/null; \
 		then echo "[✓] fastlane is installed."; \
 		else echo "[!] Installing fastlane"; brew cask install fastlane; fi
