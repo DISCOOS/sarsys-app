@@ -202,7 +202,9 @@ Future<PageStorageBucket> readAppState(PageStorageBucket bucket, {BuildContext c
     bucket.writeState(context, json[DevicesPageState.FILTER], identifier: DevicesPageState.FILTER);
     bucket.writeState(
       context,
-      json[IncidentMapState.BASE_MAP] == null ? Defaults.baseMap : BaseMap.fromJson(json[IncidentMapState.BASE_MAP]),
+      json[IncidentMapState.BASE_MAP] is Map<String, dynamic>
+          ? BaseMap.fromJson(json[IncidentMapState.BASE_MAP])
+          : Defaults.baseMap,
       identifier: IncidentMapState.BASE_MAP,
     );
   }
