@@ -41,6 +41,7 @@ class BaseMapService {
     }
     _baseMaps.clear();
     _baseMaps.addAll(await fetchOnlineMaps());
+    //List<BaseMap> _offlineMaps = await fetchStoredMaps();
     _baseMaps.addAll(await fetchStoredMaps());
   }
 
@@ -56,13 +57,20 @@ class BaseMapService {
   // If we find a 'maps' directory here (on the root of the sdcard) we check for metadata.json in subfolder
   // Each tileset is in separate subdirectory under maps and in slippy z/x/y structure
   Future<List<BaseMap>> fetchStoredMaps() async {
-    final completer = Completer<List<BaseMap>>();
-    // Ask for permission
-    final controller = PermissionController(configBloc: _configBloc);
-    controller.ask(
-      controller.storageRequest.copyWith(onReady: () => completer.complete(_fetchStoredMaps())),
-    );
-    return completer.future;
+
+      final completer = Completer<List<BaseMap>>();
+      if(Platform.isAndroid) {
+        // Ask for permission
+        final controller = PermissionController(configBloc: _configBloc);
+        controller.ask(
+          controller.storageRequest.copyWith(onReady: () => completer.complete(_fetchStoredMaps())),
+        );
+      } else {
+        completer.complete(_fetchStoredMaps());
+      }
+      return completer.future;
+
+
   }
 
   Future<List<BaseMap>> _fetchStoredMaps() async {
@@ -73,7 +81,7 @@ class BaseMapService {
       if (basename(entity.path) != "emulated" && basename(entity.path) != "self" && entity is Directory) {
         // Second level, search for folder containing "maps" folder
         if (entity is Directory && basename(entity.path).toLowerCase() == "maps") {
-          // Search for subfolders in "maos" containing metadata file
+          // Search for subfolders in "maps" containing metadata file
           await for (FileSystemEntity entity in entity.list(recursive: false, followLinks: false)) {
             if (entity is Directory) {
               final File metadataFile = File("${entity.path}/metadata.json");
