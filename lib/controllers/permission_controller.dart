@@ -104,7 +104,7 @@ class PermissionController {
       switch (status) {
         case ServiceStatus.enabled:
         case ServiceStatus.notApplicable:
-          handle(
+          allowed = await handle(
             await handler.checkPermissionStatus(request.group),
             request,
           );
@@ -126,7 +126,7 @@ class PermissionController {
     return allowed;
   }
 
-  Future handle(PermissionStatus status, PermissionRequest request) async {
+  Future<bool> handle(PermissionStatus status, PermissionRequest request) async {
     var isReady = false;
 
     // Prevent re-entrant loop
@@ -163,6 +163,8 @@ class PermissionController {
       if (isReady && request.onReady != null) request.onReady();
     }
     _resolving = false;
+
+    return isReady;
   }
 
   Future<bool> _updateAppConfig({

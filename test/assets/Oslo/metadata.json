@@ -4,6 +4,16 @@
   "previewFile": "Oslo.png",
   "minZoom": 3,
   "maxZoom": 20,
+  "bounds": {
+    "ne": {
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "sw": {
+      "lat": 0.0,
+      "lon": 0.0
+    }
+  },
   "offline": true,
   "tms": false
 }

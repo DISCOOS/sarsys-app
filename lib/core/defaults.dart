@@ -20,7 +20,8 @@ class Defaults {
   static const bool callsignReuse = true;
   static final BaseMap baseMap = BaseMap(
     name: "Topografisk",
-    url: "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    url: "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    subdomains: ["opencache", "opencache2", "opencache3"],
   );
 
   static final LatLng origo = LatLng(59.5, 10.09);

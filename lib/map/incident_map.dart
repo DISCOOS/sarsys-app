@@ -89,9 +89,13 @@ class IncidentMap extends StatefulWidget {
   /// If [fitBounds] is given, control who bounds is fitted with [fitBoundOptions]
   final FitBoundsOptions fitBoundOptions;
 
+  /// Show retired units and personnel
   final bool showRetired;
+
+  /// List of map layers to show
   final List<String> showLayers;
 
+  /// Control offset from top of map canvas
   final double withControlsOffset;
 
   IncidentMap({
@@ -128,6 +132,7 @@ class IncidentMap extends StatefulWidget {
     this.onMessage,
     this.onToolChange,
     this.onOpenDrawer,
+    Image placeholder,
     MapController mapController,
   })  : this.mapController = mapController ?? IncidentMapController(),
         super(key: key);
@@ -271,6 +276,15 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   bool _hasFitToBounds = false;
   bool _attemptRestore = true;
 
+  /// Tile error data persisted across map reloads
+  final Map<BaseMap, TileErrorData> _tileErrorData = {};
+
+  /// Placeholder shown while loading images
+  final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
+
+  /// Placeholder shown while loading images
+  final ImageProvider _tilePlaceholderImage = Image.asset("assets/placeholder.png").image;
+
   @override
   void initState() {
     super.initState();
@@ -328,13 +342,19 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         orElse: _zoom,
         defaultValue: widget.zoom ?? Defaults.zoom,
       );
-    _currentBaseMap = _readState(BASE_MAP, defaultValue: Defaults.baseMap);
+    _setBaseMap(_readState(BASE_MAP, defaultValue: Defaults.baseMap));
     _useLayers = _resolveLayers();
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
     }
     _mapController = widget.mapController;
     _mapController.progress.addListener(_onMoveProgress);
+  }
+
+  void _setBaseMap(BaseMap map) {
+    _currentBaseMap = map;
+    final data = _tileErrorData.putIfAbsent(map, () => TileErrorData(map));
+    if (data.isFatal()) _onFatalTileError(data);
   }
 
   Set<String> _resolveLayers() => widget.withRead && widget.readLayers
@@ -531,12 +551,30 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         maxZoom: _currentBaseMap.maxZoom,
         subdomains: _currentBaseMap.subdomains,
         tms: _currentBaseMap.tms,
-        placeholderImage: Image.asset("assets/placeholder.png").image,
+        placeholderImage: _tilePlaceholderImage,
         tileProvider: _buildTileProvider(_currentBaseMap.offline),
       );
 
   TileProvider _buildTileProvider(bool offline) {
-    return offline ? OfflineTileProvider() : ManagedCacheTileProvider(FileCacheService(_configBloc.config));
+    return offline
+        ? ManagedFileTileProvider(
+            _tileErrorImage,
+            _tileErrorData[_currentBaseMap],
+            onFatal: (data) => _onFatalTileError(data),
+          )
+        : ManagedCacheTileProvider(
+            FileCacheService(_configBloc.config),
+            _tileErrorImage,
+            _tileErrorData[_currentBaseMap],
+            onFatal: (data) => _onFatalTileError(data),
+          );
+  }
+
+  void _onFatalTileError(TileErrorData data) {
+    if (widget.onMessage != null) {
+      final reason = data.explain().map((type) => translateTileErrorType(type));
+      widget.onMessage("Kartdata ${reason.isNotEmpty ? reason.join(', ') : ' kan ikke lastes'}");
+    }
   }
 
   void _onTap(LatLng point) {
@@ -817,7 +855,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
             () {
-              _currentBaseMap = _writeState(BASE_MAP, map);
+              _setBaseMap(_writeState(BASE_MAP, map));
               _setLayerOptions();
               Navigator.pop(context);
             },

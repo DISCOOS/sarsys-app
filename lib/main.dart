@@ -8,6 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 
+import 'map/tile_providers.dart';
+
 void main() async {
   // Required since provider need access to service bindings prior to calling 'runApp()'
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,11 +99,14 @@ void runAppWithCatcher(Widget app, String sentryDns) {
   var exceptions = [
     // Silence map tile cache host lookup
     "SocketException: Failed host lookup",
-    // Silence map tile fetch failures thrown by FlutterMap
-    "Couldn't download or retrieve file", "FetchFailure",
-    "SocketException: OS Error: Software caused connection abort",
+    // Silence general map tile fetch failures thrown by FlutterMap
+    "FetchFailure",
     "Connection closed while receiving data",
     "Connection closed before full header was received",
+    "SocketException: OS Error: Software caused connection abort",
+    // Silence tile errors, see TileErrorHandler
+    TileError.NOT_FOUND, //"Couldn't download or retrieve file"
+    TileError.IS_INVALID, //"Could not instantiate image codec"
     // Silence Overlay assertion errors thrown by form_field_builder.
     // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
     "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true."

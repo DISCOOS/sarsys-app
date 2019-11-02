@@ -123,6 +123,7 @@ flutter:
     - assets/config/app_config.json
     - assets/images/map.png
     - assets/placeholder.png
+    - assets/error_tile.png
     - assets/images/cabin.png
     - assets/images/sar-team 2.png
     - assets/images/avatar male.png

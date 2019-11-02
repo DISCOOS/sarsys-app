@@ -1,6 +1,8 @@
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/models/converters.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'BaseMap.g.dart';
@@ -14,9 +16,12 @@ class BaseMap extends Equatable {
   final double minZoom;
   final String attribution;
   final bool offline;
-  final String previewFile;
   final bool tms;
+  final String previewFile;
   final List<String> subdomains;
+
+  @LatLngBoundsConverter()
+  final LatLngBounds bounds;
 
   BaseMap({
     @required this.url,
@@ -25,6 +30,7 @@ class BaseMap extends Equatable {
     this.maxZoom = Defaults.minZoom,
     this.minZoom = Defaults.maxZoom,
     this.attribution,
+    this.bounds,
     this.offline = false,
     this.previewFile,
     this.tms = false,
@@ -40,7 +46,8 @@ class BaseMap extends Equatable {
           offline,
           tms,
           previewFile,
-          subdomains,
+          subdomains ?? const [],
+          bounds,
         ]);
 
   /// Factory constructor for creating a new `BaseMap` instance
@@ -60,5 +67,6 @@ class BaseMap extends Equatable {
         offline: this.offline,
         previewFile: previewFile ?? this.previewFile,
         tms: this.tms,
+        bounds: this.bounds,
       );
 }

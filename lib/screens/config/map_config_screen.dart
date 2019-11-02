@@ -165,6 +165,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
                   "Slette kart-fliser",
                   "Dette vil slette alle kartfliser lagret lokalt. Vil du fortsette?",
                 )) {
+                  imageCache.clear();
                   await cache.emptyCache();
                   setState(() {});
                 }
