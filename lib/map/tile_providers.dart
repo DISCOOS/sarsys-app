@@ -145,6 +145,7 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
 class ManagedFileTileProvider extends TileProvider {
   final ImageProvider errorImage;
   final TileErrorHandler errorHandler;
+  static Map<String, ImageProvider> images = {};
 
   ManagedFileTileProvider(
     TileErrorData data, {
@@ -156,20 +157,29 @@ class ManagedFileTileProvider extends TileProvider {
           onFatal: onFatal,
           threshold: threshold,
           data: data,
+          onError: (error) => images.remove(error.key),
         );
 
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
-    return errorHandler.isFatal || errorHandler.contains(url) || File(url).existsSync() == false
-        ? _ensureImage()
-        : ManagedFileTileImageProvider(
-            File(getTileUrl(coords, options)),
-            errorHandler,
-          );
+    final file = File(url);
+    return errorHandler.isFatal || errorHandler.contains(file.path) ? _ensureImage(file) : _refreshImage(file);
   }
 
-  ImageProvider _ensureImage() => errorImage;
+  ManagedFileTileImageProvider _refreshImage(File file) {
+    final key = ManagedFileTileImageProvider(
+      file,
+      errorHandler,
+    );
+    images.putIfAbsent(file.path, () => key);
+    return key;
+  }
+
+  ImageProvider _ensureImage(File file) {
+    final image = images[file.path];
+    return image == null ? errorImage : image;
+  }
 }
 
 /// [ManagedFileTileProvider] companion class implementing image provider error handling
