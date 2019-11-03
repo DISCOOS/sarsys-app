@@ -295,14 +295,42 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   /// Placeholder shown when tiles are not found in offline mode
   final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
 
-  /// Check if network connection is offline
-  bool get _isOffline => ConnectivityStatus.Offline == Provider.of<ConnectivityStatus>(context);
+  /// Flag indicating that network connection is offline
+  bool get _offline => ConnectivityStatus.Offline == Provider.of<ConnectivityStatus>(context);
+
+  StreamSubscription _subscription;
 
   @override
   void initState() {
     super.initState();
     _setup();
     _init();
+    _subscription = ConnectivityService().changes.listen((state) async {
+      if (ConnectivityStatus.Offline != state) await _removePlaceholders();
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _mapController.cancel();
+    _mapController.progress.removeListener(_onMoveProgress);
+    _mapToolController?.dispose();
+    _locationController?.dispose();
+    _isLocating?.dispose();
+    _isMeasuring?.dispose();
+    _subscription?.cancel();
+    _isLocating = null;
+    _isMeasuring = null;
+    _subscription = null;
+    _mapController = null;
+    _mapToolController = null;
+    _locationController = null;
+
+    _restoreWakeLock();
+
+    super.dispose();
   }
 
   @override
@@ -424,26 +452,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
   }
 
-  @override
-  void dispose() {
-    _disposed = true;
-    _mapController.cancel();
-    _mapController.progress.removeListener(_onMoveProgress);
-    _mapToolController?.dispose();
-    _locationController?.dispose();
-    _isLocating?.dispose();
-    _isMeasuring?.dispose();
-    _isLocating = null;
-    _isMeasuring = null;
-    _mapController = null;
-    _mapToolController = null;
-    _locationController = null;
-
-    _restoreWakeLock();
-
-    super.dispose();
-  }
-
   void _restoreWakeLock() async {
     final wakeLock = await Wakelock.isEnabled;
     if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: _wakeLockWasOn);
@@ -458,22 +466,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<ConnectivityStatus>(
-        stream: ConnectivityService().changes,
-        builder: (context, snapshot) {
-          return FutureBuilder<int>(
-              future: _removePlaceholders(),
-              builder: (context, snapshot) {
-                return Stack(
-                  overflow: Overflow.clip,
-                  children: [
-                    _buildMap(),
-                    if (widget.withControls) _buildControls(),
-                    if (widget.withSearch) _buildSearchBar(),
-                  ],
-                );
-              });
-        });
+    return Stack(
+      overflow: Overflow.clip,
+      children: [
+        _buildMap(),
+        if (widget.withControls) _buildControls(),
+        if (widget.withSearch) _buildSearchBar(),
+      ],
+    );
   }
 
   // Removes all offline placeholders from caches when online.
@@ -481,7 +481,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   FutureOr<int> _removePlaceholders() async {
     int removed = 0;
     final data = _tileErrorData[_currentBaseMap];
-    if (!_isOffline && data != null && data.placeholders.isNotEmpty) {
+    if (!_offline && data != null && data.placeholders.isNotEmpty) {
       final fileCache = FileCacheService(_configBloc.config);
       data.placeholders.forEach((key) => imageCache.evict(key));
       await Future.forEach(data.placeholders.where((key) => key is ManagedCacheTileProvider), (key) async {
@@ -568,7 +568,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         maxZoom: _currentBaseMap.maxZoom,
         subdomains: _currentBaseMap.subdomains,
         tms: _currentBaseMap.tms,
-        placeholderImage: _isOffline ? _tileOfflineImage : _tilePendingImage,
+        placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
         tileProvider: _buildTileProvider(_currentBaseMap),
       );
 
@@ -580,7 +580,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         )
       : ManagedCacheTileProvider(
           _tileErrorData[map],
-          offline: _isOffline,
+          offline: _offline,
           errorImage: _tileErrorImage,
           offlineImage: _tileOfflineImage,
           offlineAsset: _fileOfflineAsset,
