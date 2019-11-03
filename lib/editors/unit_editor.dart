@@ -546,7 +546,7 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);
 
   List<Personnel> _getActualPersonnel() {
-    return (widget?.unit?.personnel ?? [])..addAll(widget.personnel);
+    return (widget?.unit?.personnel ?? [])..addAll(widget.personnel ?? []);
   }
 
   Point _preparePoint() {
