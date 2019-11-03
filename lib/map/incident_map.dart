@@ -459,9 +459,20 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   LatLng _ensureCenter() {
     final current = widget.withControlsLocateMe ? _locationController.current : null;
-    return widget.center ??
+    final candidate = widget.center ??
         (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
+    /*
+    if (_currentBaseMap?.bounds?.contains(candidate) == false) {
+      // Use center in current map bounds
+      _center = LatLng(
+        _currentBaseMap.bounds.south + (_currentBaseMap.bounds.north - _currentBaseMap.bounds.south) / 2,
+        _currentBaseMap.bounds.west + (_currentBaseMap.bounds.east - _currentBaseMap.bounds.west) / 2,
+      );
+    }
+    */
+
+    return candidate;
   }
 
   @override
@@ -504,8 +515,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         maxZoom: Defaults.maxZoom,
         minZoom: Defaults.minZoom,
         interactive: widget.interactive,
+        /* Ensure _center is inside given bounds
         nePanBoundary: _currentBaseMap.bounds?.northEast,
         swPanBoundary: _currentBaseMap.bounds?.southWest,
+        */
         onTap: (point) => _onTap(point),
         onLongPress: (point) => _onLongPress(point),
         onPositionChanged: _onPositionChanged,
