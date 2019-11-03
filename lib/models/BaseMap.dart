@@ -47,7 +47,7 @@ class BaseMap extends Equatable {
           tms,
           previewFile,
           subdomains ?? const [],
-          bounds,
+          /*bounds, //LatLngBounds are not comparable, exclude to ensure similarity in BaseMapService */
         ]);
 
   /// Factory constructor for creating a new `BaseMap` instance
