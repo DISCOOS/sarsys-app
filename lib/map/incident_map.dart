@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -24,6 +25,7 @@ import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/BaseMap.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/base_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -279,11 +281,22 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   /// Tile error data persisted across map reloads
   final Map<BaseMap, TileErrorData> _tileErrorData = {};
 
-  /// Placeholder shown while loading images
+  /// Pl
+
+  /// Placeholder shown when a tile fails to load
   final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
 
   /// Placeholder shown while loading images
-  final ImageProvider _tilePlaceholderImage = Image.asset("assets/placeholder.png").image;
+  final ImageProvider _tilePendingImage = Image.asset("assets/pending_tile.png").image;
+
+  /// Asset name for offline tiles
+  final String _fileOfflineAsset = "assets/offline_tile.png";
+
+  /// Placeholder shown when tiles are not found in offline mode
+  final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
+
+  /// Check if network connection is offline
+  bool get _isOffline => ConnectivityStatus.Offline == Provider.of<ConnectivityStatus>(context);
 
   @override
   void initState() {
@@ -445,14 +458,39 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      overflow: Overflow.clip,
-      children: [
-        _buildMap(),
-        if (widget.withControls) _buildControls(),
-        if (widget.withSearch) _buildSearchBar(),
-      ],
-    );
+    return StreamBuilder<ConnectivityStatus>(
+        stream: ConnectivityService().changes,
+        builder: (context, snapshot) {
+          return FutureBuilder<int>(
+              future: _removePlaceholders(),
+              builder: (context, snapshot) {
+                return Stack(
+                  overflow: Overflow.clip,
+                  children: [
+                    _buildMap(),
+                    if (widget.withControls) _buildControls(),
+                    if (widget.withSearch) _buildSearchBar(),
+                  ],
+                );
+              });
+        });
+  }
+
+  // Removes all offline placeholders from caches when online.
+  // This ensures that actual tiles are loaded instead of placeholders.
+  FutureOr<int> _removePlaceholders() async {
+    int removed = 0;
+    final data = _tileErrorData[_currentBaseMap];
+    if (!_isOffline && data != null && data.placeholders.isNotEmpty) {
+      final fileCache = FileCacheService(_configBloc.config);
+      data.placeholders.forEach((key) => imageCache.evict(key));
+      await Future.forEach(data.placeholders.where((key) => key is ManagedCacheTileProvider), (key) async {
+        await fileCache.removeFile(key.url);
+        removed++;
+      });
+      data.placeholders.clear();
+    }
+    return removed;
   }
 
   Widget _buildMap() {
@@ -466,6 +504,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         maxZoom: Defaults.maxZoom,
         minZoom: Defaults.minZoom,
         interactive: widget.interactive,
+        nePanBoundary: _currentBaseMap.bounds?.northEast,
+        swPanBoundary: _currentBaseMap.bounds?.southWest,
         onTap: (point) => _onTap(point),
         onLongPress: (point) => _onLongPress(point),
         onPositionChanged: _onPositionChanged,
@@ -504,29 +544,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
   }
 
-  /*
-  void _debugFitBounds() {
-    final fitBounds = widget.fitBounds;
-    final fitBoundOptions = widget.fitBoundOptions ?? FIT_BOUNDS_OPTIONS;
-    final centerZoom = _mapController.getBoundsCenterZoom(fitBounds, fitBoundOptions);
-    try {
-      _fitBounds();
-    } on Error catch (e) {
-      Catcher.reportCheckedError(
-        "Method _fitBounds() failed with: \n "
-        "_mapController(zoom: ${_mapController.zoom}, center: ${_mapController.center}, ${_mapController.size}, "
-        "options(zoom: ${_mapController.options.zoom}), state(zoom: ${_mapController.state.zoom})) \n"
-        "fitBounds(isValid: ${fitBounds.isValid}, west: ${fitBounds.west}, "
-        "north: ${fitBounds.north}, east: ${fitBounds.east}, south: ${fitBounds.south}) \n"
-        "fitBoundsOptions(zoom: ${fitBoundOptions.zoom}, maxZoom ${fitBoundOptions.maxZoom}),${fitBoundOptions.padding}) \n"
-        "centerZoom(zoom: ${centerZoom.zoom}, center: ${centerZoom.center}). \n"
-        "Error was $e",
-        e.stackTrace,
-      );
-    }
-  }
-   */
-
   List<LayerOptions> _setLayerOptions() {
     final tool = _mapToolController?.of<MeasureTool>();
     _layerOptions
@@ -551,24 +568,25 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         maxZoom: _currentBaseMap.maxZoom,
         subdomains: _currentBaseMap.subdomains,
         tms: _currentBaseMap.tms,
-        placeholderImage: _tilePlaceholderImage,
-        tileProvider: _buildTileProvider(_currentBaseMap.offline),
+        placeholderImage: _isOffline ? _tileOfflineImage : _tilePendingImage,
+        tileProvider: _buildTileProvider(_currentBaseMap),
       );
 
-  TileProvider _buildTileProvider(bool offline) {
-    return offline
-        ? ManagedFileTileProvider(
-            _tileErrorImage,
-            _tileErrorData[_currentBaseMap],
-            onFatal: (data) => _onFatalTileError(data),
-          )
-        : ManagedCacheTileProvider(
-            FileCacheService(_configBloc.config),
-            _tileErrorImage,
-            _tileErrorData[_currentBaseMap],
-            onFatal: (data) => _onFatalTileError(data),
-          );
-  }
+  TileProvider _buildTileProvider(BaseMap map) => map.offline
+      ? ManagedFileTileProvider(
+          _tileErrorData[map],
+          errorImage: _tileErrorImage,
+          onFatal: (data) => _onFatalTileError(data),
+        )
+      : ManagedCacheTileProvider(
+          _tileErrorData[map],
+          offline: _isOffline,
+          errorImage: _tileErrorImage,
+          offlineImage: _tileOfflineImage,
+          offlineAsset: _fileOfflineAsset,
+          cacheManager: FileCacheService(_configBloc.config),
+          onFatal: (data) => _onFatalTileError(data),
+        );
 
   void _onFatalTileError(TileErrorData data) {
     if (widget.onMessage != null) {
@@ -649,9 +667,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           if (widget.withControlsBaseMap)
             MapControl(
               icon: Icons.map,
-              onPressed: () {
-                _showBaseMapBottomSheet(context);
-              },
+              onPressed: () => _showBaseMapSheet(context),
             ),
           if (widget.withControlsZoom) ...[
             MapControl(
@@ -818,7 +834,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     });
   }
 
-  void _showBaseMapBottomSheet(context) {
+  void _showBaseMapSheet(context) {
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
@@ -837,7 +853,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
                   child: GridView.count(
                     shrinkWrap: true,
                     crossAxisCount: landscape ? 4 : 2,
-                    children: _mapBottomSheetCards(),
+                    children: _toBaseMapCards(),
                   ),
                 ),
               ),
@@ -846,11 +862,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         });
   }
 
-  List<Widget> _mapBottomSheetCards() {
-    List<Widget> _mapCards = [];
+  List<Widget> _toBaseMapCards() {
+    final List<Widget> _cards = [];
 
     for (BaseMap map in _baseMapService.baseMaps) {
-      _mapCards.add(
+      _cards.add(
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
@@ -863,7 +879,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         ),
       );
     }
-    return _mapCards;
+    return _cards;
   }
 
   void _onTrackingChanged(bool isLocated, bool isLocked) {

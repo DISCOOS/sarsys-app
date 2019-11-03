@@ -1,7 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui show instantiateImageCodec, Codec;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -13,22 +17,29 @@ import 'package:SarSys/models/BaseMap.dart';
 /// This class implements a managed network-based and managed tile cache
 /// with a fallback error handling strategy. When more than [threshold]
 /// number of tiles was not found or empty, the tile provider will
-/// return [tileErrorImage] as tiles for all request until the number of
+/// return [errorImage] as tiles for all request until the number of
 /// erroneous tiles are below the [threshold] again. This will minimise
 /// UI "jank" by minimizing network timeouts.
 class ManagedCacheTileProvider extends TileProvider {
-  final ImageProvider tileErrorImage;
+  final bool offline;
+  final TileErrorData data;
+  final String offlineAsset;
+  final ImageProvider offlineImage;
+  final ImageProvider errorImage;
   final BaseCacheManager cacheManager;
-  final TileErrorHandler tileErrorHandler;
+  final TileErrorHandler errorHandler;
 
   ManagedCacheTileProvider(
-    this.cacheManager,
-    this.tileErrorImage,
-    TileErrorData data, {
+    this.data, {
+    @required this.offline,
+    @required this.offlineAsset,
+    @required this.offlineImage,
+    @required this.errorImage,
+    @required this.cacheManager,
     int threshold = TileErrorData.THRESHOLD,
     ValueChanged<TileErrorData> onFatal,
   })  : assert(data != null, "data can not be null"),
-        this.tileErrorHandler = TileErrorHandler(
+        this.errorHandler = TileErrorHandler(
           onFatal: onFatal,
           threshold: threshold,
           data: data,
@@ -38,54 +49,110 @@ class ManagedCacheTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
-    return tileErrorHandler.isFatal || tileErrorHandler.contains(url)
-        ? _ensureImage(url)
-        : ManagedCachedNetworkImageProvider(
-            url,
-            cacheManager,
-            tileErrorHandler,
-          );
+    return errorHandler.isFatal || errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
+  }
+
+  ManagedCachedNetworkImageProvider _refreshImage(String url) {
+    final key = ManagedCachedNetworkImageProvider(
+      url: url,
+      manager: cacheManager,
+      offline: offline,
+      offlineAsset: offlineAsset,
+      errorHandler: errorHandler,
+      onPlaceholder: (key) => data.placeholders.add(key),
+    );
+
+    return key;
   }
 
   ImageProvider _ensureImage(String url) {
     final info = cacheManager.getFileFromMemory(url);
-    return info == null ? tileErrorImage : FileImage(info.file);
+    return info == null ? (offline ? offlineImage : errorImage) : FileImage(info.file);
   }
 }
 
 /// [ManagedCacheTileProvider] companion class implementing image provider error handling
 class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
-  final TileErrorHandler handler;
+  final bool offline;
+  final String offlineAsset;
+  final TileErrorHandler errorHandler;
+  final ValueChanged<ImageProvider> onPlaceholder;
 
-  ManagedCachedNetworkImageProvider(
-    String url,
-    BaseCacheManager cacheManager,
-    this.handler,
-  ) : super(url, cacheManager: cacheManager);
+  var placeholderBytes;
+
+  ManagedCachedNetworkImageProvider({
+    @required String url,
+    @required this.errorHandler,
+    @required this.offline,
+    @required this.offlineAsset,
+    @required this.onPlaceholder,
+    @required BaseCacheManager manager,
+  }) : super(url, cacheManager: manager);
 
   @override
   ImageStreamCompleter load(CachedNetworkImageProvider key) {
-    return super.load(key)..addListener(handler.listen(key.url, (e) => TileError.toType(e)));
+    return (offline ? _loadFromCache(key) : super.load(key))
+      ..addListener(errorHandler.listen(key.url, (e) => TileError.toType(e)));
+  }
+
+  /// Only called when offline
+  ImageStreamCompleter _loadFromCache(key) => MultiFrameImageStreamCompleter(
+        codec: _loadAsyncFromCache(key),
+        scale: key.scale,
+// TODO enable information collector on next stable release of flutter
+//      informationCollector: () sync* {
+//        yield DiagnosticsProperty<ImageProvider>(
+//          'Image provider: $this \n Image key: $key',
+//          this,
+//          style: DiagnosticsTreeStyle.errorProperty,
+//        );
+//      },
+      );
+
+  /// Adapted from [CachedNetworkImageProvider]
+  Future<ui.Codec> _loadAsyncFromCache(CachedNetworkImageProvider key) async {
+    Uint8List bytes;
+    final info = await cacheManager.getFileFromCache(url);
+    if (info == null) {
+      // Optimization
+      if (placeholderBytes == null) {
+        final data = await rootBundle.load(offlineAsset);
+        placeholderBytes = data.buffer.asUint8List();
+      }
+      bytes = placeholderBytes;
+    } else {
+      final file = info.file;
+      bytes = await file.readAsBytes();
+    }
+
+    if (bytes.lengthInBytes == 0) {
+      if (errorListener != null) errorListener();
+      throw new Exception(TileError.IS_EMPTY);
+    }
+
+    if (info == null) onPlaceholder(key);
+
+    return await ui.instantiateImageCodec(bytes);
   }
 }
 
 /// This class implements a managed file-based [TileProvider] with
 /// a fallback error handling strategy. When more than [threshold]
 /// number of tiles was not found or empty, the tile provider will
-/// return [tileErrorImage] as tiles for all request until the number of
+/// return [errorImage] as tiles for all request until the number of
 /// erroneous tiles are below the [threshold] again. This will minimise
 /// UI "jank" by file io exceptions.
 class ManagedFileTileProvider extends TileProvider {
-  final ImageProvider tileErrorImage;
-  final TileErrorHandler tileErrorHandler;
+  final ImageProvider errorImage;
+  final TileErrorHandler errorHandler;
 
   ManagedFileTileProvider(
-    this.tileErrorImage,
     TileErrorData data, {
+    @required this.errorImage,
     int threshold = TileErrorData.THRESHOLD,
     ValueChanged<TileErrorData> onFatal,
   })  : assert(data != null, "data can not be null"),
-        this.tileErrorHandler = TileErrorHandler(
+        this.errorHandler = TileErrorHandler(
           onFatal: onFatal,
           threshold: threshold,
           data: data,
@@ -94,13 +161,15 @@ class ManagedFileTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
-    return tileErrorHandler.isFatal || tileErrorHandler.contains(url) || File(url).existsSync() == false
-        ? tileErrorImage
+    return errorHandler.isFatal || errorHandler.contains(url) || File(url).existsSync() == false
+        ? _ensureImage()
         : ManagedFileTileImageProvider(
             File(getTileUrl(coords, options)),
-            tileErrorHandler,
+            errorHandler,
           );
   }
+
+  ImageProvider _ensureImage() => errorImage;
 }
 
 /// [ManagedFileTileProvider] companion class implementing image provider error handling
@@ -139,6 +208,7 @@ class TileErrorData {
 
   final BaseMap map;
   final Map<String, TileError> keys = {};
+  final Set<ImageProvider> placeholders = {};
 
   TileErrorData(this.map);
 

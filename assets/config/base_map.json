@@ -7,7 +7,7 @@
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://{s}.statkart.no/gatekeeper/ererewrwerwer/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    "url": "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     "subdomains": [
       "opencache",
       "opencache2",

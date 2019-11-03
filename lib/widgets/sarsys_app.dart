@@ -10,6 +10,7 @@ import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/network_sensitive.dart';
 import 'package:SarSys/widgets/permission_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
@@ -63,38 +64,36 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: widget.navigatorKey,
-      navigatorObservers: [RouteWriter.observer],
-      debugShowCheckedModeBanner: false,
-      title: 'SarSys',
-      theme: ThemeData(
-        primaryColor: Colors.grey[850],
-        buttonTheme: ButtonThemeData(
-          height: 36.0,
-          textTheme: ButtonTextTheme.primary,
+    return NetworkSensitive(
+      child: BlocProviderTree(
+        blocProviders: widget.controller.all,
+        child: MaterialApp(
+          navigatorKey: widget.navigatorKey,
+          navigatorObservers: [RouteWriter.observer],
+          debugShowCheckedModeBanner: false,
+          title: 'SarSys',
+          theme: ThemeData(
+            primaryColor: Colors.grey[850],
+            buttonTheme: ButtonThemeData(
+              height: 36.0,
+              textTheme: ButtonTextTheme.primary,
+            ),
+          ),
+          home: _toHome(widget.controller),
+          onGenerateRoute: (settings) => _toRoute(settings),
+          localizationsDelegates: [
+            GlobalWidgetsLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            DefaultMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            DefaultCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            const Locale('en', 'US'), // English
+            const Locale('nb', 'NO'), // Norwegian Bokmål
+          ],
         ),
       ),
-      home: _toHome(widget.controller),
-      builder: (context, child) {
-        // will rebuild when blocs are rebuilt with Providers.rebuild
-        return BlocProviderTree(
-          blocProviders: widget.controller.all,
-          child: child,
-        );
-      },
-      onGenerateRoute: (settings) => _toRoute(settings),
-      localizationsDelegates: [
-        GlobalWidgetsLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        DefaultMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        DefaultCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        const Locale('en', 'US'), // English
-        const Locale('nb', 'NO'), // Norwegian Bokmål
-      ],
     );
   }
 
