@@ -1,13 +1,13 @@
 [
   {
     "name": "topo4",
-    "description": "Topografisk",
+    "description": "Topografisk kkk",
     "previewFile": "topo4.png",
     "minZoom": 3,
     "maxZoom": 20,
     "offline": false,
     "tms": false,
-    "url": "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    "url": "https://{s}.statkart.no/gatekeeper/kkk/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     "subdomains": [
       "opencache",
       "opencache2",

@@ -49,7 +49,7 @@ class ManagedCacheTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
-    return errorHandler.isFatal || errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
+    return errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
   }
 
   ManagedCachedNetworkImageProvider _refreshImage(String url) {
@@ -78,7 +78,7 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
   final TileErrorHandler errorHandler;
   final ValueChanged<ImageProvider> onPlaceholder;
 
-  var placeholderBytes;
+  ui.Codec placeholder;
 
   ManagedCachedNetworkImageProvider({
     @required String url,
@@ -112,27 +112,31 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
   /// Adapted from [CachedNetworkImageProvider]
   Future<ui.Codec> _loadAsyncFromCache(CachedNetworkImageProvider key) async {
     Uint8List bytes;
+    ui.Codec codec = placeholder;
     final info = await cacheManager.getFileFromCache(url);
     if (info == null) {
       // Optimization
-      if (placeholderBytes == null) {
+      if (placeholder == null) {
         final data = await rootBundle.load(offlineAsset);
-        placeholderBytes = data.buffer.asUint8List();
+        bytes = data.buffer.asUint8List();
+        placeholder = await toCodec(bytes);
+        onPlaceholder(key);
       }
-      bytes = placeholderBytes;
     } else {
       final file = info.file;
       bytes = await file.readAsBytes();
+      codec = await toCodec(bytes);
     }
 
+    return codec;
+  }
+
+  Future<ui.Codec> toCodec(Uint8List bytes) async {
     if (bytes.lengthInBytes == 0) {
       if (errorListener != null) errorListener();
       throw new Exception(TileError.IS_EMPTY);
     }
-
-    if (info == null) onPlaceholder(key);
-
-    return await ui.instantiateImageCodec(bytes);
+    return ui.instantiateImageCodec(bytes);
   }
 }
 
@@ -164,7 +168,7 @@ class ManagedFileTileProvider extends TileProvider {
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
     final file = File(url);
-    return errorHandler.isFatal || errorHandler.contains(file.path) ? _ensureImage(file) : _refreshImage(file);
+    return errorHandler.contains(file.path) ? _ensureImage(file) : _refreshImage(file);
   }
 
   ManagedFileTileImageProvider _refreshImage(File file) {
@@ -214,7 +218,7 @@ String translateTileErrorType(TileErrorType type) {
 
 /// Tile error data object
 class TileErrorData {
-  static const int THRESHOLD = 3;
+  static const int THRESHOLD = 48;
 
   final BaseMap map;
   final Map<String, TileError> keys = {};

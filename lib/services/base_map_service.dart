@@ -43,6 +43,8 @@ class BaseMapService {
     _baseMaps.clear();
     _baseMaps.addAll(await fetchOnlineMaps());
     _baseMaps.addAll(await fetchStoredMaps());
+
+    print(_baseMaps);
   }
 
   Future<List<BaseMap>> fetchOnlineMaps() async {
