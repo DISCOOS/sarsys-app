@@ -1,7 +1,7 @@
 [
   {
     "name": "topo4",
-    "description": "Topografisk kkk",
+    "description": "Topografisk",
     "previewFile": "topo4.png",
     "minZoom": 3,
     "maxZoom": 20,
