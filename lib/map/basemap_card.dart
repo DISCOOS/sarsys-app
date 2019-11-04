@@ -47,7 +47,7 @@ class BaseMapCard extends StatelessWidget {
                 ),
               ),
               Text(
-                map.description,
+                map.description ?? map.name,
                 softWrap: true,
                 textAlign: TextAlign.center,
               ),

@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/BaseMap.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +14,6 @@ class BaseMapService {
 
   static BaseMapService _instance;
 
-  final AppConfigBloc _configBloc;
   final List<BaseMap> _baseMaps = [Defaults.baseMap];
 
   List<dynamic> _assets = [];
@@ -25,18 +22,16 @@ class BaseMapService {
 
   List<BaseMap> get baseMaps => _baseMaps.toList();
 
-  factory BaseMapService(AppConfigBloc bloc) {
+  factory BaseMapService() {
     if (_instance == null) {
-      _instance = new BaseMapService._internal(bloc);
+      _instance = new BaseMapService._internal();
     }
     return _instance;
   }
 
-  BaseMapService._internal(AppConfigBloc bloc) : _configBloc = bloc {
-    init();
-  }
+  BaseMapService._internal();
 
-  void init() async {
+  Future init() async {
     if (_assets.isEmpty) {
       _assets = json.decode(await rootBundle.loadString(ASSET));
     }
@@ -57,19 +52,6 @@ class BaseMapService {
   // If we find a 'maps' directory here (on the root of the sdcard) we check for metadata.json in subfolder
   // Each tileset is in separate subdirectory under maps and in slippy z/x/y structure
   Future<List<BaseMap>> fetchStoredMaps() async {
-    final completer = Completer<List<BaseMap>>();
-    // Ask for permission
-    final controller = PermissionController(configBloc: _configBloc);
-    final used = await controller.ask(
-      controller.storageRequest.copyWith(onReady: () => completer.complete(_fetchStoredMaps())),
-    );
-    if (used == false) {
-      completer.complete(_fetchStoredMaps());
-    }
-    return completer.future;
-  }
-
-  Future<List<BaseMap>> _fetchStoredMaps() async {
     Set<BaseMap> baseMaps = {};
     final baseDirs = await _resolveDirs();
 

@@ -195,7 +195,7 @@ class PermissionController {
     var deniedBefore = prefs.getBool("userDeniedGroupBefore_${request.group}") ?? false;
     // Only supported on Android, iOS always return false
     if (await handler.shouldShowRequestPermissionRationale(request.group)) {
-      prompt = onPrompt != null && await onPrompt(request.title, _toRationale(request, deniedBefore));
+      prompt = onPrompt == null ? true : await onPrompt(request.title, _toRationale(request, deniedBefore));
     }
     if (prompt) {
       var response = await handler.requestPermissions([request.group]);
@@ -219,8 +219,8 @@ class PermissionController {
 
   void _handleServiceDenied(PermissionRequest request) async {
     final handler = PermissionHandler();
-    var check = await handler.checkServiceStatus(request.group);
-    if (check == ServiceStatus.disabled) {
+    var check = await handler.checkPermissionStatus(request.group);
+    if (check == PermissionStatus.disabled) {
       _handleServiceDisabled(request);
     } else {
       _handlePermissionRequest(request.deniedMessage, request);

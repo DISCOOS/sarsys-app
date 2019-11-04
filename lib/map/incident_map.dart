@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -341,7 +342,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _setup(
         wasZoom: widget.zoom != old.zoom,
       );
-      _init();
     }
   }
 
@@ -354,7 +354,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
 
-    _baseMapService = BaseMapService(_configBloc);
+    _baseMapService ??= BaseMapService();
 
     // Ensure all controllers are set
     _ensureMapToolController();
@@ -373,6 +373,23 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _init() async {
     _wakeLockWasOn = await Wakelock.isEnabled;
     await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
+    // Ask for permission
+    final controller = Provider.of<PermissionController>(context).cloneWith(
+      onMessage: widget.onMessage,
+    );
+    final used = await controller.ask(
+      controller.storageRequest.copyWith(
+        onReady: () async => await _asyncBaseMapLoad(),
+      ),
+    );
+    if (Platform.isIOS && used == false) {
+      await _asyncBaseMapLoad();
+    }
+  }
+
+  Future _asyncBaseMapLoad() async {
+    await _baseMapService.init();
+    setState(() {});
   }
 
   void _setup({bool wasZoom = true}) {

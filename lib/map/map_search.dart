@@ -390,7 +390,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         );
 
       if (results.length > 0) {
-        _showResults(results);
+        _showResults(results.take(10).toList());
       } else {
         found = false;
       }
