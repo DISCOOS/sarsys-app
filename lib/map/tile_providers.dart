@@ -52,18 +52,14 @@ class ManagedCacheTileProvider extends TileProvider {
     return errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
   }
 
-  ManagedCachedNetworkImageProvider _refreshImage(String url) {
-    final key = ManagedCachedNetworkImageProvider(
-      url: url,
-      manager: cacheManager,
-      offline: offline,
-      offlineAsset: offlineAsset,
-      errorHandler: errorHandler,
-      onPlaceholder: (key) => data.placeholders.add(key),
-    );
-
-    return key;
-  }
+  ImageProvider _refreshImage(String url) => ManagedCachedNetworkImageProvider(
+        url: url,
+        manager: cacheManager,
+        offline: offline,
+        offlineAsset: offlineAsset,
+        errorHandler: errorHandler,
+        onPlaceholder: (key) => data.placeholders.add(key),
+      );
 
   ImageProvider _ensureImage(String url) {
     final info = cacheManager.getFileFromMemory(url);

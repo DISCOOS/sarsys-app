@@ -305,8 +305,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     super.initState();
     _setup();
     _init();
-    _subscription = ConnectivityService().changes.listen((state) async {
-      if (ConnectivityStatus.Offline != state) await _removePlaceholders();
+    _subscription = ConnectivityService().changes.listen((status) async {
+      if (ConnectivityStatus.Offline != status) await _removePlaceholders();
       setState(() {});
     });
   }
@@ -492,7 +492,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   FutureOr<int> _removePlaceholders() async {
     int removed = 0;
     final data = _tileErrorData[_currentBaseMap];
-    if (!_offline && data != null && data.placeholders.isNotEmpty) {
+    if (data != null && data.placeholders.isNotEmpty) {
       final fileCache = FileCacheService(_configBloc.config);
       data.placeholders.forEach((key) => imageCache.evict(key));
       await Future.forEach(data.placeholders.where((key) => key is ManagedCacheTileProvider), (key) async {
