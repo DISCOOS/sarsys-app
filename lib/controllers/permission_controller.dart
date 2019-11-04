@@ -229,7 +229,7 @@ class PermissionController {
 
   void _handleServiceDisabled(PermissionRequest request) async {
     if (onMessage == null)
-      _onOpenSetting(request);
+      await _onOpenSetting(request);
     else
       onMessage(request.disabledMessage, action: "LØS", data: request, onPressed: () async {
         await _onOpenSetting(request);

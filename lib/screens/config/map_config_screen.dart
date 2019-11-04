@@ -163,7 +163,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
                 if (await prompt(
                   context,
                   "Slette kart-fliser",
-                  "Dette vil slette alle kartfliser lagret lokalt. Vil du fortsette?",
+                  "Dette vil slette alle kartfliser lastet ned lokalt. Vil du fortsette?",
                 )) {
                   imageCache.clear();
                   await cache.emptyCache();

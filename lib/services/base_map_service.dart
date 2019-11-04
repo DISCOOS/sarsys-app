@@ -43,8 +43,6 @@ class BaseMapService {
     _baseMaps.clear();
     _baseMaps.addAll(await fetchOnlineMaps());
     _baseMaps.addAll(await fetchStoredMaps());
-
-    print(_baseMaps);
   }
 
   Future<List<BaseMap>> fetchOnlineMaps() async {
@@ -65,7 +63,7 @@ class BaseMapService {
     final used = await controller.ask(
       controller.storageRequest.copyWith(onReady: () => completer.complete(_fetchStoredMaps())),
     );
-    if (!used) {
+    if (used == false) {
       completer.complete(_fetchStoredMaps());
     }
     return completer.future;
@@ -80,7 +78,7 @@ class BaseMapService {
     // Search roots
     for (Directory baseDir in baseDirs) {
       // Skip "emulated" and "self" directories
-      for (FileSystemEntity root in _search(baseDir, (e) => _isSearchable(e), recursive: false)) {
+      for (FileSystemEntity root in _search(baseDir, (e) => _isRoot(e) && _isSearchable(e), recursive: false)) {
         // Search for "maps" directories
         for (FileSystemEntity maps in _search(root, (e) => _isMaps(e), recursive: false)) {
           // Search for map tiles metadata
@@ -107,6 +105,8 @@ class BaseMapService {
 
     return baseMaps.toList();
   }
+
+  bool _isRoot(FileSystemEntity e) => basename(e.path) != "emulated" && basename(e.path) != "self";
 
   bool _isSearchable(FileSystemEntity e) => e is Directory && e.statSync().modeString().startsWith(RegExp(r'.{3}r'));
 
