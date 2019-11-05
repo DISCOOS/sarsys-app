@@ -297,7 +297,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
 
   /// Flag indicating that network connection is offline
-  bool get _offline => ConnectivityStatus.Offline == Provider.of<ConnectivityStatus>(context);
+  bool get _offline {
+    final status = Provider.of<ConnectivityStatus>(context);
+    return status == null || ConnectivityStatus.Offline == status;
+  }
 
   StreamSubscription _subscription;
 
@@ -360,6 +363,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _ensureMapToolController();
     _ensureLocationControllers();
 
+    // Ask for permission
+    _ensurePermissions();
+
     // Only ensure center if not set already
     _center ??= _ensureCenter();
 
@@ -370,26 +376,32 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
   }
 
-  void _init() async {
-    _wakeLockWasOn = await Wakelock.isEnabled;
-    await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
-    // Ask for permission
-    final controller = Provider.of<PermissionController>(context).cloneWith(
-      onMessage: widget.onMessage,
-    );
-    final used = await controller.ask(
-      controller.storageRequest.copyWith(
-        onReady: () async => await _asyncBaseMapLoad(),
-      ),
-    );
-    if (Platform.isIOS && used == false) {
-      await _asyncBaseMapLoad();
+  Future _ensurePermissions() async {
+    if (_baseMapService.isReady == false) {
+      final controller = Provider.of<PermissionController>(context).cloneWith(
+        onMessage: widget.onMessage,
+      );
+      final used = await controller.ask(
+        controller.storageRequest.copyWith(
+          onReady: () async => await _asyncBaseMapLoad(),
+        ),
+      );
+      if (Platform.isIOS && used == false) {
+        await _asyncBaseMapLoad();
+      }
     }
   }
 
+  void _init() async {
+    _wakeLockWasOn = await Wakelock.isEnabled;
+    await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
+  }
+
   Future _asyncBaseMapLoad() async {
-    await _baseMapService.init();
-    setState(() {});
+    if (mounted) {
+      await _baseMapService.init();
+      setState(() {});
+    }
   }
 
   void _setup({bool wasZoom = true}) {
