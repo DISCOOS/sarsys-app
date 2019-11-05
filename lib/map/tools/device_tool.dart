@@ -74,7 +74,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   void _showInfo(BuildContext context, Device device) async {
     final unit = bloc.units.find(device);
     final personnel = bloc.personnel.find(device);
-    final tracking = bloc.tracking[unit?.tracking];
+    final tracking = bloc.tracking[unit?.tracking] ?? bloc.tracking[personnel?.tracking];
     await showDialog(
       context: context,
       barrierDismissible: true,
