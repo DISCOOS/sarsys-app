@@ -87,7 +87,7 @@ class POITool extends MapTool with MapSelectable<POI> {
                       type: POIType.IPP,
                     )
                   : POI(
-                      name: "Meetup",
+                      name: "Oppmøte",
                       point: actual,
                       type: POIType.Meetup,
                     ),
