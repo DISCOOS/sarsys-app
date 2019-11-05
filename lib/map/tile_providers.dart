@@ -49,7 +49,7 @@ class ManagedCacheTileProvider extends TileProvider {
   @override
   ImageProvider getImage(Coords<num> coords, TileLayerOptions options) {
     final url = getTileUrl(coords, options);
-    return errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
+    return offline || errorHandler.contains(url) ? _ensureImage(url) : _refreshImage(url);
   }
 
   ImageProvider _refreshImage(String url) => ManagedCachedNetworkImageProvider(

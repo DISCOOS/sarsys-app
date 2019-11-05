@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:connectivity/connectivity.dart';
 
@@ -6,6 +7,10 @@ class ConnectivityService {
   static ConnectivityService _singleton;
 
   final StreamController<ConnectivityStatus> _controller = StreamController<ConnectivityStatus>.broadcast();
+
+  bool _hasConnection = false;
+
+  ConnectivityStatus _status = ConnectivityStatus.Offline;
 
   StreamSubscription _subscription;
 
@@ -19,22 +24,51 @@ class ConnectivityService {
   }
 
   ConnectivityService._internal() {
-    _subscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-      _controller.add(_getStatusFromResult(result));
-    });
+    _subscription = Connectivity().onConnectivityChanged.listen(_handle);
+  }
+
+  void _handle(ConnectivityResult result) async {
+    await checkConnection();
+    final previousStatus = _status;
+    _status = _getStatusFromResult(result);
+    if (previousStatus != _status) _controller.add(_getStatusFromResult(result));
+    // Retry?
+    if (ConnectivityResult.none != result && _hasConnection == false) {
+      Timer(Duration(seconds: 1), () {
+        _handle(result);
+      });
+    }
   }
 
   ConnectivityStatus _getStatusFromResult(ConnectivityResult result) {
-    switch (result) {
-      case ConnectivityResult.mobile:
-        return ConnectivityStatus.Cellular;
-      case ConnectivityResult.wifi:
-        return ConnectivityStatus.WiFi;
-      case ConnectivityResult.none:
-        return ConnectivityStatus.Offline;
-      default:
-        return ConnectivityStatus.Offline;
+    if (_hasConnection) {
+      switch (result) {
+        case ConnectivityResult.mobile:
+          return ConnectivityStatus.Cellular;
+        case ConnectivityResult.wifi:
+          return ConnectivityStatus.WiFi;
+        case ConnectivityResult.none:
+          return ConnectivityStatus.Offline;
+        default:
+          return ConnectivityStatus.Offline;
+      }
     }
+    return ConnectivityStatus.Offline;
+  }
+
+  //The test to actually see if there is a connection
+  Future checkConnection() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        _hasConnection = true;
+      } else {
+        _hasConnection = false;
+      }
+    } on SocketException catch (_) {
+      _hasConnection = false;
+    }
+    return _hasConnection;
   }
 
   void dispose() {
