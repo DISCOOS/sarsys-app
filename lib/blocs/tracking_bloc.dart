@@ -211,6 +211,23 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         asId: (personnel) => personnel?.tracking,
       );
 
+  /// Get aggregates being tracked
+  Entities<Tracking> get aggregates => Entities<Tracking>(
+        bloc: this,
+        data: Map.fromEntries(
+          _tracking.values.where((tracking) => tracking.aggregates.isNotEmpty).fold(
+            {},
+            (map, tracking) => map.toList()
+              ..addAll(
+                tracking.aggregates.map(
+                  (id) => MapEntry(id, _tracking[id]),
+                ),
+              ),
+          ),
+        ),
+        asId: (aggregate) => aggregate?.id,
+      );
+
   /// Test if device is being tracked
   bool contains(
     Device device, {
@@ -684,6 +701,7 @@ class Entities<T> {
   }) =>
       _data.values.firstWhere(
         (entity) => contains(entity, exclude: exclude) && tracking == asId(entity),
+        orElse: () => null,
       );
 
   /// Find entity tracking given device

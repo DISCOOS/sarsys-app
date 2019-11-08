@@ -497,7 +497,7 @@ class _UnitEditorState extends State<UnitEditor> {
           .where((personnel) =>
               // Add locally removed devices
               actual.contains(personnel.id) && !local.contains(personnel.id) ||
-              _trackingBloc.tracking.containsKey(personnel.tracking))
+              _trackingBloc.aggregates.elementAt(personnel.tracking) == null)
           .where((personnel) =>
               personnel.name.toLowerCase().contains(lowercaseQuery) ||
               translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
