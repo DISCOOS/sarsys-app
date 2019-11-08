@@ -45,7 +45,7 @@
     },
     "61": {
       "id": "61",
-      "name": "Røde Kors Hjelpekors",
+      "name": "Røde Kors Hjelpekorps",
       "alias": "RK",
       "pattern": "61\\d{5}",
       "levels": {
