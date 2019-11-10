@@ -128,6 +128,6 @@ class FilterData<T> {
   FilterData({
     @required this.key,
     @required this.title,
-    @required this.selected,
+    this.selected = false,
   });
 }

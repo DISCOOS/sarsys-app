@@ -21,6 +21,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 
 class SarSysApp extends StatefulWidget {
   final Key navigatorKey;
@@ -65,33 +67,36 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return NetworkSensitive(
-      child: BlocProviderTree(
-        blocProviders: widget.controller.all,
-        child: MaterialApp(
-          navigatorKey: widget.navigatorKey,
-          navigatorObservers: [RouteWriter.observer],
-          debugShowCheckedModeBanner: false,
-          title: 'SarSys',
-          theme: ThemeData(
-            primaryColor: Colors.grey[850],
-            buttonTheme: ButtonThemeData(
-              height: 36.0,
-              textTheme: ButtonTextTheme.primary,
+      child: Provider<Client>(
+        builder: (BuildContext context) => widget.controller.client,
+        child: BlocProviderTree(
+          blocProviders: widget.controller.all,
+          child: MaterialApp(
+            navigatorKey: widget.navigatorKey,
+            navigatorObservers: [RouteWriter.observer],
+            debugShowCheckedModeBanner: false,
+            title: 'SarSys',
+            theme: ThemeData(
+              primaryColor: Colors.grey[850],
+              buttonTheme: ButtonThemeData(
+                height: 36.0,
+                textTheme: ButtonTextTheme.primary,
+              ),
             ),
+            home: _toHome(widget.controller),
+            onGenerateRoute: (settings) => _toRoute(settings),
+            localizationsDelegates: [
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              DefaultMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              DefaultCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [
+              const Locale('en', 'US'), // English
+              const Locale('nb', 'NO'), // Norwegian Bokmål
+            ],
           ),
-          home: _toHome(widget.controller),
-          onGenerateRoute: (settings) => _toRoute(settings),
-          localizationsDelegates: [
-            GlobalWidgetsLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            DefaultMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            DefaultCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: [
-            const Locale('en', 'US'), // English
-            const Locale('nb', 'NO'), // Norwegian Bokmål
-          ],
         ),
       ),
     );

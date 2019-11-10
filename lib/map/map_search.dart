@@ -10,13 +10,17 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/services/geocoder/address_service.dart';
+import 'package:SarSys/services/geocoder/place_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart';
 import 'package:latlong/latlong.dart';
+import 'package:provider/provider.dart';
 
 typedef ErrorCallback = void Function(String message);
 typedef MatchCallback = void Function(LatLng point);
@@ -55,7 +59,8 @@ class MapSearchField extends StatefulWidget {
   MapSearchFieldState createState() => MapSearchFieldState();
 }
 
-class MapSearchFieldState extends State<MapSearchField> with TickerProviderStateMixin {
+class MapSearchFieldState extends State<MapSearchField>
+    with TickerProviderStateMixin {
   final _searchKey = GlobalKey();
   final _focusNode = FocusNode();
   final _controller = TextEditingController();
@@ -105,7 +110,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
           Expanded(
             child: InputDecorator(
               decoration: InputDecoration(
-                border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
+                border: widget.withBorder
+                    ? InputBorder.none
+                    : UnderlineInputBorder(),
                 suffixIcon: _buildClearButton(theme),
               ),
               child: TextField(
@@ -165,7 +172,9 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _focusNode.requestFocus();
 
     final choices = results
-        .map((result) => result is _AddressLookup ? _buildListTileFromLookup(result) : _buildListTile(context, result))
+        .map((result) => result is _AddressLookup
+            ? _buildListTileFromLookup(result)
+            : _buildListTile(context, result))
         .take(10)
         .toList();
 
@@ -174,7 +183,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         left: 8.0,
         top: offset.dy + size.height + widget.offset,
         width: MediaQuery.of(context).size.width - 16.0,
-        height: MediaQuery.of(context).size.height - (offset.dy + size.height + 16.0),
+        height: MediaQuery.of(context).size.height -
+            (offset.dy + size.height + 16.0),
         child: Material(
           elevation: 0.0,
           borderRadius: BorderRadius.circular(8.0),
@@ -185,8 +195,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
             ),
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: results.length,
-              semanticChildCount: results.length,
+              itemCount: choices.length,
+              semanticChildCount: choices.length,
               itemBuilder: (BuildContext context, int index) => choices[index],
             ),
           ),
@@ -201,7 +211,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       initialData: lookup,
       future: lookup.search,
       builder: (BuildContext context, AsyncSnapshot<_SearchResult> snapshot) {
-        return _buildListTile(context, snapshot.hasData ? snapshot.data : lookup);
+        return _buildListTile(
+            context, snapshot.hasData ? snapshot.data : lookup);
       },
     );
   }
@@ -216,22 +227,35 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
       title: Text(data.title ?? ''),
       subtitle: data.address == null
           ? Text(data.position)
-          : Text([data.address, data.position].where((test) => test != null).join("\n")),
-      contentPadding:
-          data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+          : Text([data.address, data.position]
+              .where((test) => test != null)
+              .join("\n")),
+      contentPadding: data.address == null
+          ? EdgeInsets.only(left: 16.0, right: 16.0)
+          : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
       onTap: () {
         _goto(data.latitude, data.longitude);
       },
     );
   }
 
-  void _search(BuildContext context, String value) {
-    if (!_searchBlocs(context, value)) {
-      _searchForLocation(value, context);
+  void _search(BuildContext context, String value) async {
+    if (!_searchForLocation(value, context)) {
+      if (!_searchBlocs(context, value)) {
+        if (await _searchAddresses(value) == false) {
+          if (await _searchPlaces(value) == false) {
+            if (await _searchGeocode(value) == false) {
+              _hideResults();
+              if (widget.onError != null)
+                widget.onError('"$value" ikke funnet');
+            }
+          }
+        }
+      }
     }
   }
 
-  void _searchForLocation(String value, BuildContext context) async {
+  bool _searchForLocation(String value, BuildContext context) {
     var row;
     var zone = -1, lat, lon;
     var isSouth = false;
@@ -288,56 +312,86 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
               ? CoordinateFormat.EASTING
               : CoordinateFormat.NORTHTING);
           ordinals[axis] = match;
-          if (!kReleaseMode) print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
+          if (!kReleaseMode)
+            print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
         }
       });
     }
 
     // Search for address?
-    if (ordinals.length != 2) {
-      try {
-        var placemarks = await _fromAddress(value);
-        if (placemarks.length > 0) {
-          _showResults(placemarks
-              .map((placemark) => _SearchResult(
-                    icon: Icons.home,
-                    title: "${placemark.thoroughfare} ${placemark.subThoroughfare}",
-                    address: _AddressLookup.toAddress(placemark),
-                    position: _AddressLookup.toPosition(placemark.position.latitude, placemark.position.longitude),
-                    latitude: placemark.position.latitude,
-                    longitude: placemark.position.longitude,
-                  ))
-              .toList());
-        }
-      } catch (e) {
-        _hideResults();
-        if (widget.onError != null) widget.onError('"$value" ikke funnet');
-      }
-    } else {
-      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
-      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
+    if (ordinals.length == 2) {
+      lat = double.tryParse(
+          CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
+      lon = double.tryParse(
+          CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
       if (zone > 0) {
         var proj = TransverseMercatorProjection.utm(zone, isSouth);
-        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
+        var dst = proj.inverse(isDefault
+            ? ProjCoordinate.from2D(lat, lon)
+            : ProjCoordinate.from2D(lon, lat));
         lon = dst.x;
         lat = dst.y;
       }
     }
-    if (lat != null && lon != null) {
+    final found = lat != null && lon != null;
+    if (found) {
       _goto(lat, lon);
-    } else {
-      if (widget.onError != null) widget.onError('"$value" ikke funnet');
+    }
+    return found;
+  }
+
+  Future<bool> _searchPlaces(String value) async {
+    try {
+      var placemarks =
+          await PlaceService(Provider.of<Client>(context)).search(value);
+      if (placemarks.length > 0) {
+        _showResults(_toSearchResults(placemarks));
+      }
+      return placemarks.isNotEmpty;
+    } catch (e) {
+      return false;
     }
   }
 
-  Future<List<Placemark>> _fromAddress(String value) async {
+  Future<bool> _searchAddresses(String value) async {
     try {
-      Locale locale = Localizations.localeOf(context);
-      return await Geolocator().placemarkFromAddress(value, localeIdentifier: locale.toString());
-    } on Exception {
-      return [];
+      var placemarks =
+          await AddressService(Provider.of<Client>(context)).search(value);
+      if (placemarks.length > 0) {
+        _showResults(_toSearchResults(placemarks));
+      }
+      return placemarks.isNotEmpty;
+    } catch (e) {
+      return false;
     }
   }
+
+  Future<bool> _searchGeocode(String value) async {
+    try {
+      Locale locale = Localizations.localeOf(context);
+      var placemarks = await Geolocator()
+          .placemarkFromAddress(value, localeIdentifier: locale.toString());
+      if (placemarks.length > 0) {
+        _showResults(_toSearchResults(placemarks));
+      }
+      return placemarks.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  List<_SearchResult> _toSearchResults(List<Placemark> placemarks) => placemarks
+      .map((placemark) => _SearchResult(
+            icon: Icons.home,
+            title:
+                "${placemark.thoroughfare ?? placemark.name} ${placemark.subThoroughfare ?? ''}",
+            address: _AddressLookup.toAddress(placemark),
+            position: _AddressLookup.toPosition(
+                placemark.position.latitude, placemark.position.longitude),
+            latitude: placemark.position.latitude,
+            longitude: placemark.position.longitude,
+          ))
+      .toList();
 
   bool _searchBlocs(BuildContext context, String value) {
     final results = <_AddressLookup>[];
@@ -406,12 +460,15 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     BuildContext context,
   ) =>
       units.values
-          .where((unit) => widget.withRetired || unit.status != UnitStatus.Retired)
+          .where(
+              (unit) => widget.withRetired || unit.status != UnitStatus.Retired)
           .where((unit) =>
               // Search in unit
               _prepare(unit.searchable).contains(match) ||
               // Search in devices tracked with this unit
-              tracking[unit.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+              tracking[unit.tracking]
+                  .devices
+                  .any((id) => _prepare(devices[id]).contains(match)))
           .where((unit) => tracking[unit.tracking].point != null)
           .map((unit) => _AddressLookup(
                 context: context,
@@ -428,12 +485,15 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     BuildContext context,
   ) =>
       personnel.values
-          .where((p) => widget.withRetired || p.status != PersonnelStatus.Retired)
+          .where(
+              (p) => widget.withRetired || p.status != PersonnelStatus.Retired)
           .where((p) =>
               // Search in personnel
               _prepare(p.searchable).contains(match) ||
               // Search in devices tracked with this personnel
-              tracking[p.tracking].devices.any((id) => _prepare(devices[id]).contains(match)))
+              tracking[p.tracking]
+                  .devices
+                  .any((id) => _prepare(devices[id]).contains(match)))
           .where((p) => tracking[p.tracking].point != null)
           .map((p) => _AddressLookup(
                 context: context,
@@ -448,19 +508,24 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     Map<String, Tracking> tracking,
     BuildContext context,
   ) =>
-      devices.values.where((p) => _prepare(p).contains(match)).where((p) => p.point != null).map((p) => _AddressLookup(
-            context: context,
-            point: p.point,
-            title: p.name,
-            icon: Icons.person,
-          ));
+      devices.values
+          .where((p) => _prepare(p).contains(match))
+          .where((p) => p.point != null)
+          .map((p) => _AddressLookup(
+                context: context,
+                point: p.point,
+                title: p.name,
+                icon: Icons.person,
+              ));
 
-  String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
+  String _prepare(Object object) =>
+      "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 
   void _goto(lat, lon) {
     _match = LatLng(lat, lon);
     if (!kReleaseMode) print("Goto: $_match");
-    widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
+    widget.mapController
+        .animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
     if (widget.onMatch != null) widget.onMatch(_match);
     FocusScope.of(context).unfocus();
     _hideResults();
@@ -509,9 +574,11 @@ class _AddressLookup extends _SearchResult {
           longitude: point.lon,
         );
 
-  Future<_SearchResult> get search => _lookup(context, point, title: title, icon: icon);
+  Future<_SearchResult> get search =>
+      _lookup(context, point, title: title, icon: icon);
 
-  Future<_SearchResult> _lookup(BuildContext context, Point point, {String title, IconData icon}) async {
+  Future<_SearchResult> _lookup(BuildContext context, Point point,
+      {String title, IconData icon}) async {
     Placemark closest;
     var last = double.maxFinite;
     final Locale locale = Localizations.localeOf(context);
@@ -558,16 +625,19 @@ class _AddressLookup extends _SearchResult {
           );
   }
 
-  Future<List<Placemark>> _fromCoordinates(BuildContext context, Locale locale, Point point) async {
+  Future<List<Placemark>> _fromCoordinates(
+      BuildContext context, Locale locale, Point point) async {
     try {
-      return await locator.placemarkFromCoordinates(point.lat, point.lon, localeIdentifier: locale.toString());
+      return await locator.placemarkFromCoordinates(point.lat, point.lon,
+          localeIdentifier: locale.toString());
     } catch (e) {
       return [];
     }
   }
 
   static String toPosition(double lat, double lon, {double distance}) {
-    final hasDistance = distance != null && distance != double.maxFinite && distance > 0;
+    final hasDistance =
+        distance != null && distance != double.maxFinite && distance > 0;
     return "${toUTM(Point.now(lat, lon))}${hasDistance ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
   }
 

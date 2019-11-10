@@ -372,7 +372,8 @@ void setText(TextEditingController controller, String value) {
 
     controller.value = TextEditingValue(
       text: value,
-      selection: selection.end > value?.length ?? 0 ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
+      selection:
+          selection.extentOffset > value?.length ?? 0 ? TextSelection.collapsed(offset: value?.length ?? 0) : selection,
     );
   }
 }

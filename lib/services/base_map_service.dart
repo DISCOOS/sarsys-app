@@ -55,7 +55,7 @@ class BaseMapService {
     Set<BaseMap> baseMaps = {};
     final baseDirs = await _resolveDirs();
 
-    print(baseDirs);
+    if (kDebugMode) print(baseDirs);
 
     // Search roots
     for (Directory baseDir in baseDirs) {
