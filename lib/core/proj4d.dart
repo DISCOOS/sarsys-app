@@ -1,7 +1,9 @@
+import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 
@@ -1183,5 +1185,81 @@ class CoordinateFormat {
     final northing = utmOrdinalFormat.format(from.y);
     final easting = utmOrdinalFormat.format(from.x);
     return withLabels ? "$zone$band E$easting N$northing" : "$zone$band $easting $northing";
+  }
+
+  static ProjCoordinate toLatLng(String coordinate) {
+    var row;
+    var zone = -1, lat, lon;
+    var isSouth = false;
+    var isDefault = false;
+    var matches = List<Match>();
+    var ordinals = HashMap<String, Match>();
+
+    coordinate = coordinate.trim();
+
+    if (!kReleaseMode) print("Search: $coordinate");
+
+    // Is utm?
+    var match = utm.firstMatch(coordinate);
+    if (match != null) {
+      zone = int.parse(match.group(1));
+      row = match.group(2).toUpperCase();
+      isSouth = 'N'.compareTo(row) > 0;
+      coordinate = match.group(3);
+      if (!kReleaseMode) print("Found UTM coordinate in grid '$zone$row'");
+    }
+
+    // Attempt to map each match to an axis
+    coordinate.split(" ").forEach((value) {
+      var match = ordinate.firstMatch(value);
+      if (match != null) {
+        matches.add(match);
+        var axis = CoordinateFormat.axis(CoordinateFormat.labels(match));
+        // Preserve order
+        if (axis != null) {
+          if (ordinals.containsKey(axis)) {
+            if (!kReleaseMode) print('Found same axis label on both ordinals');
+            ordinals.clear();
+          } else {
+            ordinals[axis] = match;
+          }
+        }
+      }
+    });
+
+    // No axis labels found?
+    if (ordinals.length == 0 && matches.length == 2) {
+      // Assume default order {lat, lon} is entered
+      isDefault = true;
+      ordinals[CoordinateFormat.NORTHTING] = matches.first;
+      ordinals[CoordinateFormat.EASTING] = matches.last;
+      if (!kReleaseMode) print("Assumed default order {NORTHING, EASTING} ");
+    } else if (ordinals.length == 1) {
+      // One axis label found, try to infer the other
+      matches.forEach((match) {
+        if (!ordinals.containsValue(match)) {
+          // Infer missing axis
+          var first = ordinals.values.first;
+          var axis = (CoordinateFormat.NORTHTING == ordinals.keys.first
+              ? CoordinateFormat.EASTING
+              : CoordinateFormat.NORTHTING);
+          ordinals[axis] = match;
+          if (!kReleaseMode) print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
+        }
+      });
+    }
+
+    // Search for address?
+    if (ordinals.length == 2) {
+      lat = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
+      lon = double.tryParse(CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
+      if (zone > 0) {
+        var proj = TransverseMercatorProjection.utm(zone, isSouth);
+        var dst = proj.inverse(isDefault ? ProjCoordinate.from2D(lat, lon) : ProjCoordinate.from2D(lon, lat));
+        lon = dst.x;
+        lat = dst.y;
+      }
+    }
+    return lat != null && lon != null ? ProjCoordinate.from2D(lat, lon) : null;
   }
 }

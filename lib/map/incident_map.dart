@@ -219,8 +219,7 @@ class IncidentMap extends StatefulWidget {
       showRetired.hashCode;
 }
 
-class IncidentMapState extends State<IncidentMap>
-    with TickerProviderStateMixin {
+class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
   static const FILTER = "map_filter";
   static const ZOOM = "zoom";
   static const CENTER = "center";
@@ -263,8 +262,7 @@ class IncidentMapState extends State<IncidentMap>
   LocationController _locationController;
 
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
-  ValueNotifier<MapControlState> _isMeasuring =
-      ValueNotifier(MapControlState());
+  ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
 
   Set<String> _useLayers;
   List<LayerOptions> _layerOptions = [];
@@ -287,19 +285,16 @@ class IncidentMapState extends State<IncidentMap>
   /// Pl
 
   /// Placeholder shown when a tile fails to load
-  final ImageProvider _tileErrorImage =
-      Image.asset("assets/error_tile.png").image;
+  final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
 
   /// Placeholder shown while loading images
-  final ImageProvider _tilePendingImage =
-      Image.asset("assets/pending_tile.png").image;
+  final ImageProvider _tilePendingImage = Image.asset("assets/pending_tile.png").image;
 
   /// Asset name for offline tiles
   final String _fileOfflineAsset = "assets/offline_tile.png";
 
   /// Placeholder shown when tiles are not found in offline mode
-  final ImageProvider _tileOfflineImage =
-      Image.asset("assets/offline_tile.png").image;
+  final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
 
   /// Flag indicating that network connection is offline
   bool get _offline {
@@ -373,10 +368,8 @@ class IncidentMapState extends State<IncidentMap>
     _center ??= _ensureCenter();
 
     if (_attemptRestore) {
-      _zoom = _readState(ZOOM,
-          defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
-      _center = _readState(CENTER,
-          defaultValue: _ensureCenter(), read: widget.readCenter);
+      _zoom = _readState(ZOOM, defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
+      _center = _readState(CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
       _attemptRestore = false;
     }
   }
@@ -434,8 +427,7 @@ class IncidentMapState extends State<IncidentMap>
   }
 
   Set<String> _resolveLayers() => widget.withRead && widget.readLayers
-      ? (FilterSheet.read(context, FILTER,
-          defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
+      ? (FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
       : (_withLayers()..retainAll(widget.showLayers.toSet()));
 
   void _ensureMapToolController() {
@@ -477,8 +469,7 @@ class IncidentMapState extends State<IncidentMap>
       _locationController = LocationController(
         tickerProvider: this,
         configBloc: _configBloc,
-        permissionController:
-            Provider.of<PermissionController>(context).cloneWith(
+        permissionController: Provider.of<PermissionController>(context).cloneWith(
           onMessage: widget.onMessage,
         ),
         mapController: widget.mapController,
@@ -495,15 +486,10 @@ class IncidentMapState extends State<IncidentMap>
   }
 
   LatLng _ensureCenter() {
-    final current =
-        widget.withControlsLocateMe ? _locationController.current : null;
+    final current = widget.withControlsLocateMe ? _locationController.current : null;
     final candidate = widget.center ??
-        (_incidentBloc?.current?.meetup != null
-            ? toLatLng(_incidentBloc?.current?.meetup?.point)
-            : null) ??
-        (current != null
-            ? LatLng(current.latitude, current.longitude)
-            : Defaults.origo);
+        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
+        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
     /*
     if (_currentBaseMap?.bounds?.contains(candidate) == false) {
       // Use center in current map bounds
@@ -537,9 +523,7 @@ class IncidentMapState extends State<IncidentMap>
     if (data != null && data.placeholders.isNotEmpty) {
       final fileCache = FileCacheService(_configBloc.config);
       data.placeholders.forEach((key) => imageCache.evict(key));
-      await Future.forEach(
-          data.placeholders.where((key) => key is ManagedCacheTileProvider),
-          (key) async {
+      await Future.forEach(data.placeholders.where((key) => key is ManagedCacheTileProvider), (key) async {
         await fileCache.removeFile(key.url);
         removed++;
       });
@@ -612,12 +596,9 @@ class IncidentMapState extends State<IncidentMap>
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
         if (_useLayers.contains(POI_LAYER)) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
-        if (widget.withControlsLocateMe && _locationController?.isReady == true)
-          _locationController.options,
-        if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER))
-          CoordinateLayerOptions(),
-        if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER))
-          _buildScaleBarOptions(),
+        if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
+        if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
+        if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),
       ]);
     return _layerOptions;
@@ -651,23 +632,19 @@ class IncidentMapState extends State<IncidentMap>
   void _onFatalTileError(TileErrorData data) {
     if (widget.onMessage != null) {
       final reason = data.explain().map((type) => translateTileErrorType(type));
-      widget.onMessage(
-          "Kartdata ${reason.isNotEmpty ? reason.join(', ') : ' kan ikke lastes'}");
+      widget.onMessage("Kartdata ${reason.isNotEmpty ? reason.join(', ') : ' kan ikke lastes'}");
     }
   }
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
-    if (_mapToolController != null)
-      _mapToolController.onTap(context, point, _zoom, ScalebarOption.SCALES);
+    if (_mapToolController != null) _mapToolController.onTap(context, point, _zoom, ScalebarOption.SCALES);
     if (widget.onTap != null) widget.onTap(point);
   }
 
   void _onLongPress(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
-    if (_mapToolController != null)
-      _mapToolController.onLongPress(
-          context, point, _zoom, ScalebarOption.SCALES);
+    if (_mapToolController != null) _mapToolController.onLongPress(context, point, _zoom, ScalebarOption.SCALES);
   }
 
   ScalebarOption _buildScaleBarOptions() {
@@ -684,8 +661,7 @@ class IncidentMapState extends State<IncidentMap>
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
     final maxWidth = orientation != Orientation.landscape ||
-            _searchFieldKey.currentState != null &&
-                _searchFieldKey.currentState.hasFocus
+            _searchFieldKey.currentState != null && _searchFieldKey.currentState.hasFocus
         ? size.width + (orientation == Orientation.landscape ? -56.0 : 0.0)
         : math.min(size.width, size.height) * 0.7;
     return SafeArea(
@@ -697,8 +673,8 @@ class IncidentMapState extends State<IncidentMap>
             margin: EdgeInsets.all(8.0),
             child: MapSearchField(
               key: _searchFieldKey,
-              mapController: _mapController,
               zoom: _zoom,
+              mapController: _mapController,
               onError: (message) => widget.onMessage(message),
               onMatch: _onSearchMatch,
               onCleared: _onSearchCleared,
@@ -738,19 +714,15 @@ class IncidentMapState extends State<IncidentMap>
             MapControl(
               icon: Icons.add,
               onPressed: () {
-                _zoom =
-                    _writeState(ZOOM, math.min(_zoom + 1, Defaults.maxZoom));
-                _mapController.animatedMove(_center, _zoom, this,
-                    milliSeconds: 250);
+                _zoom = _writeState(ZOOM, math.min(_zoom + 1, Defaults.maxZoom));
+                _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             ),
             MapControl(
               icon: Icons.remove,
               onPressed: () {
-                _zoom =
-                    _writeState(ZOOM, math.max(_zoom - 1, Defaults.minZoom));
-                _mapController.animatedMove(_center, _zoom, this,
-                    milliSeconds: 250);
+                _zoom = _writeState(ZOOM, math.max(_zoom - 1, Defaults.minZoom));
+                _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             )
           ],
@@ -907,8 +879,7 @@ class IncidentMapState extends State<IncidentMap>
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
-          final landscape =
-              MediaQuery.of(context).orientation == Orientation.landscape;
+          final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -980,8 +951,7 @@ class IncidentMapState extends State<IncidentMap>
             title: name,
           ),
         ),
-        onChanged: (Set<String> selected) =>
-            setState(() => _useLayers = selected),
+        onChanged: (Set<String> selected) => setState(() => _useLayers = selected),
       ),
     );
   }
@@ -1003,14 +973,11 @@ class IncidentMapState extends State<IncidentMap>
     _center = _writeState(CENTER, _mapController.progress.value.center);
   }
 
-  T _readState<T>(String identifier,
-          {T defaultValue, bool read = true, T orElse}) =>
-      (widget.withRead && read)
-          ? readState<T>(context, identifier, defaultValue: defaultValue)
-          : read ? defaultValue : orElse ?? defaultValue;
+  T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) => (widget.withRead && read)
+      ? readState<T>(context, identifier, defaultValue: defaultValue)
+      : read ? defaultValue : orElse ?? defaultValue;
 
-  T _writeState<T>(String identifier, T value) =>
-      widget.withWrite ? writeState<T>(context, identifier, value) : value;
+  T _writeState<T>(String identifier, T value) => widget.withWrite ? writeState<T>(context, identifier, value) : value;
 }
 
 /// Incident MapController that supports animated move operations
@@ -1037,20 +1004,16 @@ class IncidentMapController extends MapControllerImpl {
       } else {
         // Create some tweens. These serve to split up the transition from one location to another.
         // In our case, we want to split the transition be<tween> our current map center and the destination.
-        final _latTween =
-            Tween<double>(begin: center.latitude, end: point.latitude);
-        final _lngTween =
-            Tween<double>(begin: center.longitude, end: point.longitude);
+        final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+        final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
         final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
         // Create a animation controller that has a duration and a TickerProvider.
-        _controller = AnimationController(
-            duration: Duration(milliseconds: milliSeconds), vsync: provider);
+        _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
         // The animation determines what path the animation will take. You can try different Curves values, although I found
         // fastOutSlowIn to be my favorite.
-        Animation<double> animation =
-            CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+        Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
         _controller.addListener(() {
           final state = MapMoveState(
@@ -1066,8 +1029,7 @@ class IncidentMapController extends MapControllerImpl {
         });
 
         animation.addStatusListener((status) {
-          if ([AnimationStatus.completed, AnimationStatus.dismissed]
-              .contains(status)) {
+          if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
             cancel();
           }
         });

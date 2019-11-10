@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:SarSys/Services/location_service.dart';
+import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
@@ -32,6 +32,7 @@ class LocationController {
   StreamController<Null> _locationUpdateController = StreamController.broadcast();
 
   bool get isLocked => _locked;
+  LocationService get service => _service;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
   bool get isLocated => mapController.ready && (isLocked || _toLatLng(_service?.current) == mapController?.center);
   bool get isReady => _service.isReady.value && _options != null;

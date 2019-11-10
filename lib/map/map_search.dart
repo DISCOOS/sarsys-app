@@ -1,23 +1,10 @@
-import 'dart:collection';
-
-import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
-import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/geocoder/address_service.dart';
-import 'package:SarSys/services/geocoder/place_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart';
 import 'package:latlong/latlong.dart';
 import 'package:provider/provider.dart';
@@ -59,8 +46,7 @@ class MapSearchField extends StatefulWidget {
   MapSearchFieldState createState() => MapSearchFieldState();
 }
 
-class MapSearchFieldState extends State<MapSearchField>
-    with TickerProviderStateMixin {
+class MapSearchFieldState extends State<MapSearchField> with TickerProviderStateMixin {
   final _searchKey = GlobalKey();
   final _focusNode = FocusNode();
   final _controller = TextEditingController();
@@ -110,9 +96,7 @@ class MapSearchFieldState extends State<MapSearchField>
           Expanded(
             child: InputDecorator(
               decoration: InputDecoration(
-                border: widget.withBorder
-                    ? InputBorder.none
-                    : UnderlineInputBorder(),
+                border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
                 suffixIcon: _buildClearButton(theme),
               ),
               child: TextField(
@@ -120,7 +104,7 @@ class MapSearchFieldState extends State<MapSearchField>
                 focusNode: _focusNode,
                 autofocus: false,
                 controller: _controller,
-                onSubmitted: (value) => _search(context, value),
+                onSubmitted: (value) => _search(value),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintMaxLines: 1,
@@ -163,7 +147,7 @@ class MapSearchFieldState extends State<MapSearchField>
     _overlayEntry = null;
   }
 
-  void _showResults(List<_SearchResult> results) async {
+  void _showResults(List<GeocodeResult> results) async {
     final RenderBox renderBox = _searchKey.currentContext.findRenderObject();
     final size = renderBox.size;
     final offset = renderBox.localToGlobal(Offset.zero);
@@ -172,9 +156,7 @@ class MapSearchFieldState extends State<MapSearchField>
     _focusNode.requestFocus();
 
     final choices = results
-        .map((result) => result is _AddressLookup
-            ? _buildListTileFromLookup(result)
-            : _buildListTile(context, result))
+        .map((result) => result is AddressLookup ? _buildListTileFromLookup(result) : _buildListTile(context, result))
         .take(10)
         .toList();
 
@@ -183,8 +165,7 @@ class MapSearchFieldState extends State<MapSearchField>
         left: 8.0,
         top: offset.dy + size.height + widget.offset,
         width: MediaQuery.of(context).size.width - 16.0,
-        height: MediaQuery.of(context).size.height -
-            (offset.dy + size.height + 16.0),
+        height: MediaQuery.of(context).size.height - (offset.dy + size.height + 16.0),
         child: Material(
           elevation: 0.0,
           borderRadius: BorderRadius.circular(8.0),
@@ -206,449 +187,146 @@ class MapSearchFieldState extends State<MapSearchField>
     Overlay.of(context).insert(this._overlayEntry);
   }
 
-  Widget _buildListTileFromLookup(_AddressLookup lookup) {
-    return FutureBuilder<_SearchResult>(
+  Widget _buildListTileFromLookup(AddressLookup lookup) {
+    return FutureBuilder<AddressLookup>(
       initialData: lookup,
       future: lookup.search,
-      builder: (BuildContext context, AsyncSnapshot<_SearchResult> snapshot) {
-        return _buildListTile(
-            context, snapshot.hasData ? snapshot.data : lookup);
+      builder: (BuildContext context, AsyncSnapshot<AddressLookup> snapshot) {
+        return _buildListTile(context, snapshot.hasData ? snapshot.data : lookup);
       },
     );
   }
 
-  ListTile _buildListTile(BuildContext context, _SearchResult data) {
+  ListTile _buildListTile(BuildContext context, GeocodeResult data) {
     final backgroundColor = Theme.of(context).canvasColor;
     return ListTile(
       leading: CircleAvatar(
         child: Icon(data.icon, size: 36.0),
         backgroundColor: backgroundColor,
       ),
-      title: Text(data.title ?? ''),
-      subtitle: data.address == null
-          ? Text(data.position)
-          : Text([data.address, data.position]
-              .where((test) => test != null)
-              .join("\n")),
-      contentPadding: data.address == null
-          ? EdgeInsets.only(left: 16.0, right: 16.0)
-          : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+      title: Text(_toTitle(data)),
+      subtitle: Text(toLocation(data)),
+      contentPadding: _toPadding(data),
+      trailing: _toSource(data, context),
       onTap: () {
         _goto(data.latitude, data.longitude);
       },
     );
   }
 
-  void _search(BuildContext context, String value) async {
-    if (!_searchForLocation(value, context)) {
-      if (!_searchBlocs(context, value)) {
-        if (await _searchAddresses(value) == false) {
-          if (await _searchPlaces(value) == false) {
-            if (await _searchGeocode(value) == false) {
-              _hideResults();
-              if (widget.onError != null)
-                widget.onError('"$value" ikke funnet');
-            }
-          }
-        }
+  String _toTitle(GeocodeResult data) => "${data.title ?? ''}".trim();
+
+  String _distanceFromMe(GeocodeResult data) => widget.mapController.center != null
+      ? formatDistance(ProjMath.eucledianDistance(
+          data.latitude,
+          data.longitude,
+          widget.mapController.center.latitude,
+          widget.mapController.center.longitude,
+        ))
+      : null;
+
+  EdgeInsets _toPadding(GeocodeResult data) =>
+      data.address == null ? EdgeInsets.only(left: 16.0, right: 16.0) : EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0);
+
+  String toLocation(GeocodeResult data) =>
+      data.address == null ? data.position : [data.address, data.position].where((test) => test != null).join("\n");
+
+  Padding _toSource(GeocodeResult data, BuildContext context) {
+    final caption = Theme.of(context).textTheme.caption;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Text(
+            data.source,
+            style: caption,
+          ),
+          Text(
+            _distanceFromMe(data) ?? '',
+            style: caption,
+          )
+        ],
+      ),
+    );
+  }
+
+  void _search(String value) async {
+    if (_searchCoords(value) == false) {
+      if (await _searchGeocode(value) == false) {
+        _hideResults();
+        if (widget.onError != null) widget.onError('"$value" ikke funnet');
       }
     }
   }
 
-  bool _searchForLocation(String value, BuildContext context) {
-    var row;
-    var zone = -1, lat, lon;
-    var isSouth = false;
-    var isDefault = false;
-    var matches = List<Match>();
-    var ordinals = HashMap<String, Match>();
-
-    value = value.trim();
-
-    if (!kReleaseMode) print("Search: $value");
-
-    // Is utm?
-    var match = CoordinateFormat.utm.firstMatch(value);
-    if (match != null) {
-      zone = int.parse(match.group(1));
-      row = match.group(2).toUpperCase();
-      isSouth = 'N'.compareTo(row) > 0;
-      value = match.group(3);
-      if (!kReleaseMode) print("Found UTM coordinate in grid '$zone$row'");
-    }
-
-    // Attempt to map each match to an axis
-    value.split(" ").forEach((value) {
-      var match = CoordinateFormat.ordinate.firstMatch(value);
-      if (match != null) {
-        matches.add(match);
-        var axis = CoordinateFormat.axis(CoordinateFormat.labels(match));
-        // Preserve order
-        if (axis != null) {
-          if (ordinals.containsKey(axis)) {
-            if (!kReleaseMode) print('Found same axis label on both ordinals');
-            ordinals.clear();
-          } else {
-            ordinals[axis] = match;
-          }
-        }
-      }
-    });
-
-    // No axis labels found?
-    if (ordinals.length == 0 && matches.length == 2) {
-      // Assume default order {lat, lon} is entered
-      isDefault = true;
-      ordinals[CoordinateFormat.NORTHTING] = matches.first;
-      ordinals[CoordinateFormat.EASTING] = matches.last;
-      if (!kReleaseMode) print("Assumed default order {NORTHING, EASTING} ");
-    } else if (ordinals.length == 1) {
-      // One axis label found, try to infer the other
-      matches.forEach((match) {
-        if (!ordinals.containsValue(match)) {
-          // Infer missing axis
-          var first = ordinals.values.first;
-          var axis = (CoordinateFormat.NORTHTING == ordinals.keys.first
-              ? CoordinateFormat.EASTING
-              : CoordinateFormat.NORTHTING);
-          ordinals[axis] = match;
-          if (!kReleaseMode)
-            print("Inferred axis '$axis' from ordinal: '${first.group(0)}'");
-        }
-      });
-    }
-
-    // Search for address?
-    if (ordinals.length == 2) {
-      lat = double.tryParse(
-          CoordinateFormat.trim(ordinals[CoordinateFormat.NORTHTING].group(2)));
-      lon = double.tryParse(
-          CoordinateFormat.trim(ordinals[CoordinateFormat.EASTING].group(2)));
-      if (zone > 0) {
-        var proj = TransverseMercatorProjection.utm(zone, isSouth);
-        var dst = proj.inverse(isDefault
-            ? ProjCoordinate.from2D(lat, lon)
-            : ProjCoordinate.from2D(lon, lat));
-        lon = dst.x;
-        lat = dst.y;
-      }
-    }
-    final found = lat != null && lon != null;
+  bool _searchCoords(String value) {
+    final coords = CoordinateFormat.toLatLng(value);
+    final found = coords != null;
     if (found) {
-      _goto(lat, lon);
+      _goto(coords.x, coords.y);
     }
     return found;
-  }
-
-  Future<bool> _searchPlaces(String value) async {
-    try {
-      var placemarks =
-          await PlaceService(Provider.of<Client>(context)).search(value);
-      if (placemarks.length > 0) {
-        _showResults(_toSearchResults(placemarks));
-      }
-      return placemarks.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<bool> _searchAddresses(String value) async {
-    try {
-      var placemarks =
-          await AddressService(Provider.of<Client>(context)).search(value);
-      if (placemarks.length > 0) {
-        _showResults(_toSearchResults(placemarks));
-      }
-      return placemarks.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
   }
 
   Future<bool> _searchGeocode(String value) async {
+    final manager = MapSearchEngine(
+      Provider.of<Client>(context),
+      Provider.of<BlocProviderController>(context),
+      withRetired: widget.withRetired,
+    );
     try {
-      Locale locale = Localizations.localeOf(context);
-      var placemarks = await Geolocator()
-          .placemarkFromAddress(value, localeIdentifier: locale.toString());
-      if (placemarks.length > 0) {
-        _showResults(_toSearchResults(placemarks));
+      final results = await manager.search(value);
+      if (results.length > 0) {
+        _showResults(results);
       }
-      return placemarks.isNotEmpty;
+      return results.isNotEmpty;
     } catch (e) {
       return false;
     }
   }
-
-  List<_SearchResult> _toSearchResults(List<Placemark> placemarks) => placemarks
-      .map((placemark) => _SearchResult(
-            icon: Icons.home,
-            title:
-                "${placemark.thoroughfare ?? placemark.name} ${placemark.subThoroughfare ?? ''}",
-            address: _AddressLookup.toAddress(placemark),
-            position: _AddressLookup.toPosition(
-                placemark.position.latitude, placemark.position.longitude),
-            latitude: placemark.position.latitude,
-            longitude: placemark.position.longitude,
-          ))
-      .toList();
-
-  bool _searchBlocs(BuildContext context, String value) {
-    final results = <_AddressLookup>[];
-    final match = RegExp("${_prepare(value)}");
-    final units = BlocProvider.of<TrackingBloc>(context).units.asTrackingIds(
-          exclude: widget.withRetired ? [] : [TrackingStatus.Closed],
-        );
-    final tracking = BlocProvider.of<TrackingBloc>(context).tracking;
-    final personnel = BlocProvider.of<PersonnelBloc>(context).personnel;
-    final devices = BlocProvider.of<DeviceBloc>(context).devices;
-    final incident = BlocProvider.of<IncidentBloc>(context).current;
-
-    var found = incident != null;
-
-    if (found) {
-      // Search for matches in incident
-      if (_prepare(incident.searchable).contains(match)) {
-        var matches = [
-          _AddressLookup(
-            context: context,
-            point: incident.ipp?.point,
-            title: "${incident.name} > IPP",
-            icon: Icons.location_on,
-          ),
-          _AddressLookup(
-            context: context,
-            point: incident.meetup?.point,
-            title: "${incident.name} > Oppmøte",
-            icon: Icons.location_on,
-          ),
-        ];
-        var positions = matches.where((test) => _prepare(test).contains(match));
-        if ((positions).isNotEmpty) {
-          results.addAll(positions);
-        } else {
-          results.addAll(matches);
-        }
-      }
-
-      // Search for matches in units and personnel
-      results
-        ..addAll(
-          _findUnits(units, match, tracking, devices, context),
-        )
-        ..addAll(
-          _findPersonnel(personnel, match, tracking, devices, context),
-        )
-        ..addAll(
-          _findDevices(devices, match, tracking, context),
-        );
-
-      if (results.length > 0) {
-        _showResults(results.take(10).toList());
-      } else {
-        found = false;
-      }
-    }
-    return found;
-  }
-
-  Iterable<_AddressLookup> _findUnits(
-    Map<String, Unit> units,
-    RegExp match,
-    Map<String, Tracking> tracking,
-    Map<String, Device> devices,
-    BuildContext context,
-  ) =>
-      units.values
-          .where(
-              (unit) => widget.withRetired || unit.status != UnitStatus.Retired)
-          .where((unit) =>
-              // Search in unit
-              _prepare(unit.searchable).contains(match) ||
-              // Search in devices tracked with this unit
-              tracking[unit.tracking]
-                  .devices
-                  .any((id) => _prepare(devices[id]).contains(match)))
-          .where((unit) => tracking[unit.tracking].point != null)
-          .map((unit) => _AddressLookup(
-                context: context,
-                point: tracking[unit.tracking].point,
-                title: unit.name,
-                icon: Icons.group,
-              ));
-
-  Iterable<_AddressLookup> _findPersonnel(
-    Map<String, Personnel> personnel,
-    RegExp match,
-    Map<String, Tracking> tracking,
-    Map<String, Device> devices,
-    BuildContext context,
-  ) =>
-      personnel.values
-          .where(
-              (p) => widget.withRetired || p.status != PersonnelStatus.Retired)
-          .where((p) =>
-              // Search in personnel
-              _prepare(p.searchable).contains(match) ||
-              // Search in devices tracked with this personnel
-              tracking[p.tracking]
-                  .devices
-                  .any((id) => _prepare(devices[id]).contains(match)))
-          .where((p) => tracking[p.tracking].point != null)
-          .map((p) => _AddressLookup(
-                context: context,
-                point: tracking[p.tracking].point,
-                title: p.name,
-                icon: Icons.person,
-              ));
-
-  Iterable<_AddressLookup> _findDevices(
-    Map<String, Device> devices,
-    RegExp match,
-    Map<String, Tracking> tracking,
-    BuildContext context,
-  ) =>
-      devices.values
-          .where((p) => _prepare(p).contains(match))
-          .where((p) => p.point != null)
-          .map((p) => _AddressLookup(
-                context: context,
-                point: p.point,
-                title: p.name,
-                icon: Icons.person,
-              ));
-
-  String _prepare(Object object) =>
-      "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 
   void _goto(lat, lon) {
     _match = LatLng(lat, lon);
     if (!kReleaseMode) print("Goto: $_match");
-    widget.mapController
-        .animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
+    widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
     if (widget.onMatch != null) widget.onMatch(_match);
     FocusScope.of(context).unfocus();
     _hideResults();
   }
 }
 
-class _SearchResult {
-  final String title;
-  final IconData icon;
-  final String address;
-  final String position;
-  final double longitude;
-  final double latitude;
+class MapSearchEngine {
+  final Client client;
+  final PlaceGeocoderService _placeGeocoderService;
+  final LocalGeocoderService _localGeocoderService;
+  final AddressGeocoderService _addressGeocoderService;
+  final ObjectGeocoderService _objectGeocoderService;
 
-  _SearchResult({
-    this.title,
-    this.icon,
-    this.address,
-    this.position,
-    this.longitude,
-    this.latitude,
-  });
+  MapSearchEngine(
+    this.client,
+    BlocProviderController controller, {
+    bool withRetired,
+  })  : this._placeGeocoderService = PlaceGeocoderService(client),
+        this._addressGeocoderService = AddressGeocoderService(client),
+        this._objectGeocoderService = ObjectGeocoderService(
+          AddressGeocoderService(client),
+          controller,
+          withRetired,
+        ),
+        this._localGeocoderService = LocalGeocoderService();
 
-  @override
-  String toString() {
-    return '_SearchResult{title: $title, address: $address, position: $position, '
-        'longitude: $longitude, latitude: $latitude}';
-  }
-}
-
-class _AddressLookup extends _SearchResult {
-  final locator = Geolocator();
-  final BuildContext context;
-  final Point point;
-
-  _AddressLookup({
-    @required this.context,
-    @required this.point,
-    @required String title,
-    @required IconData icon,
-  }) : super(
-          title: title,
-          icon: icon,
-          position: toPosition(point.lat, point.lon),
-          latitude: point.lat,
-          longitude: point.lon,
-        );
-
-  Future<_SearchResult> get search =>
-      _lookup(context, point, title: title, icon: icon);
-
-  Future<_SearchResult> _lookup(BuildContext context, Point point,
-      {String title, IconData icon}) async {
-    Placemark closest;
-    var last = double.maxFinite;
-    final Locale locale = Localizations.localeOf(context);
-
-    final matches = await _fromCoordinates(context, locale, point);
-    for (var placemark in matches) {
-      if (closest == null) {
-        closest = placemark;
-        last = await locator.distanceBetween(
-          closest.position.latitude,
-          closest.position.longitude,
-          point.lat,
-          point.lon,
-        );
-      } else {
-        var next = await locator.distanceBetween(
-          closest.position.latitude,
-          closest.position.longitude,
-          placemark.position.latitude,
-          placemark.position.longitude,
-        );
-        if (next < last) {
-          closest = placemark;
-          last = next;
-        }
-      }
-    }
-
-    return closest == null
-        ? _SearchResult(
-            icon: icon,
-            title: title,
-            position: toUTM(point),
-            latitude: point.lat,
-            longitude: point.lon,
-          )
-        : _SearchResult(
-            icon: icon,
-            title: "$title",
-            address: toAddress(closest),
-            position: toPosition(point.lat, point.lon, distance: last),
-            latitude: point.lat,
-            longitude: point.lon,
-          );
-  }
-
-  Future<List<Placemark>> _fromCoordinates(
-      BuildContext context, Locale locale, Point point) async {
-    try {
-      return await locator.placemarkFromCoordinates(point.lat, point.lon,
-          localeIdentifier: locale.toString());
-    } catch (e) {
-      return [];
-    }
-  }
-
-  static String toPosition(double lat, double lon, {double distance}) {
-    final hasDistance =
-        distance != null && distance != double.maxFinite && distance > 0;
-    return "${toUTM(Point.now(lat, lon))}${hasDistance ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
-  }
-
-  static String toAddress(Placemark placemark) {
-    return [
-      [
-        placemark.postalCode,
-        placemark.locality,
-      ].where((test) => test != null && test.isNotEmpty).join(' '),
-      placemark.administrativeArea,
-      placemark.country,
-    ].where((test) => test != null && test.isNotEmpty).join(", ").trim();
+  Future<List<GeocodeResult>> search(String query) async {
+    final futures = [
+      _objectGeocoderService.search(query),
+      _placeGeocoderService.search(query),
+      _addressGeocoderService.search(query),
+      _localGeocoderService.search(query),
+    ];
+    final results = await Future.wait(futures).catchError(
+      (error, stackTrace) => print(error),
+    );
+    return results.fold<List<GeocodeResult>>([], (fold, results) => fold..addAll(results));
   }
 }

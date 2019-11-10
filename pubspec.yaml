@@ -30,6 +30,7 @@ dependencies:
   sqflite: ^1.1.5
   shared_preferences: ^0.5.2
   geolocator: ^5.0.0
+  geocoder: ^0.2.1
   flutter_launcher_icons: ^0.7.0
   uni_links: ^0.2.0
   http: ^0.12.0+2
