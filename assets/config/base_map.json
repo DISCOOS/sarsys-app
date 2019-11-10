@@ -61,6 +61,20 @@
       "maptiles3",
       "maptiles4"
     ]
+  },{
+    "name": "osm",
+    "description": "OpenStreetMap",
+    "previewFile": "osm.png",
+    "minZoom": 3,
+    "maxZoom": 20,
+    "offline": false,
+    "tms": false,
+    "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "subdomains": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "name": "toporaster3",
