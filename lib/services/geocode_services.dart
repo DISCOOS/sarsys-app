@@ -87,8 +87,8 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
         );
 
   Future<List<GeocodeResult>> search(String query) async {
-    final request = '$url?antPerSide=$maxCount&eksakteForst=$exactFirst&epsgKode=4326&json&navn=$query*';
-    final response = await client.get(request);
+    final request = '$url?antPerSide=$maxCount&eksakteForst=$exactFirst&epsgKode=4326&json&navn=${query.trim()}*';
+    final response = await client.get(Uri.encodeFull(request));
     if (response.statusCode == 200) {
       final doc = xml.parse(toUtf8(response.body));
       final result = doc.findAllElements('sokRes').first;
@@ -182,7 +182,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 
   Future<List<GeocodeResult>> search(String query) async => await _fetch(
         '$url/autocomplete?'
-        'lang=no&size=$maxCount${layers.isNotEmpty ? "&${layers.join(',')}" : ''}&text=$query',
+        'lang=no&size=$maxCount${layers.isNotEmpty ? "&${layers.join(',')}" : ''}&text=${query.trim()}',
       );
 
   @override
@@ -193,7 +193,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     GeocodeType type,
     int radius = 20,
   }) async =>
-      _fetch(
+      await _fetch(
         toUrl(point, radius),
         title: title,
         icon: icon,
@@ -201,7 +201,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
       );
 
   String toUrl(Point point, int radius) {
-    final uri = '$url/reverse?lang=no&size=$maxCount&layers=$layers';
+    final uri = '$url/reverse?lang=no&$maxCount${layers.isNotEmpty ? "&${layers.join(',')}" : ''}';
     return '$uri&boundary.circle.radius=$radius&point.lat=${point.lat}&point.lon=${point.lon}';
   }
 
@@ -214,7 +214,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
   }) async {
     if (kDebugMode) print(request);
     final response = await client.get(
-      request,
+      Uri.encodeFull(request),
       headers: {
         // Comply with Entur strict rate-limiting policy
         'ET-Client-Name': 'discoos.org - sarsys',
@@ -302,13 +302,12 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
   Future<List<GeocodeResult>> search(String query) {
     final results = <GeocodeResult>[];
     final match = RegExp("${_prepare(query)}");
-    return Future.value(
-      results
-        ..addAll(_findPOI(match))
-        ..addAll(_findUnits(match))
-        ..addAll(_findPersonnel(match))
-        ..addAll(_findDevices(match)),
-    );
+    results
+      ..addAll(_findPOI(match))
+      ..addAll(_findUnits(match))
+      ..addAll(_findPersonnel(match))
+      ..addAll(_findDevices(match));
+    return Future.value(results);
   }
 
   Iterable<AddressLookup> _findPOI(RegExp match) {
@@ -409,8 +408,12 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   @override
   Future<List<GeocodeResult>> search(String query) async {
-    var results = await Geocoder.local.findAddressesFromQuery(query);
-    return _toSearchResults(results);
+    try {
+      var results = await Geocoder.local.findAddressesFromQuery(query);
+      return _toSearchResults(results);
+    } on Exception {
+      return [];
+    }
   }
 
   List<GeocodeResult> _toSearchResults(List<Address> addresses) => addresses
@@ -419,10 +422,10 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
           icon: Icons.home,
           title: "${address.thoroughfare ?? address.featureName} ${address.subThoroughfare ?? ''}",
           address: _toAddress(address),
-          position: _toPosition(
+          position: toUTM(Point.now(
             address.coordinates.latitude,
             address.coordinates.longitude,
-          ),
+          )),
           latitude: address.coordinates.latitude,
           longitude: address.coordinates.longitude,
           type: GeocodeType.Object,
@@ -439,11 +442,6 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
         address.adminArea,
         address.countryName,
       ].where((test) => test?.isNotEmpty == true).join(", ").trim();
-
-  static String _toPosition(double lat, double lon, {double distance}) {
-    final hasDistance = distance != null && distance != double.maxFinite && distance > 0;
-    return "${toUTM(Point.now(lat, lon))}${hasDistance ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
-  }
 }
 
 enum GeocodeType { Place, Address, Object }
@@ -500,7 +498,7 @@ class AddressLookup extends GeocodeResult {
   }) : super(
           icon: icon,
           title: title,
-          position: toPosition(point.lat, point.lon),
+          position: toUTM(point),
           latitude: point.lat,
           longitude: point.lon,
           type: type,
@@ -557,16 +555,11 @@ class AddressLookup extends GeocodeResult {
             icon: icon,
             title: "$title",
             address: closest.address,
-            position: toPosition(point.lat, point.lon, distance: last),
+            position: toUTM(point),
             latitude: point.lat,
             longitude: point.lon,
             type: type,
             source: source,
           );
-  }
-
-  static String toPosition(double lat, double lon, {double distance}) {
-    final hasDistance = distance != null && distance != double.maxFinite && distance > 0;
-    return "${toUTM(Point.now(lat, lon))}${hasDistance ? " (${distance.toStringAsFixed(0)} meter)" : ""}";
   }
 }

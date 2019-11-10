@@ -188,10 +188,10 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   }
 
   Widget _buildListTileFromLookup(AddressLookup lookup) {
-    return FutureBuilder<AddressLookup>(
+    return FutureBuilder<GeocodeResult>(
       initialData: lookup,
       future: lookup.search,
-      builder: (BuildContext context, AsyncSnapshot<AddressLookup> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<GeocodeResult> snapshot) {
         return _buildListTile(context, snapshot.hasData ? snapshot.data : lookup);
       },
     );
