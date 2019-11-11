@@ -27,7 +27,7 @@ class POI extends Equatable {
   });
 }
 
-enum POIType { IPP, Meetup }
+enum POIType { IPP, Meetup, Any }
 
 class POILayerOptions extends LayerOptions {
   IncidentBloc bloc;

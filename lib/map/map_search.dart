@@ -26,7 +26,7 @@ class MapSearchField extends StatefulWidget {
 
   final bool withBorder;
 
-  final offset;
+  final double offset;
 
   const MapSearchField({
     Key key,
@@ -73,6 +73,11 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     widget.mapController?.cancel();
     super.dispose();
   }
+
+  void setQuery(String query) => setState(() {
+        _controller.text = query;
+        _focusNode.requestFocus();
+      });
 
   @override
   Widget build(BuildContext context) {

@@ -328,6 +328,7 @@ Widget buildCopyableText({
   Icon action,
   bool selectable = false,
   GestureTapCallback onAction,
+  ValueChanged<String> onCopy,
   MessageCallback onMessage,
   GestureTapCallback onTap,
   VoidCallback onComplete,
@@ -350,6 +351,7 @@ Widget buildCopyableText({
       ),
       onTap: onTap,
       onLongPress: () {
+        if (onCopy != null) onCopy(value);
         if (onComplete != null) onComplete();
         copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
       });

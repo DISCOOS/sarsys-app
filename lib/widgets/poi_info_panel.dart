@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 class POIInfoPanel extends StatelessWidget {
   final POI poi;
   final MessageCallback onMessage;
+  final VoidCallback onCancel;
   final VoidCallback onComplete;
+  final ValueChanged<String> onCopy;
   final ValueChanged<Point> onChanged;
   final AsyncValueGetter<Either<bool, Point>> onEdit;
 
@@ -19,6 +21,8 @@ class POIInfoPanel extends StatelessWidget {
     @required this.poi,
     @required this.onMessage,
     this.onEdit,
+    this.onCopy,
+    this.onCancel,
     this.onChanged,
     this.onComplete,
   }) : super(key: key);
@@ -55,7 +59,7 @@ class POIInfoPanel extends StatelessWidget {
           Text('${poi.name}', style: theme.title),
           IconButton(
             icon: Icon(Icons.close),
-            onPressed: onComplete,
+            onPressed: onCancel ?? onComplete,
           )
         ],
       ),
@@ -74,10 +78,7 @@ class POIInfoPanel extends StatelessWidget {
                 label: "UTM",
                 icon: Icon(Icons.my_location),
                 value: toUTM(poi.point, prefix: ""),
-                onTap: () => jumpToPoint(
-                  context,
-                  center: poi.point,
-                ),
+                onCopy: onCopy,
                 onMessage: onMessage,
                 onComplete: onComplete,
               ),
@@ -85,10 +86,7 @@ class POIInfoPanel extends StatelessWidget {
                 context: context,
                 label: "Desimalgrader (DD)",
                 value: toDD(poi.point, prefix: ""),
-                onTap: () => jumpToPoint(
-                  context,
-                  center: poi.point,
-                ),
+                onCopy: onCopy,
                 onMessage: onMessage,
                 onComplete: onComplete,
               ),

@@ -17,6 +17,7 @@ import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/tile_providers.dart';
 import 'package:SarSys/map/layers/scalebar.dart';
+import 'package:SarSys/map/tools/position_tool.dart';
 import 'package:SarSys/map/tools/device_tool.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/map/tools/measure_tool.dart';
@@ -458,6 +459,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             active: () => _useLayers.contains(DEVICE_LAYER),
             onMessage: widget.onMessage,
           ),
+          PositionTool(
+            onHide: () => setState(() => _searchMatch = null),
+            onShow: (point) => setState(() => _searchMatch = point),
+            onCopy: (value) => setState(() => _searchFieldKey.currentState.setQuery(value)),
+            onMessage: widget.onMessage,
+          )
         ],
       );
     }
