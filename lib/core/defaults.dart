@@ -5,8 +5,8 @@ class Defaults {
   static const String baseWsUrl = 'wss://sporing.rodekors.no';
   static const String baseRestUrl = 'https://sporing.rodekors.no';
   static const double zoom = 13.0;
-  static const double maxZoom = 20.0;
   static const double minZoom = 3.0;
+  static const double maxZoom = 20.0;
   static const String organization = "61"; // Røde Kors Hjelpekorps
   static const String division = "140"; // Oslo
   static const String department = "141"; // Oslo
@@ -20,6 +20,8 @@ class Defaults {
   static const bool callsignReuse = true;
   static final BaseMap baseMap = BaseMap(
     name: "topo4",
+    minZoom: 3.0,
+    maxZoom: 20.0,
     description: "Topografisk",
     url: "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     subdomains: ["opencache", "opencache2", "opencache3"],

@@ -540,8 +540,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       options: MapOptions(
         zoom: _zoom,
         center: _center,
-        maxZoom: Defaults.maxZoom,
-        minZoom: Defaults.minZoom,
+        minZoom: _minZoom(),
+        maxZoom: _maxZoom(),
         interactive: widget.interactive,
         /* Ensure _center is inside given bounds
         nePanBoundary: _currentBaseMap.bounds?.northEast,
@@ -714,14 +714,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             MapControl(
               icon: Icons.add,
               onPressed: () {
-                _zoom = _writeState(ZOOM, math.min(_zoom + 1, Defaults.maxZoom));
+                _zoom = _writeState(ZOOM, math.min(_zoom + 1, _maxZoom()));
                 _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             ),
             MapControl(
               icon: Icons.remove,
               onPressed: () {
-                _zoom = _writeState(ZOOM, math.max(_zoom - 1, Defaults.minZoom));
+                _zoom = _writeState(ZOOM, math.max(_zoom - 1, _minZoom()));
                 _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             )
@@ -771,6 +771,10 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
     return _mapControls;
   }
+
+  double _minZoom() => _currentBaseMap?.minZoom ?? Defaults.minZoom;
+
+  double _maxZoom() => _currentBaseMap?.maxZoom ?? Defaults.maxZoom;
 
   POILayerOptions _buildPoiOptions() {
     final incident = widget.incident ?? _incidentBloc.current;
