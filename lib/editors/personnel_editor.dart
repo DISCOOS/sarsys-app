@@ -171,7 +171,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Affiliation _ensureAffiliation() =>
-      _affiliationKey.currentState.save() ??
+      _affiliationKey?.currentState?.save() ??
       widget.personnel?.affiliation ??
       Affiliation(
         organization: Defaults.organization,
