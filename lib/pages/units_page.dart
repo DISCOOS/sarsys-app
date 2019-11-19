@@ -110,7 +110,9 @@ class UnitsPageState extends State<UnitsPage> {
         .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
         .toList()
           ..sort(
-            (u1, u2) => widget.compareTo == null ? u1.callsign.compareTo(u2.callsign) : widget.compareTo(u1, u2),
+            (u1, u2) => widget.compareTo == null
+                ? u1.callsign.toLowerCase().compareTo(u2.callsign.toLowerCase())
+                : widget.compareTo(u1, u2),
           );
   }
 

@@ -110,7 +110,7 @@ class PersonnelPageState extends State<PersonnelPage> {
         .where((personnel) => widget.where == null || widget.where(personnel))
         .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
         .toList()
-          ..sort((p1, p2) => p1.name.compareTo(p2.name));
+          ..sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
   }
 
   String _prepare(Personnel personnel) => "${personnel.searchable}".toLowerCase();
