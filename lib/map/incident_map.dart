@@ -425,7 +425,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _setBaseMap(BaseMap map) {
     _currentBaseMap = map;
-    print(_currentBaseMap);
     final data = _tileErrorData.putIfAbsent(map, () => TileErrorData(map));
     if (data.isFatal()) _onFatalTileError(data);
   }
