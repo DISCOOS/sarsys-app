@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/usecase/poi.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -8,11 +9,13 @@ import 'package:SarSys/widgets/poi_info_panel.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 class POITool extends MapTool with MapSelectable<POI> {
   final IncidentBloc bloc;
   final bool includeRetired;
+  final MapController controller;
   final MessageCallback onMessage;
 
   final bool Function() _active;
@@ -23,6 +26,7 @@ class POITool extends MapTool with MapSelectable<POI> {
   POITool(
     this.bloc, {
     @required bool Function() active,
+    @required this.controller,
     this.onMessage,
     this.includeRetired = false,
   }) : _active = active;
@@ -96,10 +100,16 @@ class POITool extends MapTool with MapSelectable<POI> {
                   (poi.type == POIType.IPP ? editIPP(context, bloc.current) : editMeetup(context, bloc.current)),
               onChanged: (changed) => setState(() => actual = changed),
               onComplete: () => Navigator.pop(context),
+              onGoto: (point) => _goto(context, point),
             );
           }),
         );
       },
     );
+  }
+
+  void _goto(BuildContext context, Point point) {
+    controller.move(toLatLng(point), controller.zoom);
+    Navigator.pop(context);
   }
 }

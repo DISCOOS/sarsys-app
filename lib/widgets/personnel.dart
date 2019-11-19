@@ -77,6 +77,7 @@ class PersonnelInfoPanel extends StatelessWidget {
   final Iterable<Device> devices;
   final bool withHeader;
   final bool withActions;
+  final ValueChanged<Point> onGoto;
   final ValueChanged<Personnel> onChanged;
   final ValueChanged<Personnel> onComplete;
   final VoidCallback onDelete;
@@ -89,9 +90,10 @@ class PersonnelInfoPanel extends StatelessWidget {
     @required this.tracking,
     @required this.devices,
     @required this.onMessage,
+    this.onGoto,
+    this.onDelete,
     this.onChanged,
     this.onComplete,
-    this.onDelete,
     this.withHeader = true,
     this.withActions = true,
     this.organization,
@@ -195,21 +197,19 @@ class PersonnelInfoPanel extends StatelessWidget {
     String label,
     IconData icon,
     String formatter(Point location),
-  }) {
-    return buildCopyableText(
-      context: context,
-      label: label,
-      icon: Icon(icon),
-      value: formatter(tracking?.point),
-      onTap: () => tracking?.point == null
-          ? Navigator.pushReplacementNamed(context, 'map')
-          : jumpToPoint(
-              context,
-              center: tracking?.point,
-            ),
-      onMessage: onMessage,
-      onComplete: _onComplete,
-    );
+  }) =>
+      buildCopyableText(
+        context: context,
+        label: label,
+        icon: Icon(icon),
+        value: formatter(tracking?.point),
+        onTap: () => _onGoto(tracking?.point),
+        onMessage: onMessage,
+        onComplete: _onComplete,
+      );
+
+  void _onGoto(Point location) {
+    if (onGoto != null && location != null) onGoto(location);
   }
 
   Row _buildPersonalInfo(BuildContext context) {

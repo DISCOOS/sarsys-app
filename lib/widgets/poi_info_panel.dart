@@ -13,6 +13,7 @@ class POIInfoPanel extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onComplete;
   final ValueChanged<String> onCopy;
+  final ValueChanged<Point> onGoto;
   final ValueChanged<Point> onChanged;
   final AsyncValueGetter<Either<bool, Point>> onEdit;
 
@@ -22,6 +23,7 @@ class POIInfoPanel extends StatelessWidget {
     @required this.onMessage,
     this.onEdit,
     this.onCopy,
+    this.onGoto,
     this.onCancel,
     this.onChanged,
     this.onComplete,
@@ -50,68 +52,66 @@ class POIInfoPanel extends StatelessWidget {
     );
   }
 
-  Padding _buildHeader(TextTheme theme, BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16, top: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text('${poi.name}', style: theme.title),
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: onCancel ?? onComplete,
-          )
-        ],
-      ),
-    );
-  }
+  Padding _buildHeader(TextTheme theme, BuildContext context) => Padding(
+        padding: EdgeInsets.only(left: 16, top: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text('${poi.name}', style: theme.title),
+            IconButton(
+              icon: Icon(Icons.close),
+              onPressed: onCancel ?? onComplete,
+            )
+          ],
+        ),
+      );
 
-  Row _buildLocationInfo(BuildContext context, TextTheme theme) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          flex: 4,
-          child: Column(
-            children: <Widget>[
-              buildCopyableText(
-                context: context,
-                label: "UTM",
-                icon: Icon(Icons.my_location),
-                value: toUTM(poi.point, prefix: ""),
-                onCopy: onCopy,
-                onMessage: onMessage,
-                onComplete: onComplete,
-              ),
-              buildCopyableText(
-                context: context,
-                label: "Desimalgrader (DD)",
-                value: toDD(poi.point, prefix: ""),
-                onCopy: onCopy,
-                onMessage: onMessage,
-                onComplete: onComplete,
-              ),
-            ],
+  Row _buildLocationInfo(BuildContext context, TextTheme theme) => Row(
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: Column(
+              children: <Widget>[
+                buildCopyableText(
+                  context: context,
+                  label: "UTM",
+                  icon: Icon(Icons.my_location),
+                  value: toUTM(poi.point, prefix: ""),
+                  onCopy: onCopy,
+                  onMessage: onMessage,
+                  onTap: () => _onGoto(),
+                  onComplete: onComplete,
+                ),
+                buildCopyableText(
+                  context: context,
+                  label: "Desimalgrader (DD)",
+                  value: toDD(poi.point, prefix: ""),
+                  onCopy: onCopy,
+                  onMessage: onMessage,
+                  onTap: () => _onGoto(),
+                  onComplete: onComplete,
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              IconButton(
-                icon: Icon(Icons.navigation, color: Colors.black45),
-                onPressed: () {
-                  if (onComplete != null) onComplete();
-                  navigateToLatLng(context, toLatLng(poi.point));
-                },
-              ),
-              Text("Naviger", style: theme.caption),
-            ],
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.navigation, color: Colors.black45),
+                  onPressed: () {
+                    if (onComplete != null) onComplete();
+                    navigateToLatLng(context, toLatLng(poi.point));
+                  },
+                ),
+                Text("Naviger", style: theme.caption),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      );
 
   Widget _buildActions(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -147,5 +147,9 @@ class POIInfoPanel extends StatelessWidget {
         },
       ),
     );
+  }
+
+  _onGoto() {
+    if (onGoto != null) onGoto(poi.point);
   }
 }

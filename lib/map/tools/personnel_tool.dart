@@ -1,8 +1,9 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
@@ -13,13 +14,15 @@ import 'package:SarSys/widgets/selector_panel.dart';
 import 'package:SarSys/widgets/personnel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   final User user;
   final TrackingBloc bloc;
-  final MessageCallback onMessage;
   final bool includeRetired;
+  final MapController controller;
+  final MessageCallback onMessage;
 
   final bool Function() _active;
 
@@ -29,6 +32,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   PersonnelTool(
     this.bloc, {
     @required this.user,
+    @required this.controller,
     @required bool Function() active,
     this.onMessage,
     this.includeRetired = false,
@@ -91,24 +95,35 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: min(550.0, MediaQuery.of(context).size.height - 96),
+            height: math.min(550.0, MediaQuery.of(context).size.height - 96),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
               child: PersonnelInfoPanel(
                 personnel: personnel,
                 tracking: tracking,
-                devices:
-                    tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((personnel) => personnel != null),
+                devices: tracking.devices
+                    .map(
+                      (id) => bloc.deviceBloc.devices[id],
+                    )
+                    .where(
+                      (personnel) => personnel != null,
+                    ),
                 onMessage: onMessage,
                 withActions: user.isCommander == true,
                 organization: FleetMapService().fetchOrganization(Defaults.organization),
                 onDelete: () => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
+                onGoto: (point) => _goto(context, point),
               ),
             ),
           ),
         );
       },
     );
+  }
+
+  void _goto(BuildContext context, Point point) {
+    controller.move(toLatLng(point), controller.zoom);
+    Navigator.pop(context);
   }
 }

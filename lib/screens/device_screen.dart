@@ -126,6 +126,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       onMessage: showMessage,
       onChanged: (device) => setState(() => _device = device),
       onDelete: () => Navigator.pop(context),
+      onGoto: (point) => jumpToPoint(context, center: point),
     );
   }
 

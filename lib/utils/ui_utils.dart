@@ -332,30 +332,29 @@ Widget buildCopyableText({
   MessageCallback onMessage,
   GestureTapCallback onTap,
   VoidCallback onComplete,
-}) {
-  return GestureDetector(
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          hintMaxLines: 3,
-          prefixIcon: icon == null ? Container(width: 24.0) : icon,
-          suffixIcon: action != null
-              ? IconButton(
-                  icon: action,
-                  onPressed: onAction,
-                )
-              : null,
-          border: InputBorder.none,
+}) =>
+    GestureDetector(
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            hintMaxLines: 3,
+            prefixIcon: icon == null ? Container(width: 24.0) : icon,
+            suffixIcon: action != null
+                ? IconButton(
+                    icon: action,
+                    onPressed: onAction,
+                  )
+                : null,
+            border: InputBorder.none,
+          ),
+          child: selectable ? SelectableText(value) : Text(value),
         ),
-        child: selectable ? SelectableText(value) : Text(value),
-      ),
-      onTap: onTap,
-      onLongPress: () {
-        if (onCopy != null) onCopy(value);
-        if (onComplete != null) onComplete();
-        copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
-      });
-}
+        onTap: onTap,
+        onLongPress: () {
+          if (onCopy != null) onCopy(value);
+          if (onComplete != null) onComplete();
+          copy(value, onMessage, message: '"$value" kopiert til utklippstavlen');
+        });
 
 void copy(String value, MessageCallback onMessage, {String message: 'Kopiert til utklippstavlen'}) {
   Clipboard.setData(ClipboardData(text: value));
@@ -385,32 +384,31 @@ SingleChildScrollView toRefreshable(
   Widget child,
   List<Widget> children,
   String message,
-}) {
-  return SingleChildScrollView(
-    physics: const AlwaysScrollableScrollPhysics(),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        minHeight: viewportConstraints.maxHeight,
-      ),
-      child: child ??
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: children ??
-                [
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w600),
+}) =>
+    SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: viewportConstraints.maxHeight,
+        ),
+        child: child ??
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: children ??
+                  [
+                    Container(
+                      alignment: Alignment.center,
+                      child: Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                ],
-          ),
-    ),
-  );
-}
+                  ],
+            ),
+      ),
+    );
 
 /// Utility class for writing current route to PageStorage
 abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with RouteAware {

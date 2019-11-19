@@ -134,6 +134,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
       onDelete: () => Navigator.pop(context),
+      onGoto: (point) => jumpToPoint(context, center: point),
     );
   }
 

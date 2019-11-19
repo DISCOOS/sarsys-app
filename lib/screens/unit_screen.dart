@@ -121,6 +121,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
       onMessage: showMessage,
       onChanged: (unit) => setState(() => _unit = unit),
       onDelete: () => Navigator.pop(context),
+      onGoto: (point) => jumpToPoint(context, center: point),
     );
   }
 

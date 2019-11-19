@@ -1,9 +1,10 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -12,13 +13,15 @@ import 'package:SarSys/widgets/device.dart';
 import 'package:SarSys/widgets/selector_panel.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 class DeviceTool extends MapTool with MapSelectable<Device> {
   final User user;
   final TrackingBloc bloc;
-  final MessageCallback onMessage;
   final bool Function() _active;
+  final MapController controller;
+  final MessageCallback onMessage;
 
   @override
   bool active() => _active();
@@ -26,6 +29,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   DeviceTool(
     this.bloc, {
     @required this.user,
+    @required this.controller,
     @required bool Function() active,
     this.onMessage,
   }) : _active = active;
@@ -83,7 +87,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SizedBox(
-            height: min(tracking == null ? 496 : 680.0, MediaQuery.of(context).size.height),
+            height: math.min(tracking == null ? 496 : 680.0, MediaQuery.of(context).size.height),
             width: MediaQuery.of(context).size.width - 96,
             child: SingleChildScrollView(
               child: DeviceInfoPanel(
@@ -95,11 +99,17 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
                 withActions: user?.isCommander == true,
                 organization: FleetMapService().fetchOrganization(Defaults.organization),
                 onComplete: (_) => Navigator.pop(context),
+                onGoto: (point) => _goto(context, point),
               ),
             ),
           ),
         );
       },
     );
+  }
+
+  void _goto(BuildContext context, Point point) {
+    controller.move(toLatLng(point), controller.zoom);
+    Navigator.pop(context);
   }
 }

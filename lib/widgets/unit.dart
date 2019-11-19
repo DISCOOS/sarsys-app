@@ -15,6 +15,7 @@ class UnitInfoPanel extends StatelessWidget {
   final Iterable<Device> devices;
   final bool withHeader;
   final bool withActions;
+  final ValueChanged<Point> onGoto;
   final ValueChanged<Unit> onChanged;
   final ValueChanged<Unit> onComplete;
   final VoidCallback onDelete;
@@ -26,6 +27,7 @@ class UnitInfoPanel extends StatelessWidget {
     @required this.tracking,
     @required this.devices,
     @required this.onMessage,
+    this.onGoto,
     this.onChanged,
     this.onComplete,
     this.onDelete,
@@ -132,12 +134,7 @@ class UnitInfoPanel extends StatelessWidget {
         label: label,
         icon: Icon(icon),
         value: formatter(tracking?.point),
-        onTap: tracking?.point == null
-            ? null
-            : () => jumpToPoint(
-                  context,
-                  center: tracking?.point,
-                ),
+        onTap: () => _onGoto(tracking?.point),
         onMessage: onMessage,
         onComplete: _onComplete,
       );
@@ -166,6 +163,10 @@ class UnitInfoPanel extends StatelessWidget {
           ),
         ],
       );
+
+  void _onGoto(Point location) {
+    if (onGoto != null && location != null) onGoto(location);
+  }
 
   Row _buildContactInfo(BuildContext context) => Row(
         children: <Widget>[

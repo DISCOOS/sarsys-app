@@ -438,32 +438,37 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           MeasureTool(),
           POITool(
             _incidentBloc,
-            active: () => _useLayers.contains(POI_LAYER),
+            controller: _mapController,
             onMessage: widget.onMessage,
+            active: () => _useLayers.contains(POI_LAYER),
           ),
           UnitTool(
             _trackingBloc,
             user: _userBloc.user,
-            active: () => _useLayers.contains(UNIT_LAYER),
+            controller: _mapController,
             onMessage: widget.onMessage,
+            active: () => _useLayers.contains(UNIT_LAYER),
           ),
           PersonnelTool(
             _trackingBloc,
             user: _userBloc.user,
-            active: () => _useLayers.contains(PERSONNEL_LAYER),
+            controller: _mapController,
             onMessage: widget.onMessage,
+            active: () => _useLayers.contains(PERSONNEL_LAYER),
           ),
           DeviceTool(
             _trackingBloc,
             user: _userBloc.user,
-            active: () => _useLayers.contains(DEVICE_LAYER),
+            controller: _mapController,
             onMessage: widget.onMessage,
+            active: () => _useLayers.contains(DEVICE_LAYER),
           ),
           PositionTool(
+            controller: _mapController,
+            onMessage: widget.onMessage,
             onHide: () => setState(() => _searchMatch = null),
             onShow: (point) => setState(() => _searchMatch = point),
             onCopy: (value) => setState(() => _searchFieldKey.currentState.setQuery(value)),
-            onMessage: widget.onMessage,
           )
         ],
       );
