@@ -1,3 +1,4 @@
+import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -42,6 +43,8 @@ class SarSysApp extends StatefulWidget {
 class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   final _checkerKey = UniqueKey();
 
+  PermissionController controller;
+
   @override
   void initState() {
     super.initState();
@@ -69,35 +72,38 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return NetworkSensitive(
       child: Provider<Client>(
         builder: (BuildContext context) => widget.controller.client,
-        child: Provider<BlocProviderController>(
-          builder: (BuildContext context) => widget.controller,
-          child: BlocProviderTree(
-            blocProviders: widget.controller.all,
-            child: MaterialApp(
-              navigatorKey: widget.navigatorKey,
-              navigatorObservers: [RouteWriter.observer],
-              debugShowCheckedModeBanner: false,
-              title: 'SarSys',
-              theme: ThemeData(
-                primaryColor: Colors.grey[850],
-                buttonTheme: ButtonThemeData(
-                  height: 36.0,
-                  textTheme: ButtonTextTheme.primary,
+        child: Provider<PermissionController>(
+          builder: (BuildContext context) => controller,
+          child: Provider<BlocProviderController>(
+            builder: (BuildContext context) => widget.controller,
+            child: BlocProviderTree(
+              blocProviders: widget.controller.all,
+              child: MaterialApp(
+                navigatorKey: widget.navigatorKey,
+                navigatorObservers: [RouteWriter.observer],
+                debugShowCheckedModeBanner: false,
+                title: 'SarSys',
+                theme: ThemeData(
+                  primaryColor: Colors.grey[850],
+                  buttonTheme: ButtonThemeData(
+                    height: 36.0,
+                    textTheme: ButtonTextTheme.primary,
+                  ),
                 ),
+                home: _toHome(widget.controller),
+                onGenerateRoute: (settings) => _toRoute(settings),
+                localizationsDelegates: [
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  DefaultMaterialLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                  DefaultCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: [
+                  const Locale('en', 'US'), // English
+                  const Locale('nb', 'NO'), // Norwegian Bokmål
+                ],
               ),
-              home: _toHome(widget.controller),
-              onGenerateRoute: (settings) => _toRoute(settings),
-              localizationsDelegates: [
-                GlobalWidgetsLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                DefaultMaterialLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                DefaultCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: [
-                const Locale('en', 'US'), // English
-                const Locale('nb', 'NO'), // Norwegian Bokmål
-              ],
             ),
           ),
         ),
@@ -186,6 +192,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           child: PermissionChecker(
             key: _checkerKey,
             child: child,
+            controller: _ensureController(),
           ),
         );
   }
@@ -282,6 +289,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       child = PermissionChecker(
         key: _checkerKey,
         child: child,
+        controller: _ensureController(),
       );
     } else {
       child = LoginScreen();
@@ -290,5 +298,13 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       bucket: widget.bucket,
       child: child,
     );
+  }
+
+  PermissionController _ensureController() {
+    controller ??= PermissionController(
+      configBloc: widget.controller.configProvider.bloc,
+      onPrompt: (title, message) => prompt(context, title, message),
+    );
+    return controller;
   }
 }
