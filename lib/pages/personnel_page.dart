@@ -254,7 +254,7 @@ class PersonnelPageState extends State<PersonnelPage> {
       );
 
   Unit _toUnit(Personnel personnel) => _trackingBloc.unitBloc.units.values.firstWhere(
-        (unit) => unit.personnel.contains(personnel),
+        (unit) => unit.personnel?.contains(personnel) == true,
         orElse: () => null,
       );
 

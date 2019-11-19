@@ -38,10 +38,16 @@ class UnitServiceMock extends Mock implements UnitService {
         units.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(
-                "$incidentId:u:$i",
-                Unit.fromJson(
-                  UnitBuilder.createUnitAsJson("$incidentId:u:$i", UnitType.Team, i, "$incidentId:t:u:$i"),
-                )),
+              "$incidentId:u:$i",
+              Unit.fromJson(
+                UnitBuilder.createUnitAsJson(
+                  "$incidentId:u:$i",
+                  UnitType.Team,
+                  i,
+                  "$incidentId:t:u:$i",
+                ),
+              ),
+            ),
         ]);
       }
       return ServiceResponse.ok(body: units.values.toList(growable: false));

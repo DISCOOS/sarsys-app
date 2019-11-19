@@ -27,7 +27,7 @@ class Unit extends Equatable {
     @required this.callsign,
     this.phone,
     this.tracking,
-    this.personnel,
+    this.personnel = const [],
   }) : super([
           id,
           type,
@@ -62,7 +62,7 @@ class Unit extends Equatable {
       phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
-      personnel: clone.personnel,
+      personnel: clone.personnel ?? const [],
     );
   }
 
@@ -84,7 +84,7 @@ class Unit extends Equatable {
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
-      personnel: personnel ?? this.personnel,
+      personnel: personnel ?? this.personnel ?? const [],
     );
   }
 }

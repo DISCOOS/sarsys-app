@@ -54,10 +54,15 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         personnel.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(
-                "$incidentId:p:$i",
-                Personnel.fromJson(
-                  PersonnelBuilder.createPersonnelAsJson("$incidentId:p:$i", "p:$i", "$incidentId:t:p:$i"),
-                )),
+              "$incidentId:p:$i",
+              Personnel.fromJson(
+                PersonnelBuilder.createPersonnelAsJson(
+                  "$incidentId:p:$i",
+                  "p:$i",
+                  "$incidentId:t:p:$i",
+                ),
+              ),
+            ),
         ]);
       }
       return ServiceResponse.ok(body: personnel.values.toList(growable: false));
