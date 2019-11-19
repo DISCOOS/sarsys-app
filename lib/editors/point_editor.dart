@@ -1,23 +1,18 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/incident_map.dart';
-import 'package:SarSys/map/layers/poi_layer.dart';
-import 'package:SarSys/map/layers/scalebar.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/controllers/location_controller.dart';
 import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/input_coordinate.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
-import 'package:wakelock/wakelock.dart';
 
 class PointEditor extends StatefulWidget {
   final Point point;
@@ -42,20 +37,17 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   Point _current;
-  String _currentBaseMap;
   MapSearchField _searchField;
   IncidentMapController _mapController;
-  LocationController _locationController;
 
-  bool _wakeLockWasOn;
+  StreamController<LatLng> _changes;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Dont bother fixing this now, moving to BLoC/Streamcontroller later
-    _currentBaseMap = "https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}";
     _mapController = IncidentMapController();
     // TODO: Use device location as default location
+    _changes = StreamController<LatLng>();
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
@@ -65,47 +57,15 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
       mapController: _mapController,
       onMatch: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
     );
-    _init();
-  }
-
-  void _init() async {
-    _wakeLockWasOn = await Wakelock.isEnabled;
-    await Wakelock.toggle(on: BlocProvider.of<AppConfigBloc>(context).config.keepScreenOn);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_locationController == null) {
-      _locationController = LocationController(
-        mapController: _mapController,
-        configBloc: BlocProvider.of<AppConfigBloc>(context),
-        permissionController: widget.controller.cloneWith(
-          onMessage: _showMessage,
-        ),
-        tickerProvider: this,
-        onLocationChanged: (point, goto, _) {
-          if (goto) setState(() => _current = Point.now(point.latitude, point.longitude));
-        },
-      );
-      _locationController.init();
-    }
   }
 
   @override
   void dispose() {
+    _changes?.close();
     _mapController?.cancel();
-    _locationController?.dispose();
+    _changes = null;
     _mapController = null;
-    _locationController = null;
-    _restoreWakeLock();
-
     super.dispose();
-  }
-
-  void _restoreWakeLock() async {
-    final wakeLock = await Wakelock.isEnabled;
-    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: wakeLock);
   }
 
   @override
@@ -137,7 +97,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           _buildMap(),
           _buildCenterMark(),
           _buildInputFields(),
-          _buildControls(),
         ],
       ),
       resizeToAvoidBottomInset: false,
@@ -180,63 +139,40 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   }
 
   Widget _buildUTMField() {
-    return Container(
-      margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
-      child: InputUTM(
-        point: LatLng(_current.lat, _current.lon),
-        onChanged: (point) {
-          _current = Point.now(point.latitude, point.longitude);
-        },
-        onEditingComplete: () {
-          setState(() {});
-          _mapController.animatedMove(
-            LatLng(_current.lat, _current.lon),
-            _mapController.zoom,
-            this,
-          );
-        },
-      ),
-    );
+    return StreamBuilder<LatLng>(
+        initialData: toLatLng(_current),
+        stream: _changes.stream,
+        builder: (context, snapshot) {
+          return snapshot.hasData
+              ? Container(
+                  margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
+                  child: InputUTM(
+                    point: snapshot.data,
+                    onChanged: (point) {
+                      _mapController.animatedMove(point, _mapController.zoom, this);
+                      _current = Point.now(point.latitude, point.longitude);
+                    },
+                  ),
+                )
+              : Container();
+        });
   }
 
-  FlutterMap _buildMap() {
-    return FlutterMap(
+  Widget _buildMap() {
+    return IncidentMap(
+      center: _mapController.ready ? _mapController.center : LatLng(_current.lat, _current.lon),
       mapController: _mapController,
-      options: MapOptions(
-          zoom: 13,
-          center: LatLng(_current.lat, _current.lon),
-          onPositionChanged: _onPositionChanged,
-          plugins: [
-            POILayer(),
-            ScaleBar(),
-          ]),
-      layers: [
-        TileLayerOptions(
-          urlTemplate: _currentBaseMap,
-        ),
-        if (widget.incident != null) _buildPoiOptions(),
-        ScalebarOption(
-          lineColor: Colors.black54,
-          lineWidth: 2,
-          textStyle: TextStyle(color: Colors.black87, fontSize: 12),
-          padding: EdgeInsets.only(left: 16, top: 16),
-          alignment: Alignment.bottomLeft,
-        ),
-      ],
-    );
-  }
-
-  POILayerOptions _buildPoiOptions() {
-    final bloc = BlocProvider.of<IncidentBloc>(context);
-    return POILayerOptions(
-      bloc,
-      align: AnchorAlign.top,
-      icon: Icon(
-        Icons.location_on,
-        size: 30,
-        color: Colors.red,
-      ),
-      rebuild: bloc.changes(widget.incident).map((_) => null),
+      withRead: true,
+      readLayers: true,
+      withPOIs: true,
+      withUnits: false,
+      withScaleBar: true,
+      withControls: true,
+      withControlsZoom: true,
+      withControlsLocateMe: true,
+      withControlsOffset: 180,
+      onPositionChanged: _onPositionChanged,
+      onTap: (_) => _searchFieldKey.currentState.clear(),
     );
   }
 
@@ -249,94 +185,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
             painter: CrossPainter(color: Colors.red.withOpacity(0.6)),
           )),
     );
-  }
-
-  Widget _buildControls() {
-    Size size = Size(42.0, 42.0);
-    return Positioned(
-      top: 172.0,
-      right: 8.0,
-      child: SafeArea(
-        child: Column(
-          children: <Widget>[
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: Container(
-                child: IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () {
-                    _mapController.animatedMove(
-                      _mapController.center,
-                      _mapController.zoom + 1,
-                      this,
-                    );
-                  },
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 4.0,
-            ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: Container(
-                child: IconButton(
-                  icon: Icon(Icons.remove),
-                  onPressed: () {
-                    _mapController.animatedMove(
-                      _mapController.center,
-                      _mapController.zoom,
-                      this,
-                    );
-                  },
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 4.0,
-            ),
-            SizedBox(
-              width: size.width,
-              height: size.height,
-              child: Container(
-                child: IconButton(
-                  color: _locationController.isLocated ? Colors.green : Colors.black,
-                  icon: Icon(Icons.gps_fixed),
-                  onPressed: () {
-                    _locationController.goto();
-                  },
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _updatePoint(MapPosition point, bool hasGesture) {
-    if (hasGesture) {
-      setState(() {
-        _current = Point.now(point.center.latitude, point.center.longitude);
-      });
-    }
   }
 
   void _onError(String message) {
@@ -357,36 +205,9 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
-    if (hasGesture && _locationController.isLocated) {
-      _locationController.goto();
+    if (hasGesture) {
+      _current = Point.now(position.center.latitude, position.center.longitude);
+      _changes.add(position.center);
     }
-    _updatePoint(position, hasGesture);
-  }
-
-  void _showMessage(
-    String message, {
-    String action = "OK",
-    VoidCallback onPressed,
-    dynamic data,
-  }) {
-    final snackbar = SnackBar(
-      duration: Duration(seconds: 2),
-      content: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(message),
-      ),
-      action: _buildAction(action, () {
-        if (onPressed != null) onPressed();
-        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-      }),
-    );
-    _scaffoldKey.currentState.showSnackBar(snackbar);
-  }
-
-  Widget _buildAction(String label, VoidCallback onPressed) {
-    return SnackBarAction(
-      label: label,
-      onPressed: onPressed,
-    );
   }
 }

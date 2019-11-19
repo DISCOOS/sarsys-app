@@ -127,11 +127,12 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     );
   }
 
-  StatelessWidget _buildClearButton(IconThemeData theme) {
+  Widget _buildClearButton(IconThemeData theme) {
     return _focusNode.hasFocus || _match != null || _overlayEntry != null
         ? IconButton(
             icon: Icon(Icons.close, color: theme.color),
             onPressed: () => clear(),
+            padding: EdgeInsets.zero,
           )
         : Icon(Icons.search, color: theme.color.withOpacity(0.4));
   }

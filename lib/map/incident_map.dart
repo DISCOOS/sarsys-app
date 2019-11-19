@@ -77,6 +77,7 @@ class IncidentMap extends StatefulWidget {
   final TapCallback onTap;
   final MessageCallback onMessage;
   final ToolCallback onToolChange;
+  final PositionCallback onPositionChanged;
   final IncidentMapController mapController;
 
   final GestureTapCallback onOpenDrawer;
@@ -134,6 +135,7 @@ class IncidentMap extends StatefulWidget {
     this.showLayers = IncidentMapState.DEFAULT_LAYERS,
     this.onTap,
     this.onMessage,
+    this.onPositionChanged,
     this.onToolChange,
     this.onOpenDrawer,
     Image placeholder,
@@ -423,6 +425,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   void _setBaseMap(BaseMap map) {
     _currentBaseMap = map;
+    print(_currentBaseMap);
     final data = _tileErrorData.putIfAbsent(map, () => TileErrorData(map));
     if (data.isFatal()) _onFatalTileError(data);
   }
@@ -872,6 +875,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       }
     }
     _center = _writeState(CENTER, center);
+    if (widget.onPositionChanged != null) widget.onPositionChanged(position, hasGesture);
   }
 
   void _clearSearchField() {
