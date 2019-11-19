@@ -214,8 +214,8 @@ class UnitInfoPanel extends StatelessWidget {
       );
 
   String _toPersonnel() {
-    final personnel = unit.personnel.map((p) => p.formal).join(', ');
-    return personnel.isEmpty ? 'Ingen' : personnel;
+    final personnel = unit?.personnel?.map((p) => p.formal)?.join(', ');
+    return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 
   Row _buildTrackingInfo(BuildContext context) => Row(
