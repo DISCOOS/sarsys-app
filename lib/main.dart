@@ -103,6 +103,7 @@ void runAppWithCatcher(Widget app, String sentryDns) {
     "FetchFailure",
     "Connection closed while receiving data",
     "Connection closed before full header was received",
+    "SocketException: OS Error: Connection timed out",
     "SocketException: OS Error: Software caused connection abort",
     // Silence tile errors, see TileErrorHandler
     TileError.NOT_FOUND, //"Couldn't download or retrieve file"
