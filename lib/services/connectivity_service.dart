@@ -25,6 +25,9 @@ class ConnectivityService {
 
   ConnectivityService._internal() {
     _subscription = Connectivity().onConnectivityChanged.listen(_handle);
+    if (Platform.isIOS) {
+      Connectivity().checkConnectivity().then(_handle);
+    }
   }
 
   void _handle(ConnectivityResult result) async {
