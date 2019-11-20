@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -68,48 +69,57 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return NetworkSensitive(
-      child: Provider<Client>(
-        builder: (BuildContext context) => widget.controller.client,
-        child: Provider<PermissionController>(
-          builder: (BuildContext context) => controller,
-          child: Provider<BlocProviderController>(
-            builder: (BuildContext context) => widget.controller,
-            child: BlocProviderTree(
-              blocProviders: widget.controller.all,
-              child: MaterialApp(
-                navigatorKey: widget.navigatorKey,
-                navigatorObservers: [RouteWriter.observer],
-                debugShowCheckedModeBanner: false,
-                title: 'SarSys',
-                theme: ThemeData(
-                  primaryColor: Colors.grey[850],
-                  buttonTheme: ButtonThemeData(
-                    height: 36.0,
-                    textTheme: ButtonTextTheme.primary,
-                  ),
+  Widget build(BuildContext context) => _buildWithProviders(
+      context: context,
+      child: MaterialApp(
+        navigatorKey: widget.navigatorKey,
+        navigatorObservers: [RouteWriter.observer],
+        debugShowCheckedModeBanner: false,
+        title: 'SarSys',
+        theme: ThemeData(
+          primaryColor: Colors.grey[850],
+          buttonTheme: ButtonThemeData(
+            height: 36.0,
+            textTheme: ButtonTextTheme.primary,
+          ),
+        ),
+        home: _toHome(widget.controller),
+        onGenerateRoute: (settings) => _toRoute(settings),
+        localizationsDelegates: [
+          GlobalWidgetsLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          DefaultMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          DefaultCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('en', 'US'), // English
+          const Locale('nb', 'NO'), // Norwegian Bokmål
+        ],
+      ));
+
+  Widget _buildWithProviders({
+    @required BuildContext context,
+    @required Widget child,
+  }) =>
+      PageStorage(
+        bucket: widget.bucket,
+        child: NetworkSensitive(
+          child: Provider<Client>(
+            builder: (BuildContext context) => widget.controller.client,
+            child: Provider<PermissionController>(
+              builder: (BuildContext context) => controller,
+              child: Provider<BlocProviderController>(
+                builder: (BuildContext context) => widget.controller,
+                child: BlocProviderTree(
+                  blocProviders: widget.controller.all,
+                  child: child,
                 ),
-                home: _toHome(widget.controller),
-                onGenerateRoute: (settings) => _toRoute(settings),
-                localizationsDelegates: [
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  DefaultMaterialLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                  DefaultCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: [
-                  const Locale('en', 'US'), // English
-                  const Locale('nb', 'NO'), // Norwegian Bokmål
-                ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
 
   Route _toRoute(RouteSettings settings) {
     WidgetBuilder builder;
@@ -186,22 +196,14 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return child;
   }
 
-  WidgetBuilder _toChecked(Widget child) {
-    return (context) => PageStorage(
-          bucket: widget.bucket,
-          child: PermissionChecker(
-            key: _checkerKey,
-            child: child,
-            controller: _ensureController(),
-          ),
-        );
-  }
+  WidgetBuilder _toChecked(Widget child) => (context) => PermissionChecker(
+        key: _checkerKey,
+        child: child,
+        configBloc: BlocProvider.of<AppConfigBloc>(context),
+      );
 
   WidgetBuilder _toUnchecked(Widget child) {
-    return (context) => PageStorage(
-          bucket: widget.bucket,
-          child: child,
-        );
+    return (context) => child;
   }
 
   Widget _toMapScreen(RouteSettings settings) {
@@ -289,22 +291,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       child = PermissionChecker(
         key: _checkerKey,
         child: child,
-        controller: _ensureController(),
+        configBloc: providers.configProvider.bloc,
       );
     } else {
       child = LoginScreen();
     }
-    return PageStorage(
-      bucket: widget.bucket,
-      child: child,
-    );
-  }
-
-  PermissionController _ensureController() {
-    controller ??= PermissionController(
-      configBloc: widget.controller.configProvider.bloc,
-      onPrompt: (title, message) => prompt(context, title, message),
-    );
-    return controller;
+    return _buildWithProviders(context: context, child: child);
   }
 }

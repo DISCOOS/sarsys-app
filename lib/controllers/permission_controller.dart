@@ -20,8 +20,8 @@ class PermissionController {
   ];
 
   final PromptCallback onPrompt;
-  final MessageCallback<PermissionRequest> onMessage;
   final AppConfigBloc configBloc;
+  final MessageCallback<PermissionRequest> onMessage;
 
   bool _resolving = false;
   bool get resolving => _resolving;
@@ -30,8 +30,8 @@ class PermissionController {
 
   PermissionController({
     @required this.configBloc,
+    @required this.onMessage,
     this.onPrompt,
-    this.onMessage,
   }) : assert(configBloc != null, "AppConfigBloc is required");
 
   /// Clone with given parameters.
@@ -40,15 +40,14 @@ class PermissionController {
   PermissionController cloneWith({
     PromptCallback onPrompt,
     MessageCallback<PermissionRequest> onMessage,
-  }) {
-    return PermissionController(
-      configBloc: configBloc,
-      onMessage: onMessage ?? this.onMessage,
-      onPrompt: onPrompt ?? this.onPrompt,
-    )
-      .._resolving = _resolving
-      .._permissions = _permissions;
-  }
+  }) =>
+      PermissionController(
+        configBloc: configBloc,
+        onMessage: onMessage ?? this.onMessage,
+        onPrompt: onPrompt ?? this.onPrompt,
+      )
+        .._resolving = _resolving
+        .._permissions = _permissions;
 
   /// Get [PermissionGroup.storage] request
   PermissionRequest get storageRequest => PermissionRequest(
@@ -182,7 +181,7 @@ class PermissionController {
   void _handlePermissionRequest(String reason, PermissionRequest request) async {
     final handler = PermissionHandler();
     if (onMessage == null)
-      _onAction(handler, request);
+      await _onAction(handler, request);
     else
       onMessage(reason, action: "LØS", data: request, onPressed: () async {
         await _onAction(handler, request);

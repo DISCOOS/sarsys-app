@@ -9,8 +9,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 class StorageController {
   final PromptCallback onPrompt;
-  final MessageCallback onMessage;
   final AppConfigBloc configBloc;
+  final AsyncMessageCallback onMessage;
 
   PermissionController _controller;
 

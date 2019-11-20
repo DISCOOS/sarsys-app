@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/device_editor.dart';
@@ -11,7 +10,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class DeviceParams extends BlocParams<DeviceBloc, Device> {
   final Unit unit;
@@ -28,7 +27,7 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
     var result = await showDialog<Device>(
       context: params.context,
       builder: (context) => DeviceEditor(
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -76,7 +75,7 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
       context: params.context,
       builder: (context) => DeviceEditor(
         device: params.data,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -105,7 +104,7 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
       builder: (context) => PointEditor(
         params.data.point,
         title: "Sett siste kjente posisjon",
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);

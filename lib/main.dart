@@ -101,6 +101,8 @@ void runAppWithCatcher(Widget app, String sentryDns) {
     "SocketException: Failed host lookup",
     // Silence general map tile fetch failures thrown by FlutterMap
     "FetchFailure",
+    "FileSystemException: Cannot open file",
+    "OS Error: No such file or directory",
     "Connection closed while receiving data",
     "Connection closed before full header was received",
     "SocketException: OS Error: Connection timed out",

@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/point_editor.dart';
@@ -8,7 +7,7 @@ import 'package:SarSys/usecase/core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class PoiParams extends BlocParams<IncidentBloc, Point> {
   final Incident incident;
@@ -41,7 +40,7 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
         params.data ?? params.incident.ipp.point,
         title: "Endre IPP",
         incident: params.incident,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -72,7 +71,7 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
         params.data ?? params.incident.meetup.point,
         title: "Endre oppmøte",
         incident: params.incident,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);

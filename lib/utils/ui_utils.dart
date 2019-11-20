@@ -25,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 typedef PromptCallback = Future<bool> Function(String title, String message);
 typedef MessageCallback<T> = void Function(String message, {String action, VoidCallback onPressed, T data});
+typedef AsyncMessageCallback<T> = Future Function(String message, {String action, VoidCallback onPressed, T data});
 
 const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
   zoom: Defaults.zoom,

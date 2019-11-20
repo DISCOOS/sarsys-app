@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -16,6 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Point point;
@@ -46,7 +46,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       context: params.context,
       builder: (context) => PersonnelEditor(
         devices: params.devices,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -76,7 +76,7 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -111,7 +111,7 @@ class EditPersonnelLocation extends UseCase<bool, Point, PersonnelParams> {
       builder: (context) => PointEditor(
         params.point,
         title: "Sett siste kjente posisjon",
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);

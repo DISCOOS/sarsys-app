@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -17,6 +16,7 @@ import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final Point point;
@@ -53,7 +53,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
       builder: (context) => UnitEditor(
         devices: params.devices,
         personnel: params.personnel,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -89,7 +89,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
       builder: (context) => UnitEditor(
         unit: params.data,
         devices: params.devices,
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -125,7 +125,7 @@ class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
       builder: (context) => PointEditor(
         params.point,
         title: "Sett siste kjente posisjon",
-        controller: PermissionController(configBloc: BlocProvider.of<AppConfigBloc>(params.context)),
+        controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
