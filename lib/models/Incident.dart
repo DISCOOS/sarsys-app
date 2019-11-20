@@ -128,7 +128,7 @@ class Incident extends Equatable {
     String reference,
     Passcodes passcodes,
     Location ipp,
-    Location meetu,
+    Location meetup,
     List<TalkGroup> talkGroups,
   }) {
     return Incident(

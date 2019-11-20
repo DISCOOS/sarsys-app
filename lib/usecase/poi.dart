@@ -75,7 +75,7 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
       ),
     );
     if (result == null) return dartz.Left(false);
-    await params.bloc.update(params.incident.cloneWith(ipp: params.incident.meetup.cloneWith(point: result)));
+    await params.bloc.update(params.incident.cloneWith(meetup: params.incident.meetup.cloneWith(point: result)));
     return dartz.Right(result);
   }
 }
