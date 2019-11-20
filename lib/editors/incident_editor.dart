@@ -580,7 +580,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return json;
   }
 
-  void _submit(BuildContext context) {
+  void _submit(BuildContext context) async {
     if (_formKey.currentState.validate()) {
       Incident incident;
       const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
@@ -594,13 +594,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
         final talkGroups = List<String>.from(
           list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
         );
-        _configBloc.update(talkGroups: talkGroups);
+        await _configBloc.update(talkGroups: talkGroups);
       }
 
       if (widget.incident == null) {
         final units = List<String>.from(_formKey.currentState.value['units']);
         if (_rememberUnits) {
-          _configBloc.update(units: units);
+          await _configBloc.update(units: units);
         }
         Navigator.pop(
           context,
