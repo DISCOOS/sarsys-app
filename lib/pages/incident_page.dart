@@ -166,6 +166,7 @@ class _IncidentPageState extends State<IncidentPage> {
           borderRadius: BorderRadius.circular(IncidentPage.CORNER),
           child: GestureDetector(
             child: IncidentMap(
+              incident: incident,
               center: meetup ?? ipp,
               fitBounds: fitBounds,
               fitBoundOptions: FitBoundsOptions(
@@ -173,7 +174,6 @@ class _IncidentPageState extends State<IncidentPage> {
                 maxZoom: Defaults.zoom,
                 padding: EdgeInsets.all(48.0),
               ),
-              incident: incident,
               interactive: false,
               withRead: true,
             ),

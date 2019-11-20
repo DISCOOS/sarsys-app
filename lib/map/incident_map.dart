@@ -617,7 +617,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
         if (_useLayers.contains(PERSONNEL_LAYER)) _buildPersonnelOptions(),
         if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
-        if (_useLayers.contains(POI_LAYER)) _buildPoiOptions(),
+        if (_useLayers.contains(POI_LAYER) && widget.incident != null) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
@@ -800,12 +800,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   double _maxZoom() => _currentBaseMap?.maxZoom ?? Defaults.maxZoom;
 
   POILayerOptions _buildPoiOptions() {
-    final incident = widget.incident ?? _incidentBloc.current;
-    return incident == null
+    return widget.incident == null
         ? null
         : POILayerOptions(
             _incidentBloc,
-            incidentId: incident?.id,
+            incidentId: widget.incident.id,
             align: AnchorAlign.top,
             icon: Icon(
               Icons.location_on,

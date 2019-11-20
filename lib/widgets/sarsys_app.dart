@@ -1,6 +1,7 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/device_screen.dart';
@@ -183,7 +184,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child = SettingsScreen();
         break;
       case 'map':
-        child = _toMapScreen(settings);
+        child = _toMapScreen(
+          settings: settings,
+          incident: widget.controller.incidentProvider.bloc.current,
+        );
         break;
       case 'onboarding':
         child = OnboardingScreen();
@@ -206,14 +210,23 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return (context) => child;
   }
 
-  Widget _toMapScreen(RouteSettings settings) {
+  Widget _toMapScreen({RouteSettings settings, Incident incident}) {
     final arguments = settings?.arguments;
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],
-        incident: arguments["incident"],
+        incident: arguments["incident"] ?? incident,
         fitBounds: arguments["fitBounds"],
         fitBoundOptions: arguments["fitBoundOptions"],
+      );
+    }
+    if (incident != null) {
+      final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+      final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
+      final fitBounds = LatLngBounds(ipp, meetup);
+      return MapScreen(
+        incident: incident,
+        fitBounds: fitBounds,
       );
     }
     return MapScreen();
@@ -279,13 +292,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       } else if (providers.incidentProvider.bloc.isUnset) {
         child = IncidentsScreen();
       } else {
-        final incident = providers.incidentProvider.bloc.current;
-        final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
-        final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
-        final fitBounds = LatLngBounds(ipp, meetup);
-        child = MapScreen(
-          incident: incident,
-          fitBounds: fitBounds,
+        child = _toMapScreen(
+          incident: providers.incidentProvider.bloc.current,
         );
       }
       child = PermissionChecker(

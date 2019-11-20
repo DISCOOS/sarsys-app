@@ -160,6 +160,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildMap() {
     return IncidentMap(
+      incident: widget.incident,
       center: _mapController.ready ? _mapController.center : LatLng(_current.lat, _current.lon),
       mapController: _mapController,
       withRead: true,
