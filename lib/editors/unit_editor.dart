@@ -540,13 +540,15 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Device> _getActualDevices() {
     return (widget?.unit?.tracking != null ? _trackingBloc.devices(widget?.unit?.tracking,
         // Include closed tracks
-        exclude: []) : [])..addAll(widget.devices ?? []);
+        exclude: []) : [])
+      ..toList()
+      ..addAll(widget.devices ?? []);
   }
 
   List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);
 
   List<Personnel> _getActualPersonnel() {
-    return (widget?.unit?.personnel ?? [])..addAll(widget.personnel ?? []);
+    return (widget?.unit?.personnel ?? []).toList()..addAll(widget.personnel ?? []);
   }
 
   Point _preparePoint() {

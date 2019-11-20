@@ -491,6 +491,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             exclude: [],
           )
         : [])
+      ..toList()
       ..addAll(widget.devices ?? []);
   }
 
