@@ -380,9 +380,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   Future _ensureBaseMaps() async {
     if (_baseMapService == null) {
       _baseMapService = BaseMapService();
-      final controller = Provider.of<PermissionController>(context).cloneWith(
-        onMessage: widget.onMessage,
-      );
+      final controller = _ensure();
       final used = await controller.ask(
         controller.storageRequest.copyWith(
           onReady: () async => await _asyncBaseMapLoad(true),
@@ -483,15 +481,26 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _locationController = LocationController(
         tickerProvider: this,
         configBloc: _configBloc,
-        permissionController: Provider.of<PermissionController>(context).cloneWith(
-          onMessage: widget.onMessage,
-        ),
+        permissionController: _ensure(),
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
       _locationController.init();
     }
+  }
+
+  PermissionController _ensure() {
+    final controller = Provider.of<PermissionController>(context);
+    if (controller == null) {
+      return PermissionController(
+        onMessage: widget.onMessage,
+        configBloc: BlocProvider.of<AppConfigBloc>(context),
+      );
+    }
+    return controller.cloneWith(
+      onMessage: widget.onMessage,
+    );
   }
 
   void _restoreWakeLock() async {
