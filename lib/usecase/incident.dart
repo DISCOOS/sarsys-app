@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -50,13 +51,19 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
       final org = await FleetMapService().fetchOrganization(Defaults.organization);
       final unitBloc = BlocProvider.of<UnitBloc>(params.context);
       final configBloc = BlocProvider.of<AppConfigBloc>(params.context);
+      final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
       final department = org.divisions[configBloc.config.division]?.departments[configBloc.config.department] ?? '';
-      result.right.forEach((template) {
+      result.right.forEach((template) async {
         final unit = unitBloc.fromTemplate(
           department,
           template,
         );
-        if (unit != null) unitBloc.create(unit);
+        if (unit != null) {
+          final actual = await unitBloc.create(unit);
+          await trackingBloc.trackUnit(
+            actual,
+          );
+        }
       });
     }
     return dartz.Right(incident);
