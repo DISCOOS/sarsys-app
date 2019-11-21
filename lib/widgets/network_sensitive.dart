@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 class NetworkSensitive extends StatelessWidget {
   final Widget child;
+  final service = ConnectivityService();
   NetworkSensitive({
     this.child,
   });
@@ -11,6 +12,7 @@ class NetworkSensitive extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamProvider<ConnectivityStatus>(
+      initialData: service.last,
       builder: (context) => ConnectivityService().changes,
       child: child,
     );

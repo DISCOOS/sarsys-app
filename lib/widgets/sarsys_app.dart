@@ -200,14 +200,16 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return child;
   }
 
-  WidgetBuilder _toChecked(Widget child) => (context) => PermissionChecker(
+  WidgetBuilder _toChecked(Widget child) => (context) => _buildWithProviders(
+      context: context,
+      child: PermissionChecker(
         key: _checkerKey,
         child: child,
         configBloc: BlocProvider.of<AppConfigBloc>(context),
-      );
+      ));
 
   WidgetBuilder _toUnchecked(Widget child) {
-    return (context) => child;
+    return (context) => _buildWithProviders(context: context, child: child);
   }
 
   Widget _toMapScreen({RouteSettings settings, Incident incident}) {
