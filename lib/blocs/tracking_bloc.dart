@@ -305,7 +305,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return _dispatch<Tracking>(TrackUnit(
       unit,
       point: point,
-      devices: devices.map((device) => device.id).toList(),
+      devices: devices?.map((device) => device.id)?.toList() ?? [],
       personnel: personnel,
     ));
   }
@@ -314,7 +314,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<Tracking> trackPersonnel(Personnel personnel, {List<Device> devices}) {
     return _dispatch<Tracking>(TrackPersonnel(
       personnel,
-      devices: devices.map((device) => device.id).toList(),
+      devices: devices?.map((device) => device.id)?.toList() ?? [],
     ));
   }
 
@@ -397,9 +397,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       incidentBloc.current.id,
       point: event.point,
       devices: event.data,
-      aggregates: event.personnel.map((p) => p.tracking).where((id) => id != null).toList(),
+      aggregates: event.personnel?.map((p) => p.tracking)?.where((id) => id != null)?.toList(),
     );
     if (response.is200) {
+      // TODO: Mark as internal event, no message from tracking service expected
       await unitBloc.update(
         event.unit.cloneWith(tracking: response.body.id),
       );
@@ -418,6 +419,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       devices: event.data,
     );
     if (response.is200) {
+      // TODO: Mark as internal event, no message from tracking service expected
       await personnelBloc.update(
         event.personnel.cloneWith(tracking: response.body.id),
       );
