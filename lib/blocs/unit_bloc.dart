@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
@@ -16,20 +17,26 @@ typedef void UnitCallback(VoidCallback fn);
 class UnitBloc extends Bloc<UnitCommand, UnitState> {
   final UnitService service;
   final IncidentBloc incidentBloc;
+  final PersonnelBloc personnelBloc;
 
   final LinkedHashMap<String, Unit> _units = LinkedHashMap();
 
   // only set once to prevent reentrant error loop
-  StreamSubscription _subscription;
+  List<StreamSubscription> _subscriptions = [];
 
-  UnitBloc(this.service, this.incidentBloc) {
+  UnitBloc(
+    this.service,
+    this.incidentBloc,
+    this.personnelBloc,
+  ) {
     assert(this.service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
-    _subscription = incidentBloc.state.listen(_init);
+    assert(personnelBloc != null, "personnelBloc can not be null");
+    _subscriptions..add(incidentBloc.state.listen(_init))..add(personnelBloc.state.listen(_handlePersonnel));
   }
 
   void _init(IncidentState state) {
-    if (_subscription != null) {
+    if (_subscriptions.isNotEmpty != null) {
       // Clear out current tracking upon states given below
       if (state.isUnset() ||
           state.isCreated() ||
@@ -43,6 +50,32 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         dispatch(ClearUnits(_units.keys.toList()));
       } else if (state.isSelected()) {
         _fetch(state.data.id);
+      }
+    }
+  }
+
+  void _handlePersonnel(PersonnelState state) {
+    if (state.isUpdated()) {
+      final event = state as PersonnelUpdated;
+      final unit = _units.values.firstWhere(
+        (unit) => unit.personnel?.map((personnel) => personnel.id)?.contains(event.data.id),
+      );
+      // Update personnel
+      if (unit != null) {
+        final personnel = unit.personnel.toList()
+          ..removeWhere((personnel) => personnel.id == event.data.id)
+          ..add(event.data);
+        dispatch(_InternalChange(unit.cloneWith(personnel: personnel)));
+      }
+    } else if (state.isDeleted()) {
+      final event = state as PersonnelDeleted;
+      final unit = _units.values.firstWhere(
+        (unit) => unit.personnel?.map((personnel) => personnel.id)?.contains(event.data.id),
+      );
+      // Remove personnel?
+      if (unit != null) {
+        final personnel = unit.personnel.toList()..removeWhere((personnel) => personnel.id == event.data.id);
+        dispatch(_InternalChange(unit.cloneWith(personnel: personnel)));
       }
     }
   }
@@ -160,6 +193,8 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
       yield await _delete(command);
     } else if (command is ClearUnits) {
       yield _clear(command);
+    } else if (command is _InternalChange) {
+      yield await _internal(command);
     } else if (command is RaiseUnitError) {
       yield command.data;
     } else {
@@ -189,15 +224,19 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<UnitState> _update(UpdateUnit event) async {
     var response = await service.update(event.data);
     if (response.is204) {
-      _units.update(
-        event.data.id,
-        (_) => event.data,
-        ifAbsent: () => event.data,
-      );
-      // If state is Retired any tracking is removed by listening to this event in TrackingBloc
-      return _toOK(event, UnitUpdated(event.data), result: event.data);
+      return _internal(event);
     }
     return _toError(event, response);
+  }
+
+  Future<UnitState> _internal(UnitCommand<Unit> event) {
+    _units.update(
+      event.data.id,
+      (_) => event.data,
+      ifAbsent: () => event.data,
+    );
+    // If state is Retired any tracking is removed by listening to this event in TrackingBloc
+    return _toOK(event, UnitUpdated(event.data), result: event.data);
   }
 
   Future<UnitState> _delete(DeleteUnit event) async {
@@ -242,7 +281,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    if (_subscription != null) {
+    if (_subscriptions.isNotEmpty) {
       dispatch(RaiseUnitError(UnitError(error, trace: stacktrace)));
     } else {
       throw "Bad state: UnitBloc is disposed. Unexpected ${UnitError(error, trace: stacktrace)}";
@@ -252,8 +291,8 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   @override
   void dispose() {
     super.dispose();
-    _subscription?.cancel();
-    _subscription = null;
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
   }
 }
 
@@ -300,6 +339,13 @@ class ClearUnits extends UnitCommand<List<String>> {
 
   @override
   String toString() => 'ClearUnits';
+}
+
+class _InternalChange extends UnitCommand<Unit> {
+  _InternalChange(Unit data) : super(data);
+
+  @override
+  String toString() => '_InternalChange';
 }
 
 class RaiseUnitError extends UnitCommand<UnitError> {

@@ -723,8 +723,6 @@ class Entities<T> {
             orElse: () => null,
           );
 
-  /// Check if given entity is
-
   /// Get entities being tracked as a map of tracking id to entity object
   Map<String, T> asTrackingIds({
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
