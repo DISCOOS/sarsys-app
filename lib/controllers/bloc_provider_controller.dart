@@ -107,16 +107,16 @@ class BlocProviderController {
         : IncidentServiceMock.build(userService, 2, enumName(demo.role), "T123");
     final IncidentBloc incidentBloc = IncidentBloc(incidentService, userBloc);
 
-    // Configure Unit service
-    final UnitService unitService =
-        !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
-    final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc);
-
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active
         ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
         : PersonnelServiceMock.build(demo.personnelCount);
     final PersonnelBloc personnelBloc = PersonnelBloc(personnelService, incidentBloc);
+
+    // Configure Unit service
+    final UnitService unitService =
+        !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
+    final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc, personnelBloc);
 
     // Configure Device service
     final DeviceService deviceService = !demo.active

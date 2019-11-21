@@ -158,11 +158,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
           if (tracking.point?.type == PointType.Manual) {
             tracking = tracking.cloneWith(point: request.point, history: tracking.history..add(request.point));
           } else {
-            return ServiceResponse.badRequest(
-              message: "Bad request. "
-                  "Only point of type 'Manual' is allowed, "
-                  "found ${enumName(request.point?.type)}",
-            );
+            return _toOnlyManualResponse(request.point);
           }
         }
 
@@ -246,12 +242,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
     if (td.isNotEmpty) {
       return ServiceResponse.badRequest<Tracking>(message: "Bad request, aggregates $td are tracked already");
     }
-    if (point?.type != PointType.Manual) {
-      return ServiceResponse.badRequest(
-        message: "Bad request. "
-            "Only point of type 'Manual' is allowed, "
-            "found ${enumName(point?.type)}",
-      );
+    if (point?.type != null && point?.type != PointType.Manual) {
+      return _toOnlyManualResponse(point);
     }
 
     final trackingList = trackingRepo[incidentId];
@@ -279,6 +271,14 @@ class TrackingServiceMock extends Mock implements TrackingService {
       tracking.aggregates.map((aggregateId) => MapEntry(aggregateId, trackingId)),
     );
     return ServiceResponse.ok<Tracking>(body: tracking);
+  }
+
+  static ServiceResponse<Tracking> _toOnlyManualResponse(Point point) {
+    return ServiceResponse.badRequest(
+      message: "Bad request. "
+          "Only point of type 'Manual' is allowed, "
+          "found ${enumName(point?.type)}",
+    );
   }
 
   static Iterable<MapEntry<String, Tracking>> _createTrackingPersonnel(
