@@ -275,6 +275,7 @@ Future<Tracking> _handleTracking(
   if (unit.tracking == null) {
     tracking = await trackingBloc.trackUnit(
       unit,
+      point: point,
       devices: devices,
       personnel: personnel,
     );

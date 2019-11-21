@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:http/http.dart' show Client;
@@ -24,6 +25,7 @@ class TrackingService {
   /// POST ../incident/{incidentId}/tracking
   Future<ServiceResponse<Tracking>> create(
     String incidentId, {
+    Point point,
     List<String> devices,
     List<String> aggregates,
   }) async {

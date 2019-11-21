@@ -552,8 +552,11 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Point _preparePoint() {
-    final point =
-        _formKey.currentState.value["point"] == null ? null : Point.fromJson(_formKey.currentState.value["point"]);
+    final point = _formKey.currentState.value["point"] == null
+        ? null
+        : Point.fromJson(
+            _formKey.currentState.value["point"],
+          );
     // Only manually added points are allowed
     return PointType.Manual == point?.type ? point : null;
   }

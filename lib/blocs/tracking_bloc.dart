@@ -298,11 +298,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   /// Create tracking for given Unit
   Future<Tracking> trackUnit(
     Unit unit, {
+    Point point,
     List<Device> devices,
     List<Personnel> personnel,
   }) {
     return _dispatch<Tracking>(TrackUnit(
       unit,
+      point: point,
       devices: devices.map((device) => device.id).toList(),
       personnel: personnel,
     ));
@@ -393,6 +395,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<TrackingState> _trackUnit(TrackUnit event) async {
     var response = await service.create(
       incidentBloc.current.id,
+      point: event.point,
       devices: event.data,
       aggregates: event.personnel.map((p) => p.tracking).where((id) => id != null).toList(),
     );
@@ -538,8 +541,9 @@ class LoadTracking extends TrackingCommand<List<Tracking>, void> {
 
 class TrackUnit extends TrackingCommand<List<String>, Tracking> {
   final Unit unit;
+  final Point point;
   final List<Personnel> personnel;
-  TrackUnit(this.unit, {List<String> devices, this.personnel}) : super(devices);
+  TrackUnit(this.unit, {List<String> devices, this.point, this.personnel}) : super(devices);
 
   @override
   String toString() => 'TrackUnit';

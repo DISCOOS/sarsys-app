@@ -107,12 +107,18 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
 
-    when(mock.create(any, devices: anyNamed("devices"), aggregates: anyNamed("aggregates"))).thenAnswer((_) async {
+    when(mock.create(
+      any,
+      point: anyNamed("point"),
+      devices: anyNamed("devices"),
+      aggregates: anyNamed("aggregates"),
+    )).thenAnswer((_) async {
       final incidentId = _.positionalArguments[0];
       return _create(
         incidentId: incidentId,
         d2t: d2t,
         a2t: a2t,
+        point: _.namedArguments[Symbol("point")] as Point,
         devices: _.namedArguments[Symbol("devices")] as List<String> ?? <String>[],
         aggregates: _.namedArguments[Symbol("aggregates")] as List<String> ?? <String>[],
         simulations: simulations,
@@ -222,6 +228,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   static ServiceResponse<Tracking> _create({
     String incidentId,
+    Point point,
     List<String> devices = const [],
     List<String> aggregates = const [],
     Map<String, String> d2t,
@@ -230,6 +237,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     Map<String, Map<String, Tracking>> trackingRepo,
     Map<String, _TrackSimulation> simulations,
   }) {
+    // Sanity checks
     final dd = devices.where(((id) => d2t.containsKey(id)));
     if (dd.isNotEmpty) {
       return ServiceResponse.badRequest<Tracking>(message: "Bad request, devices $dd are tracked already");
@@ -238,6 +246,13 @@ class TrackingServiceMock extends Mock implements TrackingService {
     if (td.isNotEmpty) {
       return ServiceResponse.badRequest<Tracking>(message: "Bad request, aggregates $td are tracked already");
     }
+    if (point?.type != PointType.Manual) {
+      return ServiceResponse.badRequest(
+        message: "Bad request. "
+            "Only point of type 'Manual' is allowed, "
+            "found ${enumName(point?.type)}",
+      );
+    }
 
     final trackingList = trackingRepo[incidentId];
     final trackingId = "$incidentId:t:${randomAlphaNumeric(8).toLowerCase()}";
@@ -245,6 +260,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       trackingId,
       status: _toStatus(TrackingStatus.Tracking, devices.isNotEmpty, aggregates.isNotEmpty),
     )).cloneWith(
+      point: point,
       devices: devices,
       aggregates: aggregates,
     );
