@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/AppConfig.dart';
+import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
@@ -78,9 +79,16 @@ class LocationService {
     _locatorSubscription = _stream.listen((Position position) {
       _current = position;
     });
-    _current = await _geolocator.getLastKnownPosition(desiredAccuracy: _options.accuracy);
-    if (_current == null) _current = await _geolocator.getCurrentPosition(desiredAccuracy: _options.accuracy);
-    _isReady.value = true;
+    _locatorSubscription.onDone(_unsubscribe);
+    _locatorSubscription.onError(_handleError);
+    try {
+      _current = await _geolocator.getLastKnownPosition(desiredAccuracy: _options.accuracy);
+      if (_current == null) _current = await _geolocator.getCurrentPosition(desiredAccuracy: _options.accuracy);
+      _isReady.value = true;
+    } on Exception catch (e) {
+      _unsubscribe();
+      Catcher.reportCheckedError("Failed to get position with error: $e", StackTrace.current);
+    }
   }
 
   void dispose() {
@@ -100,5 +108,10 @@ class LocationService {
     return _options?.accuracy != options.accuracy ||
         _options?.timeInterval != options.timeInterval ||
         _options?.distanceFilter != options.distanceFilter;
+  }
+
+  _handleError(dynamic error, StackTrace stackTrace) {
+    _unsubscribe();
+    Catcher.reportCheckedError("Location stream failed with error: $error", stackTrace);
   }
 }
