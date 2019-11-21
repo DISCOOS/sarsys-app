@@ -35,11 +35,13 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
 /// Create unit with tracking of given devices
 Future<dartz.Either<bool, Unit>> createUnit(
   BuildContext context, {
+  Point point,
   List<Device> devices,
   List<Personnel> personnel,
 }) =>
     CreateUnit()(UnitParams(
       context,
+      point: point,
       devices: devices,
       personnel: personnel,
     ));
@@ -48,9 +50,23 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   @override
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data == null, "Unit should not be supplied");
+    var point = params.point;
+    // Select unit position?
+    if (point != null) {
+      point = await showDialog<Point>(
+        context: params.context,
+        builder: (context) => PointEditor(
+          point,
+          title: "Velg enhetens posisjon",
+          controller: Provider.of<PermissionController>(params.context),
+        ),
+      );
+      if (point == null) return dartz.Left(false);
+    }
     var result = await showDialog<UnitParams>(
       context: params.context,
       builder: (context) => UnitEditor(
+        point: point,
         devices: params.devices,
         personnel: params.personnel,
         controller: Provider.of<PermissionController>(params.context),

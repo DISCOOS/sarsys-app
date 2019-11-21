@@ -24,6 +24,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;
+  final Point point;
   final Iterable<Device> devices;
   final Iterable<Personnel> personnel;
   final PermissionController controller;
@@ -34,6 +35,7 @@ class UnitEditor extends StatefulWidget {
     Key key,
     @required this.controller,
     this.unit,
+    this.point,
     this.type = UnitType.Team,
     this.devices = const [],
     this.personnel = const [],
@@ -532,7 +534,7 @@ class _UnitEditorState extends State<UnitEditor> {
   Point _toPoint() {
     final bloc = BlocProvider.of<TrackingBloc>(context);
     final tracking = bloc.tracking[widget?.unit?.tracking];
-    return tracking?.point;
+    return tracking?.point ?? widget.point;
   }
 
   List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);

@@ -79,7 +79,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           child: Icon(Icons.close),
           onTap: () {
             _searchFieldKey.currentState.clear();
-            Navigator.pop(context, widget.point);
+            Navigator.pop(context);
           },
         ),
         actions: <Widget>[

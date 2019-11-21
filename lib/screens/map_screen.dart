@@ -109,7 +109,10 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         leading: Icon(Icons.group_add),
                         title: Text('Enhet', style: style),
                         onTap: () async {
-                          await createUnit(context);
+                          await createUnit(
+                            context,
+                            point: toPoint(_mapController.center),
+                          );
                           Navigator.pop(context);
                         },
                       ),
