@@ -107,11 +107,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         bucket: widget.bucket,
         child: NetworkSensitive(
           child: Provider<Client>(
-            builder: (BuildContext context) => widget.controller.client,
+            create: (BuildContext context) => widget.controller.client,
             child: Provider<PermissionController>(
-              builder: (BuildContext context) => controller,
+              create: (BuildContext context) => controller,
               child: Provider<BlocProviderController>(
-                builder: (BuildContext context) => widget.controller,
+                create: (BuildContext context) => widget.controller,
                 child: BlocProviderTree(
                   blocProviders: widget.controller.all,
                   child: child,

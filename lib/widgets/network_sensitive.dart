@@ -13,7 +13,7 @@ class NetworkSensitive extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamProvider<ConnectivityStatus>(
       initialData: service.last,
-      builder: (context) => ConnectivityService().changes,
+      create: (context) => ConnectivityService().changes,
       child: child,
     );
   }

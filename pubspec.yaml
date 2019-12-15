@@ -78,9 +78,11 @@ dependencies:
 
 dependency_overrides:
   flutter_map:
+    # Use local branch of flutter_map
     #path: ../flutter_map
     git:
-      url: git://github.com/johnpryan/flutter_map
+    #  url: git://github.com/johnpryan/flutter_map
+      url: https://github.com/DISCOOS/flutter_map
       ref: master
 
   intro_views_flutter:

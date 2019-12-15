@@ -29,6 +29,7 @@ ios/Flutter/flutter_export_environment.sh
 **/doc/api/
 .dart_tool/
 .flutter-plugins
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/

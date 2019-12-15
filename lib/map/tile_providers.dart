@@ -86,8 +86,8 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
   }) : super(url, cacheManager: manager);
 
   @override
-  ImageStreamCompleter load(CachedNetworkImageProvider key) {
-    return (offline ? _loadFromCache(key) : super.load(key))
+  ImageStreamCompleter load(CachedNetworkImageProvider key, DecoderCallback decode) {
+    return (offline ? _loadFromCache(key) : super.load(key, decode))
       ..addListener(errorHandler.listen(key.url, (e) => TileError.toType(e)));
   }
 
@@ -188,8 +188,8 @@ class ManagedFileTileImageProvider extends FileImage {
   ManagedFileTileImageProvider(File file, this.handler) : super(file);
 
   @override
-  ImageStreamCompleter load(FileImage key) {
-    return super.load(key)..addListener(handler.listen(key.file.path, (e) => TileError.toType(e)));
+  ImageStreamCompleter load(FileImage key, DecoderCallback decode) {
+    return super.load(key, decode)..addListener(handler.listen(key.file.path, (e) => TileError.toType(e)));
   }
 }
 
