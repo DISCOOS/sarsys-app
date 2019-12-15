@@ -83,6 +83,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   Widget build(BuildContext context) {
     final theme = Theme.of(context).iconTheme;
     return Container(
+      padding: EdgeInsets.zero,
       decoration: widget.withBorder
           ? BoxDecoration(
               color: Colors.white,
@@ -95,28 +96,28 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         children: [
           if (widget.prefixIcon != null)
             Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: widget.prefixIcon,
+              padding: const EdgeInsets.only(left: 12.0),
+              child: widget.prefixIcon ?? Container(),
             ),
           Expanded(
             child: InputDecorator(
               decoration: InputDecoration(
-                border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
                 suffixIcon: _buildClearButton(theme),
+                border: widget.withBorder ? InputBorder.none : UnderlineInputBorder(),
               ),
-              child: TextField(
-                key: _searchKey,
-                focusNode: _focusNode,
-                autofocus: false,
-                controller: _controller,
-                onSubmitted: (value) => _search(value),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintMaxLines: 1,
-                  hintText: widget.hintText ?? "Søk her",
-                  contentPadding: EdgeInsets.only(
-                    top: 4.0,
-                    left: widget.withBorder ? 0.0 : 4.0,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: TextField(
+                  key: _searchKey,
+                  focusNode: _focusNode,
+                  autofocus: false,
+                  controller: _controller,
+                  onSubmitted: (value) => _search(value),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    hintMaxLines: 1,
+                    hintText: widget.hintText ?? "Søk her",
                   ),
                 ),
               ),
@@ -132,9 +133,11 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
         ? IconButton(
             icon: Icon(Icons.close, color: theme.color),
             onPressed: () => clear(),
-            padding: EdgeInsets.zero,
           )
-        : Icon(Icons.search, color: theme.color.withOpacity(0.4));
+        : Icon(
+            Icons.search,
+            color: theme.color.withOpacity(0.4),
+          );
   }
 
   /// Hide overlay with results if shown, clear content and unfocus textfield

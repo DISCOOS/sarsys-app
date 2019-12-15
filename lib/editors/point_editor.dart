@@ -46,8 +46,8 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   void initState() {
     super.initState();
     _mapController = IncidentMapController();
-    // TODO: Use device location as default location
     _changes = StreamController<LatLng>();
+    // TODO: Use device location as default location
     _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
     _searchField = MapSearchField(
       key: _searchFieldKey,
