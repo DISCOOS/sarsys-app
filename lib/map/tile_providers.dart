@@ -58,12 +58,17 @@ class ManagedCacheTileProvider extends TileProvider {
         offline: offline,
         offlineAsset: offlineAsset,
         errorHandler: errorHandler,
-        onPlaceholder: (key) => data.placeholders.add(key),
+        onPlaceholder: _addPlaceholder,
       );
 
   ImageProvider _ensureImage(String url) {
     final info = cacheManager.getFileFromMemory(url);
     return info == null ? (offline ? offlineImage : errorImage) : FileImage(info.file);
+  }
+
+  ImageProvider _addPlaceholder(ImageProvider key) {
+    data.placeholders.add(key);
+    return key;
   }
 }
 
@@ -88,7 +93,7 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
   @override
   ImageStreamCompleter load(CachedNetworkImageProvider key, DecoderCallback decode) {
     return (offline ? _loadFromCache(key) : super.load(key, decode))
-      ..addListener(errorHandler.listen(key.url, (e) => TileError.toType(e)));
+      ..addListener(errorHandler.listen(key, key.url, (e) => TileError.toType(e)));
   }
 
   /// Only called when offline
@@ -96,13 +101,13 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
         codec: _loadAsyncFromCache(key),
         scale: key.scale,
 // TODO enable information collector on next stable release of flutter
-//      informationCollector: () sync* {
-//        yield DiagnosticsProperty<ImageProvider>(
-//          'Image provider: $this \n Image key: $key',
-//          this,
-//          style: DiagnosticsTreeStyle.errorProperty,
-//        );
-//      },
+        informationCollector: () sync* {
+          yield DiagnosticsProperty<ImageProvider>(
+            'Image provider: $this \n Image key: $key',
+            this,
+            style: DiagnosticsTreeStyle.errorProperty,
+          );
+        },
       );
 
   /// Adapted from [CachedNetworkImageProvider]
@@ -189,7 +194,10 @@ class ManagedFileTileImageProvider extends FileImage {
 
   @override
   ImageStreamCompleter load(FileImage key, DecoderCallback decode) {
-    return super.load(key, decode)..addListener(handler.listen(key.file.path, (e) => TileError.toType(e)));
+    return super.load(key, decode)
+      ..addListener(
+        handler.listen(key, key.file.path, (e) => TileError.toType(e)),
+      );
   }
 }
 
@@ -217,7 +225,7 @@ class TileErrorData {
   static const int THRESHOLD = 48;
 
   final BaseMap map;
-  final Map<String, TileError> keys = {};
+  final Map<String, TileError> errors = {};
   final Set<ImageProvider> placeholders = {};
 
   TileErrorData(this.map);
@@ -226,7 +234,7 @@ class TileErrorData {
 
   @override
   String toString() {
-    return 'TileErrorData{map: $map, keys: $keys}';
+    return 'TileErrorData{map: $map, errors: $errors}';
   }
 
   Set<TileErrorType> explain({int threshold = THRESHOLD}) {
@@ -254,7 +262,7 @@ class TileErrorData {
       TileErrorType.IsEmpty,
     ],
   ]) =>
-      keys.values.fold(0, (count, error) => count + (types.contains(error.type) ? 1 : 0));
+      errors.values.fold(0, (count, error) => count + (types.contains(error.type) ? 1 : 0));
 }
 
 /// Tile error instance
@@ -262,8 +270,14 @@ class TileError implements Exception {
   final String key;
   final String message;
   final TileErrorType type;
+  final ImageProvider image;
 
-  const TileError(this.key, this.message, this.type);
+  const TileError(
+    this.key,
+    this.image,
+    this.message,
+    this.type,
+  );
 
   @override
   String toString() {
@@ -292,7 +306,7 @@ class TileErrorHandler {
   final ValueChanged<TileError> onError;
   final ValueChanged<TileErrorData> onFatal;
 
-  bool contains(String url) => data.keys.containsKey(url);
+  bool contains(String url) => data.errors.containsKey(url);
 
   bool get isFatal => data.isFatal(threshold: threshold);
 
@@ -303,15 +317,16 @@ class TileErrorHandler {
     this.onError,
   });
 
-  ImageStreamListener listen(String key, TileErrorType toType(exception)) {
+  ImageStreamListener listen(ImageProvider image, String key, TileErrorType toType(exception)) {
     // Remove previous failure
-    data.keys.remove(key);
+    data.errors.remove(key);
 
     return ImageStreamListener(
       (ImageInfo image, bool synchronousCall) {},
       onError: (dynamic exception, StackTrace stackTrace) {
         final type = toType(exception);
-        final error = data.keys.putIfAbsent(key, () => TileError(key, "$exception", type));
+        final error = data.errors.putIfAbsent(key, () => TileError(key, image, "$exception", type));
+        data.placeholders.add(image);
         if (onError != null) onError(error);
         if (onFatal != null && data.count() == threshold) onFatal(data);
         if (kDebugMode) print(error);

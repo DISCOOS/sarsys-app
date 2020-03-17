@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity/connectivity.dart';
+import 'package:data_connection_checker/data_connection_checker.dart';
 
 class ConnectivityService {
   static ConnectivityService _singleton;
@@ -10,9 +10,12 @@ class ConnectivityService {
 
   bool _hasConnection = false;
 
+  ConnectivityResult _result = ConnectivityResult.none;
   ConnectivityStatus _status = ConnectivityStatus.Offline;
 
   StreamSubscription _subscription;
+
+  Timer _timer;
 
   ConnectivityStatus get last => _status;
   Stream<ConnectivityStatus> get changes => _controller.stream;
@@ -25,22 +28,22 @@ class ConnectivityService {
   }
 
   ConnectivityService._internal() {
+    Connectivity().checkConnectivity().then((result) {
+      _handle(result);
+      _timer = Timer.periodic(Duration(seconds: 2), (_) {
+        _handle(_result);
+      });
+    });
     _subscription = Connectivity().onConnectivityChanged.listen(_handle);
-    if (Platform.isIOS) {
-      Connectivity().checkConnectivity().then(_handle);
-    }
   }
 
   void _handle(ConnectivityResult result) async {
     await test();
     final previousStatus = _status;
+    _result = result;
     _status = _getStatusFromResult(result);
-    if (previousStatus != _status) _controller.add(_getStatusFromResult(result));
-    // Retry?
-    if (ConnectivityResult.none != result && _hasConnection == false) {
-      Timer(Duration(seconds: 1), () {
-        _handle(result);
-      });
+    if (previousStatus != _status) {
+      _controller.add(_status);
     }
   }
 
@@ -64,21 +67,10 @@ class ConnectivityService {
   Future<ConnectivityStatus> update() => Connectivity().checkConnectivity().then(_handle);
 
   /// The test to actually see if there is a connection
-  Future test() async {
-    try {
-      final result = await InternetAddress.lookup('google.com');
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        _hasConnection = true;
-      } else {
-        _hasConnection = false;
-      }
-    } on SocketException catch (_) {
-      _hasConnection = false;
-    }
-    return _hasConnection;
-  }
+  Future<bool> test() async => _hasConnection = await DataConnectionChecker().hasConnection;
 
   void dispose() {
+    _timer?.cancel();
     _controller?.close();
     _subscription?.cancel();
   }

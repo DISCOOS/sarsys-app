@@ -542,16 +542,31 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   // This ensures that actual tiles are loaded instead of placeholders.
   FutureOr<int> _removePlaceholders() async {
     int removed = 0;
-    final data = _tileErrorData[_currentBaseMap];
-    if (data != null && data.placeholders.isNotEmpty) {
+    final errors = _tileErrorData.values.where(
+      (data) => data.errors.isNotEmpty,
+    );
+    if (errors.isNotEmpty) {
       final fileCache = FileCacheService(_configBloc.config);
-      data.placeholders.forEach((key) => imageCache.evict(key));
-      await Future.forEach(data.placeholders.where((key) => key is ManagedCacheTileProvider), (key) async {
-        await fileCache.removeFile(key.url);
-        removed++;
+      await Future.forEach<TileErrorData>(errors, (data) async {
+        final images = data.errors.values
+            .where(
+              (error) => error.image is ManagedCachedNetworkImageProvider,
+            )
+            .map((error) => error.image);
+        await Future.forEach(images, (key) async {
+          await fileCache.removeFile(key.url);
+          removed++;
+        });
+        removed += data.placeholders.length;
+        data.placeholders
+          ..forEach((key) => imageCache.evict(key))
+          ..clear()
+          ..length;
+        data.errors.clear();
       });
-      data.placeholders.clear();
     }
+    print('Removed $removed');
+
     return removed;
   }
 
