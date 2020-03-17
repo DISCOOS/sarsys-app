@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'Address.g.dart';
@@ -10,9 +11,9 @@ class Address extends Equatable {
   final String countryCode;
 
   Address({
-    this.lines,
-    this.postalCode,
-    this.countryCode,
+    @required this.lines,
+    @required this.postalCode,
+    @required this.countryCode,
   }) : super([
           lines,
           postalCode,

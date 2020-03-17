@@ -30,7 +30,10 @@ class Track extends Equatable {
   Map<String, dynamic> toJson() => _$TrackToJson(this);
 
   /// Truncate to number of points and return new [Track] instance
-  Track truncate(int count) => Track(points: this.points.skip(max(0, points.length - count)).toList(), type: this.type);
+  Track truncate(int count) => Track(
+        points: this.points.skip(max(0, points.length - count)).toList(),
+        type: this.type,
+      );
 }
 
 enum TrackType { Device, Aggregate }

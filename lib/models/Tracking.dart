@@ -36,7 +36,7 @@ class Tracking extends Equatable {
     /// Average speed in m/s
     this.speed,
 
-    /// Total effort in time units
+    /// Total effort in milliseconds
     this.effort,
 
     /// List tracked devices

@@ -66,7 +66,7 @@ String translatePointType(PointType type) {
       return "Manuell";
     case PointType.Device:
       return "Apparat";
-    case PointType.Device:
+    case PointType.Personnel:
       return "Mannskap";
     case PointType.Aggregated:
     default:
