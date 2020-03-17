@@ -129,13 +129,11 @@ class IncidentsPage extends StatefulWidget {
 }
 
 class _IncidentsPageState extends State<IncidentsPage> {
-  UserBloc _userBloc;
   IncidentBloc _incidentBloc;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
 
@@ -185,11 +183,6 @@ class _IncidentsPageState extends State<IncidentsPage> {
   }
 
   String _prepare(Incident incident) => "${incident.searchable}".toLowerCase();
-
-  Future _create(BuildContext context) async {
-    var result = await createIncident(context);
-    result.fold((_) => null, (incident) => jumpToIncident(context, incident));
-  }
 
   Widget _buildCard(Incident incident) {
     final title = Theme.of(context).textTheme.title;
