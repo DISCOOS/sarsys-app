@@ -11,7 +11,7 @@ class AppDrawer extends StatelessWidget {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
-    final avatar = Image.asset("assets/images/avatar male.png");
+    final avatar = Image.asset("assets/images/avatar-male.png");
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
