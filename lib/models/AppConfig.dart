@@ -163,7 +163,7 @@ class AppConfig extends Equatable {
   DemoParams toDemoParams() => DemoParams(demo, role: toRole());
 
   UserRole toRole({
-    UserRole defaultValue: UserRole.Commander,
+    UserRole defaultValue: UserRole.commander,
   }) =>
       UserRole.values.firstWhere(
         (test) => enumName(test) == this.demoRole,

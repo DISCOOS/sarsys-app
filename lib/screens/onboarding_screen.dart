@@ -26,7 +26,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _commander = (UserRole.Commander == BlocProvider.of<AppConfigBloc>(context)?.config?.toRole());
+    _commander = (UserRole.commander == BlocProvider.of<AppConfigBloc>(context)?.config?.toRole());
   }
 
   @override
@@ -53,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         final configBloc = BlocProvider.of<AppConfigBloc>(context);
         await configBloc.update(
           onboarding: _onboard,
-          demoRole: _commander ? enumName(UserRole.Commander) : enumName(UserRole.Personnel),
+          demoRole: _commander ? enumName(UserRole.commander) : enumName(UserRole.personnel),
         );
         final authn = BlocProvider.of<UserBloc>(context).isAuthenticated;
         Navigator.pushReplacementNamed(context, authn ? 'incidents' : 'login');
@@ -98,15 +98,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Expanded(
             child: _buildSwith(
               _commander,
-              leftSide: translateUserRole(UserRole.Personnel),
-              rightSide: translateUserRole(UserRole.Commander),
+              leftSide: translateUserRole(UserRole.personnel),
+              rightSide: translateUserRole(UserRole.commander),
               onChanged: (value) => setState(() => _commander = value),
             ),
           ),
         ],
       ),
       mainImage: Image.asset(
-        'assets/images/sar-team 2.png',
+        'assets/images/sar-team-2.png',
         height: 250.0,
         width: 250.0,
         alignment: Alignment.center,
@@ -127,7 +127,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           Text(
             "Du vil bli logget inn som "
-            "${_commander ? translateUserRole(UserRole.Commander) : translateUserRole(UserRole.Personnel)}. \n"
+            "${_commander ? translateUserRole(UserRole.commander) : translateUserRole(UserRole.personnel)}. \n"
             "Alle brukernavn og passord godtas i demonstrasjonsmodus.",
             textScaleFactor: 0.75,
           ),

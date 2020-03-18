@@ -49,6 +49,7 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "tandroidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = ['appAuthRedirectScheme': 'sarsys.app']
     }
 
     signingConfigs {

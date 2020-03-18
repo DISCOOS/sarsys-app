@@ -8,7 +8,7 @@ class PersonnelService {
   final String restUrl;
   final Client client;
 
-  final StreamController _controller = StreamController.broadcast();
+  final StreamController<PersonnelMessage> _controller = StreamController.broadcast();
 
   PersonnelService(this.restUrl, this.wsUrl, this.client);
 

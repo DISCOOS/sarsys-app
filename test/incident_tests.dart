@@ -40,12 +40,12 @@ void main() async {
 
   setUp(() async {
     final AppConfigService configService = AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', null);
-    final UserService userService = UserServiceMock.buildAny(UserRole.Commander, configService);
-    await userService.login('user@localhost', 'password');
+    final UserCredentialsService userService = UserServiceMock.buildAny(UserRole.commander, configService);
+    await userService.login(username: 'user@localhost', password: 'password');
     final IncidentService incidentService = IncidentServiceMock.build(
       userService,
       2,
-      enumName(UserRole.Commander),
+      enumName(UserRole.commander),
       "T123",
     );
 
@@ -102,7 +102,7 @@ void main() async {
 
   test('Should create, update and delete incidents', () async {
     final token = UserServiceMock.createToken("user@lokalhost", "Commander");
-    final incident = Incident.fromJson(IncidentBuilder.createIncidentAsJson("random", 0, token, "123"));
+    final incident = Incident.fromJson(IncidentBuilder.createIncidentAsJson("random", 0, token.accessToken, "123"));
     var response = await incidentBloc.create(incident);
     expect(incident, isA<Incident>(), reason: "Should be an Incident");
     expect(incident.id, isNot(response.id), reason: "Response should have unique id");

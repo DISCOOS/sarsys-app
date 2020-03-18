@@ -9,7 +9,7 @@ class TrackingService {
   final String restUrl;
   final Client client;
 
-  final StreamController _controller = StreamController.broadcast();
+  final StreamController<TrackingMessage> _controller = StreamController.broadcast();
 
   TrackingService(this.restUrl, this.wsUrl, this.client);
 

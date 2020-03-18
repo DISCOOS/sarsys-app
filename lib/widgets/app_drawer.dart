@@ -18,8 +18,14 @@ class AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: <Widget>[
           UserAccountsDrawerHeader(
-            accountName: Text("User ${user?.userId}"),
-            accountEmail: Text(user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? ""),
+            accountName: Text(
+              "${user?.name}",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: Text(
+              user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? "",
+              style: TextStyle(fontWeight: FontWeight.w400),
+            ),
             decoration: BoxDecoration(
               color: Colors.grey[800],
             ),

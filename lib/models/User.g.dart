@@ -9,17 +9,23 @@ part of 'User.dart';
 User _$UserFromJson(Map<String, dynamic> json) {
   return User(
       userId: json['userId'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
+      fname: json['fname'] as String,
+      lname: json['lname'] as String,
+      uname: json['uname'] as String,
       roles: (json['roles'] as List)
           ?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))
-          ?.toList());
+          ?.toList(),
+      phone: json['phone'] as String,
+      email: json['email'] as String);
 }
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
-      'firstName': instance.firstName,
-      'lastName': instance.lastName,
       'userId': instance.userId,
+      'fname': instance.fname,
+      'lname': instance.lname,
+      'uname': instance.uname,
+      'email': instance.email,
+      'phone': instance.phone,
       'roles': instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList()
     };
 
@@ -44,7 +50,7 @@ T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
 }
 
 const _$UserRoleEnumMap = <UserRole, dynamic>{
-  UserRole.Commander: 'Commander',
-  UserRole.UnitLeader: 'UnitLeader',
-  UserRole.Personnel: 'Personnel'
+  UserRole.commander: 'commander',
+  UserRole.unit_leader: 'unit_leader',
+  UserRole.personnel: 'personnel'
 };

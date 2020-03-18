@@ -14,7 +14,6 @@ import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/tracking.dart';
 import 'package:SarSys/mock/units.dart';
-import 'package:SarSys/mock/users.dart';
 
 import 'package:SarSys/core/defaults.dart';
 
@@ -96,9 +95,8 @@ class BlocProviderController {
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final UserService userService = !demo.active
-        ? UserService('$baseRestUrl/auth/login', client)
-        : UserServiceMock.buildAny(demo.role, configService);
+    final userService = UserIdentityService();
+    //!demo.active ? UserIdentityService() : UserServiceMock.buildAny(demo.role, configService);
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service
@@ -303,7 +301,7 @@ class DemoParams {
     this.personnelCount = 30,
     this.tetraCount = 15,
     this.appCount = 30,
-    this.role = UserRole.Commander,
+    this.role = UserRole.commander,
   });
 
   @override

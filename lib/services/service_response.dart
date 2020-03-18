@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 
 class ServiceResponse<T> extends Equatable {
   final int code;
   final String message;
   final T body;
+  final Object error;
 
-  ServiceResponse({this.code, this.message, this.body}) : super([code, message, body]);
+  ServiceResponse({this.code, this.message, this.body, Object error})
+      : error = error,
+        super([code, message, body, error]);
 
   static ServiceResponse<T> ok<T>({T body}) {
     return ServiceResponse<T>(
@@ -15,10 +20,10 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> noContent<T>() {
+  static ServiceResponse<T> noContent<T>({String message = 'No content'}) {
     return ServiceResponse<T>(
       code: 204,
-      message: 'No content',
+      message: message,
     );
   }
 
@@ -50,14 +55,20 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> error<T>({message: 'Error', Object error}) {
-    return ServiceResponse<T>(code: 500, message: message, body: error);
+  static ServiceResponse<T> internalServerError<T>({
+    message: 'Internal server error',
+    Object error,
+  }) {
+    return ServiceResponse<T>(code: 500, message: message, error: error);
   }
 
-  bool get is200 => code == 200;
-  bool get is204 => code == 204;
-  bool get is401 => code == 401;
-  bool get is404 => code == 404;
-  bool get is403 => code == 403;
-  bool get is500 => code == 500;
+  bool get is200 => code == HttpStatus.ok;
+  bool get is201 => code == HttpStatus.created;
+  bool get is202 => code == HttpStatus.accepted;
+  bool get is204 => code == HttpStatus.noContent;
+  bool get is400 => code == HttpStatus.badRequest;
+  bool get is401 => code == HttpStatus.unauthorized;
+  bool get is403 => code == HttpStatus.forbidden;
+  bool get is404 => code == HttpStatus.notFound;
+  bool get is500 => code == HttpStatus.internalServerError;
 }

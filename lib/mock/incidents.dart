@@ -67,12 +67,12 @@ class IncidentServiceMock extends Mock implements IncidentService {
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
               "a:x$i",
-              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:x$i", i, response.body, passcode)),
+              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:x$i", i, response.body.accessToken, passcode)),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
             MapEntry(
               "a:y$i",
-              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:y$i", i, unauthorized, passcode)),
+              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:y$i", i, unauthorized.accessToken, passcode)),
             ),
         ]);
       }
@@ -80,7 +80,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
     });
     when(mock.create(any)).thenAnswer((_) async {
       final response = await service.getToken();
-      final authorized = JsonWebToken.unverified(response.body);
+      final authorized = JsonWebToken.unverified(response.body.accessToken);
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.claims.subject);
       final created = Incident(

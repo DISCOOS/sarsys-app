@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'package:SarSys/models/AuthToken.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
@@ -99,29 +102,34 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   Future<UserState> _load(LoadUser command) async {
     var response = await service.getToken();
-    if (response.is200) {
-      _user = User.fromToken(response.body);
-      if (!kDebugMode) developer.log("Init from token ${response.body}", level: Level.CONFIG.value);
-      return _toResponse(command, UserAuthenticated(_user), result: _user);
-    } else if (response.is401) {
-      return _toResponse(command, UserUnauthorized(response));
-    } else if (response.is404) {
-      return _toResponse(command, UserUnset());
-    }
-    return _toError(command, response);
+    return _toEvent(response, command);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
-    var response = await service.login(command.data, command.password);
-    if (response.is200) {
-      _user = User.fromToken(response.body);
-      return _toResponse(command, UserAuthenticated(_user), result: true);
-    } else if (response.is401) {
-      return _toResponse(command, UserUnauthorized(response), result: false);
-    } else if (response.is403) {
-      return _toResponse(command, UserForbidden(response), result: false);
+    var response = await service.login(
+      username: command.data,
+      password: command.password,
+    );
+    return _toEvent(response, command);
+  }
+
+  UserState _toEvent(ServiceResponse<AuthToken> response, UserCommand command) {
+    switch (response.code) {
+      case HttpStatus.ok:
+        _user = response.body.asUser();
+        if (!kDebugMode) {
+          developer.log("User parsed from token: $_user", level: Level.CONFIG.value);
+        }
+        return _toResponse(command, UserAuthenticated(_user), result: _user);
+      case HttpStatus.noContent:
+        return _toResponse(command, UserUnset());
+      case HttpStatus.unauthorized:
+        return _toResponse(command, UserUnauthorized(response), result: false);
+      case HttpStatus.forbidden:
+        return _toResponse(command, UserForbidden(response), result: false);
+      default:
+        return _toError(command, response);
     }
-    return _toError(command, response);
   }
 
   Future<UserUnset> _logout(UnsetUser command) async {

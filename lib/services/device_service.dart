@@ -8,7 +8,7 @@ class DeviceService {
   final String restUrl;
   final Client client;
 
-  final StreamController _controller = StreamController.broadcast();
+  final StreamController<DeviceMessage> _controller = StreamController.broadcast();
 
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;

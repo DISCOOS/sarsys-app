@@ -5,30 +5,39 @@ import 'package:jaguar_jwt/jaguar_jwt.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+import 'package:SarSys/utils/data_utils.dart';
+
 part 'User.g.dart';
 
 @JsonSerializable()
 class User extends Equatable {
-  final String firstName;
-  final String lastName;
   final String userId;
+  final String fname;
+  final String lname;
+  final String uname;
+  final String email;
+  final String phone;
   final List<UserRole> roles;
 
   User({
     @required this.userId,
-    this.firstName,
-    this.lastName,
+    this.fname,
+    this.lname,
+    this.uname,
     this.roles,
+    this.phone,
+    this.email,
   }) : super([
           userId,
-          firstName,
-          lastName,
+          fname,
+          lname,
           roles,
         ]);
 
-  bool get isCommander => roles.contains(UserRole.Commander);
-  bool get isUnitLeader => roles.contains(UserRole.UnitLeader);
-  bool get isPersonnel => roles.contains(UserRole.Personnel);
+  String get name => '$fname $lname';
+  bool get isCommander => roles.contains(UserRole.commander);
+  bool get isUnitLeader => roles.contains(UserRole.unit_leader);
+  bool get isPersonnel => roles.contains(UserRole.personnel);
 
   /// Factory constructor for creating a new `User` instance
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
@@ -38,15 +47,32 @@ class User extends Equatable {
 
   /// Create user from token
   factory User.fromToken(String token) {
-    final jwt = JwtClaim.fromMap(_fromJWT(token));
+    final json = _fromJWT(token);
+    final jwt = JwtClaim.fromMap(json);
+    final claims = [
+      ...json['roles'],
+      if (json.hasPath('realm_access/roles')) ...json.elementAt('realm_access/roles'),
+    ];
+    final roles = List<UserRole>.from(_toRoles(claims));
     return User(
-        userId: jwt.subject,
-        roles: (jwt['roles'] as List)
-            ?.map(
-              (e) => _$enumDecodeNullable(_$UserRoleEnumMap, e),
-            )
-            ?.toList());
+      userId: jwt.subject,
+      uname: jwt['preferred_username'],
+      fname: jwt['given_name'],
+      lname: jwt['family_name'],
+      email: jwt['email'],
+      phone: jwt['phone'],
+      roles: roles,
+    );
   }
+
+  static Iterable<UserRole> _toRoles(Iterable roles) => roles
+      ?.where(
+        _$UserRoleEnumMap.containsValue,
+      )
+      ?.map(
+        (e) => _$enumDecodeNullable(_$UserRoleEnumMap, e),
+      )
+      ?.toSet();
 
   static Map<String, dynamic> _fromJWT(String token) {
     final parts = token.split('.');
@@ -79,15 +105,15 @@ class User extends Equatable {
   }
 }
 
-enum UserRole { Commander, UnitLeader, Personnel }
+enum UserRole { commander, unit_leader, personnel }
 
 String translateUserRole(UserRole role) {
   switch (role) {
-    case UserRole.Commander:
+    case UserRole.commander:
       return "Aksjonsleder";
-    case UserRole.Personnel:
+    case UserRole.personnel:
       return "Mannskap";
-    case UserRole.UnitLeader:
+    case UserRole.unit_leader:
     default:
       return "Lagleder";
   }
