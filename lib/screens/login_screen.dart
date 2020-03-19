@@ -11,14 +11,20 @@ class LoginScreen extends StatefulWidget {
   LoginScreenState createState() => new LoginScreenState();
 }
 
-class LoginScreenState extends RouteWriter<LoginScreen, void> {
+class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerProviderStateMixin {
+  static const color = Color(0xFF0d2149);
   final _formKey = new GlobalKey<FormState>();
 
   String _username = "";
   StreamSubscription<bool> subscription;
+  AnimationController _controller;
 
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    )..repeat();
   }
 
   bool _validateAndSave() {
@@ -45,9 +51,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
 
   @override
   void dispose() {
-    if (subscription != null) {
-      subscription.cancel();
-    }
+    subscription?.cancel();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -56,14 +61,14 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
     return new Scaffold(
       backgroundColor: Colors.grey[300],
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(40.0),
         child: Center(
           child: Material(
             elevation: 4,
+            borderRadius: BorderRadius.circular(4.0),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(8.0),
               ),
               child: Container(
                 child: _buildBody(context),
@@ -87,19 +92,21 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                 : CrossFadeState.showSecond,
             firstChild: Container(
               padding: EdgeInsets.all(24.0),
-              child: ListView(
-                shrinkWrap: true,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Center(child: CircularProgressIndicator()),
-                  // Logo
                   Padding(
                     padding: EdgeInsets.all(8),
-                    child: Image.asset(
-                      'assets/images/sar-team-2.png',
-                      height: 250.0,
-                      width: 250.0,
-                      alignment: Alignment.center,
+                    child: SizedBox(
+                      height: 300,
+                      child: _buildRipple(
+                        _buildIcon(),
+                      ),
                     ),
+                  ),
+                  Text(
+                    'Logger deg inn, vent litt',
+                    style: _toStyle(context, 16, FontWeight.w600),
                   ),
                 ],
               ),
@@ -117,24 +124,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: Text(
                               "SARSys",
-                              style: Theme.of(context).textTheme.title.copyWith(
-                                    fontSize: 42,
-                                    color: Color(0xFF0d2149),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: _toStyle(context, 42, FontWeight.bold),
                             ),
                           ),
                         ),
                       ),
                       // Logo
                       Padding(
-                        padding: EdgeInsets.zero,
-                        child: Image.asset(
-                          'assets/images/sar-team-2.png',
-                          height: 250.0,
-                          width: 250.0,
-                          alignment: Alignment.center,
-                        ),
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildIcon(),
                       ),
                       if (snapshot.hasData && snapshot.data is UserException)
                         Padding(
@@ -150,11 +148,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                         ),
                       Text(
                         'Logg deg på med din organisasjonskonto',
-                        style: Theme.of(context).textTheme.title.copyWith(
-                              fontSize: 22,
-                              color: Color(0xFF0d2149),
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: _toStyle(context, 22, FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                       _buildEmailInput(),
@@ -166,26 +160,62 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
         });
   }
 
-  Widget _buildEmailInput() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-      child: new TextFormField(
-        maxLines: 1,
-        keyboardType: TextInputType.emailAddress,
-        autofocus: false,
-        scrollPadding: EdgeInsets.all(90),
-        textCapitalization: TextCapitalization.none,
-        decoration: new InputDecoration(
-          hintText: 'Påloggingsadresse',
-        ),
-        validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
-        onSaved: (value) => _username = value,
-      ),
-    );
-  }
+  TextStyle _toStyle(BuildContext context, double size, FontWeight weight) =>
+      Theme.of(context).textTheme.title.copyWith(
+            fontSize: size,
+            color: color,
+            fontWeight: weight,
+          );
 
-  Widget _buildPrimaryButton(UserBloc bloc) {
-    return new Padding(
+  Image _buildIcon() => Image.asset(
+        'assets/images/sar-team-2.png',
+        height: 250.0,
+        width: 250.0,
+        alignment: Alignment.center,
+      );
+
+  Widget _buildRipple(Widget icon) => AnimatedBuilder(
+        animation: CurvedAnimation(
+          parent: _controller,
+          curve: Curves.elasticInOut,
+        ),
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              _buildCircle(250 + (24 * _controller.value)),
+              Align(child: icon),
+            ],
+          );
+        },
+      );
+
+  Widget _buildCircle(double radius) => Container(
+        width: radius,
+        height: radius,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.lightBlue.withOpacity(_controller.value / 3),
+        ),
+      );
+
+  Widget _buildEmailInput() => Padding(
+        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
+        child: new TextFormField(
+          maxLines: 1,
+          keyboardType: TextInputType.emailAddress,
+          autofocus: false,
+          scrollPadding: EdgeInsets.all(90),
+          textCapitalization: TextCapitalization.none,
+          decoration: new InputDecoration(
+            hintText: 'Påloggingsadresse',
+          ),
+          validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+          onSaved: (value) => _username = value,
+        ),
+      );
+
+  Widget _buildPrimaryButton(UserBloc bloc) => Padding(
         padding: EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
         child: SizedBox(
           height: 40.0,
@@ -197,12 +227,16 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
             child: new Text('Logg på', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
             onPressed: () {
               if (_validateAndSave()) {
+                FocusScopeNode currentFocus = FocusScope.of(context);
+                if (!currentFocus.hasPrimaryFocus) {
+                  currentFocus.unfocus();
+                }
                 bloc.login(username: _username);
               }
             },
           ),
-        ));
-  }
+        ),
+      );
 
   String _toError(UserException state) {
     if (state is UserUnauthorized) {
