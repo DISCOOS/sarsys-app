@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:SarSys/models/AuthToken.dart';
+import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -15,10 +17,112 @@ abstract class UserService {
 
   static final storage = new FlutterSecureStorage();
 
-  Future<ServiceResponse<AuthToken>> login({String username, String password});
+  Future<ServiceResponse<AuthToken>> authorize({String username, String password});
 
   Future<ServiceResponse<AuthToken>> refresh() async {
     return ServiceResponse.noContent<AuthToken>();
+  }
+
+  Future<ServiceResponse<bool>> isSecured() async {
+    try {
+      final type = await storage.read(key: "security");
+      return ServiceResponse.ok(body: type != null);
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(
+        message: "Failed to get security from storage",
+        error: e,
+      );
+    }
+  }
+
+  Future<ServiceResponse<Security>> getSecurity() async {
+    try {
+      final json = await storage.read(key: "security");
+      if (json != null) {
+        return ServiceResponse.ok(
+          body: Security.fromJson(jsonDecode(json)),
+        );
+      }
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(
+        message: "Failed to get security from storage",
+        error: e,
+      );
+    }
+    return ServiceResponse.noContent();
+  }
+
+  Future<ServiceResponse<Security>> secure(Security security) async {
+    try {
+      var next;
+      final response = await getSecurity();
+      if (response.is200) {
+        next = response.body.cloneWith(
+          pin: security.pin,
+          type: security.type,
+          locked: security.locked,
+        );
+      } else {
+        next = security;
+      }
+      await storage.write(
+        key: "security",
+        value: jsonEncode(next.toJson()),
+      );
+      return ServiceResponse.ok(
+        body: next,
+      );
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(error: e);
+    }
+  }
+
+  Future<ServiceResponse<Security>> lock() async {
+    try {
+      final response = await getSecurity();
+      if (response.is200) {
+        return secure(response.body.cloneWith(
+          locked: true,
+        ));
+      }
+      return ServiceResponse.noContent();
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(error: e);
+    }
+  }
+
+  Future<ServiceResponse<Security>> unlock({String pin}) async {
+    try {
+      final response = await getSecurity();
+      if (response.is200) {
+        var security = response.body;
+        if (security.locked == false || security.pin == pin) {
+          security = security.cloneWith(
+            locked: false,
+          );
+          await storage.write(
+            key: "security",
+            value: jsonEncode(security.toJson()),
+          );
+          return ServiceResponse.ok(
+            body: security,
+          );
+        }
+        return ServiceResponse.unauthorized();
+      }
+      return ServiceResponse.noContent();
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(error: e);
+    }
+  }
+
+  /// Get current user from resource owner
+  Future<ServiceResponse<User>> load() async {
+    final result = await getToken();
+    if (result.is200) {
+      return ServiceResponse.ok(body: result.body.asUser());
+    }
+    return ServiceResponse.noContent();
   }
 
   /// Get current token from secure storage
@@ -35,7 +139,7 @@ abstract class UserService {
         return refresh();
       }
     } on FormatException {
-      return logout();
+      await logout();
     } on Exception catch (e) {
       return ServiceResponse.internalServerError(error: e);
     }
@@ -43,13 +147,17 @@ abstract class UserService {
   }
 
   /// Delete token from secure storage
-  Future<ServiceResponse<void>> logout() async {
+  Future<ServiceResponse<Security>> logout() async {
     try {
       // Delete token from storage
       await storage.delete(key: 'token');
-      return ServiceResponse.noContent();
+      final result = await getSecurity();
+      return ServiceResponse.ok(body: result.body);
     } on Exception catch (e) {
-      return ServiceResponse.internalServerError(message: "Failed to delete token from storage", error: e);
+      return ServiceResponse.internalServerError(
+        message: "Failed to delete token from storage",
+        error: e,
+      );
     }
   }
 
@@ -80,7 +188,8 @@ abstract class UserService {
 }
 
 class UserIdentityService extends UserService {
-  UserIdentityService();
+  UserIdentityService(this.client);
+  final Client client;
 
   static const String AUTHORIZE_ERROR_CODE = "authorize_failed";
   static const String TOKEN_ERROR_CODE = "token_failed";
@@ -94,7 +203,7 @@ class UserIdentityService extends UserService {
 
   /// Authorize and get token
   @override
-  Future<ServiceResponse<AuthToken>> login({String username, String password}) async {
+  Future<ServiceResponse<AuthToken>> authorize({String username, String password}) async {
     try {
       final access = await _appAuth.authorize(
         AuthorizationRequest(
@@ -174,6 +283,38 @@ class UserIdentityService extends UserService {
     return super.refresh();
   }
 
+  /// Delete token from secure storage
+  @override
+  Future<ServiceResponse<Security>> logout() async {
+    try {
+      final token = await getToken();
+      if (token.is200) {
+        final response =
+            await client.post('https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout', headers: {
+          'Authorization': 'Bearer ${token.body.accessToken}',
+        }, body: {
+          'client_id': _clientId,
+          'refresh_token': token.body.refreshToken,
+        });
+        if (response.statusCode == 204) {
+          return super.logout();
+        }
+        final result = await getSecurity();
+        return ServiceResponse(
+          code: response.statusCode,
+          message: response.reasonPhrase,
+          body: result.body,
+        );
+      }
+      return ServiceResponse.noContent();
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(
+        message: "Failed to delete token from storage",
+        error: e,
+      );
+    }
+  }
+
   Future<ServiceResponse<AuthToken>> _fetchToken(TokenRequest request) async {
     final result = await _appAuth.token(
       request,
@@ -193,13 +334,12 @@ class UserIdentityService extends UserService {
 }
 
 class UserCredentialsService extends UserService {
+  UserCredentialsService(this.url, this.client);
   final String url;
   final Client client;
 
-  UserCredentialsService(this.url, this.client);
-
   /// Authorize with basic auth and get token
-  Future<ServiceResponse<AuthToken>> login({String username, String password}) async {
+  Future<ServiceResponse<AuthToken>> authorize({String username, String password}) async {
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
     try {
@@ -228,7 +368,10 @@ class UserCredentialsService extends UserService {
         message: response.reasonPhrase,
       );
     } on Exception catch (e) {
-      return ServiceResponse.internalServerError(message: "Failed to login", error: e);
+      return ServiceResponse.internalServerError(
+        message: "Failed to login",
+        error: e,
+      );
     }
   }
 }

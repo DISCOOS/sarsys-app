@@ -41,7 +41,7 @@ void main() async {
   setUp(() async {
     final AppConfigService configService = AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', null);
     final UserCredentialsService userService = UserServiceMock.buildAny(UserRole.commander, configService);
-    await userService.login(username: 'user@localhost', password: 'password');
+    await userService.authorize(username: 'user@localhost', password: 'password');
     final IncidentService incidentService = IncidentServiceMock.build(
       userService,
       2,

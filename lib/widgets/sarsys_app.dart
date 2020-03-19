@@ -14,7 +14,7 @@ import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
-import 'package:SarSys/widgets/permission_checker.dart';
+import 'package:SarSys/widgets/access_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/login_screen.dart';
@@ -64,6 +64,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused) {
       writeAppState(widget.bucket);
+      // Lock access to app on pause only (inactive state should NOT lock the app for usability reasons)
+      widget.controller.userProvider.bloc.lock();
     } else if (state == AppLifecycleState.resumed) {
       readAppState(widget.bucket);
     }
@@ -126,7 +128,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     WidgetBuilder builder;
 
     // Ensure logged in
-    if (widget.controller.userProvider.bloc.isAuthenticated)
+    if (widget.controller.userProvider.bloc.isReady)
       builder = _toBuilder(settings, _toScreen(settings, false));
     else {
       final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
@@ -144,6 +146,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (settings.name) {
       case 'login':
       case 'onboarding':
+      case 'change/pin':
         builder = _toUnchecked(child);
         break;
       default:
@@ -158,6 +161,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (settings.name) {
       case 'login':
         child = LoginScreen();
+        break;
+      case 'change/pin':
+        child = LoginScreen(type: LoginType.changePin);
         break;
       case 'incident':
         child = CommandScreen(tabIndex: CommandScreen.INCIDENT);
@@ -202,7 +208,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   WidgetBuilder _toChecked(Widget child) => (context) => _buildWithProviders(
       context: context,
-      child: PermissionChecker(
+      child: AccessChecker(
         key: _checkerKey,
         child: child,
         configBloc: BlocProvider.of<AppConfigBloc>(context),
@@ -273,7 +279,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     Widget child;
     if (providers.configProvider.bloc.config.onboarding) {
       child = OnboardingScreen();
-    } else if (providers.userProvider.bloc.isAuthenticated) {
+    } else if (providers.userProvider.bloc.isReady) {
       var route = widget.bucket.readState(context, identifier: RouteWriter.NAME);
       if (route != null) {
         if (route['incident'] != null) {
@@ -298,7 +304,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           incident: providers.incidentProvider.bloc.current,
         );
       }
-      child = PermissionChecker(
+      child = AccessChecker(
         key: _checkerKey,
         child: child,
         configBloc: providers.configProvider.bloc,

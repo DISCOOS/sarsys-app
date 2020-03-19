@@ -15,7 +15,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   static UserCredentialsService build(UserRole role, AppConfigService configService, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
 
-    when(mock.login(username: username, password: password)).thenAnswer((_) async {
+    when(mock.authorize(username: username, password: password)).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(username, enumName(actual));
@@ -25,7 +25,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       return ServiceResponse.ok(body: token);
     });
     when(
-      mock.login(
+      mock.authorize(
         username: argThat(isNot(equals(username))),
         password: argThat(isNot(equals(password))),
       ),
@@ -48,7 +48,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
 
   static UserCredentialsService buildAny(UserRole role, AppConfigService configService) {
     final UserServiceMock mock = UserServiceMock();
-    when(mock.login(username: anyNamed('username'), password: anyNamed('password'))).thenAnswer((_) async {
+    when(mock.authorize(username: anyNamed('username'), password: anyNamed('password'))).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(_.namedArguments['username'], enumName(actual));

@@ -1,31 +1,42 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 
-class LoginScreen extends StatefulWidget {
-  @override
-  LoginScreenState createState() => new LoginScreenState();
+enum LoginType {
+  automatic,
+  changePin,
 }
 
-class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerProviderStateMixin {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key key, this.type = LoginType.automatic}) : super(key: key);
+  final LoginType type;
+
+  @override
+  LoginScreenState createState() => LoginScreenState();
+}
+
+class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProviderStateMixin {
   static const color = Color(0xFF0d2149);
-  final _formKey = new GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
+  String _pin = "";
+  String _nextPin = "";
   String _username = "";
-  StreamSubscription<bool> subscription;
+  bool _wrongPin = false;
+  bool _verifyPin = false;
+  bool _securePin = false;
+  bool _pinChanged = false;
+  bool _pinComplete = false;
   AnimationController _controller;
+  StreamSubscription<UserState> _subscription;
 
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 1),
-    )..repeat();
-  }
+  TextEditingController _pinController;
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
@@ -38,12 +49,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerP
 
   UserBloc _handle(BuildContext context) {
     final bloc = BlocProvider.of<UserBloc>(context);
-    if (subscription != null) {
-      subscription.cancel();
-    }
-    subscription = bloc.authenticated.listen((isAuthenticated) {
-      if (isAuthenticated) {
-        Navigator.pushReplacementNamed(context, 'incident/list');
+    _subscription?.cancel();
+    _subscription = bloc.state.listen((UserState state) {
+      switch (state.runtimeType) {
+        case UserUnlocked:
+        case UserAuthenticated:
+          if (bloc.isReady && LoginType.automatic == widget.type || _pinChanged) {
+            Navigator.pushReplacementNamed(context, 'incident/list');
+          }
+          break;
       }
     });
     return bloc;
@@ -51,14 +65,17 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerP
 
   @override
   void dispose() {
-    subscription?.cancel();
+    _subscription?.cancel();
     _controller?.dispose();
+    _controller = null;
+    /* _pinController is disposed automatically by PinCodeTextField */
+    _pinController = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
+    return Scaffold(
       backgroundColor: Colors.grey[300],
       body: Padding(
         padding: const EdgeInsets.all(40.0),
@@ -83,84 +100,133 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerP
   Widget _buildBody(BuildContext context) {
     UserBloc bloc = _handle(context);
     return StreamBuilder<UserState>(
-        stream: bloc.state,
-        builder: (context, snapshot) {
-          return AnimatedCrossFade(
-            duration: Duration(microseconds: 300),
-            crossFadeState: snapshot.hasData && snapshot.data.isAuthenticating()
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Container(
-              padding: EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: SizedBox(
-                      height: 300,
-                      child: _buildRipple(
-                        _buildIcon(),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'Logger deg inn, vent litt',
-                    style: _toStyle(context, 16, FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            secondChild: Container(
-                padding: EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: <Widget>[
-                      SafeArea(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Text(
-                              "SARSys",
-                              style: _toStyle(context, 42, FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Logo
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: _buildIcon(),
-                      ),
-                      if (snapshot.hasData && snapshot.data is UserException)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Text(
-                            _toError(snapshot.data),
-                            style: TextStyle(
-                              color: Colors.red,
-                              height: 1.0,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      Text(
-                        'Logg deg på med din organisasjonskonto',
-                        style: _toStyle(context, 22, FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                      _buildEmailInput(),
-                      _buildPrimaryButton(bloc),
-                    ],
-                  ),
-                )),
-          );
-        });
+      stream: bloc.state,
+      builder: (context, snapshot) {
+        return AnimatedCrossFade(
+          duration: Duration(microseconds: 300),
+          crossFadeState: _inProgress(snapshot, bloc) ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+          firstChild: _buildProgress(context),
+          secondChild: _buildForm(context, snapshot, bloc),
+        );
+      },
+    );
   }
 
-  TextStyle _toStyle(BuildContext context, double size, FontWeight weight) =>
+  bool _inProgress(AsyncSnapshot<UserState> snapshot, UserBloc bloc) =>
+      bloc.isReady || snapshot.hasData && (snapshot.data.isPending());
+
+  Container _buildProgress(BuildContext context) {
+    _controller ??= AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    )..repeat();
+
+    return Container(
+      padding: EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.all(8),
+            child: SizedBox(
+              height: 300,
+              child: _buildRipple(
+                _buildIcon(),
+              ),
+            ),
+          ),
+          Text(
+            'Logger deg inn, vent litt',
+            style: _toStyle(context, 16, FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Container _buildForm(
+    BuildContext context,
+    AsyncSnapshot<UserState> snapshot,
+    UserBloc bloc,
+  ) {
+    _controller?.stop(canceled: false);
+    _pinController ??= TextEditingController();
+
+    return Container(
+      padding: EdgeInsets.all(24.0),
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            _buildTitle(context),
+            // Logo
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildIcon(),
+            ),
+            ..._buildFields(snapshot, bloc),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildFields(AsyncSnapshot<UserState> snapshot, UserBloc bloc) {
+    final isError = snapshot.hasData && snapshot.data is UserException;
+    var fields = isError ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
+
+    if (changePin || !bloc.isSecured) {
+      return fields..add(_buildSecure(bloc));
+    } else if (bloc.isLocked) {
+      return fields..addAll(_buildUnlock(bloc));
+    }
+    return fields..addAll(_buildAuthenticate(bloc));
+  }
+
+  Widget _buildErrorText(AsyncSnapshot<UserState> snapshot, UserBloc bloc) => Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Text(
+          _toError(snapshot.data, bloc),
+          style: _toStyle(
+            context,
+            22,
+            FontWeight.bold,
+            color: Colors.redAccent,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+
+  String _toError(UserException state, UserBloc bloc) {
+    if (state is UserUnauthorized) {
+      return bloc.isLocked ? 'Feil pinkode' : 'Feil brukernavn eller passord';
+    } else if (state is UserForbidden) {
+      return 'Ingen tilgang';
+    }
+    return '';
+  }
+
+  SafeArea _buildTitle(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text(
+            "SARSys",
+            style: _toStyle(context, 42, FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  TextStyle _toStyle(
+    BuildContext context,
+    double size,
+    FontWeight weight, {
+    Color color = color,
+  }) =>
       Theme.of(context).textTheme.title.copyWith(
             fontSize: size,
             color: color,
@@ -199,15 +265,127 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerP
         ),
       );
 
+  Widget _buildSecure(UserBloc bloc) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          if (_verifyPin) {
+            _wrongPin = _pin != _nextPin;
+            if (!_securePin) {
+              _securePin = true;
+              _pinController.clear();
+            }
+          }
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                _toPinText(),
+                style: _toStyle(context, 22, FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              _buildPinInput(
+                setState: setState,
+              ),
+              Flexible(
+                child: _verifyPin
+                    ? _buildSecureAction(bloc, enabled: _pinComplete)
+                    : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
+              ),
+            ],
+          );
+        },
+      );
+
+  String _toPinText() =>
+      _verifyPin ? (_wrongPin ? 'Riktig pinkode er $_pin' : 'Pinkode er riktig') : 'Oppgi ny pinkode';
+
+  Widget _buildNewPinAction(UserBloc bloc, StateSetter setState, {bool enabled}) => _buildAction(
+        'Velg',
+        () => setState(() => _verifyPin = true),
+        enabled: enabled,
+      );
+
+  Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
+        'Lagre',
+        () {
+          _pinChanged = changePin;
+          bloc.secure(Security.fromPin(_pin));
+        },
+        enabled: enabled,
+      );
+
+  bool get changePin => LoginType.changePin == widget.type;
+
+  List<Widget> _buildUnlock(UserBloc bloc) => [
+        Text(
+          'Lås opp med pinkode',
+          style: _toStyle(context, 22, FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        _buildPinInput(),
+        _buildUnlockAction(bloc),
+      ];
+
+  Widget _buildUnlockAction(UserBloc bloc) => _buildAction(
+        'Lås opp',
+        () => bloc.unlock(pin: _pin),
+      );
+
+  Widget _buildPinInput({StateSetter setState}) => Padding(
+        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
+        child: PinCodeTextField(
+          length: 4,
+          obsecureText: false,
+          animationType: AnimationType.fade,
+          shape: PinCodeFieldShape.box,
+          animationDuration: Duration(milliseconds: 300),
+          borderRadius: BorderRadius.circular(5),
+          fieldHeight: 50,
+          fieldWidth: 50,
+          activeFillColor: color,
+          controller: _pinController,
+          onChanged: (value) {
+            if (_pinComplete) {
+              _pinComplete = value.length == 4;
+              if (setState != null) {
+                setState(() {});
+              }
+            }
+          },
+          onCompleted: (value) {
+            if (_verifyPin) {
+              _nextPin = value;
+            } else {
+              _pin = value;
+            }
+            _pinComplete = true;
+            if (setState != null) {
+              setState(() {});
+            }
+          },
+        ),
+      );
+
+  List<Widget> _buildAuthenticate(UserBloc bloc) => [
+        Text(
+          'Logg deg på med din organisasjonskonto',
+          style: _toStyle(context, 22, FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        _buildEmailInput(),
+        _buildAuthenticateAction(bloc),
+      ];
+
   Widget _buildEmailInput() => Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-        child: new TextFormField(
+        child: TextFormField(
           maxLines: 1,
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.go,
           autofocus: false,
           scrollPadding: EdgeInsets.all(90),
           textCapitalization: TextCapitalization.none,
-          decoration: new InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Påloggingsadresse',
           ),
           validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
@@ -215,35 +393,29 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with SingleTickerP
         ),
       );
 
-  Widget _buildPrimaryButton(UserBloc bloc) => Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-        child: SizedBox(
-          height: 40.0,
-          width: 60.0,
-          child: RaisedButton(
-            elevation: 2.0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-            color: Color.fromRGBO(00, 41, 73, 1),
-            child: new Text('Logg på', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
-            onPressed: () {
-              if (_validateAndSave()) {
-                FocusScopeNode currentFocus = FocusScope.of(context);
-                if (!currentFocus.hasPrimaryFocus) {
-                  currentFocus.unfocus();
-                }
-                bloc.login(username: _username);
-              }
-            },
-          ),
-        ),
+  Widget _buildAuthenticateAction(UserBloc bloc) => _buildAction(
+        'Logg på',
+        () => bloc.authenticate(username: _username),
       );
 
-  String _toError(UserException state) {
-    if (state is UserUnauthorized) {
-      return 'Feil brukernavn eller passord';
-    } else if (state is UserForbidden) {
-      return 'Ingen tilgang';
-    }
-    return '';
-  }
+  Widget _buildAction(String label, Function() onPressed, {bool enabled = true}) => Padding(
+        padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
+        child: RaisedButton(
+          elevation: 2.0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+          color: Color.fromRGBO(00, 41, 73, 1),
+          child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
+          onPressed: enabled
+              ? () {
+                  if (_validateAndSave()) {
+                    FocusScopeNode currentFocus = FocusScope.of(context);
+                    if (!currentFocus.hasPrimaryFocus) {
+                      currentFocus.unfocus();
+                    }
+                    onPressed();
+                  }
+                }
+              : null,
+        ),
+      );
 }

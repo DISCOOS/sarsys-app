@@ -11,12 +11,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PermissionChecker extends StatefulWidget {
+class AccessChecker extends StatefulWidget {
   final Widget child;
   final AppConfigBloc configBloc;
   final List<PermissionGroup> permissions;
 
-  const PermissionChecker({
+  const AccessChecker({
     Key key,
     @required this.child,
     @required this.configBloc,
@@ -25,10 +25,10 @@ class PermissionChecker extends StatefulWidget {
         super(key: key);
 
   @override
-  _PermissionCheckerState createState() => _PermissionCheckerState();
+  _AccessCheckerState createState() => _AccessCheckerState();
 }
 
-class _PermissionCheckerState extends State<PermissionChecker> with AutomaticKeepAliveClientMixin {
+class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveClientMixin {
   bool _listening = false;
   bool _checkPermission = true;
   PermissionController controller;
@@ -47,7 +47,7 @@ class _PermissionCheckerState extends State<PermissionChecker> with AutomaticKee
     _subscription?.cancel();
     _subscription = BlocProvider.of<UserBloc>(context)?.state?.listen((state) {
       // Skip initial event
-      if (_listening && state.isUnset()) {
+      if (_listening && (state.isUnset() || state.isLocked())) {
         final onboarding = BlocProvider.of<AppConfigBloc>(context)?.config?.onboarding;
         Navigator.of(context)?.pushReplacementNamed(onboarding == true ? "onboarding" : "login");
       }

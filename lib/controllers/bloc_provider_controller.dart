@@ -95,8 +95,7 @@ class BlocProviderController {
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final userService = UserIdentityService();
-    //!demo.active ? UserIdentityService() : UserServiceMock.buildAny(demo.role, configService);
+    final userService = UserIdentityService(client);
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service

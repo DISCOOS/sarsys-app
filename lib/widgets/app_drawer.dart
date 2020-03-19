@@ -85,11 +85,23 @@ class AppDrawer extends StatelessWidget {
           ),
           Divider(),
           ListTile(
-            leading: const Icon(Icons.lock),
-            title: Text('Logg ut', style: TextStyle(fontSize: 14)),
-            onTap: () {
+            leading: const Icon(Icons.account_box),
+            title: Text(userBloc.isAuthenticated ? 'Logg av' : 'Logg på', style: TextStyle(fontSize: 14)),
+            onTap: () async {
               Navigator.pop(context);
-              userBloc?.logout();
+              if (userBloc.isAuthenticated) {
+                await userBloc.logout();
+              } else {
+                Navigator.pushReplacementNamed(context, 'login');
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock),
+            title: Text('Endre pin', style: TextStyle(fontSize: 14)),
+            onTap: () async {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, 'change/pin');
             },
           ),
           Divider(),

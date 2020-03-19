@@ -55,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           onboarding: _onboard,
           demoRole: _commander ? enumName(UserRole.commander) : enumName(UserRole.personnel),
         );
-        final authn = BlocProvider.of<UserBloc>(context).isAuthenticated;
+        final authn = BlocProvider.of<UserBloc>(context).isReady;
         Navigator.pushReplacementNamed(context, authn ? 'incidents' : 'login');
       },
     );

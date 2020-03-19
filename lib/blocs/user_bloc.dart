@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:SarSys/models/AuthToken.dart';
+import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
@@ -26,12 +27,28 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   @override
   get initialState => UserUnset();
 
-  User _user;
+  /// Get user
   User get user => _user;
+  User _user;
+
+  /// Get security
+  Security get security => _security;
+  Security _security;
+
+  /// User identity is secured
+  bool get isSecured => _security != null;
+
+  /// User access is locked. This should enforce login
+  bool get isLocked => !isSecured || _security.locked == true;
+
+  /// User access is unlocked
+  bool get isUnlocked => _security?.locked == false;
+
+  /// User identity is secured
   bool get isAuthenticated => _user != null;
 
-  /// Stream of authentication state changes
-  Stream<bool> get authenticated => state.map((state) => state is UserAuthenticated);
+  /// User identity is ready to be accessed. If false, login should be enforced
+  bool get isReady => isSecured && isUnlocked && isAuthenticated;
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
@@ -51,21 +68,40 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   Stream<bool> authorized(Incident incident) =>
       state.map((state) => state is UserAuthorized && state.incident == incident);
 
+  /// Secure user access with given settings
+  Future<Security> secure(Security security) async {
+    return _dispatch<Security>(SecureUser(security));
+  }
+
+  /// Lock user access using current security settings
+  Future<dynamic> lock() async {
+    return _dispatch<dynamic>(LockUser());
+  }
+
+  /// Unlock user access
+  Future<dynamic> unlock({String pin}) async {
+    return _dispatch<dynamic>(_assertLocked(UnlockUser(pin: pin)));
+  }
+
+  UserCommand _assertLocked(UserCommand command) {
+    return isUnlocked ? RaiseUserError.from("Er låst opp") : command;
+  }
+
   /// Load user from secure storage
   Future<User> load() async {
     return _dispatch<User>(_assertUnset(LoadUser()));
   }
 
-  Future<User> login({String username, String password}) {
+  Future<User> authenticate({String username, String password}) {
     return _dispatch<User>(_assertUnset(AuthenticateUser(username, password)));
   }
 
   UserCommand _assertUnset(UserCommand command) {
-    return isAuthenticated ? RaiseUserError.from("Allerede logget inn") : command;
+    return isAuthenticated ? RaiseUserError.from("Er logget inn") : command;
   }
 
   Future<bool> logout() {
-    return _dispatch<bool>(UnsetUser());
+    return _dispatch<bool>(LogoutUser());
   }
 
   UserCommand _assertAuthenticated(UserCommand command) {
@@ -79,12 +115,19 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
     try {
-      if (command is LoadUser) {
+      if (command is SecureUser) {
+        yield await _secure(command);
+      } else if (command is LockUser) {
+        yield await _lock(command);
+      } else if (command is UnlockUser) {
+        yield UserUnlocking(command.data);
+        yield await _unlock(command);
+      } else if (command is LoadUser) {
         yield await _load(command);
       } else if (command is AuthenticateUser) {
         yield UserAuthenticating(command.data);
         yield await _authenticate(command);
-      } else if (command is UnsetUser) {
+      } else if (command is LogoutUser) {
         yield await _logout(command);
       } else if (command is AuthorizeUser) {
         if (_user != null) {
@@ -100,20 +143,55 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     }
   }
 
+  Future<UserState> _secure(SecureUser command) async {
+    var response = await service.secure(command.data);
+    return _toSecurityEvent(response, command);
+  }
+
+  Future<UserState> _lock(LockUser command) async {
+    var response = await service.lock();
+    return _toSecurityEvent(response, command);
+  }
+
+  Future<UserState> _unlock(UnlockUser command) async {
+    var response = await service.unlock(pin: command.data);
+    return _toSecurityEvent(response, command);
+  }
+
+  UserState _toSecurityEvent(ServiceResponse<Security> response, UserCommand command) {
+    switch (response.code) {
+      case HttpStatus.ok:
+        _security = response.body;
+        if (!kDebugMode) {
+          developer.log("Security set: $_security", level: Level.CONFIG.value);
+        }
+        return _toResponse(command, _toSecurityState(), result: _security);
+      case HttpStatus.unauthorized:
+        return _toResponse(
+          command,
+          UserUnauthorized(response),
+          result: false,
+        );
+      default:
+        return _toError(command, response);
+    }
+  }
+
   Future<UserState> _load(LoadUser command) async {
+    _security = (await service.getSecurity()).body;
     var response = await service.getToken();
-    return _toEvent(response, command);
+    return _toAuthEvent(response, command);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
-    var response = await service.login(
+    var response = await service.authorize(
       username: command.data,
       password: command.password,
     );
-    return _toEvent(response, command);
+    return _toAuthEvent(response, command);
   }
 
-  UserState _toEvent(ServiceResponse<AuthToken> response, UserCommand command) {
+  UserState _toAuthEvent(ServiceResponse<AuthToken> response, UserCommand command) {
     switch (response.code) {
       case HttpStatus.ok:
         _user = response.body.asUser();
@@ -122,22 +200,50 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         }
         return _toResponse(command, UserAuthenticated(_user), result: _user);
       case HttpStatus.noContent:
-        return _toResponse(command, UserUnset());
+        return _toResponse(
+          command,
+          _toSecurityState(),
+        );
       case HttpStatus.unauthorized:
-        return _toResponse(command, UserUnauthorized(response), result: false);
+        return _toResponse(
+          command,
+          UserUnauthorized(response),
+          result: false,
+        );
       case HttpStatus.forbidden:
-        return _toResponse(command, UserForbidden(response), result: false);
+        return _toResponse(
+          command,
+          UserForbidden(response),
+          result: false,
+        );
       default:
         return _toError(command, response);
     }
   }
 
-  Future<UserUnset> _logout(UnsetUser command) async {
+  Equatable _toSecurityState() {
+    return _security == null
+        ? UserUnset()
+        : _security.locked
+            ? UserLocked(
+                _security,
+              )
+            : UserUnlocked(
+                _security,
+              );
+  }
+
+  Future<UserState> _logout(LogoutUser command) async {
     var response = await service.logout();
-    if (response.is204) {
+    if (response.is200) {
       _user = null;
       _authorized.clear();
-      return _toResponse(command, UserUnset(), result: true);
+      _security = response.body;
+      return _toResponse(
+        command,
+        UserUnset(),
+        result: true,
+      );
     }
     return _toError(command, response);
   }
@@ -191,18 +297,32 @@ abstract class UserCommand<T, R> extends Equatable {
   UserCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class UnsetUser extends UserCommand<void, bool> {
-  UnsetUser() : super(null);
-
-  @override
-  String toString() => 'UnsetUser';
-}
-
 class LoadUser extends UserCommand<void, User> {
   LoadUser() : super(null);
 
   @override
   String toString() => 'LoadUser';
+}
+
+class SecureUser extends UserCommand<Security, Security> {
+  SecureUser(Security data) : super(data);
+
+  @override
+  String toString() => 'SecureUser {security: $data}';
+}
+
+class LockUser extends UserCommand<void, dynamic> {
+  LockUser() : super(null);
+
+  @override
+  String toString() => 'LockUser';
+}
+
+class UnlockUser extends UserCommand<String, dynamic> {
+  UnlockUser({String pin}) : super(pin);
+
+  @override
+  String toString() => 'UnlockUser';
 }
 
 class AuthenticateUser extends UserCommand<String, User> {
@@ -219,6 +339,13 @@ class AuthorizeUser extends UserCommand<Incident, bool> {
 
   @override
   String toString() => 'AuthorizeUser';
+}
+
+class LogoutUser extends UserCommand<void, bool> {
+  LogoutUser() : super(null);
+
+  @override
+  String toString() => 'LogoutUser';
 }
 
 class RaiseUserError extends UserCommand<UserError, bool> {
@@ -239,7 +366,11 @@ abstract class UserState<T> extends Equatable {
   UserState(this.data, [props = const []]) : super([data, ...props]);
 
   isUnset() => this is UserUnset;
+  isLocked() => this is UserLocked;
+  isUnlocked() => this is UserUnlocked;
+  isUnlocking() => this is UserUnlocking;
   isAuthenticating() => this is UserAuthenticating;
+  isPending() => isUnlocking() || isAuthenticating();
   isAuthenticated() => this is UserAuthenticated;
   isAuthorized() => this is UserAuthorized;
   isException() => this is UserException;
@@ -252,6 +383,24 @@ class UserUnset extends UserState<void> {
   UserUnset() : super(null);
   @override
   String toString() => 'UserUnset';
+}
+
+class UserLocked extends UserState<Security> {
+  UserLocked(Security data) : super(data);
+  @override
+  String toString() => 'UserLocked  {security: $data}';
+}
+
+class UserUnlocking extends UserState<String> {
+  UserUnlocking(String pin) : super(pin);
+  @override
+  String toString() => 'UserUnlocking {pin: $data}';
+}
+
+class UserUnlocked extends UserState<Security> {
+  UserUnlocked(Security data) : super(data);
+  @override
+  String toString() => 'UserUnlocked  {security: $data}';
 }
 
 class UserAuthenticating extends UserState<String> {
