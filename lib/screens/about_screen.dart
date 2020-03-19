@@ -29,7 +29,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
-        title: Text("Om SarSys"),
+        title: Text("Om SARSys App"),
         centerTitle: false,
         automaticallyImplyLeading: true,
         leading: IconButton(

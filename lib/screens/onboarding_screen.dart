@@ -64,7 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   PageViewModel _buildWelcomePage() {
     return PageViewModel(
       pageColor: const Color(0xFF749859),
-      title: Text('SarSys'),
+      title: Text('SARSys'),
       body: Column(
         children: <Widget>[
           Text(
@@ -89,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   PageViewModel _buildDemoPage() {
     return PageViewModel(
       pageColor: Colors.orange[600],
-      title: Text('SarSys'),
+      title: Text('SARSys'),
       body: Column(
         children: <Widget>[
           Text(
@@ -117,7 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   PageViewModel _buildFinishPage() {
     return PageViewModel(
       pageColor: Color(0xFF7bd4ff),
-      title: Text('SarSys'),
+      title: Text('SARSys'),
       body: Column(
         children: <Widget>[
           Expanded(

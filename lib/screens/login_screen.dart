@@ -116,7 +116,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: Text(
-                              "SarSys",
+                              "SARSys",
                               style: Theme.of(context).textTheme.title.copyWith(
                                     fontSize: 42,
                                     color: Color(0xFF0d2149),

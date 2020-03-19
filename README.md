@@ -1,6 +1,6 @@
-# sarsys mobile
+# SARSys App
 
-SarSys Mobile is dependent on SarSys API.
+SarSys App is dependent on SARSys API.
 
 ## Prepare release toolchain
 Requires `make` on `PATH`
