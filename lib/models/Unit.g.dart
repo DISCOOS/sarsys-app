@@ -7,30 +7,72 @@ part of 'Unit.dart';
 // **************************************************************************
 
 Unit _$UnitFromJson(Map<String, dynamic> json) {
-  return Unit(
-      id: json['id'] as String,
-      type: _$enumDecodeNullable(_$UnitTypeEnumMap, json['type']),
-      number: json['number'] as int,
-      status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
-      callsign: json['callsign'] as String,
-      phone: json['phone'] as String,
-      tracking: json['tracking'] as String,
-      personnel: (json['personnel'] as List)
-          ?.map((e) =>
-              e == null ? null : Personnel.fromJson(e as Map<String, dynamic>))
-          ?.toList());
+  return $checkedNew('Unit', json, () {
+    final val = Unit(
+        id: $checkedConvert(json, 'id', (v) => v as String),
+        type: $checkedConvert(
+            json, 'type', (v) => _$enumDecodeNullable(_$UnitTypeEnumMap, v)),
+        number: $checkedConvert(json, 'number', (v) => v as int),
+        status: $checkedConvert(json, 'status',
+            (v) => _$enumDecodeNullable(_$UnitStatusEnumMap, v)),
+        callsign: $checkedConvert(json, 'callsign', (v) => v as String),
+        phone: $checkedConvert(json, 'phone', (v) => v as String),
+        tracking: $checkedConvert(json, 'tracking', (v) => v as String),
+        personnel: $checkedConvert(
+            json,
+            'personnel',
+            (v) => (v as List)
+                ?.map((e) => e == null ? null : Personnel.fromJson(e))
+                ?.toList()));
+    return val;
+  });
 }
 
-Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
-      'id': instance.id,
-      'number': instance.number,
-      'type': _$UnitTypeEnumMap[instance.type],
-      'status': _$UnitStatusEnumMap[instance.status],
-      'phone': instance.phone,
-      'callsign': instance.callsign,
-      'tracking': instance.tracking,
-      'personnel': instance.personnel?.map((e) => e?.toJson())?.toList()
-    };
+Map<String, dynamic> _$UnitToJson(Unit instance) =>
+    _$UnitJsonMapWrapper(instance);
+
+class _$UnitJsonMapWrapper extends $JsonMapWrapper {
+  final Unit _v;
+  _$UnitJsonMapWrapper(this._v);
+
+  @override
+  Iterable<String> get keys => const [
+        'id',
+        'number',
+        'type',
+        'status',
+        'phone',
+        'callsign',
+        'tracking',
+        'personnel'
+      ];
+
+  @override
+  dynamic operator [](Object key) {
+    if (key is String) {
+      switch (key) {
+        case 'id':
+          return _v.id;
+        case 'number':
+          return _v.number;
+        case 'type':
+          return _$UnitTypeEnumMap[_v.type];
+        case 'status':
+          return _$UnitStatusEnumMap[_v.status];
+        case 'phone':
+          return _v.phone;
+        case 'callsign':
+          return _v.callsign;
+        case 'tracking':
+          return _v.tracking;
+        case 'personnel':
+          return $wrapListHandleNull<Personnel>(
+              _v.personnel, (e) => e?.toJson());
+      }
+    }
+    return null;
+  }
+}
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
   if (source == null) {

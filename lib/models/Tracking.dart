@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 
 part 'Tracking.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true, useWrappers: true)
 class Tracking extends Equatable {
   final String id;
   final TrackingStatus status;

@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 
 part 'Unit.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true, useWrappers: true, checked: true)
 class Unit extends Equatable {
   final String id;
   final int number;

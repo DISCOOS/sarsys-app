@@ -16,8 +16,7 @@ Incident _$IncidentFromJson(Map<String, dynamic> json) {
           ? null
           : DateTime.parse(json['occurred'] as String),
       talkgroups: (json['talkgroups'] as List)
-          ?.map((e) =>
-              e == null ? null : TalkGroup.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => e == null ? null : TalkGroup.fromJson(e))
           ?.toList(),
       justification: json['justification'] as String,
       ipp: json['ipp'] == null
@@ -38,21 +37,66 @@ Incident _$IncidentFromJson(Map<String, dynamic> json) {
       reference: json['reference'] as String);
 }
 
-Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'type': _$IncidentTypeEnumMap[instance.type],
-      'status': _$IncidentStatusEnumMap[instance.status],
-      'occurred': instance.occurred?.toIso8601String(),
-      'justification': instance.justification,
-      'talkgroups': instance.talkgroups?.map((e) => e?.toJson())?.toList(),
-      'ipp': instance.ipp?.toJson(),
-      'meetup': instance.meetup?.toJson(),
-      'passcodes': instance.passcodes?.toJson(),
-      'reference': instance.reference,
-      'created': instance.created?.toJson(),
-      'changed': instance.changed?.toJson()
-    };
+Map<String, dynamic> _$IncidentToJson(Incident instance) =>
+    _$IncidentJsonMapWrapper(instance);
+
+class _$IncidentJsonMapWrapper extends $JsonMapWrapper {
+  final Incident _v;
+  _$IncidentJsonMapWrapper(this._v);
+
+  @override
+  Iterable<String> get keys => const [
+        'id',
+        'name',
+        'type',
+        'status',
+        'occurred',
+        'justification',
+        'talkgroups',
+        'ipp',
+        'meetup',
+        'passcodes',
+        'reference',
+        'created',
+        'changed'
+      ];
+
+  @override
+  dynamic operator [](Object key) {
+    if (key is String) {
+      switch (key) {
+        case 'id':
+          return _v.id;
+        case 'name':
+          return _v.name;
+        case 'type':
+          return _$IncidentTypeEnumMap[_v.type];
+        case 'status':
+          return _$IncidentStatusEnumMap[_v.status];
+        case 'occurred':
+          return _v.occurred?.toIso8601String();
+        case 'justification':
+          return _v.justification;
+        case 'talkgroups':
+          return $wrapListHandleNull<TalkGroup>(
+              _v.talkgroups, (e) => e?.toJson());
+        case 'ipp':
+          return _v.ipp?.toJson();
+        case 'meetup':
+          return _v.meetup?.toJson();
+        case 'passcodes':
+          return _v.passcodes?.toJson();
+        case 'reference':
+          return _v.reference;
+        case 'created':
+          return _v.created?.toJson();
+        case 'changed':
+          return _v.changed?.toJson();
+      }
+    }
+    return null;
+  }
+}
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
   if (source == null) {

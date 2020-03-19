@@ -23,26 +23,61 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
           ?.map((e) =>
               e == null ? null : Point.fromJson(e as Map<String, dynamic>))
           ?.toList(),
-      tracks: (json['tracks'] as Map<String, dynamic>)?.map(
-        (k, e) => MapEntry(
-            k, e == null ? null : Track.fromJson(e as Map<String, dynamic>)),
-      ),
+      tracks: json['tracks'],
       aggregates:
           (json['aggregates'] as List)?.map((e) => e as String)?.toList());
 }
 
-Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
-      'id': instance.id,
-      'status': _$TrackingStatusEnumMap[instance.status],
-      'point': instance.point?.toJson(),
-      'distance': instance.distance,
-      'speed': instance.speed,
-      'effort': instance.effort?.inMicroseconds,
-      'devices': instance.devices,
-      'history': instance.history?.map((e) => e?.toJson())?.toList(),
-      'aggregates': instance.aggregates,
-      'tracks': instance.tracks?.map((k, e) => MapEntry(k, e?.toJson()))
-    };
+Map<String, dynamic> _$TrackingToJson(Tracking instance) =>
+    _$TrackingJsonMapWrapper(instance);
+
+class _$TrackingJsonMapWrapper extends $JsonMapWrapper {
+  final Tracking _v;
+  _$TrackingJsonMapWrapper(this._v);
+
+  @override
+  Iterable<String> get keys => const [
+        'id',
+        'status',
+        'point',
+        'distance',
+        'speed',
+        'effort',
+        'devices',
+        'history',
+        'aggregates',
+        'tracks'
+      ];
+
+  @override
+  dynamic operator [](Object key) {
+    if (key is String) {
+      switch (key) {
+        case 'id':
+          return _v.id;
+        case 'status':
+          return _$TrackingStatusEnumMap[_v.status];
+        case 'point':
+          return _v.point?.toJson();
+        case 'distance':
+          return _v.distance;
+        case 'speed':
+          return _v.speed;
+        case 'effort':
+          return _v.effort?.inMicroseconds;
+        case 'devices':
+          return _v.devices;
+        case 'history':
+          return $wrapListHandleNull<Point>(_v.history, (e) => e?.toJson());
+        case 'aggregates':
+          return _v.aggregates;
+        case 'tracks':
+          return _v.tracks;
+      }
+    }
+    return null;
+  }
+}
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
   if (source == null) {

@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 
 part 'Organization.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true, useWrappers: true, checked: true)
 class Organization extends Equatable {
   final String id;
   final String name;
