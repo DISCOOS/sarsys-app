@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,8 +15,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
   final _formKey = new GlobalKey<FormState>();
 
   String _username = "";
-  String _password = "";
   StreamSubscription<bool> subscription;
+
+  void initState() {
+    super.initState();
+  }
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
@@ -50,14 +54,21 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Container(
-          color: Colors.white,
-          child: Container(
-            padding: EdgeInsets.all(16.0),
-            constraints: BoxConstraints(maxWidth: 400.0),
-            child: _buildBody(context),
+      backgroundColor: Colors.grey[300],
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Center(
+          child: Material(
+            elevation: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Container(
+                child: _buildBody(context),
+              ),
+            ),
           ),
         ),
       ),
@@ -75,28 +86,26 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                 ? CrossFadeState.showFirst
                 : CrossFadeState.showSecond,
             firstChild: Container(
-              padding: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(24.0),
               child: ListView(
                 shrinkWrap: true,
                 children: <Widget>[
                   Center(child: CircularProgressIndicator()),
                   // Logo
                   Padding(
-                    padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.transparent,
-                      radius: 80.0,
-                      child: Image.asset('assets/logo.png'),
+                    padding: EdgeInsets.all(8),
+                    child: Image.asset(
+                      'assets/images/sar-team-2.png',
+                      height: 250.0,
+                      width: 250.0,
+                      alignment: Alignment.center,
                     ),
                   ),
-                  Center(
-                    child: Text("Logger inn, vennligst vent"),
-                  )
                 ],
               ),
             ),
             secondChild: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                padding: EdgeInsets.all(24.0),
                 child: Form(
                   key: _formKey,
                   child: ListView(
@@ -105,11 +114,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                       SafeArea(
                         child: Center(
                           child: Padding(
-                            padding: const EdgeInsets.only(bottom: 32.0),
+                            padding: const EdgeInsets.only(bottom: 16.0),
                             child: Text(
                               "SarSys",
                               style: Theme.of(context).textTheme.title.copyWith(
-                                    fontSize: 32,
+                                    fontSize: 42,
                                     color: Color(0xFF0d2149),
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -119,25 +128,36 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
                       ),
                       // Logo
                       Padding(
-                        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          radius: 40.0,
-                          child: Image.asset('assets/logo.png'),
+                        padding: EdgeInsets.zero,
+                        child: Image.asset(
+                          'assets/images/sar-team-2.png',
+                          height: 250.0,
+                          width: 250.0,
+                          alignment: Alignment.center,
                         ),
                       ),
                       if (snapshot.hasData && snapshot.data is UserException)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 16.0),
-                            child: Text(
-                              _toError(snapshot.data),
-                              style: TextStyle(color: Colors.red, height: 1.0, fontWeight: FontWeight.w600),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: Text(
+                            _toError(snapshot.data),
+                            style: TextStyle(
+                              color: Colors.red,
+                              height: 1.0,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
+                      Text(
+                        'Logg deg på med din organisasjonskonto',
+                        style: Theme.of(context).textTheme.title.copyWith(
+                              fontSize: 22,
+                              color: Color(0xFF0d2149),
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
                       _buildEmailInput(),
-                      _buildPasswordInput(),
                       _buildPrimaryButton(bloc),
                     ],
                   ),
@@ -153,35 +173,13 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
         maxLines: 1,
         keyboardType: TextInputType.emailAddress,
         autofocus: false,
+        scrollPadding: EdgeInsets.all(90),
         textCapitalization: TextCapitalization.none,
         decoration: new InputDecoration(
-            hintText: 'Brukernavn',
-            icon: new Icon(
-              Icons.person,
-              color: Colors.grey,
-            )),
-        validator: (value) => value.isEmpty ? 'Brukernavn må fylles ut' : null,
-        onSaved: (value) => _username = value,
-      ),
-    );
-  }
-
-  Widget _buildPasswordInput() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-      child: new TextFormField(
-        maxLines: 1,
-        obscureText: true,
-        autofocus: false,
-        decoration: new InputDecoration(
-          hintText: 'Passord',
-          icon: new Icon(
-            Icons.lock,
-            color: Colors.grey,
-          ),
+          hintText: 'Påloggingsadresse',
         ),
-        validator: (value) => value.isEmpty ? 'Passord må fylles ut' : null,
-        onSaved: (value) => _password = value,
+        validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+        onSaved: (value) => _username = value,
       ),
     );
   }
@@ -196,10 +194,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> {
             elevation: 2.0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
             color: Color.fromRGBO(00, 41, 73, 1),
-            child: new Text('Logg inn', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+            child: new Text('Logg på', style: new TextStyle(fontSize: 20.0, color: Colors.white)),
             onPressed: () {
               if (_validateAndSave()) {
-                bloc.login(_username, _password);
+                bloc.login(username: _username);
               }
             },
           ),

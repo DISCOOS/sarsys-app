@@ -56,8 +56,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return _dispatch<User>(_assertUnset(LoadUser()));
   }
 
-  Future<bool> login(String username, String password) {
-    return _dispatch<bool>(_assertUnset(AuthenticateUser(username, password)));
+  Future<User> login({String username, String password}) {
+    return _dispatch<User>(_assertUnset(AuthenticateUser(username, password)));
   }
 
   UserCommand _assertUnset(UserCommand command) {
@@ -205,7 +205,7 @@ class LoadUser extends UserCommand<void, User> {
   String toString() => 'LoadUser';
 }
 
-class AuthenticateUser extends UserCommand<String, bool> {
+class AuthenticateUser extends UserCommand<String, User> {
   final String password;
   AuthenticateUser(String username, this.password) : super(username, [password]);
 
@@ -271,7 +271,7 @@ class UserAuthorized extends UserState<User> {
   final bool command;
   final bool personnel;
   UserAuthorized(
-    user,
+    User user,
     this.incident,
     this.command,
     this.personnel,
