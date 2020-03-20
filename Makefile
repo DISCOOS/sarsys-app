@@ -19,12 +19,12 @@ storePassword = "$$(grep "storePassword" android/key.properties | cut -d'=' -f2)
 ios_certificate = "XKXT735ZZ4"
 
 .PHONY: \
-	doctor toolchain configure build install clean \
+	doctor toolchain configure test build install clean \
 	models \
 	android-configure android-build android-install android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 .SILENT: \
-	doctor toolchain configure build install clean \
+	doctor toolchain configure test build install clean \
 	models \
 	android-configure android-build android-install android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
@@ -123,22 +123,28 @@ ios-configure:
 		else echo; echo "[!] iOS configuration aborted."; fi \
 	else echo; echo "[!] Initialize iOS configuration aborted."; fi \
 
-build: models android-build ios-build
-	echo "[✓] Flutter build complete."
+test:
+	echo "Running flutter tests..."; \
+	flutter test test/incident_tests.dart
+	flutter test test/proj4d.dart
+	echo "[✓] Flutter tests complete."
 
 models:
 	echo "Generating models..."; \
 	flutter packages pub run build_runner build --delete-conflicting-outputs; \
 	echo "[✓] Generating models complete."
 
-android-build:
+build: models test android-build ios-build
+	echo "[✓] Flutter build complete."
+
+android-build: test
 	test ! -f "$(storeFile)" && \
 		{ echo "Android upload key $(storeFile) does not exist > run 'make android-init'";  exit 0; }; \
 	echo "Building Android app bundle..."; \
 	flutter build appbundle
 	echo "[✓] Flutter build for Android complete."
 
-ios-build:
+ios-build: test
 	echo "Building iOS app runner..."; \
 	flutter build ios --release --no-codesign; \
 	echo "[✓] Flutter build for iOS complete."
@@ -161,7 +167,7 @@ android-install: android-build
 android-release-internal: android-build
 	echo "Release to Google Play 'internal test' with fastlane..."
 	cd android; \
-	bundle exec fastlane supply --aab ../build/app/outputs/bundle/release/app.aab --track internal
+	bundle exec fastlane supply --aab ../build/app/outputs/bundle/release/app-release.aab --track internal
 	echo "[✓] Release to Google Play 'internal test' complete."
 
 ios-release-beta: ios-build
