@@ -26,17 +26,19 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   final _formKey = GlobalKey<FormState>();
 
   String _pin = "";
-  String _nextPin = "";
   String _username = "";
   bool _wrongPin = false;
   bool _verifyPin = false;
   bool _securePin = false;
-  bool _pinChanged = false;
   bool _pinComplete = false;
-  AnimationController _controller;
+  bool _securePending = false;
+
+  AnimationController _animController;
   StreamSubscription<UserState> _subscription;
 
-  TextEditingController _pinController;
+  FocusNode _focusNode = FocusNode();
+  ScrollController _scrollController = ScrollController();
+  TextEditingController _pinController = TextEditingController();
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
@@ -54,7 +56,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       switch (state.runtimeType) {
         case UserUnlocked:
         case UserAuthenticated:
-          if (bloc.isReady && LoginType.automatic == widget.type || _pinChanged) {
+          if (bloc.isReady && LoginType.automatic == widget.type) {
             Navigator.pushReplacementNamed(context, 'incident/list');
           }
           break;
@@ -66,8 +68,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   @override
   void dispose() {
     _subscription?.cancel();
-    _controller?.dispose();
-    _controller = null;
+    _animController?.dispose();
+    _scrollController?.dispose();
+    _animController = null;
+    _scrollController = null;
+    /* _focusNode is disposed automatically by PinCodeTextField */
+    _focusNode = null;
     /* _pinController is disposed automatically by PinCodeTextField */
     _pinController = null;
     super.dispose();
@@ -86,6 +92,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(4.0),
               ),
               child: Container(
                 child: _buildBody(context),
@@ -113,31 +120,43 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   bool _inProgress(AsyncSnapshot<UserState> snapshot, UserBloc bloc) =>
-      bloc.isReady || snapshot.hasData && (snapshot.data.isPending());
+      bloc.isReady && !changePin || snapshot.hasData && (snapshot.data.isPending() || _securePending);
 
   Container _buildProgress(BuildContext context) {
-    _controller ??= AnimationController(
+    _animController ??= AnimationController(
       vsync: this,
       duration: Duration(seconds: 1),
-    )..repeat();
+    );
+
+    _animController.repeat();
 
     return Container(
       padding: EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: SizedBox(
-              height: 300,
-              child: _buildRipple(
-                _buildIcon(),
+      child: ListView(
+        shrinkWrap: true,
+        reverse: true,
+        controller: _scrollController,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(8),
+                child: SizedBox(
+                  height: 300,
+                  child: _buildRipple(
+                    _buildIcon(),
+                  ),
+                ),
               ),
-            ),
-          ),
-          Text(
-            'Logger deg inn, vent litt',
-            style: _toStyle(context, 16, FontWeight.w600),
+              Flexible(
+                child: Text(
+                  'Logger deg inn, vent litt',
+                  style: _toStyle(context, 16, FontWeight.w600),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -149,8 +168,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     AsyncSnapshot<UserState> snapshot,
     UserBloc bloc,
   ) {
-    _controller?.stop(canceled: false);
-    _pinController ??= TextEditingController();
+    _animController?.stop(canceled: false);
+    if (!_pinComplete) {
+      _focusNode.requestFocus();
+    }
 
     return Container(
       padding: EdgeInsets.all(24.0),
@@ -158,14 +179,20 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         key: _formKey,
         child: ListView(
           shrinkWrap: true,
-          children: <Widget>[
-            _buildTitle(context),
-            // Logo
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildIcon(),
+          reverse: true,
+          controller: _scrollController,
+          children: [
+            Column(
+              children: [
+                _buildTitle(context),
+                // Logo
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: _buildIcon(),
+                ),
+                ..._buildFields(snapshot, bloc),
+              ],
             ),
-            ..._buildFields(snapshot, bloc),
           ],
         ),
       ),
@@ -173,16 +200,18 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   List<Widget> _buildFields(AsyncSnapshot<UserState> snapshot, UserBloc bloc) {
-    final isError = snapshot.hasData && snapshot.data is UserException;
-    var fields = isError ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
+    var fields = _isError(snapshot) ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
 
     if (changePin || !bloc.isSecured) {
       return fields..add(_buildSecure(bloc));
     } else if (bloc.isLocked) {
+      _pinController.clear();
       return fields..addAll(_buildUnlock(bloc));
     }
     return fields..addAll(_buildAuthenticate(bloc));
   }
+
+  bool _isError(AsyncSnapshot<UserState> snapshot) => snapshot.hasData && snapshot.data is UserException;
 
   Widget _buildErrorText(AsyncSnapshot<UserState> snapshot, UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
@@ -235,21 +264,21 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Image _buildIcon() => Image.asset(
         'assets/images/sar-team-2.png',
-        height: 250.0,
-        width: 250.0,
+        height: 200.0,
+        width: 200.0,
         alignment: Alignment.center,
       );
 
   Widget _buildRipple(Widget icon) => AnimatedBuilder(
         animation: CurvedAnimation(
-          parent: _controller,
+          parent: _animController,
           curve: Curves.elasticInOut,
         ),
         builder: (context, child) {
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              _buildCircle(250 + (24 * _controller.value)),
+              _buildCircle(200 + (24 * _animController.value)),
               Align(child: icon),
             ],
           );
@@ -261,14 +290,13 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         height: radius,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.lightBlue.withOpacity(_controller.value / 3),
+          color: Colors.lightBlue.withOpacity(_animController.value / 3),
         ),
       );
 
   Widget _buildSecure(UserBloc bloc) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           if (_verifyPin) {
-            _wrongPin = _pin != _nextPin;
             if (!_securePin) {
               _securePin = true;
               _pinController.clear();
@@ -296,23 +324,44 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         },
       );
 
-  String _toPinText() =>
-      _verifyPin ? (_wrongPin ? 'Riktig pinkode er $_pin' : 'Pinkode er riktig') : 'Oppgi ny pinkode';
+  String _toPinText() => _verifyPin
+      ? (_wrongPin ? 'Riktig pinkode er $_pin' : 'Pinkode er riktig')
+      : changePin ? 'Endre pin' : 'Oppgi ny pinkode';
 
   Widget _buildNewPinAction(UserBloc bloc, StateSetter setState, {bool enabled}) => _buildAction(
         'Velg',
-        () => setState(() => _verifyPin = true),
+        () {
+          _pinComplete = false;
+          _focusNode.requestFocus();
+          setState(() => _verifyPin = true);
+        },
         enabled: enabled,
       );
 
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
         'Lagre',
-        () {
-          _pinChanged = changePin;
-          bloc.secure(Security.fromPin(_pin));
+        () async {
+          await bloc.secure(
+            Security.fromPin(_pin),
+          );
+          _resetPin();
+          _securePending = true;
+          // If already in state 'UserUnlocked' no event will be fired.
+          if (bloc.isUnlocked) {
+            Navigator.pushReplacementNamed(context, 'incident/list');
+          }
         },
         enabled: enabled,
       );
+
+  void _resetPin() {
+    _pin = "";
+    _username = "";
+    _wrongPin = false;
+    _verifyPin = false;
+    _securePin = false;
+    _pinComplete = false;
+  }
 
   bool get changePin => LoginType.changePin == widget.type;
 
@@ -336,29 +385,32 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         child: PinCodeTextField(
           length: 4,
           obsecureText: false,
+          autoFocus: true,
           animationType: AnimationType.fade,
           shape: PinCodeFieldShape.box,
+          textInputType: TextInputType.numberWithOptions(),
           animationDuration: Duration(milliseconds: 300),
           borderRadius: BorderRadius.circular(5),
           fieldHeight: 50,
           fieldWidth: 50,
           activeFillColor: color,
           controller: _pinController,
+          focusNode: _focusNode,
           onChanged: (value) {
-            if (_pinComplete) {
-              _pinComplete = value.length == 4;
+            _pinComplete = value.length == 4;
+            if (!_pinComplete) {
               if (setState != null) {
                 setState(() {});
               }
             }
+            _wrongPin = _pin != value;
           },
           onCompleted: (value) {
-            if (_verifyPin) {
-              _nextPin = value;
-            } else {
+            if (!_verifyPin) {
               _pin = value;
             }
             _pinComplete = true;
+            _pinController.clear();
             if (setState != null) {
               setState(() {});
             }
@@ -400,22 +452,25 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildAction(String label, Function() onPressed, {bool enabled = true}) => Padding(
         padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-        child: RaisedButton(
-          elevation: 2.0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-          color: Color.fromRGBO(00, 41, 73, 1),
-          child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
-          onPressed: enabled
-              ? () {
-                  if (_validateAndSave()) {
-                    FocusScopeNode currentFocus = FocusScope.of(context);
-                    if (!currentFocus.hasPrimaryFocus) {
-                      currentFocus.unfocus();
+        child: SizedBox(
+          height: 48,
+          child: RaisedButton(
+            elevation: 2.0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+            color: Color.fromRGBO(00, 41, 73, 1),
+            child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
+            onPressed: enabled
+                ? () {
+                    if (_validateAndSave()) {
+                      FocusScopeNode currentFocus = FocusScope.of(context);
+                      if (!currentFocus.hasPrimaryFocus) {
+                        currentFocus.unfocus();
+                      }
+                      onPressed();
                     }
-                    onPressed();
                   }
-                }
-              : null,
+                : null,
+          ),
         ),
       );
 }
