@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 
 part 'Organization.g.dart';
 
-@JsonSerializable(explicitToJson: true, useWrappers: true, checked: true)
+@JsonSerializable()
 class Organization extends Equatable {
   final String id;
   final String name;
@@ -18,8 +18,8 @@ class Organization extends Equatable {
   final Map<String, String> functions;
   final Map<String, Division> divisions;
 
-  @JsonKey(name: "talk_groups")
   @FleetMapTalkGroupConverter()
+  @JsonKey(name: "talk_groups")
   final Map<String, List<TalkGroup>> talkGroups;
 
   Organization({

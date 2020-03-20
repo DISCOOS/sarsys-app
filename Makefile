@@ -128,7 +128,7 @@ build: models android-build ios-build
 
 models:
 	echo "Generating models..."; \
-	flutter pub run build_runner build --delete-conflicting-outputs; \
+	flutter packages pub run build_runner build --delete-conflicting-outputs; \
 	echo "[✓] Generating models complete."
 
 android-build:

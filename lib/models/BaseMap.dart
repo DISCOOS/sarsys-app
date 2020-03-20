@@ -21,6 +21,7 @@ class BaseMap extends Equatable {
   final List<String> subdomains;
 
   @LatLngBoundsConverter()
+  @JsonKey(nullable: true)
   final LatLngBounds bounds;
 
   BaseMap({

@@ -23,16 +23,20 @@ class LatLngBoundsConverter implements JsonConverter<LatLngBounds, Map<String, d
   const LatLngBoundsConverter();
 
   @override
-  LatLngBounds fromJson(Map<String, dynamic> json) => LatLngBounds(
-        LatLngConverter().fromJson(json['ne']),
-        LatLngConverter().fromJson(json['sw']),
-      );
+  LatLngBounds fromJson(Map<String, dynamic> json) => json != null
+      ? LatLngBounds(
+          LatLngConverter().fromJson(json['ne']),
+          LatLngConverter().fromJson(json['sw']),
+        )
+      : null;
 
   @override
-  Map<String, dynamic> toJson(LatLngBounds bounds) => {
-        "ne": LatLngConverter().toJson(bounds.northEast),
-        "sw": LatLngConverter().toJson(bounds.southWest),
-      };
+  Map<String, dynamic> toJson(LatLngBounds bounds) => bounds != null
+      ? {
+          "ne": LatLngConverter().toJson(bounds.northEast),
+          "sw": LatLngConverter().toJson(bounds.southWest),
+        }
+      : null;
 
   static LatLngBounds to(LatLng sw, LatLng ne) {
     return LatLngBounds(sw, ne);
@@ -54,7 +58,7 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
   }
 
   @override
-  Map<String, List<String>> toJson(Map<String, List<TalkGroup>> items) {
+  Map<String, dynamic> toJson(Map<String, List<TalkGroup>> items) {
     return items.map((key, list) => MapEntry(key, list.map((tg) => tg.name).toList()));
   }
 

@@ -311,7 +311,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void initState() {
     super.initState();
     _setup();
-    _init();
     _subscription = ConnectivityService().changes.listen((status) async {
       if (ConnectivityStatus.Offline != status) await _removePlaceholders();
       setState(() {});
@@ -360,6 +359,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
 
+    //
+    _initWakeLock();
+
     // Ensure all controllers are set
     _ensureMapToolController();
     _ensureLocationControllers();
@@ -392,9 +394,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
   }
 
-  void _init() async {
+  void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.isEnabled;
     await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
+  }
+
+  void _restoreWakeLock() async {
+    final wakeLock = await Wakelock.isEnabled;
+    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: _wakeLockWasOn);
   }
 
   Future _asyncBaseMapLoad(bool update) async {
@@ -501,11 +508,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return controller.cloneWith(
       onMessage: widget.onMessage,
     );
-  }
-
-  void _restoreWakeLock() async {
-    final wakeLock = await Wakelock.isEnabled;
-    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: _wakeLockWasOn);
   }
 
   LatLng _ensureCenter() {

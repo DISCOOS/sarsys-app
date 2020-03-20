@@ -6,95 +6,69 @@ part of 'Unit.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Unit _$UnitFromJson(Map<String, dynamic> json) {
-  return $checkedNew('Unit', json, () {
-    final val = Unit(
-        id: $checkedConvert(json, 'id', (v) => v as String),
-        type: $checkedConvert(
-            json, 'type', (v) => _$enumDecodeNullable(_$UnitTypeEnumMap, v)),
-        number: $checkedConvert(json, 'number', (v) => v as int),
-        status: $checkedConvert(json, 'status',
-            (v) => _$enumDecodeNullable(_$UnitStatusEnumMap, v)),
-        callsign: $checkedConvert(json, 'callsign', (v) => v as String),
-        phone: $checkedConvert(json, 'phone', (v) => v as String),
-        tracking: $checkedConvert(json, 'tracking', (v) => v as String),
-        personnel: $checkedConvert(
-            json,
-            'personnel',
-            (v) => (v as List)
-                ?.map((e) => e == null ? null : Personnel.fromJson(e))
-                ?.toList()));
-    return val;
-  });
+Unit _$UnitFromJson(Map json) {
+  return Unit(
+    id: json['id'] as String,
+    type: _$enumDecodeNullable(_$UnitTypeEnumMap, json['type']),
+    number: json['number'] as int,
+    status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
+    callsign: json['callsign'] as String,
+    phone: json['phone'] as String,
+    tracking: json['tracking'] as String,
+    personnel: (json['personnel'] as List)
+        ?.map((e) => e == null
+            ? null
+            : Personnel.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
+        ?.toList(),
+  );
 }
 
-Map<String, dynamic> _$UnitToJson(Unit instance) =>
-    _$UnitJsonMapWrapper(instance);
+Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
+      'id': instance.id,
+      'number': instance.number,
+      'type': _$UnitTypeEnumMap[instance.type],
+      'status': _$UnitStatusEnumMap[instance.status],
+      'phone': instance.phone,
+      'callsign': instance.callsign,
+      'tracking': instance.tracking,
+      'personnel': instance.personnel?.map((e) => e?.toJson())?.toList(),
+    };
 
-class _$UnitJsonMapWrapper extends $JsonMapWrapper {
-  final Unit _v;
-  _$UnitJsonMapWrapper(this._v);
-
-  @override
-  Iterable<String> get keys => const [
-        'id',
-        'number',
-        'type',
-        'status',
-        'phone',
-        'callsign',
-        'tracking',
-        'personnel'
-      ];
-
-  @override
-  dynamic operator [](Object key) {
-    if (key is String) {
-      switch (key) {
-        case 'id':
-          return _v.id;
-        case 'number':
-          return _v.number;
-        case 'type':
-          return _$UnitTypeEnumMap[_v.type];
-        case 'status':
-          return _$UnitStatusEnumMap[_v.status];
-        case 'phone':
-          return _v.phone;
-        case 'callsign':
-          return _v.callsign;
-        case 'tracking':
-          return _v.tracking;
-        case 'personnel':
-          return $wrapListHandleNull<Personnel>(
-              _v.personnel, (e) => e?.toJson());
-      }
-    }
-    return null;
-  }
-}
-
-T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
+T _$enumDecode<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
   if (source == null) {
     throw ArgumentError('A value must be provided. Supported values: '
         '${enumValues.values.join(', ')}');
   }
-  return enumValues.entries
-      .singleWhere((e) => e.value == source,
-          orElse: () => throw ArgumentError(
-              '`$source` is not one of the supported values: '
-              '${enumValues.values.join(', ')}'))
-      .key;
+
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
+
+  if (value == null && unknownValue == null) {
+    throw ArgumentError('`$source` is not one of the supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+  return value ?? unknownValue;
 }
 
-T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
+T _$enumDecodeNullable<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source);
+  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
 }
 
-const _$UnitTypeEnumMap = <UnitType, dynamic>{
+const _$UnitTypeEnumMap = {
   UnitType.Team: 'Team',
   UnitType.K9: 'K9',
   UnitType.Boat: 'Boat',
@@ -102,11 +76,11 @@ const _$UnitTypeEnumMap = <UnitType, dynamic>{
   UnitType.Snowmobile: 'Snowmobile',
   UnitType.ATV: 'ATV',
   UnitType.CommandPost: 'CommandPost',
-  UnitType.Other: 'Other'
+  UnitType.Other: 'Other',
 };
 
-const _$UnitStatusEnumMap = <UnitStatus, dynamic>{
+const _$UnitStatusEnumMap = {
   UnitStatus.Mobilized: 'Mobilized',
   UnitStatus.Deployed: 'Deployed',
-  UnitStatus.Retired: 'Retired'
+  UnitStatus.Retired: 'Retired',
 };

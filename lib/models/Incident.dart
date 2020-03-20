@@ -8,7 +8,10 @@ import 'package:meta/meta.dart';
 
 part 'Incident.g.dart';
 
-@JsonSerializable(explicitToJson: true, useWrappers: true)
+@JsonSerializable(
+  explicitToJson: true,
+  anyMap: true,
+)
 class Incident extends Equatable {
   final String id;
   final String name;

@@ -8,25 +8,25 @@ part of 'AppConfig.dart';
 
 AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
   return AppConfig(
-      sentryDns: json['sentryDns'] as String,
-      demo: json['demo'] as bool,
-      demoRole: json['demoRole'] as String,
-      onboarding: json['onboarding'] as bool,
-      storage: json['storage'] as bool,
-      locationWhenInUse: json['locationWhenInUse'] as bool,
-      division: json['division'] as String,
-      department: json['department'] as String,
-      talkGroups:
-          (json['talkGroups'] as List)?.map((e) => e as String)?.toList(),
-      talkGroupCatalog: json['talkGroupCatalog'] as String,
-      mapCacheTTL: json['mapCacheTTL'] as int,
-      mapCacheCapacity: json['mapCacheCapacity'] as int,
-      locationAccuracy: json['locationAccuracy'] as String,
-      locationFastestInterval: json['locationFastestInterval'] as int,
-      locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
-      keepScreenOn: json['keepScreenOn'] as bool,
-      callsignReuse: json['callsignReuse'] as bool,
-      units: (json['units'] as List)?.map((e) => e as String)?.toList());
+    sentryDns: json['sentryDns'] as String,
+    demo: json['demo'] as bool,
+    demoRole: json['demoRole'] as String,
+    onboarding: json['onboarding'] as bool,
+    storage: json['storage'] as bool,
+    locationWhenInUse: json['locationWhenInUse'] as bool,
+    division: json['division'] as String,
+    department: json['department'] as String,
+    talkGroups: (json['talkGroups'] as List)?.map((e) => e as String)?.toList(),
+    talkGroupCatalog: json['talkGroupCatalog'] as String,
+    mapCacheTTL: json['mapCacheTTL'] as int,
+    mapCacheCapacity: json['mapCacheCapacity'] as int,
+    locationAccuracy: json['locationAccuracy'] as String,
+    locationFastestInterval: json['locationFastestInterval'] as int,
+    locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
+    keepScreenOn: json['keepScreenOn'] as bool,
+    callsignReuse: json['callsignReuse'] as bool,
+    units: (json['units'] as List)?.map((e) => e as String)?.toList(),
+  );
 }
 
 Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
@@ -47,5 +47,5 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'locationSmallestDisplacement': instance.locationSmallestDisplacement,
       'keepScreenOn': instance.keepScreenOn,
       'callsignReuse': instance.callsignReuse,
-      'units': instance.units
+      'units': instance.units,
     };

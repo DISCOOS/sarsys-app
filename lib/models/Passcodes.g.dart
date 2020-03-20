@@ -8,11 +8,12 @@ part of 'Passcodes.dart';
 
 Passcodes _$PasscodesFromJson(Map<String, dynamic> json) {
   return Passcodes(
-      command: json['command'] as String,
-      personnel: json['personnel'] as String);
+    command: json['command'] as String,
+    personnel: json['personnel'] as String,
+  );
 }
 
 Map<String, dynamic> _$PasscodesToJson(Passcodes instance) => <String, dynamic>{
       'command': instance.command,
-      'personnel': instance.personnel
+      'personnel': instance.personnel,
     };
