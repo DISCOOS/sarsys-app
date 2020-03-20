@@ -5,14 +5,26 @@ part 'Security.g.dart';
 
 @JsonSerializable()
 class Security extends Equatable {
-  Security(this.pin, this.type, this.locked);
+  Security(
+    this.pin,
+    this.type,
+    this.locked,
+    this.paused,
+  ) : super([
+          pin,
+          type,
+          locked,
+          paused,
+        ]);
+
   final String pin;
   @JsonKey(nullable: false)
   final SecurityType type;
   @JsonKey(defaultValue: true)
   final bool locked;
+  final DateTime paused;
 
-  factory Security.fromPin(String pin) => Security(pin, SecurityType.pin, false);
+  factory Security.fromPin(String pin) => Security(pin, SecurityType.pin, false, null);
 
   /// Factory constructor for creating a new `Security` instance from json data
   factory Security.fromJson(Map<String, dynamic> json) => _$SecurityFromJson(json);
@@ -24,11 +36,13 @@ class Security extends Equatable {
     String pin,
     SecurityType type,
     bool locked,
+    DateTime paused,
   }) =>
       Security(
         pin ?? this.pin,
         type ?? this.type,
         locked ?? this.locked,
+        paused ?? this.paused,
       );
 }
 

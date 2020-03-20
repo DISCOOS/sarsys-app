@@ -61,6 +61,7 @@ abstract class UserService {
           pin: security.pin,
           type: security.type,
           locked: security.locked,
+          paused: security.paused,
         );
       } else {
         next = security;

@@ -10,13 +10,15 @@ Security _$SecurityFromJson(Map<String, dynamic> json) {
   return Security(
       json['pin'] as String,
       _$enumDecode(_$SecurityTypeEnumMap, json['type']),
-      json['locked'] as bool ?? true);
+      json['locked'] as bool ?? true,
+      json['paused'] == null ? null : DateTime.parse(json['paused'] as String));
 }
 
 Map<String, dynamic> _$SecurityToJson(Security instance) => <String, dynamic>{
       'pin': instance.pin,
       'type': _$SecurityTypeEnumMap[instance.type],
-      'locked': instance.locked
+      'locked': instance.locked,
+      'paused': instance.paused?.toIso8601String()
     };
 
 T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
