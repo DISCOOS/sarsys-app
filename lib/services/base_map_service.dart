@@ -113,13 +113,11 @@ class BaseMapService {
 
   Future<List<Directory>> _resolveDirs() async {
     return [
-      if (Platform.isIOS)
-        await getApplicationDocumentsDirectory()
-      else ...[
-        Directory("/storage/"),
-        await getExternalStorageDirectory(),
-        await getApplicationSupportDirectory(),
-      ]
+      await getApplicationDocumentsDirectory(),
+      if (Platform.isAndroid) ...await getExternalStorageDirectories(),
+      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.pictures),
+      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.documents),
+      if (Platform.isAndroid) ...await getExternalStorageDirectories(type: StorageDirectory.downloads),
     ];
   }
 }
