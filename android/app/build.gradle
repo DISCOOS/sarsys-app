@@ -45,7 +45,7 @@ android {
     defaultConfig {
         applicationId "org.discoos.sarsys"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "tandroidx.test.runner.AndroidJUnitRunner"
