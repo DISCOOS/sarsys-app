@@ -199,8 +199,8 @@ class UserIdentityService extends UserService {
   final FlutterAppAuth _appAuth = FlutterAppAuth();
   final String _clientId = 'sarsys-web';
   final String _redirectUrl = 'sarsys.app://oauth/redirect';
-  final String _logoutUrl = 'https://id2.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout';
-  final String _discoveryUrl = 'https://id2.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
+  final String _logoutUrl = 'https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout';
+  final String _discoveryUrl = 'https://id.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
   final List<String> _scopes = const ['openid', 'profile', 'email', 'offline_access', 'roles'];
   final List<String> _idpHints = const ['rodekors'];
 
@@ -215,6 +215,9 @@ class UserIdentityService extends UserService {
           _redirectUrl,
           scopes: _scopes,
           loginHint: username,
+          promptValues: [
+            'login', // Force login
+          ],
           additionalParameters: {
             if (idpHint != null) 'kc_idp_hint': idpHint,
           },
@@ -296,15 +299,7 @@ class UserIdentityService extends UserService {
           'client_id': _clientId,
           'refresh_token': token.body.refreshToken,
         });
-        if (response.statusCode == 204) {
-          return super.logout();
-        }
-        final result = await getSecurity();
-        return ServiceResponse(
-          code: response.statusCode,
-          message: response.reasonPhrase,
-          body: result.body,
-        );
+        return super.logout();
       }
       return ServiceResponse.noContent();
     } on Exception catch (e) {
