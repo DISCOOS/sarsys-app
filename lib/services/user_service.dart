@@ -199,31 +199,30 @@ class UserIdentityService extends UserService {
   final FlutterAppAuth _appAuth = FlutterAppAuth();
   final String _clientId = 'sarsys-web';
   final String _redirectUrl = 'sarsys.app://oauth/redirect';
-  final String _discoveryUrl = 'https://id.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
-  final List<String> _scopes = <String>['openid', 'profile', 'email', 'offline_access', 'roles'];
+  final String _logoutUrl = 'https://id2.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout';
+  final String _discoveryUrl = 'https://id2.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
+  final List<String> _scopes = const ['openid', 'profile', 'email', 'offline_access', 'roles'];
+  final List<String> _idpHints = const ['rodekors'];
 
   /// Authorize and get token
   @override
   Future<ServiceResponse<AuthToken>> authorize({String username, String password}) async {
     try {
-      final access = await _appAuth.authorize(
-        AuthorizationRequest(
+      final idpHint = _toIdpHint(username);
+      final response = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
           _clientId,
           _redirectUrl,
           scopes: _scopes,
           loginHint: username,
+          additionalParameters: {
+            if (idpHint != null) 'kc_idp_hint': idpHint,
+          },
           discoveryUrl: _discoveryUrl,
         ),
       );
-      return await _fetchToken(
-        TokenRequest(
-          _clientId,
-          _redirectUrl,
-          scopes: _scopes,
-          discoveryUrl: _discoveryUrl,
-          codeVerifier: access.codeVerifier,
-          authorizationCode: access.authorizationCode,
-        ),
+      return await _writeToken(
+        response,
       );
     } on PlatformException catch (e) {
       if (USER_ERRORS.contains(e.code)) {
@@ -253,7 +252,7 @@ class UserIdentityService extends UserService {
     try {
       final current = await this.read();
       if (current != null) {
-        final next = await _fetchToken(
+        final response = await _appAuth.token(
           TokenRequest(
             _clientId,
             _redirectUrl,
@@ -262,8 +261,9 @@ class UserIdentityService extends UserService {
             refreshToken: current.refreshToken,
           ),
         );
-        if (!kReleaseMode) print("Token refreshed: $next");
-        return next;
+        return await _writeToken(
+          response,
+        );
       }
     } on PlatformException catch (e) {
       if (USER_ERRORS.contains(e.code)) {
@@ -290,8 +290,7 @@ class UserIdentityService extends UserService {
     try {
       final token = await getToken();
       if (token.is200) {
-        final response =
-            await client.post('https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout', headers: {
+        final response = await client.post(_logoutUrl, headers: {
           'Authorization': 'Bearer ${token.body.accessToken}',
         }, body: {
           'client_id': _clientId,
@@ -316,21 +315,26 @@ class UserIdentityService extends UserService {
     }
   }
 
-  Future<ServiceResponse<AuthToken>> _fetchToken(TokenRequest request) async {
-    final result = await _appAuth.token(
-      request,
-    );
-
+  Future<ServiceResponse<AuthToken>> _writeToken(TokenResponse response) async {
     final token = await write(
-      idToken: result.idToken,
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      accessTokenExpiration: result.accessTokenExpirationDateTime,
+      idToken: response.idToken,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      accessTokenExpiration: response.accessTokenExpirationDateTime,
     );
-
+    if (!kReleaseMode) print("Token written: $token");
     return ServiceResponse.ok(
       body: token,
     );
+  }
+
+  String _toIdpHint(String username) {
+    final pattern = RegExp(".*.@(\\w+)\..*");
+    final matcher = pattern.firstMatch(username);
+    if (matcher != null && _idpHints.contains(matcher.group(1))) {
+      return matcher.group(1);
+    }
+    return null;
   }
 }
 

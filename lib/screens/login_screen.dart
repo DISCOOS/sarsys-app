@@ -208,7 +208,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       _pinController.clear();
       return fields..addAll(_buildUnlock(bloc));
     }
-    return fields..addAll(_buildAuthenticate(bloc));
+    return fields..add(_buildAuthenticate(bloc));
   }
 
   bool _isError(AsyncSnapshot<UserState> snapshot) => snapshot.hasData && snapshot.data is UserException;
@@ -418,15 +418,21 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
       );
 
-  List<Widget> _buildAuthenticate(UserBloc bloc) => [
-        Text(
-          'Logg deg på med din organisasjonskonto',
-          style: _toStyle(context, 22, FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        _buildEmailInput(),
-        _buildAuthenticateAction(bloc),
-      ];
+  Widget _buildAuthenticate(UserBloc bloc) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Logg deg på med din organisasjonskonto',
+            style: _toStyle(context, 22, FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          _buildEmailInput(),
+          Flexible(
+            child: _buildAuthenticateAction(bloc),
+          ),
+        ],
+      );
 
   Widget _buildEmailInput() => Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),

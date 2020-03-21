@@ -19,6 +19,9 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
 
+/// Type helper class
+Type typeOf<T>() => T;
+
 String enumName(Object o) => o.toString().split('.').last;
 
 String toDD(Point point, {String prefix = "DD", String empty = "Velg"}) {

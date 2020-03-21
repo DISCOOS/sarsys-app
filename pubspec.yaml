@@ -13,8 +13,6 @@ description: SarSys
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 version: 0.1.1+72
 
-# On flutter master commit: cc3ca9a916, v 1.10.6
-
 environment:
   sdk: ">=2.6.0 <3.0.0"
 

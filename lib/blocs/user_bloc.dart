@@ -198,7 +198,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         if (!kDebugMode) {
           developer.log("User parsed from token: $_user", level: Level.CONFIG.value);
         }
-        return _toResponse(command, UserAuthenticated(_user), result: _user);
+        return _toResponse(
+          command,
+          UserAuthenticated(_user),
+          result: _toAuthResult(command),
+        );
       case HttpStatus.noContent:
         return _toResponse(
           command,
@@ -208,18 +212,20 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         return _toResponse(
           command,
           UserUnauthorized(response),
-          result: false,
+          result: _toAuthResult(command),
         );
       case HttpStatus.forbidden:
         return _toResponse(
           command,
           UserForbidden(response),
-          result: false,
+          result: _toAuthResult(command),
         );
       default:
         return _toError(command, response);
     }
   }
+
+  Object _toAuthResult(UserCommand command) => command is LoadUser || command is AuthenticateUser ? _user : true;
 
   Equatable _toSecurityState() {
     return _security == null
