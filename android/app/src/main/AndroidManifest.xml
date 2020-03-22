@@ -15,8 +15,8 @@
     <application
         android:label="SarSys"
         android:icon="@mipmap/ic_launcher"
-        android:allowBackup="true"
-        android:fullBackupContent="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name="io.flutter.embedding.android.FlutterActivity"
