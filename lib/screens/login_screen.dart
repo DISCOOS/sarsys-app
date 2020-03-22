@@ -5,6 +5,7 @@ import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
@@ -381,41 +382,47 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         () => bloc.unlock(pin: _pin),
       );
 
-  Widget _buildPinInput({StateSetter setState}) => Padding(
-        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-        child: PinCodeTextField(
-          length: 4,
-          obsecureText: false,
-          autoFocus: true,
-          animationType: AnimationType.fade,
-          shape: PinCodeFieldShape.box,
-          textInputType: TextInputType.numberWithOptions(),
-          animationDuration: Duration(milliseconds: 300),
-          borderRadius: BorderRadius.circular(5),
-          fieldHeight: 50,
-          fieldWidth: 50,
-          activeFillColor: color,
-          controller: _pinController,
-          focusNode: _focusNode,
-          onChanged: (value) {
-            _pinComplete = value.length == 4;
-            if (!_pinComplete) {
+  Widget _buildPinInput({StateSetter setState}) => Container(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
+          child: PinCodeTextField(
+            length: 4,
+            obsecureText: false,
+            autoFocus: true,
+            inputFormatters: [
+              WhitelistingTextInputFormatter(RegExp('[0-9]')),
+            ],
+            textInputAction: TextInputAction.send,
+            animationType: AnimationType.fade,
+            shape: PinCodeFieldShape.box,
+            textInputType: TextInputType.numberWithOptions(),
+            animationDuration: Duration(milliseconds: 300),
+            borderRadius: BorderRadius.circular(5),
+            fieldHeight: 50,
+            fieldWidth: 50,
+            activeFillColor: color,
+            controller: _pinController,
+            focusNode: _focusNode,
+            onChanged: (value) {
+              _pinComplete = value.length == 4;
+              if (!_pinComplete) {
+                if (setState != null) {
+                  setState(() {});
+                }
+              }
+              _wrongPin = _pin != value;
+            },
+            onCompleted: (value) {
+              if (!_verifyPin) {
+                _pin = value;
+              }
+              _pinComplete = true;
+              _pinController.clear();
               if (setState != null) {
                 setState(() {});
               }
-            }
-            _wrongPin = _pin != value;
-          },
-          onCompleted: (value) {
-            if (!_verifyPin) {
-              _pin = value;
-            }
-            _pinComplete = true;
-            _pinController.clear();
-            if (setState != null) {
-              setState(() {});
-            }
-          },
+            },
+          ),
         ),
       );
 
