@@ -48,7 +48,16 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   bool get isAuthenticated => _user != null;
 
   /// User identity is ready to be accessed. If false, login should be enforced
-  bool get isReady => isSecured && isUnlocked && isAuthenticated;
+  bool get isReady => isSecured && isUnlocked && isAuthenticated && !isPending;
+
+  /// User identity is being authenticated
+  bool get isAuthenticating => currentState.isAuthenticating();
+
+  /// User identity is being unlocked
+  bool get isUnlocking => currentState.isUnlocking();
+
+  /// User identity is pending
+  bool get isPending => currentState.isPending();
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
@@ -84,7 +93,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertLocked(UserCommand command) {
-    return isUnlocked ? RaiseUserError.from("Er låst opp") : command;
+    return isUnlocked ? RaiseUserException.from("Er låst opp") : command;
   }
 
   /// Load user from secure storage
@@ -93,23 +102,23 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   Future<User> authenticate({String username, String password}) {
-    return _dispatch<User>(_assertUnset(AuthenticateUser(username, password)));
+    return _dispatch<User>(AuthenticateUser(username, password));
   }
 
-  UserCommand _assertUnset(UserCommand command) {
-    return isAuthenticated ? RaiseUserError.from("Er logget inn") : command;
+  UserCommand _assertUnset<T>(UserCommand command) {
+    return isAuthenticated ? RaiseUserException.from<T>("Er logget inn") : command;
   }
 
   Future<bool> logout() {
     return _dispatch<bool>(LogoutUser());
   }
 
-  UserCommand _assertAuthenticated(UserCommand command) {
-    return isAuthenticated ? command : RaiseUserError.from("Ikke logget inn");
+  UserCommand _assertAuthenticated<T>(UserCommand command) {
+    return isAuthenticated ? command : RaiseUserException.from<T>("Ikke logget inn");
   }
 
   Future<bool> authorize(Incident data, String passcode) {
-    return _dispatch<bool>(_assertAuthenticated(AuthorizeUser(data, passcode)));
+    return _dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
   }
 
   @override
@@ -133,13 +142,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         if (_user != null) {
           yield _authorize(command);
         }
-      } else if (command is RaiseUserError) {
-        yield _toError(command, command.data);
+      } else if (command is RaiseUserException) {
+        yield _completeError(command, command.data);
       } else {
         yield UserError("Unsupported $command");
       }
     } catch (e) {
-      _toError(command, e);
+      yield _completeError(command, e);
     }
   }
 
@@ -165,15 +174,18 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         if (!kDebugMode) {
           developer.log("Security set: $_security", level: Level.CONFIG.value);
         }
-        return _toResponse(command, _toSecurityState(), result: _security);
+        return _complete(
+          command,
+          _toSecurityState(),
+          result: _security,
+        );
       case HttpStatus.unauthorized:
-        return _toResponse(
+        return _completeError(
           command,
           UserUnauthorized(response),
-          result: false,
         );
       default:
-        return _toError(command, response);
+        return _completeError(command, _toError(response));
     }
   }
 
@@ -198,30 +210,28 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         if (!kDebugMode) {
           developer.log("User parsed from token: $_user", level: Level.CONFIG.value);
         }
-        return _toResponse(
+        return _complete(
           command,
           UserAuthenticated(_user),
           result: _toAuthResult(command),
         );
       case HttpStatus.noContent:
-        return _toResponse(
+        return _complete(
           command,
           _toSecurityState(),
         );
       case HttpStatus.unauthorized:
-        return _toResponse(
+        return _completeError(
           command,
           UserUnauthorized(response),
-          result: _toAuthResult(command),
         );
       case HttpStatus.forbidden:
-        return _toResponse(
+        return _completeError(
           command,
           UserForbidden(response),
-          result: _toAuthResult(command),
         );
       default:
-        return _toError(command, response);
+        return _completeError(command, _toError(response));
     }
   }
 
@@ -245,14 +255,22 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       _user = null;
       _authorized.clear();
       _security = response.body;
-      return _toResponse(
+      return _complete(
         command,
         UserUnset(),
         result: true,
       );
     }
-    return _toError(command, response);
+    return _completeError(
+      command,
+      _toError(response),
+    );
   }
+
+  UserError _toError(ServiceResponse response) => UserError(
+        '${response.code} ${response.message}',
+        stackTrace: StackTrace.current,
+      );
 
   UserState _authorize(AuthorizeUser command) {
     bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
@@ -260,9 +278,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.id, () => state);
-      return _toResponse(command, state, result: true);
+      return _complete(command, state, result: true);
     }
-    return _toResponse(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
+    return _complete(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
   }
 
   // Dispatch and return future
@@ -272,7 +290,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete request and return given state to bloc
-  UserState _toResponse<R>(UserCommand event, UserState state, {R result}) {
+  UserState _complete<R>(UserCommand event, UserState state, {R result}) {
     if (result != null)
       event.callback.complete(result);
     else
@@ -281,15 +299,14 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete with error and return response as error state to bloc
-  UserState _toError(UserCommand event, Object response) {
-    final error = UserError(response);
-    event.callback.completeError(error);
-    return error;
+  UserState _completeError(UserCommand event, UserException response) {
+    event.callback.completeError(response);
+    return response;
   }
 
   @override
-  void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseUserError(UserError(error, trace: stacktrace)));
+  void onError(Object error, StackTrace stackTrace) {
+    dispatch(RaiseUserException(UserError(error, stackTrace: stackTrace)));
   }
 }
 
@@ -354,10 +371,10 @@ class LogoutUser extends UserCommand<void, bool> {
   String toString() => 'LogoutUser';
 }
 
-class RaiseUserError extends UserCommand<UserError, bool> {
-  RaiseUserError(data) : super(data);
+class RaiseUserException extends UserCommand<UserException, Exception> {
+  RaiseUserException(data) : super(data);
 
-  static RaiseUserError from(String error) => RaiseUserError(UserError(error));
+  static RaiseUserException from<T>(Object error) => RaiseUserException(UserError(error));
 
   @override
   String toString() => 'RaiseUserError';
@@ -410,13 +427,13 @@ class UserUnlocked extends UserState<Security> {
 }
 
 class UserAuthenticating extends UserState<String> {
-  UserAuthenticating(username) : super(username);
+  UserAuthenticating(String username) : super(username);
   @override
   String toString() => 'UserAuthenticating {username: $data}';
 }
 
 class UserAuthenticated extends UserState<User> {
-  UserAuthenticated(user) : super(user);
+  UserAuthenticated(User user) : super(user);
   @override
   String toString() => 'UserAuthenticated {userid: ${data.userId}}';
 }
@@ -438,7 +455,7 @@ class UserAuthorized extends UserState<User> {
 /// ---------------------
 /// Exceptional states
 /// ---------------------
-abstract class UserException extends UserState<Object> {
+abstract class UserException extends UserState<Object> implements Exception {
   final StackTrace stackTrace;
   UserException(Object error, {this.stackTrace}) : super(error);
 
@@ -447,14 +464,14 @@ abstract class UserException extends UserState<Object> {
 }
 
 class UserForbidden extends UserException {
-  UserForbidden(Object error, {trace}) : super(error, stackTrace: trace);
+  UserForbidden(Object error, {stackTrace}) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => 'UserForbidden {data: $data}';
 }
 
 class UserUnauthorized extends UserException {
-  UserUnauthorized(Object error, {trace}) : super(error, stackTrace: trace);
+  UserUnauthorized(Object error, {stackTrace}) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => 'UserUnauthorized {data: $data}';
@@ -462,7 +479,7 @@ class UserUnauthorized extends UserException {
 
 /// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
 class UserError extends UserException {
-  UserError(Object error, {trace}) : super(error, stackTrace: trace);
+  UserError(Object error, {stackTrace}) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => 'UserError {data: $data}';

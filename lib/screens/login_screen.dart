@@ -12,6 +12,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 enum LoginType {
   automatic,
   changePin,
+  switchUser,
 }
 
 class LoginScreen extends StatefulWidget {
@@ -32,7 +33,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   bool _verifyPin = false;
   bool _securePin = false;
   bool _pinComplete = false;
-  bool _securePending = false;
+  bool _pending = false;
 
   AnimationController _animController;
   StreamSubscription<UserState> _subscription;
@@ -40,6 +41,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   FocusNode _focusNode = FocusNode();
   ScrollController _scrollController = ScrollController();
   TextEditingController _pinController = TextEditingController();
+
+  bool get automatic => LoginType.automatic == widget.type;
+  bool get changePin => LoginType.changePin == widget.type;
+  bool get switchUser => LoginType.switchUser == widget.type;
 
   bool _validateAndSave() {
     final form = _formKey.currentState;
@@ -57,7 +62,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       switch (state.runtimeType) {
         case UserUnlocked:
         case UserAuthenticated:
-          if (bloc.isReady && LoginType.automatic == widget.type) {
+          // Only close login if user is authenticated and app is secured with pin
+          if (bloc.isReady && (automatic || _pending)) {
             Navigator.pushReplacementNamed(context, 'incident/list');
           }
           break;
@@ -121,7 +127,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   bool _inProgress(AsyncSnapshot<UserState> snapshot, UserBloc bloc) =>
-      bloc.isReady && !changePin || snapshot.hasData && (snapshot.data.isPending() || _securePending);
+      bloc.isReady && !(changePin || switchUser) || snapshot.hasData && (snapshot.data.isPending() || _pending);
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -202,13 +208,19 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   List<Widget> _buildFields(AsyncSnapshot<UserState> snapshot, UserBloc bloc) {
-    var fields = _isError(snapshot) ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
-
-    if (changePin || !bloc.isSecured) {
-      return fields..add(_buildSecure(bloc));
-    } else if (bloc.isLocked) {
+    final isError = _isError(snapshot);
+    var fields = isError ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
+    if (isError) {
       _pinController.clear();
-      return fields..addAll(_buildUnlock(bloc));
+    }
+
+    if (bloc.isAuthenticated) {
+      if (changePin || !bloc.isSecured) {
+        return fields..add(_buildSecure(bloc));
+      } else if (bloc.isLocked) {
+        _pinController.clear();
+        return fields..addAll(_buildUnlock(bloc));
+      }
     }
     return fields..add(_buildAuthenticate(bloc));
   }
@@ -306,7 +318,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           }
           return Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 _toPinText(),
@@ -314,13 +325,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                 textAlign: TextAlign.center,
               ),
               _buildPinInput(
+                bloc,
                 setState: setState,
               ),
-              Flexible(
-                child: _verifyPin
-                    ? _buildSecureAction(bloc, enabled: _pinComplete)
-                    : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
-              ),
+              _verifyPin
+                  ? _buildSecureAction(bloc, enabled: _pinComplete)
+                  : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
             ],
           );
         },
@@ -341,17 +351,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
-        'Lagre',
+        'Endre',
         () async {
-          await bloc.secure(
-            Security.fromPin(_pin),
-          );
-          _resetPin();
-          _securePending = true;
-          // If already in state 'UserUnlocked' no event will be fired.
-          if (bloc.isUnlocked) {
-            Navigator.pushReplacementNamed(context, 'incident/list');
-          }
+          try {
+            await bloc.secure(
+              Security.fromPin(_pin),
+            );
+            _resetPin();
+            _pending = true;
+          } on Exception {/* Is handled by StreamBuilder */}
         },
         enabled: enabled,
       );
@@ -365,66 +373,75 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     _pinComplete = false;
   }
 
-  bool get changePin => LoginType.changePin == widget.type;
-
   List<Widget> _buildUnlock(UserBloc bloc) => [
         Text(
           'Lås opp med pinkode',
           style: _toStyle(context, 22, FontWeight.bold),
           textAlign: TextAlign.center,
         ),
-        _buildPinInput(),
-        _buildUnlockAction(bloc),
+        _buildPinInput(bloc),
       ];
 
-  Widget _buildUnlockAction(UserBloc bloc) => _buildAction(
-        'Lås opp',
-        () => bloc.unlock(pin: _pin),
-      );
-
-  Widget _buildPinInput({StateSetter setState}) => Container(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-          child: PinCodeTextField(
-            length: 4,
-            obsecureText: false,
-            autoFocus: true,
-            inputFormatters: [
-              WhitelistingTextInputFormatter(RegExp('[0-9]')),
-            ],
-            textInputAction: TextInputAction.send,
-            animationType: AnimationType.fade,
-            shape: PinCodeFieldShape.box,
-            textInputType: TextInputType.numberWithOptions(),
-            animationDuration: Duration(milliseconds: 300),
-            borderRadius: BorderRadius.circular(5),
-            fieldHeight: 50,
-            fieldWidth: 50,
-            activeFillColor: color,
-            controller: _pinController,
-            focusNode: _focusNode,
-            onChanged: (value) {
-              _pinComplete = value.length == 4;
-              if (!_pinComplete) {
-                if (setState != null) {
-                  setState(() {});
-                }
-              }
-              _wrongPin = _pin != value;
-            },
-            onCompleted: (value) {
-              if (!_verifyPin) {
-                _pin = value;
-              }
-              _pinComplete = true;
-              _pinController.clear();
-              if (setState != null) {
-                setState(() {});
-              }
-            },
+  Widget _buildPinInput(UserBloc bloc, {StateSetter setState}) => Container(
+        constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
+        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
+        child: PinCodeTextField(
+          length: 4,
+          obsecureText: false,
+          autoFocus: true,
+          inputFormatters: [
+            WhitelistingTextInputFormatter(RegExp('[0-9]')),
+          ],
+          textInputAction: TextInputAction.send,
+          animationType: AnimationType.fade,
+          shape: PinCodeFieldShape.box,
+          textInputType: TextInputType.numberWithOptions(),
+          animationDuration: Duration(milliseconds: 300),
+          borderRadius: BorderRadius.circular(5),
+          fieldHeight: 50,
+          fieldWidth: 50,
+          activeFillColor: color,
+          controller: _pinController,
+          focusNode: _focusNode,
+          onChanged: (value) => _onChanged(
+            value,
+            setState,
+            bloc,
+          ),
+          onCompleted: (value) => _onCompleted(
+            value,
+            setState,
           ),
         ),
       );
+
+  void _onCompleted(String value, StateSetter setState) {
+    if (!_verifyPin) {
+      _pin = value;
+    }
+    _pinComplete = true;
+    _pinController.clear();
+    if (setState != null) {
+      setState(() {});
+    }
+  }
+
+  void _onChanged(String value, StateSetter setState, UserBloc bloc) async {
+    _pinComplete = value.length == 4;
+    _wrongPin = _pin != value;
+    // Evaluate pin if not complete or if not changing and is wrong
+    if (!_pinComplete || !changePin && _pinComplete && _wrongPin) {
+      if (setState != null) {
+        setState(() {});
+      }
+    }
+    // Automatic approval?
+    else if (!(changePin || _wrongPin)) {
+      try {
+        await bloc.unlock(pin: _pin);
+      } on Exception {/* Is handled by StreamBuilder */}
+    }
+  }
 
   Widget _buildAuthenticate(UserBloc bloc) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -461,29 +478,41 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildAuthenticateAction(UserBloc bloc) => _buildAction(
         'Logg på',
-        () => bloc.authenticate(username: _username),
+        () async {
+          try {
+            await bloc.authenticate(username: _username);
+            _pending = true;
+          } on Exception {/* Is handled by StreamBuilder */}
+        },
       );
 
-  Widget _buildAction(String label, Function() onPressed, {bool enabled = true}) => Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-        child: SizedBox(
-          height: 48,
-          child: RaisedButton(
-            elevation: 2.0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-            color: Color.fromRGBO(00, 41, 73, 1),
-            child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
-            onPressed: enabled
-                ? () {
-                    if (_validateAndSave()) {
-                      FocusScopeNode currentFocus = FocusScope.of(context);
-                      if (!currentFocus.hasPrimaryFocus) {
-                        currentFocus.unfocus();
+  Widget _buildAction(String label, Function() onPressed, {bool enabled = true}) => Container(
+        constraints: BoxConstraints(
+          minHeight: 72,
+          maxHeight: 72,
+          minWidth: 215,
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
+          child: SizedBox(
+            height: 48,
+            child: RaisedButton(
+              elevation: 2.0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+              color: Color.fromRGBO(00, 41, 73, 1),
+              child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
+              onPressed: enabled
+                  ? () {
+                      if (_validateAndSave()) {
+                        FocusScopeNode currentFocus = FocusScope.of(context);
+                        if (!currentFocus.hasPrimaryFocus) {
+                          currentFocus.unfocus();
+                        }
+                        onPressed();
                       }
-                      onPressed();
                     }
-                  }
-                : null,
+                  : null,
+            ),
           ),
         ),
       );

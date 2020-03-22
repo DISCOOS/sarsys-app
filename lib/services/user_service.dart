@@ -13,15 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
 abstract class UserService {
-  // TODO: Take into account that several users may use the app and handle token storage accordingly
-
   static final storage = new FlutterSecureStorage();
-
-  Future<ServiceResponse<AuthToken>> authorize({String username, String password});
-
-  Future<ServiceResponse<AuthToken>> refresh() async {
-    return ServiceResponse.noContent<AuthToken>();
-  }
 
   Future<ServiceResponse<bool>> isSecured() async {
     try {
@@ -117,27 +109,69 @@ abstract class UserService {
     }
   }
 
-  /// Get current user from resource owner
-  Future<ServiceResponse<User>> load() async {
-    final result = await getToken();
+  /// Load given user from storage
+  Future<ServiceResponse<User>> load({
+    String username,
+    bool validate = true,
+  }) async {
+    final actual = username ?? await current();
+    final result = await getToken(username: actual);
     if (result.is200) {
       return ServiceResponse.ok(body: result.body.asUser());
     }
     return ServiceResponse.noContent();
   }
 
+  /// Load all users from storage
+  Future<ServiceResponse<List<User>>> loadAll({bool validate = false}) async {
+    final list = await _readAll();
+    final results = List<ServiceResponse<AuthToken>>.from(await Future.forEach(
+      list,
+      (username) => getToken(
+        username: username,
+        validate: validate,
+      ),
+    ));
+    final tokens = results
+        .where(
+          (result) => result.is200,
+        )
+        .map(
+          (result) => result.body.asUser(),
+        );
+    if (tokens.isNotEmpty) {
+      return ServiceResponse.ok(body: tokens);
+    }
+    return ServiceResponse.noContent();
+  }
+
+  Future<ServiceResponse<AuthToken>> authorize({String username, String password});
+
+  Future<ServiceResponse<AuthToken>> refresh({String username}) async {
+    return ServiceResponse.noContent<AuthToken>(
+      message: 'Username $username not found',
+    );
+  }
+
   /// Get current token from secure storage
-  Future<ServiceResponse<AuthToken>> getToken() async {
+  Future<ServiceResponse<AuthToken>> getToken({
+    String username,
+    bool validate = true,
+  }) async {
     try {
-      final token = await read();
+      final actual = username ?? await current();
+      final token = await read(actual);
       if (token != null) {
         var jwt = JsonWebToken.unverified(token.accessToken);
-        if (!kReleaseMode) print("Token found: $token");
-        if (jwt.claims.expiry.isAfter(DateTime.now())) {
-          if (!kReleaseMode) print("Token still valid");
+        if (!kReleaseMode) print("Token found for $actual: $token");
+        bool isValid = jwt.claims.expiry.isAfter(DateTime.now());
+        if (isValid || !validate) {
+          if (!kReleaseMode) print("Token ${isValid ? 'still' : 'is not'} valid");
           return ServiceResponse.ok(body: token);
         }
-        return refresh();
+        return refresh(
+          username: actual,
+        );
       }
     } on FormatException {
       await logout();
@@ -147,11 +181,12 @@ abstract class UserService {
     return ServiceResponse.noContent();
   }
 
-  /// Delete token from secure storage
-  Future<ServiceResponse<Security>> logout() async {
+  /// Delete token for given username from secure storage
+  Future<ServiceResponse<Security>> logout({String username}) async {
     try {
       // Delete token from storage
-      await storage.delete(key: 'token');
+      final actual = username ?? await current();
+      await delete(actual);
       final result = await getSecurity();
       return ServiceResponse.ok(body: result.body);
     } on Exception catch (e) {
@@ -162,13 +197,25 @@ abstract class UserService {
     }
   }
 
-  Future<AuthToken> read() async {
-    final json = await storage.read(key: "token");
+  /// Get current username from storage
+  Future<String> current() async => await storage.read(key: "username");
+
+  /// Read token for given username from storage
+  Future<AuthToken> read(String username) async {
+    final json = await storage.read(key: "token_$username");
     return json == null ? null : AuthToken.fromJson(jsonDecode(json));
   }
 
+  /// Read username list
+  Future<Set<String>> _readAll() async {
+    final json = await storage.read(key: "username_list");
+    return List<String>.from(json == null ? {} : jsonDecode(json)).toSet();
+  }
+
+  /// Write token for given username to storage
   @protected
-  Future<AuthToken> write({
+  Future<AuthToken> write(
+    String username, {
     @required String accessToken,
     String idToken,
     String refreshToken,
@@ -180,11 +227,41 @@ abstract class UserService {
       refreshToken: refreshToken,
       accessTokenExpiration: accessTokenExpiration,
     );
+    // Write current username
     await UserService.storage.write(
-      key: "token",
+      key: "username",
+      value: username,
+    );
+
+    // Write token for given user
+    await UserService.storage.write(
+      key: "token_$username",
       value: jsonEncode(token.toJson()),
     );
+    // Update user list
+    Set<String> list = await _readAll();
+    list.add(username);
+    await storage.write(
+      key: "username_list",
+      value: jsonEncode(
+        list.toList(),
+      ),
+    );
     return token;
+  }
+
+  /// Delete token for given username from storage
+  @protected
+  Future delete(String username) async {
+    await storage.delete(key: 'token_$username');
+    Set<String> list = await _readAll();
+    list.remove(username);
+    await storage.write(
+      key: "username_list",
+      value: jsonEncode(
+        list.toList(),
+      ),
+    );
   }
 }
 
@@ -194,7 +271,12 @@ class UserIdentityService extends UserService {
 
   static const String AUTHORIZE_ERROR_CODE = "authorize_failed";
   static const String TOKEN_ERROR_CODE = "token_failed";
-  static const List<String> USER_ERRORS = const [AUTHORIZE_ERROR_CODE, TOKEN_ERROR_CODE];
+  static const String AUTHORIZE_AND_EXCHANGE_CODE_FAILED = 'authorize_and_exchange_code_failed';
+  static const List<String> USER_ERRORS = const [
+    AUTHORIZE_ERROR_CODE,
+    TOKEN_ERROR_CODE,
+    AUTHORIZE_AND_EXCHANGE_CODE_FAILED,
+  ];
 
   final FlutterAppAuth _appAuth = FlutterAppAuth();
   final String _clientId = 'sarsys-web';
@@ -206,9 +288,16 @@ class UserIdentityService extends UserService {
 
   /// Authorize and get token
   @override
-  Future<ServiceResponse<AuthToken>> authorize({String username, String password}) async {
+  Future<ServiceResponse<AuthToken>> authorize({
+    String username,
+    String password,
+  }) async {
     try {
       final idpHint = _toIdpHint(username);
+      final token = await getToken(username: username);
+      if (token.is200) {
+        return token;
+      }
       final response = await _appAuth.authorizeAndExchangeCode(
         AuthorizationTokenRequest(
           _clientId,
@@ -225,6 +314,7 @@ class UserIdentityService extends UserService {
         ),
       );
       return await _writeToken(
+        username,
         response,
       );
     } on PlatformException catch (e) {
@@ -251,23 +341,28 @@ class UserIdentityService extends UserService {
   }
 
   @override
-  Future<ServiceResponse<AuthToken>> refresh() async {
+  Future<ServiceResponse<AuthToken>> refresh({String username}) async {
     try {
-      final current = await this.read();
-      if (current != null) {
+      final actual = username ?? await super.current();
+      final token = await this.read(actual);
+      if (token != null) {
         final response = await _appAuth.token(
           TokenRequest(
             _clientId,
             _redirectUrl,
             scopes: _scopes,
             discoveryUrl: _discoveryUrl,
-            refreshToken: current.refreshToken,
+            refreshToken: token.refreshToken,
           ),
         );
         return await _writeToken(
+          actual,
           response,
         );
       }
+      return super.refresh(
+        username: actual,
+      );
     } on PlatformException catch (e) {
       if (USER_ERRORS.contains(e.code)) {
         return ServiceResponse.unauthorized(
@@ -284,34 +379,30 @@ class UserIdentityService extends UserService {
         error: e,
       );
     }
-    return super.refresh();
   }
 
   /// Delete token from secure storage
   @override
-  Future<ServiceResponse<Security>> logout() async {
+  Future<ServiceResponse<Security>> logout({String username}) async {
     try {
-      final token = await getToken();
+      final token = await getToken(username: username);
       if (token.is200) {
-        final response = await client.post(_logoutUrl, headers: {
+        await client.post(_logoutUrl, headers: {
           'Authorization': 'Bearer ${token.body.accessToken}',
         }, body: {
           'client_id': _clientId,
           'refresh_token': token.body.refreshToken,
         });
-        return super.logout();
       }
-      return ServiceResponse.noContent();
-    } on Exception catch (e) {
-      return ServiceResponse.internalServerError(
-        message: "Failed to delete token from storage",
-        error: e,
-      );
+    } on Exception {
+      /* NOOP */
     }
+    return super.logout(username: username);
   }
 
-  Future<ServiceResponse<AuthToken>> _writeToken(TokenResponse response) async {
+  Future<ServiceResponse<AuthToken>> _writeToken(String username, TokenResponse response) async {
     final token = await write(
+      username,
       idToken: response.idToken,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
@@ -352,7 +443,10 @@ class UserCredentialsService extends UserService {
       );
       if (response.statusCode == 200) {
         final responseObject = jsonDecode(response.body);
-        final token = await write(accessToken: responseObject['token']);
+        final token = await write(
+          username,
+          accessToken: responseObject['token'],
+        );
         return ServiceResponse.ok(
           body: token,
         );

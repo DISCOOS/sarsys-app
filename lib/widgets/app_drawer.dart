@@ -12,6 +12,7 @@ class AppDrawer extends StatelessWidget {
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
     final avatar = Image.asset("assets/images/avatar-male.png");
+//    final roles = user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? "";
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -19,21 +20,27 @@ class AppDrawer extends StatelessWidget {
         children: <Widget>[
           UserAccountsDrawerHeader(
             accountName: Text(
-              "${user?.name}",
+              "${user?.fullName}",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             accountEmail: Text(
-              user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? "",
+              user.email,
               style: TextStyle(fontWeight: FontWeight.w400),
-            ),
-            decoration: BoxDecoration(
-              color: Colors.grey[800],
             ),
             currentAccountPicture: CircleAvatar(
               radius: 24,
-              backgroundColor: Colors.grey[600],
+              backgroundColor: Theme.of(context).accentColor,
               child: avatar,
             ),
+//            otherAccountsPictures: <Widget>[
+//              GestureDetector(
+//                child: CircleAvatar(
+//                  backgroundColor: Theme.of(context).accentColor,
+//                  child: Icon(Icons.person_add),
+//                ),
+//                onTap: () {},
+//              )
+//            ],
           ),
           ListTile(
             leading: const Icon(Icons.format_list_bulleted),
@@ -85,15 +92,11 @@ class AppDrawer extends StatelessWidget {
           ),
           Divider(),
           ListTile(
-            leading: const Icon(Icons.account_box),
-            title: Text(userBloc.isAuthenticated ? 'Logg av' : 'Logg på', style: TextStyle(fontSize: 14)),
+            leading: const Icon(Icons.contacts),
+            title: Text('Bytt bruker', style: TextStyle(fontSize: 14)),
             onTap: () async {
               Navigator.pop(context);
-              if (userBloc.isAuthenticated) {
-                await userBloc.logout();
-              } else {
-                Navigator.pushReplacementNamed(context, 'login');
-              }
+              Navigator.pushReplacementNamed(context, 'switch/user');
             },
           ),
           ListTile(

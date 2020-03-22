@@ -18,23 +18,32 @@ class User extends Equatable {
   final String email;
   final String phone;
   final List<UserRole> roles;
+  final List<String> passcodes;
 
   User({
     @required this.userId,
     this.fname,
     this.lname,
     this.uname,
-    this.roles,
     this.phone,
     this.email,
+    this.roles,
+    this.passcodes,
   }) : super([
           userId,
           fname,
           lname,
+          uname,
+          email,
+          phone,
           roles,
+          passcodes,
         ]);
 
-  String get name => '$fname $lname';
+  String get fullName => '$fname $lname';
+  String get shortName => '${fname.substring(0, 1)} $lname';
+  String get initials => '${fname.substring(0, 1)}${lname.substring(0, 1)}'.toUpperCase();
+
   bool get isCommander => roles.contains(UserRole.commander);
   bool get isUnitLeader => roles.contains(UserRole.unit_leader);
   bool get isPersonnel => roles.contains(UserRole.personnel);

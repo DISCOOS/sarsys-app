@@ -97,7 +97,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: false,
         title: 'SarSys',
         theme: ThemeData(
-          primaryColor: Colors.grey[850],
+//          primaryColor: Colors.grey[850],
+          primaryColor: Color(0xFF0d2149),
           buttonTheme: ButtonThemeData(
             height: 36.0,
             textTheme: ButtonTextTheme.primary,
@@ -163,7 +164,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (settings.name) {
       case 'login':
       case 'onboarding':
-      case 'change/pin':
         builder = _toUnchecked(child);
         break;
       default:
@@ -181,6 +181,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         break;
       case 'change/pin':
         child = LoginScreen(type: LoginType.changePin);
+        break;
+      case 'switch/user':
+        child = LoginScreen(type: LoginType.switchUser);
         break;
       case 'incident':
         child = CommandScreen(tabIndex: CommandScreen.INCIDENT);
