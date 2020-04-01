@@ -7,10 +7,14 @@ class SizeConfig {
   static double blockSizeHorizontal;
   static double blockSizeVertical;
 
-  static double _safeAreaHorizontal;
-  static double _safeAreaVertical;
+  static double safeAreaHorizontal;
+  static double safeAreaVertical;
   static double safeBlockHorizontal;
   static double safeBlockVertical;
+
+  static Orientation get orientation => _mediaQueryData.orientation;
+  static bool get isPortrait => Orientation.portrait == orientation;
+  static bool get isLandscape => Orientation.landscape == orientation;
 
   void init(BuildContext context) {
     _mediaQueryData = MediaQuery.of(context);
@@ -19,9 +23,9 @@ class SizeConfig {
     blockSizeHorizontal = screenWidth / 100;
     blockSizeVertical = screenHeight / 100;
 
-    _safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
-    _safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
-    safeBlockHorizontal = (screenWidth - _safeAreaHorizontal) / 100;
-    safeBlockVertical = (screenHeight - _safeAreaVertical) / 100;
+    safeAreaHorizontal = _mediaQueryData.padding.left + _mediaQueryData.padding.right;
+    safeAreaVertical = _mediaQueryData.padding.top + _mediaQueryData.padding.bottom;
+    safeBlockHorizontal = (screenWidth - safeAreaHorizontal) / 100;
+    safeBlockVertical = (screenHeight - safeAreaVertical) / 100;
   }
 }
