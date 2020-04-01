@@ -9,12 +9,11 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
-import 'package:jose/jose.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
 
 class IncidentBuilder {
-  static Map<String, dynamic> createIncidentAsJson(String id, int since, String token, String passcode) {
+  static Map<String, dynamic> createIncidentAsJson(String id, int since, String userId, String passcode) {
     final rnd = math.Random();
     return json.decode(
       '{'
@@ -31,8 +30,8 @@ class IncidentBuilder {
       '{"name": "RK-RIKS-1", "type": "Tetra"}'
       '],'
       '"passcodes": ${createPasscodesAsJson(passcode)},'
-      '"created": ${createAuthor(token)},'
-      '"changed": ${createAuthor(token)}'
+      '"created": ${createAuthor(userId)},'
+      '"changed": ${createAuthor(userId)}'
       '}',
     );
   }
@@ -49,10 +48,7 @@ class IncidentBuilder {
     return json.encode(Passcodes(command: passcode, personnel: passcode).toJson());
   }
 
-  static createAuthor(String token) {
-    var jwt = new JsonWebToken.unverified(token);
-    return json.encode(Author.now(jwt.claims.subject));
-  }
+  static createAuthor(String userId) => json.encode(Author.now(userId));
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
@@ -62,27 +58,31 @@ class IncidentServiceMock extends Mock implements IncidentService {
     final unauthorized = UserServiceMock.createToken("unauthorized", role);
     when(mock.fetch()).thenAnswer((_) async {
       if (incidents.isEmpty) {
-        var response = await service.getToken();
+        var response = await service.load();
         incidents.addEntries([
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
               "a:x$i",
-              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:x$i", i, response.body.accessToken, passcode)),
+              Incident.fromJson(
+                IncidentBuilder.createIncidentAsJson("a:x$i", i, response.body.userId, passcode),
+              ),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
             MapEntry(
               "a:y$i",
-              Incident.fromJson(IncidentBuilder.createIncidentAsJson("a:y$i", i, unauthorized.accessToken, passcode)),
+              Incident.fromJson(
+                IncidentBuilder.createIncidentAsJson("a:y$i", i, unauthorized.toUser().userId, passcode),
+              ),
             ),
         ]);
       }
       return ServiceResponse.ok(body: incidents.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final response = await service.getToken();
-      final authorized = JsonWebToken.unverified(response.body.accessToken);
+      final response = await service.load();
+      final authorized = response.body;
       final Incident incident = _.positionalArguments[0];
-      final author = Author.now(authorized.claims.subject);
+      final author = Author.now(authorized.userId);
       final created = Incident(
         id: "m:${randomAlphaNumeric(8).toLowerCase()}",
         type: incident.type,

@@ -15,27 +15,28 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   static UserCredentialsService build(UserRole role, AppConfigService configService, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
 
-    when(mock.authorize(username: username, password: password)).thenAnswer((_) async {
+    when(mock.login(username: username, password: password)).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(username, enumName(actual));
       final prefs = await SharedPreferences.getInstance();
       final json = jsonEncode(token.toJson());
       await prefs.setString('test_token', json);
-      return ServiceResponse.ok(body: token);
+      return ServiceResponse.ok(body: token.toUser());
     });
     when(
-      mock.authorize(
+      mock.login(
         username: argThat(isNot(equals(username))),
         password: argThat(isNot(equals(password))),
       ),
     ).thenAnswer(
       (_) async => ServiceResponse.unauthorized(message: "Feil brukernavn/passord"),
     );
+    when(mock.load()).thenAnswer(
+      (_) async => ServiceResponse.ok(body: (await _getToken(role, configService)).body.toUser()),
+    );
     when(mock.getToken()).thenAnswer(
-      (_) async {
-        return await _getToken(role, configService);
-      },
+      (_) async => await _getToken(role, configService),
     );
     when(mock.logout()).thenAnswer((_) async {
       final prefs = await SharedPreferences.getInstance();
@@ -48,18 +49,21 @@ class UserServiceMock extends Mock implements UserCredentialsService {
 
   static UserCredentialsService buildAny(UserRole role, AppConfigService configService) {
     final UserServiceMock mock = UserServiceMock();
-    when(mock.authorize(username: anyNamed('username'), password: anyNamed('password'))).thenAnswer((_) async {
+    when(mock.login(username: anyNamed('username'), password: anyNamed('password'))).thenAnswer((_) async {
       var response = await configService.fetch();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(_.namedArguments['username'], enumName(actual));
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('test_token', jsonEncode(token.toJson()));
-      return ServiceResponse.ok(body: token);
+      return ServiceResponse.ok(body: token.toUser());
     });
     when(mock.getToken()).thenAnswer(
       (_) async {
         return await _getToken(role, configService);
       },
+    );
+    when(mock.load()).thenAnswer(
+      (_) async => ServiceResponse.ok(body: (await _getToken(role, configService)).body.toUser()),
     );
     when(mock.logout()).thenAnswer((_) async {
       final prefs = await SharedPreferences.getInstance();
@@ -80,7 +84,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       try {
         token = AuthToken.fromJson(jsonDecode(json));
         // Logout if not same role
-        if (!token.asUser().roles.contains(actual)) {
+        if (!token.toUser().roles.contains(actual)) {
           token = null;
           prefs.remove('test_token');
         }

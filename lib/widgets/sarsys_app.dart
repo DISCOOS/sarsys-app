@@ -300,7 +300,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (providers.configProvider.bloc.config.onboarding) {
       child = OnboardingScreen();
     } else if (providers.userProvider.bloc.isReady) {
-      var route = widget.bucket.readState(context, identifier: RouteWriter.NAME);
+      var route = widget.bucket.readState(
+        context,
+        identifier: RouteWriter.NAME,
+      );
       if (route != null) {
         if (route['incident'] != null) {
           final id = route['incident'];

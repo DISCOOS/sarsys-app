@@ -14,10 +14,15 @@ User _$UserFromJson(Map<String, dynamic> json) {
     uname: json['uname'] as String,
     phone: json['phone'] as String,
     email: json['email'] as String,
+    security: json['security'] == null
+        ? null
+        : Security.fromJson(json['security'] as Map<String, dynamic>),
     roles: (json['roles'] as List)
-        ?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))
-        ?.toList(),
-    passcodes: (json['passcodes'] as List)?.map((e) => e as String)?.toList(),
+            ?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))
+            ?.toList() ??
+        [],
+    passcodes:
+        (json['passcodes'] as List)?.map((e) => e as String)?.toList() ?? [],
   );
 }
 
@@ -28,6 +33,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'uname': instance.uname,
       'email': instance.email,
       'phone': instance.phone,
+      'security': instance.security?.toJson(),
       'roles': instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList(),
       'passcodes': instance.passcodes,
     };

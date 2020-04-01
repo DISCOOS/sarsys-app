@@ -7,6 +7,8 @@ import 'package:meta/meta.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
 
+import 'Security.dart';
+
 part 'User.g.dart';
 
 @JsonSerializable()
@@ -17,7 +19,16 @@ class User extends Equatable {
   final String uname;
   final String email;
   final String phone;
+  final Security security;
+
+  @JsonKey(
+    defaultValue: <UserRole>[],
+  )
   final List<UserRole> roles;
+
+  @JsonKey(
+    defaultValue: <String>[],
+  )
   final List<String> passcodes;
 
   User({
@@ -27,8 +38,9 @@ class User extends Equatable {
     this.uname,
     this.phone,
     this.email,
-    this.roles,
-    this.passcodes,
+    this.security,
+    this.roles = const [],
+    this.passcodes = const [],
   }) : super([
           userId,
           fname,
@@ -55,7 +67,11 @@ class User extends Equatable {
   Map<String, dynamic> toJson() => _$UserToJson(this);
 
   /// Create user from token
-  factory User.fromToken(String token) {
+  factory User.fromToken(
+    String token, {
+    Security security,
+    List<String> passcodes,
+  }) {
     final json = _fromJWT(token);
     final jwt = JwtClaim.fromMap(json);
     final claims = [
@@ -71,6 +87,8 @@ class User extends Equatable {
       email: jwt['email'],
       phone: jwt['phone'],
       roles: roles,
+      security: security,
+      passcodes: passcodes,
     );
   }
 
@@ -110,8 +128,37 @@ class User extends Equatable {
       default:
         throw Exception('Illegal base64url string!"');
     }
-    return utf8.decode(base64Url.decode(output));
+    return utf8.decode(
+      base64Url.decode(output),
+    );
   }
+
+  User cloneWith({
+    String userId,
+    String fname,
+    String lname,
+    String uname,
+    String email,
+    String phone,
+    Security security,
+    List<UserRole> roles,
+    List<String> passcodes,
+  }) =>
+      User(
+        userId: userId ?? this.userId,
+        fname: fname ?? this.fname,
+        lname: lname ?? this.lname,
+        uname: uname ?? this.uname,
+        email: email ?? this.email,
+        phone: phone ?? this.phone,
+        security: security ?? this.security,
+        roles: List.from(
+          roles ?? this.roles ?? [],
+        ),
+        passcodes: List.from(
+          passcodes ?? this.passcodes ?? [],
+        ),
+      );
 }
 
 enum UserRole { commander, unit_leader, personnel }

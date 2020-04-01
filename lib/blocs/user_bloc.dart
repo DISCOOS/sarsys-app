@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:flutter/foundation.dart';
@@ -32,17 +31,16 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   User _user;
 
   /// Get security
-  Security get security => _security;
-  Security _security;
+  Security get security => _user?.security;
 
   /// User identity is secured
-  bool get isSecured => _security != null;
+  bool get isSecured => security != null;
 
   /// User access is locked. This should enforce login
-  bool get isLocked => !isSecured || _security.locked == true;
+  bool get isLocked => !isSecured || security?.locked == true;
 
   /// User access is unlocked
-  bool get isUnlocked => _security?.locked == false;
+  bool get isUnlocked => security?.locked == false;
 
   /// User identity is secured
   bool get isAuthenticated => _user != null;
@@ -97,8 +95,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   /// Load user from secure storage
-  Future<User> load() async {
-    return _dispatch<User>(_assertUnset(LoadUser()));
+  Future<User> load({String userId}) async {
+    return _dispatch<User>(_assertUnset(LoadUser(userId: userId)));
   }
 
   Future<User> authenticate({String username, String password}) {
@@ -109,8 +107,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return isAuthenticated ? RaiseUserException.from<T>("Er logget inn") : command;
   }
 
-  Future<bool> logout() {
-    return _dispatch<bool>(LogoutUser());
+  Future<User> logout() {
+    return _dispatch<User>(LogoutUser());
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
@@ -145,10 +143,19 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       } else if (command is RaiseUserException) {
         yield _completeError(command, command.data);
       } else {
-        yield UserError("Unsupported $command");
+        yield _completeError(
+          command,
+          UserError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
       }
-    } catch (e) {
-      yield _completeError(command, e);
+    } catch (e, stackTrace) {
+      yield _completeError(
+        command,
+        UserError(e, stackTrace: stackTrace),
+      );
     }
   }
 
@@ -170,14 +177,16 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   UserState _toSecurityEvent(ServiceResponse<Security> response, UserCommand command) {
     switch (response.code) {
       case HttpStatus.ok:
-        _security = response.body;
+        _user = _user?.cloneWith(
+          security: response.body,
+        );
         if (!kDebugMode) {
-          developer.log("Security set: $_security", level: Level.CONFIG.value);
+          developer.log("Security set: $security", level: Level.CONFIG.value);
         }
         return _complete(
           command,
           _toSecurityState(),
-          result: _security,
+          result: security,
         );
       case HttpStatus.unauthorized:
         return _completeError(
@@ -190,25 +199,30 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   Future<UserState> _load(LoadUser command) async {
-    _security = (await service.getSecurity()).body;
-    var response = await service.getToken();
+    var response = await service.load(
+      userId: command.data,
+    );
     return _toAuthEvent(response, command);
   }
 
   Future<UserState> _authenticate(AuthenticateUser command) async {
-    var response = await service.authorize(
+    var response = await service.login(
       username: command.data,
       password: command.password,
     );
     return _toAuthEvent(response, command);
   }
 
-  UserState _toAuthEvent(ServiceResponse<AuthToken> response, UserCommand command) {
+  UserState _toAuthEvent(ServiceResponse<User> response, UserCommand command) {
+    _user = null;
     switch (response.code) {
       case HttpStatus.ok:
-        _user = response.body.asUser();
+        _user = response.body;
         if (!kDebugMode) {
-          developer.log("User parsed from token: $_user", level: Level.CONFIG.value);
+          developer.log(
+            "User parsed from token: $_user",
+            level: Level.CONFIG.value,
+          );
         }
         return _complete(
           command,
@@ -238,14 +252,14 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   Object _toAuthResult(UserCommand command) => command is LoadUser || command is AuthenticateUser ? _user : true;
 
   Equatable _toSecurityState() {
-    return _security == null
+    return security == null
         ? UserUnset()
-        : _security.locked
+        : security.locked
             ? UserLocked(
-                _security,
+                security,
               )
             : UserUnlocked(
-                _security,
+                security,
               );
   }
 
@@ -254,7 +268,6 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     if (response.is200) {
       _user = null;
       _authorized.clear();
-      _security = response.body;
       return _complete(
         command,
         UserUnset(),
@@ -320,11 +333,11 @@ abstract class UserCommand<T, R> extends Equatable {
   UserCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadUser extends UserCommand<void, User> {
-  LoadUser() : super(null);
+class LoadUser extends UserCommand<String, User> {
+  LoadUser({String userId}) : super(null);
 
   @override
-  String toString() => 'LoadUser';
+  String toString() => 'LoadUser {userId: $data}';
 }
 
 class SecureUser extends UserCommand<Security, Security> {
@@ -334,18 +347,18 @@ class SecureUser extends UserCommand<Security, Security> {
   String toString() => 'SecureUser {security: $data}';
 }
 
-class LockUser extends UserCommand<void, dynamic> {
+class LockUser extends UserCommand<void, Security> {
   LockUser() : super(null);
 
   @override
   String toString() => 'LockUser';
 }
 
-class UnlockUser extends UserCommand<String, dynamic> {
+class UnlockUser extends UserCommand<String, Security> {
   UnlockUser({String pin}) : super(pin);
 
   @override
-  String toString() => 'UnlockUser';
+  String toString() => 'UnlockUser {pin: $data}';
 }
 
 class AuthenticateUser extends UserCommand<String, User> {
@@ -353,7 +366,7 @@ class AuthenticateUser extends UserCommand<String, User> {
   AuthenticateUser(String username, this.password) : super(username, [password]);
 
   @override
-  String toString() => 'AuthenticateUser';
+  String toString() => 'AuthenticateUser  {username: $data, password: $data}';
 }
 
 class AuthorizeUser extends UserCommand<Incident, bool> {
@@ -364,7 +377,7 @@ class AuthorizeUser extends UserCommand<Incident, bool> {
   String toString() => 'AuthorizeUser';
 }
 
-class LogoutUser extends UserCommand<void, bool> {
+class LogoutUser extends UserCommand<void, User> {
   LogoutUser() : super(null);
 
   @override

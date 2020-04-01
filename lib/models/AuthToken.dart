@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Security.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -25,12 +26,27 @@ class AuthToken extends Equatable {
   final String refreshToken;
   final DateTime accessTokenExpiration;
 
+  /// Check if token is expired
+  bool get isExpired => !isValid;
+  bool get isValid => accessTokenExpiration.isAfter(DateTime.now());
+
   /// Factory constructor for creating a new `AuthToken` instance
   factory AuthToken.fromJson(Map<String, dynamic> json) => _$AuthTokenFromJson(json);
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$AuthTokenToJson(this);
 
+  /// Get current user id
+  String get userId => toUser().userId;
+
   /// Get Token as User
-  User asUser() => User.fromToken(accessToken);
+  User toUser({
+    Security security,
+    List<String> passcodes,
+  }) =>
+      User.fromToken(
+        accessToken,
+        security: security,
+        passcodes: passcodes,
+      );
 }

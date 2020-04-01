@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -16,8 +17,9 @@ enum LoginType {
 }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key key, this.type = LoginType.automatic}) : super(key: key);
+  const LoginScreen({Key key, this.type = LoginType.automatic, this.returnTo}) : super(key: key);
   final LoginType type;
+  final String returnTo;
 
   @override
   LoginScreenState createState() => LoginScreenState();
@@ -33,14 +35,16 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   bool _verifyPin = false;
   bool _securePin = false;
   bool _pinComplete = false;
-  bool _pending = false;
+  bool _popWhenReady = false;
+
+  UserError _lastError;
 
   AnimationController _animController;
   StreamSubscription<UserState> _subscription;
 
-  FocusNode _focusNode = FocusNode();
   ScrollController _scrollController = ScrollController();
-  TextEditingController _pinController = TextEditingController();
+  FocusNode _focusNode = FocusNode();
+  _PinTextEditingController _pinController = _PinTextEditingController();
 
   bool get automatic => LoginType.automatic == widget.type;
   bool get changePin => LoginType.changePin == widget.type;
@@ -55,79 +59,59 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     return false;
   }
 
-  UserBloc _handle(BuildContext context) {
-    final bloc = BlocProvider.of<UserBloc>(context);
-    _subscription?.cancel();
-    _subscription = bloc.state.listen((UserState state) {
-      switch (state.runtimeType) {
-        case UserUnlocked:
-        case UserAuthenticated:
-          // Only close login if user is authenticated and app is secured with pin
-          if (bloc.isReady && (automatic || _pending)) {
-            Navigator.pushReplacementNamed(context, 'incident/list');
-          }
-          break;
-      }
-    });
-    return bloc;
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    _animController?.dispose();
-    _scrollController?.dispose();
-    _animController = null;
-    _scrollController = null;
-    /* _focusNode is disposed automatically by PinCodeTextField */
-    _focusNode = null;
-    /* _pinController is disposed automatically by PinCodeTextField */
-    _pinController = null;
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[300],
-      body: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Center(
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(4.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: Container(
-                child: _buildBody(context),
+    UserBloc bloc = _toBloc(context);
+    return StreamBuilder<UserState>(
+        stream: bloc.state,
+        builder: (context, snapshot) {
+          return Scaffold(
+            backgroundColor: Colors.grey[300],
+            appBar: !automatic && bloc.isReady ? _buildAppBar(context) : null,
+            body: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Center(
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Container(
+                      child: _buildBody(context, bloc),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ),
+          );
+        });
+  }
+
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+        title: Text(automatic ? 'Logg på' : changePin ? 'Endre pin' : 'Bytt bruker'),
+        centerTitle: false,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => _popTo(context),
+        ));
+  }
+
+  Widget _buildBody(BuildContext context, UserBloc bloc) {
+    return AnimatedCrossFade(
+      duration: Duration(microseconds: 300),
+      crossFadeState: _inProgress(bloc) ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      firstChild: _buildProgress(context),
+      secondChild: _buildForm(context, bloc),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    UserBloc bloc = _handle(context);
-    return StreamBuilder<UserState>(
-      stream: bloc.state,
-      builder: (context, snapshot) {
-        return AnimatedCrossFade(
-          duration: Duration(microseconds: 300),
-          crossFadeState: _inProgress(snapshot, bloc) ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-          firstChild: _buildProgress(context),
-          secondChild: _buildForm(context, snapshot, bloc),
-        );
-      },
-    );
-  }
-
-  bool _inProgress(AsyncSnapshot<UserState> snapshot, UserBloc bloc) =>
-      bloc.isReady && !(changePin || switchUser) || snapshot.hasData && (snapshot.data.isPending() || _pending);
+  bool _inProgress(UserBloc bloc) =>
+      bloc.isReady && !(changePin || switchUser) || bloc?.currentState?.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -173,7 +157,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Container _buildForm(
     BuildContext context,
-    AsyncSnapshot<UserState> snapshot,
     UserBloc bloc,
   ) {
     _animController?.stop(canceled: false);
@@ -198,7 +181,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: _buildIcon(),
                 ),
-                ..._buildFields(snapshot, bloc),
+                ..._buildFields(bloc),
               ],
             ),
           ],
@@ -207,9 +190,9 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  List<Widget> _buildFields(AsyncSnapshot<UserState> snapshot, UserBloc bloc) {
-    final isError = _isError(snapshot);
-    var fields = isError ? [_buildErrorText(snapshot, bloc)] : <Widget>[];
+  List<Widget> _buildFields(UserBloc bloc) {
+    final isError = _isError(bloc);
+    var fields = isError ? [_buildErrorText(bloc)] : <Widget>[];
     if (isError) {
       _pinController.clear();
     }
@@ -225,15 +208,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     return fields..add(_buildAuthenticate(bloc));
   }
 
-  bool _isError(AsyncSnapshot<UserState> snapshot) => snapshot.hasData && snapshot.data is UserException;
+  bool _isError(UserBloc bloc) => bloc.currentState is UserException;
 
-  Widget _buildErrorText(AsyncSnapshot<UserState> snapshot, UserBloc bloc) => Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
+  Widget _buildErrorText(UserBloc bloc) => Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
         child: Text(
-          _toError(snapshot.data, bloc),
+          _toError(bloc),
           style: _toStyle(
             context,
-            22,
+            16,
             FontWeight.bold,
             color: Colors.redAccent,
           ),
@@ -241,10 +224,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
       );
 
-  String _toError(UserException state, UserBloc bloc) {
-    if (state is UserUnauthorized) {
-      return bloc.isLocked ? 'Feil pinkode' : 'Feil brukernavn eller passord';
-    } else if (state is UserForbidden) {
+  String _toError(UserBloc bloc) {
+    if (bloc.currentState is UserUnauthorized) {
+      return bloc.isSecured ? bloc.isLocked ? 'Feil pinkode' : 'Feil brukernavn eller passord' : 'Du må logge inn';
+    } else if (bloc.currentState is UserForbidden) {
       return 'Ingen tilgang';
     }
     return '';
@@ -319,6 +302,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _buildFullName(bloc),
               Text(
                 _toPinText(),
                 style: _toStyle(context, 22, FontWeight.bold),
@@ -358,7 +342,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               Security.fromPin(_pin),
             );
             _resetPin();
-            _pending = true;
+            _popTo(context);
           } on Exception {/* Is handled by StreamBuilder */}
         },
         enabled: enabled,
@@ -374,6 +358,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   List<Widget> _buildUnlock(UserBloc bloc) => [
+        _buildFullName(bloc),
         Text(
           'Lås opp med pinkode',
           style: _toStyle(context, 22, FontWeight.bold),
@@ -381,6 +366,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
         _buildPinInput(bloc),
       ];
+
+  Widget _buildFullName(UserBloc bloc) => Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: Text(
+          bloc.user.fullName,
+          style: _toStyle(context, 16, FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+      );
 
   Widget _buildPinInput(UserBloc bloc, {StateSetter setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
@@ -436,7 +430,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       }
     }
     // Automatic approval?
-    else if (!(changePin || _wrongPin)) {
+    else if (bloc.isSecured && !(changePin || _wrongPin)) {
       try {
         await bloc.unlock(pin: _pin);
       } on Exception {/* Is handled by StreamBuilder */}
@@ -477,11 +471,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildAuthenticateAction(UserBloc bloc) => _buildAction(
-        'Logg på',
+        'Fortsett',
         () async {
           try {
+            _popWhenReady = true;
             await bloc.authenticate(username: _username);
-            _pending = true;
           } on Exception {/* Is handled by StreamBuilder */}
         },
       );
@@ -516,4 +510,72 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           ),
         ),
       );
+
+  UserBloc _toBloc(BuildContext context) {
+    final bloc = BlocProvider.of<UserBloc>(context);
+    _subscription?.cancel();
+    _subscription = bloc.state.listen((UserState state) {
+      _process(state, bloc, context);
+    });
+    return bloc;
+  }
+
+  void _process(UserState state, UserBloc bloc, BuildContext context) {
+    switch (state.runtimeType) {
+      case UserUnlocked:
+      case UserAuthenticated:
+        // Only close login if user is authenticated and app is secured with pin
+        if (bloc.isReady && (automatic || _popWhenReady)) {
+          _popTo(context);
+        }
+        break;
+      case UserError:
+        if (_lastError == null) {
+          Catcher.reportCheckedError(
+            state.data,
+            (state as UserError).stackTrace,
+          );
+          _lastError = state;
+        }
+        break;
+      default:
+        _lastError = null;
+        break;
+    }
+  }
+
+  Future<Object> _popTo(BuildContext context) => Navigator.pushReplacementNamed(
+        context,
+        widget.returnTo ?? 'incident/list',
+      );
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _animController?.dispose();
+    _scrollController?.dispose();
+    _pinController.release().dispose();
+    _animController = null;
+    _scrollController = null;
+    /* _focusNode is disposed automatically by PinCodeTextField */
+    _focusNode = null;
+    _pinController = null;
+    super.dispose();
+  }
+}
+
+class _PinTextEditingController extends TextEditingController {
+  bool released = false;
+
+  TextEditingController release() {
+    released = true;
+    return this;
+  }
+
+  @override
+  void dispose() {
+    if (released) {
+      super.dispose();
+    }
+  }
 }
