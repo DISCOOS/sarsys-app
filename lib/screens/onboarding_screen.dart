@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return IntroViewsFlutter(
       [
         _buildWelcomePage(),
@@ -63,32 +65,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   PageViewModel _buildWelcomePage() {
     return PageViewModel(
       pageColor: const Color(0xFF749859),
-      title: Text('SARSys'),
+      title: _buildTitle(),
+      mainImage: _buildIcon(
+        'map.png',
+      ),
       body: Column(
         children: <Widget>[
           Text(
             'Søk og redning gjort enkelt',
           ),
-          SizedBox(height: 16.0),
+          SizedBox(height: SizeConfig.safeBlockHorizontal * 4),
           Text(
             'Ingen data i appen er reelle. Enheter, apparater og posisjoner simuleres.',
             textScaleFactor: 0.75,
           ),
         ],
       ),
-      mainImage: Image.asset(
-        'assets/images/map.png',
-        height: 250.0,
-        width: 250.0,
-        alignment: Alignment.center,
-      ),
     );
   }
+
+  Text _buildTitle() => Text(
+        'SARSys',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+        ),
+      );
 
   PageViewModel _buildDemoPage() {
     return PageViewModel(
       pageColor: Colors.orange[600],
-      title: Text('SARSys'),
+      title: _buildTitle(),
+      mainImage: _buildIcon(
+        'sar-team-2.png',
+      ),
       body: Column(
         children: <Widget>[
           Text(
@@ -104,19 +113,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-      mainImage: Image.asset(
-        'assets/images/sar-team-2.png',
-        height: 250.0,
-        width: 250.0,
-        alignment: Alignment.center,
-      ),
     );
   }
 
   PageViewModel _buildFinishPage() {
     return PageViewModel(
       pageColor: Color(0xFF7bd4ff),
-      title: Text('SARSys'),
+      title: _buildTitle(),
+      mainImage: _buildIcon(
+        'cabin.png',
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -128,16 +134,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             "Du vil bli logget inn som "
             "${_commander ? translateUserRole(UserRole.commander) : translateUserRole(UserRole.personnel)}. \n"
             "Alle brukernavn og passord godtas i demonstrasjonsmodus.",
-            textScaleFactor: 0.75,
+            textScaleFactor: 0.7,
           ),
         ],
       ),
-      mainImage: Image.asset(
-        'assets/images/cabin.png',
-        height: 250.0,
-        width: 250.0,
-        alignment: Alignment.center,
-      ),
+    );
+  }
+
+  Image _buildIcon(String asset) {
+    return Image.asset(
+      'assets/images/$asset',
+      height: SizeConfig.blockSizeVertical * 20,
+      width: SizeConfig.blockSizeHorizontal * 60,
+      alignment: Alignment.center,
     );
   }
 
