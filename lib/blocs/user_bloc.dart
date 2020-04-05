@@ -30,7 +30,19 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   User get user => _user;
   User _user;
 
-  /// Get security
+  /// Check if application is running on a shared device (multiple uses accounts allowed)
+  bool get isShared => SecurityMode.shared == service.configBloc.config.securityMode;
+
+  /// Check if application is running on a private device (only one account is allowed)
+  bool get isPrivate => SecurityMode.personal == service.configBloc.config.securityMode;
+
+  /// Get requested security mode from [AppConfig]
+  SecurityMode get securityMode => service.configBloc.config.securityMode;
+
+  /// Get requested security type from [AppConfig]
+  SecurityType get securityType => service.configBloc.config.securityType;
+
+  /// Get current security applied to user
   Security get security => _user?.security;
 
   /// User identity is secured
@@ -94,9 +106,20 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return isUnlocked ? RaiseUserException.from("Er låst opp") : command;
   }
 
-  /// Load user from secure storage
+  /// Load current user from secure storage
   Future<User> load({String userId}) async {
     return _dispatch<User>(_assertUnset(LoadUser(userId: userId)));
+  }
+
+  /// Load all user from secure storage
+  Future<List<User>> loadAll({String userId}) async {
+    final result = await service.loadAll();
+    if (result.is200) {
+      return result.body;
+    } else if (result.is204) {
+      return result.body;
+    }
+    throw UserError(result);
   }
 
   Future<User> authenticate({String username, String password}) {
@@ -109,6 +132,10 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   Future<User> logout() {
     return _dispatch<User>(LogoutUser());
+  }
+
+  Future<List<User>> clear() {
+    return _dispatch<List<User>>(ClearUsers());
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
@@ -136,12 +163,17 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         yield await _authenticate(command);
       } else if (command is LogoutUser) {
         yield await _logout(command);
+      } else if (command is ClearUsers) {
+        yield await _clear(command);
       } else if (command is AuthorizeUser) {
         if (_user != null) {
           yield _authorize(command);
         }
       } else if (command is RaiseUserException) {
-        yield _completeError(command, command.data);
+        yield _completeError(
+          command,
+          command.data,
+        );
       } else {
         yield _completeError(
           command,
@@ -271,7 +303,24 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       return _complete(
         command,
         UserUnset(),
-        result: true,
+        result: response.body,
+      );
+    }
+    return _completeError(
+      command,
+      _toError(response),
+    );
+  }
+
+  Future<UserState> _clear(ClearUsers command) async {
+    var response = await service.clear();
+    if (response.is200) {
+      _user = null;
+      _authorized.clear();
+      return _complete(
+        command,
+        UserUnset(),
+        result: response.body,
       );
     }
     return _completeError(
@@ -382,6 +431,13 @@ class LogoutUser extends UserCommand<void, User> {
 
   @override
   String toString() => 'LogoutUser';
+}
+
+class ClearUsers extends UserCommand<void, List<User>> {
+  ClearUsers() : super(null);
+
+  @override
+  String toString() => 'ClearUsers';
 }
 
 class RaiseUserException extends UserCommand<UserException, Exception> {

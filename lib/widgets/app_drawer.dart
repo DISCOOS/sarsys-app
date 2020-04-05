@@ -12,7 +12,6 @@ class AppDrawer extends StatelessWidget {
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
     final avatar = Image.asset("assets/images/avatar-male.png");
-//    final roles = user?.roles?.map((role) => translateUserRole(role))?.join(", ") ?? "";
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -93,14 +92,14 @@ class AppDrawer extends StatelessWidget {
           Divider(),
           ListTile(
             leading: const Icon(Icons.contacts),
-            title: Text('Bytt bruker', style: TextStyle(fontSize: 14)),
+            title: Text('Logg av', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, 'switch/user');
+              await userBloc.logout();
+              Navigator.pushReplacementNamed(context, 'login');
             },
           ),
           ListTile(
-            leading: const Icon(Icons.lock),
+            leading: const Icon(Icons.phonelink_lock),
             title: Text('Endre pin', style: TextStyle(fontSize: 14)),
             onTap: () async {
               Navigator.pop(context);

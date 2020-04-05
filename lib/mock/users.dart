@@ -16,7 +16,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     final UserServiceMock mock = UserServiceMock();
 
     when(mock.login(username: username, password: password)).thenAnswer((_) async {
-      var response = await configService.fetch();
+      var response = await configService.load();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(username, enumName(actual));
       final prefs = await SharedPreferences.getInstance();
@@ -50,7 +50,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   static UserCredentialsService buildAny(UserRole role, AppConfigService configService) {
     final UserServiceMock mock = UserServiceMock();
     when(mock.login(username: anyNamed('username'), password: anyNamed('password'))).thenAnswer((_) async {
-      var response = await configService.fetch();
+      var response = await configService.load();
       var actual = response.body.toRole(defaultValue: role);
       var token = createToken(_.namedArguments['username'], enumName(actual));
       final prefs = await SharedPreferences.getInstance();
@@ -75,7 +75,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   }
 
   static Future<ServiceResponse<AuthToken>> _getToken(UserRole role, AppConfigService configService) async {
-    var response = await configService.fetch();
+    var response = await configService.load();
     var actual = response.body.toRole(defaultValue: role);
     final prefs = await SharedPreferences.getInstance();
     var token;

@@ -8,10 +8,13 @@ part of 'Security.dart';
 
 Security _$SecurityFromJson(Map<String, dynamic> json) {
   return Security(
-    json['pin'] as String,
-    _$enumDecode(_$SecurityTypeEnumMap, json['type']),
-    json['locked'] as bool ?? true,
-    json['paused'] == null ? null : DateTime.parse(json['paused'] as String),
+    pin: json['pin'] as String,
+    type: _$enumDecode(_$SecurityTypeEnumMap, json['type']),
+    locked: json['locked'] as bool ?? true,
+    mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
+    heartbeat: json['heartbeat'] == null
+        ? null
+        : DateTime.parse(json['heartbeat'] as String),
   );
 }
 
@@ -19,7 +22,8 @@ Map<String, dynamic> _$SecurityToJson(Security instance) => <String, dynamic>{
       'pin': instance.pin,
       'type': _$SecurityTypeEnumMap[instance.type],
       'locked': instance.locked,
-      'paused': instance.paused?.toIso8601String(),
+      'heartbeat': instance.heartbeat?.toIso8601String(),
+      'mode': _$SecurityModeEnumMap[instance.mode],
     };
 
 T _$enumDecode<T>(
@@ -46,4 +50,20 @@ T _$enumDecode<T>(
 const _$SecurityTypeEnumMap = {
   SecurityType.pin: 'pin',
   SecurityType.fingerprint: 'fingerprint',
+};
+
+T _$enumDecodeNullable<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
+  if (source == null) {
+    return null;
+  }
+  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+}
+
+const _$SecurityModeEnumMap = {
+  SecurityMode.personal: 'personal',
+  SecurityMode.shared: 'shared',
 };

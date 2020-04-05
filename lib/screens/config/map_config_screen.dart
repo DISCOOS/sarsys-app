@@ -52,6 +52,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
       appBar: AppBar(
         title: Text("Kartoppsett"),
         automaticallyImplyLeading: true,
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

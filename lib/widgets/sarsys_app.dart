@@ -1,5 +1,7 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -47,6 +49,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   PermissionController controller;
 
+  UserBloc get userBloc => widget.controller.userProvider.bloc;
+  AppConfigBloc get configBloc => widget.controller.configProvider?.bloc;
+  bool get onboarding => configBloc?.config?.onboarding ?? true;
+  int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
+
   @override
   void initState() {
     super.initState();
@@ -65,22 +72,20 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       writeAppState(widget.bucket);
       // Lock access to app on pause only (inactive state should NOT lock the app for usability reasons)
-      final bloc = widget.controller.userProvider.bloc;
-      if (bloc.isReady) {
-        await bloc.secure(
-          bloc.security.cloneWith(paused: DateTime.now()),
+      if (userBloc.isReady) {
+        await userBloc.secure(
+          userBloc.security,
         );
       }
     } else if (state == AppLifecycleState.resumed) {
-      final bloc = widget.controller.userProvider.bloc;
-      if (bloc.isReady) {
-        final paused = bloc.security.paused;
+      if (userBloc.isReady) {
+        final heartbeat = userBloc.security.heartbeat;
         // If paused more than 30 seconds - lock access
-        if (paused != null && DateTime.now().difference(paused).inSeconds > 30) {
-          await bloc.lock();
+        if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
+          await userBloc.lock();
         } else {
-          await bloc.secure(
-            bloc.security.cloneWith(paused: null),
+          await userBloc.secure(
+            userBloc.security.cloneWith(heartbeat: null),
           );
         }
       }
@@ -97,7 +102,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: false,
         title: 'SarSys',
         theme: ThemeData(
-//          primaryColor: Colors.grey[850],
           primaryColor: Color(0xFF0d2149),
           buttonTheme: ButtonThemeData(
             height: 36.0,
@@ -146,11 +150,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     WidgetBuilder builder;
 
     // Ensure logged in
-    if (widget.controller.userProvider.bloc.isReady)
+    if (userBloc.isReady)
       builder = _toBuilder(settings, _toScreen(settings, false));
     else {
-      final onboarding = widget.controller.configProvider?.bloc?.config?.onboarding;
-      builder = _toUnchecked(onboarding == true ? OnboardingScreen() : LoginScreen());
+      builder = _toUnchecked(onboarding ? OnboardingScreen() : LoginScreen());
     }
 
     return MaterialPageRoute(
@@ -266,10 +269,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       unit = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      unit = widget.controller.unitProvider.bloc.units[route['id']];
+      unit = units[route['id']];
     }
     return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.UNITS) : UnitScreen(unit: unit);
   }
+
+  Map<String, Unit> get units => widget.controller.unitProvider.bloc.units;
 
   Widget _toPersonnelScreen(RouteSettings settings, bool persisted) {
     var personnel;
@@ -277,12 +282,14 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       personnel = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      personnel = widget.controller.personnelProvider.bloc.personnel[route['id']];
+      personnel = personnels[route['id']];
     }
     return personnel == null || persisted
         ? CommandScreen(tabIndex: CommandScreen.PERSONNEL)
         : PersonnelScreen(personnel: personnel);
   }
+
+  Map<String, Personnel> get personnels => widget.controller.personnelProvider.bloc.personnel;
 
   Widget _toDeviceScreen(RouteSettings settings, bool persisted) {
     var device;
@@ -290,10 +297,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       device = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      device = widget.controller.deviceProvider.bloc.devices[route['id']];
+      device = devices[route['id']];
     }
     return device == null || persisted ? CommandScreen(tabIndex: CommandScreen.DEVICES) : DeviceScreen(device: device);
   }
+
+  Map<String, Device> get devices => widget.controller.deviceProvider.bloc.devices;
 
   Widget _toHome(BlocProviderController providers) {
     Widget child;

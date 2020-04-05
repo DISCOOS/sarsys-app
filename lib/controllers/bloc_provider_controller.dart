@@ -95,7 +95,7 @@ class BlocProviderController {
     final AppConfigBloc configBloc = AppConfigBloc(configService);
 
     // Configure user service
-    final userService = UserIdentityService(client);
+    final userService = UserIdentityService(client, configBloc);
     final UserBloc userBloc = UserBloc(userService);
 
     // Configure Incident service
@@ -164,7 +164,7 @@ class BlocProviderController {
     if (BlocProviderControllerState.Built == _state) {
       // Fail fast on first error
       await Future.wait<dynamic>([
-        configProvider.bloc.fetch(),
+        configProvider.bloc.load(),
         userProvider.bloc.load(),
       ]).catchError(
         (e) => result.completeError(e, StackTrace.current),
@@ -224,7 +224,7 @@ class BlocProviderController {
       BlocProviderControllerState.Local,
       BlocProviderControllerState.Ready,
     ].contains(_state)) {
-      if (state.isInit() || state.isLoaded() || state.isUpdated()) {
+      if (state.isInitialized() || state.isLoaded() || state.isUpdated()) {
         _rebuild(demo: (state.data as AppConfig).toDemoParams());
       }
     }

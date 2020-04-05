@@ -1,3 +1,4 @@
+import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -11,46 +12,8 @@ part 'AppConfig.g.dart';
 
 @JsonSerializable()
 class AppConfig extends Equatable {
-  static const DEMO = 'demo';
-  static const DEMO_ROLE = 'demoRole';
-  static const ONBOARDING = 'onboarding';
-  static const TALK_GROUP_CATALOG = 'talkGroupCatalog';
-  static const TALK_GROUPS = 'talkGroups';
-  static const DIVISION = 'division';
-  static const DEPARTMENT = 'department';
-  static const LOCATION_WHEN_IN_USE = 'locationWhenInUse';
-  static const STORAGE = 'storage';
-  static const SENTRY_DNS = "sentryDns";
-  static const MAP_CACHE_TTL = "mapCacheTTL";
-  static const MAP_CACHE_CAPACITY = "mapCacheCapacity";
-  static const LOCATION_ACCURACY = "locationAccuracy";
-  static const LOCATION_FASTEST_INTERVAL = "locationFastestInterval";
-  static const LOCATION_SMALLEST_DISPLACEMENT = "locationSmallestDisplacement";
-  static const KEEP_SCREEN_ON = "keepScreenOn";
-  static const CALLSIGN_REUSE = "callsignReuse";
-  static const UNITS = "units";
-
-  static const PARAMS = const {
-    SENTRY_DNS: "string",
-    DEMO: "bool",
-    DEMO_ROLE: "string",
-    ONBOARDING: "bool",
-    DIVISION: "string",
-    DEPARTMENT: "string",
-    TALK_GROUPS: "stringlist",
-    TALK_GROUP_CATALOG: "string",
-    LOCATION_WHEN_IN_USE: "bool",
-    STORAGE: "bool",
-    MAP_CACHE_TTL: "int",
-    MAP_CACHE_CAPACITY: "int",
-    LOCATION_ACCURACY: "string",
-    LOCATION_FASTEST_INTERVAL: "int",
-    LOCATION_SMALLEST_DISPLACEMENT: "int",
-    KEEP_SCREEN_ON: "bool",
-    CALLSIGN_REUSE: "bool",
-    UNITS: "stringlist",
-  };
-
+  final String uuid;
+  final String udid;
   final bool demo;
   final String demoRole;
   final String sentryDns;
@@ -69,8 +32,13 @@ class AppConfig extends Equatable {
   final bool keepScreenOn;
   final bool callsignReuse;
   final List<String> units;
+  final SecurityType securityType;
+  final SecurityMode securityMode;
+  final int securityLockAfter;
 
   AppConfig({
+    @required this.uuid,
+    @required this.udid,
     @required this.sentryDns,
     this.demo,
     this.demoRole,
@@ -86,13 +54,17 @@ class AppConfig extends Equatable {
     this.locationAccuracy = Defaults.locationAccuracy,
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
+    List<String> units = const <String>[],
     this.keepScreenOn = Defaults.keepScreenOn,
     this.callsignReuse = Defaults.callsignReuse,
-    List<String> units = const <String>[],
+    this.securityType = Defaults.securityType,
+    this.securityMode = Defaults.securityMode,
+    this.securityLockAfter = Defaults.securityLockAfter,
   })  : this.talkGroups = talkGroups ?? const <String>[],
         this.units = units ?? const <String>[],
         super([
-          sentryDns,
+          uuid,
+          udid,
           demo,
           demoRole,
           onboarding,
@@ -110,6 +82,9 @@ class AppConfig extends Equatable {
           keepScreenOn,
           callsignReuse,
           units ?? const <String>[],
+          sentryDns,
+          securityType,
+          securityMode,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -119,8 +94,8 @@ class AppConfig extends Equatable {
   Map<String, dynamic> toJson() => _$AppConfigToJson(this);
 
   AppConfig copyWith({
-    String sentry,
     bool demo,
+    String sentry,
     String demoRole,
     bool onboarding,
     String division,
@@ -137,8 +112,13 @@ class AppConfig extends Equatable {
     bool keepScreenOn,
     bool callsignReuse,
     List<String> units,
+    SecurityType securityType,
+    SecurityMode securityMode,
+    int securityLockAfter,
   }) {
     return AppConfig(
+      uuid: uuid ?? this.uuid,
+      udid: udid ?? this.udid,
       sentryDns: sentry ?? this.sentryDns,
       demo: demo ?? this.demo,
       demoRole: demoRole ?? this.demoRole,
@@ -157,6 +137,9 @@ class AppConfig extends Equatable {
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       callsignReuse: callsignReuse ?? this.callsignReuse,
       units: units ?? this.units,
+      securityType: securityType ?? this.securityType,
+      securityMode: securityMode ?? this.securityMode,
+      securityLockAfter: securityLockAfter ?? this.securityLockAfter,
     );
   }
 
@@ -176,5 +159,11 @@ class AppConfig extends Equatable {
       LocationAccuracy.values.firstWhere(
         (test) => enumName(test) == this.locationAccuracy,
         orElse: () => defaultValue,
+      );
+
+  Security toSecurity() => Security(
+        type: securityType,
+        mode: securityMode,
+        heartbeat: DateTime.now(),
       );
 }

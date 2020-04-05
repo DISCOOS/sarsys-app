@@ -2,108 +2,72 @@ import 'dart:convert';
 import 'dart:async' show Future;
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/services/service_response.dart';
-import 'package:http/http.dart' show Client;
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_udid/flutter_udid.dart';
+import 'package:hive/hive.dart';
+import 'package:http/http.dart' show Client;
+import 'package:uuid/uuid.dart';
 
-// TODO: Add dependency 'flutter_udid' for unique appId
+// TODO: Add dependency 'flutter_udid' for unique Security
 
 class AppConfigService {
+  static const VERSION = 1;
+  static const KEY_JSON = 'json';
+  static const KEY_VERSION = 'version';
+  static const BOX_NAME = 'app_config';
   final Client client;
   final String asset;
   final String baseUrl;
 
-  SharedPreferences prefs;
+  static Box box;
 
   AppConfigService(this.asset, this.baseUrl, this.client) {
     init();
   }
 
-  Future<AppConfig> init() async {
-    final Map<String, dynamic> assets = json.decode(await rootBundle.loadString(asset));
-    prefs = await SharedPreferences.getInstance();
-    await _setAll(assets);
-    return AppConfig.fromJson(assets);
-  }
-
-  Future<AppConfig> get config async {
-    Map<String, dynamic> json = {};
-    if (prefs == null) return init();
-    prefs.getKeys().forEach((key) => _get(json, key));
-    return AppConfig.fromJson(json);
-  }
-
-  void _get(Map<String, dynamic> json, String key) async {
-    json.putIfAbsent(key, () => get(prefs, key));
-  }
-
-  static Future get(SharedPreferences prefs, String key) async {
-    if (AppConfig.PARAMS.containsKey(key)) {
-      switch (AppConfig.PARAMS[key]?.toLowerCase()) {
-        case "string":
-          return prefs.getString(key);
-        case "bool":
-          return prefs.getBool(key);
-        case "int":
-          return prefs.getInt(key);
-        case "double":
-          return prefs.getDouble(key);
-        case "stringlist":
-          return prefs.getStringList(key);
+  /// Initializes configuration to default values.
+  ///
+  /// If configuration already exists [update()] will be called.
+  Future<ServiceResponse<AppConfig>> init() async {
+    // TODO: Store Hive.generateSecureKey() to secure storage and open box as encrypted
+    box ??= await Hive.openBox(BOX_NAME);
+    var defaults = await rootBundle.loadString(asset);
+    final current = box.get(KEY_VERSION);
+    if (current == null) {
+      final uuid = Uuid().v4();
+      final udid = await FlutterUdid.udid;
+      box.put(KEY_VERSION, VERSION);
+      final config = json.decode(defaults) as Map<String, dynamic>;
+      config['uuid'] = uuid;
+      config['udid'] = udid;
+      // TODO: POST ../app-config
+      await box.put(KEY_JSON, jsonEncode(config));
+    } else if (current < VERSION) {
+      // Overwrite current configuration
+      final config = json.decode(box.get(KEY_JSON)) as Map<String, dynamic>;
+      config.addAll(json.decode(defaults) as Map<String, dynamic>);
+      final response = await update(AppConfig.fromJson(config));
+      if (response.is204) {
+        await box.clear();
+        await box.put(KEY_VERSION, VERSION);
+        await box.put(KEY_JSON, jsonEncode(response.body.toJson()));
       }
+      return response;
     }
-    throw "Type ${AppConfig.PARAMS[key]} for $key is not supported";
-  }
-
-  static Future<Map<String, dynamic>> getAll(SharedPreferences prefs) async {
-    final Map<String, dynamic> values = {};
-    AppConfig.PARAMS.forEach((key, value) async {
-      final param = await get(prefs, key);
-      if (param != null) {
-        values.putIfAbsent(key, () => param);
-      }
-    });
-    return values;
+    await box.put(KEY_JSON, defaults);
+    return ServiceResponse.ok(
+      body: AppConfig.fromJson(json.decode(defaults)),
+    );
   }
 
   /// GET ../app-config
-  Future<ServiceResponse<AppConfig>> fetch() async {
+  Future<ServiceResponse<AppConfig>> load() async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }
 
-  Future<ServiceResponse<void>> save(AppConfig config) async {
+  Future<ServiceResponse<AppConfig>> update(AppConfig config) async {
     // TODO: Implement save app-config
     throw "Not implemented";
-  }
-
-  Future<void> _setAll(Map<String, dynamic> assets) async {
-    return assets.forEach(_set);
-  }
-
-  Future<bool> _set(String key, value) async {
-    return set(prefs, key, value);
-  }
-
-  static Future<bool> set(SharedPreferences prefs, String key, value) {
-    if (AppConfig.PARAMS.containsKey(key)) {
-      switch (AppConfig.PARAMS[key]?.toLowerCase()) {
-        case "string":
-          return prefs.setString(key, value);
-        case "bool":
-          return prefs.setBool(key, value);
-        case "int":
-          return prefs.setInt(key, value);
-        case "double":
-          return prefs.setDouble(key, value);
-        case "stringlist":
-          return prefs.setStringList(key, value);
-      }
-    }
-    throw "Type ${AppConfig.PARAMS[key]} for $key is not supported";
-  }
-
-  static void setAll(SharedPreferences prefs, Map<String, dynamic> values) async {
-    values.forEach((key, value) async => await set(prefs, key, value));
   }
 }

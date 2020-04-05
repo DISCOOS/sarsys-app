@@ -6,6 +6,8 @@ import 'package:catcher/catcher_plugin.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 
 import 'map/tile_providers.dart';
@@ -13,6 +15,9 @@ import 'map/tile_providers.dart';
 void main() async {
   // Required since provider need access to service bindings prior to calling 'runApp()'
   WidgetsFlutterBinding.ensureInitialized();
+
+  // All services are caching using hive
+  await Hive.initFlutter();
 
   final client = Client();
   final bucket = await readAppState(PageStorageBucket());

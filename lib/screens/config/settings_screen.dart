@@ -1,11 +1,14 @@
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/config/map_config_screen.dart';
+import 'package:SarSys/screens/config/security_config_screen.dart';
 import 'package:SarSys/screens/config/tetra_config_screen.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,7 +61,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBody(BuildContext context, BoxConstraints viewportConstraints) {
     return RefreshIndicator(
       onRefresh: () async {
-        _bloc.fetch();
+        _bloc.load();
         setState(() {});
       },
       child: StreamBuilder(
@@ -104,6 +107,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       _buildGotoIncidentConfig(),
       _buildGotoMapConfig(),
       _buildGotoTetraConfig(),
+      _buildGotoSecurityConfig(),
       Divider(),
       ListTile(
         title: Text(
@@ -111,7 +115,6 @@ class SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
-      _buildOnboardingField(),
       ListTile(
         title: Text(
           "Endre tilganger for app",
@@ -122,6 +125,7 @@ class SettingsScreenState extends State<SettingsScreen> {
           await PermissionHandler().openAppSettings();
         },
       ),
+      _buildFactoryReset(),
       ListTile(
         title: Text(
           "Om SarSys",
@@ -156,6 +160,19 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  ListTile _buildGotoSecurityConfig() {
+    return ListTile(
+      title: Text("Sikkerhet"),
+      subtitle: Text('Endre innstillinger for lokal sikkehet'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return SecurityConfigScreen();
+        }));
+      },
+    );
+  }
+
   ListTile _buildGotoMapConfig() {
     return ListTile(
       title: Text("Kart"),
@@ -182,20 +199,34 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Padding _buildOnboardingField() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Expanded(child: Text("Vis oppstartsveiviser")),
-          Switch(
-            value: _bloc.config.onboarding,
-            onChanged: (value) => _bloc.update(onboarding: value),
-          ),
-        ],
+  Widget _buildFactoryReset() {
+    return GestureDetector(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Expanded(child: Text("Nullstill og konfigurerer på nytt")),
+            Icon(
+              Icons.keyboard_arrow_right,
+              color: Colors.grey,
+            ),
+          ],
+        ),
       ),
+      onTap: () async {
+        final reset = await prompt(
+          context,
+          "Bekreftelse",
+          'Dette vil logge deg ut gjennopprette fabrikkinnstillene',
+        );
+        if (reset) {
+          Navigator.pop(context);
+          await _bloc.init();
+          await BlocProvider.of<UserBloc>(context).clear();
+        }
+      },
     );
   }
 }

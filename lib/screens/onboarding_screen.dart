@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ],
       showSkipButton: true,
       fullTransition: 200,
+      doneButtonPersist: true,
       doneText: Text('OPPSETT'),
       pageButtonTextStyles: TextStyle(
         color: Colors.white,
@@ -31,6 +33,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
       columnMainAxisAlignment: MainAxisAlignment.start,
       onTapDoneButton: () async {
+        final configBloc = BlocProvider.of<AppConfigBloc>(context);
+        await configBloc.update(
+          onboarding: false,
+        );
         final authn = BlocProvider.of<UserBloc>(context).isReady;
         Navigator.pushReplacementNamed(context, authn ? 'incidents' : 'login');
       },
@@ -45,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         body: _buildText(
           'Søk og redning gjort enkelt',
-          factor: 4.5,
+          factor: 4,
           fontWeight: FontWeight.normal,
         ),
       );
@@ -86,8 +92,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Center(
                   child: _buildText(
                     title,
-                    factor: 6.0,
-                    fontWeight: FontWeight.w800,
+                    factor: 5.0,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -96,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               alignment: Alignment.bottomCenter,
               child: _buildText(
                 statement,
-                factor: 4,
+                factor: 3.5,
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -107,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildTitle(String text) => _buildText(
         text,
         factor: 8,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       );
 
   Widget _buildText(

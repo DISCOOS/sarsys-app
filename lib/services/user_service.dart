@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
@@ -11,7 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
 abstract class UserService {
+  UserService(this.configBloc);
   static final storage = new FlutterSecureStorage();
+  final AppConfigBloc configBloc;
 
   Future<ServiceResponse<bool>> isSecured() async {
     try {
@@ -31,7 +34,7 @@ abstract class UserService {
       final json = await storage.read(key: "security_$actualId");
       if (json != null) {
         return ServiceResponse.ok(
-          body: Security.fromJson(jsonDecode(json)),
+          body: Security.fromJson(jsonDecode(json)).renew(),
         );
       }
     } on Exception catch (e) {
@@ -53,11 +56,16 @@ abstract class UserService {
           pin: security.pin,
           type: security.type,
           locked: security.locked,
-          paused: security.paused,
+          heartbeat: DateTime.now(),
         );
       } else {
-        next = security;
+        next = security.renew();
       }
+      await configBloc.update(
+        securityPin: security.pin,
+        securityType: security.type,
+        securityMode: security.mode,
+      );
       await storage.write(
         key: "security_$actualId",
         value: jsonEncode(next.toJson()),
@@ -92,6 +100,7 @@ abstract class UserService {
         if (security.locked == false || security.pin == pin) {
           security = security.cloneWith(
             locked: false,
+            heartbeat: DateTime.now(),
           );
           await storage.write(
             key: "security",
@@ -115,11 +124,18 @@ abstract class UserService {
   Future<ServiceResponse<User>> load({
     String userId,
     bool validate = true,
+    bool refresh = true,
   }) async {
     final actualId = userId ?? await currentUserId();
-    final result = await getToken(userId: actualId);
+    final result = await getToken(
+      userId: actualId,
+      validate: validate,
+      refresh: refresh,
+    );
     if (result.is200) {
-      final security = await getSecurity(userId: userId);
+      final security = await getSecurity(
+        userId: userId,
+      );
       return ServiceResponse.ok(
         body: result.body.toUser(
           security: security.body,
@@ -130,20 +146,27 @@ abstract class UserService {
   }
 
   /// Load all users from storage
-  Future<ServiceResponse<List<User>>> loadAll({bool validate = false}) async {
+  Future<ServiceResponse<List<User>>> loadAll({
+    bool validate = false,
+    bool refresh = false,
+  }) async {
+    final users = <User>[];
     final list = await _readUserIds();
-    final results = List<ServiceResponse<User>>.from(await Future.forEach(
-      list,
-      (userId) => load(
-        userId: userId,
-        validate: validate,
-      ),
-    ));
-    final users = results
-        .where(
-          (result) => result.is200,
-        )
-        .map((result) => result.body);
+    if (list.isNotEmpty) {
+      await Future.forEach(
+        list,
+        (userId) async {
+          final result = await load(
+            userId: userId,
+            validate: validate,
+            refresh: refresh,
+          );
+          if (result.is200) {
+            users.add(result.body);
+          }
+        },
+      );
+    }
 
     if (users.isNotEmpty) {
       return ServiceResponse.ok(body: users);
@@ -167,6 +190,7 @@ abstract class UserService {
   Future<ServiceResponse<AuthToken>> getToken({
     String userId,
     bool validate = true,
+    bool refresh = true,
   }) async {
     try {
       final actualId = userId ?? await currentUserId();
@@ -181,9 +205,11 @@ abstract class UserService {
           );
         }
         // Get new token (was expired)
-        await refresh(
-          userId: actualId,
-        );
+        if (refresh) {
+          await this.refresh(
+            userId: actualId,
+          );
+        }
         return ServiceResponse.ok(
           body: await readToken(userId),
         );
@@ -201,18 +227,11 @@ abstract class UserService {
   /// Delete token for given username from secure storage
   Future<ServiceResponse<User>> logout({
     String userId,
-    bool delete = false,
   }) async {
     try {
       final actualId = userId ?? await currentUserId();
-
-      // Delete token from storage?
-      if (delete) {
-        await this.deleteToken(actualId);
-      } else {
-        _unset(actualId);
-      }
-      final token = await readToken(userId);
+      final token = await readToken(actualId);
+      await this.delete(actualId);
       if (token != null) {
         final result = await lock(/*userId: actualId*/);
         if (!kReleaseMode) print("Logged out user $actualId");
@@ -235,10 +254,30 @@ abstract class UserService {
     }
   }
 
-  /// Get current user id from storage
-  Future<String> currentUserId() async => await storage.read(
-        key: "current_user_id",
+  /// Clear all users (tokens and security) from secure store
+  Future<ServiceResponse<List<User>>> clear() async {
+    try {
+      final response = await loadAll();
+      if (response.is200) {
+        final request = response.body.map(
+          (user) => delete(
+            user.userId,
+            security: true,
+          ),
+        );
+        await Future.wait(request);
+      }
+      return response;
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(
+        message: "Failed to clear all users from storage",
+        error: e,
       );
+    }
+  }
+
+  /// Get current user id from storage
+  Future<String> currentUserId() async => await storage.read(key: "current_user_id");
 
   /// Read user id list
   Future<Set<String>> _readUserIds() async {
@@ -304,8 +343,14 @@ abstract class UserService {
   }
 
   /// Delete token for given username from storage
-  Future deleteToken(String userId) async {
+  Future delete(
+    String userId, {
+    bool security: false,
+  }) async {
     await storage.delete(key: 'token_$userId');
+    if (security) {
+      await storage.delete(key: 'security_$userId');
+    }
     Set<String> list = await _readUserIds();
     list.remove(userId);
     await storage.write(
@@ -314,12 +359,12 @@ abstract class UserService {
         list.toList(),
       ),
     );
-    await _unset(userId);
+    await _unset(userId: userId);
   }
 
   // Unset current user
-  Future _unset(String userId) async {
-    if (userId == await currentUserId()) {
+  Future _unset({String userId, bool force = false}) async {
+    if (userId == await currentUserId() || force) {
       await UserService.storage.delete(
         key: "current_user_id",
       );
@@ -328,7 +373,7 @@ abstract class UserService {
 }
 
 class UserIdentityService extends UserService {
-  UserIdentityService(this.client);
+  UserIdentityService(this.client, AppConfigBloc bloc) : super(bloc);
   final http.Client client;
 
   static const String AUTHORIZE_ERROR_CODE = "authorize_failed";
@@ -341,7 +386,7 @@ class UserIdentityService extends UserService {
   ];
 
   final FlutterAppAuth _appAuth = FlutterAppAuth();
-  final String _clientId = 'sarsys-web';
+  final String _clientId = 'sarsys-app';
   final String _redirectUrl = 'sarsys.app://oauth/redirect';
   final String _logoutUrl = 'https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout';
   final String _discoveryUrl = 'https://id.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
@@ -486,16 +531,8 @@ class UserIdentityService extends UserService {
   @override
   Future<ServiceResponse<User>> logout({
     String userId,
-    bool delete = false,
   }) async {
     try {
-      // IMPORTANT: Delete is false by default. Token is
-      // intentionally NOT deleted from storage because
-      // this allows for swapping between authenticated uses
-      // without asking the user for credentials each time.
-      // The account is still protected with a pin-code which
-      // the user is forced to enter if the token was still valid.
-      //
       final token = await getToken(
         userId: userId,
       );
@@ -507,16 +544,17 @@ class UserIdentityService extends UserService {
         // resolved by actively invalidating the session using the
         // openid connect logout endpoint.
         //
-        await client.post(_logoutUrl, headers: {
+        final url = '$_logoutUrl?redirect_uri=$_redirectUrl';
+        final response = await client.post(url, headers: {
           'Authorization': 'Bearer ${token.body.accessToken}',
         }, body: {
           'client_id': _clientId,
           'refresh_token': token.body.refreshToken,
         });
+        print(response.statusCode);
       }
       return super.logout(
         userId: userId,
-        delete: delete,
       );
     } on Exception catch (e) {
       return ServiceResponse.internalServerError(
@@ -558,7 +596,7 @@ class UserIdentityService extends UserService {
 }
 
 class UserCredentialsService extends UserService {
-  UserCredentialsService(this.url, this.client);
+  UserCredentialsService(this.url, this.client, AppConfigBloc bloc) : super(bloc);
   final String url;
   final http.Client client;
 

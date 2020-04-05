@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
@@ -305,7 +307,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               _buildFullName(bloc),
               Text(
                 _toPinText(),
-                style: _toStyle(context, 22, FontWeight.bold),
+                style: _toStyle(context, 22, FontWeight.bold, color: _wrongPin && _pinComplete ? Colors.red : null),
                 textAlign: TextAlign.center,
               ),
               _buildPinInput(
@@ -313,7 +315,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                 setState: setState,
               ),
               _verifyPin
-                  ? _buildSecureAction(bloc, enabled: _pinComplete)
+                  ? _buildSecureAction(bloc, enabled: !_wrongPin && _pinComplete)
                   : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
             ],
           );
@@ -325,7 +327,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       : changePin ? 'Endre pin' : 'Oppgi ny pinkode';
 
   Widget _buildNewPinAction(UserBloc bloc, StateSetter setState, {bool enabled}) => _buildAction(
-        'Velg',
+        'FORTSETT',
         () {
           _pinComplete = false;
           _focusNode.requestFocus();
@@ -335,7 +337,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
-        'Endre',
+        'ENDRE',
         () async {
           try {
             await bloc.secure(
@@ -378,7 +380,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildPinInput(UserBloc bloc, {StateSetter setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
-        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
+        padding: const EdgeInsets.only(top: 24.0),
         child: PinCodeTextField(
           length: 4,
           obsecureText: false,
@@ -415,6 +417,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     }
     _pinComplete = true;
     _pinController.clear();
+    _wrongPin = _pin != value;
     if (setState != null) {
       setState(() {});
     }
@@ -442,40 +445,98 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Logg deg på med din organisasjonskonto',
+            'Logg på med din organisasjonskonto',
             style: _toStyle(context, 22, FontWeight.bold),
             textAlign: TextAlign.center,
           ),
-          _buildEmailInput(),
+          _buildUserInput(bloc),
           Flexible(
             child: _buildAuthenticateAction(bloc),
           ),
         ],
       );
 
-  Widget _buildEmailInput() => Padding(
-        padding: const EdgeInsets.fromLTRB(0.0, 24.0, 0.0, 0.0),
-        child: TextFormField(
-          maxLines: 1,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.go,
-          autofocus: false,
-          scrollPadding: EdgeInsets.all(90),
-          textCapitalization: TextCapitalization.none,
-          decoration: InputDecoration(
-            hintText: 'Påloggingsadresse',
-          ),
-          validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
-          onSaved: (value) => _username = value,
+  Widget _buildUserInput(UserBloc bloc) =>
+      bloc.securityMode == SecurityMode.shared ? _buildSharedUseInput(bloc) : _buildPrivateUseInput(bloc);
+
+  Widget _buildPrivateUseInput(UserBloc bloc) => Padding(
+        padding: const EdgeInsets.only(top: 24.0),
+        child: FutureBuilder<ServiceResponse<List<User>>>(
+            future: bloc.service.loadAll(),
+            builder: (context, snapshot) {
+              return snapshot.data?.is200 == true
+                  ? snapshot.data.body.isEmpty
+                      ? _buildEmailTextField
+                      : buildDropDownField<String>(
+                          attribute: 'email',
+                          label: 'Påloggingsadresse',
+                          initialValue: 'kenneth@discoos.org',
+                          items: _emailItems ??= _buildEmailItems(),
+                          onChanged: (value) => _username = value,
+                          validators: [
+                            (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+                          ],
+                        )
+                  : _buildEmailTextField();
+            }),
+      );
+
+  Widget _buildSharedUseInput(UserBloc bloc) => Padding(
+        padding: const EdgeInsets.only(top: 24.0),
+        child: FutureBuilder<ServiceResponse<List<User>>>(
+            future: bloc.service.loadAll(),
+            builder: (context, snapshot) {
+              return snapshot.data?.is200 == true
+                  ? snapshot.data.body.isEmpty
+                      ? _buildEmailTextField
+                      : buildDropDownField<String>(
+                          attribute: 'email',
+                          label: 'Påloggingsadresse',
+                          initialValue: 'kenneth@discoos.org',
+                          items: _emailItems ??= _buildEmailItems(),
+                          onChanged: (value) => _username = value,
+                          validators: [
+                            (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+                          ],
+                        )
+                  : _buildEmailTextField();
+            }),
+      );
+
+  List<DropdownMenuItem<String>> _emailItems;
+
+  List<DropdownMenuItem<String>> _buildEmailItems() => ['kenneth@discoos.org']
+      .map(
+        (String email) => DropdownMenuItem(
+          value: email,
+          child: Text(email),
         ),
+      )
+      .toList();
+
+  TextFormField _buildEmailTextField() => TextFormField(
+        maxLines: 1,
+        keyboardType: TextInputType.emailAddress,
+        textInputAction: TextInputAction.go,
+        autofocus: false,
+        scrollPadding: EdgeInsets.all(90),
+        textCapitalization: TextCapitalization.none,
+        decoration: InputDecoration(
+          hintText: 'Påloggingsadresse',
+        ),
+        validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+        onSaved: (value) => _username = value,
       );
 
   Widget _buildAuthenticateAction(UserBloc bloc) => _buildAction(
-        'Fortsett',
+        'FORTSETT',
         () async {
           try {
             _popWhenReady = true;
             await bloc.authenticate(username: _username);
+            if (bloc.isUnlocked) {
+              await bloc.lock();
+            }
           } on Exception {/* Is handled by StreamBuilder */}
         },
       );
@@ -487,26 +548,23 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           minWidth: 215,
         ),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(0.0, 16.0, 0.0, 0.0),
-          child: SizedBox(
-            height: 48,
-            child: RaisedButton(
-              elevation: 2.0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-              color: Color.fromRGBO(00, 41, 73, 1),
-              child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
-              onPressed: enabled
-                  ? () {
-                      if (_validateAndSave()) {
-                        FocusScopeNode currentFocus = FocusScope.of(context);
-                        if (!currentFocus.hasPrimaryFocus) {
-                          currentFocus.unfocus();
-                        }
-                        onPressed();
+          padding: EdgeInsets.only(top: 16.0),
+          child: RaisedButton(
+            elevation: 2.0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+            color: Color.fromRGBO(00, 41, 73, 1),
+            child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
+            onPressed: enabled
+                ? () {
+                    if (_validateAndSave()) {
+                      FocusScopeNode currentFocus = FocusScope.of(context);
+                      if (!currentFocus.hasPrimaryFocus) {
+                        currentFocus.unfocus();
                       }
+                      onPressed();
                     }
-                  : null,
-            ),
+                  }
+                : null,
           ),
         ),
       );

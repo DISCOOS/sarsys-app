@@ -1,3 +1,4 @@
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -5,16 +6,18 @@ part 'Security.g.dart';
 
 @JsonSerializable()
 class Security extends Equatable {
-  Security(
+  Security({
     this.pin,
     this.type,
     this.locked,
-    this.paused,
-  ) : super([
+    this.mode,
+    DateTime heartbeat,
+  })  : heartbeat = heartbeat ?? DateTime.now(),
+        super([
           pin,
           type,
           locked,
-          paused,
+          heartbeat,
         ]);
 
   final String pin;
@@ -22,9 +25,20 @@ class Security extends Equatable {
   final SecurityType type;
   @JsonKey(defaultValue: true)
   final bool locked;
-  final DateTime paused;
+  final DateTime heartbeat;
+  final SecurityMode mode;
 
-  factory Security.fromPin(String pin) => Security(pin, SecurityType.pin, false, null);
+  factory Security.fromPin(
+    String pin, {
+    SecurityMode mode = SecurityMode.personal,
+    bool locked = false,
+  }) =>
+      Security(
+        pin: pin,
+        type: SecurityType.pin,
+        mode: mode,
+        locked: false,
+      );
 
   /// Factory constructor for creating a new `Security` instance from json data
   factory Security.fromJson(Map<String, dynamic> json) => _$SecurityFromJson(json);
@@ -32,21 +46,45 @@ class Security extends Equatable {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$SecurityToJson(this);
 
+  Security renew() => cloneWith(heartbeat: DateTime.now());
+
   Security cloneWith({
     String pin,
     SecurityType type,
     bool locked,
-    DateTime paused,
+    DateTime heartbeat,
   }) =>
       Security(
-        pin ?? this.pin,
-        type ?? this.type,
-        locked ?? this.locked,
-        paused ?? this.paused,
+        pin: pin ?? this.pin,
+        type: type ?? this.type,
+        mode: mode ?? this.mode,
+        locked: locked ?? this.locked,
+        heartbeat: heartbeat ?? this.heartbeat,
       );
 }
 
-enum SecurityType {
-  pin,
-  fingerprint,
+enum SecurityType { pin, fingerprint }
+
+String translateSecurityType(SecurityType type) {
+  switch (type) {
+    case SecurityType.pin:
+      return "Pinkode";
+    case SecurityType.fingerprint:
+      return "Fingermønster";
+    default:
+      return enumName(type);
+  }
+}
+
+enum SecurityMode { personal, shared }
+
+String translateSecurityMode(SecurityMode mode) {
+  switch (mode) {
+    case SecurityMode.personal:
+      return "Personlig";
+    case SecurityMode.shared:
+      return "Delt";
+    default:
+      return enumName(mode);
+  }
 }

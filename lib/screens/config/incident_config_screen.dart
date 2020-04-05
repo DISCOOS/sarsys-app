@@ -35,6 +35,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
       appBar: AppBar(
         title: Text("Hendelsesoppsett"),
         automaticallyImplyLeading: true,
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

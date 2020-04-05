@@ -42,6 +42,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
       appBar: AppBar(
         title: Text("Nødnettsoppsett"),
         automaticallyImplyLeading: true,
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
