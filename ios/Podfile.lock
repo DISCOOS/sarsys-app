@@ -1,4 +1,6 @@
 PODS:
+  - "app_settings (3.0.0+1)":
+    - Flutter
   - AppAuth (1.2.0):
     - AppAuth/Core (= 1.2.0)
     - AppAuth/ExternalUserAgent (= 1.2.0)
@@ -66,8 +68,6 @@ PODS:
   - sqflite (0.0.1):
     - Flutter
     - FMDB (~> 2.7.2)
-  - system_setting (0.1.1):
-    - Flutter
   - uni_links (0.0.1):
     - Flutter
   - url_launcher (0.0.1):
@@ -80,6 +80,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - app_settings (from `.symlinks/plugins/app_settings/ios`)
   - catcher (from `.symlinks/plugins/catcher/ios`)
   - connectivity (from `.symlinks/plugins/connectivity/ios`)
   - connectivity_macos (from `.symlinks/plugins/connectivity_macos/ios`)
@@ -107,7 +108,6 @@ DEPENDENCIES:
   - shared_preferences_macos (from `.symlinks/plugins/shared_preferences_macos/ios`)
   - shared_preferences_web (from `.symlinks/plugins/shared_preferences_web/ios`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
-  - system_setting (from `.symlinks/plugins/system_setting/ios`)
   - uni_links (from `.symlinks/plugins/uni_links/ios`)
   - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
   - url_launcher_macos (from `.symlinks/plugins/url_launcher_macos/ios`)
@@ -123,6 +123,8 @@ SPEC REPOS:
     - SAMKeychain
 
 EXTERNAL SOURCES:
+  app_settings:
+    :path: ".symlinks/plugins/app_settings/ios"
   catcher:
     :path: ".symlinks/plugins/catcher/ios"
   connectivity:
@@ -177,8 +179,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/shared_preferences_web/ios"
   sqflite:
     :path: ".symlinks/plugins/sqflite/ios"
-  system_setting:
-    :path: ".symlinks/plugins/system_setting/ios"
   uni_links:
     :path: ".symlinks/plugins/uni_links/ios"
   url_launcher:
@@ -191,6 +191,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock/ios"
 
 SPEC CHECKSUMS:
+  app_settings: d103828c9f5d515c4df9ee754dabd443f7cedcf3
   AppAuth: bce82c76043657c99d91e7882e8a9e1a93650cd4
   catcher: e5585ed31458c849f4fd9c3719b2fcb0188b8918
   connectivity: 6e94255659cc86dcbef1d452ad3e0491bb1b3e75
@@ -222,7 +223,6 @@ SPEC CHECKSUMS:
   shared_preferences_macos: f3f29b71ccbb56bf40c9dd6396c9acf15e214087
   shared_preferences_web: 141cce0c3ed1a1c5bf2a0e44f52d31eeb66e5ea9
   sqflite: 4001a31ff81d210346b500c55b17f4d6c7589dd0
-  system_setting: 92cc591ade5113a6fd57ed0702dc5eaa9f5337e5
   uni_links: d97da20c7701486ba192624d99bffaaffcfc298a
   url_launcher: a1c0cc845906122c4784c542523d8cacbded5626
   url_launcher_macos: fd7894421cd39320dce5f292fc99ea9270b2a313
