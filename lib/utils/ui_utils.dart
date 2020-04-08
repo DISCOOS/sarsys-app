@@ -35,7 +35,7 @@ const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
 
 Future<bool> prompt(BuildContext context, String title, String message) async {
   // flutter defined function
-  return await showDialog<bool>(
+  return showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
       // return object of type Dialog
@@ -68,7 +68,7 @@ Widget buildDropDownField<T>({
   @required List<FormFieldValidator> validators,
   String label,
   String helperText,
-  bool isDense = false,
+  bool isDense = true,
   EdgeInsetsGeometry contentPadding,
   ValueChanged<T> onChanged,
 }) =>
@@ -78,34 +78,41 @@ Widget buildDropDownField<T>({
         enabled: true,
         initialValue: initialValue,
         builder: (FormFieldState<T> field) => buildDropdown<T>(
-          field: field,
+          value: field.value,
+          hasError: field.hasError,
+          errorText: field.errorText,
           label: label,
           helperText: helperText,
           items: items,
           isDense: isDense,
           initialValue: initialValue,
           contentPadding: contentPadding,
-          onChanged: onChanged,
+          onChanged: (T newValue) {
+            field.didChange(newValue);
+            if (onChanged != null) onChanged(newValue);
+          },
         ),
       ),
       validators: validators,
     );
 
 Widget buildDropdown<T>({
-  @required FormFieldState<T> field,
+  @required T value,
   @required List<DropdownMenuItem<T>> items,
+  @required ValueChanged<T> onChanged,
   String label,
   String helperText,
   EdgeInsetsGeometry contentPadding,
-  bool isDense = false,
   T initialValue,
-  ValueChanged<T> onChanged,
+  bool isDense = true,
+  bool hasError = false,
+  String errorText,
 }) {
-  T value = items.firstWhere((item) => item.value == field.value, orElse: () => null)?.value ?? initialValue;
+  T selected = items.firstWhere((item) => item.value == value, orElse: () => null)?.value ?? initialValue;
   return InputDecorator(
     decoration: InputDecoration(
       hasFloatingPlaceholder: true,
-      errorText: field.hasError ? field.errorText : null,
+      errorText: hasError ? errorText : null,
       filled: true,
       isDense: isDense,
       labelText: label,
@@ -116,12 +123,9 @@ Widget buildDropdown<T>({
       child: ButtonTheme(
         alignedDropdown: false,
         child: DropdownButton<T>(
-          value: value,
-          isDense: true,
-          onChanged: (T newValue) {
-            field.didChange(newValue);
-            if (onChanged != null) onChanged(newValue);
-          },
+          value: selected,
+          isDense: isDense,
+          onChanged: onChanged,
           items: items,
         ),
       ),

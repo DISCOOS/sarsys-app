@@ -7,6 +7,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/device_screen.dart';
+import 'package:SarSys/screens/first_setup_screen.dart';
 import 'package:SarSys/screens/personnel_screen.dart';
 import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
@@ -51,7 +52,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   UserBloc get userBloc => widget.controller.userProvider.bloc;
   AppConfigBloc get configBloc => widget.controller.configProvider?.bloc;
-  bool get onboarding => configBloc?.config?.onboarding ?? true;
+  bool get onboarded => configBloc?.config?.onboarded ?? false;
+  bool get firstSetup => configBloc?.config?.firstSetup ?? false;
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
 
   @override
@@ -74,7 +76,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       // Lock access to app on pause only (inactive state should NOT lock the app for usability reasons)
       if (userBloc.isReady) {
         await userBloc.secure(
-          userBloc.security,
+          userBloc.security.pin,
         );
       }
     } else if (state == AppLifecycleState.resumed) {
@@ -85,7 +87,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           await userBloc.lock();
         } else {
           await userBloc.secure(
-            userBloc.security.cloneWith(heartbeat: null),
+            userBloc.security.pin,
           );
         }
       }
@@ -151,9 +153,14 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
     // Ensure logged in
     if (userBloc.isReady)
-      builder = _toBuilder(settings, _toScreen(settings, false));
+      builder = _toBuilder(
+        settings,
+        _toScreen(settings, false),
+      );
     else {
-      builder = _toUnchecked(onboarding ? OnboardingScreen() : LoginScreen());
+      builder = _toUnchecked(
+        onboarded == false ? OnboardingScreen() : (firstSetup == false ? FirstSetupScreen() : LoginScreen()),
+      );
     }
 
     return MaterialPageRoute(
@@ -167,6 +174,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (settings.name) {
       case 'login':
       case 'onboarding':
+      case 'first_setup':
         builder = _toUnchecked(child);
         break;
       default:
@@ -179,6 +187,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   Widget _toScreen(RouteSettings settings, bool persisted) {
     Widget child;
     switch (settings.name) {
+      case 'map':
+        child = _toMapScreen(
+          settings: settings,
+          incident: widget.controller.incidentProvider.bloc.current,
+        );
+        break;
       case 'login':
         child = LoginScreen();
         break;
@@ -212,14 +226,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case 'settings':
         child = SettingsScreen();
         break;
-      case 'map':
-        child = _toMapScreen(
-          settings: settings,
-          incident: widget.controller.incidentProvider.bloc.current,
-        );
-        break;
       case 'onboarding':
         child = OnboardingScreen();
+        break;
+      case 'first_setup':
+        child = FirstSetupScreen();
         break;
       case 'incident/list':
       default:
@@ -306,8 +317,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   Widget _toHome(BlocProviderController providers) {
     Widget child;
-    if (providers.configProvider.bloc.config.onboarding) {
+    if (providers.configProvider.bloc.config.onboarded != true) {
       child = OnboardingScreen();
+    } else if (providers.configProvider.bloc.config.firstSetup != true) {
+      child = FirstSetupScreen();
     } else if (providers.userProvider.bloc.isReady) {
       var route = widget.bucket.readState(
         context,
@@ -329,8 +342,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           ),
           true,
         );
-      } else if (providers.incidentProvider.bloc.isUnset) {
-        child = IncidentsScreen();
       } else {
         child = _toMapScreen(
           incident: providers.incidentProvider.bloc.current,

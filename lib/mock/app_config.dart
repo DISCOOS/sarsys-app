@@ -3,22 +3,38 @@ import 'dart:convert';
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/service_response.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 import 'package:mockito/mockito.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show MethodCall, MethodChannel, rootBundle;
 import 'package:uuid/uuid.dart';
+
+const MethodChannel udidChannel = MethodChannel('flutter_udid');
+const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
 
 class AppConfigServiceMock extends Mock implements AppConfigService {
   static AppConfigService build(String asset, String baseUrl, Client client) {
     final AppConfigServiceMock mock = AppConfigServiceMock();
     Box box;
     AppConfig config;
+    final udid = Uuid().v4();
+    udidChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+      return udid;
+    });
+    pathChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+      return ".";
+    });
     when(mock.asset).thenAnswer((_) => asset);
     when(mock.baseUrl).thenAnswer((_) => baseUrl);
     when(mock.client).thenAnswer((_) => client);
     when(mock.init()).thenAnswer((_) async {
+      // Required since provider need access to service bindings prior to calling 'runApp()'
+      WidgetsFlutterBinding.ensureInitialized();
+      // All services are caching using hive
+      await Hive.initFlutter();
       config = await _init(asset, box, overwrite: true);
       box ??= await Hive.openBox(AppConfigService.BOX_NAME);
       return ServiceResponse.ok(
@@ -26,6 +42,10 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
       );
     });
     when(mock.load()).thenAnswer((_) async {
+      // Required since provider need access to service bindings prior to calling 'runApp()'
+      WidgetsFlutterBinding.ensureInitialized();
+      // All services are caching using hive
+      await Hive.initFlutter();
       box ??= await Hive.openBox(AppConfigService.BOX_NAME);
       return ServiceResponse.ok(
         body: config = await _init(asset, box),

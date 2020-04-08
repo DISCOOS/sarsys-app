@@ -52,6 +52,7 @@ class Security extends Equatable {
     String pin,
     SecurityType type,
     bool locked,
+    SecurityMode mode,
     DateTime heartbeat,
   }) =>
       Security(

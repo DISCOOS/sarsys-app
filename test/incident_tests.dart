@@ -54,8 +54,8 @@ void main() async {
   });
 
   tearDown(() async {
-    incidentBloc.dispose();
-    userBloc.dispose();
+    incidentBloc?.dispose();
+    userBloc?.dispose();
   });
 
   test(

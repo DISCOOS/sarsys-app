@@ -16,6 +16,12 @@ abstract class UserService {
   static final storage = new FlutterSecureStorage();
   final AppConfigBloc configBloc;
 
+  /// Check if users are sharing same device
+  bool get sharedMode => SecurityMode.shared == configBloc.config.securityMode;
+
+  /// Check if device personal
+  bool get personalMode => SecurityMode.personal == configBloc.config.securityMode;
+
   Future<ServiceResponse<bool>> isSecured() async {
     try {
       final type = await storage.read(key: "security");
@@ -28,13 +34,20 @@ abstract class UserService {
     }
   }
 
-  Future<ServiceResponse<Security>> getSecurity({String userId}) async {
+  Future<ServiceResponse<User>> getUser({String userId}) async {
     try {
       final actualId = userId ?? await currentUserId();
-      final json = await storage.read(key: "security_$actualId");
+      final json = await storage.read(key: "user_$actualId");
       if (json != null) {
+        final user = User.fromJson(jsonDecode(json));
         return ServiceResponse.ok(
-          body: Security.fromJson(jsonDecode(json)).renew(),
+          body: user.cloneWith(
+            security: user.security?.cloneWith(
+              heartbeat: DateTime.now(),
+              type: configBloc.config?.securityType,
+              mode: configBloc.config?.securityMode,
+            ),
+          ),
         );
       }
     } on Exception catch (e) {
@@ -46,45 +59,80 @@ abstract class UserService {
     return ServiceResponse.noContent();
   }
 
-  Future<ServiceResponse<Security>> secure(Security security, {String userId}) async {
+  Future<ServiceResponse<Security>> getSecurity({String userId}) async {
+    try {
+      final actualId = userId ?? await currentUserId();
+      final json = await storage.read(key: "user_$actualId");
+      if (json != null) {
+        return ServiceResponse.ok(
+          body: User.fromJson(jsonDecode(json)).security.cloneWith(
+                heartbeat: DateTime.now(),
+                type: configBloc.config?.securityType,
+                mode: configBloc.config?.securityMode,
+              ),
+        );
+      }
+    } on Exception catch (e) {
+      return ServiceResponse.internalServerError(
+        message: "Failed to get security from storage",
+        error: e,
+      );
+    }
+    return ServiceResponse.noContent();
+  }
+
+  Future<ServiceResponse<Security>> secure(String pin, {String userId, bool locked}) async {
     try {
       var next;
       final actualId = userId ?? await currentUserId();
-      final response = await getSecurity(userId: actualId);
+      final response = await load(userId: actualId);
       if (response.is200) {
-        next = response.body.cloneWith(
-          pin: security.pin,
-          type: security.type,
-          locked: security.locked,
-          heartbeat: DateTime.now(),
+        final user = response.body;
+        if (user.security != null) {
+          next = user.security.cloneWith(
+            pin: pin,
+            locked: locked ?? true,
+            heartbeat: DateTime.now(),
+            type: configBloc.config.securityType,
+            mode: configBloc.config.securityMode,
+          );
+        } else {
+          next = Security(
+            pin: pin,
+            locked: locked ?? true,
+            heartbeat: DateTime.now(),
+            type: configBloc.config.securityType,
+            mode: configBloc.config.securityMode,
+          );
+        }
+        await configBloc.update(
+          securityPin: pin,
         );
-      } else {
-        next = security.renew();
+        await writeUser(
+          user.cloneWith(security: next),
+        );
+        return ServiceResponse.ok(
+          body: next,
+        );
       }
-      await configBloc.update(
-        securityPin: security.pin,
-        securityType: security.type,
-        securityMode: security.mode,
-      );
-      await storage.write(
-        key: "security_$actualId",
-        value: jsonEncode(next.toJson()),
-      );
-      return ServiceResponse.ok(
-        body: next,
+      return ServiceResponse.notFound(
+        message: 'User id $actualId not found',
       );
     } on Exception catch (e) {
-      return ServiceResponse.internalServerError(error: e);
+      return ServiceResponse.internalServerError(
+        error: e,
+      );
     }
   }
 
-  Future<ServiceResponse<Security>> lock() async {
+  Future<ServiceResponse<Security>> lock({String userId}) async {
     try {
-      final response = await getSecurity();
+      final response = await getSecurity(userId: userId);
       if (response.is200) {
-        return secure(response.body.cloneWith(
+        return secure(
+          response.body.pin,
           locked: true,
-        ));
+        );
       }
       return ServiceResponse.noContent();
     } on Exception catch (e) {
@@ -101,6 +149,8 @@ abstract class UserService {
           security = security.cloneWith(
             locked: false,
             heartbeat: DateTime.now(),
+            type: configBloc.config.securityType,
+            mode: configBloc.config.securityMode,
           );
           await storage.write(
             key: "security",
@@ -127,20 +177,24 @@ abstract class UserService {
     bool refresh = true,
   }) async {
     final actualId = userId ?? await currentUserId();
-    final result = await getToken(
+    final token = await getToken(
       userId: actualId,
       validate: validate,
       refresh: refresh,
     );
-    if (result.is200) {
-      final security = await getSecurity(
-        userId: userId,
-      );
+    final user = await getUser(
+      userId: userId,
+    );
+    if (token.is200) {
       return ServiceResponse.ok(
-        body: result.body.toUser(
-          security: security.body,
+        body: await writeUser(
+          token.body.toUser(
+            security: user.is200 ? user.body.security : null,
+          ),
         ),
       );
+    } else if (user.is200) {
+      return user;
     }
     return ServiceResponse.noContent();
   }
@@ -176,8 +230,10 @@ abstract class UserService {
 
   /// Authorize and get token
   Future<ServiceResponse<User>> login({
+    String userId,
     String username,
     String password,
+    String idpHint,
   });
 
   Future<ServiceResponse<User>> refresh({String userId}) async {
@@ -210,12 +266,18 @@ abstract class UserService {
             userId: actualId,
           );
         }
-        return ServiceResponse.ok(
-          body: await readToken(userId),
-        );
+        final token = await readToken(userId);
+        if (token != null) {
+          return ServiceResponse.ok(
+            body: await readToken(userId),
+          );
+        }
+        return ServiceResponse.noContent();
       }
     } on FormatException {
-      await logout();
+      await logout(
+        userId: userId,
+      );
     } on Exception catch (e) {
       return ServiceResponse.internalServerError(
         error: e,
@@ -229,19 +291,25 @@ abstract class UserService {
     String userId,
   }) async {
     try {
-      final actualId = userId ?? await currentUserId();
-      final token = await readToken(actualId);
-      await this.delete(actualId);
-      if (token != null) {
-        final result = await lock(/*userId: actualId*/);
-        if (!kReleaseMode) print("Logged out user $actualId");
-        if (result != null) {
-          return ServiceResponse.ok(
-            body: token.toUser(
-              security: result.body,
-            ),
+      final response = await load(
+        userId: userId,
+      );
+      if (response.is200) {
+        final user = response.body;
+        await this.delete(
+          user.userId,
+          // SHALL NOT delete user in shared mode
+          user: personalMode,
+        );
+        if (sharedMode) {
+          await lock(
+            userId: user.userId,
           );
         }
+        if (!kReleaseMode) print("Logged out user ${user.userId}");
+        return ServiceResponse.ok(
+          body: user,
+        );
       }
       return ServiceResponse.noContent(
         message: "No user logged in",
@@ -262,7 +330,7 @@ abstract class UserService {
         final request = response.body.map(
           (user) => delete(
             user.userId,
-            security: true,
+            user: true,
           ),
         );
         await Future.wait(request);
@@ -300,10 +368,22 @@ abstract class UserService {
           );
   }
 
-  /// Write token for given username to storage
+  /// Write user to storage
   @protected
-  Future<AuthToken> writeToken({
-    @required String accessToken,
+  Future<User> writeUser(User user) async {
+    await storage.write(
+      key: "user_${user.userId}",
+      value: jsonEncode(
+        user.toJson(),
+      ),
+    );
+    return user;
+  }
+
+  /// Write token to storage
+  @protected
+  Future<AuthToken> writeToken(
+    String accessToken, {
     String idToken,
     String refreshToken,
     DateTime accessTokenExpiration,
@@ -342,23 +422,28 @@ abstract class UserService {
     return token;
   }
 
-  /// Delete token for given username from storage
+  /// Delete token for given [userId] from storage
   Future delete(
     String userId, {
-    bool security: false,
+    bool user: false,
   }) async {
-    await storage.delete(key: 'token_$userId');
-    if (security) {
-      await storage.delete(key: 'security_$userId');
-    }
-    Set<String> list = await _readUserIds();
-    list.remove(userId);
-    await storage.write(
-      key: "user_id_list",
-      value: jsonEncode(
-        list.toList(),
-      ),
+    await storage.delete(
+      key: 'token_$userId',
     );
+    if (user) {
+      await storage.delete(
+        key: 'user_$userId',
+      );
+      // TODO: Limit to N users removing the oldest first
+      Set<String> list = await _readUserIds();
+      list.remove(userId);
+      await storage.write(
+        key: "user_id_list",
+        value: jsonEncode(
+          list.toList(),
+        ),
+      );
+    }
     await _unset(userId: userId);
   }
 
@@ -410,50 +495,73 @@ class UserIdentityService extends UserService {
   /// Authorize and get token
   @override
   Future<ServiceResponse<User>> login({
+    String userId,
     String username,
     String password,
     String idpHint,
   }) async {
     try {
       // Get current user
-      final current = await readToken(
+      final currentToken = await readToken(
         await currentUserId(),
       );
-      final user = current?.toUser();
 
-      // Same username as current user?
-      if (username != null) {
-        if (username?.toLowerCase() == user?.uname?.toLowerCase()) {
-          // Refresh token?
-          if (current.isExpired) {
-            return refresh(
-              userId: user.userId,
-            );
+      final currentUser = currentToken?.toUser();
+
+      // Requested user is current user?
+      if (currentToken != null) {
+        if (userId == currentUser?.userId || username?.toLowerCase() == currentUser?.uname?.toLowerCase()) {
+          final result = await _validateAndRefresh(
+            currentToken,
+            currentUser,
+          );
+          if (result.is200) {
+            return result;
           }
-          return _toUser(current);
         }
       }
+
       // Not same user - we need to logout from current session
       // Chrome Custom Tab or other external browser might cache
       // the sessions and some IdPs doesn't support that and will
       // show an error message about that to the user. Keycloak
       // is one of those.
-      await logout(
-        userId: user?.userId,
-      );
+      if (personalMode) {
+        await logout(
+          userId: currentUser?.userId,
+        );
+      }
+
+      // A valid token exists already?
+      var actualUser = currentUser;
+      if (userId?.isNotEmpty == true) {
+        final token = await readToken(userId);
+        if (token != null) {
+          actualUser = token?.toUser();
+          final result = await _validateAndRefresh(
+            currentToken,
+            currentUser,
+          );
+          if (result.is200) {
+            return result;
+          }
+        }
+      }
+      // Select idp hint and prompt values
+      final hint = idpHint ?? toIdpHint(username ?? currentUser.uname);
+      final idpPrompt = [
+        if (_promptValues.containsKey(idpHint)) _promptValues[idpHint],
+      ];
 
       // Request a new session from idp
-      final hint = idpHint ?? _toIdpHint(username);
-      final prompt = [
-        if (_promptValues.containsKey(hint)) _promptValues[hint],
-      ];
       final response = await _appAuth.authorizeAndExchangeCode(
         AuthorizationTokenRequest(
           _clientId,
           _redirectUrl,
           scopes: _scopes,
-          loginHint: username,
-          promptValues: prompt,
+          promptValues: idpPrompt,
+          // Use actual username if found, otherwise passed username
+          loginHint: actualUser?.uname ?? (username.isNotEmpty ? username : null),
           additionalParameters: {
             if (hint != null) 'kc_idp_hint': hint,
           },
@@ -466,6 +574,7 @@ class UserIdentityService extends UserService {
         await _writeToken(
           response,
         ),
+        lock: true,
       );
     } on PlatformException catch (e) {
       if (USER_ERRORS.contains(e.code)) {
@@ -483,6 +592,15 @@ class UserIdentityService extends UserService {
         error: e,
       );
     }
+  }
+
+  Future<ServiceResponse<User>> _validateAndRefresh(AuthToken currentToken, User currentUser) {
+    if (currentToken?.isExpired == true) {
+      return refresh(
+        userId: currentUser.userId,
+      );
+    }
+    return _toUser(currentToken, lock: true);
   }
 
   @override
@@ -504,6 +622,7 @@ class UserIdentityService extends UserService {
           await _writeToken(
             response,
           ),
+          lock: false,
         );
       }
       return super.refresh(
@@ -545,13 +664,12 @@ class UserIdentityService extends UserService {
         // openid connect logout endpoint.
         //
         final url = '$_logoutUrl?redirect_uri=$_redirectUrl';
-        final response = await client.post(url, headers: {
+        await client.post(url, headers: {
           'Authorization': 'Bearer ${token.body.accessToken}',
         }, body: {
           'client_id': _clientId,
           'refresh_token': token.body.refreshToken,
         });
-        print(response.statusCode);
       }
       return super.logout(
         userId: userId,
@@ -564,9 +682,10 @@ class UserIdentityService extends UserService {
     }
   }
 
-  Future<ServiceResponse<User>> _toUser(AuthToken token) async {
+  Future<ServiceResponse<User>> _toUser(AuthToken token, {@required bool lock}) async {
     if (!kReleaseMode) print("Token written: $token");
-    final security = await getSecurity(userId: token.userId);
+    final userId = token.userId;
+    final security = lock ? await this.lock(userId: userId) : await getSecurity(userId: token.userId);
     return ServiceResponse.ok(
       body: token.toUser(
         security: security.body,
@@ -576,8 +695,8 @@ class UserIdentityService extends UserService {
 
   Future<AuthToken> _writeToken(TokenResponse response) async {
     final token = await writeToken(
+      response.accessToken,
       idToken: response.idToken,
-      accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       accessTokenExpiration: response.accessTokenExpirationDateTime,
     );
@@ -585,7 +704,7 @@ class UserIdentityService extends UserService {
     return token;
   }
 
-  String _toIdpHint(String username) {
+  String toIdpHint(String username) {
     final pattern = RegExp(".*.@(.*)");
     final matcher = pattern.firstMatch(username);
     if (matcher != null && _idpHints.containsKey(matcher.group(1))) {
@@ -601,7 +720,12 @@ class UserCredentialsService extends UserService {
   final http.Client client;
 
   /// Authorize with basic auth and get token
-  Future<ServiceResponse<User>> login({String username, String password}) async {
+  Future<ServiceResponse<User>> login({
+    String userId,
+    String username,
+    String password,
+    String idpHint,
+  }) async {
     // TODO: Change to http_client to get better control of timeout, retries etc.
     // TODO: Handle various login/network errors and throw appropriate errors
     try {
@@ -615,7 +739,7 @@ class UserCredentialsService extends UserService {
       if (response.statusCode == 200) {
         final responseObject = jsonDecode(response.body);
         final token = await writeToken(
-          accessToken: responseObject['token'],
+          responseObject['token'],
         );
         final security = await getSecurity(userId: token.userId);
         return ServiceResponse.ok(

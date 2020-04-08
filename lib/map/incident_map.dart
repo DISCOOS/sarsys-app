@@ -43,6 +43,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong/latlong.dart';
 import 'package:wakelock/wakelock.dart';
@@ -263,6 +264,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   IncidentMapController _mapController;
   MapToolController _mapToolController;
   LocationController _locationController;
+  PermissionController _permissionController;
 
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
@@ -327,12 +329,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _isLocating?.dispose();
     _isMeasuring?.dispose();
     _subscription?.cancel();
+    _permissionController?.dispose();
     _isLocating = null;
     _isMeasuring = null;
     _subscription = null;
     _mapController = null;
     _mapToolController = null;
     _locationController = null;
+    _permissionController = null;
 
     _restoreWakeLock();
 
@@ -382,15 +386,16 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   Future _ensureBaseMaps() async {
     if (_baseMapService == null) {
       _baseMapService = BaseMapService();
-      final controller = _ensure();
+      final controller = _ensurePermissionController();
       final used = await controller.ask(
         controller.storageRequest.copyWith(
           onReady: () async => await _asyncBaseMapLoad(true),
         ),
       );
-      if (Platform.isIOS && used == false) {
+      if (Platform.isIOS && used != PermissionStatus.granted) {
         await _asyncBaseMapLoad(true);
       }
+      controller.dispose();
     }
   }
 
@@ -488,7 +493,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       _locationController = LocationController(
         tickerProvider: this,
         configBloc: _configBloc,
-        permissionController: _ensure(),
+        permissionController: _ensurePermissionController(),
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
@@ -497,17 +502,12 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     }
   }
 
-  PermissionController _ensure() {
-    final controller = Provider.of<PermissionController>(context);
-    if (controller == null) {
-      return PermissionController(
-        onMessage: widget.onMessage,
-        configBloc: BlocProvider.of<AppConfigBloc>(context),
-      );
-    }
-    return controller.cloneWith(
+  PermissionController _ensurePermissionController() {
+    _permissionController ??= PermissionController(
+      configBloc: _configBloc,
       onMessage: widget.onMessage,
     );
+    return _permissionController;
   }
 
   LatLng _ensureCenter() {

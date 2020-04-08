@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
 
+import 'Incident.dart';
 import 'Security.dart';
 
 part 'User.g.dart';
@@ -56,9 +57,12 @@ class User extends Equatable {
   String get shortName => '${fname.substring(0, 1)} $lname';
   String get initials => '${fname.substring(0, 1)}${lname.substring(0, 1)}'.toUpperCase();
 
+  bool get hasRoles => roles.isNotEmpty;
   bool get isCommander => roles.contains(UserRole.commander);
   bool get isUnitLeader => roles.contains(UserRole.unit_leader);
   bool get isPersonnel => roles.contains(UserRole.personnel);
+
+  bool isAuthor(Incident incident) => incident.created.userId == userId;
 
   /// Factory constructor for creating a new `User` instance
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

@@ -59,6 +59,7 @@ class LocationController {
   void dispose() {
     options?.cancel();
     mapController?.cancel();
+    permissionController?.dispose();
     _positionSubscription?.cancel();
     _locationUpdateController?.close();
     _options = null;

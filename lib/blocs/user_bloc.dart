@@ -34,7 +34,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   bool get isShared => SecurityMode.shared == service.configBloc.config.securityMode;
 
   /// Check if application is running on a private device (only one account is allowed)
-  bool get isPrivate => SecurityMode.personal == service.configBloc.config.securityMode;
+  bool get isPersonal => SecurityMode.personal == service.configBloc.config.securityMode;
 
   /// Get requested security mode from [AppConfig]
   SecurityMode get securityMode => service.configBloc.config.securityMode;
@@ -71,7 +71,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated && (_authorized.containsKey(data.id) || _user?.userId == data.created.userId);
+    return isAuthenticated && (_authorized.containsKey(data.id) || _user.isAuthor(data));
   }
 
   /// Check if current user is authorized to access given [Incident]
@@ -88,8 +88,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       state.map((state) => state is UserAuthorized && state.incident == incident);
 
   /// Secure user access with given settings
-  Future<Security> secure(Security security) async {
-    return _dispatch<Security>(SecureUser(security));
+  Future<Security> secure(String pin, {bool locked}) async {
+    return _dispatch<Security>(SecureUser(
+      pin,
+      locked: locked,
+    ));
   }
 
   /// Lock user access using current security settings
@@ -122,8 +125,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     throw UserError(result);
   }
 
-  Future<User> authenticate({String username, String password}) {
-    return _dispatch<User>(AuthenticateUser(username, password));
+  Future<User> authenticate({String userId, String username, String password, String idpHint}) {
+    return _dispatch<User>(AuthenticateUser(
+      userId: userId,
+      username: username,
+      password: password,
+      idpHint: idpHint,
+    ));
   }
 
   UserCommand _assertUnset<T>(UserCommand command) {
@@ -192,7 +200,10 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   Future<UserState> _secure(SecureUser command) async {
-    var response = await service.secure(command.data);
+    var response = await service.secure(
+      command.data,
+      locked: command.locked,
+    );
     return _toSecurityEvent(response, command);
   }
 
@@ -241,6 +252,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     var response = await service.login(
       username: command.data,
       password: command.password,
+      userId: command.userId,
+      idpHint: command.idpHint,
     );
     return _toAuthEvent(response, command);
   }
@@ -313,14 +326,15 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   Future<UserState> _clear(ClearUsers command) async {
+    await service.logout();
     var response = await service.clear();
-    if (response.is200) {
+    if (response.is200 || response.is204) {
       _user = null;
       _authorized.clear();
       return _complete(
         command,
         UserUnset(),
-        result: response.body,
+        result: response.body ?? [],
       );
     }
     return _completeError(
@@ -389,11 +403,12 @@ class LoadUser extends UserCommand<String, User> {
   String toString() => 'LoadUser {userId: $data}';
 }
 
-class SecureUser extends UserCommand<Security, Security> {
-  SecureUser(Security data) : super(data);
+class SecureUser extends UserCommand<String, Security> {
+  final bool locked;
+  SecureUser(String pin, {this.locked}) : super(pin);
 
   @override
-  String toString() => 'SecureUser {security: $data}';
+  String toString() => 'SecureUser {pin: $data, locked: $locked}';
 }
 
 class LockUser extends UserCommand<void, Security> {
@@ -411,8 +426,19 @@ class UnlockUser extends UserCommand<String, Security> {
 }
 
 class AuthenticateUser extends UserCommand<String, User> {
+  final String userId;
   final String password;
-  AuthenticateUser(String username, this.password) : super(username, [password]);
+  final String idpHint;
+  AuthenticateUser({
+    String username,
+    this.password,
+    this.userId,
+    this.idpHint,
+  }) : super(username, [
+          userId,
+          password,
+          idpHint,
+        ]);
 
   @override
   String toString() => 'AuthenticateUser  {username: $data, password: $data}';

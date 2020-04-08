@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -5,6 +6,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/config/map_config_screen.dart';
+import 'package:SarSys/screens/config/permission_config_screen.dart';
 import 'package:SarSys/screens/config/security_config_screen.dart';
 import 'package:SarSys/screens/config/tetra_config_screen.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -108,6 +110,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       _buildGotoMapConfig(),
       _buildGotoTetraConfig(),
       _buildGotoSecurityConfig(),
+      _buildPermissionsConfig(),
       Divider(),
       ListTile(
         title: Text(
@@ -117,7 +120,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       ),
       ListTile(
         title: Text(
-          "Endre tilganger for app",
+          "Innstillinger for ${Platform.operatingSystem} app",
           style: Theme.of(context).textTheme.body1,
         ),
         trailing: Icon(Icons.open_in_new),
@@ -168,6 +171,19 @@ class SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
           return SecurityConfigScreen();
+        }));
+      },
+    );
+  }
+
+  ListTile _buildPermissionsConfig() {
+    return ListTile(
+      title: Text("Tillatelser"),
+      subtitle: Text('Endre tillatelser'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return PermissionConfigScreen();
         }));
       },
     );

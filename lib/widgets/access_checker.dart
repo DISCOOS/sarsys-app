@@ -29,8 +29,8 @@ class AccessChecker extends StatefulWidget {
 }
 
 class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveClientMixin {
+  bool _checkPermission;
   bool _listening = false;
-  bool _checkPermission = true;
   PermissionController controller;
   StreamSubscription<UserState> _subscription;
 
@@ -48,8 +48,14 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
     _subscription = BlocProvider.of<UserBloc>(context)?.state?.listen((state) {
       // Skip initial event
       if (_listening && (state.isUnset() || state.isLocked())) {
-        final onboarding = BlocProvider.of<AppConfigBloc>(context)?.config?.onboarding;
-        Navigator.of(context)?.pushReplacementNamed(onboarding == true ? "onboarding" : "login");
+        final config = BlocProvider.of<AppConfigBloc>(context)?.config;
+        if (config?.onboarded != true) {
+          Navigator.of(context)?.pushReplacementNamed("onboarding");
+        } else if (config?.firstSetup != true) {
+          Navigator.of(context)?.pushReplacementNamed("first_setup");
+        } else {
+          Navigator.of(context)?.pushReplacementNamed("login");
+        }
       }
       _listening = true;
     });
@@ -59,6 +65,7 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
+    controller?.dispose();
     super.dispose();
   }
 

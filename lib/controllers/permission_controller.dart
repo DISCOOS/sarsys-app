@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:intl/intl.dart';
 
@@ -7,9 +8,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:system_setting/system_setting.dart';
+import 'package:app_settings/app_settings.dart';
 
 class PermissionController {
+  PermissionController({
+    @required this.configBloc,
+    this.onMessage,
+    this.onPrompt,
+  }) : assert(configBloc != null, "AppConfigBloc is required");
+
   static const String IOS = "ios";
   static const String ANDROID = "android";
   static const List<String> ALL_OS = const [ANDROID, IOS];
@@ -28,11 +35,15 @@ class PermissionController {
 
   Set<PermissionGroup> _permissions = {};
 
-  PermissionController({
-    @required this.configBloc,
-    @required this.onMessage,
-    this.onPrompt,
-  }) : assert(configBloc != null, "AppConfigBloc is required");
+  Stream<PermissionResponse> get responses => _responses.stream;
+  StreamController<PermissionResponse> _responses = StreamController.broadcast();
+
+  bool _disposed = false;
+
+  void dispose() {
+    _disposed = true;
+    _responses.close();
+  }
 
   /// Clone with given parameters.
   ///
@@ -59,6 +70,7 @@ class PermissionController {
         deniedMessage: "Tilgang til minnekort er ikke tillatt.",
         deniedBefore: "Du har tidligere avslått tilgang til minnekort.",
         consequence: "Du kan ikke lese kartdata lagret lokalt.",
+        settingTarget: PermissionRequest.SETTINGS_APPLICATION,
         onCheck: () => _updateAppConfig(
           storage: true,
         ),
@@ -74,7 +86,7 @@ class PermissionController {
         deniedMessage: "Lokalisering er ikke tillatt.",
         deniedBefore: "Du har tidligere avslått deling av posisjon.",
         consequence: "Du kan ikke vise hvor du er i kartet eller lagre sporet ditt automatisk.",
-        settingTarget: SettingTarget.LOCATION,
+        settingTarget: PermissionRequest.SETTINGS_APPLICATION,
         onCheck: () => _updateAppConfig(
           locationWhenInUse: true,
         ),
@@ -95,21 +107,25 @@ class PermissionController {
       );
   }
 
-  Future<bool> ask(PermissionRequest request) async {
-    var allowed = false;
+  Future<PermissionStatus> check(PermissionRequest request) async {
+    final handler = PermissionHandler();
+    return await handler.checkPermissionStatus(request.group);
+  }
+
+  Future<PermissionStatus> ask(PermissionRequest request) async {
     if (request.platforms.contains(Platform.operatingSystem)) {
       final handler = PermissionHandler();
       final status = await handler.checkServiceStatus(request.group);
       switch (status) {
         case ServiceStatus.enabled:
         case ServiceStatus.notApplicable:
-          allowed = await handle(
+          await handle(
             await handler.checkPermissionStatus(request.group),
             request,
           );
           break;
         case ServiceStatus.disabled:
-          _handleServiceDisabled(request);
+          await _handleServiceDisabled(request);
           break;
         case ServiceStatus.unknown:
           if (onMessage != null)
@@ -122,7 +138,7 @@ class PermissionController {
           break;
       }
     }
-    return allowed;
+    return check(request);
   }
 
   Future<bool> handle(PermissionStatus status, PermissionRequest request) async {
@@ -150,19 +166,25 @@ class PermissionController {
           isReady = true;
           break;
         case PermissionStatus.denied:
-          _handleServiceDenied(request);
+          await _handleServiceDenied(request);
           break;
         case PermissionStatus.disabled:
-          _handleServiceDenied(request);
+          await _handleServiceDenied(request);
           break;
         default:
-          _handlePermissionRequest("${request.title} er ikke tilgjengelig. ${request.consequence}", request);
+          await _handlePermissionRequest("${request.title} er ikke tilgjengelig. ${request.consequence}", request);
           break;
       }
       if (isReady && request.onReady != null) request.onReady();
     }
     _resolving = false;
 
+    // Notify listeners?
+    if (!_disposed) {
+      _responses.add(
+        PermissionResponse(request, status),
+      );
+    }
     return isReady;
   }
 
@@ -178,7 +200,7 @@ class PermissionController {
     return notify;
   }
 
-  void _handlePermissionRequest(String reason, PermissionRequest request) async {
+  Future _handlePermissionRequest(String reason, PermissionRequest request) async {
     final handler = PermissionHandler();
     if (onMessage == null)
       await _onAction(handler, request);
@@ -191,21 +213,40 @@ class PermissionController {
   Future _onAction(PermissionHandler handler, PermissionRequest request) async {
     var prompt = true;
     final prefs = await SharedPreferences.getInstance();
-    var deniedBefore = prefs.getBool("userDeniedGroupBefore_${request.group}") ?? false;
-    // Only supported on Android, iOS always return false
-    if (await handler.shouldShowRequestPermissionRationale(request.group)) {
-      prompt = onPrompt == null ? true : await onPrompt(request.title, _toRationale(request, deniedBefore));
-    }
-    if (prompt) {
-      var response = await handler.requestPermissions([request.group]);
-      var status = response[request.group];
-      if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
-        handle(status, request);
-      } else if (onMessage != null) {
-        onMessage(
-          "${request.title} er ikke tilgjengelig. ${request.consequence}",
-          data: request,
-        );
+    var status = await handler.checkPermissionStatus(request.group);
+    // In case permissions was granted in app settings screen
+    if (![PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
+      var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.group}") ?? 0;
+      // Only supported on Android, iOS always return false
+      if (deniedBefore > 0 || await handler.shouldShowRequestPermissionRationale(request.group)) {
+        prompt = onPrompt == null ? true : await onPrompt(request.title, _toRationale(request, deniedBefore > 0));
+      }
+      if (prompt) {
+        if (deniedBefore < 2) {
+          var response = await handler.requestPermissions([request.group]);
+          var status = response[request.group];
+          if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
+            await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
+            handle(status, request);
+          } else {
+            await prefs.setInt("userDeniedGroupBefore_${request.group}", ++deniedBefore);
+            if (onMessage != null) {
+              onMessage(
+                "${request.title} er ikke tilgjengelig. ${request.consequence}",
+                data: request,
+              );
+            }
+          }
+        } else {
+          // In case permissions was granted in app settings screen
+          var status = await handler.checkPermissionStatus(request.group);
+          if (![PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
+            await _onOpenSetting(request);
+          } else {
+            await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
+            handle(status, request);
+          }
+        }
       }
     }
   }
@@ -216,17 +257,17 @@ class PermissionController {
     return rationale;
   }
 
-  void _handleServiceDenied(PermissionRequest request) async {
+  Future _handleServiceDenied(PermissionRequest request) async {
     final handler = PermissionHandler();
     var check = await handler.checkPermissionStatus(request.group);
     if (check == PermissionStatus.disabled) {
-      _handleServiceDisabled(request);
+      await _handleServiceDisabled(request);
     } else {
-      _handlePermissionRequest(request.deniedMessage, request);
+      await _handlePermissionRequest(request.deniedMessage, request);
     }
   }
 
-  void _handleServiceDisabled(PermissionRequest request) async {
+  Future _handleServiceDisabled(PermissionRequest request) async {
     if (onMessage == null)
       await _onOpenSetting(request);
     else
@@ -239,15 +280,31 @@ class PermissionController {
     // Will only work on Android. For iOS, this plugin only opens the app setting screen Settings application,
     // as using url schemes to open inner setting path is a violation of Apple's regulations. Using url scheme
     // to open settings can also leads to possible App Store rejection.
-    await SystemSetting.goto(request.settingTarget);
-    handle(
+    switch (request.settingTarget) {
+      case PermissionRequest.SETTINGS_LOCATION:
+        await AppSettings.openLocationSettings();
+        break;
+      case PermissionRequest.SETTINGS_APPLICATION:
+        await AppSettings.openAppSettings();
+        break;
+    }
+    await handle(
       await PermissionHandler().checkPermissionStatus(request.group),
       request,
     );
   }
 }
 
+class PermissionResponse {
+  PermissionResponse(this.request, this.status);
+  final PermissionRequest request;
+  final PermissionStatus status;
+}
+
 class PermissionRequest {
+  static const String SETTINGS_LOCATION = 'location';
+  static const String SETTINGS_APPLICATION = 'application';
+
   final String title;
   final String rationale;
   final String deniedBefore;
@@ -258,7 +315,7 @@ class PermissionRequest {
   final AsyncValueGetter<bool> onCheck;
 
   final VoidCallback onReady;
-  final SettingTarget settingTarget;
+  final String settingTarget;
 
   final List<String> platforms;
 

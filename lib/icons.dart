@@ -31,6 +31,7 @@ class SarSysIcons {
   static const IconData rkh = const IconData(0xe805, fontFamily: _kFontFam);
   static const IconData sbg1 = const IconData(0xe806, fontFamily: _kFontFam);
   static const IconData sbg2 = const IconData(0xe807, fontFamily: _kFontFam);
+  static const IconData google = const IconData(0xe807, fontFamily: _kFontFam);
 
   static Icon of(
     String id, {

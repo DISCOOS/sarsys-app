@@ -15,6 +15,7 @@ class Organization extends Equatable {
   final String name;
   final String alias;
   final String pattern;
+  final List<String> idpHints;
   final Map<String, String> functions;
   final Map<String, Division> divisions;
 
@@ -27,10 +28,20 @@ class Organization extends Equatable {
     @required this.name,
     @required this.alias,
     @required this.pattern,
+    @required this.idpHints,
     @required this.functions,
     @required this.divisions,
     @required this.talkGroups,
-  }) : super([name, alias, pattern, functions, divisions, talkGroups]);
+  }) : super([
+          id,
+          name,
+          alias,
+          pattern,
+          idpHints,
+          functions,
+          divisions,
+          talkGroups,
+        ]);
 
   /// Factory constructor for creating a new `Organization` instance
   factory Organization.fromJson(Map<String, dynamic> json) => _$OrganizationFromJson(json);

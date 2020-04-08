@@ -17,7 +17,9 @@ class AppConfig extends Equatable {
   final bool demo;
   final String demoRole;
   final String sentryDns;
-  final bool onboarding;
+  final bool onboarded;
+  final bool firstSetup;
+  final String organization;
   final String division;
   final String department;
   final List<String> talkGroups;
@@ -42,9 +44,11 @@ class AppConfig extends Equatable {
     @required this.sentryDns,
     this.demo,
     this.demoRole,
-    this.onboarding = true,
+    this.onboarded = false,
+    this.firstSetup = false,
     this.storage = false,
     this.locationWhenInUse = false,
+    this.organization = Defaults.organization,
     this.division = Defaults.division,
     this.department = Defaults.department,
     List<String> talkGroups = const <String>[],
@@ -67,7 +71,9 @@ class AppConfig extends Equatable {
           udid,
           demo,
           demoRole,
-          onboarding,
+          onboarded,
+          firstSetup,
+          organization,
           division,
           department,
           talkGroups ?? const <String>[],
@@ -97,7 +103,9 @@ class AppConfig extends Equatable {
     bool demo,
     String sentry,
     String demoRole,
-    bool onboarding,
+    bool onboarded,
+    bool firstSetup,
+    String organization,
     String division,
     String department,
     List<String> talkGroups,
@@ -122,7 +130,9 @@ class AppConfig extends Equatable {
       sentryDns: sentry ?? this.sentryDns,
       demo: demo ?? this.demo,
       demoRole: demoRole ?? this.demoRole,
-      onboarding: onboarding ?? this.onboarding,
+      onboarded: onboarded ?? this.onboarded,
+      firstSetup: firstSetup ?? this.firstSetup,
+      organization: organization ?? this.organization,
       division: division ?? this.division,
       department: department ?? this.department,
       talkGroups: talkGroups ?? this.talkGroups,

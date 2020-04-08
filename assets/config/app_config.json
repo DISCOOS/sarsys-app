@@ -1,7 +1,9 @@
 {
   "demo": true,
   "demoRole": "Commander",
-  "onboarding": true,
+  "onboarded": false,
+  "firstSetup": false,
+  "organization": "61",
   "division": "140",
   "department": "141",
   "talkGroupCatalog": "Oslo",

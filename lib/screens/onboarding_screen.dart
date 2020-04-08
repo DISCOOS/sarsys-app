@@ -1,141 +1,263 @@
+import 'dart:async';
+
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intro_views_flutter/Models/page_view_model.dart';
-import 'package:intro_views_flutter/intro_views_flutter.dart';
 
+/// Screen implementing the Top user benefits model in Material Design, see
+/// https://material.io/design/communication/onboarding.html#top-user-benefits-model
+///
+/// Code is based on
+/// https://medium.com/aubergine-solutions/create-an-onboarding-page-indicator-in-3-minutes-in-flutter-a2bd97ceeaff
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key key}) : super(key: key);
-
   @override
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  final controller = PageController();
+
+  Timer timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleScroll();
+    controller.addListener(() {
+      _scheduleScroll();
+    });
+  }
+
+  Timer _scheduleScroll() {
+    timer ??= Timer(Duration(seconds: 3), () {
+      if (mounted) {
+        if (index < views.length - 1) {
+          index++;
+        } else {
+          index = 0;
+        }
+
+        controller.animateToPage(
+          index,
+          curve: Curves.linearToEaseOut,
+          duration: Duration(milliseconds: 450),
+        );
+        timer = null;
+        _scheduleScroll();
+      }
+    });
+    return timer;
+  }
+
+  int index = 0;
+
+  List<Widget> views;
+
   @override
   Widget build(BuildContext context) {
-    SizeConfig().init(context);
-    return IntroViewsFlutter(
-      [
-        _buildWelcomePage(),
-        _buildRationale(),
-        _buildFinishPage(),
-      ],
-      showSkipButton: true,
-      fullTransition: 200,
-      doneButtonPersist: true,
-      doneText: Text('OPPSETT'),
-      pageButtonTextStyles: TextStyle(
-        color: Colors.white,
-        fontSize: 14.0,
+    SizeConfig.init(context);
+    views = [
+      _buildTopBenefit(
+        asset: 'map.png',
+        rationale: 'Enkelt å bruke',
+        statement: 'Standardisert og komplett støtteverktøy',
       ),
-      columnMainAxisAlignment: MainAxisAlignment.start,
-      onTapDoneButton: () async {
-        final configBloc = BlocProvider.of<AppConfigBloc>(context);
-        await configBloc.update(
-          onboarding: false,
-        );
-        final authn = BlocProvider.of<UserBloc>(context).isReady;
-        Navigator.pushReplacementNamed(context, authn ? 'incidents' : 'login');
-      },
+      _buildTopBenefit(
+        asset: 'sar-team-2.png',
+        rationale: 'Digital samvirke',
+        statement: 'For alle i redningstjenesten',
+      ),
+      _buildTopBenefit(
+        asset: 'cabin.png',
+        rationale: 'Alltid klar til bruk',
+        statement: 'Sikkert, robust og tilgjengelig offline',
+      ),
+    ];
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(0.0),
+            child: Stack(
+              alignment: AlignmentDirectional.bottomCenter,
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: _buildTitle(),
+                ),
+                FractionallySizedBox(
+                  heightFactor: 0.8,
+                  child: PageView.builder(
+                    pageSnapping: true,
+                    itemCount: views.length,
+                    physics: ClampingScrollPhysics(),
+                    onPageChanged: (int page) {
+                      getChangedPageAndMoveBar(page);
+                    },
+                    controller: controller,
+                    itemBuilder: (context, index) {
+                      return views[index];
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
-  PageViewModel _buildWelcomePage() => PageViewModel(
-        pageColor: const Color(0xFF749859),
-        title: _buildTitle('SARSYS'),
-        mainImage: _buildIcon(
-          'map.png',
+  Column _buildBottomBar() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.only(top: 56, bottom: 24.0),
+          child: Center(
+            child: Container(
+              height: 42,
+              child: RaisedButton(
+                child: Text('KOM I GANG'),
+                onPressed: () async {
+                  timer?.cancel();
+                  timer = null;
+                  final configBloc = BlocProvider.of<AppConfigBloc>(context);
+                  await configBloc.update(
+                    onboarded: true,
+                  );
+                  Navigator.pushReplacementNamed(context, 'first_setup');
+                },
+              ),
+            ),
+          ),
         ),
-        body: _buildText(
-          'Søk og redning gjort enkelt',
-          factor: 4,
-          fontWeight: FontWeight.normal,
+        Container(
+          height: 56,
+          child: Stack(
+            alignment: AlignmentDirectional.center,
+            children: <Widget>[
+              Container(
+                margin: EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    for (int i = 0; i < views.length; i++) if (i == index) ...[circleBar(true)] else circleBar(false),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+      ],
+    );
+  }
 
-  PageViewModel _buildRationale() => PageViewModel(
-        pageColor: Colors.orange[600],
-        title: _buildTitle('SARSYS'),
-        mainImage: _buildIcon(
-          'sar-team-2.png',
-        ),
-        body: _buildWithHeadline(
-          'Digitalt samvirke',
-          'Standardisert og for alle i redningstjenesten',
-        ),
-      );
+  Widget _buildTitle() {
+    final primaryColor = Theme.of(context).primaryColor;
+    final textTheme = Theme.of(context).textTheme;
+    final titleStyle = textTheme.title.copyWith(
+      color: primaryColor,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 1.1,
+      fontSize: SizeConfig.safeBlockVertical * 8,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 32.0),
+      child: Text(
+        'SARSYS',
+        style: titleStyle,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 
-  PageViewModel _buildFinishPage() => PageViewModel(
-        pageColor: Color(0xFF7bd4ff),
-        title: _buildTitle('SARSYS'),
-        mainImage: _buildIcon(
-          'cabin.png',
-        ),
-        body: _buildWithHeadline(
-          'Alltid klar til bruk',
-          'Sikkert, robust og offline',
-        ),
-      );
+  Widget _buildTopBenefit({String asset, String rationale, String statement}) {
+    final primaryColor = Theme.of(context).primaryColor;
+    final textTheme = Theme.of(context).textTheme;
+    final rationaleStyle = textTheme.title.copyWith(
+      color: primaryColor,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 1.1,
+      fontSize: SizeConfig.safeBlockVertical * 4.0,
+    );
+    final statementStyle = Theme.of(context).textTheme.subtitle.copyWith(
+          fontSize: SizeConfig.safeBlockVertical * 2.5,
+        );
 
-  Container _buildWithHeadline(String title, String statement) => Container(
-        alignment: Alignment.center,
-        child: Stack(
-          overflow: Overflow.visible,
-          children: <Widget>[
-            Positioned(
-              top: -32,
-              child: Container(
-                width: SizeConfig.screenWidth - 32,
+    return FractionallySizedBox(
+      widthFactor: 0.9,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: _buildIcon(asset),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.only(top: SizeConfig.safeBlockVertical),
                 child: Center(
-                  child: _buildText(
-                    title,
-                    factor: 5.0,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    rationale,
+                    style: rationaleStyle,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: _buildText(
-                statement,
-                factor: 3.5,
-                fontWeight: FontWeight.normal,
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: Text(
+                    statement,
+                    style: statementStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildTitle(String text) => _buildText(
-        text,
-        factor: 8,
-        fontWeight: FontWeight.w700,
-      );
-
-  Widget _buildText(
-    String statement, {
-    double factor = 4.5,
-    FontWeight fontWeight = FontWeight.normal,
-  }) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
-        child: Text(statement,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: fontWeight,
-              color: Colors.white,
-              fontSize: SizeConfig.safeBlockVertical * factor * (SizeConfig.isPortrait ? 1 : 1.2),
-            )),
-      );
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Image _buildIcon(String asset) => Image.asset(
         'assets/images/$asset',
-        height: SizeConfig.blockSizeVertical * 20 * (SizeConfig.isPortrait ? 1 : 2.5),
+        height: SizeConfig.blockSizeVertical * 30 * (SizeConfig.isPortrait ? 1 : 2.5),
         width: SizeConfig.blockSizeHorizontal * 60 * (SizeConfig.isPortrait ? 1 : 2.5),
         alignment: Alignment.center,
       );
+
+  Widget circleBar(bool isActive) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 150),
+      margin: EdgeInsets.symmetric(horizontal: 8),
+      height: isActive ? 8 : 7,
+      width: isActive ? 8 : 7,
+      decoration: BoxDecoration(
+        color: isActive ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.2),
+        borderRadius: BorderRadius.all(
+          Radius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  void getChangedPageAndMoveBar(int page) {
+    index = page;
+    setState(() {});
+  }
 }

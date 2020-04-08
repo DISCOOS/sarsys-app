@@ -31,15 +31,6 @@ class AppDrawer extends StatelessWidget {
               backgroundColor: Theme.of(context).accentColor,
               child: avatar,
             ),
-//            otherAccountsPictures: <Widget>[
-//              GestureDetector(
-//                child: CircleAvatar(
-//                  backgroundColor: Theme.of(context).accentColor,
-//                  child: Icon(Icons.person_add),
-//                ),
-//                onTap: () {},
-//              )
-//            ],
           ),
           ListTile(
             leading: const Icon(Icons.format_list_bulleted),
@@ -91,7 +82,7 @@ class AppDrawer extends StatelessWidget {
           ),
           Divider(),
           ListTile(
-            leading: const Icon(Icons.contacts),
+            leading: const Icon(Icons.lock),
             title: Text('Logg av', style: TextStyle(fontSize: 14)),
             onTap: () async {
               await userBloc.logout();

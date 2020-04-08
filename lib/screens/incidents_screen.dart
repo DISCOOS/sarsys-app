@@ -129,11 +129,13 @@ class IncidentsPage extends StatefulWidget {
 }
 
 class _IncidentsPageState extends State<IncidentsPage> {
+  UserBloc _userBloc;
   IncidentBloc _incidentBloc;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _userBloc = BlocProvider.of<UserBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
 
@@ -242,7 +244,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 0.0),
                       child: ButtonBarTheme(
                         // make buttons use the appropriate styles for cards
                         child: ButtonBar(
@@ -250,17 +252,21 @@ class _IncidentsPageState extends State<IncidentsPage> {
                           children: <Widget>[
                             FlatButton(
                               child: Text(
-                                  isAuthorized ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG') : 'LÅS OPP',
+                                  isAuthorized
+                                      ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG')
+                                      : _userBloc.user.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
                                   style: TextStyle(fontSize: 14.0)),
-                              padding: EdgeInsets.only(left: 16.0),
+                              padding: EdgeInsets.only(left: isAuthorized ? 0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              onPressed: () {
-                                if (isAuthorized) {
-                                  _selectAndReroute(incident);
-                                } else {
-                                  Navigator.push(context, PasscodeRoute(incident));
-                                }
-                              },
+                              onPressed: isAuthorized
+                                  ? () {
+                                      if (isAuthorized) {
+                                        _selectAndReroute(incident);
+                                      } else {
+                                        Navigator.push(context, PasscodeRoute(incident));
+                                      }
+                                    }
+                                  : null,
                             ),
                           ],
                         ),
@@ -273,7 +279,19 @@ class _IncidentsPageState extends State<IncidentsPage> {
                     Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
+                          if (userBloc.user.isAuthor(incident) || !userBloc.user.hasRoles)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                userBloc.user.isAuthor(incident) || userBloc.user.hasRoles
+                                    ? 'Min hendelse'
+                                    : 'Ingen roller',
+                                style: Theme.of(context).textTheme.caption,
+                              ),
+                            ),
                           Icon(
                             isAuthorized ? Icons.lock_open : Icons.lock,
                             color: isAuthorized ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),

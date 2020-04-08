@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/size_config.dart';
+import 'package:SarSys/icons.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/catcher_plugin.dart';
@@ -31,12 +35,40 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   static const color = Color(0xFF0d2149);
   final _formKey = GlobalKey<FormState>();
 
+  User _user;
   String _pin = "";
   String _username = "";
+
+  /// Login flow
+  /// Indicates that new user was requested
+  bool _newUser = false;
+
+  /// Change pin: state 1
+  /// Forces user to enter current pin before changing it
+  bool get verifyPin => changePin && !_newPin;
+
+  /// Change pin: state 2
+  /// Enter New pin step
+  bool _newPin = false;
+
+  /// Change pin: state 3
+  /// Confirm new pin step
+  bool _confirmPin = false;
+
+  /// Change pin: state 1 and 3
+  /// Test result for each digit entered
   bool _wrongPin = false;
-  bool _verifyPin = false;
-  bool _securePin = false;
+
+  /// All flows
+  /// Indicates that previously entered pin was cleared
+  bool _pinCleared = false;
+
+  /// All flows
+  /// Indicates that all four digits are entered
   bool _pinComplete = false;
+
+  /// All flows
+  /// State for async result processing from [UserState] stream
   bool _popWhenReady = false;
 
   UserError _lastError;
@@ -44,10 +76,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   AnimationController _animController;
   StreamSubscription<UserState> _subscription;
 
-  ScrollController _scrollController = ScrollController();
-  FocusNode _focusNode = FocusNode();
-  _PinTextEditingController _pinController = _PinTextEditingController();
+  FocusNode _focusNode;
+  ScrollController _scrollController;
+  _PinTextEditingController _pinController;
 
+  bool get newUser => _newUser;
   bool get automatic => LoginType.automatic == widget.type;
   bool get changePin => LoginType.changePin == widget.type;
   bool get switchUser => LoginType.switchUser == widget.type;
@@ -62,7 +95,30 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   @override
+  void initState() {
+    _focusNode = FocusNode();
+    _scrollController = ScrollController();
+    _pinController = _PinTextEditingController();
+
+    super.initState();
+  }
+
+  TextTheme textTheme;
+  TextStyle titleStyle;
+  TextStyle emailStyle;
+
+  @override
   Widget build(BuildContext context) {
+    SizeConfig.init(context);
+    textTheme ??= Theme.of(context).textTheme;
+    titleStyle ??= textTheme.subhead.copyWith(
+      fontSize: SizeConfig.safeBlockVertical * 2.5,
+    );
+    emailStyle ??= textTheme.body1.copyWith(
+      color: textTheme.caption.color,
+      fontSize: SizeConfig.safeBlockVertical * 2.1,
+    );
+
     UserBloc bloc = _toBloc(context);
     return StreamBuilder<UserState>(
         stream: bloc.state,
@@ -70,9 +126,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           return Scaffold(
             backgroundColor: Colors.grey[300],
             appBar: !automatic && bloc.isReady ? _buildAppBar(context) : null,
-            body: Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: Center(
+            body: Center(
+              child: FractionallySizedBox(
+                alignment: Alignment.center,
+                widthFactor: 0.90,
+                heightFactor: 0.90,
                 child: Material(
                   elevation: 4,
                   borderRadius: BorderRadius.circular(4.0),
@@ -94,7 +152,9 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
-        title: Text(automatic ? 'Logg på' : changePin ? 'Endre pin' : 'Bytt bruker'),
+        title: Text(
+          automatic ? 'Logg på' : changePin ? 'Endre pin' : (newUser ? 'Ny bruker' : 'Bytt bruker'),
+        ),
         centerTitle: false,
         automaticallyImplyLeading: true,
         leading: IconButton(
@@ -210,6 +270,28 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     return fields..add(_buildAuthenticate(bloc));
   }
 
+  Widget _buildDivider() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: Stack(
+        children: [
+          Divider(),
+          Center(
+            child: Container(
+              color: theme.colorScheme.surface,
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'ELLER',
+                style: theme.textTheme.caption,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   bool _isError(UserBloc bloc) => bloc.currentState is UserException;
 
   Widget _buildErrorText(UserBloc bloc) => Padding(
@@ -235,15 +317,13 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     return '';
   }
 
-  SafeArea _buildTitle(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Text(
-            "SARSys",
-            style: _toStyle(context, 42, FontWeight.bold),
-          ),
+  Widget _buildTitle(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: Text(
+          "SARSys",
+          style: _toStyle(context, 42, FontWeight.bold),
         ),
       ),
     );
@@ -263,8 +343,8 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Image _buildIcon() => Image.asset(
         'assets/images/sar-team-2.png',
-        height: 200.0,
-        width: 200.0,
+        height: SizeConfig.blockSizeVertical * 20 * (SizeConfig.isPortrait ? 1 : 2.5),
+        width: SizeConfig.blockSizeHorizontal * 40 * (SizeConfig.isPortrait ? 1 : 2.5),
         alignment: Alignment.center,
       );
 
@@ -295,26 +375,24 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildSecure(UserBloc bloc) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
-          if (_verifyPin) {
-            if (!_securePin) {
-              _securePin = true;
-              _pinController.clear();
-            }
-          }
+          _doClearPin();
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildFullName(bloc),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24.0),
+                child: _buildFullName(bloc.user),
+              ),
               Text(
                 _toPinText(),
-                style: _toStyle(context, 22, FontWeight.bold, color: _wrongPin && _pinComplete ? Colors.red : null),
+                style: _toPinTextStyle(context),
                 textAlign: TextAlign.center,
               ),
               _buildPinInput(
                 bloc,
                 setState: setState,
               ),
-              _verifyPin
+              verifyPin || _confirmPin
                   ? _buildSecureAction(bloc, enabled: !_wrongPin && _pinComplete)
                   : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
             ],
@@ -322,45 +400,69 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         },
       );
 
-  String _toPinText() => _verifyPin
-      ? (_wrongPin ? 'Riktig pinkode er $_pin' : 'Pinkode er riktig')
-      : changePin ? 'Endre pin' : 'Oppgi ny pinkode';
+  TextStyle _toPinTextStyle(BuildContext context) => _toStyle(
+        context,
+        22,
+        FontWeight.bold,
+        color: _wrongPin && _pinComplete ? Colors.red : null,
+      );
+
+  void _doClearPin() {
+    if (_confirmPin) {
+      if (!_pinCleared) {
+        _pinCleared = true;
+        _pinController.clear();
+      }
+    }
+  }
+
+  String _toPinText() {
+    if (verifyPin) {
+      return _wrongPin ? 'Feil pin' : 'Oppgi din pinkode';
+    }
+    if (_confirmPin) {
+      return _wrongPin ? 'Bekreft ny pinkode er $_pin' : 'Pinkode er bekreftet';
+    }
+    return changePin ? 'Endre din pinkode' : 'Oppgi din nye pinkode';
+  }
 
   Widget _buildNewPinAction(UserBloc bloc, StateSetter setState, {bool enabled}) => _buildAction(
         'FORTSETT',
         () {
           _pinComplete = false;
           _focusNode.requestFocus();
-          setState(() => _verifyPin = true);
+          setState(() => _confirmPin = true);
         },
         enabled: enabled,
       );
 
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
-        'ENDRE',
+        verifyPin ? 'BEKREFT' : 'ENDRE',
         () async {
           try {
-            await bloc.secure(
-              Security.fromPin(_pin),
-            );
-            _resetPin();
-            _popTo(context);
+            if (verifyPin) {
+              _pinComplete = false;
+              _focusNode.requestFocus();
+              _wrongPin = _pin != bloc.user?.security?.pin;
+              setState(() {
+                _pin = '';
+                _pinController.clear();
+                _newPin = !_wrongPin;
+              });
+            } else {
+              _popTo(context);
+              await bloc.secure(_pin, locked: false);
+            }
           } on Exception {/* Is handled by StreamBuilder */}
         },
         enabled: enabled,
       );
 
-  void _resetPin() {
-    _pin = "";
-    _username = "";
-    _wrongPin = false;
-    _verifyPin = false;
-    _securePin = false;
-    _pinComplete = false;
-  }
-
   List<Widget> _buildUnlock(UserBloc bloc) => [
-        _buildFullName(bloc),
+        Padding(
+          padding: EdgeInsets.only(bottom: 16.0),
+          child: _buildFullName(bloc.user),
+        ),
         Text(
           'Lås opp med pinkode',
           style: _toStyle(context, 22, FontWeight.bold),
@@ -369,14 +471,33 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         _buildPinInput(bloc),
       ];
 
-  Widget _buildFullName(UserBloc bloc) => Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Text(
-          bloc.user.fullName,
-          style: _toStyle(context, 16, FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
+  Widget _buildFullName(User user) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Text(
+              user.fullName,
+              style: titleStyle,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              user.email,
+              style: emailStyle,
+            ),
+          ),
+        ],
       );
+
+//  Widget _buildFullName(User user) => Padding(
+//        padding: const EdgeInsets.only(bottom: 16.0),
+//        child: Text(
+//          user.fullName,
+//          style: _toStyle(context, 16, FontWeight.bold),
+//          textAlign: TextAlign.center,
+//        ),
+//      );
 
   Widget _buildPinInput(UserBloc bloc, {StateSetter setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
@@ -412,7 +533,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   void _onCompleted(String value, StateSetter setState) {
-    if (!_verifyPin) {
+    if (!_confirmPin) {
       _pin = value;
     }
     _pinComplete = true;
@@ -440,20 +561,86 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     }
   }
 
-  Widget _buildAuthenticate(UserBloc bloc) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Logg på med din organisasjonskonto',
-            style: _toStyle(context, 22, FontWeight.bold),
-            textAlign: TextAlign.center,
+  Widget _buildAuthenticate(UserBloc bloc) => FutureBuilder<Organization>(
+      future: FleetMapService().fetchOrganization(
+        bloc.service.configBloc.config.organization,
+      ),
+      builder: (context, snapshot) {
+        final org = snapshot.data;
+        return snapshot.hasData
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Logg på med ${newUser ? 'ny' : 'din'} organisasjonskonto',
+                    style: _toStyle(context, 18, FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        if (bloc.isPersonal || org.idpHints.contains('rodekors'))
+                          _buildAction(
+                            'MED RØDE KORS',
+                            () => _authenticate(
+                              bloc,
+                              idpHint: 'rodekors',
+                            ),
+                            color: Colors.red[900],
+                            icon: _toIcon(
+                              SarSysIcons.rkh,
+                              Colors.red[900],
+                            ),
+                            validate: false,
+                          ),
+                        if (bloc.isPersonal)
+                          _buildAction(
+                            'MED GOOGLE',
+                            () => _authenticate(
+                              bloc,
+                              idpHint: 'google',
+                            ),
+                            icon: Padding(
+                              padding: const EdgeInsets.only(right: 18.0),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                color: Colors.white,
+                                child: Image.asset(
+                                  'assets/images/google.png',
+                                ),
+                              ),
+                            ),
+                            type: OutlineButton,
+                            validate: false,
+                          ),
+                        _buildDivider(),
+                      ],
+                    ),
+                  ),
+                  _buildUserInput(bloc),
+                  Flexible(
+                    child: _buildAuthenticateAction(bloc),
+                  ),
+                ],
+              )
+            : Container();
+      });
+
+  Padding _toIcon(IconData icon, Color color) => Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 24.0),
+        child: Container(
+          padding: EdgeInsets.all(8).copyWith(left: 9),
+          color: Colors.white,
+          child: Icon(
+            icon,
+            size: 8.0,
+            color: color,
           ),
-          _buildUserInput(bloc),
-          Flexible(
-            child: _buildAuthenticateAction(bloc),
-          ),
-        ],
+        ),
       );
 
   Widget _buildUserInput(UserBloc bloc) =>
@@ -461,24 +648,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildPrivateUseInput(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(top: 24.0),
-        child: FutureBuilder<ServiceResponse<List<User>>>(
-            future: bloc.service.loadAll(),
-            builder: (context, snapshot) {
-              return snapshot.data?.is200 == true
-                  ? snapshot.data.body.isEmpty
-                      ? _buildEmailTextField
-                      : buildDropDownField<String>(
-                          attribute: 'email',
-                          label: 'Påloggingsadresse',
-                          initialValue: 'kenneth@discoos.org',
-                          items: _emailItems ??= _buildEmailItems(),
-                          onChanged: (value) => _username = value,
-                          validators: [
-                            (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
-                          ],
-                        )
-                  : _buildEmailTextField();
-            }),
+        child: _buildEmailTextField(),
       );
 
   Widget _buildSharedUseInput(UserBloc bloc) => Padding(
@@ -487,32 +657,69 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             future: bloc.service.loadAll(),
             builder: (context, snapshot) {
               return snapshot.data?.is200 == true
-                  ? snapshot.data.body.isEmpty
-                      ? _buildEmailTextField
+                  ? _newUser || snapshot.data.body.isEmpty
+                      ? _buildEmailTextField()
                       : buildDropDownField<String>(
                           attribute: 'email',
-                          label: 'Påloggingsadresse',
-                          initialValue: 'kenneth@discoos.org',
-                          items: _emailItems ??= _buildEmailItems(),
-                          onChanged: (value) => _username = value,
-                          validators: [
-                            (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
-                          ],
+                          isDense: false,
+                          initialValue: _setUser(
+                            bloc,
+                            snapshot.data.body.first,
+                          ),
+                          items: _buildUserItems(
+                            snapshot.data.body,
+                          ),
+                          onChanged: (value) {
+                            final user = snapshot.data.body.firstWhere(
+                              (user) => user.userId == value,
+                              orElse: () => null,
+                            );
+                            _setUser(bloc, user);
+                          },
+                          validators: [],
                         )
                   : _buildEmailTextField();
             }),
       );
 
-  List<DropdownMenuItem<String>> _emailItems;
+  String _setUser(UserBloc bloc, User user) {
+    _user = user ?? bloc.user;
+    _username = _user.uname;
+    return _user.userId;
+  }
 
-  List<DropdownMenuItem<String>> _buildEmailItems() => ['kenneth@discoos.org']
-      .map(
-        (String email) => DropdownMenuItem(
-          value: email,
-          child: Text(email),
+  List<DropdownMenuItem<String>> _buildUserItems(List<User> users) {
+    final items = users
+        .map(
+          (user) => DropdownMenuItem(
+            value: user.userId,
+            child: _buildFullName(user),
+          ),
+        )
+        .toList();
+    return items
+      ..add(DropdownMenuItem(
+        child: Stack(
+          children: [
+            OutlineButton(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.person_add),
+                  Padding(
+                    padding: EdgeInsets.only(left: SizeConfig.safeBlockHorizontal * 4),
+                    child: Text('LEGG TIL NY BRUKER'),
+                  ),
+                ],
+              ),
+              onPressed: () {
+                setState(() => _newUser = true);
+              },
+            ),
+          ],
         ),
-      )
-      .toList();
+      ));
+  }
 
   TextFormField _buildEmailTextField() => TextFormField(
         maxLines: 1,
@@ -531,42 +738,143 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   Widget _buildAuthenticateAction(UserBloc bloc) => _buildAction(
         'FORTSETT',
         () async {
-          try {
-            _popWhenReady = true;
-            await bloc.authenticate(username: _username);
-            if (bloc.isUnlocked) {
-              await bloc.lock();
-            }
-          } on Exception {/* Is handled by StreamBuilder */}
+          await _authenticate(bloc);
         },
       );
 
-  Widget _buildAction(String label, Function() onPressed, {bool enabled = true}) => Container(
+  Future _authenticate(UserBloc bloc, {String idpHint}) async {
+    try {
+      _popWhenReady = true;
+      await bloc.authenticate(
+        username: _username,
+        userId: _user?.userId,
+        idpHint: idpHint,
+      );
+      if (bloc.isUnlocked) {
+        await bloc.lock();
+      }
+    } on Exception {
+      _newUser = false;
+    }
+  }
+
+  Widget _buildAction(
+    String label,
+    Function() onPressed, {
+    bool enabled = true,
+    Type type = RaisedButton,
+    Widget icon,
+    Color color = const Color.fromRGBO(00, 41, 73, 1),
+    bool validate = true,
+  }) =>
+      Container(
         constraints: BoxConstraints(
-          minHeight: 72,
-          maxHeight: 72,
+          minHeight: 56,
+          maxHeight: 56,
           minWidth: 215,
         ),
         child: Padding(
           padding: EdgeInsets.only(top: 16.0),
-          child: RaisedButton(
-            elevation: 2.0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
-            color: Color.fromRGBO(00, 41, 73, 1),
-            child: Text(label, style: TextStyle(fontSize: 20.0, color: Colors.white)),
-            onPressed: enabled
-                ? () {
-                    if (_validateAndSave()) {
-                      FocusScopeNode currentFocus = FocusScope.of(context);
-                      if (!currentFocus.hasPrimaryFocus) {
-                        currentFocus.unfocus();
-                      }
-                      onPressed();
-                    }
-                  }
-                : null,
+          child: _buildButton(
+            color,
+            label,
+            enabled,
+            onPressed,
+            type,
+            icon: icon,
+            validate: validate,
           ),
         ),
+      );
+
+  Widget _buildButton(
+    Color color,
+    String label,
+    bool enabled,
+    onPressed(),
+    Type type, {
+    Widget icon,
+    bool validate = true,
+  }) {
+    if (type == OutlineButton) {
+      return _buildOutlineButton(
+        label,
+        enabled,
+        onPressed,
+        icon: icon,
+        validate: validate,
+      );
+    }
+    return _buildRaisedButton(
+      color,
+      label,
+      enabled,
+      onPressed,
+      icon: icon,
+      validate: validate,
+    );
+  }
+
+  Widget _buildRaisedButton(
+    Color color,
+    String label,
+    bool enabled,
+    onPressed(), {
+    Widget icon,
+    bool validate = true,
+  }) =>
+      RaisedButton(
+        color: color,
+        elevation: 2.0,
+        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+        child: Row(
+          mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
+          children: <Widget>[
+            if (icon != null) icon,
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.8, color: Colors.white),
+                textAlign: icon == null ? TextAlign.center : TextAlign.left,
+              ),
+            ),
+          ],
+        ),
+        onPressed: enabled ? () => _onActionPressed(validate, onPressed) : null,
+      );
+
+  void _onActionPressed(bool validate, onPressed()) {
+    if (!validate || _validateAndSave()) {
+      FocusScopeNode currentFocus = FocusScope.of(context);
+      if (!currentFocus.hasPrimaryFocus) {
+        currentFocus.unfocus();
+      }
+      onPressed();
+    }
+  }
+
+  Widget _buildOutlineButton(
+    String label,
+    bool enabled,
+    onPressed(), {
+    Widget icon,
+    bool validate = true,
+  }) =>
+      OutlineButton(
+        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+        child: Row(
+          mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
+          children: <Widget>[
+            if (icon != null) icon,
+            Text(
+              label,
+              style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.8),
+              textAlign: icon == null ? TextAlign.center : TextAlign.left,
+            ),
+          ],
+        ),
+        onPressed: enabled ? () => _onActionPressed(validate, onPressed) : null,
       );
 
   UserBloc _toBloc(BuildContext context) {
