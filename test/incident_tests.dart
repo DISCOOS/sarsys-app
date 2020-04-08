@@ -14,9 +14,16 @@ import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+const MethodChannel udidChannel = MethodChannel('flutter_udid');
+const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
 
 void main() async {
   // Required since provider need access to service bindings prior to calling 'test()'
@@ -28,6 +35,17 @@ void main() async {
     final Uint8List encoded = utf8.encoder.convert(file.readAsStringSync());
     return Future.value(encoded.buffer.asByteData());
   });
+
+  final udid = Uuid().v4();
+  udidChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+    return udid;
+  });
+  pathChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+    return ".";
+  });
+
+  // All services are caching using hive
+  await Hive.initFlutter();
 
   // Initialize shared preferences for testing
   SharedPreferences.setMockInitialValues({});
