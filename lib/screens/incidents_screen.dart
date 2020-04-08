@@ -254,11 +254,11 @@ class _IncidentsPageState extends State<IncidentsPage> {
                               child: Text(
                                   isAuthorized
                                       ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG')
-                                      : _userBloc.user.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
+                                      : _userBloc.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
                                   style: TextStyle(fontSize: 14.0)),
                               padding: EdgeInsets.only(left: isAuthorized ? 0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              onPressed: isAuthorized
+                              onPressed: isAuthorized || _userBloc.hasRoles
                                   ? () {
                                       if (isAuthorized) {
                                         _selectAndReroute(incident);
@@ -282,13 +282,11 @@ class _IncidentsPageState extends State<IncidentsPage> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          if (userBloc.user.isAuthor(incident) || !userBloc.user.hasRoles)
+                          if (userBloc.isAuthor(incident) || !userBloc.hasRoles)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                userBloc.user.isAuthor(incident) || userBloc.user.hasRoles
-                                    ? 'Min hendelse'
-                                    : 'Ingen roller',
+                                userBloc.isAuthor(incident) || userBloc.hasRoles ? 'Min hendelse' : 'Ingen roller',
                                 style: Theme.of(context).textTheme.caption,
                               ),
                             ),

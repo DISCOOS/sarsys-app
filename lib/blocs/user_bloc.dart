@@ -30,6 +30,12 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   User get user => _user;
   User _user;
 
+  /// Check if user has roles
+  bool get hasRoles => _user?.hasRoles == true;
+
+  /// Check if user has roles
+  bool isAuthor(Incident incident) => _user?.isAuthor(incident) == true;
+
   /// Check if application is running on a shared device (multiple uses accounts allowed)
   bool get isShared => SecurityMode.shared == service.configBloc.config.securityMode;
 

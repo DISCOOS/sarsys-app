@@ -80,7 +80,7 @@ class User extends Equatable {
     final jwt = JwtClaim.fromMap(json);
     final claims = [
       if (json.hasPath('roles')) ...json['roles'],
-      if (json.hasPath('realm_access/roles')) ...json.elementAt('realm_access/roles'),
+      if (json.hasPath('realm_access_roles')) ...json.elementAt('realm_access_roles'),
     ];
     final roles = List<UserRole>.from(_toRoles(claims));
     return User(

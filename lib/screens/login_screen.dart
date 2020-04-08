@@ -126,21 +126,23 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           return Scaffold(
             backgroundColor: Colors.grey[300],
             appBar: !automatic && bloc.isReady ? _buildAppBar(context) : null,
-            body: Center(
-              child: FractionallySizedBox(
-                alignment: Alignment.center,
-                widthFactor: 0.90,
-                heightFactor: 0.90,
-                child: Material(
-                  elevation: 4,
-                  borderRadius: BorderRadius.circular(4.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
+            body: SafeArea(
+              child: Center(
+                child: FractionallySizedBox(
+                  alignment: Alignment.center,
+                  widthFactor: 0.90,
+                  heightFactor: 0.90,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(4.0),
                     child: Container(
-                      child: _buildBody(context, bloc),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      child: Container(
+                        child: _buildBody(context, bloc),
+                      ),
                     ),
                   ),
                 ),
