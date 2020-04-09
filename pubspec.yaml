@@ -72,6 +72,7 @@ dependencies:
   hive: ^1.4.1+1
   hive_flutter: ^0.3.0+2
   flutter_udid: ^1.0.1
+  simple_gravatar: ^1.0.5
 
   # Mocking support
   uuid: ^2.0.2
