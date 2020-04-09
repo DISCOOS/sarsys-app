@@ -137,7 +137,11 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.phonelink_lock),
             title: Text('Endre pin', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              Navigator.pushReplacementNamed(context, 'change/pin');
+              Navigator.popAndPushNamed(
+                context,
+                'change/pin',
+                arguments: {'popOnClose': true},
+              );
             },
           ),
           Divider(),
@@ -145,8 +149,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.settings),
             title: Text('Innstillinger', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, 'settings');
+              Navigator.popAndPushNamed(context, 'settings');
             },
           ),
         ],

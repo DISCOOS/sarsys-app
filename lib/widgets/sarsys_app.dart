@@ -192,7 +192,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child = LoginScreen();
         break;
       case 'change/pin':
-        child = LoginScreen(type: LoginType.changePin);
+        child = LoginScreen(
+          type: LoginType.changePin,
+          popOnClose: toArgument(settings, 'popOnClose', defaultValue: false),
+        );
         break;
       case 'switch/user':
         child = LoginScreen(type: LoginType.switchUser);
@@ -233,6 +236,14 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         break;
     }
     return child;
+  }
+
+  T toArgument<T>(RouteSettings settings, String path, {T defaultValue}) {
+    if (settings.arguments is Map) {
+      final arguments = settings.arguments as Map<String, dynamic>;
+      return arguments.hasPath(path) ? arguments.elementAt(path) as T : defaultValue;
+    }
+    return defaultValue;
   }
 
   WidgetBuilder _toChecked(Widget child) => (context) => _buildWithProviders(

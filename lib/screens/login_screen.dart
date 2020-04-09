@@ -23,9 +23,15 @@ enum LoginType {
 }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key key, this.type = LoginType.automatic, this.returnTo}) : super(key: key);
+  const LoginScreen({
+    Key key,
+    this.type = LoginType.automatic,
+    this.returnTo,
+    this.popOnClose = false,
+  }) : super(key: key);
   final LoginType type;
   final String returnTo;
+  final bool popOnClose;
 
   @override
   LoginScreenState createState() => LoginScreenState();
@@ -921,10 +927,14 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   void _popTo(BuildContext context) {
     if (!_isPopped) {
       _isPopped = true;
-      Navigator.pushReplacementNamed(
-        context,
-        widget.returnTo ?? 'incident/list',
-      );
+      if (widget.popOnClose) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacementNamed(
+          context,
+          widget.returnTo ?? 'incident/list',
+        );
+      }
     }
   }
 
