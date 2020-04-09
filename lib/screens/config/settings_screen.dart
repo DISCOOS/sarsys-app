@@ -69,13 +69,15 @@ class SettingsScreenState extends State<SettingsScreen> {
       child: StreamBuilder(
         stream: _bloc.state,
         builder: (context, snapshot) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ListView(
-              shrinkWrap: true,
-              children: _buildSettings(context),
-            ),
-          );
+          return snapshot.hasData
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: _buildSettings(context),
+                  ),
+                )
+              : CircularProgressIndicator();
         },
       ),
     );
@@ -238,9 +240,9 @@ class SettingsScreenState extends State<SettingsScreen> {
           'Dette vil logge deg ut gjennopprette fabrikkinnstillene',
         );
         if (reset) {
-          Navigator.pop(context);
           await _bloc.init();
           await BlocProvider.of<UserBloc>(context).clear();
+          Navigator.pop(context);
         }
       },
     );

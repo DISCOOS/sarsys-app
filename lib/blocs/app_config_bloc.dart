@@ -84,6 +84,10 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     return _dispatch(UpdateAppConfig(config));
   }
 
+  Future<AppConfig> clear() {
+    return _dispatch<AppConfig>(ClearAppConfig());
+  }
+
   // Dispatch and return future
   Future<T> _dispatch<T>(AppConfigCommand<T> command) {
     dispatch(command);
@@ -98,6 +102,8 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
       yield await _load(command);
     } else if (command is UpdateAppConfig) {
       yield await _update(command);
+    } else if (command is ClearAppConfig) {
+      yield await _clear(command);
     } else if (command is RaiseAppConfigError) {
       yield _toError(command, command.data);
     } else {
@@ -138,6 +144,19 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
       return _toOK(
         event,
         AppConfigUpdated(_config),
+        result: _config,
+      );
+    }
+    return _toError(event, response);
+  }
+
+  Future<AppConfigState> _clear(ClearAppConfig event) async {
+    var response = await service.clear();
+    if (response.is204) {
+      _config = null;
+      return _toOK(
+        event,
+        AppConfigEmpty(),
         result: _config,
       );
     }
@@ -195,6 +214,13 @@ class UpdateAppConfig extends AppConfigCommand<AppConfig> {
 
   @override
   String toString() => 'UpdateAppConfig {data: $data}';
+}
+
+class ClearAppConfig extends AppConfigCommand<AppConfig> {
+  ClearAppConfig() : super(null);
+
+  @override
+  String toString() => 'ClearAppConfig {}';
 }
 
 class RaiseAppConfigError extends AppConfigCommand<AppConfigError> {

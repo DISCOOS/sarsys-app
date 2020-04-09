@@ -89,7 +89,7 @@ void main() async {
   );
 
   test('Incident bloc should contain two incidents', () async {
-    List<Incident> incidents = await incidentBloc.fetch();
+    List<Incident> incidents = await incidentBloc.load();
     expect(incidents.length, 2, reason: "Bloc should return two incidents");
     expect(incidentBloc.isEmpty, isFalse, reason: "Bloc should not be empty");
     expect(incidentBloc.isUnset, isTrue, reason: "Bloc should not be in seleted state");
@@ -100,7 +100,7 @@ void main() async {
   });
 
   test('Incident bloc should be in selected state', () async {
-    List<Incident> incidents = await incidentBloc.fetch();
+    List<Incident> incidents = await incidentBloc.load();
     await incidentBloc.select(incidents.first.id);
     _assertEvents(incidentBloc, [
       emits(isA<IncidentsLoaded>()),
@@ -109,7 +109,7 @@ void main() async {
   });
 
   test('First incident should be selected in last state', () async {
-    List<Incident> incidents = await incidentBloc.fetch();
+    List<Incident> incidents = await incidentBloc.load();
     await incidentBloc.select(incidents.first.id);
     expect(incidentBloc.current, incidents.first, reason: "First incident was not selected");
     _assertEvents(incidentBloc, [
@@ -139,7 +139,7 @@ void main() async {
   });
 
   test('Should be empty and no incidents should be selected after clear', () async {
-    await incidentBloc.fetch();
+    await incidentBloc.load();
     await incidentBloc.clear();
     expect(incidentBloc.incidents.length, 0, reason: "Bloc should not containt incidents");
     expect(incidentBloc.isEmpty, isTrue, reason: "Bloc should be empty");
@@ -147,7 +147,7 @@ void main() async {
   });
 
   test('Should be selected after switching to other incident', () async {
-    List<Incident> incidents = await incidentBloc.fetch();
+    List<Incident> incidents = await incidentBloc.load();
     await incidentBloc.select(incidents.first.id);
     expect(incidentBloc.current, incidents.first, reason: "First incident was not selected");
     await incidentBloc.select(incidents.last.id);

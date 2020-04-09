@@ -28,7 +28,7 @@ class IncidentService {
   }
 
   /// DELETE ../incidents/{incidentId}
-  Future<ServiceResponse<void>> delete(Incident incident) async {
+  Future<ServiceResponse<void>> delete(String id) async {
     // TODO: Implement delete incident
     throw "Not implemented";
   }

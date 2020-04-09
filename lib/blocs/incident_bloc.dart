@@ -26,8 +26,8 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     if (_subscription != null) {
       if (!state.isUnset() && state.isUnset()) {
         dispatch(ClearIncidents(_incidents.keys.toList()));
-        if (_given != null) dispatch(UnsetIncident());
-      } else if (state.isAuthenticated()) fetch();
+        if (_given != null) dispatch(UnselectIncident());
+      } else if (state.isAuthenticated()) load();
     }
   }
 
@@ -67,7 +67,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
       .map((state) => state.data);
 
   /// Fetch incidents from [service]
-  Future<List<Incident>> fetch() async {
+  Future<List<Incident>> load() async {
     var response = await service.fetch();
     if (response.is200) {
       dispatch(ClearIncidents(_incidents.keys.toList()));
@@ -78,11 +78,13 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   /// Select given id
-  Future<void> select(String id) {
-    if (_given != id && _incidents.containsKey(id)) {
-      return _dispatch(SelectIncident(id));
-    }
-    return Future.value();
+  Future<Incident> select(String id) {
+    return _dispatch(SelectIncident(id));
+  }
+
+  /// Unselect current incident
+  Future<Incident> unselect() {
+    return _dispatch(UnselectIncident());
   }
 
   /// Create given incident
@@ -96,8 +98,8 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   /// Delete given incident
-  Future<void> delete(Incident incident) {
-    return _dispatch(DeleteIncident(incident));
+  Future<Incident> delete(String id) {
+    return _dispatch(DeleteIncident(id));
   }
 
   /// Clear all incidents
@@ -130,19 +132,17 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
         yield updated;
       }
     } else if (command is SelectIncident) {
-      if (command.data != _given && _incidents.containsKey(command.data)) {
-        yield _select(command);
-      }
+      yield _select(command);
     } else if (command is DeleteIncident) {
       final deleted = await _delete(command);
-      if (deleted.isDeleted() && command.data.id == _given) {
+      if (deleted.isDeleted() && command.data == _given) {
         yield _unset();
       }
       yield deleted;
     } else if (command is ClearIncidents) {
       yield _clear(command);
-    } else if (command is UnsetIncident) {
-      yield _unset();
+    } else if (command is UnselectIncident) {
+      yield _unset(event: command);
     } else if (command is RaiseIncidentError) {
       yield command.data;
     } else {
@@ -190,17 +190,29 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Future<IncidentState> _delete(DeleteIncident event) async {
     var response = await service.delete(event.data);
     if (response.is204) {
-      if (_incidents.remove(event.data.id) == null) {
+      final incident = _incidents.remove(event.data);
+      if (incident == null) {
         return _toError(event, "Failed to delete incident $event, not found locally");
       }
       // All tracking is removed by listening to this event in TrackingBloc
-      return _toOK(event, IncidentDeleted(event.data));
+      return _toOK(event, IncidentDeleted(incident));
     }
     return _toError(event, response);
   }
 
   IncidentSelected _select(SelectIncident command) {
-    return _toOK(command, _set(_incidents[command.data]));
+    if (_incidents.containsKey(command.data)) {
+      final incident = _incidents[command.data];
+      return _toOK(
+        command,
+        _set(_incidents[command.data]),
+        result: incident,
+      );
+    }
+    return _toError(
+      command,
+      IncidentError('Incident ${command.data} not found locally'),
+    );
   }
 
   IncidentSelected _set(Incident data) {
@@ -208,9 +220,15 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return IncidentSelected(data);
   }
 
-  IncidentUnset _unset() {
+  IncidentState _unset({IncidentCommand event}) {
     final incident = _incidents[_given];
+    if (incident == null) {
+      return _toError(event, IncidentError('No incident was selected'));
+    }
     _given = null;
+    if (event != null) {
+      return _toOK(event, IncidentUnset(incident), result: incident);
+    }
     return IncidentUnset(incident);
   }
 
@@ -221,7 +239,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   // Dispatch and return future
-  Future<T> _dispatch<T>(IncidentCommand<T> command) {
+  Future<T> _dispatch<T>(IncidentCommand<Object, T> command) {
     dispatch(command);
     return command.callback.future;
   }
@@ -236,7 +254,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   // Complete with error and return response as error state to bloc
-  Future<IncidentState> _toError(IncidentCommand event, Object response) async {
+  IncidentState _toError(IncidentCommand event, Object response) {
     final error = IncidentError(response);
     event.callback.completeError(error);
     return error;
@@ -262,69 +280,69 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class IncidentCommand<T> extends Equatable {
-  final T data;
+abstract class IncidentCommand<S, T> extends Equatable {
+  final S data;
   final Completer<T> callback = Completer();
 
   IncidentCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadIncidents extends IncidentCommand<List<Incident>> {
+class LoadIncidents extends IncidentCommand<List<Incident>, List<Incident>> {
   LoadIncidents(List<Incident> data) : super(data);
 
   @override
-  String toString() => 'LoadIncidents';
+  String toString() => 'LoadIncidents {data: $data}';
 }
 
-class CreateIncident extends IncidentCommand<Incident> {
+class CreateIncident extends IncidentCommand<Incident, Incident> {
   final bool selected;
   CreateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
-  String toString() => 'CreateIncident';
+  String toString() => 'CreateIncident {data: $data, selected: $selected}';
 }
 
-class UpdateIncident extends IncidentCommand<Incident> {
+class UpdateIncident extends IncidentCommand<Incident, Incident> {
   final bool selected;
   UpdateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
 
   @override
-  String toString() => 'UpdateIncident';
+  String toString() => 'UpdateIncident {data: $data, selected: $selected}';
 }
 
-class SelectIncident extends IncidentCommand<String> {
+class SelectIncident extends IncidentCommand<String, Incident> {
   SelectIncident(String id) : super(id);
 
   @override
-  String toString() => 'SelectIncident';
+  String toString() => 'SelectIncident {data: $data}';
 }
 
-class DeleteIncident extends IncidentCommand<Incident> {
-  DeleteIncident(Incident data) : super(data);
+class DeleteIncident extends IncidentCommand<String, Incident> {
+  DeleteIncident(String id) : super(id);
 
   @override
-  String toString() => 'DeleteIncident';
+  String toString() => 'DeleteIncident {data: $data}';
 }
 
-class ClearIncidents extends IncidentCommand<List<String>> {
+class ClearIncidents extends IncidentCommand<List<String>, List<Incident>> {
   ClearIncidents(List<String> data) : super(data);
 
   @override
-  String toString() => 'ClearIncidents';
+  String toString() => 'ClearIncidents {data: $data}';
 }
 
-class UnsetIncident extends IncidentCommand<void> {
-  UnsetIncident() : super(null);
+class UnselectIncident extends IncidentCommand<void, Incident> {
+  UnselectIncident() : super(null);
 
   @override
-  String toString() => 'UnsetIncident';
+  String toString() => 'UnselectIncident';
 }
 
-class RaiseIncidentError extends IncidentCommand<IncidentError> {
+class RaiseIncidentError extends IncidentCommand<Object, IncidentError> {
   RaiseIncidentError(data) : super(data);
 
   @override
-  String toString() => 'RaiseIncidentError';
+  String toString() => 'RaiseIncidentError {data: $data}';
 }
 
 /// ---------------------

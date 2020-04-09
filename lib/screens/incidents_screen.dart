@@ -30,7 +30,7 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
 
   IncidentsScreenState()
       : super(
-          title: "Velg hendelse",
+          title: "Aksjoner",
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
 
@@ -144,7 +144,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          await _incidentBloc.fetch();
+          await _incidentBloc.load();
           setState(() {});
         },
         child: StreamBuilder(
@@ -195,6 +195,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
         stream: userBloc.state,
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
+          final isCurrent = _incidentBloc.current == incident;
           final isAuthorized = userBloc.isAuthorized(incident);
           return Card(
             child: Column(
@@ -252,16 +253,19 @@ class _IncidentsPageState extends State<IncidentsPage> {
                           children: <Widget>[
                             FlatButton(
                               child: Text(
-                                  isAuthorized
-                                      ? (_incidentBloc.current == incident ? 'ÅPNE' : 'VELG')
-                                      : _userBloc.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
-                                  style: TextStyle(fontSize: 14.0)),
-                              padding: EdgeInsets.only(left: isAuthorized ? 0 : 16.0),
+                                isAuthorized
+                                    ? (isCurrent ? 'FORLAT' : 'DELTA')
+                                    : _userBloc.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
+                                style: TextStyle(fontSize: 14.0),
+                              ),
+                              padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               onPressed: isAuthorized || _userBloc.hasRoles
-                                  ? () {
-                                      if (isAuthorized) {
-                                        _selectAndReroute(incident);
+                                  ? () async {
+                                      if (isCurrent) {
+                                        await _unselectAndReroute();
+                                      } else if (isAuthorized) {
+                                        await _selectAndReroute(incident);
                                       } else {
                                         Navigator.push(context, PasscodeRoute(incident));
                                       }
@@ -341,8 +345,13 @@ class _IncidentsPageState extends State<IncidentsPage> {
     );
   }
 
-  void _selectAndReroute(Incident incident) {
-    _incidentBloc.select(incident.id);
+  Future _unselectAndReroute() async {
+    await _incidentBloc.unselect();
+    jumpToMe(context);
+  }
+
+  Future _selectAndReroute(Incident incident) async {
+    await _incidentBloc.select(incident.id);
     jumpToIncident(context, incident);
   }
 }

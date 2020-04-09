@@ -285,6 +285,32 @@ void jumpToLatLngBounds(
   }
 }
 
+void jumpToMe(
+  BuildContext context, {
+  FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
+}) async {
+  final service = LocationService(BlocProvider.of<AppConfigBloc>(context));
+  var status = service.status;
+  if (PermissionStatus.unknown == status) {
+    status = await service.configure();
+  }
+  if ([
+    PermissionStatus.granted,
+    PermissionStatus.restricted,
+  ].contains(status)) {
+    var current = service.current;
+    if (current != null) {
+      jumpToLatLng(
+        context,
+        center: LatLng(
+          current.latitude,
+          current.longitude,
+        ),
+      );
+    }
+  }
+}
+
 void jumpToIncident(
   BuildContext context,
   Incident incident, {

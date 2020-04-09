@@ -60,14 +60,21 @@ class AppConfigService {
     );
   }
 
-  /// GET ../app-config
+  /// GET ../app-config/{uuid}
   Future<ServiceResponse<AppConfig>> load() async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }
 
+  /// PATCH ../app-config/{uuid}
   Future<ServiceResponse<AppConfig>> update(AppConfig config) async {
     // TODO: Implement save app-config
+    throw "Not implemented";
+  }
+
+  /// DELETE ../app-config/{uuid}
+  Future<ServiceResponse<AppConfig>> clear() async {
+    // TODO: Implement fetch app-config
     throw "Not implemented";
   }
 }

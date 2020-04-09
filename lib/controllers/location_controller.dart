@@ -52,8 +52,10 @@ class LocationController {
   /// Get current location
   Position get current => _service.current;
 
-  void init() async {
-    _handle(await _service.configure());
+  Future<LatLng> init() async {
+    return _handle(
+      await _service.configure(),
+    );
   }
 
   void dispose() {
@@ -162,27 +164,37 @@ class LocationController {
         (mapController.center.longitude - position.longitude).abs() > 0.0001;
   }
 
-  void _handle(PermissionStatus status) async {
+  Future<LatLng> _handle(PermissionStatus status) async {
+    final completer = Completer<LatLng>();
     await permissionController.handle(
       status,
-      permissionController.locationWhenInUseRequest.copyWith(onReady: _onReady),
+      permissionController.locationWhenInUseRequest.copyWith(onReady: () => _onReady(completer)),
     );
+    return completer.future;
   }
 
-  void _onReady() async {
-    final status = await _service.configure();
-    if (_service.isReady.value) {
-      _options?.cancel();
-      _options = MyLocationOptions(
-        _toLatLng(_service.current),
-        opacity: 0.5,
-        tickerProvider: tickerProvider,
-        locationUpdateController: _locationUpdateController,
-        rebuild: _locationUpdateController?.stream,
-      );
-      _subscribe();
-      if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
-    } else
-      _handle(status);
+  void _onReady(Completer<LatLng> completer) async {
+    try {
+      final status = await _service.configure();
+      if (_service.isReady.value) {
+        final point = _toLatLng(_service.current);
+        _options?.cancel();
+        _options = MyLocationOptions(
+          point,
+          opacity: 0.5,
+          tickerProvider: tickerProvider,
+          locationUpdateController: _locationUpdateController,
+          rebuild: _locationUpdateController?.stream,
+        );
+        _subscribe();
+        if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
+        completer.complete(point);
+      } else {
+        final point = await _handle(status);
+        completer.complete(point);
+      }
+    } on Exception catch (e, stackTrace) {
+      completer.completeError(e, stackTrace);
+    }
   }
 }

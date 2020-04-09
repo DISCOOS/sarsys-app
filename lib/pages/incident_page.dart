@@ -70,7 +70,7 @@ class _IncidentPageState extends State<IncidentPage> {
     unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
     return RefreshIndicator(
       onRefresh: () async {
-        bloc.fetch();
+        bloc.load();
       },
       child: Container(
         color: Color.fromRGBO(168, 168, 168, 0.6),

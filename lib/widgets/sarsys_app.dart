@@ -71,17 +71,23 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       writeAppState(widget.bucket);
     } else if (state == AppLifecycleState.resumed) {
+      readAppState(widget.bucket);
       if (userBloc.isReady) {
         final heartbeat = userBloc.security.heartbeat;
         if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
           await userBloc.lock();
         }
       }
-      readAppState(widget.bucket);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    readAppState(widget.bucket, context: context);
   }
 
   @override

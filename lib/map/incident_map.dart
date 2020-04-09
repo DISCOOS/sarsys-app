@@ -38,6 +38,7 @@ import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -511,10 +512,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   LatLng _ensureCenter() {
-    final current = widget.withControlsLocateMe ? _locationController.current : null;
-    final candidate = widget.center ??
-        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
-        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
+    Position current = _tryCenterOnMe();
+    LatLng candidate = _centerFromIncident(current);
     /*
     if (_currentBaseMap?.bounds?.contains(candidate) == false) {
       // Use center in current map bounds
@@ -526,6 +525,21 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     */
 
     return candidate;
+  }
+
+  LatLng _centerFromIncident(Position current) {
+    final candidate = widget.center ??
+        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
+        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
+    return candidate;
+  }
+
+  Position _tryCenterOnMe() {
+    final current = widget.withControlsLocateMe ? _locationController.current : null;
+    if (widget.withControlsLocateMe && _center == null && current == null) {
+      _locationController.init().then((point) => setState(() => _center = point));
+    }
+    return current;
   }
 
   @override

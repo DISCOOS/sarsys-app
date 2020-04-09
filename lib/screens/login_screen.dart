@@ -401,9 +401,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                 bloc,
                 setState: setState,
               ),
-              verifyPin || _confirmPin
-                  ? _buildSecureAction(bloc, enabled: !_wrongPin && _pinComplete)
-                  : _buildNewPinAction(bloc, setState, enabled: !_wrongPin && _pinComplete),
+              _pinComplete ? _buildSecureAction(bloc, enabled: !_wrongPin && _pinComplete) : Container(),
             ],
           );
         },
@@ -430,23 +428,13 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       return _wrongPin ? 'Feil pin' : 'Oppgi din pinkode';
     }
     if (_confirmPin) {
-      return _wrongPin ? 'Bekreft ny pinkode er $_pin' : 'Pinkode er bekreftet';
+      return _wrongPin ? 'Bekreft ny pinkode er $_pin' : 'Ny pinkode er bekreftet';
     }
-    return changePin ? 'Endre din pinkode' : 'Oppgi din nye pinkode';
+    return changePin ? 'Oppgi ny pinkode' : 'Oppgi din nye pinkode';
   }
 
-  Widget _buildNewPinAction(UserBloc bloc, StateSetter setState, {bool enabled}) => _buildAction(
-        'FORTSETT',
-        () {
-          _pinComplete = false;
-          _focusNode.requestFocus();
-          setState(() => _confirmPin = true);
-        },
-        enabled: enabled,
-      );
-
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
-        verifyPin ? 'BEKREFT' : 'OPPRETT',
+        changePin ? 'ENDRE' : 'OPPRETT',
         () async {
           try {
             if (verifyPin) {
@@ -459,6 +447,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                 _newPin = !_wrongPin;
               });
             } else {
+              _popWhenReady = changePin;
               await bloc.secure(_pin, locked: false);
             }
           } on Exception {/* Is handled by StreamBuilder */}
@@ -497,15 +486,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           ),
         ],
       );
-
-//  Widget _buildFullName(User user) => Padding(
-//        padding: const EdgeInsets.only(bottom: 16.0),
-//        child: Text(
-//          user.fullName,
-//          style: _toStyle(context, 16, FontWeight.bold),
-//          textAlign: TextAlign.center,
-//        ),
-//      );
 
   Widget _buildPinInput(UserBloc bloc, {StateSetter setState}) => Container(
         constraints: BoxConstraints(minWidth: 215, maxWidth: 215),
@@ -566,7 +546,25 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       try {
         await bloc.unlock(pin: _pin);
       } on Exception {/* Is handled by StreamBuilder */}
+    } else if (_pinComplete && !_wrongPin) {
+      // Automatic process when pin is correct
+      setState(() {
+        if (verifyPin) {
+          _reset('');
+          _newPin = true;
+        } else if (!_confirmPin) {
+          _reset(_pin);
+          _confirmPin = true;
+        }
+      });
     }
+  }
+
+  void _reset(String pin) {
+    _pin = pin;
+    _pinComplete = false;
+    _pinController.clear();
+    _focusNode.requestFocus();
   }
 
   Widget _buildAuthenticate(UserBloc bloc) => FutureBuilder<Organization>(

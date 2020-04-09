@@ -34,7 +34,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.format_list_bulleted),
-            title: Text('Velg hendelse', style: TextStyle(fontSize: 14)),
+            title: Text('Aksjoner', style: TextStyle(fontSize: 14)),
             onTap: () {
               Navigator.pushReplacementNamed(context, 'incident/list');
             },

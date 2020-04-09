@@ -366,7 +366,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Dispatch and return future
-  Future<R> _dispatch<R>(UserCommand<dynamic, R> command) {
+  Future<T> _dispatch<T>(UserCommand<dynamic, T> command) {
     dispatch(command);
     return command.callback.future;
   }
@@ -395,9 +395,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class UserCommand<T, R> extends Equatable {
-  final T data;
-  final Completer<R> callback = Completer();
+abstract class UserCommand<S, T> extends Equatable {
+  final S data;
+  final Completer<T> callback = Completer();
 
   UserCommand(this.data, [props = const []]) : super([data, ...props]);
 }

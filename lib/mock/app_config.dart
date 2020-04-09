@@ -9,7 +9,7 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 import 'package:mockito/mockito.dart';
-import 'package:flutter/services.dart' show MethodCall, MethodChannel, rootBundle;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:uuid/uuid.dart';
 
 class AppConfigServiceMock extends Mock implements AppConfigService {
@@ -44,6 +44,11 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
       return ServiceResponse.ok(
         body: config = config,
       );
+    });
+    when(mock.clear()).thenAnswer((c) async {
+      box ??= await Hive.openBox(AppConfigService.BOX_NAME);
+      await box.deleteFromDisk();
+      return ServiceResponse.noContent();
     });
     return mock;
   }

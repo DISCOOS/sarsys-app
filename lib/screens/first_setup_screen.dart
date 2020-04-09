@@ -10,6 +10,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/permission_setup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,6 +37,10 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   SecurityMode _mode = SecurityMode.personal;
 
   String _organization = Defaults.organization;
+
+  bool get isComplete => isLocationGranted && isStorageGranted;
+  bool get isStorageGranted => _permissionsKey.currentState.isStorageGranted;
+  bool get isLocationGranted => _permissionsKey.currentState.isLocationGranted;
 
   @override
   void dispose() {
@@ -206,7 +211,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: FlatButton(
-                child: Text(index == views.length - 1 ? 'FERDIG' : 'NESTE'),
+                child: Text(index == views.length - 1 ? (isComplete ? 'FERDIG' : 'AVSLUTT') : 'NESTE'),
                 onPressed: () async {
                   if (index < views.length - 1) {
                     controller.animateToPage(
@@ -215,17 +220,28 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                       duration: const Duration(milliseconds: 500),
                     );
                   } else {
-                    // Disable automatic permission prompts (toast are still shown when applicable)
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool("checkPermission", false);
-                    final configBloc = BlocProvider.of<AppConfigBloc>(context);
-                    await configBloc.update(
-                      firstSetup: true,
-                      securityMode: _mode,
-                      storage: _permissionsKey.currentState.storageGranted,
-                      locationWhenInUse: _permissionsKey.currentState.locationGranted,
-                    );
-                    Navigator.pushReplacementNamed(context, 'login');
+                    if (isComplete) {
+                      // Disable automatic permission prompts (toast are still shown when applicable)
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool("checkPermission", false);
+                      final configBloc = BlocProvider.of<AppConfigBloc>(context);
+                      await configBloc.update(
+                        firstSetup: true,
+                        securityMode: _mode,
+                        storage: isStorageGranted,
+                        locationWhenInUse: isLocationGranted,
+                      );
+                      Navigator.pushReplacementNamed(context, 'login');
+                    } else {
+                      final answer = await prompt(
+                        context,
+                        'Bekreftelse',
+                        'Dette vil lukke appen. Vil du fortsette?',
+                      );
+                      if (answer) {
+                        SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                      }
+                    }
                   }
                 },
               ),

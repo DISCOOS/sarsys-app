@@ -40,7 +40,9 @@ class LocationService {
   ValueNotifier<bool> get isReady => _isReady;
 
   Future<PermissionStatus> configure() async {
-    _status = await PermissionHandler().checkPermissionStatus(PermissionGroup.locationWhenInUse);
+    _status = await PermissionHandler().checkPermissionStatus(
+      PermissionGroup.locationWhenInUse,
+    );
     if ([PermissionStatus.granted, PermissionStatus.restricted].contains(_status)) {
       final config = _appConfigBloc.config;
       var options = _toOptions(config);

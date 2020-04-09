@@ -21,11 +21,11 @@ class PermissionSetupState extends State<PermissionSetup> {
   Future<PermissionStatus> _storageStatus;
   Future<PermissionStatus> _locationStatus;
 
-  bool get storageGranted => _storageGranted;
+  bool get isStorageGranted => _storageGranted;
   bool _storageGranted = false;
 
   bool _locationGranted = false;
-  bool get locationGranted => _locationGranted;
+  bool get isLocationGranted => _locationGranted;
 
   @override
   void didChangeDependencies() {
