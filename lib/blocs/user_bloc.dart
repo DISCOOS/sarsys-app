@@ -33,9 +33,6 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   /// Check if user has roles
   bool get hasRoles => _user?.hasRoles == true;
 
-  /// Check if user has roles
-  bool isAuthor(Incident incident) => _user?.isAuthor(incident) == true;
-
   /// Check if application is running on a shared device (multiple uses accounts allowed)
   bool get isShared => SecurityMode.shared == service.configBloc.config.securityMode;
 
@@ -74,6 +71,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// User identity is pending
   bool get isPending => currentState.isPending();
+
+  /// Check if user has roles
+  bool isAuthor(Incident incident) => _user?.isAuthor(incident) == true;
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {

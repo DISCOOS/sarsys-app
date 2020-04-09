@@ -73,22 +73,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused) {
       writeAppState(widget.bucket);
-      // Lock access to app on pause only (inactive state should NOT lock the app for usability reasons)
-      if (userBloc.isReady) {
-        await userBloc.secure(
-          userBloc.security.pin,
-        );
-      }
     } else if (state == AppLifecycleState.resumed) {
       if (userBloc.isReady) {
         final heartbeat = userBloc.security.heartbeat;
-        // If paused more than 30 seconds - lock access
         if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
           await userBloc.lock();
-        } else {
-          await userBloc.secure(
-            userBloc.security.pin,
-          );
         }
       }
       readAppState(widget.bucket);
