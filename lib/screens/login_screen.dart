@@ -85,6 +85,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   bool get changePin => LoginType.changePin == widget.type;
   bool get switchUser => LoginType.switchUser == widget.type;
 
+  TextTheme textTheme;
+  TextStyle titleStyle;
+  TextStyle emailStyle;
+
+  UserBloc _bloc;
+
   bool _validateAndSave() {
     final form = _formKey.currentState;
     if (form.validate()) {
@@ -103,9 +109,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     super.initState();
   }
 
-  TextTheme textTheme;
-  TextStyle titleStyle;
-  TextStyle emailStyle;
+  @override
+  void didChangeDependencies() {
+    _bloc = _toBloc(context);
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,13 +127,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       fontSize: SizeConfig.safeBlockVertical * 2.1,
     );
 
-    UserBloc bloc = _toBloc(context);
     return StreamBuilder<UserState>(
-        stream: bloc.state,
+        stream: _bloc.state,
         builder: (context, snapshot) {
           return Scaffold(
             backgroundColor: Colors.grey[300],
-            appBar: !automatic && bloc.isReady ? _buildAppBar(context) : null,
+            appBar: !automatic && _bloc.isReady ? _buildAppBar(context) : null,
             body: SafeArea(
               child: Center(
                 child: FractionallySizedBox(
@@ -141,7 +148,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: Container(
-                        child: _buildBody(context, bloc),
+                        child: _buildBody(context, _bloc),
                       ),
                     ),
                   ),
@@ -439,7 +446,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildSecureAction(UserBloc bloc, {bool enabled}) => _buildAction(
-        verifyPin ? 'BEKREFT' : 'ENDRE',
+        verifyPin ? 'BEKREFT' : 'OPPRETT',
         () async {
           try {
             if (verifyPin) {
@@ -452,7 +459,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                 _newPin = !_wrongPin;
               });
             } else {
-              _popTo(context);
               await bloc.secure(_pin, locked: false);
             }
           } on Exception {/* Is handled by StreamBuilder */}
@@ -912,10 +918,17 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     }
   }
 
-  Future<Object> _popTo(BuildContext context) => Navigator.pushReplacementNamed(
+  bool _isPopped = false;
+
+  void _popTo(BuildContext context) {
+    if (!_isPopped) {
+      _isPopped = true;
+      Navigator.pushReplacementNamed(
         context,
         widget.returnTo ?? 'incident/list',
       );
+    }
+  }
 
   @override
   void dispose() {

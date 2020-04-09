@@ -86,14 +86,12 @@ class AppDrawer extends StatelessWidget {
             title: Text('Logg av', style: TextStyle(fontSize: 14)),
             onTap: () async {
               await userBloc.logout();
-              Navigator.pushReplacementNamed(context, 'login');
             },
           ),
           ListTile(
             leading: const Icon(Icons.phonelink_lock),
             title: Text('Endre pin', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              Navigator.pop(context);
               Navigator.pushReplacementNamed(context, 'change/pin');
             },
           ),
