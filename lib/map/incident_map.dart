@@ -581,8 +581,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         data.errors.clear();
       });
     }
-    print('Removed $removed');
-
     return removed;
   }
 

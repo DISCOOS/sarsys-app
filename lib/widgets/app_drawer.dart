@@ -3,10 +3,18 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/screens/command_screen.dart';
+import 'package:SarSys/screens/config/settings_screen.dart';
+import 'package:SarSys/screens/incidents_screen.dart';
+import 'package:SarSys/screens/login_screen.dart';
+import 'package:SarSys/screens/map_screen.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_gravatar/simple_gravatar.dart';
+
+import 'descriptions.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -14,6 +22,7 @@ class AppDrawer extends StatelessWidget {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
+    final config = BlocProvider.of<AppConfigBloc>(context).config;
     var gravatar = Gravatar(user.email);
     var url = gravatar.imageUrl(
       size: 100,
@@ -51,18 +60,30 @@ class AppDrawer extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0, right: 16.0),
                     child: FractionallySizedBox(
-                      widthFactor: 0.45,
+                      widthFactor: 0.55,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: <Widget>[
-                          Chip(
-                            padding: EdgeInsets.zero,
-                            label: Text(
-                              '${translateSecurityMode(BlocProvider.of<AppConfigBloc>(context).config.securityMode)} app',
-                              style: TextStyle(color: Colors.white38),
+                          GestureDetector(
+                            child: Chip(
+                              padding: EdgeInsets.zero,
+                              label: Text(
+                                '${translateSecurityMode(config.securityMode)} '
+                                '${user.isTrusted ? '' : '(begrenset)'}',
+                                style: TextStyle(color: Colors.white38),
+                              ),
+                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
                             ),
-                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+                            onTap: () {
+                              alert(
+                                context,
+                                title: "Bruksmodus og sikkerhet",
+                                content: userBloc.isShared
+                                    ? SecurityModeSharedDescription()
+                                    : SecurityModePersonalDescription(untrusted: user.isUntrusted),
+                              );
+                            },
                           ),
                           Text(
                             roles.isEmpty ? 'Ingen roller' : roles.map(translateUserRole).join(', '),
@@ -81,7 +102,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.format_list_bulleted),
             title: Text('Aksjoner', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'incident/list');
+              Navigator.pushReplacementNamed(context, IncidentsScreen.ROUTE);
             },
           ),
           Divider(),
@@ -89,7 +110,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.map),
             title: Text('Kart', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'map');
+              Navigator.pushReplacementNamed(context, MapScreen.ROUTE);
             },
           ),
           Divider(),
@@ -98,7 +119,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.warning),
             title: Text('Hendelse', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'incident');
+              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_INCIDENT);
             },
           ),
           ListTile(
@@ -106,7 +127,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.people),
             title: Text('Enheter', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'unit/list');
+              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_UNIT_LIST);
             },
           ),
           ListTile(
@@ -114,7 +135,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.person),
             title: Text('Mannskap', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'personnel/list');
+              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_PERSONNEL_LIST);
             },
           ),
           ListTile(
@@ -122,7 +143,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(MdiIcons.cellphoneBasic),
             title: Text('Apparater', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.pushReplacementNamed(context, 'device/list');
+              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_DEVICE_LIST);
             },
           ),
           Divider(),
@@ -130,7 +151,19 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.lock),
             title: Text('Logg av', style: TextStyle(fontSize: 14)),
             onTap: () async {
-              await userBloc.logout();
+              // As a security precaution, security information
+              // for users from untrusted domains are automatically
+              // deleted. Notify user about this before logging out
+              final answer = user.isTrusted ||
+                  await prompt(
+                    context,
+                    'Bekreftelse',
+                    'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
+                  );
+
+              if (answer) {
+                await userBloc.logout();
+              }
             },
           ),
           ListTile(
@@ -139,7 +172,7 @@ class AppDrawer extends StatelessWidget {
             onTap: () async {
               Navigator.popAndPushNamed(
                 context,
-                'change/pin',
+                LoginScreen.ROUTE_CHANGE_PIN,
                 arguments: {'popOnClose': true},
               );
             },
@@ -149,7 +182,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.settings),
             title: Text('Innstillinger', style: TextStyle(fontSize: 14)),
             onTap: () {
-              Navigator.popAndPushNamed(context, 'settings');
+              Navigator.popAndPushNamed(context, SettingsScreen.ROUTE);
             },
           ),
         ],

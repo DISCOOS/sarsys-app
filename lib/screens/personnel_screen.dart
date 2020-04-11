@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:async/async.dart';
 
@@ -20,6 +21,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong/latlong.dart';
 
 class PersonnelScreen extends Screen<_PersonnelScreenState> {
+  static const ROUTE = 'personnel';
+
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
@@ -39,7 +42,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       : super(
           title: "${personnel.name}",
           withDrawer: false,
-          writeEnabled: false,
+          routeWriter: false,
         );
 
   final _controller = IncidentMapController();
@@ -59,7 +62,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.initState();
 
     _personnel = widget.personnel;
-    id = widget?.personnel?.id;
+    routeData = widget?.personnel?.id;
   }
 
   @override
@@ -165,8 +168,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               ],
               mapController: _controller,
             ),
-            onTap: () =>
-                center == null ? Navigator.pushReplacementNamed(context, 'map') : jumpToLatLng(context, center: center),
+            onTap: () => center == null
+                ? Navigator.pushReplacementNamed(context, MapScreen.ROUTE)
+                : jumpToLatLng(context, center: center),
           ),
         ),
       ),

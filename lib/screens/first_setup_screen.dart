@@ -6,12 +6,15 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/screens/login_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/widgets/permission_setup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Screen implementing the Self-Select model in Material Design, see
@@ -20,6 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Code is based on
 /// https://medium.com/aubergine-solutions/create-an-onboarding-page-indicator-in-3-minutes-in-flutter-a2bd97ceeaff
 class FirstSetupScreen extends StatefulWidget {
+  static const ROUTE = 'first_setup';
   @override
   _FirstSetupScreenState createState() => _FirstSetupScreenState();
 }
@@ -39,8 +43,12 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   String _organization = Defaults.organization;
 
   bool get isComplete => isLocationGranted && isStorageGranted;
-  bool get isStorageGranted => _permissionsKey.currentState.isStorageGranted;
-  bool get isLocationGranted => _permissionsKey.currentState.isLocationGranted;
+
+  bool get isStorageGranted => _isStorageGranted || (_permissionsKey?.currentState?.isStorageGranted ?? false);
+  bool _isStorageGranted = false;
+
+  bool get isLocationGranted => _isLocationGranted || (_permissionsKey?.currentState?.isLocationGranted ?? false);
+  bool _isLocationGranted = false;
 
   @override
   void dispose() {
@@ -62,6 +70,13 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         explanation: ['SARSYS trenger tilgang til posisjon', if (Platform.isAndroid) ' og lagring'].join(),
         child: PermissionSetup(
           key: _permissionsKey,
+          onChanged: (response) {
+            if (response.request.group == PermissionGroup.location) {
+              setState(() => _isLocationGranted = PermissionStatus.granted == response.status);
+            } else if (response.request.group == PermissionGroup.storage) {
+              setState(() => _isStorageGranted = PermissionStatus.granted == response.status);
+            }
+          },
         ),
       ),
     ];
@@ -110,9 +125,19 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
           leading: Radio<SecurityMode>(
             value: SecurityMode.personal,
             groupValue: _mode,
-            onChanged: (value) => setState(() {
-              _mode = value;
-            }),
+            onChanged: (value) => setState(
+              () {
+                _mode = value;
+              },
+            ),
+          ),
+          trailing: IconButton(
+            icon: Icon(Icons.info_outline),
+            onPressed: () => alert(
+              context,
+              title: "Bruksmodus og sikkerhet",
+              content: SecurityModePersonalDescription(),
+            ),
           ),
         ),
         ListTile(
@@ -127,6 +152,14 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
             onChanged: (value) => setState(() {
               _mode = value;
             }),
+          ),
+          trailing: IconButton(
+            icon: Icon(Icons.info_outline),
+            onPressed: () => alert(
+              context,
+              title: "Bruksmodus og sikkerhet",
+              content: SecurityModeSharedDescription(),
+            ),
           ),
         ),
         if (SecurityMode.shared == _mode)
@@ -231,7 +264,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                         storage: isStorageGranted,
                         locationWhenInUse: isLocationGranted,
                       );
-                      Navigator.pushReplacementNamed(context, 'login');
+                      Navigator.pushReplacementNamed(context, LoginScreen.ROUTE_LOGIN);
                     } else {
                       final answer = await prompt(
                         context,

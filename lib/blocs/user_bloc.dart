@@ -57,6 +57,12 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   /// User access is unlocked
   bool get isUnlocked => security?.locked == false;
 
+  /// User is in a trusted domain
+  bool get isTrusted => security?.trusted == true;
+
+  /// User is in a untrusted domain
+  bool get isUntrusted => security?.trusted == false;
+
   /// User identity is secured
   bool get isAuthenticated => _user != null;
 
@@ -94,11 +100,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
       state.map((state) => state is UserAuthorized && state.incident == incident);
 
   /// Secure user access with given settings
-  Future<Security> secure(String pin, {bool locked}) async {
-    return _dispatch<Security>(SecureUser(
-      pin,
-      locked: locked,
-    ));
+  Future<Security> secure(String pin, {bool locked, bool trusted}) async {
+    return _dispatch<Security>(SecureUser(pin, locked: locked, trusted: trusted));
   }
 
   /// Lock user access using current security settings
@@ -144,8 +147,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return isAuthenticated ? RaiseUserException.from<T>("Er logget inn") : command;
   }
 
-  Future<User> logout() {
-    return _dispatch<User>(LogoutUser());
+  Future<User> logout({bool delete = false}) {
+    return _dispatch<User>(LogoutUser(delete: delete));
   }
 
   Future<List<User>> clear() {
@@ -350,8 +353,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserError _toError(ServiceResponse response) => UserError(
-        '${response.code} ${response.message}',
-        stackTrace: StackTrace.current,
+        '${response.code} ${response.message}: ${response.error}',
+        stackTrace: response.stackTrace ?? StackTrace.current,
       );
 
   UserState _authorize(AuthorizeUser command) {
@@ -411,10 +414,11 @@ class LoadUser extends UserCommand<String, User> {
 
 class SecureUser extends UserCommand<String, Security> {
   final bool locked;
-  SecureUser(String pin, {this.locked}) : super(pin);
+  final bool trusted;
+  SecureUser(String pin, {this.locked, this.trusted}) : super(pin);
 
   @override
-  String toString() => 'SecureUser {pin: $data, locked: $locked}';
+  String toString() => 'SecureUser {pin: $data, locked: $locked, locked: $trusted}';
 }
 
 class LockUser extends UserCommand<void, Security> {
@@ -458,11 +462,11 @@ class AuthorizeUser extends UserCommand<Incident, bool> {
   String toString() => 'AuthorizeUser';
 }
 
-class LogoutUser extends UserCommand<void, User> {
-  LogoutUser() : super(null);
+class LogoutUser extends UserCommand<bool, User> {
+  LogoutUser({bool delete = false}) : super(delete);
 
   @override
-  String toString() => 'LogoutUser';
+  String toString() => 'LogoutUser {data: $data}';
 }
 
 class ClearUsers extends UserCommand<void, List<User>> {

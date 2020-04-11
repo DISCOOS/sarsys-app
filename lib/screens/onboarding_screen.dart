@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
+import 'package:SarSys/screens/first_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Code is based on
 /// https://medium.com/aubergine-solutions/create-an-onboarding-page-indicator-in-3-minutes-in-flutter-a2bd97ceeaff
 class OnboardingScreen extends StatefulWidget {
+  static const ROUTE = 'onboarding';
   @override
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
@@ -128,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   await configBloc.update(
                     onboarded: true,
                   );
-                  Navigator.pushReplacementNamed(context, 'first_setup');
+                  Navigator.pushReplacementNamed(context, FirstSetupScreen.ROUTE);
                 },
               ),
             ),

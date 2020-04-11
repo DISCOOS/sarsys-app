@@ -200,7 +200,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return _toError(event, response);
   }
 
-  IncidentSelected _select(SelectIncident command) {
+  IncidentState _select(SelectIncident command) {
     if (_incidents.containsKey(command.data)) {
       final incident = _incidents[command.data];
       return _toOK(
@@ -263,9 +263,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscription != null) {
-      dispatch(RaiseIncidentError(IncidentError(error, trace: stacktrace)));
+      dispatch(RaiseIncidentError(IncidentError(error, stackTrace: stacktrace)));
     } else {
-      throw "Bad state: IncidentBloc is disposed. Unexpected ${IncidentError(error, trace: stacktrace)}";
+      throw "Bad state: IncidentBloc is disposed. Unexpected ${IncidentError(error, stackTrace: stacktrace)}";
     }
   }
 
@@ -418,8 +418,8 @@ class IncidentsCleared extends IncidentState<List<Incident>> {
 /// Exceptional States
 /// ---------------------
 abstract class IncidentException extends IncidentState<Object> {
-  final StackTrace trace;
-  IncidentException(Object error, {this.trace}) : super(error, [trace]);
+  final StackTrace stackTrace;
+  IncidentException(Object error, {this.stackTrace}) : super(error, [stackTrace]);
 
   @override
   String toString() => 'IncidentException {data: $data}';
@@ -427,9 +427,9 @@ abstract class IncidentException extends IncidentState<Object> {
 
 /// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
 class IncidentError extends IncidentException {
-  final StackTrace trace;
-  IncidentError(Object error, {this.trace}) : super(error, trace: trace);
+  final StackTrace stackTrace;
+  IncidentError(Object error, {this.stackTrace}) : super(error, stackTrace: stackTrace);
 
   @override
-  String toString() => 'IncidentError {data: $data}';
+  String toString() => 'IncidentError {data: $data, stackTrace: $stackTrace}';
 }

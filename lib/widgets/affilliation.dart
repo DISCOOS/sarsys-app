@@ -3,6 +3,7 @@ import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -33,12 +34,14 @@ class AffiliationAvatar extends StatelessWidget {
 }
 
 class AffiliationForm extends StatefulWidget {
+  final User user;
   final Affiliation initialValue;
   final ValueChanged<Affiliation> onChanged;
 
   const AffiliationForm({
     Key key,
     @required this.initialValue,
+    this.user,
     this.onChanged,
   }) : super(key: key);
 
@@ -51,14 +54,40 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   final _formKey = GlobalKey<FormBuilderState>();
 
-  Future<Organization> _organization;
+  ValueNotifier<Organization> _organization = ValueNotifier(null);
   ValueNotifier<Division> _division = ValueNotifier(null);
+
+  String _department;
 
   @override
   void initState() {
     super.initState();
-    _organization = FleetMapService().fetchOrganization(Defaults.organization)
-      ..then((org) => _division.value = org.divisions[widget.initialValue.division]);
+    _department = widget.initialValue.department;
+    FleetMapService().fetchOrganization(Defaults.organization)..then(_resolve);
+  }
+
+  void _resolve(Organization org) {
+    if (widget.user != null) {
+      if (widget.user.division != null) {
+        final division = org.divisions.values.firstWhere(
+          (match) => match.name == widget.user.division,
+          orElse: () => null,
+        );
+        if (division != null) {
+          if (widget.user.department != null) {
+            _department = division.departments.values.firstWhere(
+              (match) => match == widget.user.department,
+              orElse: () => null,
+            );
+          }
+          _organization.value = org;
+          _division.value = division;
+        }
+      }
+    } else {
+      _organization.value = org;
+      _division.value = org.divisions[widget.initialValue.division];
+    }
   }
 
   @override
@@ -80,57 +109,72 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   Widget _buildOrganizationField() {
-    return FutureBuilder<Organization>(
-        future: _organization,
-        builder: (context, snapshot) {
-          final org = snapshot.hasData ? snapshot.data : null;
+    return ValueListenableBuilder<Organization>(
+        valueListenable: _organization,
+        builder: (context, org, _) {
           _update('organization', Defaults.organization);
-          return FormBuilderCustomField<String>(
-            attribute: 'organization',
-            formField: FormField<String>(
-              enabled: false,
-              initialValue: org?.name,
-              builder: (FormFieldState<String> field) => InputDecorator(
-                decoration: InputDecoration(
-                  labelText: "Organisasjon",
-                  filled: true,
-                  enabled: false,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(
-                    org?.name ?? "-",
-                    style: Theme.of(context).textTheme.subhead,
-                  ),
-                ),
-              ),
-            ),
+          return _buildReadOnly(
+            context,
+            'organization',
+            'Organisasjon',
+            org?.name ?? "-",
           );
         });
   }
 
+  FormBuilderCustomField<String> _buildReadOnly(BuildContext context, String attribute, String title, String value) {
+    return FormBuilderCustomField<String>(
+      attribute: attribute,
+      formField: FormField<String>(
+        enabled: false,
+        initialValue: value,
+        builder: (FormFieldState<String> field) => InputDecorator(
+          decoration: InputDecoration(
+            labelText: title,
+            filled: true,
+            enabled: false,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.subhead,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDivisionField() {
-    return FutureBuilder<Organization>(
-        future: _organization,
-        builder: (context, snapshot) {
-          final org = snapshot.hasData ? snapshot.data : null;
-          final division = _update('division', _ensureDivision(org));
-          return buildDropDownField<String>(
-            attribute: 'division',
-            label: 'Distrikt',
-            initialValue: division,
-            items: _ensureDivisions(org),
-            onChanged: (value) {
-              if (org != null) {
-                _division.value = org.divisions[value];
-                _onChanged();
-              }
-            },
-            validators: [
-              FormBuilderValidators.required(errorText: 'Distrikt må velges'),
-            ],
-          );
-        });
+    return ValueListenableBuilder<Organization>(
+      valueListenable: _organization,
+      builder: (context, org, _) {
+        final division = _update('division', _ensureDivision(org));
+        return widget.user == null
+            ? buildDropDownField<String>(
+                attribute: 'division',
+                label: 'Distrikt',
+                initialValue: division,
+                items: _ensureDivisions(org),
+                onChanged: (value) {
+                  if (org != null) {
+                    _division.value = org.divisions[value];
+                    _onChanged();
+                  }
+                },
+                validators: [
+                  FormBuilderValidators.required(errorText: 'Distrikt må velges'),
+                ],
+              )
+            : _buildReadOnly(
+                context,
+                'division',
+                'Distrikt',
+                _division?.value?.name ?? '-',
+              );
+      },
+    );
   }
 
   String _update(String attribute, String value) {
@@ -157,25 +201,35 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<Division>(
         valueListenable: _division,
         builder: (context, division, _) {
-          _update('department', _ensureDepartment(division));
-          final field = buildDropDownField<String>(
-            attribute: 'department',
-            label: 'Avdeling',
-            items: _ensureDepartments(division),
-            initialValue: null,
-            onChanged: (_) => _onChanged(),
-            validators: [
-              FormBuilderValidators.required(errorText: 'Avdeling må velges'),
-            ],
-          );
-          return field;
+          final department = _ensureDepartment(division);
+          _update('department', department);
+          return widget.user == null
+              ? buildDropDownField<String>(
+                  attribute: 'department',
+                  label: 'Avdeling',
+                  items: _ensureDepartments(division),
+                  initialValue: null,
+                  enabled: widget.user == null,
+                  onChanged: (_) => _onChanged(),
+                  validators: [
+                    FormBuilderValidators.required(errorText: 'Avdeling må velges'),
+                  ],
+                )
+              : _buildReadOnly(
+                  context,
+                  'department',
+                  'Avdeling',
+                  _division?.value?.departments?.elementAt(department) ?? '-',
+                );
         });
   }
 
-  String _ensureDepartment(Division division) =>
-      (division?.departments?.containsKey(widget.initialValue?.department) == true
-          ? widget.initialValue?.department
-          : division?.departments?.keys?.first ?? Defaults.department);
+  String _ensureDepartment(Division division) {
+    final department = _department ?? widget.initialValue?.department;
+    return (division?.departments?.containsKey(department) == true
+        ? department
+        : division?.departments?.keys?.first ?? Defaults.department);
+  }
 
   List<DropdownMenuItem<String>> _ensureDepartments(Division division) {
     return sortMapValues<String, String, String>(division?.departments ?? {})
@@ -188,7 +242,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   Affiliation save() {
-    _formKey.currentState.save();
+    _formKey?.currentState?.save();
     final json = _formKey.currentState.value;
     final affiliation = Affiliation.fromJson(json);
     return affiliation;

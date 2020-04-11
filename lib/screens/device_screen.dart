@@ -24,6 +24,8 @@ import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
 class DeviceScreen extends Screen<_DeviceScreenState> {
+  static const ROUTE = 'device';
+
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
@@ -56,8 +58,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   @override
   void initState() {
     super.initState();
-    writeEnabled = false;
-    id = widget?.device?.id;
+    routeWriter = false;
+    routeData = widget?.device?.id;
     _device = widget.device;
   }
 

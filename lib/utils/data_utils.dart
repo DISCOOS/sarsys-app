@@ -11,7 +11,7 @@ import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/screens/screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/widgets.dart';
@@ -199,7 +199,7 @@ T writeState<T>(BuildContext context, String identifier, T value) {
 Future<PageStorageBucket> readAppState(PageStorageBucket bucket, {BuildContext context}) async {
   final json = readFromFile(await getApplicationDocumentsDirectory(), "app_state.json");
   if (json != null) {
-    bucket.writeState(context, json[RouteWriter.NAME], identifier: RouteWriter.NAME);
+    bucket.writeState(context, json[RouteWriter.STATE_NAME], identifier: RouteWriter.STATE_NAME);
     bucket.writeState(context, json[UnitsPageState.FILTER], identifier: UnitsPageState.FILTER);
     bucket.writeState(context, json[IncidentMapState.FILTER], identifier: IncidentMapState.FILTER);
     bucket.writeState(context, json[DevicesPageState.FILTER], identifier: DevicesPageState.FILTER);
@@ -225,7 +225,7 @@ Map<String, dynamic> readFromFile(Directory dir, String fileName) {
 
 Future<void> writeAppState(PageStorageBucket bucket, {BuildContext context}) async {
   final json = {
-    RouteWriter.NAME: bucket.readState(context, identifier: RouteWriter.NAME),
+    RouteWriter.STATE_NAME: bucket.readState(context, identifier: RouteWriter.STATE_NAME),
     UnitsPageState.FILTER: bucket.readState(context, identifier: UnitsPageState.FILTER),
     IncidentMapState.FILTER: bucket.readState(context, identifier: IncidentMapState.FILTER),
     DevicesPageState.FILTER: bucket.readState(context, identifier: DevicesPageState.FILTER),

@@ -11,10 +11,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
+import 'package:SarSys/screens/screen.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
 
 class MapScreen extends StatefulWidget {
+  static const ROUTE = 'map';
+
   final LatLng center;
   final Incident incident;
   final LatLngBounds fitBounds;

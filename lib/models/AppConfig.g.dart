@@ -34,6 +34,8 @@ AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
         _$enumDecodeNullable(_$SecurityTypeEnumMap, json['securityType']),
     securityMode:
         _$enumDecodeNullable(_$SecurityModeEnumMap, json['securityMode']),
+    trustedDomains:
+        (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
     securityLockAfter: json['securityLockAfter'] as int,
   );
 }
@@ -63,6 +65,7 @@ Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
       'units': instance.units,
       'securityType': _$SecurityTypeEnumMap[instance.securityType],
       'securityMode': _$SecurityModeEnumMap[instance.securityMode],
+      'trustedDomains': instance.trustedDomains,
       'securityLockAfter': instance.securityLockAfter,
     };
 

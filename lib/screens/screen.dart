@@ -1,6 +1,10 @@
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'models/route_model.dart';
 
 abstract class Screen<S extends ScreenState> extends StatefulWidget {
   const Screen({Key key}) : super(key: key);
@@ -17,12 +21,12 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
-  final writeEnabled;
+  final routeWriter;
 
   ScreenState({
     @required this.title,
     this.withDrawer = true,
-    this.writeEnabled = true,
+    this.routeWriter = true,
     this.floatingActionButtonLocation = FloatingActionButtonLocation.endFloat,
   });
 
@@ -85,5 +89,73 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
       label: label,
       onPressed: onPressed,
     );
+  }
+}
+
+/// Utility class for writing current route to PageStorage
+abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with RouteAware {
+  static const FIELD_DATA = "data";
+  static const FIELD_NAME = "name";
+  static const STATE_NAME = "route";
+  static RouteObserver<PageRoute> _observer;
+  static get observer => _observer ??= RouteObserver<PageRoute>();
+
+  T routeData;
+  String routeName;
+  bool routeWriter = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _observer.subscribe(this, ModalRoute.of(context));
+  }
+
+  @override
+  void dispose() {
+    _observer.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Called when the top route has been popped off, and the current route
+  /// shows up.
+  @override
+  void didPopNext() {
+    writeRoute(data: routeData);
+  }
+
+  /// Called when the current route has been pushed.
+  @override
+  void didPush() {
+    writeRoute(data: routeData);
+  }
+
+  /// Called when a new route has been pushed, and the current route is no
+  /// longer visible.
+  @override
+  void didPushNext() {}
+
+  /// Called when the current route has been popped off.
+  @override
+  void didPop() {}
+
+  /// Get current state
+  static RouteModel state(BuildContext context) => RouteModel.fromJson(readState(context, STATE_NAME));
+
+  /// Write route information to PageStorage
+  void writeRoute({T data, String name}) {
+    if (routeWriter) {
+      this.routeData = data;
+      this.routeName = name ?? this.routeName;
+      final route = this.routeName ?? ModalRoute.of(context)?.settings?.name;
+      if (route != '/') {
+        writeState(context, STATE_NAME, {
+          'name': route,
+          'data': data,
+          // TODO: Move to IncidentBloc using hydrated_bloc and Hive (encryption support)
+          'incidentId': BlocProvider.of<IncidentBloc>(context)?.current?.id,
+        });
+        writeAppState(PageStorage.of(context), context: context);
+      }
+    }
   }
 }

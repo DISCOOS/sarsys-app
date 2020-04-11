@@ -17,6 +17,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class IncidentsScreen extends Screen<IncidentsScreenState> {
+  static const ROUTE = 'incident/list';
   @override
   IncidentsScreenState createState() => IncidentsScreenState();
 }
@@ -50,6 +51,7 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
+    writeRoute();
   }
 
   @override
@@ -255,12 +257,12 @@ class _IncidentsPageState extends State<IncidentsPage> {
                               child: Text(
                                 isAuthorized
                                     ? (isCurrent ? 'FORLAT' : 'DELTA')
-                                    : _userBloc.hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
+                                    : hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
                                 style: TextStyle(fontSize: 14.0),
                               ),
                               padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              onPressed: isAuthorized || _userBloc.hasRoles
+                              onPressed: isAuthorized || hasRoles
                                   ? () async {
                                       if (isCurrent) {
                                         await _unselectAndReroute();
@@ -309,6 +311,8 @@ class _IncidentsPageState extends State<IncidentsPage> {
           );
         });
   }
+
+  bool get hasRoles => _userBloc?.hasRoles == true;
 
   String _toDescription(Incident incident) {
     String meetup = incident.meetup.description;

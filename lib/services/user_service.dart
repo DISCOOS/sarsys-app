@@ -22,14 +22,18 @@ abstract class UserService {
   /// Check if device personal
   bool get personalMode => SecurityMode.personal == configBloc.config.securityMode;
 
+  /// Check if [User] is in a trusted domain
+  bool isTrusted(User user) => configBloc.config.trustedDomains.contains(toDomain(user.uname));
+
   Future<ServiceResponse<bool>> isSecured() async {
     try {
       final type = await storage.read(key: "security");
       return ServiceResponse.ok(body: type != null);
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to get security from storage",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -50,10 +54,11 @@ abstract class UserService {
           ),
         );
       }
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to get security from storage",
         error: e,
+        stackTrace: stackTrace,
       );
     }
     return ServiceResponse.noContent();
@@ -72,16 +77,22 @@ abstract class UserService {
               ),
         );
       }
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to get security from storage",
         error: e,
+        stackTrace: stackTrace,
       );
     }
     return ServiceResponse.noContent();
   }
 
-  Future<ServiceResponse<Security>> secure(String pin, {String userId, bool locked}) async {
+  Future<ServiceResponse<Security>> secure(
+    String pin, {
+    String userId,
+    bool locked,
+    bool trusted,
+  }) async {
     try {
       var next;
       final actualId = userId ?? await currentUserId();
@@ -91,7 +102,8 @@ abstract class UserService {
         if (user.security != null) {
           next = user.security.cloneWith(
             pin: pin,
-            locked: locked ?? true,
+            locked: locked,
+            trusted: trusted,
             heartbeat: DateTime.now(),
             type: configBloc.config.securityType,
             mode: configBloc.config.securityMode,
@@ -100,6 +112,7 @@ abstract class UserService {
           next = Security(
             pin: pin,
             locked: locked ?? true,
+            trusted: trusted ?? isTrusted(user),
             heartbeat: DateTime.now(),
             type: configBloc.config.securityType,
             mode: configBloc.config.securityMode,
@@ -118,9 +131,10 @@ abstract class UserService {
       return ServiceResponse.notFound(
         message: 'User id $actualId not found',
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -135,8 +149,11 @@ abstract class UserService {
         );
       }
       return ServiceResponse.noContent();
-    } on Exception catch (e) {
-      return ServiceResponse.internalServerError(error: e);
+    } on Exception catch (e, stackTrace) {
+      return ServiceResponse.internalServerError(
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -163,9 +180,10 @@ abstract class UserService {
         return ServiceResponse.unauthorized();
       }
       return ServiceResponse.noContent();
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -278,9 +296,10 @@ abstract class UserService {
       await logout(
         userId: userId,
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         error: e,
+        stackTrace: stackTrace,
       );
     }
     return ServiceResponse.noContent();
@@ -289,6 +308,7 @@ abstract class UserService {
   /// Delete token for given username from secure storage
   Future<ServiceResponse<User>> logout({
     String userId,
+    bool delete: false,
   }) async {
     try {
       final response = await load(
@@ -298,8 +318,8 @@ abstract class UserService {
         final user = response.body;
         await this.delete(
           user.userId,
-          // SHALL NOT delete user in shared mode
-          user: personalMode,
+          // Always delete untrusted users
+          user: delete || user.isUntrusted,
         );
         if (sharedMode) {
           await lock(
@@ -314,10 +334,11 @@ abstract class UserService {
       return ServiceResponse.noContent(
         message: "No user logged in",
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to delete token from storage",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -336,10 +357,11 @@ abstract class UserService {
         await Future.wait(request);
       }
       return response;
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to clear all users from storage",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -455,6 +477,12 @@ abstract class UserService {
       );
     }
   }
+
+  static String toDomain(String username) {
+    final pattern = RegExp(".*.@(.*)");
+    final matcher = pattern.firstMatch(username);
+    return matcher?.group(1);
+  }
 }
 
 class UserIdentityService extends UserService {
@@ -475,7 +503,16 @@ class UserIdentityService extends UserService {
   final String _redirectUrl = 'sarsys.app://oauth/redirect';
   final String _logoutUrl = 'https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/logout';
   final String _discoveryUrl = 'https://id.discoos.io/auth/realms/DISCOOS/.well-known/openid-configuration';
-  final List<String> _scopes = const ['openid', 'profile', 'email', 'offline_access', 'roles'];
+  final List<String> _scopes = const [
+    'openid',
+    'profile',
+    'email',
+    'offline_access',
+    'roles',
+    'phone_number',
+    'division',
+    'department',
+  ];
 
   // Keycloak will use this to redirect to linked identity providers
   final Map<String, String> _idpHints = const {
@@ -526,7 +563,7 @@ class UserIdentityService extends UserService {
       // the sessions and some IdPs doesn't support that and will
       // show an error message about that to the user. Keycloak
       // is one of those.
-      if (personalMode) {
+      if (currentUser != null) {
         await logout(
           userId: currentUser?.userId,
         );
@@ -576,7 +613,7 @@ class UserIdentityService extends UserService {
         ),
         lock: true,
       );
-    } on PlatformException catch (e) {
+    } on PlatformException catch (e, stackTrace) {
       if (USER_ERRORS.contains(e.code)) {
         return ServiceResponse.unauthorized(
           message: "Unauthorized",
@@ -585,11 +622,13 @@ class UserIdentityService extends UserService {
       return ServiceResponse.internalServerError(
         message: "Failed to login",
         error: e,
+        stackTrace: stackTrace,
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to login",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -628,7 +667,7 @@ class UserIdentityService extends UserService {
       return super.refresh(
         userId: actualId,
       );
-    } on PlatformException catch (e) {
+    } on PlatformException catch (e, stackTrace) {
       if (USER_ERRORS.contains(e.code)) {
         return ServiceResponse.unauthorized(
           message: "Unauthorized",
@@ -637,11 +676,13 @@ class UserIdentityService extends UserService {
       return ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
+        stackTrace: stackTrace,
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -650,6 +691,7 @@ class UserIdentityService extends UserService {
   @override
   Future<ServiceResponse<User>> logout({
     String userId,
+    bool delete: false,
   }) async {
     try {
       final token = await getToken(
@@ -673,11 +715,13 @@ class UserIdentityService extends UserService {
       }
       return super.logout(
         userId: userId,
+        delete: delete,
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to logout",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }
@@ -705,10 +749,9 @@ class UserIdentityService extends UserService {
   }
 
   String toIdpHint(String username) {
-    final pattern = RegExp(".*.@(.*)");
-    final matcher = pattern.firstMatch(username);
-    if (matcher != null && _idpHints.containsKey(matcher.group(1))) {
-      return _idpHints[matcher.group(1)];
+    final domain = UserService.toDomain(username);
+    if (domain != null && _idpHints.containsKey(domain)) {
+      return _idpHints[domain];
     }
     return null;
   }
@@ -758,10 +801,11 @@ class UserCredentialsService extends UserService {
         code: response.statusCode,
         message: response.reasonPhrase,
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         message: "Failed to login",
         error: e,
+        stackTrace: stackTrace,
       );
     }
   }

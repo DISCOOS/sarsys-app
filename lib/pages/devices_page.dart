@@ -10,6 +10,7 @@ import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/device_screen.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/usecase/device.dart';
@@ -268,7 +269,7 @@ class DevicesPageState extends State<DevicesPage> {
               ),
           ],
         ),
-        onTap: () => Navigator.pushNamed(context, 'device', arguments: device),
+        onTap: () => Navigator.pushNamed(context, DeviceScreen.ROUTE, arguments: device),
       ),
     );
   }

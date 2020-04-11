@@ -30,6 +30,7 @@ class Defaults {
   static const int securityLockAfter = 2700;
   static const SecurityType securityType = SecurityType.pin;
   static const SecurityMode securityMode = SecurityMode.personal;
+  static const List<String> trustedDomains = const ['rodekors.org'];
 
   static final LatLng origo = LatLng(59.5, 10.09);
 }

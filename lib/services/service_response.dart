@@ -7,10 +7,10 @@ class ServiceResponse<T> extends Equatable {
   final String message;
   final T body;
   final Object error;
+  final StackTrace stackTrace;
 
-  ServiceResponse({this.code, this.message, this.body, Object error})
-      : error = error,
-        super([code, message, body, error]);
+  ServiceResponse({this.code, this.message, this.body, this.error, this.stackTrace})
+      : super([code, message, body, error, stackTrace]);
 
   static ServiceResponse<T> ok<T>({T body}) {
     return ServiceResponse<T>(
@@ -58,8 +58,14 @@ class ServiceResponse<T> extends Equatable {
   static ServiceResponse<T> internalServerError<T>({
     message: 'Internal server error',
     Object error,
+    StackTrace stackTrace,
   }) {
-    return ServiceResponse<T>(code: 500, message: message, error: error);
+    return ServiceResponse<T>(
+      code: 500,
+      message: message,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   bool get is200 => code == HttpStatus.ok;

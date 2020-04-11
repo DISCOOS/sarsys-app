@@ -11,6 +11,7 @@ Security _$SecurityFromJson(Map<String, dynamic> json) {
     pin: json['pin'] as String,
     type: _$enumDecode(_$SecurityTypeEnumMap, json['type']),
     locked: json['locked'] as bool ?? true,
+    trusted: json['trusted'] as bool,
     mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
     heartbeat: json['heartbeat'] == null
         ? null
@@ -22,6 +23,7 @@ Map<String, dynamic> _$SecurityToJson(Security instance) => <String, dynamic>{
       'pin': instance.pin,
       'type': _$SecurityTypeEnumMap[instance.type],
       'locked': instance.locked,
+      'trusted': instance.trusted,
       'heartbeat': instance.heartbeat?.toIso8601String(),
       'mode': _$SecurityModeEnumMap[instance.mode],
     };

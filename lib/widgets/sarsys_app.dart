@@ -15,7 +15,7 @@ import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
 import 'package:SarSys/widgets/access_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
@@ -31,9 +31,9 @@ import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 
 class SarSysApp extends StatefulWidget {
-  final Key navigatorKey;
   final PageStorageBucket bucket;
   final BlocProviderController controller;
+  final GlobalKey<NavigatorState> navigatorKey;
   const SarSysApp({
     Key key,
     @required this.bucket,
@@ -105,8 +105,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
             textTheme: ButtonTextTheme.primary,
           ),
         ),
-        home: _toHome(widget.controller),
-        onGenerateRoute: (settings) => _toRoute(settings),
+        home: _toHome(
+          widget.controller,
+        ),
+        onGenerateRoute: (settings) => _toRoute(
+          settings,
+        ),
         localizationsDelegates: [
           GlobalWidgetsLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -158,6 +162,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       );
     }
 
+    writeAppState(widget.bucket);
+
     return MaterialPageRoute(
       builder: builder,
       settings: settings,
@@ -167,9 +173,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   WidgetBuilder _toBuilder(RouteSettings settings, Widget child) {
     WidgetBuilder builder;
     switch (settings.name) {
-      case 'login':
-      case 'onboarding':
-      case 'first_setup':
+      case LoginScreen.ROUTE_LOGIN:
+      case OnboardingScreen.ROUTE:
+      case FirstSetupScreen.ROUTE:
         builder = _toUnchecked(child);
         break;
       default:
@@ -182,55 +188,59 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   Widget _toScreen(RouteSettings settings, bool persisted) {
     Widget child;
     switch (settings.name) {
-      case 'map':
+      case MapScreen.ROUTE:
         child = _toMapScreen(
           settings: settings,
           incident: widget.controller.incidentProvider.bloc.current,
         );
         break;
-      case 'login':
+      case LoginScreen.ROUTE_LOGIN:
         child = LoginScreen();
         break;
-      case 'change/pin':
+      case LoginScreen.ROUTE_CHANGE_PIN:
         child = LoginScreen(
           type: LoginType.changePin,
-          popOnClose: toArgument(settings, 'popOnClose', defaultValue: false),
+          popOnClose: toArgument(
+            settings,
+            'popOnClose',
+            defaultValue: false,
+          ),
         );
         break;
-      case 'switch/user':
+      case LoginScreen.ROUTE_SWITCH_USER:
         child = LoginScreen(type: LoginType.switchUser);
         break;
-      case 'incident':
-        child = CommandScreen(tabIndex: CommandScreen.INCIDENT);
+      case CommandScreen.ROUTE_INCIDENT:
+        child = CommandScreen(tabIndex: CommandScreen.TAB_INCIDENT);
         break;
-      case 'unit':
+      case UnitScreen.ROUTE:
         child = _toUnitScreen(settings, persisted);
         break;
-      case 'unit/list':
-        child = CommandScreen(tabIndex: CommandScreen.UNITS);
+      case CommandScreen.ROUTE_UNIT_LIST:
+        child = CommandScreen(tabIndex: CommandScreen.TAB_UNITS);
         break;
-      case 'personnel':
-        child = _toPersonnelScreen(settings, persisted);
-        break;
-      case 'personnel/list':
-        child = CommandScreen(tabIndex: CommandScreen.PERSONNEL);
-        break;
-      case 'device':
+      case DeviceScreen.ROUTE:
         child = _toDeviceScreen(settings, persisted);
         break;
-      case 'device/list':
-        child = CommandScreen(tabIndex: CommandScreen.DEVICES);
+      case CommandScreen.ROUTE_DEVICE_LIST:
+        child = CommandScreen(tabIndex: CommandScreen.TAB_DEVICES);
         break;
-      case 'settings':
+      case PersonnelScreen.ROUTE:
+        child = _toPersonnelScreen(settings, persisted);
+        break;
+      case CommandScreen.ROUTE_PERSONNEL_LIST:
+        child = CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL);
+        break;
+      case SettingsScreen.ROUTE:
         child = SettingsScreen();
         break;
-      case 'onboarding':
+      case OnboardingScreen.ROUTE:
         child = OnboardingScreen();
         break;
-      case 'first_setup':
+      case FirstSetupScreen.ROUTE:
         child = FirstSetupScreen();
         break;
-      case 'incident/list':
+      case IncidentsScreen.ROUTE:
       default:
         child = IncidentsScreen();
         break;
@@ -286,9 +296,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       unit = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      unit = units[route['id']];
+      unit = units[route['data']];
     }
-    return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.UNITS) : UnitScreen(unit: unit);
+    return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
   }
 
   Map<String, Unit> get units => widget.controller.unitProvider.bloc.units;
@@ -299,10 +309,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       personnel = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      personnel = personnels[route['id']];
+      personnel = personnels[route['data']];
     }
     return personnel == null || persisted
-        ? CommandScreen(tabIndex: CommandScreen.PERSONNEL)
+        ? CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL)
         : PersonnelScreen(personnel: personnel);
   }
 
@@ -314,9 +324,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       device = settings?.arguments;
     } else if (settings?.arguments is Map) {
       final Map<String, dynamic> route = Map.from(settings?.arguments);
-      device = devices[route['id']];
+      device = devices[route['data']];
     }
-    return device == null || persisted ? CommandScreen(tabIndex: CommandScreen.DEVICES) : DeviceScreen(device: device);
+    return device == null || persisted
+        ? CommandScreen(tabIndex: CommandScreen.TAB_DEVICES)
+        : DeviceScreen(device: device);
   }
 
   Map<String, Device> get devices => widget.controller.deviceProvider.bloc.devices;
@@ -330,19 +342,22 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else if (providers.userProvider.bloc.isReady) {
       var route = widget.bucket.readState(
         context,
-        identifier: RouteWriter.NAME,
+        identifier: RouteWriter.STATE_NAME,
       );
-      if (route != null) {
-        if (route['incident'] != null) {
-          final id = route['incident'];
-          providers.incidentProvider.bloc.select(id);
-          route = Map.from(route);
-          route['incident'] = providers.incidentProvider.bloc.current;
+      if (route is Map) {
+        final _route = Map.from(route);
+        final id = _route.elementAt('incidentId');
+        if (id != null) {
+          // On first load blocks are not loaded yet
+          providers.incidentProvider.bloc.state.firstWhere((state) => state.isLoaded()).then((_) async {
+            _route['incident'] = await providers.incidentProvider.bloc.select(id);
+            pushReplacementNamed(_route[RouteWriter.FIELD_NAME], arguments: route);
+          });
         }
         bool isUnset = providers.incidentProvider.bloc.isUnset;
         child = _toScreen(
           RouteSettings(
-            name: isUnset ? 'incidents' : route['name'],
+            name: isUnset ? 'incidents' : _route[RouteWriter.FIELD_NAME],
             isInitialRoute: true,
             arguments: isUnset ? null : route,
           ),
@@ -363,4 +378,13 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     }
     return _buildWithProviders(context: context, child: child);
   }
+
+  Future<Object> pushReplacementNamed(
+    String path, {
+    Object arguments,
+  }) =>
+      widget.navigatorKey.currentState.pushReplacementNamed(
+        path,
+        arguments: arguments,
+      );
 }

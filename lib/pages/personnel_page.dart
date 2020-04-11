@@ -6,6 +6,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/personnel_screen.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -216,7 +217,7 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   _onTap(Personnel personnel) {
     if (widget.onSelection == null) {
-      Navigator.pushNamed(context, 'personnel', arguments: personnel);
+      Navigator.pushNamed(context, PersonnelScreen.ROUTE, arguments: personnel);
     } else {
       widget.onSelection(personnel);
     }

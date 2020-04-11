@@ -15,6 +15,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:SarSys/screens/screen.dart';
+
+import 'incidents_screen.dart';
 
 enum LoginType {
   automatic,
@@ -23,6 +26,10 @@ enum LoginType {
 }
 
 class LoginScreen extends StatefulWidget {
+  static const ROUTE_LOGIN = 'login';
+  static const ROUTE_CHANGE_PIN = 'change/pin';
+  static const ROUTE_SWITCH_USER = 'switch/user';
+
   const LoginScreen({
     Key key,
     this.type = LoginType.automatic,
@@ -472,7 +479,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           textAlign: TextAlign.center,
         ),
         _buildPinInput(bloc),
+        _buildLogoutAction(bloc),
       ];
+
+  Widget _buildLogoutAction(UserBloc bloc) => _buildAction(
+        'LOGG AV',
+        () async {
+          await bloc.logout();
+        },
+      );
 
   Widget _buildFullName(User user) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -932,7 +947,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       } else {
         Navigator.pushReplacementNamed(
           context,
-          widget.returnTo ?? 'incident/list',
+          widget.returnTo ?? IncidentsScreen.ROUTE,
         );
       }
     }

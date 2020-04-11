@@ -12,18 +12,29 @@ import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/usecase/unit.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class CommandScreen extends StatefulWidget {
-  static const INCIDENT = 0;
-  static const UNITS = 1;
-  static const PERSONNEL = 2;
-  static const DEVICES = 3;
-  static const ROUTES = ["incident", "units", "devices", "personnel"];
+  static const TAB_INCIDENT = 0;
+  static const TAB_UNITS = 1;
+  static const TAB_PERSONNEL = 2;
+  static const TAB_DEVICES = 3;
+
+  static const ROUTE_INCIDENT = 'incident';
+  static const ROUTE_UNIT_LIST = 'unit/list';
+  static const ROUTE_DEVICE_LIST = 'device/list';
+  static const ROUTE_PERSONNEL_LIST = 'personnel/list';
+
+  static const ROUTES = [
+    ROUTE_INCIDENT,
+    ROUTE_UNIT_LIST,
+    ROUTE_DEVICE_LIST,
+    ROUTE_PERSONNEL_LIST,
+  ];
 
   final int tabIndex;
 
@@ -45,8 +56,8 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   @override
   void initState() {
     super.initState();
-    id = widget.tabIndex;
-    name = CommandScreen.ROUTES[id];
+    routeData = widget.tabIndex;
+    routeName = CommandScreen.ROUTES[routeData];
   }
 
   @override
@@ -60,7 +71,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   void didUpdateWidget(CommandScreen old) {
     super.didUpdateWidget(old);
     if (old.tabIndex != widget.tabIndex) {
-      write(widget.tabIndex, name: CommandScreen.ROUTES[widget.tabIndex]);
+      writeRoute(
+        data: widget.tabIndex,
+        name: CommandScreen.ROUTES[widget.tabIndex],
+      );
     }
   }
 
@@ -85,10 +99,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             actions: _buildActions(incident),
             title: Text(title),
           ),
-          body: tabs[id],
+          body: tabs[routeData],
           resizeToAvoidBottomInset: false,
           bottomNavigationBar: BottomNavigationBar(
-            currentIndex: id,
+            currentIndex: routeData,
             elevation: 4.0,
             selectedItemColor: Theme.of(context).colorScheme.primary,
             type: BottomNavigationBarType.fixed,
@@ -99,7 +113,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
               BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
             ],
             onTap: (index) => setState(() {
-              write(index, name: CommandScreen.ROUTES[index]);
+              writeRoute(
+                data: index,
+                name: CommandScreen.ROUTES[index],
+              );
             }),
           ),
           floatingActionButton: _buildFAB(),
@@ -109,22 +126,22 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   }
 
   _toName(Incident incident, {ifEmpty: "Hendelse"}) {
-    switch (id) {
-      case CommandScreen.INCIDENT:
+    switch (routeData) {
+      case CommandScreen.TAB_INCIDENT:
         String name = incident?.name ?? "Hendelse";
         return name == null || name.isEmpty ? ifEmpty : name;
-      case CommandScreen.UNITS:
+      case CommandScreen.TAB_UNITS:
         return "Enheter";
-      case CommandScreen.PERSONNEL:
+      case CommandScreen.TAB_PERSONNEL:
         return "Mannskap";
-      case CommandScreen.DEVICES:
+      case CommandScreen.TAB_DEVICES:
         return "Apparater";
     }
   }
 
   List<Widget> _buildActions(incident) {
-    switch (id) {
-      case CommandScreen.INCIDENT:
+    switch (routeData) {
+      case CommandScreen.TAB_INCIDENT:
         return [
           if (_userBloc?.user?.isCommander == true)
             IconButton(
@@ -132,21 +149,21 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
               onPressed: () async => await editIncident(context, incident),
             )
         ];
-      case CommandScreen.UNITS:
+      case CommandScreen.TAB_UNITS:
         return _buildListActions<Unit>(
           delegate: UnitSearch(),
           onPressed: () async {
             _unitsKey.currentState.showFilterSheet();
           },
         );
-      case CommandScreen.PERSONNEL:
+      case CommandScreen.TAB_PERSONNEL:
         return _buildListActions<Personnel>(
           delegate: PersonnelSearch(),
           onPressed: () async {
             _personnelKey.currentState.showFilterSheet();
           },
         );
-      case CommandScreen.DEVICES:
+      case CommandScreen.TAB_DEVICES:
         return _buildListActions<Device>(
           delegate: DeviceSearch(),
           onPressed: () async {
@@ -175,18 +192,18 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
 
   StatelessWidget _buildFAB() {
     if (_userBloc?.user?.isCommander == true) {
-      switch (id) {
-        case CommandScreen.UNITS:
+      switch (routeData) {
+        case CommandScreen.TAB_UNITS:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createUnit(context),
           );
-        case CommandScreen.PERSONNEL:
+        case CommandScreen.TAB_PERSONNEL:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createPersonnel(context),
           );
-        case CommandScreen.DEVICES:
+        case CommandScreen.TAB_DEVICES:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () async => await createDevice(context),

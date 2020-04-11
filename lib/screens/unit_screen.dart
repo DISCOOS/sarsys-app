@@ -18,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong/latlong.dart';
 
 class UnitScreen extends Screen<_UnitScreenState> {
+  static const ROUTE = 'unit';
   static const HEIGHT = 82.0;
   static const CORNER = 4.0;
   static const SPACING = 8.0;
@@ -50,9 +51,9 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   @override
   void initState() {
     super.initState();
-    writeEnabled = false;
+    routeWriter = false;
     _unit = widget.unit;
-    id = widget?.unit?.id;
+    routeData = widget?.unit?.id;
   }
 
   @override

@@ -20,6 +20,8 @@ class User extends Equatable {
   final String uname;
   final String email;
   final String phone;
+  final String division;
+  final String department;
   final Security security;
 
   @JsonKey(
@@ -32,6 +34,8 @@ class User extends Equatable {
   )
   final List<String> passcodes;
 
+  bool get isAffiliated => division != null || department != null;
+
   User({
     @required this.userId,
     this.fname,
@@ -40,6 +44,8 @@ class User extends Equatable {
     this.phone,
     this.email,
     this.security,
+    this.division,
+    this.department,
     this.roles = const [],
     this.passcodes = const [],
   }) : super([
@@ -49,6 +55,8 @@ class User extends Equatable {
           uname,
           email,
           phone,
+          division,
+          department,
           roles,
           passcodes,
         ]);
@@ -61,6 +69,8 @@ class User extends Equatable {
   bool get isCommander => roles.contains(UserRole.commander);
   bool get isUnitLeader => roles.contains(UserRole.unit_leader);
   bool get isPersonnel => roles.contains(UserRole.personnel);
+  bool get isTrusted => security?.trusted ?? false;
+  bool get isUntrusted => !isTrusted;
 
   bool isAuthor(Incident incident) => incident.created.userId == userId;
 
@@ -71,29 +81,40 @@ class User extends Equatable {
   Map<String, dynamic> toJson() => _$UserToJson(this);
 
   /// Create user from token
-  factory User.fromToken(
-    String token, {
+  factory User.fromTokens(
+    String accessToken, {
+    String idToken,
     Security security,
     List<String> passcodes,
   }) {
-    final json = _fromJWT(token);
+    final json = _fromJWT(accessToken);
     final jwt = JwtClaim.fromMap(json);
     final claims = [
       if (json.hasPath('roles')) ...json['roles'],
       if (json.hasPath('realm_access_roles')) ...json.elementAt('realm_access_roles'),
     ];
     final roles = List<UserRole>.from(_toRoles(claims));
-    return User(
+    var user = User(
       userId: jwt.subject,
       uname: jwt['preferred_username'],
       fname: jwt['given_name'],
       lname: jwt['family_name'],
       email: jwt['email'],
-      phone: jwt['phone'],
       roles: roles,
       security: security,
       passcodes: passcodes,
     );
+    if (idToken != null) {
+      final idJson = _fromJWT(idToken);
+      final idJwt = JwtClaim.fromMap(idJson);
+      final affiliation = Map.from(idJwt['affiliation'] ?? {});
+      user = user.cloneWith(
+        phone: idJwt['phone'],
+        division: affiliation['division'],
+        department: affiliation['department'],
+      );
+    }
+    return user;
   }
 
   static Iterable<UserRole> _toRoles(Iterable roles) => roles
@@ -144,6 +165,8 @@ class User extends Equatable {
     String uname,
     String email,
     String phone,
+    String division,
+    String department,
     Security security,
     List<UserRole> roles,
     List<String> passcodes,
@@ -155,6 +178,8 @@ class User extends Equatable {
         uname: uname ?? this.uname,
         email: email ?? this.email,
         phone: phone ?? this.phone,
+        division: division ?? this.division,
+        department: department ?? this.department,
         security: security ?? this.security,
         roles: List.from(
           roles ?? this.roles ?? [],

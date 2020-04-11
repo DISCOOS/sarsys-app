@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -9,6 +8,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +32,28 @@ const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
   maxZoom: Defaults.zoom,
   padding: EdgeInsets.all(48.0),
 );
+
+Future<void> alert(BuildContext context, {String title, Widget content}) {
+  // flutter defined function
+  return showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      // return object of type Dialog
+      return AlertDialog(
+        title: title == null ? Container() : Text(title),
+        content: content,
+        actions: <Widget>[
+          FlatButton(
+            child: Text("LUKK"),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
 Future<bool> prompt(BuildContext context, String title, String message) async {
   // flutter defined function
@@ -69,13 +91,14 @@ Widget buildDropDownField<T>({
   String label,
   String helperText,
   bool isDense = true,
+  bool enabled = true,
   EdgeInsetsGeometry contentPadding,
   ValueChanged<T> onChanged,
 }) =>
     FormBuilderCustomField(
       attribute: attribute,
       formField: FormField<T>(
-        enabled: true,
+        enabled: enabled,
         initialValue: initialValue,
         builder: (FormFieldState<T> field) => buildDropdown<T>(
           value: field.value,
@@ -266,7 +289,7 @@ void jumpToPoint(BuildContext context, {Point center, Incident incident}) {
 
 void jumpToLatLng(BuildContext context, {LatLng center, Incident incident}) {
   if (center != null) {
-    Navigator.pushNamed(context, "map", arguments: {"center": center, "incident": incident});
+    Navigator.pushNamed(context, MapScreen.ROUTE, arguments: {"center": center, "incident": incident});
   }
 }
 
@@ -277,7 +300,7 @@ void jumpToLatLngBounds(
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
   if (fitBounds != null && fitBounds.isValid) {
-    Navigator.pushNamed(context, "map", arguments: {
+    Navigator.pushNamed(context, MapScreen.ROUTE, arguments: {
       "incident": incident,
       "fitBounds": fitBounds,
       "fitBoundOptions": fitBoundOptions,
@@ -440,69 +463,3 @@ SingleChildScrollView toRefreshable(
             ),
       ),
     );
-
-/// Utility class for writing current route to PageStorage
-abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with RouteAware {
-  static const NAME = "route";
-
-  static RouteObserver<PageRoute> _observer;
-  static get observer => _observer ??= RouteObserver<PageRoute>();
-
-  T id;
-  String name;
-  bool writeEnabled = true;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _observer.subscribe(this, ModalRoute.of(context));
-  }
-
-  @override
-  void dispose() {
-    _observer.unsubscribe(this);
-    super.dispose();
-  }
-
-  /// Called when the top route has been popped off, and the current route
-  /// shows up.
-  @override
-  void didPopNext() {
-    write(id);
-  }
-
-  /// Called when the current route has been pushed.
-  @override
-  void didPush() {
-    write(id);
-  }
-
-  /// Called when a new route has been pushed, and the current route is no
-  /// longer visible.
-  @override
-  void didPushNext() {}
-
-  /// Called when the current route has been popped off.
-  @override
-  void didPop() {}
-
-  /// Get current state
-  static Map<String, dynamic> state(BuildContext context) => readState(context, NAME);
-
-  /// Write route information to PageStorage
-  void write(T id, {String name}) {
-    if (writeEnabled) {
-      this.id = id;
-      this.name = name ?? this.name;
-      final route = this.name ?? ModalRoute.of(context)?.settings?.name;
-      if (route != '/') {
-        final incident = BlocProvider.of<IncidentBloc>(context)?.current?.id;
-        writeState(context, NAME, {
-          "name": route,
-          "id": id,
-          "incident": incident,
-        });
-      }
-    }
-  }
-}

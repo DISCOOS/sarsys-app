@@ -117,10 +117,12 @@ class _IncidentPageState extends State<IncidentPage> {
         _buildReference(incident),
         SizedBox(height: IncidentPage.SPACING),
         _buildPasscodes(incident),
-        if (_userBloc?.user?.isCommander) ...[SizedBox(height: IncidentPage.SPACING), _buildActions(context)],
+        if (isCommander) ...[SizedBox(height: IncidentPage.SPACING), _buildActions(context)],
       ],
     );
   }
+
+  bool get isCommander => _userBloc?.user?.isCommander == true;
 
   SafeArea _buildBottomActions() {
     return SafeArea(

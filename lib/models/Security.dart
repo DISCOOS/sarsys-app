@@ -10,6 +10,7 @@ class Security extends Equatable {
     this.pin,
     this.type,
     this.locked,
+    this.trusted,
     this.mode,
     DateTime heartbeat,
   })  : heartbeat = heartbeat ?? DateTime.now(),
@@ -17,6 +18,7 @@ class Security extends Equatable {
           pin,
           type,
           locked,
+          trusted,
           heartbeat,
         ]);
 
@@ -25,6 +27,7 @@ class Security extends Equatable {
   final SecurityType type;
   @JsonKey(defaultValue: true)
   final bool locked;
+  final bool trusted;
   final DateTime heartbeat;
   final SecurityMode mode;
 
@@ -32,12 +35,14 @@ class Security extends Equatable {
     String pin, {
     SecurityMode mode = SecurityMode.personal,
     bool locked = false,
+    bool trusted = false,
   }) =>
       Security(
         pin: pin,
         type: SecurityType.pin,
         mode: mode,
-        locked: false,
+        locked: locked,
+        trusted: trusted,
       );
 
   /// Factory constructor for creating a new `Security` instance from json data
@@ -50,8 +55,9 @@ class Security extends Equatable {
 
   Security cloneWith({
     String pin,
-    SecurityType type,
     bool locked,
+    bool trusted,
+    SecurityType type,
     SecurityMode mode,
     DateTime heartbeat,
   }) =>
@@ -60,6 +66,7 @@ class Security extends Equatable {
         type: type ?? this.type,
         mode: mode ?? this.mode,
         locked: locked ?? this.locked,
+        trusted: trusted ?? this.trusted,
         heartbeat: heartbeat ?? this.heartbeat,
       );
 }

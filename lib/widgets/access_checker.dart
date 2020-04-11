@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/screens/first_setup_screen.dart';
+import 'package:SarSys/screens/login_screen.dart';
+import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -50,11 +53,11 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
       if (_listening && (state.isUnset() || state.isLocked())) {
         final config = BlocProvider.of<AppConfigBloc>(context)?.config;
         if (config?.onboarded != true) {
-          Navigator.of(context)?.pushReplacementNamed("onboarding");
+          Navigator.of(context)?.pushReplacementNamed(OnboardingScreen.ROUTE);
         } else if (config?.firstSetup != true) {
-          Navigator.of(context)?.pushReplacementNamed("first_setup");
+          Navigator.of(context)?.pushReplacementNamed(FirstSetupScreen.ROUTE);
         } else {
-          Navigator.of(context)?.pushReplacementNamed("login");
+          Navigator.of(context)?.pushReplacementNamed(LoginScreen.ROUTE_LOGIN);
         }
       }
       _listening = true;

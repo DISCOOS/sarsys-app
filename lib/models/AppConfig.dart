@@ -36,6 +36,7 @@ class AppConfig extends Equatable {
   final List<String> units;
   final SecurityType securityType;
   final SecurityMode securityMode;
+  final List<String> trustedDomains;
   final int securityLockAfter;
 
   AppConfig({
@@ -63,6 +64,7 @@ class AppConfig extends Equatable {
     this.callsignReuse = Defaults.callsignReuse,
     this.securityType = Defaults.securityType,
     this.securityMode = Defaults.securityMode,
+    this.trustedDomains = Defaults.trustedDomains,
     this.securityLockAfter = Defaults.securityLockAfter,
   })  : this.talkGroups = talkGroups ?? const <String>[],
         this.units = units ?? const <String>[],
@@ -91,6 +93,8 @@ class AppConfig extends Equatable {
           sentryDns,
           securityType,
           securityMode,
+          trustedDomains,
+          securityLockAfter,
         ]);
 
   /// Factory constructor for creating a new `AppConfig` instance
@@ -122,6 +126,7 @@ class AppConfig extends Equatable {
     List<String> units,
     SecurityType securityType,
     SecurityMode securityMode,
+    List<String> trustedDomains,
     int securityLockAfter,
   }) {
     return AppConfig(
@@ -149,6 +154,7 @@ class AppConfig extends Equatable {
       units: units ?? this.units,
       securityType: securityType ?? this.securityType,
       securityMode: securityMode ?? this.securityMode,
+      trustedDomains: trustedDomains ?? this.trustedDomains,
       securityLockAfter: securityLockAfter ?? this.securityLockAfter,
     );
   }
@@ -171,9 +177,10 @@ class AppConfig extends Equatable {
         orElse: () => defaultValue,
       );
 
-  Security toSecurity() => Security(
+  Security toSecurity(String orgId) => Security(
         type: securityType,
         mode: securityMode,
         heartbeat: DateTime.now(),
+        trusted: organization == orgId,
       );
 }

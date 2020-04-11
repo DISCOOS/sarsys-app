@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -204,7 +205,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   _onTap(Unit unit) {
     if (widget.onSelection == null) {
-      Navigator.pushNamed(context, 'unit', arguments: unit);
+      Navigator.pushNamed(context, UnitScreen.ROUTE, arguments: unit);
     } else {
       widget.onSelection(unit);
     }
