@@ -32,7 +32,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   String _pin;
 
   /// Forces user to enter current pin before changing it
-  bool _verifyPin = true;
+  bool _verifyPin;
 
   /// Asks user to enter new pin
   bool _newPin = false;
@@ -82,6 +82,13 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   @override
   void didChangeDependencies() {
     _bloc = BlocProvider.of<UserBloc>(context);
+    _pin = null;
+    _verifyPin = _bloc.isSecured;
+    _newPin = !_verifyPin;
+    _wrongPin = false;
+    _changePin = false;
+    _confirmPin = false;
+    _pinComplete = false;
     super.didChangeDependencies();
   }
 

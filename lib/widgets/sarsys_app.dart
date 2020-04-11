@@ -158,12 +158,16 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         settings,
         _toScreen(settings, false),
       );
-    else {
-      builder = _toUnchecked(
-        onboarded == false
-            ? OnboardingScreen()
-            : (firstSetup == false ? FirstSetupScreen() : userBloc.isAuthenticated ? UnlockScreen() : LoginScreen()),
-      );
+    else if (!onboarded) {
+      builder = _toUnchecked(OnboardingScreen());
+    } else if (!firstSetup) {
+      builder = _toUnchecked(FirstSetupScreen());
+    } else if (!userBloc.isAuthenticated) {
+      builder = _toUnchecked(LoginScreen());
+    } else if (!userBloc.isSecured) {
+      builder = _toUnchecked(ChangePinScreen());
+    } else {
+      builder = _toUnchecked(UnlockScreen());
     }
 
     writeAppState(widget.bucket);
@@ -339,7 +343,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       child = OnboardingScreen();
     } else if (providers.configProvider.bloc.config.firstSetup != true) {
       child = FirstSetupScreen();
-    } else if (providers.userProvider.bloc.isReady) {
+    } else if (userBloc.isReady) {
       var route = widget.bucket.readState(
         context,
         identifier: RouteWriter.STATE_NAME,
@@ -373,10 +377,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child: child,
         configBloc: providers.configProvider.bloc,
       );
-    } else if (providers.userProvider.bloc.isAuthenticated) {
-      child = UnlockScreen();
-    } else {
+    } else if (!userBloc.isAuthenticated) {
       child = LoginScreen();
+    } else if (!userBloc.isSecured) {
+      child = ChangePinScreen();
+    } else {
+      child = UnlockScreen();
     }
     return _buildWithProviders(context: context, child: child);
   }

@@ -289,25 +289,27 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
 
   Widget _buildSecure() => StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24.0),
-                child: _buildFullName(_bloc.user),
-              ),
-              Text(
-                _wrongPin ? 'Feil pinkode' : 'Oppgi din pinkode',
-                style: _toPinTextStyle(context),
-                textAlign: TextAlign.center,
-              ),
-              _buildPinInput(
-                setState: setState,
-              ),
-              _buildDivider(),
-              _buildLogoutAction(enabled: true),
-            ],
-          );
+          return _bloc.user == null
+              ? Container()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
+                      child: _buildFullName(_bloc.user),
+                    ),
+                    Text(
+                      _wrongPin ? 'Feil pinkode' : 'Oppgi din pinkode',
+                      style: _toPinTextStyle(context),
+                      textAlign: TextAlign.center,
+                    ),
+                    _buildPinInput(
+                      setState: setState,
+                    ),
+                    _buildDivider(),
+                    _buildLogoutAction(enabled: true),
+                  ],
+                );
         },
       );
 
@@ -551,8 +553,9 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   void _process(UserState state, UserBloc bloc, BuildContext context) {
     switch (state.runtimeType) {
       case UserUnlocked:
-        // Only close login if user is authenticated and app is secured with pin
-        if (bloc.isAuthenticated && _popWhenReady) {
+      case UserUnset:
+        // Only close user chose to logout if app is unlocked
+        if (!bloc.isAuthenticated || bloc.isUnlocked && _popWhenReady) {
           _popTo(context);
         }
         break;
