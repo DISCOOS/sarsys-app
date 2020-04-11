@@ -786,9 +786,11 @@ packages:
   pin_code_fields:
     dependency: "direct main"
     description:
-      name: pin_code_fields
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: master
+      resolved-ref: a14c086a4bc1daf6a2dbcbac7b0b739c296ac903
+      url: "https://github.com/DISCOOS/pin_code_fields.git"
+    source: git
     version: "2.4.0"
   platform:
     dependency: transitive

@@ -91,7 +91,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   FocusNode _focusNode;
   ScrollController _scrollController;
-  _PinTextEditingController _pinController;
+  TextEditingController _pinController;
 
   bool get newUser => _newUser;
   bool get automatic => LoginType.automatic == widget.type;
@@ -117,7 +117,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   void initState() {
     _focusNode = FocusNode();
     _scrollController = ScrollController();
-    _pinController = _PinTextEditingController();
+    _pinController = TextEditingController();
 
     super.initState();
   }
@@ -527,8 +527,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           fieldHeight: 50,
           fieldWidth: 50,
           activeFillColor: color,
-          controller: _pinController,
           focusNode: _focusNode,
+          controller: _pinController,
+          autoDisposeController: false,
+          autoDisposeFocusNode: false,
           onChanged: (value) => _onChanged(
             value,
             setState,
@@ -958,28 +960,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     _subscription?.cancel();
     _animController?.dispose();
     _scrollController?.dispose();
-    _pinController.release().dispose();
+    _focusNode.dispose();
+    _pinController.dispose();
     _animController = null;
     _scrollController = null;
-    /* _focusNode is disposed automatically by PinCodeTextField */
     _focusNode = null;
     _pinController = null;
     super.dispose();
-  }
-}
-
-class _PinTextEditingController extends TextEditingController {
-  bool released = false;
-
-  TextEditingController release() {
-    released = true;
-    return this;
-  }
-
-  @override
-  void dispose() {
-    if (released) {
-      super.dispose();
-    }
   }
 }

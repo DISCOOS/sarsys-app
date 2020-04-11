@@ -102,6 +102,12 @@ dependency_overrides:
       url: https://github.com/danvick/flutter_chips_input.git
       ref: master
 
+  pin_code_fields:
+    #path: ../pin_code_fields
+    git:
+      url: https://github.com/DISCOOS/pin_code_fields.git
+      ref: master
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
