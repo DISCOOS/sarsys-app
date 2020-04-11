@@ -264,7 +264,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                         storage: isStorageGranted,
                         locationWhenInUse: isLocationGranted,
                       );
-                      Navigator.pushReplacementNamed(context, LoginScreen.ROUTE_LOGIN);
+                      Navigator.pushReplacementNamed(context, LoginScreen.ROUTE);
                     } else {
                       final answer = await prompt(
                         context,

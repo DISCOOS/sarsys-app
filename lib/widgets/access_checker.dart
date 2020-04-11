@@ -57,7 +57,7 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
         } else if (config?.firstSetup != true) {
           Navigator.of(context)?.pushReplacementNamed(FirstSetupScreen.ROUTE);
         } else {
-          Navigator.of(context)?.pushReplacementNamed(LoginScreen.ROUTE_LOGIN);
+          Navigator.of(context)?.pushReplacementNamed(LoginScreen.ROUTE);
         }
       }
       _listening = true;

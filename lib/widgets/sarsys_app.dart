@@ -6,6 +6,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/screens/change_pin_screen.dart';
 import 'package:SarSys/screens/device_screen.dart';
 import 'package:SarSys/screens/first_setup_screen.dart';
 import 'package:SarSys/screens/personnel_screen.dart';
@@ -14,6 +15,7 @@ import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
+import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
@@ -158,7 +160,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       );
     else {
       builder = _toUnchecked(
-        onboarded == false ? OnboardingScreen() : (firstSetup == false ? FirstSetupScreen() : LoginScreen()),
+        onboarded == false
+            ? OnboardingScreen()
+            : (firstSetup == false ? FirstSetupScreen() : userBloc.isAuthenticated ? UnlockScreen() : LoginScreen()),
       );
     }
 
@@ -173,7 +177,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   WidgetBuilder _toBuilder(RouteSettings settings, Widget child) {
     WidgetBuilder builder;
     switch (settings.name) {
-      case LoginScreen.ROUTE_LOGIN:
+      case LoginScreen.ROUTE:
       case OnboardingScreen.ROUTE:
       case FirstSetupScreen.ROUTE:
         builder = _toUnchecked(child);
@@ -194,21 +198,17 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           incident: widget.controller.incidentProvider.bloc.current,
         );
         break;
-      case LoginScreen.ROUTE_LOGIN:
+      case LoginScreen.ROUTE:
         child = LoginScreen();
         break;
-      case LoginScreen.ROUTE_CHANGE_PIN:
-        child = LoginScreen(
-          type: LoginType.changePin,
+      case ChangePinScreen.ROUTE:
+        child = ChangePinScreen(
           popOnClose: toArgument(
             settings,
             'popOnClose',
             defaultValue: false,
           ),
         );
-        break;
-      case LoginScreen.ROUTE_SWITCH_USER:
-        child = LoginScreen(type: LoginType.switchUser);
         break;
       case CommandScreen.ROUTE_INCIDENT:
         child = CommandScreen(tabIndex: CommandScreen.TAB_INCIDENT);
@@ -373,6 +373,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child: child,
         configBloc: providers.configProvider.bloc,
       );
+    } else if (providers.userProvider.bloc.isAuthenticated) {
+      child = UnlockScreen();
     } else {
       child = LoginScreen();
     }

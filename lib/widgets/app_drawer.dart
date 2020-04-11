@@ -3,10 +3,10 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/screens/change_pin_screen.dart';
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
-import 'package:SarSys/screens/login_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -172,7 +172,7 @@ class AppDrawer extends StatelessWidget {
             onTap: () async {
               Navigator.popAndPushNamed(
                 context,
-                LoginScreen.ROUTE_CHANGE_PIN,
+                ChangePinScreen.ROUTE,
                 arguments: {'popOnClose': true},
               );
             },
