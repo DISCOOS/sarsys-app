@@ -347,13 +347,13 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     } else if (_confirmPin) {
       return 'Bekreft ny pinkode er $_pin';
     } else if (_changePin) {
-      return 'Endre til ny pinkode';
+      return _bloc.isSecured ? 'Endre til ny pinkode' : 'Opprett pinkode';
     }
     return 'Oppgi ny pinkode';
   }
 
   Widget _buildSecureAction({bool enabled}) => buildAction(
-        'ENDRE',
+        _bloc.isSecured ? 'ENDRE' : 'OPPRETT',
         () async {
           try {
             await _bloc.secure(

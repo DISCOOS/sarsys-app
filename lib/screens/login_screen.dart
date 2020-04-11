@@ -167,12 +167,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                   ),
                 ),
               ),
-              Flexible(
-                child: Text(
-                  'Logger deg inn, vent litt',
-                  style: _toStyle(context, 22, FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
+              Text(
+                'Logger deg inn, vent litt',
+                style: _toStyle(context, 22, FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
