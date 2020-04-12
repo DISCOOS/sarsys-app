@@ -1,3 +1,4 @@
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/BaseMap.dart';
 import 'package:equatable/equatable.dart';
 import 'package:latlong/latlong.dart';
@@ -13,11 +14,11 @@ part 'map_widget_state_model.g.dart';
 class MapWidgetStateModel extends Equatable {
   MapWidgetStateModel({
     this.center,
-    this.zoom,
+    this.zoom = Defaults.zoom,
     this.baseMap,
     this.filters,
     this.incident,
-    this.following,
+    this.following = false,
   }) : super([center, zoom, baseMap, filters]);
   final double zoom;
   @JsonKey(fromJson: _toLatLng, toJson: _toJson)

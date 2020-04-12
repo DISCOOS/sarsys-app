@@ -315,8 +315,8 @@ void jumpToLatLngBounds(
 
 void _stopFollowMe(BuildContext context) {
   // Disable location lock?
-  var model = readState<MapWidgetStateModel>(context, MapWidgetState.STATE);
-  if (model.following) {
+  var model = readState<MapWidgetStateModel>(context, MapWidgetState.STATE, defaultValue: MapWidgetStateModel());
+  if (model?.following == true) {
     writeState(context, MapWidgetState.STATE, model.cloneWith(following: false));
     writeAppState(PageStorage.of(context));
   }

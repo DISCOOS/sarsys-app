@@ -1061,15 +1061,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       final model = readState<MapWidgetStateModel>(context, STATE);
       switch (identifier) {
         case STATE_CENTER:
-          return model.center ?? defaultValue;
+          return model?.center ?? defaultValue;
         case STATE_ZOOM:
-          return model.zoom ?? defaultValue;
+          return model?.zoom ?? defaultValue;
         case STATE_BASE_MAP:
-          return model.baseMap ?? defaultValue;
+          return model?.baseMap ?? defaultValue;
         case STATE_FOLLOWING:
-          return model.following ?? defaultValue;
+          return model?.following ?? defaultValue;
         case STATE_FILTERS:
-          return model.filters ?? defaultValue;
+          return model?.filters ?? defaultValue;
         default:
           throw '_writeState: Unexpected identifier $identifier';
       }
