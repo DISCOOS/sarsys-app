@@ -103,8 +103,8 @@ abstract class UserService {
           next = user.security.cloneWith(
             pin: pin,
             locked: locked,
-            trusted: trusted,
             heartbeat: DateTime.now(),
+            trusted: trusted ?? isTrusted(user),
             type: configBloc.config.securityType,
             mode: configBloc.config.securityMode,
           );
