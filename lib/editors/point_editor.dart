@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
@@ -159,7 +159,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
   }
 
   Widget _buildMap() {
-    return IncidentMap(
+    return MapWidget(
       incident: widget.incident,
       center: _mapController.ready ? _mapController.center : LatLng(_current.lat, _current.lon),
       mapController: _mapController,

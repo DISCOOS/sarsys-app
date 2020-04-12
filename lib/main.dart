@@ -1,4 +1,3 @@
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
@@ -10,6 +9,7 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 
+import 'core/app_state.dart';
 import 'map/tile_providers.dart';
 
 void main() async {

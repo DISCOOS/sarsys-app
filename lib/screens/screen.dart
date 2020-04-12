@@ -1,5 +1,5 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -94,9 +94,9 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
 
 /// Utility class for writing current route to PageStorage
 abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with RouteAware {
+  static const STATE = "route";
   static const FIELD_DATA = "data";
   static const FIELD_NAME = "name";
-  static const STATE_NAME = "route";
   static RouteObserver<PageRoute> _observer;
   static get observer => _observer ??= RouteObserver<PageRoute>();
 
@@ -139,7 +139,7 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
   void didPop() {}
 
   /// Get current state
-  static RouteModel state(BuildContext context) => RouteModel.fromJson(readState(context, STATE_NAME));
+  static RouteModel state(BuildContext context) => RouteModel.fromJson(readState(context, STATE));
 
   /// Write route information to PageStorage
   void writeRoute({T data, String name}) {
@@ -148,7 +148,7 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
       this.routeName = name ?? this.routeName;
       final route = this.routeName ?? ModalRoute.of(context)?.settings?.name;
       if (route != '/') {
-        writeState(context, STATE_NAME, {
+        writeState(context, STATE, {
           'name': route,
           'data': data,
           // TODO: Move to IncidentBloc using hydrated_bloc and Hive (encryption support)

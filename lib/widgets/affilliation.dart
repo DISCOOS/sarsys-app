@@ -10,6 +10,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:SarSys/core/extensions.dart';
 
 class AffiliationAvatar extends StatelessWidget {
   final Affiliation affiliation;

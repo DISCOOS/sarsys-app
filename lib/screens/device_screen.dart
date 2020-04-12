@@ -11,7 +11,7 @@ import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -144,7 +144,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
             ClipRRect(
               borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
               child: GestureDetector(
-                child: IncidentMap(
+                child: MapWidget(
                   center: center,
                   zoom: 16.0,
                   interactive: false,
@@ -152,8 +152,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                   withUnits: false,
                   withRead: true,
                   showLayers: [
-                    IncidentMapState.DEVICE_LAYER,
-                    IncidentMapState.TRACKING_LAYER,
+                    MapWidgetState.LAYER_DEVICE,
+                    MapWidgetState.LAYER_TRACKING,
                   ],
                   mapController: _controller,
                 ),

@@ -6,7 +6,7 @@ import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -136,7 +136,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         child: ClipRRect(
           borderRadius: BorderRadius.circular(UnitScreen.CORNER),
           child: GestureDetector(
-            child: IncidentMap(
+            child: MapWidget(
               center: center,
               zoom: 16.0,
               interactive: false,
@@ -148,8 +148,8 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               withControlsOffset: 16.0,
               showRetired: UnitStatus.Retired == unit.status,
               showLayers: [
-                IncidentMapState.UNIT_LAYER,
-                IncidentMapState.TRACKING_LAYER,
+                MapWidgetState.LAYER_UNIT,
+                MapWidgetState.LAYER_TRACKING,
               ],
               mapController: _controller,
             ),

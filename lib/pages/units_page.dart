@@ -37,7 +37,7 @@ class UnitsPage extends StatefulWidget {
 }
 
 class UnitsPageState extends State<UnitsPage> {
-  static const FILTER = "units_filter";
+  static const STATE = "units_filter";
   UserBloc _userBloc;
   UnitBloc _unitBloc;
   TrackingBloc _trackingBloc;
@@ -50,7 +50,7 @@ class UnitsPageState extends State<UnitsPage> {
     super.initState();
     _filter = FilterSheet.read(
       context,
-      FILTER,
+      STATE,
       defaultValue: UnitStatus.values.toSet()..remove(UnitStatus.Retired),
       onRead: _onRead,
     );
@@ -253,7 +253,7 @@ class UnitsPageState extends State<UnitsPage> {
       isScrollControlled: true,
       builder: (BuildContext bc) => FilterSheet<UnitStatus>(
         initial: _filter,
-        identifier: FILTER,
+        identifier: STATE,
         bucket: PageStorage.of(context),
         onRead: (value) => _onRead(value),
         onWrite: (value) => enumName(value),

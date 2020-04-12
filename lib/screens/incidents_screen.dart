@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/screens/screen.dart';
@@ -331,7 +331,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
       child: GestureDetector(
         child: Container(
           height: 240.0,
-          child: IncidentMap(
+          child: MapWidget(
             center: meetup ?? ipp,
             fitBounds: fitBounds,
             fitBoundOptions: FitBoundsOptions(

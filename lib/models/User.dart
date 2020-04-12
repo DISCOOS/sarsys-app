@@ -5,7 +5,7 @@ import 'package:jaguar_jwt/jaguar_jwt.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/extensions.dart';
 
 import 'Incident.dart';
 import 'Security.dart';

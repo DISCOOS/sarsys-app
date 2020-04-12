@@ -9,7 +9,7 @@ import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -151,7 +151,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         child: ClipRRect(
           borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
           child: GestureDetector(
-            child: IncidentMap(
+            child: MapWidget(
               center: center,
               zoom: 16.0,
               interactive: false,
@@ -163,8 +163,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               withControlsOffset: 16.0,
               showRetired: PersonnelStatus.Retired == personnel.status,
               showLayers: [
-                IncidentMapState.PERSONNEL_LAYER,
-                IncidentMapState.TRACKING_LAYER,
+                MapWidgetState.LAYER_PERSONNEL,
+                MapWidgetState.LAYER_TRACKING,
               ],
               mapController: _controller,
             ),

@@ -7,6 +7,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/layers/device_layer.dart';
@@ -49,9 +50,11 @@ import 'package:provider/provider.dart';
 import 'package:latlong/latlong.dart';
 import 'package:wakelock/wakelock.dart';
 
+import 'models/map_widget_state_model.dart';
+
 typedef ToolCallback = void Function(MapTool tool);
 
-class IncidentMap extends StatefulWidget {
+class MapWidget extends StatefulWidget {
   final bool interactive;
   final bool withSearch;
   final bool withControls;
@@ -105,7 +108,7 @@ class IncidentMap extends StatefulWidget {
   /// Control offset from top of map canvas
   final double withControlsOffset;
 
-  IncidentMap({
+  MapWidget({
     Key key,
     this.zoom,
     this.center,
@@ -134,7 +137,7 @@ class IncidentMap extends StatefulWidget {
     this.readCenter = false,
     this.readLayers = false,
     this.showRetired = false,
-    this.showLayers = IncidentMapState.DEFAULT_LAYERS,
+    this.showLayers = MapWidgetState.DEFAULT_LAYERS,
     this.onTap,
     this.onMessage,
     this.onPositionChanged,
@@ -146,12 +149,12 @@ class IncidentMap extends StatefulWidget {
         super(key: key);
 
   @override
-  IncidentMapState createState() => IncidentMapState();
+  MapWidgetState createState() => MapWidgetState();
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is IncidentMap &&
+      other is MapWidget &&
           runtimeType == other.runtimeType &&
           interactive == other.interactive &&
           withSearch == other.withSearch &&
@@ -224,32 +227,34 @@ class IncidentMap extends StatefulWidget {
       showRetired.hashCode;
 }
 
-class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin {
-  static const FILTER = "map_filter";
-  static const ZOOM = "zoom";
-  static const CENTER = "center";
-  static const BASE_MAP = "base_map";
-  static const POI_LAYER = "Interessepunkt";
-  static const UNIT_LAYER = "Enheter";
-  static const PERSONNEL_LAYER = "Mannskap";
-  static const DEVICE_LAYER = "Apparater";
-  static const TRACKING_LAYER = "Sporing";
-  static const COORDS_LAYER = "Koordinater";
-  static const SCALE_LAYER = "Målestokk";
+class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
+  static const STATE = "incident_map";
+  static const STATE_FILTERS = "filters";
+  static const STATE_ZOOM = "zoom";
+  static const STATE_CENTER = "center";
+  static const STATE_BASE_MAP = "baseMap";
+  static const STATE_FOLLOWING = "following";
+  static const LAYER_POI = "Interessepunkt";
+  static const LAYER_UNIT = "Enheter";
+  static const LAYER_PERSONNEL = "Mannskap";
+  static const LAYER_DEVICE = "Apparater";
+  static const LAYER_TRACKING = "Sporing";
+  static const LAYER_COORDS = "Koordinater";
+  static const LAYER_SCALE = "Målestokk";
 
   static const ALL_LAYERS = [
-    POI_LAYER,
-    UNIT_LAYER,
-    PERSONNEL_LAYER,
-    TRACKING_LAYER,
-    DEVICE_LAYER,
-    SCALE_LAYER,
-    COORDS_LAYER,
+    LAYER_POI,
+    LAYER_UNIT,
+    LAYER_PERSONNEL,
+    LAYER_TRACKING,
+    LAYER_DEVICE,
+    LAYER_SCALE,
+    LAYER_COORDS,
   ];
   static const DEFAULT_LAYERS = [
-    POI_LAYER,
-    UNIT_LAYER,
-    SCALE_LAYER,
+    LAYER_POI,
+    LAYER_UNIT,
+    LAYER_SCALE,
   ];
 
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
@@ -266,6 +271,9 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   MapToolController _mapToolController;
   LocationController _locationController;
   PermissionController _permissionController;
+
+  /// Conditionally set during initialization
+  Future<LatLng> _locationRequest;
 
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
@@ -287,8 +295,6 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   /// Tile error data persisted across map reloads
   final Map<BaseMap, TileErrorData> _tileErrorData = {};
-
-  /// Pl
 
   /// Placeholder shown when a tile fails to load
   final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
@@ -345,7 +351,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   @override
-  void didUpdateWidget(IncidentMap old) {
+  void didUpdateWidget(MapWidget old) {
     super.didUpdateWidget(old);
     // Assumes that this.hash and this.== are up to date!
     if (widget != old) {
@@ -378,8 +384,8 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     _center ??= _ensureCenter();
 
     if (_attemptRestore) {
-      _zoom = _readState(ZOOM, defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
-      _center = _readState(CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
+      _zoom = _readState(STATE_ZOOM, defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
+      _center = _readState(STATE_CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
       _attemptRestore = false;
     }
   }
@@ -420,12 +426,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _setup({bool wasZoom = true}) {
     if (wasZoom)
       _zoom = _readState(
-        ZOOM,
+        STATE_ZOOM,
         read: widget.readZoom,
         orElse: _zoom,
         defaultValue: widget.zoom ?? Defaults.zoom,
       );
-    _setBaseMap(_readState(BASE_MAP, defaultValue: Defaults.baseMap));
+    _setBaseMap(
+      _readState(STATE_BASE_MAP, defaultValue: Defaults.baseMap),
+    );
     _useLayers = _resolveLayers();
     if (_mapController != null) {
       _mapController.progress.removeListener(_onMoveProgress);
@@ -441,7 +449,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   }
 
   Set<String> _resolveLayers() => widget.withRead && widget.readLayers
-      ? (FilterSheet.read(context, FILTER, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
+      ? (FilterSheet.read(context, STATE_FILTERS, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
       : (_withLayers()..retainAll(widget.showLayers.toSet()));
 
   void _ensureMapToolController() {
@@ -453,28 +461,28 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             _incidentBloc,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(POI_LAYER),
+            active: () => _useLayers.contains(LAYER_POI),
           ),
           UnitTool(
             _trackingBloc,
             user: _userBloc.user,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(UNIT_LAYER),
+            active: () => _useLayers.contains(LAYER_UNIT),
           ),
           PersonnelTool(
             _trackingBloc,
             user: _userBloc.user,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(PERSONNEL_LAYER),
+            active: () => _useLayers.contains(LAYER_PERSONNEL),
           ),
           DeviceTool(
             _trackingBloc,
             user: _userBloc.user,
             controller: _mapController,
             onMessage: widget.onMessage,
-            active: () => _useLayers.contains(DEVICE_LAYER),
+            active: () => _useLayers.contains(LAYER_DEVICE),
           ),
           PositionTool(
             controller: _mapController,
@@ -499,8 +507,19 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
       );
-      _locationController.init();
+      _scheduleInitLocation((_) {
+        final following = _readState(STATE_FOLLOWING, defaultValue: false);
+        if (following) {
+          _locationController.goto(locked: true);
+          _updateLocationToolState(force: true);
+        }
+      });
     }
+  }
+
+  void _scheduleInitLocation(ValueChanged<LatLng> callback) {
+    _locationRequest ??= _locationController.init();
+    _locationRequest.then(callback);
   }
 
   PermissionController _ensurePermissionController() {
@@ -537,7 +556,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   Position _tryCenterOnMe() {
     final current = widget.withControlsLocateMe ? _locationController.current : null;
     if (widget.withControlsLocateMe && _center == null && current == null) {
-      _locationController.init().then((point) => setState(() => _center = point));
+      _scheduleInitLocation((location) => setState(() => _center = location));
     }
     return current;
   }
@@ -617,9 +636,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     );
   }
 
+  bool get isFollowing => _isLocating.value.locked || _readState(STATE_FOLLOWING, defaultValue: false);
+
   void _fitToBoundsOnce() async {
     if (_hasFitToBounds == false) {
-      if (widget.fitBounds?.isValid == true) {
+      if (!isFollowing && widget.fitBounds?.isValid == true) {
         // Listen for ready event
         _mapController.onReady.then((_) => _fitBounds());
       }
@@ -643,14 +664,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       ..clear()
       ..addAll([
         _buildBaseMapLayer(),
-        if (_useLayers.contains(DEVICE_LAYER)) _buildDeviceOptions(),
-        if (_useLayers.contains(PERSONNEL_LAYER)) _buildPersonnelOptions(),
-        if (_useLayers.contains(UNIT_LAYER)) _buildUnitOptions(),
-        if (_useLayers.contains(POI_LAYER) && widget.incident != null) _buildPoiOptions(),
+        if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
+        if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
+        if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
+        if (_useLayers.contains(LAYER_POI) && widget.incident != null) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
-        if (widget.withCoordsPanel && _useLayers.contains(COORDS_LAYER)) CoordinateLayerOptions(),
-        if (widget.withScaleBar && _useLayers.contains(SCALE_LAYER)) _buildScaleBarOptions(),
+        if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
+        if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),
       ]);
     return _layerOptions;
@@ -766,14 +787,14 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
             MapControl(
               icon: Icons.add,
               onPressed: () {
-                _zoom = _writeState(ZOOM, math.min(_zoom + 1, _maxZoom()));
+                _zoom = _writeState(STATE_ZOOM, math.min(_zoom + 1, _maxZoom()));
                 _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             ),
             MapControl(
               icon: Icons.remove,
               onPressed: () {
-                _zoom = _writeState(ZOOM, math.max(_zoom - 1, _minZoom()));
+                _zoom = _writeState(STATE_ZOOM, math.max(_zoom - 1, _minZoom()));
                 _mapController.animatedMove(_center, _zoom, this, milliSeconds: 250);
               },
             )
@@ -784,9 +805,11 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
               listenable: _isLocating,
               onPressed: () {
                 _locationController.goto();
+                _writeState(STATE_FOLLOWING, false);
               },
               onLongPress: () {
                 _locationController.goto(locked: true);
+                _writeState(STATE_FOLLOWING, true);
               },
             ),
           if (widget.withControlsTool)
@@ -848,7 +871,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
     return DeviceLayerOptions(
       bloc: _trackingBloc,
       onMessage: widget.onMessage,
-      showTail: _useLayers.contains(TRACKING_LAYER),
+      showTail: _useLayers.contains(LAYER_TRACKING),
     );
   }
 
@@ -857,7 +880,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       bloc: _trackingBloc,
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
-      showTail: _useLayers.contains(TRACKING_LAYER),
+      showTail: _useLayers.contains(LAYER_TRACKING),
     );
   }
 
@@ -866,7 +889,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       bloc: _trackingBloc,
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
-      showTail: _useLayers.contains(TRACKING_LAYER),
+      showTail: _useLayers.contains(LAYER_TRACKING),
     );
   }
 
@@ -894,7 +917,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
     var center = position.center;
     if ((hasGesture) && _mapController.ready) {
-      _zoom = _writeState(ZOOM, _mapController.zoom);
+      _zoom = _writeState(STATE_ZOOM, _mapController.zoom);
       if (widget.withControlsLocateMe) {
         if (_locationController.isLocked) {
           center = _center;
@@ -903,15 +926,19 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       }
     }
     if ((hasGesture) && widget.withControlsLocateMe) {
-      if (_locationController.isLocated != _isLocating.value?.toggled) {
-        _isLocating.value = MapControlState(
-          toggled: _locationController.isLocated,
-          locked: _locationController.isLocked,
-        );
-      }
+      _updateLocationToolState();
     }
-    _center = _writeState(CENTER, center);
+    _center = _writeState(STATE_CENTER, center);
     if (widget.onPositionChanged != null) widget.onPositionChanged(position, hasGesture);
+  }
+
+  void _updateLocationToolState({bool force = false}) {
+    if (force || _locationController.isLocated != _isLocating.value?.toggled) {
+      _isLocating.value = MapControlState(
+        toggled: _locationController.isLocated,
+        locked: _locationController.isLocked,
+      );
+    }
   }
 
   void _clearSearchField() {
@@ -968,7 +995,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
           child: Center(child: BaseMapCard(map: map)),
           onTap: () => setState(
             () {
-              _setBaseMap(_writeState(BASE_MAP, map));
+              _setBaseMap(_writeState(STATE_BASE_MAP, map));
               _setLayerOptions();
               Navigator.pop(context);
             },
@@ -999,7 +1026,7 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
       builder: (BuildContext bc) => FilterSheet<String>(
         allowNone: true,
         initial: _useLayers,
-        identifier: FILTER,
+        identifier: STATE_FILTERS,
         bucket: PageStorage.of(context),
         onBuild: () => _withLayers().map(
           (name) => FilterData(
@@ -1014,26 +1041,84 @@ class IncidentMapState extends State<IncidentMap> with TickerProviderStateMixin 
 
   Set<String> _withLayers() {
     final layers = ALL_LAYERS.toList();
-    if (!widget.withScaleBar) layers.remove(SCALE_LAYER);
-    if (!widget.withCoordsPanel) layers.remove(COORDS_LAYER);
-    if (!widget.withPOIs) layers.remove(POI_LAYER);
-    if (!widget.withUnits) layers.remove(UNIT_LAYER);
-    if (!widget.withPersonnel) layers.remove(PERSONNEL_LAYER);
-    if (!widget.withDevices) layers.remove(DEVICE_LAYER);
-    if (!widget.withTracking) layers.remove(TRACKING_LAYER);
+    if (!widget.withScaleBar) layers.remove(LAYER_SCALE);
+    if (!widget.withCoordsPanel) layers.remove(LAYER_COORDS);
+    if (!widget.withPOIs) layers.remove(LAYER_POI);
+    if (!widget.withUnits) layers.remove(LAYER_UNIT);
+    if (!widget.withPersonnel) layers.remove(LAYER_PERSONNEL);
+    if (!widget.withDevices) layers.remove(LAYER_DEVICE);
+    if (!widget.withTracking) layers.remove(LAYER_TRACKING);
     return layers.toSet();
   }
 
   void _onMoveProgress() {
-    _zoom = _writeState(ZOOM, _mapController.progress.value.zoom);
-    _center = _writeState(CENTER, _mapController.progress.value.center);
+    _zoom = _writeState(STATE_ZOOM, _mapController.progress.value.zoom);
+    _center = _writeState(STATE_CENTER, _mapController.progress.value.center);
   }
 
-  T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) => (widget.withRead && read)
-      ? readState<T>(context, identifier, defaultValue: defaultValue)
-      : read ? defaultValue : orElse ?? defaultValue;
+  T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) {
+    if (widget.withRead && read) {
+      final model = readState<MapWidgetStateModel>(context, STATE);
+      switch (identifier) {
+        case STATE_CENTER:
+          return model.center ?? defaultValue;
+        case STATE_ZOOM:
+          return model.zoom ?? defaultValue;
+        case STATE_BASE_MAP:
+          return model.baseMap ?? defaultValue;
+        case STATE_FOLLOWING:
+          return model.following ?? defaultValue;
+        case STATE_FILTERS:
+          return model.filters ?? defaultValue;
+        default:
+          throw '_writeState: Unexpected identifier $identifier';
+      }
+    }
+    return read ? defaultValue : orElse ?? defaultValue;
+  }
 
-  T _writeState<T>(String identifier, T value) => widget.withWrite ? writeState<T>(context, identifier, value) : value;
+  T _writeState<T>(String identifier, T value) {
+    if (widget.withWrite) {
+      var model = readState<MapWidgetStateModel>(context, STATE);
+      switch (identifier) {
+        case STATE_CENTER:
+          model = model.cloneWith(
+            center: value as LatLng,
+            incident: widget.incident?.id,
+          );
+          break;
+        case STATE_ZOOM:
+          model = model.cloneWith(
+            zoom: value as double,
+            incident: widget.incident?.id,
+          );
+          break;
+        case STATE_BASE_MAP:
+          model = model.cloneWith(
+            baseMap: value as BaseMap,
+            incident: widget.incident?.id,
+          );
+          break;
+        case STATE_FOLLOWING:
+          model = model.cloneWith(
+            following: value as bool,
+            incident: widget.incident?.id,
+          );
+          break;
+        case STATE_FILTERS:
+          model = model.cloneWith(
+            filters: value as List<String>,
+            incident: widget.incident?.id,
+          );
+          break;
+        default:
+          throw '_writeState: Unexpected identifier $identifier';
+      }
+      writeState<MapWidgetStateModel>(context, STATE, model);
+      writeAppState(PageStorage.of(context));
+    }
+    return value;
+  }
 }
 
 /// Incident MapController that supports animated move operations

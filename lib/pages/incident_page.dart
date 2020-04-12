@@ -3,7 +3,7 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -167,7 +167,7 @@ class _IncidentPageState extends State<IncidentPage> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(IncidentPage.CORNER),
           child: GestureDetector(
-            child: IncidentMap(
+            child: MapWidget(
               incident: incident,
               center: meetup ?? ipp,
               fitBounds: fitBounds,

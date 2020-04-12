@@ -1,0 +1,66 @@
+import 'package:SarSys/models/BaseMap.dart';
+import 'package:equatable/equatable.dart';
+import 'package:latlong/latlong.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:SarSys/core/extensions.dart';
+
+part 'map_widget_state_model.g.dart';
+
+@JsonSerializable(
+  explicitToJson: true,
+  anyMap: true,
+)
+class MapWidgetStateModel extends Equatable {
+  MapWidgetStateModel({
+    this.center,
+    this.zoom,
+    this.baseMap,
+    this.filters,
+    this.incident,
+    this.following,
+  }) : super([center, zoom, baseMap, filters]);
+  final double zoom;
+  @JsonKey(fromJson: _toLatLng, toJson: _toJson)
+  final LatLng center;
+  final BaseMap baseMap;
+  final List<String> filters;
+  final bool following;
+  final String incident;
+
+  /// Factory constructor for creating a new `MapWidgetStateModel` instance from json data
+  factory MapWidgetStateModel.fromJson(Map<String, dynamic> json) => _$MapWidgetStateModelFromJson(json);
+
+  /// Declare support for serialization to JSON
+  Map<String, dynamic> toJson() => _$MapWidgetStateModelToJson(this);
+
+  static _toLatLng(Map<String, dynamic> value) => value?.isNotEmpty == true
+      ? LatLng(
+          value.elementAt('lat') as double,
+          value.elementAt('lon') as double,
+        )
+      : null;
+
+  static _toJson(LatLng center) => center == null
+      ? null
+      : {
+          'lat': center.latitude,
+          'lon': center.longitude,
+        };
+
+  MapWidgetStateModel cloneWith({
+    LatLng center,
+    double zoom,
+    BaseMap baseMap,
+    bool following,
+    String incident,
+    List<String> filters,
+  }) =>
+      MapWidgetStateModel(
+        center: center ?? this.center,
+        zoom: zoom ?? this.zoom,
+        baseMap: baseMap ?? this.baseMap,
+        filters: filters ?? this.filters,
+        incident: incident ?? this.incident,
+        following: following ?? this.following,
+      );
+}

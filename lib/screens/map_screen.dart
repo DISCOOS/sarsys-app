@@ -1,6 +1,6 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/usecase/unit.dart';
@@ -62,7 +62,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
     );
   }
 
-  Widget _buildMap() => IncidentMap(
+  Widget _buildMap() => MapWidget(
         center: widget.center,
         incident: widget.incident,
         fitBounds: widget.fitBounds,

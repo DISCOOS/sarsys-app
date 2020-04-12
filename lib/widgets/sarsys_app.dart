@@ -1,7 +1,10 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -23,6 +26,7 @@ import 'package:SarSys/widgets/access_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/login_screen.dart';
+import 'package:SarSys/core/extensions.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -283,13 +287,19 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       );
     }
     if (incident != null) {
-      final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
-      final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
-      final fitBounds = LatLngBounds(ipp, meetup);
-      return MapScreen(
-        incident: incident,
-        fitBounds: fitBounds,
+      var model = readState<MapWidgetStateModel>(
+        widget.navigatorKey.currentState.context,
+        MapWidgetState.STATE,
       );
+      if (model?.incident != incident.id) {
+        final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
+        final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
+        final fitBounds = LatLngBounds(ipp, meetup);
+        return MapScreen(
+          incident: incident,
+          fitBounds: fitBounds,
+        );
+      }
     }
     return MapScreen();
   }
@@ -346,7 +356,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else if (userBloc.isReady) {
       var route = widget.bucket.readState(
         context,
-        identifier: RouteWriter.STATE_NAME,
+        identifier: RouteWriter.STATE,
       );
       if (route is Map) {
         final _route = Map.from(route);

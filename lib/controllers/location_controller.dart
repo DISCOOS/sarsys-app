@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:catcher/catcher_plugin.dart';

@@ -1,5 +1,5 @@
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
-import 'package:SarSys/map/incident_map.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/data_utils.dart';

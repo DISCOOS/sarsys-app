@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -289,7 +292,8 @@ void jumpToPoint(BuildContext context, {Point center, Incident incident}) {
 
 void jumpToLatLng(BuildContext context, {LatLng center, Incident incident}) {
   if (center != null) {
-    Navigator.pushNamed(context, MapScreen.ROUTE, arguments: {"center": center, "incident": incident});
+    _stopFollowMe(context);
+    Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {"center": center, "incident": incident});
   }
 }
 
@@ -300,11 +304,21 @@ void jumpToLatLngBounds(
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
   if (fitBounds != null && fitBounds.isValid) {
-    Navigator.pushNamed(context, MapScreen.ROUTE, arguments: {
+    _stopFollowMe(context);
+    Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {
       "incident": incident,
       "fitBounds": fitBounds,
       "fitBoundOptions": fitBoundOptions,
     });
+  }
+}
+
+void _stopFollowMe(BuildContext context) {
+  // Disable location lock?
+  var model = readState<MapWidgetStateModel>(context, MapWidgetState.STATE);
+  if (model.following) {
+    writeState(context, MapWidgetState.STATE, model.cloneWith(following: false));
+    writeAppState(PageStorage.of(context));
   }
 }
 
