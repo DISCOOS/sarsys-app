@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:catcher/catcher_plugin.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:app_settings/app_settings.dart';
 
 class PermissionController {
   PermissionController({
@@ -212,6 +215,8 @@ class PermissionController {
 
   Future _onAction(PermissionHandler handler, PermissionRequest request) async {
     var prompt = true;
+
+    /// TODO: Move userDeniedGroupBefore counter to AppConfig
     final prefs = await SharedPreferences.getInstance();
     var status = await handler.checkPermissionStatus(request.group);
     // In case permissions was granted in app settings screen
@@ -223,20 +228,7 @@ class PermissionController {
       }
       if (prompt) {
         if (deniedBefore < 2) {
-          var response = await handler.requestPermissions([request.group]);
-          var status = response[request.group];
-          if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
-            await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
-            handle(status, request);
-          } else {
-            await prefs.setInt("userDeniedGroupBefore_${request.group}", ++deniedBefore);
-            if (onMessage != null) {
-              onMessage(
-                "${request.title} er ikke tilgjengelig. ${request.consequence}",
-                data: request,
-              );
-            }
-          }
+          await _request(handler, request, prefs, deniedBefore);
         } else {
           // In case permissions was granted in app settings screen
           var status = await handler.checkPermissionStatus(request.group);
@@ -247,6 +239,31 @@ class PermissionController {
             handle(status, request);
           }
         }
+      }
+    }
+  }
+
+  Future _request(
+      PermissionHandler handler, PermissionRequest request, SharedPreferences prefs, int deniedBefore) async {
+    try {
+      var response = await handler.requestPermissions([request.group]);
+      var status = response[request.group];
+      if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
+        await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
+        handle(status, request);
+      } else {
+        await prefs.setInt("userDeniedGroupBefore_${request.group}", ++deniedBefore);
+        if (onMessage != null) {
+          onMessage(
+            "${request.title} er ikke tilgjengelig. ${request.consequence}",
+            data: request,
+          );
+        }
+      }
+    } on PlatformException catch (e, stackTrace) {
+      // TODO: Implement request queue for sequential processing
+      if (e.code != 'ERROR_ALREADY_REQUESTING_PERMISSIONS') {
+        Catcher.reportCheckedError(e, stackTrace);
       }
     }
   }
