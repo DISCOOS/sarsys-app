@@ -4,10 +4,10 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
@@ -420,12 +420,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
       );
 
-  Widget _buildUserInput(UserBloc bloc) =>
-      bloc.securityMode == SecurityMode.shared ? _buildSharedUseInput(bloc) : _buildPrivateUseInput(bloc);
+  Widget _buildUserInput(UserBloc bloc) => bloc.isShared ? _buildSharedUseInput(bloc) : _buildPrivateUseInput(bloc);
 
   Widget _buildPrivateUseInput(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(top: 24.0),
-        child: _buildEmailTextField(),
+        child: _buildEmailTextField(bloc),
       );
 
   Widget _buildSharedUseInput(UserBloc bloc) => Padding(
@@ -435,7 +434,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             builder: (context, snapshot) {
               return snapshot.data?.is200 == true
                   ? _newUser || snapshot.data.body.isEmpty
-                      ? _buildEmailTextField()
+                      ? _buildEmailTextField(bloc)
                       : buildDropDownField<String>(
                           attribute: 'email',
                           isDense: false,
@@ -455,7 +454,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                           },
                           validators: [],
                         )
-                  : _buildEmailTextField();
+                  : _buildEmailTextField(bloc);
             }),
       );
 
@@ -498,7 +497,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       ));
   }
 
-  TextFormField _buildEmailTextField() => TextFormField(
+  TextFormField _buildEmailTextField(UserBloc bloc) => TextFormField(
         maxLines: 1,
         keyboardType: TextInputType.emailAddress,
         textInputAction: TextInputAction.go,
@@ -508,7 +507,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         decoration: InputDecoration(
           hintText: 'Påloggingsadresse',
         ),
-        validator: (value) => value.isEmpty ? 'Påloggingsadresse må fylles ut' : null,
+        validator: (value) {
+          if (bloc.isShared) {
+            final domain = UserService.toDomain(value);
+            if (!bloc.service.configBloc.config.trustedDomains.contains(domain)) {
+              return '$value er ikke tillatt';
+            }
+          }
+          return value.isEmpty ? 'Påloggingsadresse må fylles ut' : null;
+        },
         onSaved: (value) => _username = value,
       );
 
