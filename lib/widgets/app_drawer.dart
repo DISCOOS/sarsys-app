@@ -58,7 +58,7 @@ class AppDrawer extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 8.0, right: 16.0),
+                    padding: const EdgeInsets.only(top: 8.0, right: 8.0),
                     child: FractionallySizedBox(
                       widthFactor: 0.55,
                       child: Column(
@@ -85,10 +85,13 @@ class AppDrawer extends StatelessWidget {
                               );
                             },
                           ),
-                          Text(
-                            roles.isEmpty ? 'Ingen roller' : roles.map(translateUserRole).join(', '),
-                            style: TextStyle(color: Colors.white38),
-                            textAlign: TextAlign.end,
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              roles.isEmpty ? 'Ingen roller' : roles.map(translateUserRole).join(', '),
+                              style: TextStyle(color: Colors.white38),
+                              textAlign: TextAlign.end,
+                            ),
                           ),
                         ],
                       ),
