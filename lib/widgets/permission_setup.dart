@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -77,74 +78,82 @@ class PermissionSetupState extends State<PermissionSetup> {
       child: ListView(
         itemExtent: 88,
         children: <Widget>[
-          ListTile(
-            title: Text('Tilgang til posisjon'),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 8.0, right: 16.0),
-              child: Text('For å finne deg selv i kartet og sporing'),
-            ),
-            trailing: FutureBuilder<PermissionStatus>(
-                future: _locationStatus,
-                builder: (context, snapshot) {
-                  _locationGranted = PermissionStatus.granted == snapshot.data;
-                  return snapshot.hasData
-                      ? !_locationGranted
-                          ? Switch(
-                              value: false,
-                              onChanged: (value) async {
-                                if (value) {
-                                  _permissions.ask(
-                                    _permissions.locationWhenInUseRequest,
-                                  );
-                                }
-                              },
-                            )
-                          : IconButton(
-                              icon: Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              ),
-                              onPressed: null,
-                              iconSize: 32,
-                            )
-                      : CircularProgressIndicator();
-                }),
-          ),
-          ListTile(
-            title: Text('Tilgang til lagring'),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 8.0, right: 16.0),
-              child: Text('For lagring av kartdata lokalt'),
-            ),
-            trailing: FutureBuilder<PermissionStatus>(
-                future: _storageStatus,
-                builder: (context, snapshot) {
-                  _storageGranted = PermissionStatus.granted == snapshot.data;
-                  return snapshot.hasData
-                      ? !_storageGranted
-                          ? Switch(
-                              value: false,
-                              onChanged: (value) async {
-                                if (value) {
-                                  _storageStatus = _permissions.ask(
-                                    _permissions.storageRequest,
-                                  );
-                                }
-                              },
-                            )
-                          : IconButton(
-                              icon: Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              ),
-                              onPressed: null,
-                              iconSize: 32,
-                            )
-                      : CircularProgressIndicator();
-                }),
-          ),
+          _buildPermissionLocation(),
+          if (Platform.isAndroid) _buildPermissionStorage(),
         ],
       ),
+    );
+  }
+
+  ListTile _buildPermissionStorage() {
+    return ListTile(
+      title: Text('Tilgang til lagring'),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8.0, right: 16.0),
+        child: Text('For lagring av kartdata lokalt'),
+      ),
+      trailing: FutureBuilder<PermissionStatus>(
+          future: _storageStatus,
+          builder: (context, snapshot) {
+            _storageGranted = PermissionStatus.granted == snapshot.data;
+            return snapshot.hasData
+                ? !_storageGranted
+                    ? Switch(
+                        value: false,
+                        onChanged: (value) async {
+                          if (value) {
+                            _storageStatus = _permissions.ask(
+                              _permissions.storageRequest,
+                            );
+                          }
+                        },
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                        onPressed: null,
+                        iconSize: 32,
+                      )
+                : CircularProgressIndicator();
+          }),
+    );
+  }
+
+  ListTile _buildPermissionLocation() {
+    return ListTile(
+      title: Text('Tilgang til posisjon'),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8.0, right: 16.0),
+        child: Text('For å finne deg selv i kartet og sporing'),
+      ),
+      trailing: FutureBuilder<PermissionStatus>(
+          future: _locationStatus,
+          builder: (context, snapshot) {
+            _locationGranted = PermissionStatus.granted == snapshot.data;
+            return snapshot.hasData
+                ? !_locationGranted
+                    ? Switch(
+                        value: false,
+                        onChanged: (value) async {
+                          if (value) {
+                            _permissions.ask(
+                              _permissions.locationWhenInUseRequest,
+                            );
+                          }
+                        },
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                        onPressed: null,
+                        iconSize: 32,
+                      )
+                : CircularProgressIndicator();
+          }),
     );
   }
 }

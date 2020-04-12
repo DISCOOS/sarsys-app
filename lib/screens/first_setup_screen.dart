@@ -42,7 +42,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
 
   String _organization = Defaults.organization;
 
-  bool get isComplete => isLocationGranted && isStorageGranted;
+  bool get isComplete => isLocationGranted && (isStorageGranted || !Platform.isAndroid);
 
   bool get isStorageGranted => _isStorageGranted || (_permissionsKey?.currentState?.isStorageGranted ?? false);
   bool _isStorageGranted = false;
