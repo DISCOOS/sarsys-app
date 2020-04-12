@@ -1,13 +1,17 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/screens/screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 T readState<T>(BuildContext context, String identifier, {T defaultValue}) =>
     PageStorage.of(context)?.readState(context, identifier: identifier) ?? defaultValue;
@@ -52,7 +56,7 @@ _writeTypedState<T>(
 
 Map<String, dynamic> readFromFile(Directory dir, String fileName) {
   var values;
-  File file = new File(dir.path + "/" + fileName);
+  File file = File(dir.path + "/" + fileName);
   if (file.existsSync()) {
     values = json.decode(file.readAsStringSync());
   }
@@ -74,9 +78,24 @@ T _readTypedState<T>(BuildContext context, PageStorageBucket bucket, Object iden
 }
 
 void writeToFile(Map<String, dynamic> content, Directory dir, String fileName) {
-  File file = new File(dir.path + "/" + fileName);
+  File file = File(dir.path + "/" + fileName);
   if (!file.existsSync()) {
     file.createSync();
   }
   file.writeAsStringSync(json.encode(content));
+}
+
+void deleteFile(Directory dir, String fileName) {
+  File file = File(dir.path + "/" + fileName);
+  if (file.existsSync()) {
+    file.deleteSync();
+  }
+}
+
+Future clearAppStateAndData(BuildContext context) async {
+  await BlocProvider.of<AppConfigBloc>(context).init();
+  await BlocProvider.of<UserBloc>(context).clear();
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+  deleteFile(await getApplicationDocumentsDirectory(), "app_state.json");
 }

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/screens/config/affiliation_config_screen.dart';
 import 'package:SarSys/screens/config/map_config_screen.dart';
@@ -229,9 +229,8 @@ class SettingsScreenState extends State<SettingsScreen> {
           'Dette vil logge deg ut gjennopprette fabrikkinnstillene',
         );
         if (reset) {
-          await _configBloc.init();
-          await BlocProvider.of<UserBloc>(context).clear();
           Navigator.pop(context);
+          await clearAppStateAndData(context);
         }
       },
     );
