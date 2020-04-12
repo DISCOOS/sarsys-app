@@ -106,7 +106,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
     return Scaffold(
       backgroundColor: Colors.grey[300],
-      appBar: _buildAppBar(context),
+      appBar: _bloc.isSecured ? _buildAppBar(context) : null,
       body: SafeArea(
         child: Center(
           child: FractionallySizedBox(

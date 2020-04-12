@@ -23,7 +23,7 @@ abstract class UserService {
   bool get personalMode => SecurityMode.personal == configBloc.config.securityMode;
 
   /// Check if [User] is in a trusted domain
-  bool isTrusted(User user) => configBloc.config.trustedDomains.contains(toDomain(user.uname));
+  bool isTrusted(User user) => configBloc.config.trustedDomains?.contains(toDomain(user.uname));
 
   Future<ServiceResponse<bool>> isSecured() async {
     try {
