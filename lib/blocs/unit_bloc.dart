@@ -49,7 +49,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         // TODO: Mark as internal event, no message from units service expected
         dispatch(ClearUnits(_units.keys.toList()));
       } else if (state.isSelected()) {
-        _fetch(state.data.id);
+        _fetch(state.data.uuid);
       }
     }
   }
@@ -59,6 +59,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
       final event = state as PersonnelUpdated;
       final unit = _units.values.firstWhere(
         (unit) => unit.personnel?.map((personnel) => personnel.id)?.contains(event.data.id),
+        orElse: () => null,
       );
       // Update personnel
       if (unit != null) {
@@ -71,6 +72,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
       final event = state as PersonnelDeleted;
       final unit = _units.values.firstWhere(
         (unit) => unit.personnel?.map((personnel) => personnel.id)?.contains(event.data.id),
+        orElse: () => null,
       );
       // Remove personnel?
       if (unit != null) {
@@ -108,12 +110,16 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   /// Creating a new 'Unit' instance from template string
   Unit fromTemplate(String department, String template, {int offset = 20}) {
-    final type = UnitType.values.firstWhere((type) {
-      final name = translateUnitType(type).toLowerCase();
-      final match =
-          template.length >= name.length ? template.substring(0, min(name.length, template.length))?.trim() : template;
-      return name.startsWith(match.toLowerCase());
-    });
+    final type = UnitType.values.firstWhere(
+      (type) {
+        final name = translateUnitType(type).toLowerCase();
+        final match = template.length >= name.length
+            ? template.substring(0, min(name.length, template.length))?.trim()
+            : template;
+        return name.startsWith(match.toLowerCase());
+      },
+      orElse: () => null,
+    );
 
     if (type != null) {
       final name = translateUnitType(type).toLowerCase();
@@ -168,7 +174,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.fetch()'",
       );
     }
-    return _fetch(incidentBloc.current.id);
+    return _fetch(incidentBloc.selected.uuid);
   }
 
   Future<List<Unit>> _fetch(String id) async {
@@ -210,7 +216,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _create(CreateUnit event) async {
-    var response = await service.create(incidentBloc.current.id, event.data);
+    var response = await service.create(incidentBloc.selected.uuid, event.data);
     if (response.is200) {
       var unit = _units.putIfAbsent(
         response.body.id,

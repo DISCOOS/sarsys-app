@@ -118,10 +118,10 @@ String translateOperationalFunction(OperationalFunction function) {
   switch (function) {
     case OperationalFunction.Commander:
       return "Aksjonsleder";
-    case OperationalFunction.Personnel:
-      return "Mannskap";
     case OperationalFunction.UnitLeader:
-    default:
       return "Lagleder";
+    case OperationalFunction.Personnel:
+    default:
+      return "Mannskap";
   }
 }

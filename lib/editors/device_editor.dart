@@ -47,7 +47,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   void initState() {
     super.initState();
-    _organization = FleetMapService().fetchOrganization(Defaults.organization);
+    _organization = FleetMapService().fetchOrganization(Defaults.organizationId);
     _initAliasController();
     _initNumberController();
   }
@@ -190,8 +190,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
-        FormBuilderValidators.required(errorText: 'Nummer må fylles inn'),
-        FormBuilderValidators.numeric(errorText: "Må være et nummer"),
+        FormBuilderValidators.required(errorText: 'Påkrevd'),
         (number) {
           Device device = _deviceBloc.devices.values.firstWhere(
             (Device device) => isSameNumber(device, number),
@@ -255,7 +254,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultFunction(Organization org) => org?.toFunction(widget?.device?.number) ?? '-';
+  String _defaultFunction(Organization org) => org?.toFunctionFromNumber(widget?.device?.number) ?? '-';
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -320,7 +319,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       _editedName = alias ?? number ?? _defaultName();
       _editedAffiliation = org?.toAffiliationAsString(number, empty: '-') ?? _editedAffiliation;
       _editedOrgAlias = org?.alias ?? _editedOrgAlias;
-      _editedFunction = org?.toFunction(number) ?? _editedFunction;
+      _editedFunction = org?.toFunctionFromNumber(number) ?? _editedFunction;
       if (update) setState(() {});
     }
   }

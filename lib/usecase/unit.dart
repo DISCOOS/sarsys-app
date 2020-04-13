@@ -12,7 +12,6 @@ import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,24 +22,21 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final List<Device> devices;
   final List<Personnel> personnel;
 
-  UnitParams(
-    BuildContext context, {
+  UnitParams({
     Unit unit,
     this.point,
     this.devices,
     this.personnel,
-  }) : super(context, unit);
+  }) : super(unit);
 }
 
 /// Create unit with tracking of given devices
-Future<dartz.Either<bool, Unit>> createUnit(
-  BuildContext context, {
+Future<dartz.Either<bool, Unit>> createUnit({
   Point point,
   List<Device> devices,
   List<Personnel> personnel,
 }) =>
     CreateUnit()(UnitParams(
-      context,
       point: point,
       devices: devices,
       personnel: personnel,
@@ -54,7 +50,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
     // Select unit position?
     if (point != null) {
       point = await showDialog<Point>(
-        context: params.context,
+        context: params.overlay.context,
         builder: (context) => PointEditor(
           point,
           title: "Velg enhetens posisjon",
@@ -64,7 +60,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
       if (point == null) return dartz.Left(false);
     }
     var result = await showDialog<UnitParams>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => UnitEditor(
         point: point,
         devices: params.devices,
@@ -88,11 +84,9 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
 
 /// Edit given unit
 Future<dartz.Either<bool, Unit>> editUnit(
-  BuildContext context,
   Unit unit,
 ) =>
     EditUnit()(UnitParams(
-      context,
       unit: unit,
     ));
 
@@ -101,7 +95,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
   Future<dartz.Either<bool, Unit>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
     var result = await showDialog<UnitParams>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => UnitEditor(
         unit: params.data,
         devices: params.devices,
@@ -124,11 +118,9 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
 
 /// Edit last known unit location
 Future<dartz.Either<bool, Point>> editUnitLocation(
-  BuildContext context,
   Unit unit,
 ) =>
     EditUnitLocation()(UnitParams(
-      context,
       unit: unit,
     ));
 
@@ -137,7 +129,7 @@ class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
   Future<dartz.Either<bool, Point>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
     var result = await showDialog<Point>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PointEditor(
         params.point,
         title: "Sett siste kjente posisjon",
@@ -151,14 +143,12 @@ class EditUnitLocation extends UseCase<bool, Point, UnitParams> {
 }
 
 /// Add given devices and personnel to tracking of given unit
-Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit(
-  BuildContext context, {
+Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit({
   List<Device> devices,
   List<Personnel> personnel,
   Unit unit,
 }) =>
     AddToUnit()(UnitParams(
-      context,
       unit: unit,
       devices: devices,
       personnel: personnel,
@@ -219,13 +209,11 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
 /// Remove tracking of given devices and personnel from unit.
 /// If a list is empty or null it is ignored (current list is kept)
 Future<dartz.Either<bool, Tracking>> removeFromUnit(
-  BuildContext context,
   Unit unit, {
   List<Device> devices,
   List<Personnel> personnel,
 }) =>
     RemoveFromUnit()(UnitParams(
-      context,
       unit: unit,
       devices: devices,
       personnel: personnel,
@@ -310,11 +298,9 @@ Future<Tracking> _handleTracking(
 
 /// Transition unit to mobilized state
 Future<dartz.Either<bool, Unit>> mobilizeUnit(
-  BuildContext context,
   Unit unit,
 ) =>
     MobilizeUnit()(UnitParams(
-      context,
       unit: unit,
     ));
 
@@ -330,11 +316,9 @@ class MobilizeUnit extends UseCase<bool, Unit, UnitParams> {
 
 /// Transition unit to deployed state
 Future<dartz.Either<bool, Unit>> deployUnit(
-  BuildContext context,
   Unit unit,
 ) =>
     DeployUnit()(UnitParams(
-      context,
       unit: unit,
     ));
 
@@ -350,11 +334,9 @@ class DeployUnit extends UseCase<bool, Unit, UnitParams> {
 
 /// Transition unit to state Retired
 Future<dartz.Either<bool, Unit>> retireUnit(
-  BuildContext context,
   Unit unit,
 ) =>
     RetireUnit()(UnitParams(
-      context,
       unit: unit,
     ));
 
@@ -383,11 +365,9 @@ Future<dartz.Either<bool, Unit>> _transitionUnit(UnitParams params, UnitStatus s
 
 /// Delete unit
 Future<dartz.Either<bool, UnitState>> deleteUnit(
-  BuildContext context,
   Unit unit,
 ) =>
     DeleteUnit()(UnitParams(
-      context,
       unit: unit,
     ));
 

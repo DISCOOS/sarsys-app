@@ -207,17 +207,17 @@ class TrackingServiceMock extends Mock implements TrackingService {
       var tracking = _.positionalArguments[0];
       // Assumes that a device is attached to a single incident only
       var incident = trackingRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(tracking.id),
+        (entry) => entry.value.containsKey(tracking.uuid),
         orElse: () => null,
       );
       if (incident != null) {
         var trackingList = incident.value;
-        trackingList.remove(tracking.id);
-        simulations.remove(tracking.id);
-        d2t.removeWhere((deviceId, trackingId) => trackingId == tracking.id);
+        trackingList.remove(tracking.uuid);
+        simulations.remove(tracking.uuid);
+        d2t.removeWhere((deviceId, trackingId) => trackingId == tracking.uuid);
         return ServiceResponse.noContent();
       }
-      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.id}");
+      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.uuid}");
     });
     return mock;
   }

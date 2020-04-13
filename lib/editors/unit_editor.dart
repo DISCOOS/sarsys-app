@@ -91,7 +91,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _init() async {
-    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.organization));
+    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.organizationId));
     _initPhoneController();
     _initNumberController();
     _initCallsignController();
@@ -590,7 +590,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _nextCallSign() {
-    final String department = _departments[_appConfigBloc.config.department];
+    final String department = _departments[_appConfigBloc.config.departmentId];
     int number = _ensureCallSignSuffix();
     return toCallsign(department, number);
   }
@@ -627,7 +627,6 @@ class _UnitEditorState extends State<UnitEditor> {
         Navigator.pop(
           context,
           UnitParams(
-            context,
             unit: unit,
             devices: _devices,
             personnel: _personnel,

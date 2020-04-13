@@ -263,7 +263,7 @@ class DeviceInfoPanel extends StatelessWidget {
                 context: context,
                 label: "Funksjon",
                 icon: Icon(Icons.functions),
-                value: snapshot.hasData ? snapshot.data.toFunction(device.number) : '-',
+                value: snapshot.hasData ? snapshot.data.toFunctionFromNumber(device.number) : '-',
                 onMessage: onMessage,
                 onComplete: _onComplete,
               ),
@@ -387,7 +387,7 @@ class DeviceInfoPanel extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              final result = await addToUnit(context, devices: [device], unit: unit);
+              final result = await addToUnit(devices: [device], unit: unit);
               if (result.isRight()) {
                 var actual = result.toIterable().first.left;
                 _onMessage("${device.name} er tilknyttet ${actual.name}");
@@ -404,7 +404,7 @@ class DeviceInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await editDevice(context, device);
+            final result = await editDevice(device);
             if (result.isRight() && result.toIterable().first != device) {
               var actual = result.toIterable().first;
               _onMessage("${actual.name} er oppdatert");
@@ -422,7 +422,7 @@ class DeviceInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await createUnit(context, devices: [device]);
+            final result = await createUnit(devices: [device]);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${device.name} er tilknyttet ${actual.name}");
@@ -440,7 +440,7 @@ class DeviceInfoPanel extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              final result = await removeFromUnit(context, unit, devices: [device]);
+              final result = await removeFromUnit(unit, devices: [device]);
               if (result.isRight()) {
                 _onMessage("${device.name} er fjernet fra ${unit.name}");
                 _onChanged(device);

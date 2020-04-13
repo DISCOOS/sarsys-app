@@ -40,7 +40,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
 
   SecurityMode _mode = SecurityMode.personal;
 
-  String _organization = Defaults.organization;
+  String _organization = Defaults.organizationId;
 
   bool get isComplete => isLocationGranted && (isStorageGranted || !Platform.isAndroid);
 
@@ -186,7 +186,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                         isDense: false,
                         items: [
                           DropdownMenuItem(
-                            value: Defaults.organization,
+                            value: Defaults.organizationId,
                             child: Text('Røde Kors Hjelpekorps'),
                           )
                         ],

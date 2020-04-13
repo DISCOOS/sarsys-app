@@ -76,6 +76,8 @@ T _$enumDecodeNullable<T>(
 
 const _$UserRoleEnumMap = {
   UserRole.commander: 'commander',
+  UserRole.planning_chief: 'planning_chief',
+  UserRole.operations_chief: 'operations_chief',
   UserRole.unit_leader: 'unit_leader',
   UserRole.personnel: 'personnel',
 };

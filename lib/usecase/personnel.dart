@@ -11,7 +11,6 @@ import 'package:SarSys/pages/personnel_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,21 +19,18 @@ import 'package:provider/provider.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Point point;
   final List<Device> devices;
-  PersonnelParams(
-    BuildContext context, {
+  PersonnelParams({
     Personnel personnel,
     this.point,
     this.devices,
-  }) : super(context, personnel);
+  }) : super(personnel);
 }
 
 /// Create personnel with tracking of given devices
-Future<dartz.Either<bool, Personnel>> createPersonnel(
-  BuildContext context, {
+Future<dartz.Either<bool, Personnel>> createPersonnel({
   List<Device> devices,
 }) =>
     CreatePersonnel()(PersonnelParams(
-      context,
       devices: devices,
     ));
 
@@ -43,7 +39,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> call(params) async {
     assert(params.data == null, "Personnel should not be supplied");
     var result = await showDialog<PersonnelParams>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PersonnelEditor(
         devices: params.devices,
         controller: Provider.of<PermissionController>(params.context),
@@ -59,11 +55,9 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
 /// Edit given personnel
 Future<dartz.Either<bool, Personnel>> editPersonnel(
-  BuildContext context,
   Personnel personnel,
 ) =>
     EditPersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 
@@ -72,7 +66,7 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> call(params) async {
     assert(params.data != null, "Personnel must be supplied");
     var result = await showDialog<PersonnelParams>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
@@ -94,11 +88,9 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
 /// Edit last known personnel location
 Future<dartz.Either<bool, Point>> editPersonnelLocation(
-  BuildContext context,
   Personnel personnel,
 ) =>
     EditPersonnelLocation()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 
@@ -107,7 +99,7 @@ class EditPersonnelLocation extends UseCase<bool, Point, PersonnelParams> {
   Future<dartz.Either<bool, Point>> call(params) async {
     assert(params.data != null, "Personnel must be supplied");
     var result = await showDialog<Point>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PointEditor(
         params.point,
         title: "Sett siste kjente posisjon",
@@ -122,12 +114,10 @@ class EditPersonnelLocation extends UseCase<bool, Point, PersonnelParams> {
 
 /// Add given devices tracking of given personnel
 Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
-  BuildContext context,
   List<Device> devices, {
   Personnel personnel,
 }) =>
     AddToPersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
       devices: devices,
     ));
@@ -161,12 +151,10 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
 
 /// Remove given devices from personnel. If no devices are supplied, all devices tracked by personnel is removed
 Future<dartz.Either<bool, Tracking>> removeFromPersonnel(
-  BuildContext context,
   Personnel personnel, {
   List<Device> devices,
 }) =>
     RemoveFromPersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
       devices: devices,
     ));
@@ -229,11 +217,9 @@ Future<Tracking> _handleTracking(
 
 /// Transition personnel to mobilized state
 Future<dartz.Either<bool, Personnel>> mobilizePersonnel(
-  BuildContext context,
   Personnel personnel,
 ) =>
     MobilizePersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 
@@ -248,11 +234,9 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 }
 
 Future<dartz.Either<bool, Personnel>> checkInPersonnel(
-  BuildContext context,
   Personnel personnel,
 ) =>
     DeployPersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 
@@ -268,11 +252,9 @@ class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
 /// Transition personnel to retired state
 Future<dartz.Either<bool, Personnel>> retirePersonnel(
-  BuildContext context,
   Personnel personnel,
 ) =>
     RetirePersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 
@@ -301,11 +283,9 @@ Future<dartz.Either<bool, Personnel>> _transitionPersonnel(PersonnelParams param
 
 /// Delete personnel
 Future<dartz.Either<bool, PersonnelState>> deletePersonnel(
-  BuildContext context,
   Personnel personnel,
 ) =>
     DeletePersonnel()(PersonnelParams(
-      context,
       personnel: personnel,
     ));
 

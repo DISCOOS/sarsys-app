@@ -40,11 +40,11 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Check if incident is unset
   bool get isUnset => _given == null;
 
-  /// Get current incident
-  Incident get current => _incidents[this._given];
+  /// Get selected incident
+  Incident get selected => _incidents[this._given];
 
-  /// Get incident from id
-  Incident at(String id) => _incidents[id];
+  /// Get incident from uuid
+  Incident at(String uuid) => _incidents[uuid];
 
   /// Get incidents
   List<Incident> get incidents => UnmodifiableListView<Incident>(_incidents.values);
@@ -52,7 +52,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   /// Stream of switched between given incidents
   Stream<Incident> get switches => state
       .where(
-        (state) => state is IncidentSelected && state.data.id != _given,
+        (state) => state is IncidentSelected && state.data.uuid != _given,
       )
       .map((state) => state.data);
 
@@ -60,7 +60,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   Stream<Incident> changes([Incident incident]) => state
       .where(
         (state) =>
-            (incident == null || state.data is Incident && state.data.id == incident.id) && state.isCreated() ||
+            (incident == null || state.data is Incident && state.data.uuid == incident.uuid) && state.isCreated() ||
             state.isUpdated() ||
             state.isSelected(),
       )
@@ -77,9 +77,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     return Future.error(response);
   }
 
-  /// Select given id
-  Future<Incident> select(String id) {
-    return _dispatch(SelectIncident(id));
+  /// Select given uuid
+  Future<Incident> select(String uuid) {
+    return _dispatch(SelectIncident(uuid));
   }
 
   /// Unselect current incident
@@ -98,8 +98,8 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   /// Delete given incident
-  Future<Incident> delete(String id) {
-    return _dispatch(DeleteIncident(id));
+  Future<Incident> delete(String uuid) {
+    return _dispatch(DeleteIncident(uuid));
   }
 
   /// Clear all incidents
@@ -125,7 +125,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     } else if (command is UpdateIncident) {
       final updated = await _update(command);
       if (updated.isUpdated()) {
-        var select = command.selected && command.data.id != _given;
+        var select = command.selected && command.data.uuid != _given;
         if (select) {
           yield _set(command.data);
         }
@@ -152,7 +152,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   IncidentState _load(LoadIncidents command) {
     _incidents.addEntries((command.data).map(
-      (incident) => MapEntry(incident.id, incident),
+      (incident) => MapEntry(incident.uuid, incident),
     ));
     return _toOK<List<Incident>>(
       command,
@@ -165,7 +165,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     var response = await service.create(event.data);
     if (response.is200) {
       _incidents.putIfAbsent(
-        response.body.id,
+        response.body.uuid,
         () => response.body,
       );
       return _toOK<Incident>(event, IncidentCreated(response.body), result: response.body);
@@ -177,7 +177,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     var response = await service.update(event.data);
     if (response.is204) {
       _incidents.update(
-        event.data.id,
+        event.data.uuid,
         (_) => event.data,
         ifAbsent: () => event.data,
       );
@@ -216,7 +216,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   }
 
   IncidentSelected _set(Incident data) {
-    _given = data.id;
+    _given = data.uuid;
     return IncidentSelected(data);
   }
 
@@ -234,7 +234,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   IncidentState _clear(ClearIncidents command) {
     List<Incident> cleared = [];
-    command.data.forEach((id) => {if (_incidents.containsKey(id)) cleared.add(_incidents.remove(id))});
+    command.data.forEach((uuid) => {if (_incidents.containsKey(uuid)) cleared.add(_incidents.remove(uuid))});
     return _toOK(command, IncidentsCleared(cleared));
   }
 
@@ -311,14 +311,14 @@ class UpdateIncident extends IncidentCommand<Incident, Incident> {
 }
 
 class SelectIncident extends IncidentCommand<String, Incident> {
-  SelectIncident(String id) : super(id);
+  SelectIncident(String uuid) : super(uuid);
 
   @override
   String toString() => 'SelectIncident {data: $data}';
 }
 
 class DeleteIncident extends IncidentCommand<String, Incident> {
-  DeleteIncident(String id) : super(id);
+  DeleteIncident(String uuid) : super(uuid);
 
   @override
   String toString() => 'DeleteIncident {data: $data}';

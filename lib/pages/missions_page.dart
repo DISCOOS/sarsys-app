@@ -216,7 +216,7 @@ class MissionsPageState extends State<MissionsPage> {
       caption: 'ENDRE',
       color: Theme.of(context).buttonColor,
       icon: Icons.more_horiz,
-      onTap: () async => await editUnit(context, unit),
+      onTap: () async => await editUnit(unit),
     );
   }
 
@@ -227,14 +227,14 @@ class MissionsPageState extends State<MissionsPage> {
           caption: 'MOBILISERT',
           color: toUnitStatusColor(UnitStatus.Mobilized),
           icon: Icons.send,
-          onTap: () async => await mobilizeUnit(context, unit),
+          onTap: () async => await mobilizeUnit(unit),
         );
       case UnitStatus.Mobilized:
         return IconSlideAction(
           caption: 'DEPLOYERT',
           color: Colors.green,
           icon: Icons.send,
-          onTap: () async => await deployUnit(context, unit),
+          onTap: () async => await deployUnit(unit),
         );
       case UnitStatus.Deployed:
       default:
@@ -242,7 +242,7 @@ class MissionsPageState extends State<MissionsPage> {
           caption: 'OPPLØST',
           color: toUnitStatusColor(UnitStatus.Retired),
           icon: Icons.delete,
-          onTap: () async => await retireUnit(context, unit),
+          onTap: () async => await retireUnit(unit),
         );
     }
   }
@@ -268,7 +268,10 @@ class MissionsPageState extends State<MissionsPage> {
     );
   }
 
-  UnitStatus _onRead(value) => UnitStatus.values.firstWhere((e) => value == enumName(e));
+  UnitStatus _onRead(value) => UnitStatus.values.firstWhere(
+        (e) => value == enumName(e),
+        orElse: () => UnitStatus.Mobilized,
+      );
 }
 
 class UnitAvatar extends StatelessWidget {

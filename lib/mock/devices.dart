@@ -69,7 +69,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       }
       // Only generate devices for automatically generated incidents
       if (incidentId.startsWith('a:') && devices.isEmpty) {
-        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp?.point;
+        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.selected.ipp?.point;
         _createDevices(DeviceType.Tetra, devices, tetraCount, incidentId, 6114000, center, rnd, simulations);
         _createDevices(DeviceType.App, devices, appCount, incidentId, 91500000, center, rnd, simulations);
       }
@@ -82,7 +82,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         devices = deviceRepo.putIfAbsent(incidentId, () => {});
       }
       var device = _.positionalArguments[1] as Device;
-      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.current.ipp?.point;
+      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.selected.ipp?.point;
       device = _simulate(
         Device(
           id: "$incidentId:d:${randomAlphaNumeric(8).toLowerCase()}",
@@ -184,7 +184,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     Map<String, _DeviceSimulation> simulations,
     StreamController<DeviceMessage> controller,
   ) {
-    final incidentId = bloc.current?.id;
+    final incidentId = bloc.selected?.uuid;
     if (incidentId != null) {
       final devices = devicesMap[incidentId].values.toList()..shuffle();
       // only update 10% each iteration

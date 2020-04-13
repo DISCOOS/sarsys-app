@@ -64,7 +64,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   void initState() {
     super.initState();
     _department = widget.initialValue.department;
-    FleetMapService().fetchOrganization(Defaults.organization)..then(_resolve);
+    FleetMapService().fetchOrganization(Defaults.organizationId)..then(_resolve);
   }
 
   void _resolve(Organization org) {
@@ -113,7 +113,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<Organization>(
         valueListenable: _organization,
         builder: (context, org, _) {
-          _update('organization', Defaults.organization);
+          _update('organization', Defaults.organizationId);
           return _buildReadOnly(
             context,
             'organization',
@@ -186,7 +186,7 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   String _ensureDivision(Organization org) => org?.divisions?.containsKey(widget.initialValue?.division) == true
       ? widget.initialValue?.division
-      : org?.divisions?.keys?.first ?? Defaults.division;
+      : org?.divisions?.keys?.first ?? Defaults.divisionId;
 
   List<DropdownMenuItem<String>> _ensureDivisions(Organization org) {
     return sortMapValues<String, Division, String>(org?.divisions ?? {}, (division) => division.name)
@@ -229,7 +229,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     final department = _department ?? widget.initialValue?.department;
     return (division?.departments?.containsKey(department) == true
         ? department
-        : division?.departments?.keys?.first ?? Defaults.department);
+        : division?.departments?.keys?.first ?? Defaults.departmentId);
   }
 
   List<DropdownMenuItem<String>> _ensureDepartments(Division division) {

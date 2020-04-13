@@ -1,3 +1,4 @@
+import 'package:SarSys/services/navigation_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
@@ -13,11 +14,11 @@ class NoParams extends Equatable {}
 class BlocParams<B extends Bloc, T> extends Equatable {
   final B bloc;
   final T data;
-  final BuildContext context;
+  OverlayState get overlay => NavigationService().overlay;
+  BuildContext get context => NavigationService().context;
 
   BlocParams(
-    this.context,
     this.data,
-  )   : this.bloc = BlocProvider.of<B>(context),
+  )   : this.bloc = BlocProvider.of<B>(NavigationService().context),
         super([data]);
 }

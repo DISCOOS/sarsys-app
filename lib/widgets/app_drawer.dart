@@ -132,7 +132,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            enabled: false,
+            enabled: !isUnset,
             leading: const Icon(Icons.supervised_user_circle),
             title: Text('Min enhet', style: TextStyle(fontSize: 14)),
             onTap: () {
@@ -147,7 +147,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            enabled: false,
+            enabled: !isUnset,
             leading: const Icon(Icons.history),
             title: Text('Min historikk', style: TextStyle(fontSize: 14)),
             onTap: () {

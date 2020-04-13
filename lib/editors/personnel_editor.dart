@@ -174,9 +174,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       _affiliationKey?.currentState?.save() ??
       widget.personnel?.affiliation ??
       Affiliation(
-        organization: Defaults.organization,
-        division: _appConfigBloc.config.division,
-        department: _appConfigBloc.config.department,
+        organization: Defaults.organizationId,
+        division: _appConfigBloc.config.divisionId,
+        department: _appConfigBloc.config.departmentId,
       );
 
   InputDecorator _buildNameField() {
@@ -519,7 +519,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         Navigator.pop(
           context,
           PersonnelParams(
-            context,
             personnel: personnel,
             devices: devices,
             point: devices.isEmpty ? _preparePoint() : null,

@@ -19,9 +19,9 @@ class AppConfig extends Equatable {
   final String sentryDns;
   final bool onboarded;
   final bool firstSetup;
-  final String organization;
-  final String division;
-  final String department;
+  final String organizationId;
+  final String divisionId;
+  final String departmentId;
   final List<String> talkGroups;
   final String talkGroupCatalog;
   final bool storage;
@@ -49,9 +49,9 @@ class AppConfig extends Equatable {
     this.firstSetup = false,
     this.storage = false,
     this.locationWhenInUse = false,
-    this.organization = Defaults.organization,
-    this.division = Defaults.division,
-    this.department = Defaults.department,
+    this.organizationId = Defaults.organizationId,
+    this.divisionId = Defaults.divisionId,
+    this.departmentId = Defaults.departmentId,
     List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
@@ -75,9 +75,9 @@ class AppConfig extends Equatable {
           demoRole,
           onboarded,
           firstSetup,
-          organization,
-          division,
-          department,
+          organizationId,
+          divisionId,
+          departmentId,
           talkGroups ?? const <String>[],
           talkGroupCatalog,
           storage,
@@ -137,9 +137,9 @@ class AppConfig extends Equatable {
       demoRole: demoRole ?? this.demoRole,
       onboarded: onboarded ?? this.onboarded,
       firstSetup: firstSetup ?? this.firstSetup,
-      organization: organization ?? this.organization,
-      division: division ?? this.division,
-      department: department ?? this.department,
+      organizationId: organization ?? this.organizationId,
+      divisionId: division ?? this.divisionId,
+      departmentId: department ?? this.departmentId,
       talkGroups: talkGroups ?? this.talkGroups,
       talkGroupCatalog: talkGroupCatalog ?? this.talkGroupCatalog,
       storage: storage ?? this.storage,
@@ -181,6 +181,6 @@ class AppConfig extends Equatable {
         type: securityType,
         mode: securityMode,
         heartbeat: DateTime.now(),
-        trusted: organization == orgId,
+        trusted: organizationId == orgId,
       );
 }

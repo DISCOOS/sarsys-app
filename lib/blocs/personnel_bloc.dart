@@ -43,7 +43,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
         // TODO: Mark as internal event, no message from personnel service expected
         dispatch(ClearPersonnel(_personnel.keys.toList()));
       } else if (state.isSelected()) {
-        _fetch(state.data.id);
+        _fetch(state.data.uuid);
       }
     }
   }
@@ -97,7 +97,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
         "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.fetch()'",
       );
     }
-    return _fetch(incidentBloc.current.id);
+    return _fetch(incidentBloc.selected.uuid);
   }
 
   Future<List<Personnel>> _fetch(String id) async {
@@ -139,7 +139,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   Future<PersonnelState> _create(CreatePersonnel event) async {
-    var response = await service.create(incidentBloc.current.id, event.data);
+    var response = await service.create(incidentBloc.selected.uuid, event.data);
     if (response.is200) {
       var personnel = _personnel.putIfAbsent(
         response.body.id,
@@ -154,7 +154,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     switch (event.type) {
       case PersonnelMessageType.PersonnelChanged:
         // Only handle personnel in current incident
-        if (event.incidentId == incidentBloc?.current?.id) {
+        if (event.incidentId == incidentBloc?.selected?.uuid) {
           var personnel = Personnel.fromJson(event.json);
           // Update or add as new
           return PersonnelUpdated(_personnel.update(personnel.id, (_) => personnel, ifAbsent: () => personnel));

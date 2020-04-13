@@ -13,11 +13,11 @@ import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
 
 class IncidentBuilder {
-  static Map<String, dynamic> createIncidentAsJson(String id, int since, String userId, String passcode) {
+  static Map<String, dynamic> createIncidentAsJson(String uuid, int since, String userId, String passcode) {
     final rnd = math.Random();
     return json.decode(
       '{'
-      '"id": "$id",'
+      '"uuid": "$uuid",'
       '"name": "Savnet person",'
       '"type": "Lost",'
       '"status": "Handling",'
@@ -84,7 +84,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.userId);
       final created = Incident(
-        id: "m:${randomAlphaNumeric(8).toLowerCase()}",
+        uuid: "m:${randomAlphaNumeric(8).toLowerCase()}",
         type: incident.type,
         status: incident.status,
         created: author,
@@ -101,28 +101,28 @@ class IncidentServiceMock extends Mock implements IncidentService {
         talkgroups: incident.talkgroups,
         reference: incident.reference,
       );
-      incidents.putIfAbsent(created.id, () => created);
+      incidents.putIfAbsent(created.uuid, () => created);
       return ServiceResponse.ok(body: created);
     });
     when(mock.update(any)).thenAnswer((_) async {
       var incident = _.positionalArguments[0];
-      if (incidents.containsKey(incident.id)) {
+      if (incidents.containsKey(incident.uuid)) {
         incidents.update(
-          incident.id,
+          incident.uuid,
           (_) => incident,
           ifAbsent: () => incident,
         );
         return ServiceResponse.noContent();
       }
-      return ServiceResponse.notFound(message: "Not found. Incident ${incident.id}");
+      return ServiceResponse.notFound(message: "Not found. Incident ${incident.uuid}");
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var incident = _.positionalArguments[0];
-      if (incidents.containsKey(incident.id)) {
-        incidents.remove(incident.id);
+      if (incidents.containsKey(incident.uuid)) {
+        incidents.remove(incident.uuid);
         return ServiceResponse.noContent();
       }
-      return ServiceResponse.notFound(message: "Not found. Incident ${incident.id}");
+      return ServiceResponse.notFound(message: "Not found. Incident ${incident.uuid}");
     });
     return mock;
   }

@@ -4,7 +4,6 @@ import 'package:SarSys/editors/point_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/usecase/core.dart';
-import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,20 +11,17 @@ import 'package:provider/provider.dart';
 class PoiParams extends BlocParams<IncidentBloc, Point> {
   final Incident incident;
   PoiParams(
-    BuildContext context,
     Point point,
     this.incident,
-  ) : super(context, point);
+  ) : super(point);
 }
 
 /// Edit given IPP
 Future<dartz.Either<bool, Point>> editIPP(
-  BuildContext context,
   Incident incident, {
   Point point,
 }) =>
     EditPoi()(PoiParams(
-      context,
       point,
       incident,
     ));
@@ -35,7 +31,7 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
   Future<dartz.Either<bool, Point>> call(params) async {
     assert(params.incident != null, "Incident must be supplied");
     var result = await showDialog<Point>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PointEditor(
         params.data ?? params.incident.ipp.point,
         title: "Endre IPP",
@@ -51,12 +47,10 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
 
 /// Edit given IPP
 Future<dartz.Either<bool, Point>> editMeetup(
-  BuildContext context,
   Incident incident, {
   Point point,
 }) =>
     EditMeetup()(PoiParams(
-      context,
       point,
       incident,
     ));
@@ -66,7 +60,7 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
   Future<dartz.Either<bool, Point>> call(params) async {
     assert(params.incident != null, "Incident must be supplied");
     var result = await showDialog<Point>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PointEditor(
         params.data ?? params.incident.meetup.point,
         title: "Endre oppmøte",

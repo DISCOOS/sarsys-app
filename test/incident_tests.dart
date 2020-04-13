@@ -101,7 +101,7 @@ void main() async {
 
   test('Incident bloc should be in selected state', () async {
     List<Incident> incidents = await incidentBloc.load();
-    await incidentBloc.select(incidents.first.id);
+    await incidentBloc.select(incidents.first.uuid);
     _assertEvents(incidentBloc, [
       emits(isA<IncidentsLoaded>()),
       emits(isA<IncidentSelected>()),
@@ -110,8 +110,8 @@ void main() async {
 
   test('First incident should be selected in last state', () async {
     List<Incident> incidents = await incidentBloc.load();
-    await incidentBloc.select(incidents.first.id);
-    expect(incidentBloc.current, incidents.first, reason: "First incident was not selected");
+    await incidentBloc.select(incidents.first.uuid);
+    expect(incidentBloc.selected.uuid, incidents.first.uuid, reason: "First incident was not selected");
     _assertEvents(incidentBloc, [
       emits(isA<IncidentsLoaded>()),
       emits(isA<IncidentSelected>()),
@@ -123,14 +123,14 @@ void main() async {
     final incident = Incident.fromJson(IncidentBuilder.createIncidentAsJson("random", 0, token.accessToken, "123"));
     var response = await incidentBloc.create(incident);
     expect(incident, isA<Incident>(), reason: "Should be an Incident");
-    expect(incident.id, isNot(response.id), reason: "Response should have unique id");
+    expect(incident.uuid, isNot(response.uuid), reason: "Response should have unique id");
     _assertEvents(incidentBloc, [
       emits(isA<IncidentUnset>()),
       emits(isA<IncidentSelected>()),
       emits(isA<IncidentCreated>()),
     ]);
     await incidentBloc.update(response.withAuthor("author@localhost"));
-    response = incidentBloc.current;
+    response = incidentBloc.selected;
     expect(response.changed.userId, "author@localhost", reason: "Should be 'author@localhost'");
     _assertEvents(incidentBloc, [
       emits(isA<IncidentCreated>()),
@@ -148,11 +148,11 @@ void main() async {
 
   test('Should be selected after switching to other incident', () async {
     List<Incident> incidents = await incidentBloc.load();
-    await incidentBloc.select(incidents.first.id);
-    expect(incidentBloc.current, incidents.first, reason: "First incident was not selected");
-    await incidentBloc.select(incidents.last.id);
-    expect(incidentBloc.current, incidents.last, reason: "Last incident was not selected");
-    await incidentBloc.select(incidents.first.id);
+    await incidentBloc.select(incidents.first.uuid);
+    expect(incidentBloc.selected.uuid, incidents.first.uuid, reason: "First incident was not selected");
+    await incidentBloc.select(incidents.last.uuid);
+    expect(incidentBloc.selected.uuid, incidents.last.uuid, reason: "Last incident was not selected");
+    await incidentBloc.select(incidents.first.uuid);
     _assertEvents(incidentBloc, [
       emits(isA<IncidentSelected>()),
       emits(isA<IncidentSelected>()),

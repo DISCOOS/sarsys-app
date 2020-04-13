@@ -110,7 +110,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
                     ),
                 onMessage: onMessage,
                 withActions: user.isCommander == true,
-                organization: FleetMapService().fetchOrganization(Defaults.organization),
+                organization: FleetMapService().fetchOrganization(Defaults.organizationId),
                 onDelete: () => Navigator.pop(context),
                 onComplete: (_) => Navigator.pop(context),
                 onGoto: (point) => _goto(context, point),

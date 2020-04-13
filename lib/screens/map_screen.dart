@@ -113,7 +113,6 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         title: Text('Enhet', style: style),
                         onTap: () async {
                           await createUnit(
-                            context,
                             point: toPoint(_mapController.center),
                           );
                           Navigator.pop(context);
@@ -126,7 +125,6 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         title: Text('Aksjon', style: style),
                         onTap: () async {
                           final result = await createIncident(
-                            context,
                             ipp: toPoint(_mapController.center),
                           );
                           result.fold((_) => null, (incident) => jumpToIncident(context, incident));

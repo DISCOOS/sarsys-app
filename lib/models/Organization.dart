@@ -7,6 +7,8 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+import 'User.dart';
+
 part 'Organization.g.dart';
 
 @JsonSerializable()
@@ -49,14 +51,25 @@ class Organization extends Equatable {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$OrganizationToJson(this);
 
+  /// Get Affiliation from User
+  Affiliation toAffiliationFromUser(User user) {
+    final division = toDivisionIdFromUser(user);
+    final department = toDepartmentIdFromUser(user);
+    return Affiliation(
+      organization: id,
+      division: division,
+      department: department,
+    );
+  }
+
   /// Get Affiliation from device number
-  Affiliation toAffiliation(String number) {
+  Affiliation toAffiliationFromNumber(String number) {
     String id = emptyAsNull(number?.isEmpty == false && number.length >= 3 ? number?.substring(0, 2) : null);
     if (id == null || !id.startsWith(this.id)) return null;
     return Affiliation(
       organization: this.id,
-      division: toDivision(number)?.name,
-      department: toDepartment(number, empty: null),
+      division: toDivisionFromNumber(number)?.name,
+      department: toDepartmentFromNumber(number, empty: null),
     );
   }
 
@@ -64,21 +77,54 @@ class Organization extends Equatable {
   String toAffiliationAsString(String number, {String empty = 'Ingen'}) {
     final names = [
       name,
-      toDivision(number)?.name,
-      toDepartment(number, empty: null),
+      toDivisionFromNumber(number)?.name,
+      toDepartmentFromNumber(number, empty: null),
     ]..removeWhere((name) => name == null);
     return names.isEmpty ? empty : names.join(', ');
   }
 
+  /// Get Division from User
+  String toDivisionIdFromUser(User user) {
+    final name = user.division?.toLowerCase();
+    return divisions?.entries
+        ?.firstWhere(
+          (division) => division.value.name.toLowerCase() == name,
+          orElse: () => null,
+        )
+        ?.key;
+  }
+
+  /// Get Department id from User
+  String toDepartmentIdFromUser(User user) {
+    final name = user.department?.toLowerCase();
+    final departments = Map.from(
+      divisions?.values?.fold(
+        <String, String>{},
+        (departments, division) => departments..addAll(division.departments),
+      ),
+    );
+    return departments?.entries
+        ?.firstWhere(
+          (department) => department.value.toLowerCase() == name,
+          orElse: () => null,
+        )
+        ?.key;
+  }
+
   /// Get Division from device number
-  Division toDivision(String number) {
+  Division toDivisionFromNumber(String number) {
     String id = emptyAsNull(number?.isEmpty == false && number.length >= 5 ? number?.substring(2, 5) : null);
     if (id == null) return null;
-    return divisions?.entries?.firstWhere((division) => division.key == id, orElse: () => null)?.value;
+    return divisions?.entries
+        ?.firstWhere(
+          (division) => division.key == id,
+          orElse: () => null,
+        )
+        ?.value;
   }
 
   /// Get Department from device number
-  String toDepartment(String number, {String empty = 'Ingen'}) {
+  String toDepartmentFromNumber(String number, {String empty = 'Ingen'}) {
     String id = emptyAsNull(number?.isEmpty == false && number.length >= 5 ? number?.substring(2, 5) : null);
     if (id == null) return null;
     return divisions?.entries
@@ -91,7 +137,7 @@ class Organization extends Equatable {
   }
 
   /// Get function from device number
-  String toFunction(String number) {
+  String toFunctionFromNumber(String number) {
     final match = functions?.entries
         ?.firstWhere(
           (entry) => number != null && RegExp(entry.key).hasMatch(number),

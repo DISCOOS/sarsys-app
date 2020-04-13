@@ -107,6 +107,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         issuer: 'rkh',
         otherClaims: <String, dynamic>{
           'roles': [role],
+          'division': 'Oslo',
+          'department': 'Oslo',
         },
         maxAge: const Duration(minutes: 5));
 

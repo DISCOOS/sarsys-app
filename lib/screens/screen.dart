@@ -76,7 +76,7 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
         padding: const EdgeInsets.all(8.0),
         child: Text(message),
       ),
-      action: _buildAction(action, () {
+      action: _buildSnackBarAction(action, () {
         if (onPressed != null) onPressed();
         _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
       }),
@@ -84,7 +84,7 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
     _scaffoldKey.currentState.showSnackBar(snackbar);
   }
 
-  Widget _buildAction(String label, VoidCallback onPressed) {
+  Widget _buildSnackBarAction(String label, VoidCallback onPressed) {
     return SnackBarAction(
       label: label,
       onPressed: onPressed,
@@ -154,7 +154,7 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
           'name': route,
           'data': data,
           // TODO: Move to IncidentBloc using hydrated_bloc and Hive (encryption support)
-          'incidentId': BlocProvider.of<IncidentBloc>(context)?.current?.id,
+          'incidentId': BlocProvider.of<IncidentBloc>(context)?.selected?.uuid,
         });
         writeAppState(PageStorage.of(context), context: context);
       }

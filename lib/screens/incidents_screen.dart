@@ -76,7 +76,7 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
   }
 
   Future _create(BuildContext context) async {
-    var result = await createIncident(context);
+    var result = await createIncident();
     result.fold((_) => null, (incident) => jumpToIncident(context, incident));
   }
 
@@ -113,7 +113,10 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
     );
   }
 
-  IncidentStatus _onRead(value) => IncidentStatus.values.firstWhere((e) => value == enumName(e));
+  IncidentStatus _onRead(value) => IncidentStatus.values.firstWhere(
+        (e) => value == enumName(e),
+        orElse: () => IncidentStatus.Registered,
+      );
 }
 
 class IncidentsPage extends StatefulWidget {
@@ -197,15 +200,15 @@ class _IncidentsPageState extends State<IncidentsPage> {
         stream: userBloc.state,
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
-          final isCurrent = _incidentBloc.current == incident;
+          final isCurrent = _incidentBloc.selected == incident;
           final isAuthorized = userBloc.isAuthorized(incident);
           return Card(
             child: Column(
-              key: ObjectKey(incident.id),
+              key: ObjectKey(incident.uuid),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListTile(
-                  selected: _incidentBloc.current == incident,
+                  selected: _incidentBloc.selected == incident,
                   title: Text(
                     incident.name,
                     style: title,
@@ -265,9 +268,9 @@ class _IncidentsPageState extends State<IncidentsPage> {
                               onPressed: isAuthorized || hasRoles
                                   ? () async {
                                       if (isCurrent) {
-                                        await _unselectAndReroute();
+                                        await _leaveAndReroute();
                                       } else if (isAuthorized) {
-                                        await _selectAndReroute(incident);
+                                        await _joinAndReroute(incident);
                                       } else {
                                         Navigator.push(context, PasscodeRoute(incident));
                                       }
@@ -344,19 +347,23 @@ class _IncidentsPageState extends State<IncidentsPage> {
             withRead: true,
           ),
         ),
-        onTap: () => _selectAndReroute(incident),
+        onTap: () => _joinAndReroute(incident),
       ),
     );
   }
 
-  Future _unselectAndReroute() async {
-    await _incidentBloc.unselect();
-    jumpToMe(context);
+  Future _leaveAndReroute() async {
+    final result = await leaveIncident();
+    if (result.isRight()) {
+      jumpToMe(context);
+    }
   }
 
-  Future _selectAndReroute(Incident incident) async {
-    await _incidentBloc.select(incident.id);
-    jumpToIncident(context, incident);
+  Future _joinAndReroute(Incident incident) async {
+    final result = await joinIncident(incident);
+    if (result.isRight()) {
+      jumpToIncident(context, incident);
+    }
   }
 }
 

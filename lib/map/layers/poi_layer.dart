@@ -77,7 +77,7 @@ class POILayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, POILayerOptions params, MapState map) {
     int index = 0;
-    List<Widget> icons = toItems(params.bloc.at(params.incidentId) ?? params.bloc.current)
+    List<Widget> icons = toItems(params.bloc.at(params.incidentId) ?? params.bloc.selected)
         .where((poi) => map.bounds.contains(toLatLng(poi.point)))
         .map((poi) => _buildIcon(context, map, params, toLatLng(poi.point), poi.name, index++))
         .toList();

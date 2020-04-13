@@ -340,7 +340,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildAuthenticate(UserBloc bloc) => FutureBuilder<Organization>(
       future: FleetMapService().fetchOrganization(
-        bloc.service.configBloc.config.organization,
+        bloc.service.configBloc.config.organizationId,
       ),
       builder: (context, snapshot) {
         final org = snapshot.data;

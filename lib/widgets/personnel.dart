@@ -385,7 +385,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await editPersonnel(context, personnel);
+            final result = await editPersonnel(personnel);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               if (actual != personnel) {
@@ -406,7 +406,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await removeFromPersonnel(context, personnel, devices: devices.toList());
+            final result = await removeFromPersonnel(personnel, devices: devices.toList());
             if (result.isRight()) {
               _onMessage("Apparater fjernet fra ${personnel.name}");
               _onChanged(personnel);
@@ -436,7 +436,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await mobilizePersonnel(context, personnel);
+            final result = await mobilizePersonnel(personnel);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert mobilisert");
@@ -455,7 +455,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await checkInPersonnel(context, personnel);
+            final result = await checkInPersonnel(personnel);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert ankommet");
@@ -474,7 +474,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await retirePersonnel(context, personnel);
+            final result = await retirePersonnel(personnel);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er dimmitert");
@@ -496,7 +496,7 @@ class PersonnelInfoPanel extends StatelessWidget {
             style: button.copyWith(color: Colors.red),
           ),
           onPressed: () async {
-            final result = await deletePersonnel(context, personnel);
+            final result = await deletePersonnel(personnel);
             if (result.isRight()) {
               _onMessage("${personnel.name} er slettet");
               _onDelete();

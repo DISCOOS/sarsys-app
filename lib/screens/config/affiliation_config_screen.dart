@@ -82,8 +82,8 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
   }
 
   Affiliation _ensureAffiliation() => Affiliation(
-        organization: Defaults.organization,
-        division: _configBloc.config.division ?? Defaults.division,
-        department: _configBloc.config.department ?? Defaults.department,
+        organization: Defaults.organizationId,
+        division: _configBloc.config.divisionId ?? Defaults.divisionId,
+        department: _configBloc.config.departmentId ?? Defaults.departmentId,
       );
 }

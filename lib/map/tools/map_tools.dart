@@ -28,15 +28,20 @@ class MapToolController {
     final size = MediaQuery.of(context).size;
     final tolerance = tapTargetSize / math.max(size.width, size.height);
     final distance = tolerance * ScaleBar.toDistance(scales, zoom);
-    tools.firstWhere((tool) => tool.active() && tool.onTap(context, point, distance, onMatch), orElse: () => null);
+    tools.firstWhere(
+      (tool) => tool.active() && tool.onTap(context, point, distance, onMatch),
+      orElse: () => null,
+    );
   }
 
   void onLongPress(BuildContext context, LatLng point, double zoom, List<double> scales) {
     final size = MediaQuery.of(context).size;
     final tolerance = tapTargetSize / math.max(size.width, size.height);
     final distance = tolerance * ScaleBar.toDistance(scales, zoom);
-    tools.firstWhere((tool) => tool.active() && tool.onLongPress(context, point, distance, onMatch),
-        orElse: () => null);
+    tools.firstWhere(
+      (tool) => tool.active() && tool.onLongPress(context, point, distance, onMatch),
+      orElse: () => null,
+    );
   }
 }
 

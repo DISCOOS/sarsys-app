@@ -80,7 +80,7 @@ class _IncidentPageState extends State<IncidentPage> {
             children: [
               StreamBuilder<Incident>(
                 stream: bloc.changes(),
-                initialData: bloc.current,
+                initialData: bloc.selected,
                 builder: (context, snapshot) {
                   final incident = (snapshot.hasData ? snapshot.data : null);
                   return incident == null
@@ -468,7 +468,7 @@ class _IncidentPageState extends State<IncidentPage> {
   void _setIncidentStatus(BuildContext context, IncidentStatus status) {
     var bloc = BlocProvider.of<IncidentBloc>(context);
     var userId = BlocProvider.of<UserBloc>(context).user?.userId;
-    var incident = bloc.current.withJson({"status": enumName(status)}, userId: userId);
+    var incident = bloc.selected.withJson({"status": enumName(status)}, userId: userId);
     bloc.update(incident);
   }
 

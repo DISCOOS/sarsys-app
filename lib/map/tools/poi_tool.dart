@@ -32,7 +32,7 @@ class POITool extends MapTool with MapSelectable<POI> {
   }) : _active = active;
 
   @override
-  Iterable<POI> get targets => bloc.isUnset ? [] : POILayer.toItems(bloc?.current);
+  Iterable<POI> get targets => bloc.isUnset ? [] : POILayer.toItems(bloc?.selected);
 
   @override
   void doProcessTap(BuildContext context, List<POI> items) {
@@ -96,8 +96,7 @@ class POITool extends MapTool with MapSelectable<POI> {
                       type: POIType.Meetup,
                     ),
               onMessage: onMessage,
-              onEdit: () async =>
-                  (poi.type == POIType.IPP ? editIPP(context, bloc.current) : editMeetup(context, bloc.current)),
+              onEdit: () async => (poi.type == POIType.IPP ? editIPP(bloc.selected) : editMeetup(bloc.selected)),
               onChanged: (changed) => setState(() => actual = changed),
               onComplete: () => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),

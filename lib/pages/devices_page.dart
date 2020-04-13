@@ -74,8 +74,8 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   void _init() async {
-    _divisions = await FleetMapService().fetchDivisions(Defaults.organization);
-    _functions = await FleetMapService().fetchFunctions(Defaults.organization);
+    _divisions = await FleetMapService().fetchDivisions(Defaults.organizationId);
+    _functions = await FleetMapService().fetchFunctions(Defaults.organizationId);
     if (mounted) setState(() {});
   }
 
@@ -174,7 +174,7 @@ class DevicesPageState extends State<DevicesPage> {
           caption: 'KNYTT',
           color: Theme.of(context).buttonColor,
           icon: Icons.people,
-          onTap: () async => await addToUnit(context, devices: [device]),
+          onTap: () async => await addToUnit(devices: [device]),
         ),
       );
 
@@ -184,7 +184,7 @@ class DevicesPageState extends State<DevicesPage> {
           caption: 'KNYTT',
           color: Theme.of(context).buttonColor,
           icon: Icons.person,
-          onTap: () async => await addToPersonnel(context, [device]),
+          onTap: () async => await addToPersonnel([device]),
         ),
       );
 
@@ -192,7 +192,7 @@ class DevicesPageState extends State<DevicesPage> {
         caption: 'ENDRE',
         color: Theme.of(context).buttonColor,
         icon: Icons.more_horiz,
-        onTap: () async => await editDevice(context, device),
+        onTap: () async => await editDevice(device),
       );
 
   IconSlideAction _buildRemoveAction(
@@ -207,11 +207,11 @@ class DevicesPageState extends State<DevicesPage> {
         onTap: () async {
           final unit = units[device.id];
           if (unit != null) {
-            final result = await removeFromUnit(context, unit, devices: [device]);
+            final result = await removeFromUnit(unit, devices: [device]);
             if (result.isLeft()) return;
           }
           final p = personnel[device.id];
-          if (p != null) await removeFromPersonnel(context, p, devices: [device]);
+          if (p != null) await removeFromPersonnel(p, devices: [device]);
         },
       );
 
@@ -284,17 +284,33 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
-    return tracked[device.id]?.firstWhere((tracking) => tracking.status != TrackingStatus.None)?.status ??
+    return tracked[device.id]
+            ?.firstWhere(
+              (tracking) => tracking.status != TrackingStatus.None,
+              orElse: () => null,
+            )
+            ?.status ??
         TrackingStatus.None;
   }
 
   String _toDistrict(String number) {
     String id = number?.substring(2, 5);
-    return _divisions?.entries?.firstWhere((entry) => entry.key == id, orElse: () => null)?.value?.name;
+    return _divisions?.entries
+        ?.firstWhere(
+          (entry) => entry.key == id,
+          orElse: () => null,
+        )
+        ?.value
+        ?.name;
   }
 
   String _toFunction(String number) {
-    return _functions?.entries?.firstWhere((entry) => RegExp(entry.key).hasMatch(number), orElse: () => null)?.value;
+    return _functions?.entries
+        ?.firstWhere(
+          (entry) => RegExp(entry.key).hasMatch(number),
+          orElse: () => null,
+        )
+        ?.value;
   }
 
   void showFilterSheet() {
@@ -318,7 +334,10 @@ class DevicesPageState extends State<DevicesPage> {
     );
   }
 
-  DeviceType _onRead(value) => DeviceType.values.firstWhere((e) => value == enumName(e));
+  DeviceType _onRead(value) => DeviceType.values.firstWhere(
+        (e) => value == enumName(e),
+        orElse: () => null,
+      );
 }
 
 class DeviceSearch extends SearchDelegate<Device> {

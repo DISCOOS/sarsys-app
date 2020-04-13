@@ -68,7 +68,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         // TODO: Mark as internal event, no message from tracking service expected
         dispatch(ClearTracking(_tracking.keys.toList()));
       } else if (state.isSelected()) {
-        _fetch(state.data.id);
+        _fetch(state.data.uuid);
       }
     }
   }
@@ -242,7 +242,10 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }) =>
       _tracking.entries
           .where((entry) => !exclude.contains(entry.value.status))
-          .firstWhere((entry) => entry.value.devices.contains(device.id), orElse: () => null)
+          .firstWhere(
+            (entry) => entry.value.devices.contains(device.id),
+            orElse: () => null,
+          )
           ?.value;
 
   /// Get devices being tracked by given tracking id
@@ -281,7 +284,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         "Ensure that 'IncidentBloc.select(String id)' is called before 'TrackingBloc.fetch()'",
       );
     }
-    return _fetch(incidentBloc.current.id);
+    return _fetch(incidentBloc.selected.uuid);
   }
 
   Future<List<Tracking>> _fetch(String id) async {
@@ -394,7 +397,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   Future<TrackingState> _trackUnit(TrackUnit event) async {
     var response = await service.create(
-      incidentBloc.current.id,
+      incidentBloc.selected.uuid,
       point: event.point,
       devices: event.data,
       aggregates: event.personnel?.map((p) => p.tracking)?.where((id) => id != null)?.toList(),
@@ -415,7 +418,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
   Future<TrackingState> _trackPersonnel(TrackPersonnel event) async {
     var response = await service.create(
-      incidentBloc.current.id,
+      incidentBloc.selected.uuid,
       devices: event.data,
     );
     if (response.is200) {
@@ -436,7 +439,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     switch (event.type) {
       case TrackingMessageType.TrackingChanged:
         // Only handle tracking in current incident
-        if (event.incidentId == incidentBloc?.current?.id) {
+        if (event.incidentId == incidentBloc?.selected?.uuid) {
           var tracking = Tracking.fromJson(event.json);
           // Update or add as new
           return TrackingUpdated(_tracking.update(tracking.id, (_) => tracking, ifAbsent: () => tracking));

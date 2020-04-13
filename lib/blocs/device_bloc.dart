@@ -42,7 +42,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
         // TODO: Mark as internal event, no message from devices service expected
         dispatch(ClearDevices(_devices.keys.toList()));
       } else if (state.isSelected()) {
-        _fetch(state.data.id);
+        _fetch(state.data.uuid);
       }
     }
   }
@@ -101,7 +101,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
         "Ensure that 'IncidentBloc.select(String id)' is called before 'DeviceBloc.fetch()'",
       );
     }
-    return _fetch(incidentBloc.current.id);
+    return _fetch(incidentBloc.selected.uuid);
   }
 
   Future<List<Device>> _fetch(String id) async {
@@ -143,7 +143,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   Future<DeviceState> _create(CreateDevice event) async {
-    var response = await service.create(incidentBloc.current.id, event.data);
+    var response = await service.create(incidentBloc.selected.uuid, event.data);
     if (response.is200) {
       var device = _devices.putIfAbsent(
         response.body.id,

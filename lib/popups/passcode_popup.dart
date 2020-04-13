@@ -1,6 +1,6 @@
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/usecase/incident.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -116,11 +116,9 @@ class PasscodeRoute extends PopupRoute {
       onPressed: () async {
         if (_validateAndSave()) {
           if (await bloc.authorize(incident, _passcode)) {
-            final bloc = BlocProvider.of<IncidentBloc>(context);
-            bloc.select(incident.id);
+            await joinIncident(incident);
             Navigator.pushReplacementNamed(context, 'incident');
           }
-          //setState(() {});
         }
       },
     );

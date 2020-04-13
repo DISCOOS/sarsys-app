@@ -8,7 +8,7 @@ part of 'Incident.dart';
 
 Incident _$IncidentFromJson(Map json) {
   return Incident(
-    id: json['id'] as String,
+    uuid: json['uuid'] as String,
     name: json['name'] as String,
     type: _$enumDecodeNullable(_$IncidentTypeEnumMap, json['type']),
     status: _$enumDecodeNullable(_$IncidentStatusEnumMap, json['status']),
@@ -53,7 +53,7 @@ Incident _$IncidentFromJson(Map json) {
 }
 
 Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
-      'id': instance.id,
+      'uuid': instance.uuid,
       'name': instance.name,
       'type': _$IncidentTypeEnumMap[instance.type],
       'status': _$IncidentStatusEnumMap[instance.status],

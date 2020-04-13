@@ -548,7 +548,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   LatLng _centerFromIncident(Position current) {
     final candidate = widget.center ??
-        (_incidentBloc?.current?.meetup != null ? toLatLng(_incidentBloc?.current?.meetup?.point) : null) ??
+        (_incidentBloc?.selected?.meetup != null ? toLatLng(_incidentBloc?.selected?.meetup?.point) : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
     return candidate;
   }
@@ -856,7 +856,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         ? null
         : POILayerOptions(
             _incidentBloc,
-            incidentId: widget.incident.id,
+            incidentId: widget.incident.uuid,
             align: AnchorAlign.top,
             icon: Icon(
               Icons.location_on,
@@ -1084,31 +1084,31 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         case STATE_CENTER:
           model = model.cloneWith(
             center: value as LatLng,
-            incident: widget.incident?.id,
+            incident: widget.incident?.uuid,
           );
           break;
         case STATE_ZOOM:
           model = model.cloneWith(
             zoom: value as double,
-            incident: widget.incident?.id,
+            incident: widget.incident?.uuid,
           );
           break;
         case STATE_BASE_MAP:
           model = model.cloneWith(
             baseMap: value as BaseMap,
-            incident: widget.incident?.id,
+            incident: widget.incident?.uuid,
           );
           break;
         case STATE_FOLLOWING:
           model = model.cloneWith(
             following: value as bool,
-            incident: widget.incident?.id,
+            incident: widget.incident?.uuid,
           );
           break;
         case STATE_FILTERS:
           model = model.cloneWith(
             filters: value as List<String>,
-            incident: widget.incident?.id,
+            incident: widget.incident?.uuid,
           );
           break;
         default:

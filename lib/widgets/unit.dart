@@ -302,7 +302,7 @@ class UnitInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await editUnit(context, unit);
+            final result = await editUnit(unit);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               if (actual != unit) {
@@ -324,7 +324,6 @@ class UnitInfoPanel extends StatelessWidget {
           ),
           onPressed: () async {
             final result = await removeFromUnit(
-              context,
               unit,
               devices: devices.toList(),
               personnel: unit.personnel,
@@ -358,7 +357,7 @@ class UnitInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await mobilizeUnit(context, unit);
+            final result = await mobilizeUnit(unit);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert mobilisert");
@@ -376,7 +375,7 @@ class UnitInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await deployUnit(context, unit);
+            final result = await deployUnit(unit);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${actual.name} er registert deployert");
@@ -395,7 +394,7 @@ class UnitInfoPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           onPressed: () async {
-            final result = await retireUnit(context, unit);
+            final result = await retireUnit(unit);
             if (result.isRight()) {
               final actual = result.toIterable().first;
               _onMessage("${unit.name} er oppløst");
@@ -417,7 +416,7 @@ class UnitInfoPanel extends StatelessWidget {
             style: button.copyWith(color: Colors.red),
           ),
           onPressed: () async {
-            final result = await deleteUnit(context, unit);
+            final result = await deleteUnit(unit);
             if (result.isRight()) {
               _onMessage("${unit.name} er slettet");
               _onDelete();

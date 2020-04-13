@@ -20,6 +20,8 @@ import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
+import 'package:SarSys/services/navigation_service.dart';
+import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
@@ -112,9 +114,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
             textTheme: ButtonTextTheme.primary,
           ),
         ),
-        home: _toHome(
-          widget.controller,
-        ),
+        home: _toHome(),
         onGenerateRoute: (settings) => _toRoute(
           settings,
         ),
@@ -204,7 +204,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case MapScreen.ROUTE:
         child = _toMapScreen(
           settings: settings,
-          incident: widget.controller.incidentProvider.bloc.current,
+          incident: widget.controller.incidentProvider.bloc.selected,
         );
         break;
       case LoginScreen.ROUTE:
@@ -304,7 +304,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         widget.navigatorKey.currentState.context,
         MapWidgetState.STATE,
       );
-      if (model?.incident != incident.id) {
+      if (model?.incident != incident.uuid) {
         final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
         final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
         final fitBounds = LatLngBounds(ipp, meetup);
@@ -360,11 +360,13 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   Map<String, Device> get devices => widget.controller.deviceProvider.bloc.devices;
 
-  Widget _toHome(BlocProviderController providers) {
+  Widget _toHome() {
     Widget child;
-    if (providers.configProvider.bloc.config.onboarded != true) {
+    final configBloc = widget.controller.configProvider.bloc;
+    final incidentBloc = widget.controller.incidentProvider.bloc;
+    if (configBloc.config.onboarded != true) {
       child = OnboardingScreen();
-    } else if (providers.configProvider.bloc.config.firstSetup != true) {
+    } else if (configBloc.config.firstSetup != true) {
       child = FirstSetupScreen();
     } else if (userBloc.isReady) {
       var route = widget.bucket.readState(
@@ -373,15 +375,18 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       );
       if (route is Map) {
         final _route = Map.from(route);
-        final id = _route.elementAt('incidentId');
-        if (id != null) {
-          // On first load blocks are not loaded yet
-          providers.incidentProvider.bloc.state.firstWhere((state) => state.isLoaded()).then((_) async {
-            _route['incident'] = await providers.incidentProvider.bloc.select(id);
-            pushReplacementNamed(_route[RouteWriter.FIELD_NAME], arguments: route);
+        final uuid = _route.elementAt('incidentId');
+        if (uuid != null) {
+          // On first load bloc's are not loaded yet
+          incidentBloc.state.firstWhere((state) => state.isLoaded()).then((_) async {
+            _route['incident'] = await selectIncident(uuid);
+            NavigationService().pushReplacementNamed(
+              _route[RouteWriter.FIELD_NAME],
+              arguments: route,
+            );
           });
         }
-        bool isUnset = providers.incidentProvider.bloc.isUnset;
+        bool isUnset = incidentBloc.isUnset;
         child = _toScreen(
           RouteSettings(
             name: isUnset ? 'incidents' : _route[RouteWriter.FIELD_NAME],
@@ -392,13 +397,13 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         );
       } else {
         child = _toMapScreen(
-          incident: providers.incidentProvider.bloc.current,
+          incident: incidentBloc.selected,
         );
       }
       child = AccessChecker(
         key: _checkerKey,
         child: child,
-        configBloc: providers.configProvider.bloc,
+        configBloc: configBloc,
       );
     } else if (!userBloc.isAuthenticated) {
       child = LoginScreen();
@@ -409,13 +414,4 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     }
     return _buildWithProviders(context: context, child: child);
   }
-
-  Future<Object> pushReplacementNamed(
-    String path, {
-    Object arguments,
-  }) =>
-      widget.navigatorKey.currentState.pushReplacementNamed(
-        path,
-        arguments: arguments,
-      );
 }

@@ -106,13 +106,12 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
                 if (snapshot.data is Personnel) {
                   _personnel = snapshot.data;
                 }
-                final tracking = _trackingBloc.tracking[_personnel.tracking];
                 return ListView(
                   padding: const EdgeInsets.all(PersonnelScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
                   children: [
                     _buildMapTile(context, _personnel),
-                    _buildInfoPanel(tracking, context),
+                    _buildInfoPanel(context),
                   ],
                 );
               },
@@ -123,7 +122,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     );
   }
 
-  PersonnelInfoPanel _buildInfoPanel(Tracking tracking, BuildContext context) {
+  PersonnelInfoPanel _buildInfoPanel(BuildContext context) {
+    final tracking = _trackingBloc.tracking[_personnel.tracking];
     return PersonnelInfoPanel(
       personnel: _personnel,
       tracking: tracking,
@@ -133,7 +133,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           {},
       withHeader: false,
       withActions: _userBloc.user.isCommander,
-      organization: FleetMapService().fetchOrganization(Defaults.organization),
+      organization: FleetMapService().fetchOrganization(Defaults.organizationId),
       onMessage: showMessage,
       onChanged: (personnel) => setState(() => _personnel = personnel),
       onDelete: () => Navigator.pop(context),

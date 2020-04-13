@@ -83,13 +83,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated && (_authorized.containsKey(data.id) || _user.isAuthor(data));
+    return isAuthenticated && (_authorized.containsKey(data.uuid) || _user.isAuthor(data));
   }
 
   /// Check if current user is authorized to access given [Incident]
   UserAuthorized getAuthorization(Incident data) {
     if (isAuthenticated) {
-      if (_authorized.containsKey(data.id)) return _authorized[data.id];
+      if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
       if (_user?.userId == data.created.userId) return UserAuthorized(_user, data, true, true);
     }
     return null;
@@ -362,7 +362,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
-      _authorized.putIfAbsent(command.data.id, () => state);
+      _authorized.putIfAbsent(command.data.uuid, () => state);
       return _complete(command, state, result: true);
     }
     return _complete(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);

@@ -82,15 +82,15 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   Widget build(BuildContext context) {
     return StreamBuilder(
       stream: _incidentBloc.changes(),
-      initialData: _incidentBloc.current,
+      initialData: _incidentBloc.selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final incident = (snapshot.hasData ? _incidentBloc.current : null);
+        final incident = (snapshot.hasData ? _incidentBloc.selected : null);
         final title = _toTitle(incident);
         final tabs = [
-          MissionsPage(key: _missionsKey),
           UnitsPage(key: _unitsKey),
           PersonnelPage(key: _personnelKey),
           DevicesPage(key: _devicesKey),
+          MissionsPage(key: _missionsKey),
         ];
         return Scaffold(
           key: _scaffoldKey,
@@ -102,11 +102,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           body: tabs[routeData],
           resizeToAvoidBottomInset: false,
           bottomNavigationBar: BottomAppBar(
-            shape: CircularNotchedRectangle(),
+            shape: _userBloc.user.isCommander ? CircularNotchedRectangle() : null,
             notchMargin: 8.0,
             elevation: 16.0,
             child: FractionallySizedBox(
-              widthFactor: 0.80,
+              widthFactor: _userBloc.user.isCommander ? 0.80 : 1.0,
               alignment: Alignment.bottomLeft,
               child: BottomNavigationBar(
                 currentIndex: routeData,
@@ -202,27 +202,27 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   }
 
   StatelessWidget _buildFAB() {
-    if (_userBloc?.user?.isCommander == true) {
+    if (_userBloc.user.isCommander) {
       switch (routeData) {
         case CommandScreen.TAB_MISSIONS:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createUnit(context),
+            onPressed: () async => await createUnit(),
           );
         case CommandScreen.TAB_UNITS:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createUnit(context),
+            onPressed: () async => await createUnit(),
           );
         case CommandScreen.TAB_PERSONNEL:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createPersonnel(context),
+            onPressed: () async => await createPersonnel(),
           );
         case CommandScreen.TAB_DEVICES:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createDevice(context),
+            onPressed: () async => await createDevice(),
           );
       }
     }

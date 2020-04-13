@@ -312,7 +312,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPOI(RegExp match) {
     final results = <AddressLookup>[];
-    final incident = controller.incidentProvider.bloc.current;
+    final incident = controller.incidentProvider.bloc.selected;
     if (incident != null) {
       // Search for matches in incident
       if (_prepare(incident.searchable).contains(match)) {

@@ -13,7 +13,7 @@ part 'Incident.g.dart';
   anyMap: true,
 )
 class Incident extends Equatable {
-  final String id;
+  final String uuid;
   final String name;
   final IncidentType type;
   final IncidentStatus status;
@@ -28,7 +28,7 @@ class Incident extends Equatable {
   final Author changed;
 
   Incident({
-    @required this.id,
+    @required this.uuid,
     @required this.name,
     @required this.type,
     @required this.status,
@@ -42,7 +42,7 @@ class Incident extends Equatable {
     @required this.changed,
     this.reference,
   }) : super([
-          id,
+          uuid,
           name,
           type,
           status,
@@ -81,7 +81,7 @@ class Incident extends Equatable {
     var clone = Incident.fromJson(json);
     var now = DateTime.now();
     return Incident(
-      id: clone.id ?? this.id,
+      uuid: clone.uuid ?? this.uuid,
       name: clone.name ?? this.name,
       type: clone.type ?? this.type,
       status: clone.status ?? this.status,
@@ -103,7 +103,7 @@ class Incident extends Equatable {
   Incident withAuthor(String userId) {
     var now = DateTime.now();
     return Incident(
-      id: this.id,
+      uuid: this.uuid,
       name: this.name,
       type: this.type,
       status: this.status,
@@ -135,7 +135,7 @@ class Incident extends Equatable {
     List<TalkGroup> talkGroups,
   }) {
     return Incident(
-      id: this.id,
+      uuid: this.uuid,
       name: name ?? this.name,
       type: type ?? this.type,
       status: status ?? this.status,

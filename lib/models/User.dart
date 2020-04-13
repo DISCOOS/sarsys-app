@@ -111,7 +111,7 @@ class User extends Equatable {
       final idJwt = JwtClaim.fromMap(idJson);
       final affiliation = Map.from(idJwt['affiliation'] ?? {});
       user = user.cloneWith(
-        phone: idJwt['phone'],
+        phone: idJwt['phone'] ?? idJwt['phone_number'],
         division: affiliation['division'],
         department: affiliation['department'],
       );

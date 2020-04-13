@@ -14,18 +14,18 @@ import 'package:provider/provider.dart';
 
 class DeviceParams extends BlocParams<DeviceBloc, Device> {
   final Unit unit;
-  DeviceParams(BuildContext context, {Device device, this.unit}) : super(context, device);
+  DeviceParams({Device device, this.unit}) : super(device);
 }
 
 /// Create an device
-Future<dartz.Either<bool, Device>> createDevice(BuildContext context) => CreateDevice()(DeviceParams(context));
+Future<dartz.Either<bool, Device>> createDevice() => CreateDevice()(DeviceParams());
 
 class CreateDevice extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await showDialog<Device>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => DeviceEditor(
         controller: Provider.of<PermissionController>(params.context),
       ),
@@ -38,7 +38,7 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
 }
 
 /// Attach an device to incident
-Future<dartz.Either<bool, Device>> attachDevice(BuildContext context) => AttachDevice()(DeviceParams(context));
+Future<dartz.Either<bool, Device>> attachDevice() => AttachDevice()(DeviceParams());
 
 class AttachDevice extends UseCase<bool, Device, DeviceParams> {
   @override
@@ -57,11 +57,9 @@ class AttachDevice extends UseCase<bool, Device, DeviceParams> {
 
 /// Edit given unit
 Future<dartz.Either<bool, Device>> editDevice(
-  BuildContext context,
   Device device,
 ) =>
     EditDevice()(DeviceParams(
-      context,
       device: device,
     ));
 
@@ -72,7 +70,7 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
     // The widget returned by the builder does not share a context with the location that
     // showDialog is originally called from. Provider.of will therefore fail.
     var result = await showDialog<Device>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => DeviceEditor(
         device: params.data,
         controller: Provider.of<PermissionController>(params.context),
@@ -87,11 +85,9 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
 
 /// Edit last known device location
 Future<dartz.Either<bool, Device>> editDeviceLocation(
-  BuildContext context,
   Device device,
 ) =>
     EditDeviceLocation()(DeviceParams(
-      context,
       device: device,
     ));
 
@@ -100,7 +96,7 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data != null, "Device must be supplied");
     var result = await showDialog<Point>(
-      context: params.context,
+      context: params.overlay.context,
       builder: (context) => PointEditor(
         params.data.point,
         title: "Sett siste kjente posisjon",
@@ -119,7 +115,6 @@ Future<dartz.Either<bool, DeviceState>> detachDevice(
   Device device,
 ) =>
     DetachDevice()(DeviceParams(
-      context,
       device: device,
     ));
 
@@ -144,7 +139,6 @@ Future<dartz.Either<bool, DeviceState>> deleteDevice(
   Device device,
 ) =>
     DeleteDevice()(DeviceParams(
-      context,
       device: device,
     ));
 
