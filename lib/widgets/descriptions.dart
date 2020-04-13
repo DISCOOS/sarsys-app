@@ -1,4 +1,9 @@
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/models/User.dart';
+import 'package:SarSys/utils/ui_utils.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SecurityModePersonalDescription extends StatelessWidget {
   const SecurityModePersonalDescription({
@@ -116,6 +121,167 @@ class SecurityModeSharedDescription extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class UserRolesDescription extends StatelessWidget {
+  const UserRolesDescription({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = BlocProvider.of<IncidentBloc>(context);
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(text: "Roller tildeles av din orgainsasjon."),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: Text.rich(
+              TextSpan(
+                text: 'Tilgangskoder',
+                style: TextStyle(
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: "Aksjoner krever en kode for å kunne åpnes. "
+                    "Denne koden kan sendes ut med varslingen eller oppgis på annet vis.",
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                  text: "Aksjoner du selv har opprettet kan åpnes av deg uten kode. "
+                      "Koden for hver aksjon finnes på ",
+                  children: [
+                    !bloc.isUnset
+                        ? TextSpan(text: 'aksjonens side.')
+                        : TextSpan(
+                            text: 'aksjonens side',
+                            style: TextStyle(color: Colors.blue),
+                            recognizer: new TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.popAndPushNamed(context, 'incident');
+                              },
+                            children: [TextSpan(text: '.', style: TextStyle(color: Colors.black))])
+                  ]),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: Text.rich(
+              TextSpan(
+                text: '${translateUserRole(UserRole.commander)} (${translateUserRoleAbbr(UserRole.commander)})',
+                style: TextStyle(
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: "Alle som inngår i aksjonsledelse skal ha denne rollen.",
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: "Du kan opprette aksjoner og gi andre tilgang ved å dele tilgangkoder.",
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: "Du kan administrere aksjoner opprettet av andre ved å oppgi "
+                    "tilgangskoden for aksjonleder.",
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4.0),
+            child: Text.rich(
+              TextSpan(
+                text: '${translateUserRole(UserRole.unit_leader)} (${translateUserRoleAbbr(UserRole.unit_leader)})',
+                style: TextStyle(
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: "Du kan administrere laget du er tildelt. "
+                    "For å delta på aksjoner må du oppgi tilgangskoden for mannskap.",
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: '${translateUserRole(UserRole.personnel)} (${translateUserRoleAbbr(UserRole.personnel)})',
+                style: TextStyle(
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(text: "Du kan delta på aksjoner med tilgangskoden for mannskap."),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(
+                text: 'Ingen roller',
+                style: TextStyle(
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text.rich(
+              TextSpan(text: "Du ikke delta på aksjoner."),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -65,34 +65,8 @@ class AppDrawer extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: <Widget>[
-                          GestureDetector(
-                            child: Chip(
-                              padding: EdgeInsets.zero,
-                              label: Text(
-                                '${translateSecurityMode(config.securityMode)} '
-                                '${user.isTrusted ? '' : '(begrenset)'}',
-                                style: TextStyle(color: Colors.white38),
-                              ),
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
-                            ),
-                            onTap: () {
-                              alert(
-                                context,
-                                title: "Bruksmodus og sikkerhet",
-                                content: userBloc.isShared
-                                    ? SecurityModeSharedDescription()
-                                    : SecurityModePersonalDescription(untrusted: user.isUntrusted),
-                              );
-                            },
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: Text(
-                              roles.isEmpty ? 'Ingen roller' : roles.map(translateUserRole).join(', '),
-                              style: TextStyle(color: Colors.white38),
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
+                          _buildSecurityState(context, userBloc),
+                          _buildUserRoles(context, roles),
                         ],
                       ),
                     ),
@@ -120,7 +94,7 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             enabled: !isUnset,
             leading: const Icon(Icons.warning),
-            title: Text('Hendelse', style: TextStyle(fontSize: 14)),
+            title: Text('Aksjon', style: TextStyle(fontSize: 14)),
             onTap: () {
               Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_INCIDENT);
             },
@@ -190,6 +164,49 @@ class AppDrawer extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUserRoles(BuildContext context, List<UserRole> roles) {
+    return GestureDetector(
+      child: Chip(
+        padding: EdgeInsets.zero,
+        label: Text(
+          (roles.isEmpty ? ['Ingen roller'] : roles.map(translateUserRoleAbbr)).join('/'),
+          style: TextStyle(color: Colors.white38),
+        ),
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+      ),
+      onTap: () {
+        alert(
+          context,
+          title: "Roller og tilgangsstyring",
+          content: UserRolesDescription(),
+        );
+      },
+    );
+  }
+
+  GestureDetector _buildSecurityState(BuildContext context, UserBloc bloc) {
+    return GestureDetector(
+      child: Chip(
+        padding: EdgeInsets.zero,
+        label: Text(
+          '${translateSecurityMode(bloc.securityMode)} '
+          '${bloc.user.isTrusted ? '' : '(begrenset)'}',
+          style: TextStyle(color: Colors.white38),
+        ),
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+      ),
+      onTap: () {
+        alert(
+          context,
+          title: "Bruksmodus og sikkerhet",
+          content: bloc.isShared
+              ? SecurityModeSharedDescription()
+              : SecurityModePersonalDescription(untrusted: bloc.user.isUntrusted),
+        );
+      },
     );
   }
 }
