@@ -4,17 +4,18 @@ import 'dart:ui';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/app_state.dart';
 import 'package:SarSys/screens/about_screen.dart';
-import 'package:SarSys/screens/config/affiliation_config_screen.dart';
-import 'package:SarSys/screens/config/map_config_screen.dart';
-import 'package:SarSys/screens/config/permission_config_screen.dart';
-import 'package:SarSys/screens/config/security_config_screen.dart';
-import 'package:SarSys/screens/config/tetra_config_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'incident_config_screen.dart';
+import 'location_config_screen.dart';
+import 'map_config_screen.dart';
+import 'affiliation_config_screen.dart';
+import 'permission_config_screen.dart';
+import 'security_config_screen.dart';
+import 'tetra_config_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   static const ROUTE = 'settings';
@@ -92,6 +93,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       _buildGotoAffiliationConfig(),
       _buildGotoIncidentConfig(),
       _buildGotoMapConfig(),
+      _buildGotoLocationConfig(),
       _buildGotoTetraConfig(),
       _buildGotoSecurityConfig(),
       _buildPermissionsConfig(),
@@ -183,11 +185,24 @@ class SettingsScreenState extends State<SettingsScreen> {
   ListTile _buildGotoMapConfig() {
     return ListTile(
       title: Text("Kart"),
-      subtitle: Text('Endre innstillinger for sporing og lagring'),
+      subtitle: Text('Endre innstillinger for kart og lagring'),
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
           return MapConfigScreen();
+        }));
+      },
+    );
+  }
+
+  ListTile _buildGotoLocationConfig() {
+    return ListTile(
+      title: Text("Posisjon og sporing"),
+      subtitle: Text('Endre innstillinger posisjonering og sporing'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return LocationConfigScreen();
         }));
       },
     );
