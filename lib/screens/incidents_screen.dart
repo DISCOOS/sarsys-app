@@ -68,7 +68,7 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
     return _userBloc?.user?.isCommander == true
         ? FloatingActionButton(
             onPressed: () => _create(context),
-            tooltip: 'Ny hendelse',
+            tooltip: 'Ny aksjon',
             child: Icon(Icons.add),
             elevation: 2.0,
           )
@@ -292,7 +292,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                userBloc.isAuthor(incident) || userBloc.hasRoles ? 'Min hendelse' : 'Ingen roller',
+                                userBloc.isAuthor(incident) || userBloc.hasRoles ? 'Min aksjon' : 'Ingen roller',
                                 style: Theme.of(context).textTheme.caption,
                               ),
                             ),

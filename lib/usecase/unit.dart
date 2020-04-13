@@ -398,7 +398,7 @@ class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
     var response = await prompt(
       params.context,
       "Slett ${params.data.name}",
-      "Dette vil slette alle data fra sporinger og fjerne enheten fra hendelsen. "
+      "Dette vil slette alle data fra sporinger og fjerne enheten fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);

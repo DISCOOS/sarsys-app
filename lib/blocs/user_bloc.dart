@@ -587,5 +587,5 @@ class UserError extends UserException {
   UserError(Object error, {stackTrace}) : super(error, stackTrace: stackTrace);
 
   @override
-  String toString() => 'UserError {data: $data}';
+  String toString() => 'UserError {data: $data, stackTrace: $stackTrace}';
 }

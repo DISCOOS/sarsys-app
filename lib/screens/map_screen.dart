@@ -123,7 +123,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                       ListTile(
                         dense: landscape,
                         leading: Icon(Icons.warning),
-                        title: Text('Hendelse', style: style),
+                        title: Text('Aksjon', style: style),
                         onTap: () async {
                           final result = await createIncident(
                             context,

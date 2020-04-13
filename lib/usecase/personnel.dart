@@ -316,7 +316,7 @@ class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
     var response = await prompt(
       params.context,
       "Slett ${params.data.name}",
-      "Dette vil slette alle data fra sporinger og fjerne mannskapet fra hendelsen. "
+      "Dette vil slette alle data fra sporinger og fjerne mannskapet fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);

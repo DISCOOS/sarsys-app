@@ -71,7 +71,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
       key: _scaffoldKey,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(widget.incident == null ? 'Ny hendelse' : 'Endre hendelse'),
+        title: Text(widget.incident == null ? 'Ny aksjon' : 'Endre aksjon'),
         centerTitle: false,
         leading: GestureDetector(
           child: Icon(Icons.close),
@@ -296,7 +296,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   Widget _buildTypeField() {
     return buildDropDownField(
       attribute: 'type',
-      label: 'Type hendelse',
+      label: 'Type aksjon',
       initialValue: enumName(widget?.incident?.type ?? IncidentType.Lost),
       items: IncidentType.values
           .map((type) => [enumName(type), translateIncidentType(type)])

@@ -143,8 +143,8 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   ListTile _buildGotoIncidentConfig() {
     return ListTile(
-      title: Text("Hendelse"),
-      subtitle: Text('Endre innstillinger for hendelse'),
+      title: Text("Aksjon"),
+      subtitle: Text('Endre innstillinger for aksjon'),
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {

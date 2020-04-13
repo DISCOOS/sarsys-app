@@ -46,8 +46,8 @@ class AttachDevice extends UseCase<bool, Device, DeviceParams> {
     assert(params.data == null, "Device should not be supplied");
     var result = await prompt(
       params.context,
-      "Tilknytt hendelse",
-      "Dette vil knytte apparatet til hendelsen. Vil du fortsette?",
+      "Tilknytt aksjon",
+      "Dette vil knytte apparatet til aksjonen. Vil du fortsette?",
     );
     if (!result) return dartz.left(false);
     final device = await params.bloc.attach(params.data);
@@ -130,7 +130,7 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
     var response = await prompt(
       params.context,
       "Fjern ${params.data.name}",
-      "Dette vil fjerne apparatet fra sporing og hendelsen. Vil du fortsette?",
+      "Dette vil fjerne apparatet fra sporing og aksjonen. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
     await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Detached));
@@ -155,7 +155,7 @@ class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
     var response = await prompt(
       params.context,
       "Slett ${params.data.name}",
-      "Dette vil slette alle data fra sporinger og fjerne apparatet fra hendelsen. "
+      "Dette vil slette alle data fra sporinger og fjerne apparatet fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);

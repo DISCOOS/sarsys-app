@@ -107,7 +107,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             selectedItemColor: Theme.of(context).colorScheme.primary,
             type: BottomNavigationBarType.fixed,
             items: [
-              BottomNavigationBarItem(title: Text("Hendelse"), icon: Icon(Icons.warning)),
+              BottomNavigationBarItem(title: Text("Aksjon"), icon: Icon(Icons.warning)),
               BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
               BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
               BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
@@ -125,10 +125,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     );
   }
 
-  _toName(Incident incident, {ifEmpty: "Hendelse"}) {
+  _toName(Incident incident, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
       case CommandScreen.TAB_INCIDENT:
-        String name = incident?.name ?? "Hendelse";
+        String name = incident?.name ?? "Aksjon";
         return name == null || name.isEmpty ? ifEmpty : name;
       case CommandScreen.TAB_UNITS:
         return "Enheter";

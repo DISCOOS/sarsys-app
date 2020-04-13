@@ -67,6 +67,8 @@ class User extends Equatable {
 
   bool get hasRoles => roles.isNotEmpty;
   bool get isCommander => roles.contains(UserRole.commander);
+  bool get isPlanningChief => roles.contains(UserRole.planning_chief);
+  bool get isOperationsChief => roles.contains(UserRole.operations_chief);
   bool get isUnitLeader => roles.contains(UserRole.unit_leader);
   bool get isPersonnel => roles.contains(UserRole.personnel);
   bool get isTrusted => security?.trusted ?? false;
@@ -190,16 +192,42 @@ class User extends Equatable {
       );
 }
 
-enum UserRole { commander, unit_leader, personnel }
+enum UserRole {
+  commander,
+  planning_chief,
+  operations_chief,
+  unit_leader,
+  personnel,
+}
 
 String translateUserRole(UserRole role) {
   switch (role) {
     case UserRole.commander:
       return "Aksjonsleder";
-    case UserRole.personnel:
-      return "Mannskap";
+    case UserRole.planning_chief:
+      return "Søksleder";
+    case UserRole.operations_chief:
+      return "Ressursleder";
     case UserRole.unit_leader:
-    default:
       return "Lagleder";
+    case UserRole.personnel:
+    default:
+      return "Mannskap";
+  }
+}
+
+String translateUserRoleAbbr(UserRole role) {
+  switch (role) {
+    case UserRole.commander:
+      return "AL";
+    case UserRole.planning_chief:
+      return "SL";
+    case UserRole.operations_chief:
+      return "RL";
+    case UserRole.unit_leader:
+      return "LL";
+    case UserRole.personnel:
+    default:
+      return "MS";
   }
 }
