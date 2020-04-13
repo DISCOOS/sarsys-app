@@ -60,7 +60,7 @@ class AppDrawer extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0, right: 8.0),
                     child: FractionallySizedBox(
-                      widthFactor: 0.55,
+                      widthFactor: 0.70,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -169,13 +169,28 @@ class AppDrawer extends StatelessWidget {
 
   Widget _buildUserRoles(BuildContext context, List<UserRole> roles) {
     return GestureDetector(
-      child: Chip(
-        padding: EdgeInsets.zero,
-        label: Text(
-          (roles.isEmpty ? ['Ingen roller'] : roles.map(translateUserRoleAbbr)).join('/'),
-          style: TextStyle(color: Colors.white38),
-        ),
-        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Text(
+            'Tildelt ',
+            style: TextStyle(color: Colors.white38),
+          ),
+          Chip(
+            padding: EdgeInsets.zero,
+            labelPadding: EdgeInsets.only(left: 8.0),
+            label: Text(
+              (roles.isEmpty ? ['Ingen roller'] : roles.map(translateUserRoleAbbr)).join('/'),
+              style: TextStyle(color: Colors.white38),
+            ),
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+            onDeleted: () {},
+            deleteIcon: Icon(
+              Icons.info_outline,
+              color: Colors.white24,
+            ),
+          ),
+        ],
       ),
       onTap: () {
         alert(
@@ -189,14 +204,28 @@ class AppDrawer extends StatelessWidget {
 
   GestureDetector _buildSecurityState(BuildContext context, UserBloc bloc) {
     return GestureDetector(
-      child: Chip(
-        padding: EdgeInsets.zero,
-        label: Text(
-          '${translateSecurityMode(bloc.securityMode)} '
-          '${bloc.user.isTrusted ? '' : '(begrenset)'}',
-          style: TextStyle(color: Colors.white38),
-        ),
-        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Text(
+            'Modus ',
+            style: TextStyle(color: Colors.white38),
+          ),
+          Chip(
+            padding: EdgeInsets.zero,
+            labelPadding: EdgeInsets.only(left: 8.0),
+            label: Text(
+              '${bloc.user.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
+              style: TextStyle(color: Colors.white38),
+            ),
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
+            onDeleted: () {},
+            deleteIcon: Icon(
+              Icons.info_outline,
+              color: Colors.white24,
+            ),
+          ),
+        ],
       ),
       onTap: () {
         alert(
