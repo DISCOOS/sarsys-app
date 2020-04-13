@@ -1,4 +1,3 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
@@ -8,6 +7,7 @@ import 'package:SarSys/screens/command_screen.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
+import 'package:SarSys/screens/user_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +22,6 @@ class AppDrawer extends StatelessWidget {
     final UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     final User user = userBloc.user;
     final isUnset = BlocProvider.of<IncidentBloc>(context).isUnset;
-    final config = BlocProvider.of<AppConfigBloc>(context).config;
     var gravatar = Gravatar(user.email);
     var url = gravatar.imageUrl(
       size: 100,
@@ -91,14 +90,14 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           Divider(),
-          ListTile(
-            enabled: !isUnset,
-            leading: const Icon(Icons.warning),
-            title: Text('Aksjon', style: TextStyle(fontSize: 14)),
-            onTap: () {
-              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_INCIDENT);
-            },
-          ),
+//          ListTile(
+//            enabled: !isUnset,
+//            leading: const Icon(Icons.assignment),
+//            title: Text('Oppdrag', style: TextStyle(fontSize: 14)),
+//            onTap: () {
+//              Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_MISSION_LIST);
+//            },
+//          ),
           ListTile(
             enabled: !isUnset,
             leading: const Icon(Icons.people),
@@ -121,6 +120,38 @@ class AppDrawer extends StatelessWidget {
             title: Text('Apparater', style: TextStyle(fontSize: 14)),
             onTap: () {
               Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_DEVICE_LIST);
+            },
+          ),
+          Divider(),
+          ListTile(
+            enabled: !isUnset,
+            leading: const Icon(Icons.warning),
+            title: Text('Min aksjon', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, UserScreen.ROUTE_INCIDENT);
+            },
+          ),
+          ListTile(
+            enabled: false,
+            leading: const Icon(Icons.supervised_user_circle),
+            title: Text('Min enhet', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, UserScreen.ROUTE_UNIT);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_box),
+            title: Text('Min side', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, UserScreen.ROUTE_STATUS);
+            },
+          ),
+          ListTile(
+            enabled: false,
+            leading: const Icon(Icons.history),
+            title: Text('Min historikk', style: TextStyle(fontSize: 14)),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, UserScreen.ROUTE_HISTORY);
             },
           ),
           Divider(),
@@ -169,6 +200,7 @@ class AppDrawer extends StatelessWidget {
 
   Widget _buildUserRoles(BuildContext context, List<UserRole> roles) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
@@ -177,18 +209,25 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(color: Colors.white38),
           ),
           Chip(
-            padding: EdgeInsets.zero,
+            padding: EdgeInsets.only(right: 4.0),
             labelPadding: EdgeInsets.only(left: 8.0),
-            label: Text(
-              (roles.isEmpty ? ['Ingen roller'] : roles.map(translateUserRoleAbbr)).join('/'),
-              style: TextStyle(color: Colors.white38),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  (roles.isEmpty ? ['Ingen roller'] : roles.map(translateUserRoleAbbr)).join('/'),
+                  style: TextStyle(color: Colors.white38),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Colors.white24,
+                  ),
+                ),
+              ],
             ),
             backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
-            onDeleted: () {},
-            deleteIcon: Icon(
-              Icons.info_outline,
-              color: Colors.white24,
-            ),
           ),
         ],
       ),
@@ -212,18 +251,25 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(color: Colors.white38),
           ),
           Chip(
-            padding: EdgeInsets.zero,
+            padding: EdgeInsets.only(right: 4.0),
             labelPadding: EdgeInsets.only(left: 8.0),
-            label: Text(
-              '${bloc.user.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
-              style: TextStyle(color: Colors.white38),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  '${bloc.user.isTrusted ? translateSecurityMode(bloc.securityMode) : 'Begrenset'}',
+                  style: TextStyle(color: Colors.white38),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Colors.white24,
+                  ),
+                )
+              ],
             ),
             backgroundColor: Theme.of(context).primaryColor.withOpacity(0.8),
-            onDeleted: () {},
-            deleteIcon: Icon(
-              Icons.info_outline,
-              color: Colors.white24,
-            ),
           ),
         ],
       ),

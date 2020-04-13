@@ -100,6 +100,8 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
   static RouteObserver<PageRoute> _observer;
   static get observer => _observer ??= RouteObserver<PageRoute>();
 
+  RouteWriter({this.routeData, this.routeName, this.routeWriter = true});
+
   T routeData;
   String routeName;
   bool routeWriter = true;

@@ -19,6 +19,7 @@ import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/unlock_screen.dart';
+import 'package:SarSys/screens/user_screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
@@ -218,8 +219,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           ),
         );
         break;
-      case CommandScreen.ROUTE_INCIDENT:
-        child = CommandScreen(tabIndex: CommandScreen.TAB_INCIDENT);
+      case UserScreen.ROUTE_INCIDENT:
+        child = UserScreen(tabIndex: UserScreen.TAB_INCIDENT);
         break;
       case UnitScreen.ROUTE:
         child = _toUnitScreen(settings, persisted);
@@ -230,6 +231,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case DeviceScreen.ROUTE:
         child = _toDeviceScreen(settings, persisted);
         break;
+      case CommandScreen.ROUTE_MISSION_LIST:
+        child = CommandScreen(tabIndex: CommandScreen.TAB_MISSIONS);
+        break;
       case CommandScreen.ROUTE_DEVICE_LIST:
         child = CommandScreen(tabIndex: CommandScreen.TAB_DEVICES);
         break;
@@ -238,6 +242,15 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         break;
       case CommandScreen.ROUTE_PERSONNEL_LIST:
         child = CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL);
+        break;
+      case UserScreen.ROUTE_STATUS:
+        child = UserScreen(tabIndex: UserScreen.TAB_STATUS);
+        break;
+      case UserScreen.ROUTE_UNIT:
+        child = UserScreen(tabIndex: UserScreen.TAB_UNIT);
+        break;
+      case UserScreen.ROUTE_HISTORY:
+        child = UserScreen(tabIndex: UserScreen.TAB_HISTORY);
         break;
       case SettingsScreen.ROUTE:
         child = SettingsScreen();

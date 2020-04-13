@@ -4,12 +4,11 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/devices_page.dart';
+import 'package:SarSys/pages/missions_page.dart';
 import 'package:SarSys/pages/personnel_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/device.dart';
-import 'package:SarSys/usecase/incident.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/screens/screen.dart';
@@ -19,21 +18,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class CommandScreen extends StatefulWidget {
-  static const TAB_INCIDENT = 0;
-  static const TAB_UNITS = 1;
-  static const TAB_PERSONNEL = 2;
-  static const TAB_DEVICES = 3;
+  static const TAB_UNITS = 0;
+  static const TAB_PERSONNEL = 1;
+  static const TAB_DEVICES = 2;
+  static const TAB_MISSIONS = 3;
 
-  static const ROUTE_INCIDENT = 'incident';
+  static const ROUTE_MISSION_LIST = 'mission/list';
   static const ROUTE_UNIT_LIST = 'unit/list';
   static const ROUTE_DEVICE_LIST = 'device/list';
   static const ROUTE_PERSONNEL_LIST = 'personnel/list';
 
   static const ROUTES = [
-    ROUTE_INCIDENT,
     ROUTE_UNIT_LIST,
     ROUTE_DEVICE_LIST,
     ROUTE_PERSONNEL_LIST,
+    ROUTE_MISSION_LIST,
   ];
 
   final int tabIndex;
@@ -45,8 +44,9 @@ class CommandScreen extends StatefulWidget {
 }
 
 class _CommandScreenState extends RouteWriter<CommandScreen, int> {
-  final _unitsKey = GlobalKey<UnitsPageState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _missionsKey = GlobalKey<MissionsPageState>();
+  final _unitsKey = GlobalKey<UnitsPageState>();
   final _personnelKey = GlobalKey<PersonnelPageState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
@@ -85,9 +85,9 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       initialData: _incidentBloc.current,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = (snapshot.hasData ? _incidentBloc.current : null);
-        final title = _toName(incident);
+        final title = _toTitle(incident);
         final tabs = [
-          IncidentPage(onMessage: _showMessage),
+          MissionsPage(key: _missionsKey),
           UnitsPage(key: _unitsKey),
           PersonnelPage(key: _personnelKey),
           DevicesPage(key: _devicesKey),
@@ -101,35 +101,47 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           ),
           body: tabs[routeData],
           resizeToAvoidBottomInset: false,
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: routeData,
-            elevation: 4.0,
-            selectedItemColor: Theme.of(context).colorScheme.primary,
-            type: BottomNavigationBarType.fixed,
-            items: [
-              BottomNavigationBarItem(title: Text("Aksjon"), icon: Icon(Icons.warning)),
-              BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
-              BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
-              BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
-            ],
-            onTap: (index) => setState(() {
-              writeRoute(
-                data: index,
-                name: CommandScreen.ROUTES[index],
-              );
-            }),
+          bottomNavigationBar: BottomAppBar(
+            shape: CircularNotchedRectangle(),
+            notchMargin: 8.0,
+            elevation: 16.0,
+            child: FractionallySizedBox(
+              widthFactor: 0.80,
+              alignment: Alignment.bottomLeft,
+              child: BottomNavigationBar(
+                currentIndex: routeData,
+                elevation: 0.0,
+                backgroundColor: Colors.transparent,
+                selectedItemColor: Theme.of(context).colorScheme.primary,
+                type: BottomNavigationBarType.fixed,
+                showUnselectedLabels: true,
+                items: [
+//                  BottomNavigationBarItem(title: Text("Oppdrag"), icon: Icon(Icons.assessment)),
+                  BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
+                  BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
+                  BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
+                ],
+                onTap: (index) => setState(() {
+                  writeRoute(
+                    data: index,
+                    name: CommandScreen.ROUTES[index],
+                  );
+                }),
+              ),
+            ),
           ),
           floatingActionButton: _buildFAB(),
+          floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         );
       },
     );
   }
 
-  _toName(Incident incident, {ifEmpty: "Aksjon"}) {
+  _toTitle(Incident incident, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
-      case CommandScreen.TAB_INCIDENT:
-        String name = incident?.name ?? "Aksjon";
-        return name == null || name.isEmpty ? ifEmpty : name;
+      case CommandScreen.TAB_MISSIONS:
+        return "Oppdrag";
       case CommandScreen.TAB_UNITS:
         return "Enheter";
       case CommandScreen.TAB_PERSONNEL:
@@ -141,14 +153,13 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
 
   List<Widget> _buildActions(incident) {
     switch (routeData) {
-      case CommandScreen.TAB_INCIDENT:
-        return [
-          if (_userBloc?.user?.isCommander == true)
-            IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: () async => await editIncident(context, incident),
-            )
-        ];
+      case CommandScreen.TAB_MISSIONS:
+        return _buildListActions<Unit>(
+          delegate: MissionSearch(),
+          onPressed: () async {
+            _missionsKey.currentState.showFilterSheet();
+          },
+        );
       case CommandScreen.TAB_UNITS:
         return _buildListActions<Unit>(
           delegate: UnitSearch(),
@@ -193,6 +204,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   StatelessWidget _buildFAB() {
     if (_userBloc?.user?.isCommander == true) {
       switch (routeData) {
+        case CommandScreen.TAB_MISSIONS:
+          return FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: () async => await createUnit(context),
+          );
         case CommandScreen.TAB_UNITS:
           return FloatingActionButton(
             child: Icon(Icons.add),
@@ -211,32 +227,5 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       }
     }
     return Container();
-  }
-
-  void _showMessage(
-    String message, {
-    String action = "OK",
-    VoidCallback onPressed,
-    dynamic data,
-  }) {
-    final snackbar = SnackBar(
-      duration: Duration(seconds: 2),
-      content: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(message),
-      ),
-      action: _buildAction(action, () {
-        if (onPressed != null) onPressed();
-        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
-      }),
-    );
-    _scaffoldKey.currentState.showSnackBar(snackbar);
-  }
-
-  Widget _buildAction(String label, VoidCallback onPressed) {
-    return SnackBarAction(
-      label: label,
-      onPressed: onPressed,
-    );
   }
 }

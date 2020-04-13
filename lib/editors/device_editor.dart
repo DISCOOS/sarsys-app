@@ -137,6 +137,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         labelText: "Navn",
         filled: true,
         enabled: false,
+        isDense: true,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -166,6 +167,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         hintText: 'Skriv inn',
         filled: true,
         enabled: true,
+        isDense: true,
         labelText: 'Nummer',
         suffix: GestureDetector(
           child: Icon(
@@ -269,6 +271,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
+        isDense: true,
         labelText: 'Alias',
         suffix: GestureDetector(
           child: Icon(
