@@ -122,24 +122,18 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     );
   }
 
-  PersonnelInfoPanel _buildInfoPanel(BuildContext context) {
-    final tracking = _trackingBloc.tracking[_personnel.tracking];
-    return PersonnelInfoPanel(
-      personnel: _personnel,
-      tracking: tracking,
-      devices: tracking?.devices
-              ?.map((id) => _trackingBloc.deviceBloc.devices[id])
-              ?.where((personnel) => personnel != null) ??
-          {},
-      withHeader: false,
-      withActions: _userBloc.user.isCommander,
-      organization: FleetMapService().fetchOrganization(Defaults.organizationId),
-      onMessage: showMessage,
-      onChanged: (personnel) => setState(() => _personnel = personnel),
-      onDelete: () => Navigator.pop(context),
-      onGoto: (point) => jumpToPoint(context, center: point),
-    );
-  }
+  PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
+        personnel: _personnel,
+        tracking: _trackingBloc.tracking[_personnel.tracking],
+        devices: _trackingBloc.devices(_personnel.tracking),
+        withHeader: false,
+        withActions: _userBloc.user.isCommander,
+        organization: FleetMapService().fetchOrganization(Defaults.orgId),
+        onMessage: showMessage,
+        onDelete: () => Navigator.pop(context),
+        onGoto: (point) => jumpToPoint(context, center: point),
+        onChanged: (personnel) => setState(() => _personnel = personnel),
+      );
 
   Widget _buildMapTile(BuildContext context, Personnel personnel) {
     final center = toCenter(_trackingBloc.tracking[personnel.tracking]);

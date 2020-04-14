@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 
 class POIInfoPanel extends StatelessWidget {
   final POI poi;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
   final VoidCallback onCancel;
   final VoidCallback onComplete;
   final ValueChanged<String> onCopy;

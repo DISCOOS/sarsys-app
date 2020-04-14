@@ -248,13 +248,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
           )
           ?.value;
 
-  /// Get devices being tracked by given tracking id
+  /// Get devices being tracked by given [Tracking.id]
   List<Device> devices(
-    String id, {
+    String tuuid, {
     List<TrackingStatus> exclude = const [TrackingStatus.Closed],
   }) =>
-      _tracking.containsKey(id) && !exclude.contains(_tracking[id].status)
-          ? _tracking[id]
+      _tracking.containsKey(tuuid) && !exclude.contains(_tracking[tuuid].status)
+          ? _tracking[tuuid]
               .devices
               .where((id) => deviceBloc.devices.containsKey(id))
               .map((id) => deviceBloc.devices[id])

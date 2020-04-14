@@ -50,8 +50,8 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
               user: _userBloc.user,
               initialValue: _ensureAffiliation(),
               onChanged: (affiliation) => _configBloc.update(
-                division: affiliation.division,
-                department: affiliation.department,
+                division: affiliation.divId,
+                department: affiliation.depId,
               ),
             ),
             if (_userBloc.user.isAffiliated)
@@ -82,8 +82,8 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
   }
 
   Affiliation _ensureAffiliation() => Affiliation(
-        organization: Defaults.organizationId,
-        division: _configBloc.config.divisionId ?? Defaults.divisionId,
-        department: _configBloc.config.departmentId ?? Defaults.departmentId,
+        orgId: Defaults.orgId,
+        divId: _configBloc.config.divId ?? Defaults.divId,
+        depId: _configBloc.config.depId ?? Defaults.depId,
       );
 }

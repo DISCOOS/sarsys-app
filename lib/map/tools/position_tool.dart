@@ -12,7 +12,7 @@ import 'package:latlong/latlong.dart';
 class PositionTool extends MapTool {
   final VoidCallback onHide;
   final MapController controller;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
   final ValueChanged<LatLng> onShow;
   final ValueChanged<String> onCopy;
 

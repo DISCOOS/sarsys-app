@@ -21,7 +21,7 @@ class DeviceLayerOptions extends LayerOptions {
   bool showLabels;
   bool showTail;
   final TrackingBloc bloc;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   DeviceLayerOptions({
     @required this.bloc,

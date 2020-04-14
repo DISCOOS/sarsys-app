@@ -1,85 +1,70 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/personnel.dart';
-import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UserStatusPage extends StatefulWidget {
-  const UserStatusPage({Key key, @required this.onMessage}) : super(key: key);
+  const UserStatusPage({
+    Key key,
+    @required this.onMessage,
+    this.personnel,
+    this.onChanged,
+  }) : super(key: key);
 
-  final MessageCallback onMessage;
+  final Personnel personnel;
+  final ActionCallback onMessage;
+  final ValueChanged<Personnel> onChanged;
 
   @override
   UserStatusPageState createState() => UserStatusPageState();
 }
 
 class UserStatusPageState extends State<UserStatusPage> {
-  UserBloc _userBloc;
   PersonnelBloc _personnelBloc;
   TrackingBloc _trackingBloc;
-  StreamGroup<dynamic> _group;
 
   Personnel _personnel;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
+    _personnel = widget.personnel;
     _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _group?.close();
-    _group = StreamGroup.broadcast()..add(_personnelBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
-  }
-
-  Personnel _findPersonnel() {
-    final userId = _userBloc.user?.userId;
-    return _personnelBloc.personnel.values.firstWhere(
-      (personnel) => personnel.userId == userId,
-      orElse: () => null,
-    );
-  }
-
-  @override
-  void dispose() {
-    _group?.close();
-    _group = null;
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Object>(
-        stream: _group.stream,
+    return StreamBuilder<PersonnelState>(
+        stream: _personnelBloc.state,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            _personnel = _findPersonnel();
+            final state = snapshot.data;
+            if (state.isUpdated() && state.data.id == _personnel.id) {
+              _personnel = state.data;
+            }
             return _personnel == null ? Text('Deltar ikke på aksjon') : _buildInfoPanel(context);
           }
           return Container();
         });
   }
 
-  PersonnelInfoPanel _buildInfoPanel(BuildContext context) {
+  PersonnelWidget _buildInfoPanel(BuildContext context) {
     final tracking = _trackingBloc.tracking[_personnel.tracking];
-    return PersonnelInfoPanel(
+    return PersonnelWidget(
       personnel: _personnel,
       tracking: tracking,
-      devices: tracking?.devices
-              ?.map((id) => _trackingBloc.deviceBloc.devices[id])
-              ?.where((personnel) => personnel != null) ??
-          {},
+      devices: _trackingBloc.devices(_personnel.tracking),
+      withName: true,
       withHeader: false,
-      withActions: _userBloc.user.isCommander,
+      withActions: false,
       onMessage: widget.onMessage,
-      organization: FleetMapService().fetchOrganization(Defaults.organizationId),
-      onChanged: (personnel) => setState(() => _personnel = personnel),
-      onDelete: () => Navigator.pop(context),
+      organization: FleetMapService().fetchOrganization(Defaults.orgId),
       onGoto: (point) => jumpToPoint(context, center: point),
     );
   }

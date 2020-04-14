@@ -241,7 +241,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         final reset = await prompt(
           context,
           "Bekreftelse",
-          'Dette vil logge deg ut gjennopprette fabrikkinnstillene',
+          'Dette vil logge deg ut og gjenopprette fabrikkinnstillingene',
         );
         if (reset) {
           Navigator.pop(context);

@@ -19,7 +19,7 @@ class IncidentPage extends StatefulWidget {
   static const ELEVATION = 4.0;
   static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
 
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   const IncidentPage({
     Key key,

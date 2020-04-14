@@ -26,9 +26,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+typedef MessageCallback = void Function(String message);
 typedef PromptCallback = Future<bool> Function(String title, String message);
-typedef MessageCallback<T> = void Function(String message, {String action, VoidCallback onPressed, T data});
-typedef AsyncMessageCallback<T> = Future Function(String message, {String action, VoidCallback onPressed, T data});
+typedef ActionCallback<T> = void Function(String message, {String action, VoidCallback onPressed, T data});
+typedef AsyncActionCallback<T> = Future Function(String message, {String action, VoidCallback onPressed, T data});
 
 const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
   zoom: Defaults.zoom,
@@ -140,7 +141,7 @@ Widget buildDropdown<T>({
       hasFloatingPlaceholder: true,
       errorText: hasError ? errorText : null,
       filled: true,
-      isDense: isDense,
+      isDense: false,
       labelText: label,
       helperText: helperText,
       contentPadding: contentPadding,

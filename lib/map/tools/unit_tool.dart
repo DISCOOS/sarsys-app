@@ -20,7 +20,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
   final TrackingBloc bloc;
   final bool includeRetired;
   final MapController controller;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   final bool Function() _active;
 

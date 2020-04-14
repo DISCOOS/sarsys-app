@@ -54,11 +54,11 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     if (result == null) return dartz.Left(false);
     final incident = await params.bloc.create(result.left);
     if (result.right.isNotEmpty) {
-      final org = await FleetMapService().fetchOrganization(Defaults.organizationId);
+      final org = await FleetMapService().fetchOrganization(Defaults.orgId);
       final unitBloc = BlocProvider.of<UnitBloc>(params.context);
       final configBloc = BlocProvider.of<AppConfigBloc>(params.context);
       final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
-      final department = org.divisions[configBloc.config.divisionId]?.departments[configBloc.config.departmentId] ?? '';
+      final department = org.divisions[configBloc.config.divId]?.departments[configBloc.config.depId] ?? '';
       result.right.forEach((template) async {
         final unit = unitBloc.fromTemplate(
           department,
@@ -87,7 +87,7 @@ class SelectIncident extends UseCase<bool, Incident, IncidentParams> {
     assert(params.uuid != null, "Incident uuid must be given");
     try {
       final incident = await params.bloc.select(
-        params.data.uuid,
+        params.uuid,
       );
       return dartz.Right(incident);
     } on Exception catch (e, stackTrace) {
@@ -123,7 +123,7 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
         );
         var personnel = _findPersonnel(personnelBloc, user);
         if (personnel == null) {
-          final org = await FleetMapService().fetchOrganization(Defaults.organizationId);
+          final org = await FleetMapService().fetchOrganization(Defaults.orgId);
           personnel = await personnelBloc.create(Personnel(
             id: Uuid().v4(),
             userId: user.userId,

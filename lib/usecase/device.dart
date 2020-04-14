@@ -45,7 +45,7 @@ class AttachDevice extends UseCase<bool, Device, DeviceParams> {
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await prompt(
-      params.context,
+      params.overlay.context,
       "Tilknytt aksjon",
       "Dette vil knytte apparatet til aksjonen. Vil du fortsette?",
     );
@@ -123,7 +123,7 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
   Future<dartz.Either<bool, DeviceState>> call(params) async {
     assert(params.data != null, "Device must be supplied");
     var response = await prompt(
-      params.context,
+      params.overlay.context,
       "Fjern ${params.data.name}",
       "Dette vil fjerne apparatet fra sporing og aksjonen. Vil du fortsette?",
     );
@@ -147,7 +147,7 @@ class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
   Future<dartz.Either<bool, DeviceState>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
     var response = await prompt(
-      params.context,
+      params.overlay.context,
       "Slett ${params.data.name}",
       "Dette vil slette alle data fra sporinger og fjerne apparatet fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",

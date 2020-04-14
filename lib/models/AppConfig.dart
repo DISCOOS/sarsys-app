@@ -20,8 +20,8 @@ class AppConfig extends Equatable {
   final bool onboarded;
   final bool firstSetup;
   final String organizationId;
-  final String divisionId;
-  final String departmentId;
+  final String divId;
+  final String depId;
   final List<String> talkGroups;
   final String talkGroupCatalog;
   final bool storage;
@@ -49,9 +49,9 @@ class AppConfig extends Equatable {
     this.firstSetup = false,
     this.storage = false,
     this.locationWhenInUse = false,
-    this.organizationId = Defaults.organizationId,
-    this.divisionId = Defaults.divisionId,
-    this.departmentId = Defaults.departmentId,
+    this.organizationId = Defaults.orgId,
+    this.divId = Defaults.divId,
+    this.depId = Defaults.depId,
     List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
@@ -76,8 +76,8 @@ class AppConfig extends Equatable {
           onboarded,
           firstSetup,
           organizationId,
-          divisionId,
-          departmentId,
+          divId,
+          depId,
           talkGroups ?? const <String>[],
           talkGroupCatalog,
           storage,
@@ -138,8 +138,8 @@ class AppConfig extends Equatable {
       onboarded: onboarded ?? this.onboarded,
       firstSetup: firstSetup ?? this.firstSetup,
       organizationId: organization ?? this.organizationId,
-      divisionId: division ?? this.divisionId,
-      departmentId: department ?? this.departmentId,
+      divId: division ?? this.divId,
+      depId: department ?? this.depId,
       talkGroups: talkGroups ?? this.talkGroups,
       talkGroupCatalog: talkGroupCatalog ?? this.talkGroupCatalog,
       storage: storage ?? this.storage,

@@ -1,12 +1,15 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/user_history_page.dart';
 import 'package:SarSys/pages/user_status_page.dart';
 import 'package:SarSys/pages/user_unit_page.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -45,6 +48,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
 
   UserBloc _userBloc;
   IncidentBloc _incidentBloc;
+  PersonnelBloc _personnelBloc;
+
+  Personnel _personnel;
 
   @override
   void initState() {
@@ -58,6 +64,12 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
     super.didChangeDependencies();
     _userBloc = BlocProvider.of<UserBloc>(context);
     _incidentBloc = BlocProvider.of<IncidentBloc>(context);
+    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
+    final userId = _userBloc.user?.userId;
+    _personnel = _personnelBloc.personnel.values.firstWhere(
+      (personnel) => personnel.userId == userId,
+      orElse: () => null,
+    );
   }
 
   @override
@@ -81,7 +93,12 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
           final tabs = [
             IncidentPage(onMessage: _showMessage),
             UserUnitPage(key: _unitKey),
-            UserStatusPage(key: _statusKey, onMessage: _showMessage),
+            UserStatusPage(
+              key: _statusKey,
+              personnel: _personnel,
+              onMessage: _showMessage,
+              onChanged: (personnel) => _personnel = personnel,
+            ),
             UserHistoryPage(key: _historyKey),
           ];
           return Scaffold(
@@ -92,7 +109,6 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               title: Text(_toTitle(incident)),
             ),
             body: tabs[routeData],
-            resizeToAvoidBottomInset: false,
             bottomNavigationBar: Container(
               child: BottomNavigationBar(
                 currentIndex: routeData,
@@ -143,10 +159,11 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         ];
       case UserScreen.TAB_STATUS:
         return [
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {},
-          )
+          if (_personnel != null)
+            IconButton(
+              icon: Icon(Icons.more_vert),
+              onPressed: () async => await editPersonnel(_personnel),
+            )
         ];
       case UserScreen.TAB_UNIT:
         return [

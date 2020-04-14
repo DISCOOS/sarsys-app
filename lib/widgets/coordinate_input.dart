@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:latlong/latlong.dart';
 
-class InputUTM extends StatefulWidget {
+class CoordinateInput extends StatefulWidget {
   final int zone;
   final bool isSouth;
   final String band;
@@ -15,7 +15,7 @@ class InputUTM extends StatefulWidget {
   final VoidCallback onEditingComplete;
   final bool withBorder;
 
-  const InputUTM({
+  const CoordinateInput({
     Key key,
     this.point,
     this.zone = 32,
@@ -27,10 +27,10 @@ class InputUTM extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InputUTMState createState() => _InputUTMState();
+  _CoordinateInputState createState() => _CoordinateInputState();
 }
 
-class _InputUTMState extends State<InputUTM> {
+class _CoordinateInputState extends State<CoordinateInput> {
   FocusNode _northingFocusNode;
   TransverseMercatorProjection proj;
 
@@ -51,7 +51,7 @@ class _InputUTMState extends State<InputUTM> {
   }
 
   @override
-  void didUpdateWidget(InputUTM old) {
+  void didUpdateWidget(CoordinateInput old) {
     super.didUpdateWidget(old);
     if (widget.point != old.point || widget.isSouth != old.isSouth) {
       _setUTM();
@@ -187,7 +187,7 @@ class _InputUTMState extends State<InputUTM> {
     return buildDropDownField(
       attribute: 'zone',
       initialValue: 32,
-      isDense: false,
+      isDense: true,
       items: [31, 32, 33, 34, 35, 36, 37]
           .map(
             (zone) => DropdownMenuItem(value: zone, child: Text("$zone")),
@@ -205,7 +205,7 @@ class _InputUTMState extends State<InputUTM> {
     return buildDropDownField(
       attribute: 'band',
       initialValue: band,
-      isDense: false,
+      isDense: true,
       items: ["V", "W", "X"]
           .map(
             (band) => DropdownMenuItem(value: band, child: Text("$band")),

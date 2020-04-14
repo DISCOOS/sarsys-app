@@ -8,15 +8,15 @@ part of 'Affiliation.dart';
 
 Affiliation _$AffiliationFromJson(Map<String, dynamic> json) {
   return Affiliation(
-    organization: json['organization'] as String,
-    division: json['division'] as String,
-    department: json['department'] as String,
+    orgId: json['orgId'] as String,
+    divId: json['divId'] as String,
+    depId: json['depId'] as String,
   );
 }
 
 Map<String, dynamic> _$AffiliationToJson(Affiliation instance) =>
     <String, dynamic>{
-      'organization': instance.organization,
-      'division': instance.division,
-      'department': instance.department,
+      'orgId': instance.orgId,
+      'divId': instance.divId,
+      'depId': instance.depId,
     };

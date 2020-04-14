@@ -83,7 +83,7 @@ class DeviceInfoPanel extends StatelessWidget {
   final bool withHeader;
   final bool withActions;
   final Tracking tracking;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
   final ValueChanged<Point> onGoto;
   final ValueChanged<Device> onChanged;
   final ValueChanged<Device> onComplete;
@@ -292,7 +292,7 @@ class DeviceInfoPanel extends StatelessWidget {
       });
 
   String _ensureAffiliation(AsyncSnapshot<Organization> snapshot) =>
-      snapshot.hasData ? snapshot.data.toAffiliationAsString(device.number) : "-";
+      snapshot.hasData ? snapshot.data.toAffiliationNameFromNumber(device.number) : "-";
 
   Row _buildTrackingInfo(BuildContext context) {
     final List<Point> track = _toTrack(tracking);

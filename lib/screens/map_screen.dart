@@ -48,6 +48,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
+      resizeToAvoidBottomInset: false,
       floatingActionButton: _showFAB && userBloc?.user?.isCommander == true
           ? FloatingActionButton(
               onPressed: () {
@@ -58,7 +59,6 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
             )
           : Container(),
       body: _buildMap(),
-      resizeToAvoidBottomInset: false,
     );
   }
 

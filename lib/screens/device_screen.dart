@@ -122,7 +122,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       personnel: personnel,
       device: _device,
       tracking: _trackingBloc.tracking[unit?.tracking],
-      organization: FleetMapService().fetchOrganization(Defaults.organizationId),
+      organization: FleetMapService().fetchOrganization(Defaults.orgId),
       withHeader: false,
       withActions: _userBloc.user?.isCommander == true,
       onMessage: showMessage,

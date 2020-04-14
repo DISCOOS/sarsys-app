@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Affiliation.dart';
@@ -27,9 +29,47 @@ class AffiliationAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      child: SarSysIcons.of(affiliation.organization, size: size),
+      child: SarSysIcons.of(affiliation.orgId, size: size),
       maxRadius: maxRadius,
       backgroundColor: Colors.white,
+    );
+  }
+}
+
+class AffiliationView extends StatelessWidget {
+  const AffiliationView({
+    @required this.future,
+    @required this.affiliation,
+    this.onMessage,
+    this.onComplete,
+    Key key,
+  }) : super(key: key);
+
+  final Affiliation affiliation;
+  final VoidCallback onComplete;
+  final MessageCallback onMessage;
+  final FutureOr<Organization> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Organization>(
+      future: future,
+      builder: (context, snapshot) {
+        return Row(
+          children: <Widget>[
+            Expanded(
+              child: buildCopyableText(
+                context: context,
+                label: "Tilhørighet",
+                icon: SarSysIcons.of(snapshot.data?.id),
+                value: snapshot.hasData ? snapshot.data.toFullName(affiliation) : '-',
+                onMessage: onMessage,
+                onComplete: onComplete,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -63,8 +103,8 @@ class AffiliationFormState extends State<AffiliationForm> {
   @override
   void initState() {
     super.initState();
-    _department = widget.initialValue.department;
-    FleetMapService().fetchOrganization(Defaults.organizationId)..then(_resolve);
+    _department = widget.initialValue.depId;
+    FleetMapService().fetchOrganization(Defaults.orgId)..then(_resolve);
   }
 
   void _resolve(Organization org) {
@@ -87,7 +127,7 @@ class AffiliationFormState extends State<AffiliationForm> {
       }
     } else {
       _organization.value = org;
-      _division.value = org.divisions[widget.initialValue.division];
+      _division.value = org.divisions[widget.initialValue.divId];
     }
   }
 
@@ -113,7 +153,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<Organization>(
         valueListenable: _organization,
         builder: (context, org, _) {
-          _update('organization', Defaults.organizationId);
+          _update('organization', Defaults.orgId);
           return _buildReadOnly(
             context,
             'organization',
@@ -184,9 +224,9 @@ class AffiliationFormState extends State<AffiliationForm> {
     return value;
   }
 
-  String _ensureDivision(Organization org) => org?.divisions?.containsKey(widget.initialValue?.division) == true
-      ? widget.initialValue?.division
-      : org?.divisions?.keys?.first ?? Defaults.divisionId;
+  String _ensureDivision(Organization org) => org?.divisions?.containsKey(widget.initialValue?.divId) == true
+      ? widget.initialValue?.divId
+      : org?.divisions?.keys?.first ?? Defaults.divId;
 
   List<DropdownMenuItem<String>> _ensureDivisions(Organization org) {
     return sortMapValues<String, Division, String>(org?.divisions ?? {}, (division) => division.name)
@@ -226,10 +266,10 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   String _ensureDepartment(Division division) {
-    final department = _department ?? widget.initialValue?.department;
+    final department = _department ?? widget.initialValue?.depId;
     return (division?.departments?.containsKey(department) == true
         ? department
-        : division?.departments?.keys?.first ?? Defaults.departmentId);
+        : division?.departments?.keys?.first ?? Defaults.depId);
   }
 
   List<DropdownMenuItem<String>> _ensureDepartments(Division division) {

@@ -190,7 +190,7 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
       params.data != null
           ? params.data
           : await selectUnit(
-              params.context,
+              params.overlay.context,
               where: (unit) =>
                   // Unit is not tracking any devices or personnel?
                   bloc.tracking[unit.tracking] == null ||
@@ -232,7 +232,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
       ...personnel.map((personnel) => personnel.name).toList(),
     ]).join((', '));
     var proceed = await prompt(
-      params.context,
+      params.overlay.context,
       "Bekreft fjerning",
       "Dette vil fjerne $names fra ${unit.name}",
     );
@@ -356,7 +356,7 @@ Future<dartz.Either<bool, Unit>> _transitionUnit(UnitParams params, UnitStatus s
     {String action, String message}) async {
   assert(params.data != null, "Unit must be supplied");
   if (action != null) {
-    var response = await prompt(params.context, action, message);
+    var response = await prompt(params.overlay.context, action, message);
     if (!response) return dartz.Left(false);
   }
   final unit = await params.bloc.update(params.data.cloneWith(status: status));
@@ -376,7 +376,7 @@ class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
   Future<dartz.Either<bool, UnitState>> call(params) async {
     assert(params.data != null, "Unit must be supplied");
     var response = await prompt(
-      params.context,
+      params.overlay.context,
       "Slett ${params.data.name}",
       "Dette vil slette alle data fra sporinger og fjerne enheten fra aksjonen. "
           "Endringen kan ikke omgjøres. Vil du fortsette?",

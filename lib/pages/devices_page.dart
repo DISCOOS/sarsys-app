@@ -74,8 +74,8 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   void _init() async {
-    _divisions = await FleetMapService().fetchDivisions(Defaults.organizationId);
-    _functions = await FleetMapService().fetchFunctions(Defaults.organizationId);
+    _divisions = await FleetMapService().fetchDivisions(Defaults.orgId);
+    _functions = await FleetMapService().fetchFunctions(Defaults.orgId);
     if (mounted) setState(() {});
   }
 

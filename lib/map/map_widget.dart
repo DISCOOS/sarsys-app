@@ -80,7 +80,7 @@ class MapWidget extends StatefulWidget {
 
   final Incident incident;
   final TapCallback onTap;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
   final ToolCallback onToolChange;
   final PositionCallback onPositionChanged;
   final IncidentMapController mapController;

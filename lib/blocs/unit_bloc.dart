@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -107,6 +108,16 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   /// Get units
   Map<String, Unit> get units => UnmodifiableMapView<String, Unit>(_units);
+
+  /// Find unit from personnel
+  Iterable<Unit> find(
+    Personnel personnel, {
+    List<UnitStatus> exclude: const [UnitStatus.Retired],
+  }) =>
+      _units.values
+          .where((unit) => !exclude.contains(unit.status))
+          .where((unit) => unit.personnel.contains(personnel))
+          .where((unit) => UnitStatus.Retired != unit.status);
 
   /// Creating a new 'Unit' instance from template string
   Unit fromTemplate(String department, String template, {int offset = 20}) {

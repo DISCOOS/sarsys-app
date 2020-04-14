@@ -91,7 +91,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _init() async {
-    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.organizationId));
+    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.orgId));
     _initPhoneController();
     _initNumberController();
     _initCallsignController();
@@ -121,7 +121,6 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      resizeToAvoidBottomInset: false,
       extendBody: true,
       appBar: AppBar(
         title: Text(widget.unit == null ? 'Ny enhet' : 'Endre enhet'),
@@ -590,7 +589,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _nextCallSign() {
-    final String department = _departments[_appConfigBloc.config.departmentId];
+    final String department = _departments[_appConfigBloc.config.depId];
     int number = _ensureCallSignSuffix();
     return toCallsign(department, number);
   }

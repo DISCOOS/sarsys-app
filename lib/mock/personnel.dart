@@ -24,9 +24,9 @@ class PersonnelBuilder {
       '}');
 
   static Map<String, dynamic> createAffiliation() => Affiliation(
-        organization: Defaults.organizationId,
-        division: Defaults.divisionId,
-        department: Defaults.departmentId,
+        orgId: Defaults.orgId,
+        divId: Defaults.divId,
+        depId: Defaults.depId,
       ).toJson();
 }
 

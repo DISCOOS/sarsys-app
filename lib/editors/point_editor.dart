@@ -9,7 +9,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/widgets/input_coordinate.dart';
+import 'package:SarSys/widgets/coordinate_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
@@ -99,7 +99,6 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           _buildInputFields(),
         ],
       ),
-      resizeToAvoidBottomInset: false,
     );
   }
 
@@ -146,7 +145,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
           return snapshot.hasData
               ? Container(
                   margin: EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
-                  child: InputUTM(
+                  child: CoordinateInput(
                     point: snapshot.data,
                     onChanged: (point) {
                       _mapController.animatedMove(point, _mapController.zoom, this);

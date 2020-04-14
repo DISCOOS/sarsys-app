@@ -22,7 +22,7 @@ class UnitLayerOptions extends LayerOptions {
   bool showTail;
   bool showRetired;
   final TrackingBloc bloc;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   UnitLayerOptions({
     @required this.bloc,

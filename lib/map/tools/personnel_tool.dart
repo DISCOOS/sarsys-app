@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
@@ -22,7 +20,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   final TrackingBloc bloc;
   final bool includeRetired;
   final MapController controller;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   final bool Function() _active;
 
@@ -94,27 +92,17 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: SizedBox(
-            height: math.min(550.0, MediaQuery.of(context).size.height - 96),
-            width: MediaQuery.of(context).size.width - 96,
-            child: SingleChildScrollView(
-              child: PersonnelInfoPanel(
-                personnel: personnel,
-                tracking: tracking,
-                devices: tracking.devices
-                    .map(
-                      (id) => bloc.deviceBloc.devices[id],
-                    )
-                    .where(
-                      (personnel) => personnel != null,
-                    ),
-                onMessage: onMessage,
-                withActions: user.isCommander == true,
-                organization: FleetMapService().fetchOrganization(Defaults.organizationId),
-                onDelete: () => Navigator.pop(context),
-                onComplete: (_) => Navigator.pop(context),
-                onGoto: (point) => _goto(context, point),
-              ),
+          child: SingleChildScrollView(
+            child: PersonnelWidget(
+              personnel: personnel,
+              tracking: tracking,
+              devices: bloc.devices(personnel.tracking),
+              onMessage: onMessage,
+              withActions: user.isCommander == true,
+              organization: FleetMapService().fetchOrganization(Defaults.orgId),
+              onDelete: () => Navigator.pop(context),
+              onComplete: (_) => Navigator.pop(context),
+              onGoto: (point) => _goto(context, point),
             ),
           ),
         );

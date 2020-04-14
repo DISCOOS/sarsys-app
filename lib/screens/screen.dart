@@ -52,7 +52,6 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
             actions: buildAppBarActions(),
           ),
           extendBody: true,
-          resizeToAvoidBottomInset: false,
           body: buildBody(context, constraints),
           floatingActionButtonLocation: floatingActionButtonLocation,
           floatingActionButton: buildFAB(context),

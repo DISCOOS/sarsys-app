@@ -47,7 +47,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   void initState() {
     super.initState();
-    _organization = FleetMapService().fetchOrganization(Defaults.organizationId);
+    _organization = FleetMapService().fetchOrganization(Defaults.orgId);
     _initAliasController();
     _initNumberController();
   }
@@ -220,7 +220,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultAffiliation(Organization org) => org?.toAffiliationAsString(widget?.device?.number) ?? '-';
+  String _defaultAffiliation(Organization org) => org?.toAffiliationNameFromNumber(widget?.device?.number) ?? '-';
 
   InputDecorator _buildOrgAliasField(Organization org) => InputDecorator(
         decoration: InputDecoration(
@@ -317,7 +317,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       alias = emptyAsNull(alias);
       number = emptyAsNull(number);
       _editedName = alias ?? number ?? _defaultName();
-      _editedAffiliation = org?.toAffiliationAsString(number, empty: '-') ?? _editedAffiliation;
+      _editedAffiliation = org?.toAffiliationNameFromNumber(number, empty: '-') ?? _editedAffiliation;
       _editedOrgAlias = org?.alias ?? _editedOrgAlias;
       _editedFunction = org?.toFunctionFromNumber(number) ?? _editedFunction;
       if (update) setState(() {});

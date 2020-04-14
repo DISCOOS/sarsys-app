@@ -19,7 +19,7 @@ class UnitInfoPanel extends StatelessWidget {
   final ValueChanged<Unit> onChanged;
   final ValueChanged<Unit> onComplete;
   final VoidCallback onDelete;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   const UnitInfoPanel({
     Key key,

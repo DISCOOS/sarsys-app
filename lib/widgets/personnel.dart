@@ -1,99 +1,45 @@
-import 'package:SarSys/icons.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/usecase/personnel.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
+import 'package:SarSys/widgets/coordinate_view.dart';
+import 'package:SarSys/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PersonnelTile extends StatelessWidget {
-  final Personnel personnel;
-  final ChipsInputState state;
-
-  const PersonnelTile({
-    Key key,
-    @required this.personnel,
-    this.state,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      key: ObjectKey(personnel),
-      leading: AffiliationAvatar(
-        affiliation: personnel?.affiliation,
-        size: 10.0,
-      ),
-      title: Text(personnel.name),
-      onTap: state != null ? () => state.selectSuggestion(personnel) : null,
-    );
-  }
-}
-
-class PersonnelChip extends StatelessWidget {
-  final Personnel personnel;
-  final ChipsInputState state;
-
-  const PersonnelChip({
-    Key key,
-    @required this.personnel,
-    this.state,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.caption;
-    return InputChip(
-      key: ObjectKey(personnel),
-      labelPadding: EdgeInsets.only(left: 4.0),
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          AffiliationAvatar(
-            affiliation: personnel.affiliation,
-            size: 6.0,
-            maxRadius: 10.0,
-          ),
-          SizedBox(width: 6.0),
-          Text(personnel.formal, style: style),
-        ],
-      ),
-      onDeleted: () => state.deleteChip(personnel),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-  }
-}
-
-class PersonnelInfoPanel extends StatelessWidget {
-  final Personnel personnel;
-  final Tracking tracking;
-  final Iterable<Device> devices;
+class PersonnelWidget extends StatelessWidget {
+  final bool withName;
   final bool withHeader;
   final bool withActions;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Personnel> onChanged;
-  final ValueChanged<Personnel> onComplete;
+  final Tracking tracking;
+  final Personnel personnel;
+  final Iterable<Device> devices;
   final VoidCallback onDelete;
   final MessageCallback onMessage;
+  final ValueChanged<Point> onGoto;
+  final ValueChanged<Personnel> onChanged;
   final Future<Organization> organization;
+  final ValueChanged<Personnel> onComplete;
 
-  const PersonnelInfoPanel({
+  const PersonnelWidget({
     Key key,
     @required this.personnel,
-    @required this.tracking,
-    @required this.devices,
     @required this.onMessage,
+    this.tracking,
+    this.devices,
     this.onGoto,
     this.onDelete,
     this.onChanged,
     this.onComplete,
+    this.withName = false,
     this.withHeader = true,
     this.withActions = true,
     this.organization,
@@ -102,20 +48,17 @@ class PersonnelInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
+    Orientation orientation = MediaQuery.of(context).orientation;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) _buildHeader(personnel, theme, context),
-        if (withHeader) Divider() else SizedBox(height: 8.0),
-        _buildPersonalInfo(context),
-        _buildOperationalInfo(context),
-        if (organization != null) _buildAffiliationInfo(context),
-        Divider(),
-        _buildLocationInfo(context, theme),
-        Divider(),
-        _buildTrackingInfo(context),
-        Divider(),
-        _buildEffortInfo(context),
+        if (withHeader) ...[
+          _buildHeader(personnel, theme, context),
+          Divider(),
+        ] else
+          SizedBox(height: 8.0),
+        if (Orientation.portrait == orientation) _buildPortrait() else _buildLandscape(),
         if (withActions) ...[
           Divider(),
           Padding(
@@ -123,10 +66,73 @@ class PersonnelInfoPanel extends StatelessWidget {
             child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
           ),
           _buildActions(context, personnel)
-        ]
+        ] else
+          SizedBox(height: 16.0)
       ],
     );
   }
+
+  Widget _buildPortrait() => Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (withName) _buildNameView(),
+            _buildContactView(),
+            _buildOperationalView(),
+            _buildDivider(Orientation.portrait),
+            if (organization != null) ...[
+              _buildAffiliationView(),
+              _buildDivider(Orientation.portrait),
+            ],
+            _buildLocationView(),
+            _buildDivider(Orientation.portrait),
+            _buildTrackingView(),
+          ],
+        ),
+      );
+
+  Widget _buildLandscape() => Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              fit: FlexFit.loose,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (withName) _buildNameView(),
+                  _buildContactView(),
+                  if (!withName && organization != null) _buildAffiliationView(),
+                  _buildLocationView(),
+                ],
+              ),
+            ),
+            _buildDivider(Orientation.landscape),
+            Flexible(
+              fit: FlexFit.loose,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _buildOperationalView(),
+                  _buildTrackingView(),
+                  if (withName && organization != null) _buildAffiliationView(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation
+      ? Divider(indent: 16.0, endIndent: 16.0)
+      : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
   Padding _buildHeader(Personnel personnel, TextTheme theme, BuildContext context) {
     return Padding(
@@ -144,216 +150,43 @@ class PersonnelInfoPanel extends StatelessWidget {
     );
   }
 
-  Row _buildLocationInfo(BuildContext context, TextTheme theme) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          flex: 4,
-          child: Column(
-            children: <Widget>[
-              buildCopyableLocation(
-                context,
-                label: "UTM",
-                icon: Icons.my_location,
-                tracking: tracking,
-                formatter: (point) => toUTM(tracking?.point, prefix: "", empty: "Ingen"),
-              ),
-              buildCopyableLocation(
-                context,
-                label: "Desimalgrader (DD)",
-                icon: Icons.my_location,
-                tracking: tracking,
-                formatter: (point) => toDD(tracking?.point, prefix: "", empty: "Ingen"),
-              ),
-            ],
-          ),
-        ),
-        if (tracking?.point != null)
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: tracking?.point == null
-                      ? null
-                      : () {
-                          navigateToLatLng(context, toLatLng(tracking?.point));
-                          _onComplete();
-                        },
-                ),
-                Text("Naviger", style: theme.caption),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget buildCopyableLocation(
-    BuildContext context, {
-    Tracking tracking,
-    String label,
-    IconData icon,
-    String formatter(Point location),
-  }) =>
-      buildCopyableText(
-        context: context,
-        label: label,
-        icon: Icon(icon),
-        value: formatter(tracking?.point),
-        onTap: () => _onGoto(tracking?.point),
+  Widget _buildNameView() => PersonnelNameView(
+        personnel: personnel,
         onMessage: onMessage,
-        onComplete: _onComplete,
+        onComplete: () => _onComplete(personnel),
       );
 
-  void _onGoto(Point location) {
-    if (onGoto != null && location != null) onGoto(location);
-  }
+  Widget _buildLocationView() => CoordinateView(
+        point: tracking?.point,
+        onMessage: onMessage,
+        onGoto: onGoto,
+        onComplete: () => _onComplete(personnel),
+      );
 
-  Row _buildPersonalInfo(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Navn",
-            icon: Icon(Icons.person),
-            value: personnel.name,
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Status",
-            icon: Icon(MdiIcons.accountQuestionOutline),
-            value: translatePersonnelStatus(personnel.status),
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildContactView() => PersonnelContactView(
+        personnel: personnel,
+        onMessage: onMessage,
+        onComplete: () => _onComplete(personnel),
+      );
 
-  Row _buildOperationalInfo(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Funksjon",
-            icon: Icon(Icons.functions),
-            value: translateOperationalFunction(personnel.function),
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Mobil",
-            icon: Icon(Icons.phone),
-            value: personnel.phone ?? "Ukjent",
-            onMessage: onMessage,
-            onComplete: _onComplete,
-            onTap: () {
-              final number = personnel?.phone ?? '';
-              if (number.isNotEmpty) launch("tel:$number");
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildOperationalView() => PersonnelOperationalView(
+        personnel: personnel,
+        onMessage: _onMessage,
+        onComplete: () => _onComplete(personnel),
+      );
 
-  Widget _buildAffiliationInfo(BuildContext context) {
-    return FutureBuilder<Organization>(
+  Widget _buildAffiliationView() => AffiliationView(
         future: organization,
-        builder: (context, snapshot) {
-          return Row(
-            children: <Widget>[
-              Expanded(
-                child: buildCopyableText(
-                  context: context,
-                  label: "Tilhørighet",
-                  icon: SarSysIcons.of(snapshot.data?.id),
-                  value: _ensureAffiliation(snapshot),
-                  onMessage: onMessage,
-                  onComplete: _onComplete,
-                ),
-              ),
-            ],
-          );
-        });
-  }
+        onMessage: onMessage,
+        affiliation: personnel.affiliation,
+        onComplete: () => _onComplete(personnel),
+      );
 
-  String _ensureAffiliation(AsyncSnapshot<Organization> snapshot) => snapshot.hasData
-      ? "${snapshot.data.name}, ${snapshot.data.divisions[personnel.affiliation.division].name}, "
-          "${snapshot.data.divisions[personnel.affiliation.division].departments[personnel.affiliation.department]}"
-      : "-";
-
-  Row _buildTrackingInfo(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Apparater",
-            icon: Icon(MdiIcons.cellphoneBasic),
-            value: _toDeviceNumbers(),
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Avstand sporet",
-            icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(tracking?.distance),
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _toDeviceNumbers() {
-    final numbers = devices?.map((device) => device.number);
-    return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
-  }
-
-  Row _buildEffortInfo(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Innsatstid",
-            icon: Icon(Icons.timer),
-            value: "${formatDuration(tracking?.effort)}",
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-        Expanded(
-          child: buildCopyableText(
-            context: context,
-            label: "Gj.snitthastiget",
-            icon: Icon(MdiIcons.speedometer),
-            value: "${(tracking?.speed ?? 0.0 * 3.6).toStringAsFixed(1)} km/t",
-            onMessage: onMessage,
-            onComplete: _onComplete,
-          ),
-        ),
-      ],
-    );
-  }
+  TrackingView _buildTrackingView() => TrackingView(
+        tuuid: tracking?.id,
+        onMessage: onMessage,
+        onComplete: () => _onComplete(personnel),
+      );
 
   Widget _buildActions(BuildContext context, Personnel personnel1) {
     return Padding(
@@ -364,7 +197,7 @@ class PersonnelInfoPanel extends StatelessWidget {
           alignment: MainAxisAlignment.start,
           children: <Widget>[
             _buildEditAction(context),
-            if (devices.isNotEmpty) _buildRemoveAction(context),
+            if (devices?.isNotEmpty == true) _buildRemoveAction(context),
             _buildTransitionAction(context),
             _buildDeleteAction(context),
           ],
@@ -520,5 +353,191 @@ class PersonnelInfoPanel extends StatelessWidget {
 
   void _onDelete() {
     if (onDelete != null) onDelete();
+  }
+}
+
+class PersonnelNameView extends StatelessWidget {
+  const PersonnelNameView({
+    Key key,
+    this.personnel,
+    this.onMessage,
+    this.onComplete,
+  }) : super(key: key);
+
+  final Personnel personnel;
+  final VoidCallback onComplete;
+  final MessageCallback onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Fornavn",
+            icon: Icon(Icons.person),
+            value: personnel.fname,
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Etternavn",
+            icon: Icon(Icons.person_outline),
+            value: personnel.lname,
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PersonnelContactView extends StatelessWidget {
+  const PersonnelContactView({
+    Key key,
+    this.personnel,
+    this.onMessage,
+    this.onComplete,
+  }) : super(key: key);
+
+  final Personnel personnel;
+  final VoidCallback onComplete;
+  final MessageCallback onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final units = BlocProvider.of<UnitBloc>(context).find(personnel);
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Enhet",
+            icon: Icon(Icons.supervised_user_circle),
+            value: units.isNotEmpty ? units.map((unit) => unit.name).join(', ') : 'Ingen',
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Mobil",
+            icon: Icon(Icons.phone),
+            value: personnel.phone ?? "Ukjent",
+            onMessage: onMessage,
+            onComplete: onComplete,
+            onTap: () {
+              final number = personnel.phone ?? '';
+              if (number.isNotEmpty) launch("tel:$number");
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PersonnelOperationalView extends StatelessWidget {
+  const PersonnelOperationalView({
+    Key key,
+    this.personnel,
+    this.onMessage,
+    this.onComplete,
+  }) : super(key: key);
+
+  final Personnel personnel;
+  final VoidCallback onComplete;
+  final MessageCallback onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Funksjon",
+            icon: Icon(Icons.functions),
+            value: translateOperationalFunction(personnel.function),
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Status",
+            icon: Icon(MdiIcons.accountQuestionOutline),
+            value: translatePersonnelStatus(personnel.status),
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PersonnelTile extends StatelessWidget {
+  final Personnel personnel;
+  final ChipsInputState state;
+
+  const PersonnelTile({
+    Key key,
+    @required this.personnel,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: ObjectKey(personnel),
+      leading: AffiliationAvatar(
+        affiliation: personnel?.affiliation,
+        size: 10.0,
+      ),
+      title: Text(personnel.name),
+      onTap: state != null ? () => state.selectSuggestion(personnel) : null,
+    );
+  }
+}
+
+class PersonnelChip extends StatelessWidget {
+  final Personnel personnel;
+  final ChipsInputState state;
+
+  const PersonnelChip({
+    Key key,
+    @required this.personnel,
+    this.state,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.caption;
+    return InputChip(
+      key: ObjectKey(personnel),
+      labelPadding: EdgeInsets.only(left: 4.0),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          AffiliationAvatar(
+            affiliation: personnel.affiliation,
+            size: 6.0,
+            maxRadius: 10.0,
+          ),
+          SizedBox(width: 6.0),
+          Text(personnel.formal, style: style),
+        ],
+      ),
+      onDeleted: () => state.deleteChip(personnel),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
   }
 }

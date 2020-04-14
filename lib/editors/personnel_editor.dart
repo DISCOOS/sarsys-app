@@ -4,16 +4,19 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
+import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/widgets/point_field.dart';
 
 import 'package:flutter/material.dart';
@@ -22,19 +25,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class PersonnelEditor extends StatefulWidget {
+  const PersonnelEditor({
+    Key key,
+    @required this.controller,
+    this.personnel,
+    this.devices = const [],
+    this.status = PersonnelStatus.Mobilized,
+  }) : super(key: key);
+
   final Personnel personnel;
   final Iterable<Device> devices;
   final PermissionController controller;
 
   final PersonnelStatus status;
-
-  const PersonnelEditor({
-    Key key,
-    @required this.controller,
-    this.personnel,
-    this.status = PersonnelStatus.Mobilized,
-    this.devices = const [],
-  }) : super(key: key);
 
   @override
   _PersonnelEditorState createState() => _PersonnelEditorState();
@@ -59,6 +62,16 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   PersonnelBloc _personnelBloc;
   AppConfigBloc _appConfigBloc;
 
+  Future<Organization> _future;
+
+  bool get managed => widget.personnel?.userId != null;
+
+  void _explainManaged() => alert(
+        context,
+        title: "Persondata",
+        content: ManagedProfileDescription(),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +88,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
     _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _devices ??= _getActualDevices();
+    if (managed) {
+      _future = FleetMapService().fetchOrganization(widget.personnel.affiliation.orgId);
+    }
   }
 
   void _initFNameController() {
@@ -106,7 +122,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     final caption = Theme.of(context).textTheme.caption;
     return Scaffold(
       key: _scaffoldKey,
-      resizeToAvoidBottomInset: false,
       extendBody: true,
       appBar: AppBar(
         title: Text(widget.personnel == null ? 'Nytt mannskap' : 'Endre mannskap'),
@@ -142,15 +157,29 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 buildTwoCellRow(_buildFunctionField(), _buildPhoneField(), spacing: SPACING),
                 SizedBox(height: SPACING),
                 Divider(),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0),
-                  child: Text("Tilhørighet", style: caption),
-                ),
-                SizedBox(height: SPACING),
-                AffiliationForm(
-                  key: _affiliationKey,
-                  initialValue: _ensureAffiliation(),
-                ),
+                if (!managed) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12.0),
+                    child: Text("Tilhørighet", style: caption),
+                  ),
+                  SizedBox(height: SPACING),
+                ],
+                managed
+                    ? GestureDetector(
+                        child: FutureBuilder<Organization>(
+                            future: _future,
+                            builder: (context, snapshot) {
+                              return AffiliationView(
+                                future: _future,
+                                affiliation: widget.personnel.affiliation,
+                              );
+                            }),
+                        onTap: _explainManaged,
+                      )
+                    : AffiliationForm(
+                        key: _affiliationKey,
+                        initialValue: _ensureAffiliation(),
+                      ),
                 SizedBox(height: SPACING),
                 Divider(),
                 Padding(
@@ -174,92 +203,122 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       _affiliationKey?.currentState?.save() ??
       widget.personnel?.affiliation ??
       Affiliation(
-        organization: Defaults.organizationId,
-        division: _appConfigBloc.config.divisionId,
-        department: _appConfigBloc.config.departmentId,
+        orgId: Defaults.orgId,
+        divId: _appConfigBloc.config.divId,
+        depId: _appConfigBloc.config.depId,
       );
 
-  InputDecorator _buildNameField() {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: "Kortnavn",
-        filled: true,
-        enabled: false,
+  Widget _buildNameField() {
+    return _buildDecorator(
+      label: "Kortnavn",
+      child: ValueListenableBuilder<String>(
+          valueListenable: _editedName,
+          builder: (context, name, _) {
+            return _buildReadOnlyText(context, name ?? _defaultName() ?? '');
+          }),
+    );
+  }
+
+  Text _buildReadOnlyText(BuildContext context, String text) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.subhead,
+    );
+  }
+
+  Widget _buildDecorator({
+    String label,
+    Widget child,
+    VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          enabled: false,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: child,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: ValueListenableBuilder<String>(
-            valueListenable: _editedName,
-            builder: (context, name, _) {
-              return Text(
-                name ?? _defaultName() ?? '',
-                style: Theme.of(context).textTheme.subhead,
-              );
-            }),
-      ),
+      onTap: onTap,
     );
   }
 
   String _defaultName() => widget?.personnel?.formal;
 
-  FormBuilderTextField _buildFNameField() {
-    return FormBuilderTextField(
-      maxLines: 1,
-      attribute: 'fname',
-      controller: _fnameController,
-      decoration: InputDecoration(
-        hintText: 'Skriv inn',
-        filled: true,
-        labelText: 'Fornavn',
-        suffix: GestureDetector(
-          child: Icon(
-            Icons.clear,
-            color: Colors.grey,
-            size: 20,
-          ),
-          onTap: () => _setText(
-            _fnameController,
-            _defaultFName(),
-          ),
-        ),
-      ),
-      keyboardType: TextInputType.text,
-      valueTransformer: (value) => emptyAsNull(value),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Må fylles inn'),
-        (value) => _validateName(value, _fnameController.text),
-      ],
-    );
+  Widget _buildFNameField() {
+    return managed
+        ? _buildDecorator(
+            label: 'Fornavn',
+            onTap: _explainManaged,
+            child: _buildReadOnlyText(context, _defaultFName()),
+          )
+        : FormBuilderTextField(
+            maxLines: 1,
+            attribute: 'fname',
+            controller: _fnameController,
+            decoration: InputDecoration(
+              hintText: 'Skriv inn',
+              filled: true,
+              labelText: 'Fornavn',
+              suffix: GestureDetector(
+                child: Icon(
+                  Icons.clear,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                onTap: () => _setText(
+                  _fnameController,
+                  _defaultFName(),
+                ),
+              ),
+            ),
+            keyboardType: TextInputType.text,
+            valueTransformer: (value) => emptyAsNull(value),
+            validators: [
+              FormBuilderValidators.required(errorText: 'Må fylles inn'),
+              (value) => _validateName(value, _fnameController.text),
+            ],
+          );
   }
 
-  FormBuilderTextField _buildLNameField() {
-    return FormBuilderTextField(
-      maxLines: 1,
-      attribute: 'lname',
-      controller: _lnameController,
-      decoration: InputDecoration(
-        hintText: 'Skriv inn',
-        filled: true,
-        labelText: 'Etternavn',
-        suffix: GestureDetector(
-          child: Icon(
-            Icons.clear,
-            color: Colors.grey,
-            size: 20,
-          ),
-          onTap: () => _setText(
-            _lnameController,
-            _defaultLName(),
-          ),
-        ),
-      ),
-      keyboardType: TextInputType.text,
-      valueTransformer: (value) => emptyAsNull(value),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Må fylles inn'),
-        (value) => _validateName(value, _lnameController.text),
-      ],
-    );
+  Widget _buildLNameField() {
+    return managed
+        ? _buildDecorator(
+            label: 'Fornavn',
+            onTap: _explainManaged,
+            child: _buildReadOnlyText(context, _defaultLName()),
+          )
+        : FormBuilderTextField(
+            maxLines: 1,
+            attribute: 'lname',
+            controller: _lnameController,
+            decoration: InputDecoration(
+              hintText: 'Skriv inn',
+              filled: true,
+              labelText: 'Etternavn',
+              suffix: GestureDetector(
+                child: Icon(
+                  Icons.clear,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                onTap: () => _setText(
+                  _lnameController,
+                  _defaultLName(),
+                ),
+              ),
+            ),
+            keyboardType: TextInputType.text,
+            valueTransformer: (value) => emptyAsNull(value),
+            validators: [
+              FormBuilderValidators.required(errorText: 'Må fylles inn'),
+              (value) => _validateName(value, _lnameController.text),
+            ],
+          );
   }
 
   String _validateName(String fname, String lname) {
@@ -496,9 +555,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   void _submit() async {
-    if (_formKey.currentState.validate() && _affiliationKey.currentState.validate()) {
+    if (_formKey.currentState.validate() && (managed || _affiliationKey.currentState.validate())) {
       _formKey.currentState.save();
-      final affiliation = _affiliationKey.currentState.save();
+      final affiliation = managed ? widget.personnel.affiliation : _affiliationKey.currentState.save();
 
       // Get personnel from current state
       var personnel = (widget.personnel == null

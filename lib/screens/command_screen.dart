@@ -100,7 +100,6 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             title: Text(title),
           ),
           body: tabs[routeData],
-          resizeToAvoidBottomInset: false,
           bottomNavigationBar: BottomAppBar(
             shape: _userBloc.user.isCommander ? CircularNotchedRectangle() : null,
             notchMargin: 8.0,

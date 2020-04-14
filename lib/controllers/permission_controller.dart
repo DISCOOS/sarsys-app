@@ -31,7 +31,7 @@ class PermissionController {
 
   final PromptCallback onPrompt;
   final AppConfigBloc configBloc;
-  final MessageCallback<PermissionRequest> onMessage;
+  final ActionCallback<PermissionRequest> onMessage;
 
   bool _resolving = false;
   bool get resolving => _resolving;
@@ -53,7 +53,7 @@ class PermissionController {
   /// Will copy resolving state and current permissions
   PermissionController cloneWith({
     PromptCallback onPrompt,
-    MessageCallback<PermissionRequest> onMessage,
+    ActionCallback<PermissionRequest> onMessage,
   }) =>
       PermissionController(
         configBloc: configBloc,

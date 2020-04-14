@@ -56,9 +56,9 @@ class Organization extends Equatable {
     final division = toDivisionIdFromUser(user);
     final department = toDepartmentIdFromUser(user);
     return Affiliation(
-      organization: id,
-      division: division,
-      department: department,
+      orgId: id,
+      divId: division,
+      depId: department,
     );
   }
 
@@ -67,18 +67,32 @@ class Organization extends Equatable {
     String id = emptyAsNull(number?.isEmpty == false && number.length >= 3 ? number?.substring(0, 2) : null);
     if (id == null || !id.startsWith(this.id)) return null;
     return Affiliation(
-      organization: this.id,
-      division: toDivisionFromNumber(number)?.name,
-      department: toDepartmentFromNumber(number, empty: null),
+      orgId: this.id,
+      divId: toDivisionFromNumber(number)?.name,
+      depId: toDepartmentFromNumber(number, empty: null),
     );
   }
 
-  /// Get affiliation as comma-separated list of organization, division and department names
-  String toAffiliationAsString(String number, {String empty = 'Ingen'}) {
+  /// Get full affiliation name as comma-separated list of organization, division and department names
+  String toAffiliationNameFromNumber(String number, {String empty = 'Ingen'}) {
     final names = [
       name,
       toDivisionFromNumber(number)?.name,
       toDepartmentFromNumber(number, empty: null),
+    ]..removeWhere((name) => name == null);
+    return names.isEmpty ? empty : names.join(', ');
+  }
+
+  /// Get full affiliation name as comma-separated list of organization, division and department names
+  String toFullName(Affiliation affiliation, {String empty = 'Ingen'}) {
+    if (affiliation.orgId != id) {
+      throw 'Organization ids does not match. Expected $id, found ${affiliation.orgId}';
+    }
+    final division = divisions[affiliation.divId];
+    final names = [
+      name,
+      division?.name,
+      (division?.departments ?? {})[affiliation.depId],
     ]..removeWhere((name) => name == null);
     return names.isEmpty ? empty : names.join(', ');
   }

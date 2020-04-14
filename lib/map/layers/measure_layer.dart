@@ -17,7 +17,7 @@ class MeasureLayerOptions extends LayerOptions {
   double size;
   double opacity;
   MeasureTool tool;
-  final MessageCallback onMessage;
+  final ActionCallback onMessage;
 
   MeasureLayerOptions(
     this.tool, {

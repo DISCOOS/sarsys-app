@@ -284,3 +284,53 @@ class UserRolesDescription extends StatelessWidget {
     );
   }
 }
+
+class ManagedProfileDescription extends StatelessWidget {
+  const ManagedProfileDescription({
+    Key key,
+    this.affiliation,
+  }) : super(key: key);
+
+  final String affiliation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: 'Styrt profil',
+              style: TextStyle(
+                fontSize: 16,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: "Tilhørighet og persondata er styrt av ${affiliation ?? 'organisasjonen'}.",
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: "Telefonnummer kan endres. "
+                  "Endringen vil da kun gjelde for aksjonen "
+                  "som mannskapet er knyttet til.",
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

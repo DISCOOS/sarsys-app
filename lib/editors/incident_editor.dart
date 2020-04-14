@@ -52,7 +52,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   void _init() async {
-    var catalogs = await FleetMapService().fetchTalkGroupCatalogs(Defaults.organizationId)
+    var catalogs = await FleetMapService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
     _tgCatalog.value = catalogs;
   }
@@ -69,7 +69,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(widget.incident == null ? 'Ny aksjon' : 'Endre aksjon'),
         centerTitle: false,
@@ -387,7 +386,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
                 var talkGroup = _formKey.currentState.fields["tgCatalog"].currentState.value;
-                return (await service.fetchTalkGroups(Defaults.organizationId, talkGroup))
+                return (await service.fetchTalkGroups(Defaults.orgId, talkGroup))
                     .where((tg) =>
                         tg.name.toLowerCase().contains(lowercaseQuery) ||
                         tg.type.toString().toLowerCase().contains(lowercaseQuery))

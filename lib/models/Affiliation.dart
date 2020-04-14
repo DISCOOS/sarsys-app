@@ -5,18 +5,18 @@ part 'Affiliation.g.dart';
 
 @JsonSerializable()
 class Affiliation extends Equatable {
-  final String organization;
-  final String division;
-  final String department;
+  final String orgId;
+  final String divId;
+  final String depId;
 
   Affiliation({
-    this.organization,
-    this.division,
-    this.department,
+    this.orgId,
+    this.divId,
+    this.depId,
   }) : super([
-          organization,
-          division,
-          division,
+          orgId,
+          divId,
+          depId,
         ]);
 
   /// Factory constructor for creating a new `Affiliation` instance
