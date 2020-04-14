@@ -25,34 +25,66 @@ class LocationService {
   AppConfigBloc _appConfigBloc;
   LocationOptions _options;
 
-  Stream<Position> _stream;
+  Stream<Position> _internalStream;
   StreamSubscription _configSubscription;
   StreamSubscription _locatorSubscription;
-
-  int get events => _events.length;
-
-  LocationEvent operator [](int index) => _events[index];
+  StreamController<Position> _positionController = StreamController.broadcast();
+  StreamController<LocationEvent> _eventController = StreamController.broadcast();
 
   factory LocationService(AppConfigBloc bloc) {
-    if (_singleton == null) {
+    if (_singleton == null || _singleton.disposed) {
       _singleton = LocationService._internal(bloc);
     }
     return _singleton;
   }
 
   Position get current => _current;
-  Stream<Position> get stream => _stream;
   PermissionStatus get status => _status;
   ValueNotifier<bool> get isReady => _isReady;
+  Stream<Position> get stream => _positionController.stream;
+  Stream<LocationEvent> get onChanged => _eventController.stream;
+  Iterable<LocationEvent> get events => List.unmodifiable(_events);
 
-  Future<PermissionStatus> configure() async {
+  LocationEvent operator [](int index) => _events[index];
+
+  Future<Position> update() async {
+    if (_isReady.value) {
+      try {
+        final last = _current;
+        _current = await _geolocator.getLastKnownPosition(desiredAccuracy: _options.accuracy);
+        if (_current == null) {
+          _current = await _geolocator.getCurrentPosition(
+            desiredAccuracy: _options.accuracy,
+          );
+        }
+        if (last != _current) {
+          _positionController.add(_current);
+          _notify(PositionEvent(_current));
+        }
+      } on Exception catch (e, stackTrace) {
+        _notify(ErrorEvent(_options, e, stackTrace));
+        _unsubscribe();
+        Catcher.reportCheckedError("Failed to get position with error: $e", StackTrace.current);
+      }
+    } else {
+      await configure();
+    }
+    return _current;
+  }
+
+  void _notify(LocationEvent event) {
+    _events.insert(0, event);
+    _eventController.add(event);
+  }
+
+  Future<PermissionStatus> configure({bool force = false}) async {
     _status = await PermissionHandler().checkPermissionStatus(
       PermissionGroup.locationWhenInUse,
     );
-    if ([PermissionStatus.granted, PermissionStatus.restricted].contains(_status)) {
+    if ([PermissionStatus.granted].contains(_status)) {
       final config = _appConfigBloc.config;
       var options = _toOptions(config);
-      if (_isConfigChanged(options)) {
+      if (force || _isConfigChanged(options)) {
         _subscribe(options);
         _configSubscription?.cancel();
         _configSubscription = _appConfigBloc.state.listen(
@@ -81,43 +113,41 @@ class LocationService {
   }
 
   void _subscribe(LocationOptions options) async {
-    if (_stream != null) _unsubscribe();
+    if (_internalStream != null) _unsubscribe();
     _options = options;
-    _stream = _geolocator.getPositionStream(_options).asBroadcastStream();
-    _locatorSubscription = _stream.listen((Position position) {
+    _internalStream = _geolocator.getPositionStream(_options);
+    _locatorSubscription = _internalStream.listen((Position position) {
       _current = position;
-      _events.insert(0, PositionEvent(position));
+      _positionController.add(position);
+      _notify(PositionEvent(position));
     });
     _locatorSubscription.onDone(_unsubscribe);
     _locatorSubscription.onError(_handleError);
-    try {
-      _current = await _geolocator.getLastKnownPosition(desiredAccuracy: _options.accuracy);
-      if (_current == null) {
-        _current = await _geolocator.getCurrentPosition(
-          desiredAccuracy: _options.accuracy,
-        );
-      }
-      _isReady.value = true;
-      _events.insert(0, SubscribeEvent(options));
-    } on Exception catch (e, stackTrace) {
-      _events.insert(0, ErrorEvent(options, e, stackTrace));
-      _unsubscribe();
-      Catcher.reportCheckedError("Failed to get position with error: $e", StackTrace.current);
-    }
+    _notify(SubscribeEvent(options));
+    _isReady.value = true;
+    await update();
   }
 
+  bool get disposed => _disposed;
+  bool _disposed = false;
+
   void dispose() {
+    _eventController.close();
+    _positionController.close();
     _configSubscription?.cancel();
+    _eventController = null;
+    _positionController = null;
     _configSubscription = null;
     _unsubscribe();
+    _disposed = true;
   }
 
   void _unsubscribe() {
-    _stream = null;
+    _internalStream = null;
     _locatorSubscription?.cancel();
     _locatorSubscription = null;
     _isReady.value = false;
-    _events.insert(0, UnsubscribeEvent(_options));
+    _notify(UnsubscribeEvent(_options));
   }
 
   bool _isConfigChanged(LocationOptions options) {
@@ -128,7 +158,7 @@ class LocationService {
 
   _handleError(dynamic error, StackTrace stackTrace) {
     _unsubscribe();
-    _events.insert(0, ErrorEvent(_options, error, stackTrace));
+    _notify(ErrorEvent(_options, error, stackTrace));
     Catcher.reportCheckedError("Location stream failed with error: $error", stackTrace);
   }
 
@@ -161,10 +191,13 @@ class CreateEvent extends LocationEvent {
   final AppConfig config;
 
   @override
-  String toString() => 'Accuracy: ${config.locationAccuracy}\n'
-      'Interval: ${config.locationFastestInterval}\n'
-      'Displacement: ${config.locationSmallestDisplacement}\n'
-      'Permission: ${config.locationWhenInUse}';
+  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+      'AppConfig: {\n'
+      '   accuracy: ${config.locationAccuracy}\n'
+      '   interval: ${config.locationFastestInterval}\n'
+      '   displacement: ${config.locationSmallestDisplacement}\n'
+      '   permission: ${config.locationWhenInUse}\n'
+      '}';
 }
 
 class PositionEvent extends LocationEvent {
@@ -173,7 +206,17 @@ class PositionEvent extends LocationEvent {
 
   @override
   String toString() {
-    return 'Position: $position';
+    return 'When: ${timestamp.toIso8601String()}\n'
+        'Position: {\n'
+        '   lat: ${position.latitude}\n'
+        '   lon: ${position.longitude}\n'
+        '   alt: ${position.altitude}\n'
+        '   acc: ${position.accuracy}\n'
+        '   heading: ${position.heading}\n'
+        '   speed: ${position.speed}\n'
+        '   speedAcc: ${position.speedAccuracy}\n'
+        '   time: ${position.timestamp.toIso8601String()}\n'
+        '}';
   }
 }
 
@@ -181,20 +224,26 @@ class SubscribeEvent extends LocationEvent {
   SubscribeEvent(this.options) : super(StackTrace.current);
   final LocationOptions options;
   @override
-  String toString() => 'Accuracy: ${options.accuracy}, '
-      'TimeInterval: ${options.timeInterval}, '
-      'DistanceFilter: ${options.distanceFilter}, '
-      'ForceAndroidLocationManager: ${options.forceAndroidLocationManager}';
+  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+      'Options: {\n'
+      '   accuracy: ${options.accuracy}\n'
+      '   timeInterval: ${options.timeInterval}\n'
+      '   distanceFilter: ${options.distanceFilter}\n'
+      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
+      '}';
 }
 
 class UnsubscribeEvent extends LocationEvent {
   UnsubscribeEvent(this.options) : super(StackTrace.current);
   final LocationOptions options;
   @override
-  String toString() => 'Accuracy: ${options.accuracy}, '
-      'TimeInterval: ${options.timeInterval}, '
-      'DistanceFilter: ${options.distanceFilter}, '
-      'ForceAndroidLocationManager: ${options.forceAndroidLocationManager}';
+  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+      'Options: {\n'
+      '   accuracy: ${options.accuracy}\n'
+      '   timeInterval: ${options.timeInterval}\n'
+      '   distanceFilter: ${options.distanceFilter}\n'
+      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
+      '}';
 }
 
 class ErrorEvent extends LocationEvent {
@@ -202,9 +251,15 @@ class ErrorEvent extends LocationEvent {
   final Object error;
   final LocationOptions options;
   @override
-  String toString() => 'Error: $error, stackTrace: $stackTrace'
-      'Accuracy: ${options.accuracy}, '
-      'TimeInterval: ${options.timeInterval}, '
-      'DistanceFilter: ${options.distanceFilter}, '
-      'ForceAndroidLocationManager: ${options.forceAndroidLocationManager}';
+  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+      'Error: {\n'
+      '   message: $error\n'
+      '   stackTrace: $stackTrace\n'
+      '}\n'
+      'Options: {\n'
+      '   accuracy: ${options.accuracy}\n'
+      '   timeInterval: ${options.timeInterval}\n'
+      '   distanceFilter: ${options.distanceFilter}\n'
+      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
+      '}';
 }

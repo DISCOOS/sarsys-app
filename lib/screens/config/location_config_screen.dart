@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationConfigScreen extends StatefulWidget {
@@ -58,6 +60,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           children: <Widget>[
             ListView(
               shrinkWrap: true,
+              physics: ClampingScrollPhysics(),
               children: <Widget>[
                 _buildLocationAccuracyField(),
                 _buildLocationFastestIntervalField(),
@@ -65,20 +68,81 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
             ),
             Divider(),
-            ListView.separated(
-              shrinkWrap: true,
-              itemCount: _locationService.events,
-              itemBuilder: (BuildContext context, int index) {
-                final LocationEvent event = _locationService[index];
-                final duration =
-                    index > 0 ? _locationService[index - 1].timestamp.difference(event.timestamp).inSeconds : 0;
-                return ListTile(
-                  title: Text('${event.timestamp.toIso8601String()}: ${event.runtimeType}: $duration s'),
-                  subtitle: Text('$event'),
-                );
-              },
-              separatorBuilder: (BuildContext context, int index) => Divider(),
+            ListTile(
+              title: Text(
+                "Posisjonstjeneste",
+                style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.system_update),
+                    tooltip: "Konfigurer posisjonstjenesten på nytt",
+                    padding: EdgeInsets.zero,
+                    onPressed: () async {
+                      final answer = await prompt(
+                        context,
+                        "Bekreftelse",
+                        "Dette vil konfigurere posisjonstjenesten på nytt, vil du forsette?",
+                      );
+                      if (answer) {
+                        await LocationService(_bloc).configure(force: true);
+                        setState(() {});
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.my_location),
+                    tooltip: "Be om min posisjon",
+                    padding: EdgeInsets.zero,
+                    onPressed: () async {
+                      await LocationService(_bloc).update();
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.send),
+                    tooltip: "Send posisjonslogg til epostmottaker",
+                    padding: EdgeInsets.zero,
+                    onPressed: () async {
+                      final Email email = Email(
+                        body: 'Posisjonstjeneste log:\n\n${_locationService.events.map(
+                              (event) => '${event.runtimeType}\n$event',
+                            ).join('\n\n')}',
+                        subject: 'Posisjonstjeneste - log',
+                        recipients: ['support@discoos.org'],
+                      );
+                      await FlutterEmailSender.send(email);
+                    },
+                  ),
+                ],
+              ),
             ),
+            StreamBuilder<LocationEvent>(
+                stream: _locationService.onChanged,
+                builder: (context, snapshot) {
+                  final now = DateTime.now();
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: ClampingScrollPhysics(),
+                    itemCount: _locationService.events.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final LocationEvent event = _locationService[index];
+                      final duration = now.difference(_locationService[index].timestamp);
+                      return ListTile(
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('${event.runtimeType}', style: TextStyle(fontWeight: FontWeight.w600)),
+                            Chip(label: Text('${formatDuration(duration, withMillis: true)}')),
+                          ],
+                        ),
+                        subtitle: Text('$event'),
+                      );
+                    },
+                    separatorBuilder: (BuildContext context, int index) => Divider(),
+                  );
+                }),
           ],
         ),
       ),
@@ -96,7 +160,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           Expanded(
             flex: 3,
             child: ListTile(
-              title: Text("Lokasjonsnøyaktighet"),
+              title: Text("Nøyaktighet"),
               subtitle: Text("Høy nøyaktighet bruker mer batteri"),
             ),
           ),

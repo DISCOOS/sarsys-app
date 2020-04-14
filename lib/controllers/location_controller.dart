@@ -52,9 +52,9 @@ class LocationController {
   /// Get current location
   Position get current => _service.current;
 
-  Future<LatLng> init() async {
+  Future<LatLng> configure() async {
     return _handle(
-      await _service.configure(),
+      await _service.configure(force: true),
     );
   }
 
@@ -78,8 +78,9 @@ class LocationController {
       if (wasLocated != isLocated || wasLocked != _locked) {
         if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
       }
-    } else
+    } else {
       _handle(_service.status);
+    }
     return isLocated;
   }
 
@@ -99,8 +100,8 @@ class LocationController {
       );
       if (Platform.isIOS) {
         // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
-        _positionSubscription.onError((e) {
-          Catcher.reportCheckedError(e, StackTrace.current);
+        _positionSubscription.onError((e, stackTrace) {
+          Catcher.reportCheckedError(e, stackTrace);
           _positionSubscription.cancel();
           _subscribe();
         });

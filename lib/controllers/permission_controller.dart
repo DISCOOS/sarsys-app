@@ -163,7 +163,7 @@ class PermissionController {
         case PermissionStatus.restricted:
           if (await _updateAppConfig(locationWhenInUse: true) && onMessage != null)
             onMessage(
-              "Tilgang til ${toBeginningOfSentenceCase(request.title)} er begrenset",
+              "Tilgang til ${toBeginningOfSentenceCase(request.title)} tillates ikke",
               data: request,
             );
           isReady = true;
@@ -220,7 +220,7 @@ class PermissionController {
     final prefs = await SharedPreferences.getInstance();
     var status = await handler.checkPermissionStatus(request.group);
     // In case permissions was granted in app settings screen
-    if (![PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
+    if ([PermissionStatus.denied, PermissionStatus.restricted].contains(status)) {
       var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.group}") ?? 0;
       // Only supported on Android, iOS always return false
       if (deniedBefore > 0 || await handler.shouldShowRequestPermissionRationale(request.group)) {
@@ -232,11 +232,11 @@ class PermissionController {
         } else {
           // In case permissions was granted in app settings screen
           var status = await handler.checkPermissionStatus(request.group);
-          if (![PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
-            await _onOpenSetting(request);
-          } else {
+          if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
             await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
             handle(status, request);
+          } else {
+            await _onOpenSetting(request);
           }
         }
       }

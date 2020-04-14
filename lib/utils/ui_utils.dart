@@ -331,10 +331,7 @@ void jumpToMe(
   if (PermissionStatus.unknown == status) {
     status = await service.configure();
   }
-  if ([
-    PermissionStatus.granted,
-    PermissionStatus.restricted,
-  ].contains(status)) {
+  if ([PermissionStatus.granted].contains(status)) {
     var current = service.current;
     if (current != null) {
       jumpToLatLng(
@@ -371,10 +368,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
     if (PermissionStatus.unknown == status) {
       status = await service.configure();
     }
-    if ([
-      PermissionStatus.granted,
-      PermissionStatus.restricted,
-    ].contains(status)) {
+    if ([PermissionStatus.granted].contains(status)) {
       var current = service.current;
       if (current != null) {
         success = await launch(

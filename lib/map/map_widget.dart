@@ -518,7 +518,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _scheduleInitLocation(ValueChanged<LatLng> callback) {
-    _locationRequest ??= _locationController.init();
+    _locationRequest ??= _locationController.configure();
     _locationRequest.then(callback);
   }
 

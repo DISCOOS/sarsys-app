@@ -55,7 +55,13 @@ String formatSince(DateTime timestamp, {bool approx = true, String defaultValue 
   );
 }
 
-String formatDuration(Duration delta, {bool approx = true, String defaultValue = "-", bool withUnits = true}) {
+String formatDuration(
+  Duration delta, {
+  bool approx = true,
+  String defaultValue = "-",
+  bool withUnits = true,
+  bool withMillis = false,
+}) {
   if (delta == null) return defaultValue;
   return delta.inHours > 99
       ? "${delta.inDays}${withUnits ? (delta.inDays > 1 ? " dager" : " dag") : ""}"
@@ -63,7 +69,11 @@ String formatDuration(Duration delta, {bool approx = true, String defaultValue =
           ? "${delta.inHours}${withUnits ? (delta.inHours > 1 ? " timer" : " time") : ""}"
           : delta.inMinutes > 0
               ? "${delta.inMinutes}${withUnits ? " min" : ""}"
-              : approx ? "~1${withUnits ? " min" : ""}" : "${delta.inSeconds}${withUnits ? " sek" : ""}";
+              : delta.inSeconds > 0
+                  ? "${delta.inSeconds}${withUnits ? " sek" : ""}"
+                  : !withMillis && approx
+                      ? "~1${withUnits ? " sek" : ""}"
+                      : "${delta.inMilliseconds}${withUnits ? " ms" : ""}";
 }
 
 String formatDistance(double distance) {
