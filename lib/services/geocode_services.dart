@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -312,7 +317,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPOI(RegExp match) {
     final results = <AddressLookup>[];
-    final incident = controller.incidentProvider.bloc.selected;
+    final incident = controller.bloc<IncidentBloc>().selected;
     if (incident != null) {
       // Search for matches in incident
       if (_prepare(incident.searchable).contains(match)) {
@@ -345,17 +350,23 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
     return results;
   }
 
-  Iterable<AddressLookup> _findUnits(RegExp match) => controller.unitProvider.bloc.units.values
+  Iterable<AddressLookup> _findUnits(RegExp match) => controller
+      .bloc<UnitBloc>()
+      .units
+      .values
       .where((unit) => withRetired || unit.status != UnitStatus.Retired)
       .where((unit) =>
           // Search in unit
           _prepare(unit.searchable).contains(match) ||
           // Search in devices tracked with this unit
-          controller.trackingProvider.bloc.tracking[unit.tracking].devices
-              .any((id) => _prepare(controller.deviceProvider.bloc.devices[id]).contains(match)))
-      .where((unit) => controller.trackingProvider.bloc.tracking[unit.tracking].point != null)
+          controller
+              .bloc<TrackingBloc>()
+              .tracking[unit.tracking]
+              .devices
+              .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
+      .where((unit) => controller.bloc<TrackingBloc>().tracking[unit.tracking].point != null)
       .map((unit) => AddressLookup(
-            point: controller.trackingProvider.bloc.tracking[unit.tracking].point,
+            point: controller.bloc<TrackingBloc>().tracking[unit.tracking].point,
             icon: Icons.group,
             title: unit.name,
             type: GeocodeType.Object,
@@ -363,17 +374,23 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
             source: name,
           ));
 
-  Iterable<AddressLookup> _findPersonnel(RegExp match) => controller.personnelProvider.bloc.personnel.values
+  Iterable<AddressLookup> _findPersonnel(RegExp match) => controller
+      .bloc<PersonnelBloc>()
+      .personnel
+      .values
       .where((p) => withRetired || p.status != PersonnelStatus.Retired)
       .where((p) =>
           // Search in personnel
           _prepare(p.searchable).contains(match) ||
           // Search in devices tracked with this personnel
-          controller.trackingProvider.bloc.tracking[p.tracking].devices
-              .any((id) => _prepare(controller.deviceProvider.bloc.devices[id]).contains(match)))
-      .where((p) => controller.trackingProvider.bloc.tracking[p.tracking].point != null)
+          controller
+              .bloc<TrackingBloc>()
+              .tracking[p.tracking]
+              .devices
+              .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
+      .where((p) => controller.bloc<TrackingBloc>().tracking[p.tracking].point != null)
       .map((p) => AddressLookup(
-            point: controller.trackingProvider.bloc.tracking[p.tracking].point,
+            point: controller.bloc<TrackingBloc>().tracking[p.tracking].point,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -381,7 +398,10 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
             source: name,
           ));
 
-  Iterable<AddressLookup> _findDevices(RegExp match) => controller.deviceProvider.bloc.devices.values
+  Iterable<AddressLookup> _findDevices(RegExp match) => controller
+      .bloc<DeviceBloc>()
+      .devices
+      .values
       .where((p) => _prepare(p).contains(match))
       .where((p) => p.point != null)
       .map((p) => AddressLookup(

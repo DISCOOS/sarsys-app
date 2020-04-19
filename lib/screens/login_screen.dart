@@ -5,8 +5,6 @@ import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/services/service_response.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/catcher_plugin.dart';
@@ -59,8 +57,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   TextStyle titleStyle;
   TextStyle emailStyle;
 
-  UserBloc _bloc;
-
   bool _validateAndSave() {
     final form = _formKey.currentState;
     if (form.validate()) {
@@ -81,8 +77,12 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   @override
   void didChangeDependencies() {
-    _bloc = _toBloc(context);
     super.didChangeDependencies();
+    final bloc = BlocProvider.of<UserBloc>(context);
+    _subscription?.cancel();
+    _subscription = bloc.listen((UserState state) {
+      _process(state, bloc, context);
+    });
   }
 
   @override
@@ -98,7 +98,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
 
     return StreamBuilder<UserState>(
-        stream: _bloc.state,
+        stream: context.bloc<UserBloc>(),
         builder: (context, snapshot) {
           return Scaffold(
             backgroundColor: Colors.grey[300],
@@ -117,7 +117,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: Container(
-                        child: _buildBody(context, _bloc),
+                        child: _buildBody(context, context.bloc<UserBloc>()),
                       ),
                     ),
                   ),
@@ -137,7 +137,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  bool _inProgress(UserBloc bloc) => bloc.isAuthenticated || bloc?.currentState?.isPending() == true;
+  bool _inProgress(UserBloc bloc) => bloc.isAuthenticated || bloc?.state?.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -238,7 +238,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  bool _isError(UserBloc bloc) => bloc.currentState is UserException;
+  bool _isError(UserBloc bloc) => bloc.state is UserException;
 
   Widget _buildErrorText(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
@@ -255,9 +255,9 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   String _toError(UserBloc bloc) {
-    if (bloc.currentState is UserUnauthorized) {
+    if (bloc.state is UserUnauthorized) {
       return 'Feil brukernavn eller passord';
-    } else if (bloc.currentState is UserForbidden) {
+    } else if (bloc.state is UserForbidden) {
       return 'Ingen tilgang';
     }
     return '';
@@ -339,9 +339,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       );
 
   Widget _buildAuthenticate(UserBloc bloc) => FutureBuilder<Organization>(
-      future: FleetMapService().fetchOrganization(
-        bloc.service.configBloc.config.organizationId,
-      ),
+      future: bloc.getTrustedOrg(),
       builder: (context, snapshot) {
         final org = snapshot.data;
         return snapshot.hasData
@@ -429,33 +427,27 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
   Widget _buildSharedUseInput(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(top: 24.0),
-        child: FutureBuilder<ServiceResponse<List<User>>>(
-            future: bloc.service.loadAll(),
-            builder: (context, snapshot) {
-              return snapshot.data?.is200 == true
-                  ? _newUser || snapshot.data.body.isEmpty
-                      ? _buildEmailTextField(bloc)
-                      : buildDropDownField<String>(
-                          attribute: 'email',
-                          isDense: false,
-                          initialValue: _setUser(
-                            bloc,
-                            snapshot.data.body.first,
-                          ),
-                          items: _buildUserItems(
-                            snapshot.data.body,
-                          ),
-                          onChanged: (value) {
-                            final user = snapshot.data.body.firstWhere(
-                              (user) => user.userId == value,
-                              orElse: () => null,
-                            );
-                            _setUser(bloc, user);
-                          },
-                          validators: [],
-                        )
-                  : _buildEmailTextField(bloc);
-            }),
+        child: _newUser || bloc.users.isEmpty
+            ? _buildEmailTextField(bloc)
+            : buildDropDownField<String>(
+                attribute: 'email',
+                isDense: false,
+                initialValue: _setUser(
+                  bloc,
+                  bloc.users.first,
+                ),
+                items: _buildUserItems(
+                  bloc.users,
+                ),
+                onChanged: (value) {
+                  final user = bloc.users.firstWhere(
+                    (user) => user.userId == value,
+                    orElse: () => null,
+                  );
+                  _setUser(bloc, user);
+                },
+                validators: [],
+              ),
       );
 
   String _setUser(UserBloc bloc, User user) {
@@ -510,7 +502,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         validator: (value) {
           if (bloc.isShared) {
             final domain = UserService.toDomain(value);
-            if (!bloc.service.configBloc.config.trustedDomains.contains(domain)) {
+            if (!bloc.trustedDomains.contains(domain)) {
               return '$value er ikke tillatt';
             }
           }
@@ -529,7 +521,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   Future _authenticate(UserBloc bloc, {String idpHint}) async {
     try {
       _popWhenReady = true;
-      await bloc.authenticate(
+      await bloc.login(
         username: _username,
         userId: _user?.userId,
         idpHint: idpHint,
@@ -660,15 +652,6 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ),
         onPressed: enabled ? () => _onActionPressed(validate, onPressed) : null,
       );
-
-  UserBloc _toBloc(BuildContext context) {
-    final bloc = BlocProvider.of<UserBloc>(context);
-    _subscription?.cancel();
-    _subscription = bloc.state.listen((UserState state) {
-      _process(state, bloc, context);
-    });
-    return bloc;
-  }
 
   void _process(UserState state, UserBloc bloc, BuildContext context) {
     switch (state.runtimeType) {

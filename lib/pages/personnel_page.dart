@@ -39,9 +39,6 @@ class PersonnelPage extends StatefulWidget {
 
 class PersonnelPageState extends State<PersonnelPage> {
   static const FILTER = "personnel_filter";
-  UserBloc _userBloc;
-  PersonnelBloc _personnelBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
   Set<PersonnelStatus> _filter;
@@ -60,11 +57,11 @@ class PersonnelPageState extends State<PersonnelPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    _group = StreamGroup.broadcast()..add(_personnelBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<PersonnelBloc>())
+      ..add(context.bloc<TrackingBloc>())
+      ..add(context.bloc<UserBloc>());
   }
 
   @override
@@ -80,7 +77,7 @@ class PersonnelPageState extends State<PersonnelPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            _personnelBloc.fetch();
+            context.bloc<PersonnelBloc>().load();
           },
           child: Container(
             color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -106,7 +103,10 @@ class PersonnelPageState extends State<PersonnelPage> {
   }
 
   List<Personnel> _filteredPersonnel() {
-    return _personnelBloc.personnel.values
+    return context
+        .bloc<PersonnelBloc>()
+        .personnel
+        .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
         .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
@@ -134,9 +134,9 @@ class PersonnelPageState extends State<PersonnelPage> {
     }
     var personnel = items[index];
     var unit = _toUnit(personnel);
-    var tracking = _trackingBloc.tracking[personnel.tracking];
+    var tracking = context.bloc<TrackingBloc>().tracking[personnel.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
-    return widget.withActions && _userBloc?.user?.isCommander == true
+    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
@@ -190,7 +190,7 @@ class PersonnelPageState extends State<PersonnelPage> {
                 color: toPointStatusColor(tracking?.point),
               ),
             ),
-            if (widget.withActions && _userBloc?.user?.isCommander == true)
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -254,7 +254,7 @@ class PersonnelPageState extends State<PersonnelPage> {
         ),
       );
 
-  Unit _toUnit(Personnel personnel) => _trackingBloc.unitBloc.units.values.firstWhere(
+  Unit _toUnit(Personnel personnel) => context.bloc<TrackingBloc>().unitBloc.units.values.firstWhere(
         (unit) => unit.personnel?.contains(personnel) == true,
         orElse: () => null,
       );

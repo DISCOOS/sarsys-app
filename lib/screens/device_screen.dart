@@ -46,9 +46,6 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   final _controller = IncidentMapController();
 
   Device _device;
-  UserBloc _userBloc;
-  DeviceBloc _deviceBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Device> _onMoved;
 
@@ -66,14 +63,13 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    final unit = _trackingBloc.units.find(_device);
-    _group = StreamGroup.broadcast()..add(_deviceBloc.changes(_device))..add(_trackingBloc.changes(unit?.tracking));
+    final unit = context.bloc<TrackingBloc>().units.find(_device);
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<DeviceBloc>().changes(_device))
+      ..add(context.bloc<TrackingBloc>().changes(unit?.tracking));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _deviceBloc.changes(_device).listen(_onMove);
+    _onMoved = context.bloc<DeviceBloc>().changes(_device).listen(_onMove);
   }
 
   @override
@@ -98,8 +94,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.data is Device) _device = snapshot.data;
-                final unit = _trackingBloc.units.find(_device);
-                final personnel = _trackingBloc.personnel.find(_device);
+                final unit = context.bloc<TrackingBloc>().units.find(_device);
+                final personnel = context.bloc<TrackingBloc>().personnel.find(_device);
                 return ListView(
                   padding: const EdgeInsets.all(DeviceScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
@@ -121,10 +117,10 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       unit: unit,
       personnel: personnel,
       device: _device,
-      tracking: _trackingBloc.tracking[unit?.tracking],
+      tracking: context.bloc<TrackingBloc>().tracking[unit?.tracking],
       organization: FleetMapService().fetchOrganization(Defaults.orgId),
       withHeader: false,
-      withActions: _userBloc.user?.isCommander == true,
+      withActions: context.bloc<UserBloc>().user?.isCommander == true,
       onMessage: showMessage,
       onChanged: (device) => setState(() => _device = device),
       onDelete: () => Navigator.pop(context),

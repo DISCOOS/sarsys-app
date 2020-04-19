@@ -15,19 +15,16 @@ class UserHistoryPage extends StatefulWidget {
 }
 
 class UserHistoryPageState extends State<UserHistoryPage> {
-  UserBloc _userBloc;
-  PersonnelBloc _personnelBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _group?.close();
-    _group = StreamGroup.broadcast()..add(_personnelBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<PersonnelBloc>())
+      ..add(context.bloc<TrackingBloc>())
+      ..add(context.bloc<UserBloc>());
   }
 
   @override

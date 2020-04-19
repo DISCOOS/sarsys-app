@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:http/http.dart' show Client;
 
 class UnitService {
@@ -10,7 +10,7 @@ class UnitService {
   UnitService(this.url, this.client);
 
   /// GET ../units
-  Future<ServiceResponse<List<Unit>>> fetch(String incidentId) async {
+  Future<ServiceResponse<List<Unit>>> load(String incidentId) async {
     // TODO: Implement fetch units
     throw "Not implemented";
   }

@@ -57,11 +57,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   ValueNotifier<String> _editedName = ValueNotifier(null);
   List<Device> _devices;
 
-  DeviceBloc _deviceBloc;
-  TrackingBloc _trackingBloc;
-  PersonnelBloc _personnelBloc;
-  AppConfigBloc _appConfigBloc;
-
   Future<Organization> _future;
 
   bool get managed => widget.personnel?.userId != null;
@@ -83,10 +78,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _devices ??= _getActualDevices();
     if (managed) {
       _future = FleetMapService().fetchOrganization(widget.personnel.affiliation.orgId);
@@ -199,14 +190,16 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  Affiliation _ensureAffiliation() =>
-      _affiliationKey?.currentState?.save() ??
-      widget.personnel?.affiliation ??
-      Affiliation(
-        orgId: Defaults.orgId,
-        divId: _appConfigBloc.config.divId,
-        depId: _appConfigBloc.config.depId,
-      );
+  Affiliation _ensureAffiliation() {
+    final config = context.bloc<AppConfigBloc>().config;
+    return _affiliationKey?.currentState?.save() ??
+        widget.personnel?.affiliation ??
+        Affiliation(
+          orgId: Defaults.orgId,
+          divId: config.divId,
+          depId: config.depId,
+        );
+  }
 
   Widget _buildNameField() {
     return _buildDecorator(
@@ -322,7 +315,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   String _validateName(String fname, String lname) {
-    Personnel personnel = _personnelBloc.personnel.values
+    Personnel personnel = context
+        .bloc<PersonnelBloc>()
+        .personnel
+        .values
         .where(
           (personnel) => PersonnelStatus.Retired != personnel.status,
         )
@@ -427,7 +423,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   String _validatePhone(phone) {
-    Personnel match = _personnelBloc.personnel.values
+    Personnel match = context
+        .bloc<PersonnelBloc>()
+        .personnel
+        .values
         .where(
           (unit) => PersonnelStatus.Retired != unit.status,
         )
@@ -501,10 +500,14 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       var actual = _getActualDevices().map((device) => device.id);
       var local = _getLocalDevices().map((device) => device.id);
       var lowercaseQuery = query.toLowerCase();
-      return _deviceBloc.devices.values
+      return context
+          .bloc<DeviceBloc>()
+          .devices
+          .values
           .where((device) =>
               // Add locally removed devices
-              actual.contains(device.id) && !local.contains(device.id) || _trackingBloc.contains(device) == false)
+              actual.contains(device.id) && !local.contains(device.id) ||
+              context.bloc<TrackingBloc>().has(device) == false)
           .where((device) =>
               device.number.toLowerCase().contains(lowercaseQuery) ||
               device.type.toString().toLowerCase().contains(lowercaseQuery))
@@ -535,8 +538,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Point _toPoint() {
-    final bloc = BlocProvider.of<TrackingBloc>(context);
-    final tracking = bloc.tracking[widget?.personnel?.tracking];
+    final tracking = context.bloc<TrackingBloc>().tracking[widget?.personnel?.tracking];
     return tracking?.point;
   }
 
@@ -544,7 +546,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   List<Device> _getActualDevices() {
     return (widget?.personnel?.tracking != null
-        ? _trackingBloc.devices(
+        ? context.bloc<TrackingBloc>().devices(
             widget?.personnel?.tracking,
             // Include closed tracks
             exclude: [],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -11,20 +12,19 @@ import 'package:flutter/foundation.dart';
 typedef void AppConfigCallback(VoidCallback fn);
 
 class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
-  final AppConfigService service;
+  AppConfigBloc(this.repo);
+  final AppConfigRepository repo;
 
-  AppConfig _config;
-
-  AppConfigBloc(this.service);
+  AppConfigService get service => repo.service;
 
   @override
   AppConfigState get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
-  bool get isReady => _config != null;
+  bool get isReady => repo.isReady;
 
   /// Get config
-  AppConfig get config => _config;
+  AppConfig get config => repo.config;
 
   /// Initialize config from [service]
   Future<AppConfig> init() async => _dispatch(InitAppConfig());
@@ -65,9 +65,9 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           demoRole: demoRole,
           onboarded: onboarded,
           firstSetup: firstSetup,
-          organization: organization,
-          division: division,
-          department: department,
+          orgId: organization,
+          divId: division,
+          depId: department,
           talkGroups: talkGroups,
           talkGroupCatalog: talkGroupCatalog,
           storage: storage,
@@ -84,13 +84,13 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     return _dispatch(UpdateAppConfig(config));
   }
 
-  Future<AppConfig> clear() {
-    return _dispatch<AppConfig>(ClearAppConfig());
+  Future<AppConfig> delete() {
+    return _dispatch<AppConfig>(DeleteAppConfig());
   }
 
   // Dispatch and return future
   Future<T> _dispatch<T>(AppConfigCommand<T> command) {
-    dispatch(command);
+    add(command);
     return command.callback.future;
   }
 
@@ -102,65 +102,52 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
       yield await _load(command);
     } else if (command is UpdateAppConfig) {
       yield await _update(command);
-    } else if (command is ClearAppConfig) {
-      yield await _clear(command);
+    } else if (command is DeleteAppConfig) {
+      yield await _delete(command);
     } else if (command is RaiseAppConfigError) {
       yield _toError(command, command.data);
     } else {
-      yield _toError(command, AppConfigError("Unsupported $command"));
+      yield _toError(
+        command,
+        AppConfigError("Unsupported $command"),
+      );
     }
   }
 
   Future<AppConfigState> _init(InitAppConfig event) async {
-    var response = await service.init();
-    if (response.is200) {
-      _config = response.body;
-      return _toOK(
-        event,
-        AppConfigInitialized(_config),
-        result: _config,
-      );
-    }
-    return _toError(event, response);
+    var config = await repo.init();
+    return _toOK(
+      event,
+      AppConfigInitialized(config),
+      result: config,
+    );
   }
 
   Future<AppConfigState> _load(LoadAppConfig event) async {
-    var response = await service.load();
-    if (response.is200) {
-      _config = response.body;
-      return _toOK(
-        event,
-        AppConfigLoaded(_config),
-        result: _config,
-      );
-    }
-    return _toError(event, response);
+    var config = await repo.load();
+    return _toOK(
+      event,
+      AppConfigLoaded(config),
+      result: config,
+    );
   }
 
   Future<AppConfigState> _update(UpdateAppConfig event) async {
-    var response = await service.update(event.data);
-    if (response.is200) {
-      _config = event.data;
-      return _toOK(
-        event,
-        AppConfigUpdated(_config),
-        result: _config,
-      );
-    }
-    return _toError(event, response);
+    var config = await repo.update(event.data);
+    return _toOK(
+      event,
+      AppConfigUpdated(config),
+      result: config,
+    );
   }
 
-  Future<AppConfigState> _clear(ClearAppConfig event) async {
-    var response = await service.clear();
-    if (response.is204) {
-      _config = null;
-      return _toOK(
-        event,
-        AppConfigEmpty(),
-        result: _config,
-      );
-    }
-    return _toError(event, response);
+  Future<AppConfigState> _delete(DeleteAppConfig event) async {
+    var config = await repo.delete();
+    return _toOK(
+      event,
+      AppConfigDeleted(config),
+      result: config,
+    );
   }
 
   // Complete request and return given state to bloc
@@ -181,7 +168,13 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   @override
   void onError(Object error, StackTrace stacktrace) {
-    dispatch(RaiseAppConfigError(AppConfigError(error, trace: stacktrace)));
+    add(RaiseAppConfigError(error, stackTrace: stacktrace));
+  }
+
+  @override
+  Future<void> close() {
+    repo.close();
+    return super.close();
   }
 }
 
@@ -216,18 +209,19 @@ class UpdateAppConfig extends AppConfigCommand<AppConfig> {
   String toString() => 'UpdateAppConfig {data: $data}';
 }
 
-class ClearAppConfig extends AppConfigCommand<AppConfig> {
-  ClearAppConfig() : super(null);
+class DeleteAppConfig extends AppConfigCommand<AppConfig> {
+  DeleteAppConfig() : super(null);
 
   @override
-  String toString() => 'ClearAppConfig {}';
+  String toString() => 'DeleteAppConfig {}';
 }
 
-class RaiseAppConfigError extends AppConfigCommand<AppConfigError> {
-  RaiseAppConfigError(data) : super(data);
+class RaiseAppConfigError extends AppConfigCommand<Object> {
+  final StackTrace stackTrace;
+  RaiseAppConfigError(data, {this.stackTrace}) : super(data);
 
   @override
-  String toString() => 'RaiseAppConfigError {data: $data}';
+  String toString() => 'RaiseAppConfigError {error: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------
@@ -242,6 +236,7 @@ abstract class AppConfigState<T> extends Equatable {
   isInitialized() => this is AppConfigInitialized;
   isLoaded() => this is AppConfigLoaded;
   isUpdated() => this is AppConfigUpdated;
+  isDeleted() => this is AppConfigDeleted;
   isException() => this is AppConfigException;
   isError() => this is AppConfigError;
 }
@@ -257,21 +252,28 @@ class AppConfigInitialized extends AppConfigState<AppConfig> {
   AppConfigInitialized(AppConfig config) : super(config);
 
   @override
-  String toString() => 'AppConfigInitialized';
+  String toString() => 'AppConfigInitialized {config: $data}';
 }
 
 class AppConfigLoaded extends AppConfigState<AppConfig> {
   AppConfigLoaded(AppConfig data) : super(data);
 
   @override
-  String toString() => 'AppConfigLoaded';
+  String toString() => 'AppConfigLoaded {config: $data}';
 }
 
 class AppConfigUpdated extends AppConfigState<AppConfig> {
   AppConfigUpdated(AppConfig data) : super(data);
 
   @override
-  String toString() => 'AppConfigUpdated';
+  String toString() => 'AppConfigUpdated {config: $data}';
+}
+
+class AppConfigDeleted extends AppConfigState<AppConfig> {
+  AppConfigDeleted(AppConfig data) : super(data);
+
+  @override
+  String toString() => 'AppConfigDeleted {config: $data}';
 }
 
 /// ---------------------

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:http/http.dart' show Client;
 
 class DeviceService {
@@ -16,19 +16,19 @@ class DeviceService {
   DeviceService(this.restUrl, this.wsUrl, this.client);
 
   /// GET ../devices
-  Future<ServiceResponse<List<Device>>> fetch(String incidentId) async {
+  Future<ServiceResponse<List<Device>>> load(String tuuid) async {
     // TODO: Implement fetch devices
     throw "Not implemented";
   }
 
   /// POST ../devices
-  Future<ServiceResponse<Device>> create(String incidentId, Device device) async {
+  Future<ServiceResponse<Device>> create(String tuuid, Device device) async {
     // TODO: Implement create device
     throw "Not implemented";
   }
 
   /// PUT ../devices/{deviceId}
-  Future<ServiceResponse<void>> update(Device device) async {
+  Future<ServiceResponse<Device>> update(Device device) async {
     // TODO: Implement update device
     throw "Not implemented";
   }
@@ -47,8 +47,8 @@ class DeviceService {
 enum DeviceMessageType { LocationChanged }
 
 class DeviceMessage {
-  final String deviceId;
+  final String duuid;
   final DeviceMessageType type;
   final Map<String, dynamic> json;
-  DeviceMessage(this.deviceId, this.type, this.json);
+  DeviceMessage({this.duuid, this.type, this.json});
 }

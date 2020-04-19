@@ -8,7 +8,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/device_service.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/cupertino.dart';

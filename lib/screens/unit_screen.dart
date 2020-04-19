@@ -39,9 +39,6 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   final _controller = IncidentMapController();
 
   Unit _unit;
-  UserBloc _userBloc;
-  UnitBloc _unitBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Tracking> _onMoved;
 
@@ -59,15 +56,12 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(_unitBloc.changes(widget.unit))
-      ..add(_trackingBloc.changes(widget?.unit?.tracking));
+      ..add(context.bloc<UnitBloc>().changes(widget.unit))
+      ..add(context.bloc<TrackingBloc>().changes(widget?.unit?.tracking));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _trackingBloc.changes(widget?.unit?.tracking).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().changes(widget?.unit?.tracking).listen(_onMove);
   }
 
   @override
@@ -95,7 +89,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
                 if (snapshot.data is Unit) {
                   _unit = snapshot.data;
                 }
-                final tracking = _trackingBloc.tracking[_unit.tracking];
+                final tracking = context.bloc<TrackingBloc>().tracking[_unit.tracking];
                 return ListView(
                   padding: const EdgeInsets.all(UnitScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
@@ -116,9 +110,11 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     return UnitInfoPanel(
       unit: _unit,
       tracking: tracking,
-      devices: tracking?.devices?.map((id) => _trackingBloc.deviceBloc.devices[id])?.where((unit) => unit != null),
+      devices: tracking?.devices
+          ?.map((id) => context.bloc<TrackingBloc>().deviceBloc.devices[id])
+          ?.where((unit) => unit != null),
       withHeader: false,
-      withActions: _userBloc.user?.isCommander,
+      withActions: context.bloc<UserBloc>().user?.isCommander,
       onMessage: showMessage,
       onChanged: (unit) => setState(() => _unit = unit),
       onDelete: () => Navigator.pop(context),
@@ -127,7 +123,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   }
 
   Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(_trackingBloc.tracking[unit.tracking]);
+    final center = toCenter(context.bloc<TrackingBloc>().tracking[unit.tracking]);
     return Material(
       elevation: UnitScreen.ELEVATION,
       borderRadius: BorderRadius.circular(UnitScreen.CORNER),

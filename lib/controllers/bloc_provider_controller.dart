@@ -3,6 +3,13 @@ import 'dart:async';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/mock/personnel.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/repositories/app_config_repository.dart';
+import 'package:SarSys/repositories/device_repository.dart';
+import 'package:SarSys/repositories/incident_repository.dart';
+import 'package:SarSys/repositories/personnel_repository.dart';
+import 'package:SarSys/repositories/unit_repository.dart';
+import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -39,21 +46,13 @@ class BlocProviderController {
   DemoParams _demo;
   DemoParams get demo => _demo;
 
-  BlocProvider<AppConfigBloc> _configProvider;
-  BlocProvider<UserBloc> _userProvider;
-  BlocProvider<IncidentBloc> _incidentProvider;
-  BlocProvider<UnitBloc> _unitProvider;
-  BlocProvider<PersonnelBloc> _personnelProvider;
-  BlocProvider<DeviceBloc> _deviceProvider;
-  BlocProvider<TrackingBloc> _trackingProvider;
+  final _blocs = <Type, Bloc>{};
 
-  BlocProvider<AppConfigBloc> get configProvider => _configProvider;
-  BlocProvider<UserBloc> get userProvider => _userProvider;
-  BlocProvider<IncidentBloc> get incidentProvider => _incidentProvider;
-  BlocProvider<UnitBloc> get unitProvider => _unitProvider;
-  BlocProvider<PersonnelBloc> get personnelProvider => _personnelProvider;
-  BlocProvider<DeviceBloc> get deviceProvider => _deviceProvider;
-  BlocProvider<TrackingBloc> get trackingProvider => _trackingProvider;
+  T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
+
+  BlocProvider<T> toProvider<T extends Bloc>() => BlocProvider<T>(
+        create: (_) => _blocs[typeOf<T>()] as T,
+      );
 
   BlocProviderControllerState _state = BlocProviderControllerState.Empty;
   BlocProviderControllerState get state => _state;
@@ -63,13 +62,13 @@ class BlocProviderController {
   Stream<BlocProviderControllerState> get onChange => _controller.stream;
 
   List<BlocProvider> get all => [
-        _configProvider,
-        _userProvider,
-        _incidentProvider,
-        _unitProvider,
-        _personnelProvider,
-        _deviceProvider,
-        _trackingProvider,
+        toProvider<AppConfigBloc>(),
+        toProvider<UserBloc>(),
+        toProvider<IncidentBloc>(),
+        toProvider<UnitBloc>(),
+        toProvider<PersonnelBloc>(),
+        toProvider<DeviceBloc>(),
+        toProvider<TrackingBloc>(),
       ];
 
   BlocProviderController._internal(
@@ -89,37 +88,50 @@ class BlocProviderController {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
-    final AppConfigService configService = !demo.active
-        ? AppConfigService(assetConfig, '$baseRestUrl/api/app-config', client)
-        : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
-    final AppConfigBloc configBloc = AppConfigBloc(configService);
 
-    // Configure user service
-    final userService = UserIdentityService(client, configBloc);
-    final UserBloc userBloc = UserBloc(userService);
+    final connectivityService = ConnectivityService();
+
+    final AppConfigService configService = !demo.active
+        ? AppConfigService(client: client, asset: assetConfig, baseUrl: '$baseRestUrl/api/app-config')
+        : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
+    // ignore: close_sinks
+    final AppConfigBloc configBloc = AppConfigBloc(AppConfigRepository(
+      APP_CONFIG_VERSION,
+      configService,
+      connectivity: connectivityService,
+    ));
+
+    // Configure user service and repo
+    final userService = UserIdentityService(client);
+    final userRepo = UserRepository(userService);
+    // ignore: close_sinks
+    final UserBloc userBloc = UserBloc(userRepo, configBloc);
 
     // Configure Incident service
     final IncidentService incidentService = !demo.active
         ? IncidentService('$baseRestUrl/api/incidents', client)
-        : IncidentServiceMock.build(userService, 2, enumName(demo.role), "T123");
-    final IncidentBloc incidentBloc = IncidentBloc(incidentService, userBloc);
+        : IncidentServiceMock.build(userRepo, 2, enumName(demo.role), "T123");
+    final IncidentBloc incidentBloc = IncidentBloc(IncidentRepository(incidentService), userBloc);
 
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active
         ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
         : PersonnelServiceMock.build(demo.personnelCount);
-    final PersonnelBloc personnelBloc = PersonnelBloc(personnelService, incidentBloc);
+    // ignore: close_sinks
+    final PersonnelBloc personnelBloc = PersonnelBloc(PersonnelRepository(personnelService), incidentBloc);
 
     // Configure Unit service
     final UnitService unitService =
         !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
-    final UnitBloc unitBloc = UnitBloc(unitService, incidentBloc, personnelBloc);
+    // ignore: close_sinks
+    final UnitBloc unitBloc = UnitBloc(UnitRepository(unitService), incidentBloc, personnelBloc);
 
     // Configure Device service
     final DeviceService deviceService = !demo.active
         ? DeviceService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : DeviceServiceMock.build(incidentBloc, demo.tetraCount, demo.appCount);
-    final DeviceBloc deviceBloc = DeviceBloc(deviceService, incidentBloc);
+    // ignore: close_sinks
+    final DeviceBloc deviceBloc = DeviceBloc(DeviceRepository(deviceService), incidentBloc);
 
     // Configure Tracking service
     final TrackingService trackingService = !demo.active
@@ -130,12 +142,13 @@ class BlocProviderController {
             demo.personnelCount,
             demo.unitCount,
           );
+    // ignore: close_sinks
     final TrackingBloc trackingBloc = TrackingBloc(
       service: trackingService,
-      incidentBloc: incidentBloc,
       unitBloc: unitBloc,
-      personnelBloc: personnelBloc,
       deviceBloc: deviceBloc,
+      incidentBloc: incidentBloc,
+      personnelBloc: personnelBloc,
     );
 
     return providers._set(
@@ -164,20 +177,20 @@ class BlocProviderController {
     if (BlocProviderControllerState.Built == _state) {
       // Fail fast on first error
       await Future.wait<dynamic>([
-        configProvider.bloc.load(),
-        userProvider.bloc.load(),
+        bloc<AppConfigBloc>().load(),
+        bloc<UserBloc>().load(),
       ]).catchError(
         (e) => result.completeError(e, StackTrace.current),
       );
       if (!result.isCompleted) {
         // Override demo parameter from persisted config
-        _demo = configProvider.bloc.config.toDemoParams();
+        _demo = bloc<AppConfigBloc>().config.toDemoParams();
 
         // Allow _onUserChange to transition to next legal state
         _controller.add(BlocProviderControllerState.Initialized);
 
         // Set state depending on user state
-        _onUserState(userProvider.bloc.currentState);
+        _onUserState(bloc<UserBloc>().state);
 
         result.complete(this);
       }
@@ -201,16 +214,16 @@ class BlocProviderController {
 
     _demo = demo;
 
-    _configProvider = BlocProvider<AppConfigBloc>(bloc: configBloc);
-    _userProvider = BlocProvider<UserBloc>(bloc: userBloc);
-    _incidentProvider = BlocProvider<IncidentBloc>(bloc: incidentBloc);
-    _unitProvider = BlocProvider<UnitBloc>(bloc: unitBloc);
-    _personnelProvider = BlocProvider<PersonnelBloc>(bloc: personnelBloc);
-    _deviceProvider = BlocProvider<DeviceBloc>(bloc: deviceBloc);
-    _trackingProvider = BlocProvider<TrackingBloc>(bloc: trackingBloc);
+    _blocs[configBloc.runtimeType] = configBloc;
+    _blocs[userBloc.runtimeType] = userBloc;
+    _blocs[incidentBloc.runtimeType] = incidentBloc;
+    _blocs[unitBloc.runtimeType] = unitBloc;
+    _blocs[personnelBloc.runtimeType] = personnelBloc;
+    _blocs[deviceBloc.runtimeType] = deviceBloc;
+    _blocs[trackingBloc.runtimeType] = trackingBloc;
 
     // Rebuild providers when demo parameters changes
-    _subscriptions..add(configBloc.state.listen(_onConfigState))..add(userBloc.state.listen(_onUserState));
+    _subscriptions..add(configBloc.listen(_onConfigState))..add(userBloc.listen(_onUserState));
 
     // Notify that providers are ready
     _controller.add(_state = BlocProviderControllerState.Built);
@@ -255,7 +268,7 @@ class BlocProviderController {
     _subscriptions.clear();
 
     // Dispose current blocs
-    all.forEach((provider) => provider?.bloc?.dispose());
+    _blocs.values.forEach((bloc) => bloc.close());
 
     // Notify that provider is not ready
     _controller.add(_state = BlocProviderControllerState.Empty);

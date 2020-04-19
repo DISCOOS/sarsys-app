@@ -1,52 +1,67 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
-import 'dart:io';
-import 'package:SarSys/models/Security.dart';
-import 'package:SarSys/services/service_response.dart';
+
+import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
+import 'package:equatable/equatable.dart';
 
+import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/user_service.dart';
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'app_config_bloc.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
 class UserBloc extends Bloc<UserCommand, UserState> {
-  final UserService service;
+  UserBloc(this.repo, this.configBloc);
+
+  final UserRepository repo;
+  final AppConfigBloc configBloc;
   final LinkedHashMap<String, UserAuthorized> _authorized = LinkedHashMap();
 
-  UserBloc(this.service);
+  UserService get service1 => repo.service;
 
   @override
   get initialState => UserUnset();
 
   /// Get user
-  User get user => _user;
-  User _user;
+  User get user => repo.user;
 
-  /// Check if user has roles
-  bool get hasRoles => _user?.hasRoles == true;
+  /// Get [AppConfig]
+  AppConfig get config => configBloc.config;
 
-  /// Check if application is running on a shared device (multiple uses accounts allowed)
-  bool get isShared => SecurityMode.shared == service.configBloc.config.securityMode;
-
-  /// Check if application is running on a private device (only one account is allowed)
-  bool get isPersonal => SecurityMode.personal == service.configBloc.config.securityMode;
-
-  /// Get requested security mode from [AppConfig]
-  SecurityMode get securityMode => service.configBloc.config.securityMode;
-
-  /// Get requested security type from [AppConfig]
-  SecurityType get securityType => service.configBloc.config.securityType;
+  /// Get all user on this device
+  Iterable<User> get users => repo.values;
 
   /// Get current security applied to user
-  Security get security => _user?.security;
+  Security get security => user?.security;
+
+  /// Check if user has roles
+  bool get hasRoles => user?.hasRoles == true;
+
+  /// Check if application is running on a shared device (multiple uses accounts allowed)
+  bool get isShared => SecurityMode.shared == config.securityMode;
+
+  /// Check if application is running on a private device (only one account is allowed)
+  bool get isPersonal => SecurityMode.personal == config.securityMode;
+
+  /// Get requested security mode from [AppConfig]
+  SecurityMode get securityMode => config.securityMode;
+
+  /// Get requested security type from [AppConfig]
+  SecurityType get securityType => config.securityType;
+
+  /// Get trusted domains from [AppConfig]
+  List<String> get trustedDomains => config.trustedDomains;
 
   /// User identity is secured
   bool get isSecured => security != null;
@@ -64,44 +79,50 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   bool get isUntrusted => security?.trusted == false;
 
   /// User identity is secured
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => user != null;
 
   /// User identity is ready to be accessed. If false, login should be enforced
   bool get isReady => isSecured && isUnlocked && isAuthenticated && !isPending;
 
   /// User identity is being authenticated
-  bool get isAuthenticating => currentState.isAuthenticating();
+  bool get isAuthenticating => state.isAuthenticating();
 
   /// User identity is being unlocked
-  bool get isUnlocking => currentState.isUnlocking();
+  bool get isUnlocking => state.isUnlocking();
 
   /// User identity is pending
-  bool get isPending => currentState.isPending();
+  bool get isPending => state.isPending();
 
   /// Check if user has roles
-  bool isAuthor(Incident incident) => _user?.isAuthor(incident) == true;
+  bool isAuthor(Incident incident) => user?.isAuthor(incident) == true;
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated && (_authorized.containsKey(data.uuid) || _user.isAuthor(data));
+    return isAuthenticated && (_authorized.containsKey(data.uuid) || user.isAuthor(data));
   }
 
   /// Check if current user is authorized to access given [Incident]
   UserAuthorized getAuthorization(Incident data) {
     if (isAuthenticated) {
       if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
-      if (_user?.userId == data.created.userId) return UserAuthorized(_user, data, true, true);
+      if (user?.userId == data.created.userId) return UserAuthorized(user, data, true, true);
     }
     return null;
   }
 
+  /// Get trusted organization given in [AppConfig]
+  Future<Organization> getTrustedOrg() async => FleetMapService().fetchOrganization(
+        config.orgId,
+      );
+
   /// Stream of authorization state changes
-  Stream<bool> authorized(Incident incident) =>
-      state.map((state) => state is UserAuthorized && state.incident == incident);
+  Stream<bool> authorized(Incident incident) => map(
+        (state) => state is UserAuthorized && state.incident == incident,
+      );
 
   /// Secure user access with given settings
-  Future<Security> secure(String pin, {bool locked, bool trusted}) async {
-    return _dispatch<Security>(SecureUser(pin, locked: locked, trusted: trusted));
+  Future<Security> secure(String pin, {bool locked}) async {
+    return _dispatch<Security>(SecureUser(pin, locked: locked));
   }
 
   /// Lock user access using current security settings
@@ -115,7 +136,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertLocked(UserCommand command) {
-    return isUnlocked ? RaiseUserException.from("Er låst opp") : command;
+    return isUnlocked ? RaiseUserException("Er låst opp") : command;
   }
 
   /// Load current user from secure storage
@@ -123,19 +144,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return _dispatch<User>(_assertUnset(LoadUser(userId: userId)));
   }
 
-  /// Load all user from secure storage
-  Future<List<User>> loadAll({String userId}) async {
-    final result = await service.loadAll();
-    if (result.is200) {
-      return result.body;
-    } else if (result.is204) {
-      return result.body;
-    }
-    throw UserError(result);
-  }
-
-  Future<User> authenticate({String userId, String username, String password, String idpHint}) {
-    return _dispatch<User>(AuthenticateUser(
+  /// Authenticate user
+  Future<User> login({String userId, String username, String password, String idpHint}) {
+    return _dispatch<User>(LoginUser(
       userId: userId,
       username: username,
       password: password,
@@ -144,7 +155,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertUnset<T>(UserCommand command) {
-    return isAuthenticated ? RaiseUserException.from<T>("Er logget inn") : command;
+    return isAuthenticated ? RaiseUserException("User is logged in") : command;
   }
 
   Future<User> logout({bool delete = false}) {
@@ -156,7 +167,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
-    return isAuthenticated ? command : RaiseUserException.from<T>("Ikke logget inn");
+    return isAuthenticated ? command : RaiseUserException("User is not logged");
   }
 
   Future<bool> authorize(Incident data, String passcode) {
@@ -165,145 +176,184 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
-    try {
-      if (command is SecureUser) {
-        yield await _secure(command);
-      } else if (command is LockUser) {
-        yield await _lock(command);
-      } else if (command is UnlockUser) {
-        yield UserUnlocking(command.data);
-        yield await _unlock(command);
-      } else if (command is LoadUser) {
-        yield await _load(command);
-      } else if (command is AuthenticateUser) {
-        yield UserAuthenticating(command.data);
-        yield await _authenticate(command);
-      } else if (command is LogoutUser) {
-        yield await _logout(command);
-      } else if (command is ClearUsers) {
-        yield await _clear(command);
-      } else if (command is AuthorizeUser) {
-        if (_user != null) {
-          yield _authorize(command);
-        }
-      } else if (command is RaiseUserException) {
-        yield _completeError(
-          command,
-          command.data,
-        );
-      } else {
-        yield _completeError(
-          command,
-          UserError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } catch (e, stackTrace) {
-      yield _completeError(
+    if (command is SecureUser) {
+      yield await _secure(command);
+    } else if (command is LockUser) {
+      yield await _lock(command);
+    } else if (command is UnlockUser) {
+      yield UserUnlocking(command.data);
+      yield await _unlock(command);
+    } else if (command is LoadUser) {
+      yield await _load(command);
+    } else if (command is LoginUser) {
+      yield UserAuthenticating(command.data);
+      yield await _authenticate(command);
+    } else if (command is LogoutUser) {
+      yield await _logout(command);
+    } else if (command is ClearUsers) {
+      yield await _clear(command);
+    } else if (command is AuthorizeUser) {
+      yield _authorize(command);
+    } else if (command is RaiseUserException) {
+      yield _toError(
         command,
-        UserError(e, stackTrace: stackTrace),
+        command.data,
+      );
+    } else {
+      yield _toError(
+        command,
+        UserError(
+          "Unsupported $command",
+          stackTrace: StackTrace.current,
+        ),
       );
     }
   }
 
   Future<UserState> _secure(SecureUser command) async {
-    var response = await service.secure(
-      command.data,
-      locked: command.locked,
-    );
-    return _toSecurityEvent(response, command);
+    try {
+      var response = await repo.secure(
+        command.data,
+        trusted: isTrusted,
+        locked: command.locked,
+        type: config.securityType,
+        mode: config.securityMode,
+      );
+      return _toEvent(command, response);
+    } on Exception catch (e) {
+      return _toEvent(command, e);
+    }
   }
 
   Future<UserState> _lock(LockUser command) async {
-    var response = await service.lock();
-    return _toSecurityEvent(response, command);
+    try {
+      return _toEvent(
+        command,
+        await repo.lock(),
+      );
+    } on Exception catch (e) {
+      return _toEvent(command, e);
+    }
   }
 
   Future<UserState> _unlock(UnlockUser command) async {
-    var response = await service.unlock(pin: command.data);
-    return _toSecurityEvent(response, command);
-  }
-
-  UserState _toSecurityEvent(ServiceResponse<Security> response, UserCommand command) {
-    switch (response.code) {
-      case HttpStatus.ok:
-        _user = _user?.cloneWith(
-          security: response.body,
-        );
-        if (!kDebugMode) {
-          developer.log("Security set: $security", level: Level.CONFIG.value);
-        }
-        return _complete(
-          command,
-          _toSecurityState(),
-          result: security,
-        );
-      case HttpStatus.unauthorized:
-        return _completeError(
-          command,
-          UserUnauthorized(response),
-        );
-      default:
-        return _completeError(command, _toError(response));
+    try {
+      return _toEvent(
+        command,
+        await repo.unlock(pin: command.data),
+      );
+    } on Exception catch (e) {
+      return _toEvent(command, e);
     }
   }
 
   Future<UserState> _load(LoadUser command) async {
-    var response = await service.load(
-      userId: command.data,
-    );
-    return _toAuthEvent(response, command);
-  }
-
-  Future<UserState> _authenticate(AuthenticateUser command) async {
-    var response = await service.login(
-      username: command.data,
-      password: command.password,
-      userId: command.userId,
-      idpHint: command.idpHint,
-    );
-    return _toAuthEvent(response, command);
-  }
-
-  UserState _toAuthEvent(ServiceResponse<User> response, UserCommand command) {
-    _user = null;
-    switch (response.code) {
-      case HttpStatus.ok:
-        _user = response.body;
-        if (!kDebugMode) {
-          developer.log(
-            "User parsed from token: $_user",
-            level: Level.CONFIG.value,
-          );
-        }
-        return _complete(
-          command,
-          UserAuthenticated(_user),
-          result: _toAuthResult(command),
-        );
-      case HttpStatus.noContent:
-        return _complete(
-          command,
-          _toSecurityState(),
-        );
-      case HttpStatus.unauthorized:
-        return _completeError(
-          command,
-          UserUnauthorized(response),
-        );
-      case HttpStatus.forbidden:
-        return _completeError(
-          command,
-          UserForbidden(response),
-        );
-      default:
-        return _completeError(command, _toError(response));
+    try {
+      return _toEvent(
+        command,
+        await repo.load(userId: command.data),
+      );
+    } on Exception catch (e) {
+      return _toEvent(command, e);
     }
   }
 
-  Object _toAuthResult(UserCommand command) => command is LoadUser || command is AuthenticateUser ? _user : true;
+  Future<UserState> _authenticate(LoginUser command) async {
+    try {
+      var response = await repo.login(
+        username: command.data,
+        password: command.password,
+        userId: command.userId,
+        idpHint: command.idpHint,
+      );
+      return _toEvent(command, response);
+    } on Exception catch (e) {
+      return _toEvent(command, e);
+    }
+  }
+
+  Future<UserState> _logout(LogoutUser command) async {
+    var user = await repo.logout(
+      delete: command.data,
+    );
+    _authorized.clear();
+    return _toOK(
+      command,
+      UserUnset(),
+      result: user,
+    );
+  }
+
+  Future<UserState> _clear(ClearUsers command) async {
+    await repo.logout();
+    var users = await repo.clear();
+    _authorized.clear();
+    return _toOK(
+      command,
+      UserUnset(),
+      result: users,
+    );
+  }
+
+  UserState _authorize(AuthorizeUser command) {
+    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
+    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
+    if (isCommander || isPersonnel) {
+      var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
+      _authorized.putIfAbsent(command.data.uuid, () => state);
+      return _toOK(command, state, result: true);
+    }
+    return _toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
+  }
+
+  // Dispatch and return future
+  Future<T> _dispatch<T>(UserCommand<dynamic, T> command) {
+    add(command);
+    return command.callback.future;
+  }
+
+  UserState _toEvent(UserCommand command, Object result) {
+    if (result is User) {
+      if (kDebugMode) {
+        developer.log("User parsed from token: $user", level: Level.CONFIG.value);
+      }
+      return _toOK(
+        command,
+        UserAuthenticated(user),
+        result: _toAuthResult(command),
+      );
+    } else if (result is Security) {
+      if (kDebugMode) {
+        developer.log("Security set: $security", level: Level.CONFIG.value);
+      }
+      return _toOK(
+        command,
+        _toSecurityState(),
+        result: security,
+      );
+    } else if (result is UserNotFoundException) {
+      return _toError(
+        command,
+        UserUnauthorized(result),
+      );
+    } else if (result is UserForbiddenException) {
+      return _toError(
+        command,
+        UserForbidden(result),
+      );
+    }
+    return _toError(
+      command,
+      UserError(
+        'Unknown result: $result',
+        stackTrace: StackTrace.current,
+      ),
+    );
+  }
+
+  Object _toAuthResult(UserCommand command) {
+    return command is LoadUser || command is LoginUser ? user : true;
+  }
 
   Equatable _toSecurityState() {
     return security == null
@@ -317,65 +367,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
               );
   }
 
-  Future<UserState> _logout(LogoutUser command) async {
-    var response = await service.logout();
-    if (response.is200) {
-      _user = null;
-      _authorized.clear();
-      return _complete(
-        command,
-        UserUnset(),
-        result: response.body,
-      );
-    }
-    return _completeError(
-      command,
-      _toError(response),
-    );
-  }
-
-  Future<UserState> _clear(ClearUsers command) async {
-    await service.logout();
-    var response = await service.clear();
-    if (response.is200 || response.is204) {
-      _user = null;
-      _authorized.clear();
-      return _complete(
-        command,
-        UserUnset(),
-        result: response.body ?? [],
-      );
-    }
-    return _completeError(
-      command,
-      _toError(response),
-    );
-  }
-
-  UserError _toError(ServiceResponse response) => UserError(
-        '${response.code} ${response.message}: ${response.error}',
-        stackTrace: response.stackTrace ?? StackTrace.current,
-      );
-
-  UserState _authorize(AuthorizeUser command) {
-    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
-    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
-    if (isCommander || isPersonnel) {
-      var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
-      _authorized.putIfAbsent(command.data.uuid, () => state);
-      return _complete(command, state, result: true);
-    }
-    return _complete(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
-  }
-
-  // Dispatch and return future
-  Future<T> _dispatch<T>(UserCommand<dynamic, T> command) {
-    dispatch(command);
-    return command.callback.future;
-  }
-
   // Complete request and return given state to bloc
-  UserState _complete<R>(UserCommand event, UserState state, {R result}) {
+  UserState _toOK<T>(UserCommand event, UserState state, {T result}) {
     if (result != null)
       event.callback.complete(result);
     else
@@ -384,14 +377,14 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete with error and return response as error state to bloc
-  UserState _completeError(UserCommand event, UserException response) {
+  UserState _toError(UserCommand event, UserException response) {
     event.callback.completeError(response);
     return response;
   }
 
   @override
   void onError(Object error, StackTrace stackTrace) {
-    dispatch(RaiseUserException(UserError(error, stackTrace: stackTrace)));
+    add(RaiseUserException(UserError(error, stackTrace: stackTrace)));
   }
 }
 
@@ -414,11 +407,10 @@ class LoadUser extends UserCommand<String, User> {
 
 class SecureUser extends UserCommand<String, Security> {
   final bool locked;
-  final bool trusted;
-  SecureUser(String pin, {this.locked, this.trusted}) : super(pin);
+  SecureUser(String pin, {this.locked}) : super(pin);
 
   @override
-  String toString() => 'SecureUser {pin: $data, locked: $locked, locked: $trusted}';
+  String toString() => 'SecureUser {pin: $data, locked: $locked}';
 }
 
 class LockUser extends UserCommand<void, Security> {
@@ -435,11 +427,11 @@ class UnlockUser extends UserCommand<String, Security> {
   String toString() => 'UnlockUser {pin: $data}';
 }
 
-class AuthenticateUser extends UserCommand<String, User> {
+class LoginUser extends UserCommand<String, User> {
   final String userId;
   final String password;
   final String idpHint;
-  AuthenticateUser({
+  LoginUser({
     String username,
     this.password,
     this.userId,
@@ -476,10 +468,9 @@ class ClearUsers extends UserCommand<void, List<User>> {
   String toString() => 'ClearUsers';
 }
 
-class RaiseUserException extends UserCommand<UserException, Exception> {
-  RaiseUserException(data) : super(data);
-
-  static RaiseUserException from<T>(Object error) => RaiseUserException(UserError(error));
+class RaiseUserException extends UserCommand<Object, Exception> {
+  final StackTrace stackTrace;
+  RaiseUserException(data, {this.stackTrace}) : super(data);
 
   @override
   String toString() => 'RaiseUserError';

@@ -25,8 +25,6 @@ class IncidentsScreen extends Screen<IncidentsScreenState> {
 class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
   static const FILTER = "incidents_filter";
 
-  UserBloc _userBloc;
-
   Set<IncidentStatus> _filter;
 
   IncidentsScreenState()
@@ -50,7 +48,6 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
     writeRoute();
   }
 
@@ -65,7 +62,7 @@ class IncidentsScreenState extends ScreenState<IncidentsScreen, void> {
 
   @override
   FloatingActionButton buildFAB(BuildContext context) {
-    return _userBloc?.user?.isCommander == true
+    return context.bloc<UserBloc>()?.user?.isCommander == true
         ? FloatingActionButton(
             onPressed: () => _create(context),
             tooltip: 'Ny aksjon',
@@ -134,26 +131,16 @@ class IncidentsPage extends StatefulWidget {
 }
 
 class _IncidentsPageState extends State<IncidentsPage> {
-  UserBloc _userBloc;
-  IncidentBloc _incidentBloc;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          await _incidentBloc.load();
+          await context.bloc<IncidentBloc>().load();
           setState(() {});
         },
         child: StreamBuilder(
-          stream: _incidentBloc.state,
+          stream: context.bloc<IncidentBloc>(),
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
             var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
@@ -162,7 +149,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
             return cards.isEmpty
                 ? toRefreshable(
                     viewportConstraints,
-                    message: "0 av ${_incidentBloc.incidents.length} hendelser vises",
+                    message: "0 av ${context.bloc<IncidentBloc>().incidents.length} hendelser vises",
                   )
                 : toRefreshable(
                     viewportConstraints,
@@ -180,7 +167,9 @@ class _IncidentsPageState extends State<IncidentsPage> {
   }
 
   List<Incident> _filteredIncidents() {
-    return _incidentBloc.incidents
+    return context
+        .bloc<IncidentBloc>()
+        .incidents
         .where((incident) => widget.filter.contains(incident.status))
         .where((incident) => widget.query == null || _prepare(incident).contains(widget.query.toLowerCase()))
         .toList()
@@ -194,21 +183,20 @@ class _IncidentsPageState extends State<IncidentsPage> {
   Widget _buildCard(Incident incident) {
     final title = Theme.of(context).textTheme.title;
     final caption = Theme.of(context).textTheme.caption;
-    final userBloc = BlocProvider.of<UserBloc>(context);
 
     return StreamBuilder(
-        stream: userBloc.state,
+        stream: context.bloc<UserBloc>(),
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
-          final isCurrent = _incidentBloc.selected == incident;
-          final isAuthorized = userBloc.isAuthorized(incident);
+          final isCurrent = context.bloc<IncidentBloc>().selected == incident;
+          final isAuthorized = context.bloc<UserBloc>().isAuthorized(incident);
           return Card(
             child: Column(
               key: ObjectKey(incident.uuid),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListTile(
-                  selected: _incidentBloc.selected == incident,
+                  selected: context.bloc<IncidentBloc>().selected == incident,
                   title: Text(
                     incident.name,
                     style: title,
@@ -291,11 +279,13 @@ class _IncidentsPageState extends State<IncidentsPage> {
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          if (userBloc.isAuthor(incident) || !userBloc.hasRoles)
+                          if (context.bloc<UserBloc>().isAuthor(incident) || !context.bloc<UserBloc>().hasRoles)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                userBloc.isAuthor(incident) || userBloc.hasRoles ? 'Min aksjon' : 'Ingen roller',
+                                context.bloc<UserBloc>().isAuthor(incident) || context.bloc<UserBloc>().hasRoles
+                                    ? 'Min aksjon'
+                                    : 'Ingen roller',
                                 style: Theme.of(context).textTheme.caption,
                               ),
                             ),
@@ -315,7 +305,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
         });
   }
 
-  bool get hasRoles => _userBloc?.hasRoles == true;
+  bool get hasRoles => context.bloc<UserBloc>()?.hasRoles == true;
 
   String _toDescription(Incident incident) {
     String meetup = incident.meetup.description;

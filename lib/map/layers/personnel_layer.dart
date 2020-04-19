@@ -32,7 +32,7 @@ class PersonnelLayerOptions extends LayerOptions {
     this.showTail = true,
     this.showRetired = false,
     this.onMessage,
-  }) : super(rebuild: bloc.state.map((_) => null));
+  }) : super(rebuild: bloc.map((_) => null));
 }
 
 class PersonnelLayer extends MapPlugin {
@@ -67,7 +67,7 @@ class PersonnelLayer extends MapPlugin {
         .where((personnel) => tracking[personnel.tracking]?.point?.isNotEmpty == true)
         .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
         .where((personnel) => bounds.contains(toLatLng(tracking[personnel.tracking].point)));
-    return options.bloc.isEmpty
+    return tracking.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,

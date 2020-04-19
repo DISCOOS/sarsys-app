@@ -125,18 +125,17 @@ Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
 class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Pair<Personnel, Tracking>>> call(params) async {
-    final bloc = BlocProvider.of<TrackingBloc>(params.context);
     var personnel = params.data != null
         ? params.data
         : await selectPersonnel(
             params.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
-                bloc.tracking[personnel.tracking] == null ||
+                params.context.bloc<TrackingBloc>().tracking[personnel.tracking] == null ||
                 // Personnel is not tracking given devices?
-                !bloc.tracking[personnel.tracking].devices.any(
-                  (device) => params.devices?.contains(device) == true,
-                ),
+                !params.context.bloc<TrackingBloc>().tracking[personnel.tracking].devices.any(
+                      (device) => params.devices?.contains(device) == true,
+                    ),
           );
     if (personnel == null) return dartz.Left(false);
     final tracking = await _handleTracking(
@@ -173,17 +172,18 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
     );
     if (!proceed) return dartz.left(false);
 
-    // Prepare removal
-    final bloc = BlocProvider.of<TrackingBloc>(params.context);
-
     // Collect kept devices and personnel
-    final keepDevices = bloc.devices(personnel.tracking).where((test) => !devices.contains(test)).toList();
+    final keepDevices = params.context
+        .bloc<TrackingBloc>()
+        .devices(personnel.tracking)
+        .where((test) => !devices.contains(test))
+        .toList();
 
-    final tracking = await bloc.update(
-      bloc.tracking[personnel.tracking],
-      devices: keepDevices,
-      append: false,
-    );
+    final tracking = await params.context.bloc<TrackingBloc>().update(
+          params.context.bloc<TrackingBloc>().tracking[personnel.tracking],
+          devices: keepDevices,
+          append: false,
+        );
     return dartz.right(tracking);
   }
 }
@@ -197,20 +197,19 @@ Future<Tracking> _handleTracking(
   bool append,
 }) async {
   Tracking tracking;
-  final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
   if (personnel.tracking == null) {
-    tracking = await trackingBloc.trackPersonnel(
-      personnel,
-      devices: devices,
-    );
-  } else if (trackingBloc.tracking.containsKey(personnel.tracking)) {
-    tracking = trackingBloc.tracking[personnel.tracking];
-    tracking = await trackingBloc.update(
-      tracking,
-      point: point,
-      devices: devices,
-      append: append,
-    );
+    tracking = await params.context.bloc<TrackingBloc>().trackPersonnel(
+          personnel,
+          devices: devices,
+        );
+  } else if (params.context.bloc<TrackingBloc>().tracking.containsKey(personnel.tracking)) {
+    tracking = params.context.bloc<TrackingBloc>().tracking[personnel.tracking];
+    tracking = await params.context.bloc<TrackingBloc>().update(
+          tracking,
+          point: point,
+          devices: devices,
+          append: append,
+        );
   }
   return tracking;
 }
@@ -301,6 +300,6 @@ class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
     );
     if (!response) return dartz.Left(false);
     await params.bloc.delete(params.data);
-    return dartz.Right(params.bloc.currentState);
+    return dartz.Right(params.bloc.state);
   }
 }

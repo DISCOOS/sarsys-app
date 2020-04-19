@@ -238,11 +238,9 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     );
     if (!proceed) return dartz.left(false);
 
-    // Prepare removal
-    final bloc = BlocProvider.of<TrackingBloc>(params.context);
-
     // Collect kept devices and personnel
-    final keepDevices = bloc.devices(unit.tracking).where((test) => !devices.contains(test)).toList();
+    final keepDevices =
+        params.context.bloc<TrackingBloc>().devices(unit.tracking).where((test) => !devices.contains(test)).toList();
     final keepPersonnel = unit.personnel.where((test) => !personnel.contains(test)).toList();
 
     // Remove personnel from Unit?
@@ -255,12 +253,12 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     }
 
     // Perform tracking update
-    final tracking = await bloc.update(
-      bloc.tracking[unit.tracking],
-      devices: keepDevices,
-      personnel: keepPersonnel,
-      append: false,
-    );
+    final tracking = await params.context.bloc<TrackingBloc>().update(
+          params.context.bloc<TrackingBloc>().tracking[unit.tracking],
+          devices: keepDevices,
+          personnel: keepPersonnel,
+          append: false,
+        );
     return dartz.right(tracking);
   }
 }
@@ -275,23 +273,23 @@ Future<Tracking> _handleTracking(
   bool append,
 }) async {
   Tracking tracking;
-  final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
+  final items = params.context.bloc<TrackingBloc>().tracking;
   if (unit.tracking == null) {
-    tracking = await trackingBloc.trackUnit(
-      unit,
-      point: point,
-      devices: devices,
-      personnel: personnel,
-    );
-  } else if (trackingBloc.tracking.containsKey(unit.tracking)) {
-    tracking = trackingBloc.tracking[unit.tracking];
-    tracking = await trackingBloc.update(
-      tracking,
-      point: point,
-      devices: devices,
-      personnel: personnel,
-      append: append,
-    );
+    tracking = await params.context.bloc<TrackingBloc>().trackUnit(
+          unit,
+          point: point,
+          devices: devices,
+          personnel: personnel,
+        );
+  } else if (items.containsKey(unit.tracking)) {
+    tracking = items[unit.tracking];
+    tracking = await params.context.bloc<TrackingBloc>().update(
+          tracking,
+          point: point,
+          devices: devices,
+          personnel: personnel,
+          append: append,
+        );
   }
   return tracking;
 }
@@ -383,6 +381,6 @@ class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
     );
     if (!response) return dartz.Left(false);
     await params.bloc.delete(params.data);
-    return dartz.Right(params.bloc.currentState);
+    return dartz.Right(params.bloc.state);
   }
 }

@@ -14,6 +14,8 @@ import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/extensions.dart';
+
 class UserScreen extends StatefulWidget {
   UserScreen({Key key, @required this.tabIndex}) : super(key: key);
 
@@ -46,10 +48,6 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   final _statusKey = GlobalKey<UserStatusPageState>();
   final _historyKey = GlobalKey<UserHistoryPageState>();
 
-  UserBloc _userBloc;
-  IncidentBloc _incidentBloc;
-  PersonnelBloc _personnelBloc;
-
   Personnel _personnel;
 
   @override
@@ -62,14 +60,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    final userId = _userBloc.user?.userId;
-    _personnel = _personnelBloc.personnel.values.firstWhere(
-      (personnel) => personnel.userId == userId,
-      orElse: () => null,
-    );
+    _personnel = context.bloc<PersonnelBloc>().find(context.bloc<UserBloc>().user).firstOrNull;
   }
 
   @override
@@ -86,10 +77,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: _incidentBloc.changes(),
-        initialData: _incidentBloc.selected,
+        stream: context.bloc<IncidentBloc>().changes(),
+        initialData: context.bloc<IncidentBloc>().selected,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
-          final incident = (snapshot.hasData ? _incidentBloc.selected : null);
+          final incident = (snapshot.hasData ? context.bloc<IncidentBloc>().selected : null);
           final tabs = [
             IncidentPage(onMessage: _showMessage),
             UserUnitPage(key: _unitKey),
@@ -151,10 +142,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
     switch (routeData) {
       case UserScreen.TAB_INCIDENT:
         return [
-          if (_userBloc?.user?.isCommander == true)
+          if (context.bloc<UserBloc>()?.user?.isCommander == true)
             IconButton(
               icon: Icon(Icons.more_vert),
-              onPressed: () async => await editIncident(_incidentBloc.selected),
+              onPressed: () async => await editIncident(context.bloc<IncidentBloc>().selected),
             )
         ];
       case UserScreen.TAB_STATUS:

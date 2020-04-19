@@ -129,7 +129,7 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
     );
     if (!response) return dartz.Left(false);
     await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Detached));
-    return dartz.Right(params.bloc.currentState);
+    return dartz.Right(params.bloc.state);
   }
 }
 
@@ -154,6 +154,6 @@ class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
     );
     if (!response) return dartz.Left(false);
     await params.bloc.delete(params.data);
-    return dartz.Right(params.bloc.currentState);
+    return dartz.Right(params.bloc.state);
   }
 }

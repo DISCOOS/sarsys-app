@@ -16,19 +16,16 @@ class UserUnitPage extends StatefulWidget {
 }
 
 class UserUnitPageState extends State<UserUnitPage> {
-  UserBloc _userBloc;
-  UnitBloc _unitBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     _group?.close();
-    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<UnitBloc>())
+      ..add(context.bloc<TrackingBloc>())
+      ..add(context.bloc<UserBloc>());
   }
 
   @override

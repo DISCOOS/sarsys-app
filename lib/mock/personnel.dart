@@ -5,7 +5,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/services/personnel_service.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
@@ -43,7 +43,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.fetch(any)).thenAnswer((_) async {
+    when(mock.load(any)).thenAnswer((_) async {
       final String incidentId = _.positionalArguments[0];
       var personnel = personnelRepo[incidentId];
       if (personnel == null) {

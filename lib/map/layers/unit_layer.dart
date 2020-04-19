@@ -32,7 +32,7 @@ class UnitLayerOptions extends LayerOptions {
     this.showTail = true,
     this.showRetired = false,
     this.onMessage,
-  }) : super(rebuild: bloc.state.map((_) => null));
+  }) : super(rebuild: bloc.map((_) => null));
 }
 
 class UnitLayer extends MapPlugin {
@@ -67,7 +67,7 @@ class UnitLayer extends MapPlugin {
         .where((unit) => tracking[unit.tracking]?.point?.isNotEmpty == true)
         .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
         .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking].point)));
-    return options.bloc.isEmpty
+    return tracking.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,

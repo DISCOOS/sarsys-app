@@ -8,21 +8,35 @@ class ConnectivityService {
 
   final StreamController<ConnectivityStatus> _controller = StreamController<ConnectivityStatus>.broadcast();
 
-  bool _hasConnection = false;
-
-  ConnectivityResult _result = ConnectivityResult.none;
-  ConnectivityStatus _status = ConnectivityStatus.Offline;
-
+  Timer _timer;
   StreamSubscription _subscription;
 
-  Timer _timer;
+  ConnectivityResult _result = ConnectivityResult.none;
 
-  ConnectivityStatus get last => _status;
+  ConnectivityStatus _status = ConnectivityStatus.cellular;
+  ConnectivityStatus get status => _status;
+
+  bool get isWifi => ConnectivityStatus.wifi == _status;
+  bool get isOnline => ConnectivityStatus.offline != _status;
+  bool get isOffline => ConnectivityStatus.offline == _status;
+  bool get isCellular => ConnectivityStatus.cellular == _status;
+
   Stream<ConnectivityStatus> get changes => _controller.stream;
+  Stream<ConnectivityStatus> get whenOnline => _controller.stream.where(
+        (status) => ConnectivityStatus.offline != status,
+      );
+  Stream<ConnectivityStatus> get whenOffline => _controller.stream.where(
+        (status) => ConnectivityStatus.offline == status,
+      );
+
+  bool _hasConnection = true;
+  bool _disposed = false;
 
   factory ConnectivityService() {
-    if (_singleton == null) {
+    if (_singleton == null || _singleton._disposed) {
       _singleton = ConnectivityService._internal();
+    } else {
+      _singleton.update();
     }
     return _singleton;
   }
@@ -30,7 +44,7 @@ class ConnectivityService {
   ConnectivityService._internal() {
     Connectivity().checkConnectivity().then((result) {
       _handle(result);
-      _timer = Timer.periodic(Duration(seconds: 2), (_) {
+      _timer = Timer.periodic(Duration(seconds: 1), (_) {
         _handle(_result);
       });
     });
@@ -51,16 +65,15 @@ class ConnectivityService {
     if (_hasConnection) {
       switch (result) {
         case ConnectivityResult.mobile:
-          return ConnectivityStatus.Cellular;
+          return ConnectivityStatus.cellular;
         case ConnectivityResult.wifi:
-          return ConnectivityStatus.WiFi;
+          return ConnectivityStatus.wifi;
         case ConnectivityResult.none:
-          return ConnectivityStatus.Offline;
         default:
-          return ConnectivityStatus.Offline;
+          break;
       }
     }
-    return ConnectivityStatus.Offline;
+    return ConnectivityStatus.offline;
   }
 
   /// Update state
@@ -70,10 +83,11 @@ class ConnectivityService {
   Future<bool> test() async => _hasConnection = await DataConnectionChecker().hasConnection;
 
   void dispose() {
+    _disposed = true;
     _timer?.cancel();
     _controller?.close();
     _subscription?.cancel();
   }
 }
 
-enum ConnectivityStatus { WiFi, Cellular, Offline }
+enum ConnectivityStatus { wifi, cellular, offline }

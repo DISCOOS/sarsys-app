@@ -131,7 +131,6 @@ class UserRolesDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = BlocProvider.of<IncidentBloc>(context);
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -172,7 +171,7 @@ class UserRolesDescription extends StatelessWidget {
                   text: "Aksjoner du selv har opprettet kan åpnes av deg uten kode. "
                       "Koden for hver aksjon finnes på ",
                   children: [
-                    !bloc.isUnset
+                    !context.bloc<IncidentBloc>().isUnset
                         ? TextSpan(text: 'aksjonens side.')
                         : TextSpan(
                             text: 'aksjonens side',

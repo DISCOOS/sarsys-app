@@ -1,67 +1,30 @@
-import 'dart:convert';
 import 'dart:async' show Future;
 import 'package:SarSys/models/AppConfig.dart';
-import 'package:SarSys/services/service_response.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_udid/flutter_udid.dart';
-import 'package:hive/hive.dart';
+import 'package:SarSys/services/service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' show Client;
-import 'package:uuid/uuid.dart';
-
-// TODO: Add dependency 'flutter_udid' for unique Security
 
 class AppConfigService {
-  static const VERSION = 1;
-  static const KEY_JSON = 'json';
-  static const KEY_VERSION = 'version';
-  static const BOX_NAME = 'app_config';
   final Client client;
   final String asset;
   final String baseUrl;
 
-  static Box box;
+  AppConfigService({
+    @required this.asset,
+    @required this.client,
+    @required this.baseUrl,
+  });
 
-  AppConfigService(this.asset, this.baseUrl, this.client) {
-    init();
-  }
-
-  /// Initializes configuration to default values.
+  /// Initializes configuration to default values for given version.
   ///
-  /// If configuration already exists [update()] will be called.
-  Future<ServiceResponse<AppConfig>> init() async {
-    // TODO: Store Hive.generateSecureKey() to secure storage and open box as encrypted
-    box ??= await Hive.openBox(BOX_NAME);
-    var defaults = await rootBundle.loadString(asset);
-    final current = box.get(KEY_VERSION);
-    if (current == null) {
-      final uuid = Uuid().v4();
-      final udid = await FlutterUdid.udid;
-      box.put(KEY_VERSION, VERSION);
-      final config = json.decode(defaults) as Map<String, dynamic>;
-      config['uuid'] = uuid;
-      config['udid'] = udid;
-      // TODO: POST ../app-config
-      await box.put(KEY_JSON, jsonEncode(config));
-    } else if (current < VERSION) {
-      // Overwrite current configuration
-      final config = json.decode(box.get(KEY_JSON)) as Map<String, dynamic>;
-      config.addAll(json.decode(defaults) as Map<String, dynamic>);
-      final response = await update(AppConfig.fromJson(config));
-      if (response.is204) {
-        await box.clear();
-        await box.put(KEY_VERSION, VERSION);
-        await box.put(KEY_JSON, jsonEncode(response.body.toJson()));
-      }
-      return response;
-    }
-    await box.put(KEY_JSON, defaults);
-    return ServiceResponse.ok(
-      body: AppConfig.fromJson(json.decode(defaults)),
-    );
+  /// POST ../app-config/{version}
+  Future<ServiceResponse<AppConfig>> create(AppConfig config, int version) async {
+    // TODO: Implement fetch app-config
+    throw "Not implemented";
   }
 
   /// GET ../app-config/{uuid}
-  Future<ServiceResponse<AppConfig>> load() async {
+  Future<ServiceResponse<AppConfig>> fetch(String uuid) async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }
@@ -73,7 +36,7 @@ class AppConfigService {
   }
 
   /// DELETE ../app-config/{uuid}
-  Future<ServiceResponse<AppConfig>> clear() async {
+  Future<ServiceResponse<AppConfig>> delete(String uuid) async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }

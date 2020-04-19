@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:http/http.dart' show Client;
 
 class PersonnelService {
@@ -16,7 +16,7 @@ class PersonnelService {
   Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
-  Future<ServiceResponse<List<Personnel>>> fetch(String incidentId) async {
+  Future<ServiceResponse<List<Personnel>>> load(String incidentId) async {
     // TODO: Implement fetch Personnel
     throw "Not implemented";
   }
@@ -47,8 +47,8 @@ class PersonnelService {
 enum PersonnelMessageType { PersonnelChanged }
 
 class PersonnelMessage {
-  final String incidentId;
+  final String puuid;
   final PersonnelMessageType type;
   final Map<String, dynamic> json;
-  PersonnelMessage(this.incidentId, this.type, this.json);
+  PersonnelMessage(this.puuid, this.type, this.json);
 }

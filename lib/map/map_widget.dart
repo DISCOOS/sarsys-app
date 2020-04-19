@@ -284,11 +284,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   // Prevent location updates after dispose
   bool _disposed = false;
 
-  UserBloc _userBloc;
-  AppConfigBloc _configBloc;
-  TrackingBloc _trackingBloc;
-  IncidentBloc _incidentBloc;
-
   bool _wakeLockWasOn;
   bool _hasFitToBounds = false;
   bool _attemptRestore = true;
@@ -311,7 +306,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   /// Flag indicating that network connection is offline
   bool get _offline {
     final status = Provider.of<ConnectivityStatus>(context);
-    return status == null || ConnectivityStatus.Offline == status;
+    return status == null || ConnectivityStatus.offline == status;
   }
 
   StreamSubscription _subscription;
@@ -321,7 +316,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     super.initState();
     _setup();
     _subscription = ConnectivityService().changes.listen((status) async {
-      if (ConnectivityStatus.Offline != status) await _removePlaceholders();
+      if (ConnectivityStatus.offline != status) await _removePlaceholders();
       setState(() {});
     });
   }
@@ -365,11 +360,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _configBloc = BlocProvider.of<AppConfigBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-
     //
     _initWakeLock();
 
@@ -408,7 +398,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.isEnabled;
-    await Wakelock.toggle(on: _configBloc.config.keepScreenOn);
+    await Wakelock.toggle(on: context.bloc<AppConfigBloc>().config.keepScreenOn);
   }
 
   void _restoreWakeLock() async {
@@ -458,28 +448,28 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         tools: [
           MeasureTool(),
           POITool(
-            _incidentBloc,
+            context.bloc<IncidentBloc>(),
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_POI),
           ),
           UnitTool(
-            _trackingBloc,
-            user: _userBloc.user,
+            context.bloc<TrackingBloc>(),
+            user: context.bloc<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_UNIT),
           ),
           PersonnelTool(
-            _trackingBloc,
-            user: _userBloc.user,
+            context.bloc<TrackingBloc>(),
+            user: context.bloc<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_PERSONNEL),
           ),
           DeviceTool(
-            _trackingBloc,
-            user: _userBloc.user,
+            context.bloc<TrackingBloc>(),
+            user: context.bloc<UserBloc>().user,
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_DEVICE),
@@ -501,7 +491,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     if (widget.withControlsLocateMe && _locationController == null) {
       _locationController = LocationController(
         tickerProvider: this,
-        configBloc: _configBloc,
+        configBloc: context.bloc<AppConfigBloc>(),
         permissionController: _ensurePermissionController(),
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
@@ -524,7 +514,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   PermissionController _ensurePermissionController() {
     _permissionController ??= PermissionController(
-      configBloc: _configBloc,
+      configBloc: context.bloc<AppConfigBloc>(),
       onMessage: widget.onMessage,
     );
     return _permissionController;
@@ -548,7 +538,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   LatLng _centerFromIncident(Position current) {
     final candidate = widget.center ??
-        (_incidentBloc?.selected?.meetup != null ? toLatLng(_incidentBloc?.selected?.meetup?.point) : null) ??
+        (context.bloc<IncidentBloc>()?.selected?.meetup != null
+            ? toLatLng(context.bloc<IncidentBloc>()?.selected?.meetup?.point)
+            : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
     return candidate;
   }
@@ -581,7 +573,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       (data) => data.errors.isNotEmpty,
     );
     if (errors.isNotEmpty) {
-      final fileCache = FileCacheService(_configBloc.config);
+      final fileCache = FileCacheService(context.bloc<AppConfigBloc>().config);
       await Future.forEach<TileErrorData>(errors, (data) async {
         final images = data.errors.values
             .where(
@@ -698,7 +690,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           errorImage: _tileErrorImage,
           offlineImage: _tileOfflineImage,
           offlineAsset: _fileOfflineAsset,
-          cacheManager: FileCacheService(_configBloc.config),
+          cacheManager: FileCacheService(context.bloc<AppConfigBloc>().config),
           onFatal: (data) => _onFatalTileError(data),
         );
 
@@ -855,7 +847,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return widget.incident == null
         ? null
         : POILayerOptions(
-            _incidentBloc,
+            context.bloc<IncidentBloc>(),
             incidentId: widget.incident.uuid,
             align: AnchorAlign.top,
             icon: Icon(
@@ -863,13 +855,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               size: 30,
               color: Colors.red,
             ),
-            rebuild: _incidentBloc.state.map((_) => null),
+            rebuild: context.bloc<IncidentBloc>().map((_) => null),
           );
   }
 
   DeviceLayerOptions _buildDeviceOptions() {
     return DeviceLayerOptions(
-      bloc: _trackingBloc,
+      bloc: context.bloc<TrackingBloc>(),
       onMessage: widget.onMessage,
       showTail: _useLayers.contains(LAYER_TRACKING),
     );
@@ -877,7 +869,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   PersonnelLayerOptions _buildPersonnelOptions() {
     return PersonnelLayerOptions(
-      bloc: _trackingBloc,
+      bloc: context.bloc<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
       showTail: _useLayers.contains(LAYER_TRACKING),
@@ -886,7 +878,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   UnitLayerOptions _buildUnitOptions() {
     return UnitLayerOptions(
-      bloc: _trackingBloc,
+      bloc: context.bloc<TrackingBloc>(),
       onMessage: widget.onMessage,
       showRetired: widget.showRetired,
       showTail: _useLayers.contains(LAYER_TRACKING),

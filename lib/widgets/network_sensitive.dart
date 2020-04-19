@@ -12,7 +12,7 @@ class NetworkSensitive extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamProvider<ConnectivityStatus>(
-      initialData: service.last,
+      initialData: service.status,
       create: (context) => ConnectivityService().changes,
       child: child,
     );

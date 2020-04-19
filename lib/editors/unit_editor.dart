@@ -61,11 +61,6 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Personnel> _personnel;
 
   String _editedName;
-  UnitBloc _unitBloc;
-  DeviceBloc _deviceBloc;
-  TrackingBloc _trackingBloc;
-  AppConfigBloc _appConfigBloc;
-  PersonnelBloc _personnelBloc;
 
   @override
   void initState() {
@@ -81,11 +76,6 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _set() {
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _appConfigBloc = BlocProvider.of<AppConfigBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     _devices ??= _getActualDevices();
     _personnel ??= _getActualPersonnel();
   }
@@ -225,7 +215,10 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _validateNumber(number) {
-    Unit unit = _unitBloc.units.values
+    Unit unit = context
+        .bloc<UnitBloc>()
+        .units
+        .values
         .where(
           (unit) => widget.unit?.id != unit.id && UnitStatus.Retired != unit.status,
         )
@@ -271,7 +264,10 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _validateCallsign(callsign) {
-    Unit unit = _unitBloc.units.values
+    Unit unit = context
+        .bloc<UnitBloc>()
+        .units
+        .values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
         )
@@ -329,7 +325,10 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _validatePhone(phone) {
-    Unit unit = _unitBloc.units.values
+    Unit unit = context
+        .bloc<UnitBloc>()
+        .units
+        .values
         .where(
           (unit) => UnitStatus.Retired != unit.status,
         )
@@ -440,10 +439,14 @@ class _UnitEditorState extends State<UnitEditor> {
       var actual = _getActualDevices().map((device) => device.id);
       var local = _getLocalDevices().map((device) => device.id);
       var lowercaseQuery = query.toLowerCase();
-      return _deviceBloc.devices.values
+      return context
+          .bloc<DeviceBloc>()
+          .devices
+          .values
           .where((device) =>
               // Add locally removed devices
-              actual.contains(device.id) && !local.contains(device.id) || _trackingBloc.contains(device) == false)
+              actual.contains(device.id) && !local.contains(device.id) ||
+              context.bloc<TrackingBloc>().has(device) == false)
           .where((device) =>
               device.number.toLowerCase().contains(lowercaseQuery) ||
               device.type.toString().toLowerCase().contains(lowercaseQuery))
@@ -494,11 +497,14 @@ class _UnitEditorState extends State<UnitEditor> {
       var actual = _getActualPersonnel().map((personnel) => personnel.id);
       var local = _getLocalPersonnel().map((personnel) => personnel.id);
       var lowercaseQuery = query.toLowerCase();
-      return _personnelBloc.personnel.values
+      return context
+          .bloc<PersonnelBloc>()
+          .personnel
+          .values
           .where((personnel) =>
               // Add locally removed devices
               actual.contains(personnel.id) && !local.contains(personnel.id) ||
-              _trackingBloc.aggregates.elementAt(personnel.tracking) == null)
+              context.bloc<TrackingBloc>().aggregates.elementAt(personnel.tracking) == null)
           .where((personnel) =>
               personnel.name.toLowerCase().contains(lowercaseQuery) ||
               translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
@@ -531,15 +537,14 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Point _toPoint() {
-    final bloc = BlocProvider.of<TrackingBloc>(context);
-    final tracking = bloc.tracking[widget?.unit?.tracking];
+    final tracking = context.bloc<TrackingBloc>().tracking[widget?.unit?.tracking];
     return tracking?.point ?? widget.point;
   }
 
   List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null ? _trackingBloc.devices(widget?.unit?.tracking,
+    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(widget?.unit?.tracking,
         // Include closed tracks
         exclude: []) : [])
       ..toList()
@@ -566,9 +571,9 @@ class _UnitEditorState extends State<UnitEditor> {
     return "${widget?.unit?.number ?? _nextNumber()}";
   }
 
-  int _nextNumber() {
-    return _unitBloc.nextAvailableNumber(_appConfigBloc.config.callsignReuse);
-  }
+  int _nextNumber() => context.bloc<UnitBloc>().nextAvailableNumber(
+        context.bloc<AppConfigBloc>().config.callsignReuse,
+      );
 
   String _actualNumber() {
     final values = _formKey?.currentState?.value;
@@ -589,7 +594,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _nextCallSign() {
-    final String department = _departments[_appConfigBloc.config.depId];
+    final String department = _departments[context.bloc<AppConfigBloc>().config.depId];
     int number = _ensureCallSignSuffix();
     return toCallsign(department, number);
   }

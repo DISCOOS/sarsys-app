@@ -48,9 +48,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   final _controller = IncidentMapController();
 
   Personnel _personnel;
-  UserBloc _userBloc;
-  PersonnelBloc _personnelBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
   StreamSubscription<Tracking> _onMoved;
 
@@ -69,16 +66,12 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(_personnelBloc.changes(widget.personnel))
-      ..add(_trackingBloc.changes(widget.personnel?.tracking));
+      ..add(context.bloc<PersonnelBloc>().changes(widget.personnel))
+      ..add(context.bloc<TrackingBloc>().changes(widget.personnel?.tracking));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = _trackingBloc.changes(widget.personnel?.tracking).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().changes(widget.personnel?.tracking).listen(_onMove);
   }
 
   @override
@@ -124,10 +117,10 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
   PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
         personnel: _personnel,
-        tracking: _trackingBloc.tracking[_personnel.tracking],
-        devices: _trackingBloc.devices(_personnel.tracking),
+        tracking: context.bloc<TrackingBloc>().tracking[_personnel.tracking],
+        devices: context.bloc<TrackingBloc>().devices(_personnel.tracking),
         withHeader: false,
-        withActions: _userBloc.user.isCommander,
+        withActions: context.bloc<UserBloc>().user.isCommander,
         organization: FleetMapService().fetchOrganization(Defaults.orgId),
         onMessage: showMessage,
         onDelete: () => Navigator.pop(context),
@@ -136,7 +129,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       );
 
   Widget _buildMapTile(BuildContext context, Personnel personnel) {
-    final center = toCenter(_trackingBloc.tracking[personnel.tracking]);
+    final center = toCenter(context.bloc<TrackingBloc>().tracking[personnel.tracking]);
     return Material(
       elevation: PersonnelScreen.ELEVATION,
       borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),

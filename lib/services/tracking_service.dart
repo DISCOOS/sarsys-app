@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:http/http.dart' show Client;
 
 class TrackingService {

@@ -87,7 +87,7 @@ class LocationService {
       if (force || _isConfigChanged(options)) {
         _subscribe(options);
         _configSubscription?.cancel();
-        _configSubscription = _appConfigBloc.state.listen(
+        _configSubscription = _appConfigBloc.listen(
           (state) {
             if (state.data is AppConfig) {
               final options = _toOptions(state.data);

@@ -30,7 +30,7 @@ class DeviceLayerOptions extends LayerOptions {
     this.showTail = false,
     this.showLabels = true,
     this.onMessage,
-  }) : super(rebuild: bloc.state.map((_) => null));
+  }) : super(rebuild: bloc.map((_) => null));
 }
 
 class DeviceLayer extends MapPlugin {
@@ -60,7 +60,7 @@ class DeviceLayer extends MapPlugin {
     final devices = options.bloc.deviceBloc.devices.values.where(
       (device) => bounds.contains(toLatLng(device.point)),
     );
-    return options.bloc.isEmpty
+    return options.bloc.tracking.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,

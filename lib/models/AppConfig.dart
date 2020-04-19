@@ -14,12 +14,13 @@ part 'AppConfig.g.dart';
 class AppConfig extends Equatable {
   final String uuid;
   final String udid;
+  final int version;
   final bool demo;
   final String demoRole;
   final String sentryDns;
   final bool onboarded;
   final bool firstSetup;
-  final String organizationId;
+  final String orgId;
   final String divId;
   final String depId;
   final List<String> talkGroups;
@@ -43,13 +44,14 @@ class AppConfig extends Equatable {
     @required this.uuid,
     @required this.udid,
     @required this.sentryDns,
+    @required this.version,
     this.demo,
     this.demoRole,
     this.onboarded = false,
     this.firstSetup = false,
     this.storage = false,
     this.locationWhenInUse = false,
-    this.organizationId = Defaults.orgId,
+    this.orgId = Defaults.orgId,
     this.divId = Defaults.divId,
     this.depId = Defaults.depId,
     List<String> talkGroups = const <String>[],
@@ -71,11 +73,12 @@ class AppConfig extends Equatable {
         super([
           uuid,
           udid,
+          version,
           demo,
           demoRole,
           onboarded,
           firstSetup,
-          organizationId,
+          orgId,
           divId,
           depId,
           talkGroups ?? const <String>[],
@@ -104,14 +107,17 @@ class AppConfig extends Equatable {
   Map<String, dynamic> toJson() => _$AppConfigToJson(this);
 
   AppConfig copyWith({
+    String uuid,
+    String udid,
+    int version,
     bool demo,
     String sentry,
     String demoRole,
     bool onboarded,
     bool firstSetup,
-    String organization,
-    String division,
-    String department,
+    String orgId,
+    String divId,
+    String depId,
     List<String> talkGroups,
     String talkGroupCatalog,
     bool storage,
@@ -132,14 +138,15 @@ class AppConfig extends Equatable {
     return AppConfig(
       uuid: uuid ?? this.uuid,
       udid: udid ?? this.udid,
+      version: version ?? this.version,
       sentryDns: sentry ?? this.sentryDns,
       demo: demo ?? this.demo,
       demoRole: demoRole ?? this.demoRole,
       onboarded: onboarded ?? this.onboarded,
       firstSetup: firstSetup ?? this.firstSetup,
-      organizationId: organization ?? this.organizationId,
-      divId: division ?? this.divId,
-      depId: department ?? this.depId,
+      orgId: orgId ?? this.orgId,
+      divId: divId ?? this.divId,
+      depId: depId ?? this.depId,
       talkGroups: talkGroups ?? this.talkGroups,
       talkGroupCatalog: talkGroupCatalog ?? this.talkGroupCatalog,
       storage: storage ?? this.storage,
@@ -181,6 +188,6 @@ class AppConfig extends Equatable {
         type: securityType,
         mode: securityMode,
         heartbeat: DateTime.now(),
-        trusted: organizationId == orgId,
+        trusted: this.orgId == orgId,
       );
 }

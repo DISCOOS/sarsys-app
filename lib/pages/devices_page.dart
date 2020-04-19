@@ -39,11 +39,6 @@ class DevicesPageState extends State<DevicesPage> {
   static const STATE = "devices_filter";
   Set<DeviceType> _filter;
 
-  UserBloc _userBloc;
-  UnitBloc _unitBloc;
-  PersonnelBloc _personnelBloc;
-  DeviceBloc _deviceBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
   Map<String, String> _functions;
@@ -59,18 +54,13 @@ class DevicesPageState extends State<DevicesPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(_userBloc.state)
-      ..add(_unitBloc.state)
-      ..add(_personnelBloc.state)
-      ..add(_deviceBloc.state)
-      ..add(_trackingBloc.state);
+      ..add(context.bloc<UserBloc>())
+      ..add(context.bloc<UnitBloc>())
+      ..add(context.bloc<PersonnelBloc>())
+      ..add(context.bloc<DeviceBloc>())
+      ..add(context.bloc<TrackingBloc>());
   }
 
   void _init() async {
@@ -90,7 +80,7 @@ class DevicesPageState extends State<DevicesPage> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
       return RefreshIndicator(
         onRefresh: () async {
-          _deviceBloc.fetch();
+          context.bloc<DeviceBloc>().load();
         },
         child: Container(
           color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -98,9 +88,9 @@ class DevicesPageState extends State<DevicesPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = _trackingBloc.units.asDeviceIds();
-                var personnel = _trackingBloc.personnel.asDeviceIds();
-                var tracked = _trackingBloc.asDeviceIds();
+                var units = context.bloc<TrackingBloc>().units.asDeviceIds();
+                var personnel = context.bloc<TrackingBloc>().personnel.asDeviceIds();
+                var tracked = context.bloc<TrackingBloc>().asDeviceIds();
                 var devices = _filteredDevices();
                 return devices.isEmpty || snapshot.hasError
                     ? toRefreshable(
@@ -122,7 +112,10 @@ class DevicesPageState extends State<DevicesPage> {
     });
   }
 
-  List<Device> _filteredDevices() => _deviceBloc.devices.values
+  List<Device> _filteredDevices() => context
+      .bloc<DeviceBloc>()
+      .devices
+      .values
       .where((device) =>
           _filter.contains(device.type) &&
           (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
@@ -150,7 +143,7 @@ class DevicesPageState extends State<DevicesPage> {
     }
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
-    return widget.withActions && _userBloc?.user?.isCommander == true
+    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
@@ -259,7 +252,7 @@ class DevicesPageState extends State<DevicesPage> {
                 color: toPointStatusColor(device?.point),
               ),
             ),
-            if (widget.withActions && _userBloc?.user?.isCommander == true)
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(

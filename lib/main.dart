@@ -1,3 +1,4 @@
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
@@ -5,10 +6,9 @@ import 'package:catcher/catcher_plugin.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart';
 
+import 'blocs/app_config_bloc.dart';
 import 'core/app_state.dart';
 import 'map/tile_providers.dart';
 
@@ -17,7 +17,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // All services are caching using hive
-  await Hive.initFlutter();
+  await Storage.init();
 
   final client = Client();
   final bucket = await readAppState(PageStorageBucket());
@@ -27,7 +27,7 @@ void main() async {
   controller.init().then((_) {
     runAppWithCatcher(
       _buildApp(controller, bucket),
-      controller.configProvider.bloc.config.sentryDns,
+      controller.bloc<AppConfigBloc>().config.sentryDns,
     );
 //  runApp(_buildApp(controller));
   }).catchError((error, stackTrace) {
@@ -63,7 +63,7 @@ Future _rebuildApp(
     // Restart app to rehydrate with blocs just built and initiated
     runAppWithCatcher(
       _createApp(controller, bucket),
-      controller.configProvider.bloc.config.sentryDns,
+      controller.bloc<AppConfigBloc>().config.sentryDns,
     );
   }
 }

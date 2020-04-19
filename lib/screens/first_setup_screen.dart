@@ -257,13 +257,12 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                       // Disable automatic permission prompts (toast are still shown when applicable)
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool("checkPermission", false);
-                      final configBloc = BlocProvider.of<AppConfigBloc>(context);
-                      await configBloc.update(
-                        firstSetup: true,
-                        securityMode: _mode,
-                        storage: isStorageGranted,
-                        locationWhenInUse: isLocationGranted,
-                      );
+                      await context.bloc<AppConfigBloc>().update(
+                            firstSetup: true,
+                            securityMode: _mode,
+                            storage: isStorageGranted,
+                            locationWhenInUse: isLocationGranted,
+                          );
                       Navigator.pushReplacementNamed(context, LoginScreen.ROUTE);
                     } else {
                       final answer = await prompt(

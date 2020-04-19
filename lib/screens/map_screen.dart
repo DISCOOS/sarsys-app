@@ -43,13 +43,12 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   @override
   Widget build(BuildContext context) {
-    final userBloc = BlocProvider.of<UserBloc>(context);
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: _showFAB && userBloc?.user?.isCommander == true
+      floatingActionButton: _showFAB && context.bloc<UserBloc>()?.user?.isCommander == true
           ? FloatingActionButton(
               onPressed: () {
                 _showCreateItemSheet(context);
@@ -91,7 +90,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   void _showCreateItemSheet(context) {
     final style = Theme.of(context).textTheme.title;
-    final bloc = BlocProvider.of<IncidentBloc>(context);
+    final isUnset = context.bloc<IncidentBloc>().isUnset;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -106,7 +105,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                   children: <Widget>[
                     ListTile(title: Text("Opprett", style: style)),
                     Divider(),
-                    if (!bloc.isUnset)
+                    if (!isUnset)
                       ListTile(
                         dense: landscape,
                         leading: Icon(Icons.group_add),
@@ -118,7 +117,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                           Navigator.pop(context);
                         },
                       ),
-                    if (bloc.isUnset)
+                    if (isUnset)
                       ListTile(
                         dense: landscape,
                         leading: Icon(Icons.warning),

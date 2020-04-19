@@ -41,7 +41,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
   String _editedOrgAlias;
   String _editedAffiliation;
   String _editedFunction;
-  DeviceBloc _deviceBloc;
   Future<Organization> _organization;
 
   @override
@@ -64,12 +63,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
     _numberController.addListener(
       () => _onNumberOrAliasEdit(_aliasController.text, _numberController.text),
     );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _deviceBloc = BlocProvider.of<DeviceBloc>(context);
   }
 
   @override
@@ -192,10 +185,10 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Påkrevd'),
         (number) {
-          Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) => isSameNumber(device, number),
-            orElse: () => null,
-          );
+          Device device = context.bloc<DeviceBloc>().devices.values.firstWhere(
+                (Device device) => isSameNumber(device, number),
+                orElse: () => null,
+              );
           return device != null ? "Finnes allerede" : null;
         },
       ],
@@ -285,10 +278,10 @@ class _DeviceEditorState extends State<DeviceEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
         (alias) {
-          Device device = _deviceBloc.devices.values.firstWhere(
-            (Device device) => _isSameAlias(device, alias),
-            orElse: () => null,
-          );
+          Device device = context.bloc<DeviceBloc>().devices.values.firstWhere(
+                (Device device) => _isSameAlias(device, alias),
+                orElse: () => null,
+              );
           return device != null ? "Finnes allerede" : null;
         },
       ],

@@ -154,7 +154,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     );
   }
 
-  bool _inProgress() => _bloc?.currentState?.isPending() == true;
+  bool _inProgress() => _bloc?.state?.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -239,7 +239,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     return fields..add(_buildSecure());
   }
 
-  bool _isError() => _bloc.currentState is UserException;
+  bool _isError() => _bloc.state.isError();
 
   Widget _buildErrorText() => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),

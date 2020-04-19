@@ -16,16 +16,6 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _affiliationKey = GlobalKey<AffiliationFormState>();
 
-  UserBloc _userBloc;
-  AppConfigBloc _configBloc;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _configBloc = BlocProvider.of<AppConfigBloc>(context);
-  }
-
   @override //new
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,14 +37,14 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
           children: <Widget>[
             AffiliationForm(
               key: _affiliationKey,
-              user: _userBloc.user,
+              user: context.bloc<UserBloc>().user,
               initialValue: _ensureAffiliation(),
-              onChanged: (affiliation) => _configBloc.update(
-                division: affiliation.divId,
-                department: affiliation.depId,
-              ),
+              onChanged: (affiliation) => context.bloc<AppConfigBloc>().update(
+                    division: affiliation.divId,
+                    department: affiliation.depId,
+                  ),
             ),
-            if (_userBloc.user.isAffiliated)
+            if (context.bloc<UserBloc>().user.isAffiliated)
               Padding(
                   padding: const EdgeInsets.only(top: 24.0),
                   child: InputDecorator(
@@ -83,7 +73,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
 
   Affiliation _ensureAffiliation() => Affiliation(
         orgId: Defaults.orgId,
-        divId: _configBloc.config.divId ?? Defaults.divId,
-        depId: _configBloc.config.depId ?? Defaults.depId,
+        divId: context.bloc<AppConfigBloc>().config.divId ?? Defaults.divId,
+        depId: context.bloc<AppConfigBloc>().config.depId ?? Defaults.depId,
       );
 }

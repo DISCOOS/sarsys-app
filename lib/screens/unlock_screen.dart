@@ -130,7 +130,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     );
   }
 
-  bool _inProgress() => _bloc?.currentState?.isPending() == true;
+  bool _inProgress() => _bloc?.state?.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -215,7 +215,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     return fields..add(_buildSecure());
   }
 
-  bool _isError() => _bloc.currentState is UserException;
+  bool _isError() => _bloc.state is UserException;
 
   Widget _buildErrorText() => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
@@ -544,7 +544,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   UserBloc _toBloc(BuildContext context) {
     final bloc = BlocProvider.of<UserBloc>(context);
     _subscription?.cancel();
-    _subscription = bloc.state.listen((UserState state) {
+    _subscription = bloc.listen((UserState state) {
       _process(state, bloc, context);
     });
     return bloc;

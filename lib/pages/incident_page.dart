@@ -33,7 +33,6 @@ class IncidentPage extends StatefulWidget {
 class _IncidentPageState extends State<IncidentPage> {
   final _controller = ScrollController();
 
-  UserBloc _userBloc;
   bool _showHint = true;
 
   TextStyle labelStyle;
@@ -50,12 +49,6 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-  }
-
-  @override
   void dispose() {
     _controller.removeListener(_testHint);
     _controller.dispose();
@@ -64,13 +57,12 @@ class _IncidentPageState extends State<IncidentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = BlocProvider.of<IncidentBloc>(context);
     labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
     valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
     unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
     return RefreshIndicator(
       onRefresh: () async {
-        bloc.load();
+        context.bloc<IncidentBloc>().load();
       },
       child: Container(
         color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -79,8 +71,8 @@ class _IncidentPageState extends State<IncidentPage> {
           child: Stack(
             children: [
               StreamBuilder<Incident>(
-                stream: bloc.changes(),
-                initialData: bloc.selected,
+                stream: context.bloc<IncidentBloc>().changes(),
+                initialData: context.bloc<IncidentBloc>().selected,
                 builder: (context, snapshot) {
                   final incident = (snapshot.hasData ? snapshot.data : null);
                   return incident == null
@@ -122,7 +114,7 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  bool get isCommander => _userBloc?.user?.isCommander == true;
+  bool get isCommander => context.bloc<UserBloc>()?.user?.isCommander == true;
 
   SafeArea _buildBottomActions() {
     return SafeArea(
@@ -200,13 +192,14 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Row _buildGeneral(Incident incident) {
-    final unitBloc = BlocProvider.of<UnitBloc>(context);
-    final personnelBloc = BlocProvider.of<PersonnelBloc>(context);
     return Row(
       children: <Widget>[
         Expanded(
           flex: 6,
-          child: _buildValueTile(translateIncidentType(incident.type), label: "Type"),
+          child: _buildValueTile(
+            translateIncidentType(incident.type),
+            label: "Type",
+          ),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
@@ -214,25 +207,34 @@ class _IncidentPageState extends State<IncidentPage> {
           child: StreamBuilder<int>(
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
-                return _buildValueTile("${snapshot.hasData ? formatSince(incident.occurred) : "-"}", label: "Innsats");
+                return _buildValueTile(
+                  "${snapshot.hasData ? formatSince(incident.occurred) : "-"}",
+                  label: "Innsats",
+                );
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
           flex: 5,
           child: StreamBuilder<PersonnelState>(
-              stream: personnelBloc.state,
+              stream: context.bloc<PersonnelBloc>(),
               builder: (context, snapshot) {
-                return _buildValueTile("${snapshot.hasData ? personnelBloc.count() : "-"}", label: "Mnsk");
+                return _buildValueTile(
+                  "${snapshot.hasData ? context.bloc<PersonnelBloc>().count() : "-"}",
+                  label: "Mnsk",
+                );
               }),
         ),
         SizedBox(width: IncidentPage.SPACING),
         Expanded(
           flex: 5,
           child: StreamBuilder<UnitState>(
-              stream: unitBloc.state,
+              stream: context.bloc<UnitBloc>(),
               builder: (context, snapshot) {
-                return _buildValueTile("${snapshot.hasData ? unitBloc.count() : "-"}", label: "Enheter");
+                return _buildValueTile(
+                  "${snapshot.hasData ? context.bloc<UnitBloc>().count() : "-"}",
+                  label: "Enheter",
+                );
               }),
         ),
       ],
@@ -466,10 +468,12 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   void _setIncidentStatus(BuildContext context, IncidentStatus status) {
-    var bloc = BlocProvider.of<IncidentBloc>(context);
-    var userId = BlocProvider.of<UserBloc>(context).user?.userId;
-    var incident = bloc.selected.withJson({"status": enumName(status)}, userId: userId);
-    bloc.update(incident);
+    var userId = context.bloc<UserBloc>().user?.userId;
+    var incident = context.bloc<IncidentBloc>().selected.withJson(
+      {"status": enumName(status)},
+      userId: userId,
+    );
+    context.bloc<IncidentBloc>().update(incident);
   }
 
   void _testHint() {

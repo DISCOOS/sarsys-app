@@ -1,8 +1,8 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SecurityConfigScreen extends StatefulWidget {
   @override
@@ -11,19 +11,6 @@ class SecurityConfigScreen extends StatefulWidget {
 
 class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  AppConfigBloc _bloc;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
-  }
 
   @override //new
   Widget build(BuildContext context) {
@@ -72,7 +59,7 @@ class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Chip(
-            label: Text(translateSecurityType(_bloc.config.securityType)),
+            label: Text(translateSecurityType(context.bloc<AppConfigBloc>().config.securityType)),
           ),
         )
       ],
@@ -97,7 +84,7 @@ class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Chip(
             label: Text(
-              translateSecurityMode(_bloc.config.securityMode),
+              translateSecurityMode(context.bloc<AppConfigBloc>().config.securityMode),
             ),
           ),
         )

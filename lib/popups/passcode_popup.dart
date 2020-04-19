@@ -51,7 +51,7 @@ class PasscodeRoute extends PopupRoute {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               StreamBuilder<UserState>(
-                stream: bloc.state,
+                stream: bloc,
                 builder: (context, snapshot) {
                   var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data is UserException;
                   return Padding(

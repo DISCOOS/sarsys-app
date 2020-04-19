@@ -6,9 +6,9 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
-import 'package:SarSys/services/service_response.dart';
-import 'package:SarSys/services/user_service.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
 
@@ -52,19 +52,19 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static IncidentService build(UserService service, final int count, final String role, final String passcode) {
+  static IncidentService build(UserRepository repo, final int count, final String role, final String passcode) {
     final Map<String, Incident> incidents = {};
     final IncidentServiceMock mock = IncidentServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized", role);
-    when(mock.fetch()).thenAnswer((_) async {
+    when(mock.load()).thenAnswer((_) async {
       if (incidents.isEmpty) {
-        var response = await service.load();
+        var user = await repo.load();
         incidents.addEntries([
           for (var i = 1; i <= count ~/ 2; i++)
             MapEntry(
               "a:x$i",
               Incident.fromJson(
-                IncidentBuilder.createIncidentAsJson("a:x$i", i, response.body.userId, passcode),
+                IncidentBuilder.createIncidentAsJson("a:x$i", i, user.userId, passcode),
               ),
             ),
           for (var i = count ~/ 2 + 1; i <= count; i++)
@@ -79,8 +79,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       return ServiceResponse.ok(body: incidents.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final response = await service.load();
-      final authorized = response.body;
+      final authorized = await repo.load();
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.userId);
       final created = Incident(

@@ -25,41 +25,36 @@ class UserStatusPage extends StatefulWidget {
 }
 
 class UserStatusPageState extends State<UserStatusPage> {
-  PersonnelBloc _personnelBloc;
-  TrackingBloc _trackingBloc;
-
   Personnel _personnel;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _personnel = widget.personnel;
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
-    _personnelBloc = BlocProvider.of<PersonnelBloc>(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<PersonnelState>(
-        stream: _personnelBloc.state,
+        stream: context.bloc<PersonnelBloc>(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final state = snapshot.data;
             if (state.isUpdated() && state.data.id == _personnel.id) {
               _personnel = state.data;
             }
-            return _personnel == null ? Text('Deltar ikke på aksjon') : _buildInfoPanel(context);
+            return _personnel == null ? Center(child: Text('Deltar ikke på aksjon')) : _buildInfoPanel(context);
           }
           return Container();
         });
   }
 
   PersonnelWidget _buildInfoPanel(BuildContext context) {
-    final tracking = _trackingBloc.tracking[_personnel.tracking];
+    final tracking = context.bloc<TrackingBloc>().tracking[_personnel.tracking];
     return PersonnelWidget(
       personnel: _personnel,
       tracking: tracking,
-      devices: _trackingBloc.devices(_personnel.tracking),
+      devices: context.bloc<TrackingBloc>().devices(_personnel.tracking),
       withName: true,
       withHeader: false,
       withActions: false,

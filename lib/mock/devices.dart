@@ -6,7 +6,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/device_service.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:mockito/mockito.dart';
@@ -61,7 +61,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
     // Mock all service methods
-    when(mock.fetch(any)).thenAnswer((_) async {
+    when(mock.load(any)).thenAnswer((_) async {
       final String incidentId = _.positionalArguments[0];
       var devices = deviceRepo[incidentId];
       if (devices == null) {
@@ -201,7 +201,13 @@ class DeviceServiceMock extends Mock implements DeviceService {
             (_) => device,
             ifAbsent: () => device,
           );
-          controller.add(DeviceMessage(device.id, DeviceMessageType.LocationChanged, device.toJson()));
+          controller.add(
+            DeviceMessage(
+              duuid: device.id,
+              type: DeviceMessageType.LocationChanged,
+              json: device.toJson(),
+            ),
+          );
         }
       });
     }

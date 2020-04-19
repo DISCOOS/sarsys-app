@@ -20,3 +20,7 @@ extension MapX on Map {
     return found as T;
   }
 }
+
+extension IterableX<T> on Iterable<T> {
+  T get firstOrNull => this.isNotEmpty ? this.first : null;
+}

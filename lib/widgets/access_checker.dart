@@ -48,7 +48,7 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
     super.didChangeDependencies();
     _listening = false;
     _subscription?.cancel();
-    _subscription = BlocProvider.of<UserBloc>(context)?.state?.listen((state) {
+    _subscription = BlocProvider.of<UserBloc>(context)?.listen((state) {
       // Skip initial event
       if (_listening && (state.isUnset() || state.isLocked())) {
         final config = BlocProvider.of<AppConfigBloc>(context)?.config;

@@ -1,16 +1,18 @@
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 
 class ServiceResponse<T> extends Equatable {
   final int code;
   final String message;
   final T body;
   final Object error;
+  final Conflict conflict;
   final StackTrace stackTrace;
 
-  ServiceResponse({this.code, this.message, this.body, this.error, this.stackTrace})
-      : super([code, message, body, error, stackTrace]);
+  ServiceResponse({this.code, this.message, this.body, this.conflict, this.error, this.stackTrace})
+      : super([code, message, body, conflict, error, stackTrace]);
 
   static ServiceResponse<T> ok<T>({T body}) {
     return ServiceResponse<T>(
@@ -55,6 +57,14 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  static ServiceResponse<T> asConflict<T>({@required Conflict conflict, message: 'Conflict'}) {
+    return ServiceResponse<T>(
+      code: 409,
+      message: message,
+      conflict: conflict,
+    );
+  }
+
   static ServiceResponse<T> internalServerError<T>({
     message: 'Internal server error',
     Object error,
@@ -77,4 +87,16 @@ class ServiceResponse<T> extends Equatable {
   bool get is403 => code == HttpStatus.forbidden;
   bool get is404 => code == HttpStatus.notFound;
   bool get is500 => code == HttpStatus.internalServerError;
+}
+
+class Conflict {
+  Conflict(Map<String, dynamic> mine, Map<String, dynamic> theirs)
+      : _mine = Map.unmodifiable(mine),
+        _theirs = Map.unmodifiable(theirs);
+
+  final Map<String, dynamic> _mine;
+  Map<String, dynamic> get mine => _mine;
+
+  final Map<String, dynamic> _theirs;
+  Map<String, dynamic> get theirs => _theirs;
 }

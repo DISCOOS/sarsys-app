@@ -50,21 +50,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   final _personnelKey = GlobalKey<PersonnelPageState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
-  UserBloc _userBloc;
-  IncidentBloc _incidentBloc;
-
   @override
   void initState() {
     super.initState();
     routeData = widget.tabIndex;
     routeName = CommandScreen.ROUTES[routeData];
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
   }
 
   @override
@@ -81,10 +71,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: _incidentBloc.changes(),
-      initialData: _incidentBloc.selected,
+      stream: context.bloc<IncidentBloc>().changes(),
+      initialData: context.bloc<IncidentBloc>().selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final incident = (snapshot.hasData ? _incidentBloc.selected : null);
+        final incident = (snapshot.hasData ? context.bloc<IncidentBloc>().selected : null);
         final title = _toTitle(incident);
         final tabs = [
           UnitsPage(key: _unitsKey),
@@ -101,11 +91,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           ),
           body: tabs[routeData],
           bottomNavigationBar: BottomAppBar(
-            shape: _userBloc.user.isCommander ? CircularNotchedRectangle() : null,
+            shape: context.bloc<UserBloc>().user.isCommander ? CircularNotchedRectangle() : null,
             notchMargin: 8.0,
             elevation: 16.0,
             child: FractionallySizedBox(
-              widthFactor: _userBloc.user.isCommander ? 0.80 : 1.0,
+              widthFactor: context.bloc<UserBloc>().user.isCommander ? 0.80 : 1.0,
               alignment: Alignment.bottomLeft,
               child: BottomNavigationBar(
                 currentIndex: routeData,
@@ -201,7 +191,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   }
 
   StatelessWidget _buildFAB() {
-    if (_userBloc.user.isCommander) {
+    if (context.bloc<UserBloc>().user.isCommander) {
       switch (routeData) {
         case CommandScreen.TAB_MISSIONS:
           return FloatingActionButton(

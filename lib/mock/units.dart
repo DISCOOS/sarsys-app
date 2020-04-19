@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
@@ -27,7 +27,7 @@ class UnitServiceMock extends Mock implements UnitService {
   static UnitService build(final int count) {
     final UnitServiceMock mock = UnitServiceMock();
     final unitsRepo = mock.unitsRepo;
-    when(mock.fetch(any)).thenAnswer((_) async {
+    when(mock.load(any)).thenAnswer((_) async {
       final String incidentId = _.positionalArguments[0];
       var units = unitsRepo[incidentId];
       if (units == null) {

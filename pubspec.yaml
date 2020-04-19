@@ -37,10 +37,11 @@ dependencies:
   path_provider: ^1.1.0
   protobuf: ^0.13.11
   web_socket_channel: ^1.0.12
-  rxdart: ^0.22.0
+  rxdart: ^0.23.0
   json_annotation: ^3.0.1
-  bloc: ^0.13.0
-  flutter_bloc: ^0.13.0
+  bloc: ^3.0.0
+  flutter_bloc: ^3.2.0
+  hydrated_bloc: ^3.0.0
   equatable: ^0.2.3
   jaguar_jwt: ^2.1.6
   flutter_form_builder: ^3.5.4
@@ -61,7 +62,7 @@ dependencies:
   dartz: ^0.8.7
   intro_views_flutter: ^2.6.0
   flutter_email_sender: ^2.0.3
-  provider: ^3.1.0
+  provider: ^4.0.1
   wakelock: ^0.1.4
   faker: ^1.1.1
   connectivity: ^0.4.8+2
@@ -73,6 +74,7 @@ dependencies:
   hive_flutter: ^0.3.0+2
   flutter_udid: ^1.0.1
   simple_gravatar: ^1.0.5
+  json_patch: ^2.0.0
 
   # Mocking support
   uuid: ^2.0.2
@@ -112,6 +114,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mockito: ^4.0.0
+  bloc_test: ^4.0.0
   build_runner: ^1.8.0
   json_serializable: ^3.2.5
 

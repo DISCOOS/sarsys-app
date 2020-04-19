@@ -1,4 +1,8 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/app_state.dart';
@@ -59,8 +63,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   PermissionController controller;
 
-  UserBloc get userBloc => widget.controller.userProvider.bloc;
-  AppConfigBloc get configBloc => widget.controller.configProvider?.bloc;
+  UserBloc get userBloc => widget.controller.bloc<UserBloc>();
+  AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
+  IncidentBloc get incidentBloc => widget.controller.bloc<IncidentBloc>();
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
@@ -144,8 +149,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
               create: (BuildContext context) => controller,
               child: Provider<BlocProviderController>(
                 create: (BuildContext context) => widget.controller,
-                child: BlocProviderTree(
-                  blocProviders: widget.controller.all,
+                child: MultiBlocProvider(
+                  providers: widget.controller.all,
                   child: child,
                 ),
               ),
@@ -204,7 +209,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case MapScreen.ROUTE:
         child = _toMapScreen(
           settings: settings,
-          incident: widget.controller.incidentProvider.bloc.selected,
+          incident: widget.controller.bloc<IncidentBloc>().selected,
         );
         break;
       case LoginScreen.ROUTE:
@@ -328,7 +333,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
   }
 
-  Map<String, Unit> get units => widget.controller.unitProvider.bloc.units;
+  Map<String, Unit> get units => widget.controller.bloc<UnitBloc>().units;
 
   Widget _toPersonnelScreen(RouteSettings settings, bool persisted) {
     var personnel;
@@ -343,7 +348,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : PersonnelScreen(personnel: personnel);
   }
 
-  Map<String, Personnel> get personnels => widget.controller.personnelProvider.bloc.personnel;
+  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().personnel;
 
   Widget _toDeviceScreen(RouteSettings settings, bool persisted) {
     var device;
@@ -358,12 +363,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : DeviceScreen(device: device);
   }
 
-  Map<String, Device> get devices => widget.controller.deviceProvider.bloc.devices;
+  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().devices;
 
   Widget _toHome() {
     Widget child;
-    final configBloc = widget.controller.configProvider.bloc;
-    final incidentBloc = widget.controller.incidentProvider.bloc;
     if (configBloc.config.onboarded != true) {
       child = OnboardingScreen();
     } else if (configBloc.config.firstSetup != true) {
@@ -378,7 +381,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         final uuid = _route.elementAt('incidentId');
         if (uuid != null) {
           // On first load bloc's are not loaded yet
-          incidentBloc.state.firstWhere((state) => state.isLoaded()).then((_) async {
+          incidentBloc.firstWhere((state) => state.isLoaded()).then((_) async {
             _route['incident'] = await selectIncident(uuid);
             NavigationService().pushReplacementNamed(
               _route[RouteWriter.FIELD_NAME],

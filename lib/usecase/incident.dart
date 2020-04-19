@@ -55,20 +55,18 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     final incident = await params.bloc.create(result.left);
     if (result.right.isNotEmpty) {
       final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-      final unitBloc = BlocProvider.of<UnitBloc>(params.context);
-      final configBloc = BlocProvider.of<AppConfigBloc>(params.context);
-      final trackingBloc = BlocProvider.of<TrackingBloc>(params.context);
-      final department = org.divisions[configBloc.config.divId]?.departments[configBloc.config.depId] ?? '';
+      final config = params.context.bloc<AppConfigBloc>().config;
+      final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
       result.right.forEach((template) async {
-        final unit = unitBloc.fromTemplate(
-          department,
-          template,
-        );
+        final unit = params.context.bloc<UnitBloc>().fromTemplate(
+              department,
+              template,
+            );
         if (unit != null) {
-          final actual = await unitBloc.create(unit);
-          await trackingBloc.trackUnit(
-            actual,
-          );
+          final actual = await params.context.bloc<UnitBloc>().create(unit);
+          await params.context.bloc<TrackingBloc>().trackUnit(
+                actual,
+              );
         }
       });
     }

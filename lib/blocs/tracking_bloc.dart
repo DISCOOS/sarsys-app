@@ -43,15 +43,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
     _subscriptions
-      ..add(incidentBloc.state.listen(_init))
+      ..add(incidentBloc.listen(_init))
       // Manages tracking state for units
-      ..add(unitBloc.state.listen(_handleUnit))
+      ..add(unitBloc.listen(_handleUnit))
       // Manages tracking state for devices
-      ..add(deviceBloc.state.listen(_handleDevice))
+      ..add(deviceBloc.listen(_handleDevice))
       // Manages tracking state for personnel
-      ..add(personnelBloc.state.listen(_handlePersonnel))
+      ..add(personnelBloc.listen(_handlePersonnel))
       // Process tracking messages
-      ..add(service.messages.listen((event) => dispatch(_HandleMessage(event))));
+      ..add(service.messages.listen((event) => add(_HandleMessage(event))));
   }
 
   void _init(IncidentState state) {
@@ -66,7 +66,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
                 IncidentStatus.Resolved,
               ].contains((state as IncidentUpdated).data.status))) {
         // TODO: Mark as internal event, no message from tracking service expected
-        dispatch(ClearTracking(_tracking.keys.toList()));
+        add(ClearTracking(_tracking.keys.toList()));
       } else if (state.isSelected()) {
         _fetch(state.data.uuid);
       }
@@ -81,7 +81,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         // Remove device from active list of tracked devices? This will not impact history!
         if (tracking?.devices?.contains(device.id) == true) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          dispatch(
+          add(
             UpdateTracking(
               tracking.cloneWith(
                 devices: List.from(tracking.devices)..remove(device.id),
@@ -97,7 +97,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       if (tracking != null && tracking.devices.contains(device.id)) {
         // TODO: Move to tracking service and convert to internal TrackingMessage
         // TODO: Recalculate history, point, effort, distance and speed after device is removed
-        dispatch(
+        add(
           UpdateTracking(
             tracking.cloneWith(
               devices: List.from(tracking.devices)..remove(device.id),
@@ -117,7 +117,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       if (tracking != null) {
         if (UnitStatus.Retired == event.data.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          dispatch(
+          add(
             UpdateTracking(
               tracking.cloneWith(
                 status: TrackingStatus.Closed,
@@ -127,7 +127,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
           );
         } else if (TrackingStatus.Closed == tracking.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          dispatch(
+          add(
             UpdateTracking(
               tracking.cloneWith(
                 status: TrackingStatus.Tracking,
@@ -140,7 +140,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       final event = state as UnitDeleted;
       final tracking = _tracking[event.data.tracking];
       // TODO: Move to tracking service and convert to internal TrackingMessage
-      if (tracking != null) dispatch(DeleteTracking(tracking));
+      if (tracking != null) add(DeleteTracking(tracking));
     }
   }
 
@@ -152,7 +152,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       if (tracking != null) {
         if (PersonnelStatus.Retired == event.data.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          dispatch(
+          add(
             UpdateTracking(
               tracking.cloneWith(
                 status: TrackingStatus.Closed,
@@ -162,7 +162,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
           );
         } else if (TrackingStatus.Closed == tracking.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          dispatch(
+          add(
             UpdateTracking(
               tracking.cloneWith(
                 status: TrackingStatus.Tracking,
@@ -175,7 +175,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       final event = state as PersonnelDeleted;
       final tracking = _tracking[event.data.tracking];
       // TODO: Move to tracking service and convert to internal TrackingMessage
-      if (tracking != null) dispatch(DeleteTracking(tracking));
+      if (tracking != null) add(DeleteTracking(tracking));
     }
   }
 
@@ -183,16 +183,11 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   TrackingState get initialState => TrackingEmpty();
 
   /// Stream of tracking changes for test
-  Stream<Tracking> changes(String tracking) => state
-      .where(
+  Stream<Tracking> changes(String tracking) => where(
         (state) =>
             (state is TrackingUpdated && state.data.id == tracking) ||
             (state is TrackingLoaded && state.data.contains(tracking)),
-      )
-      .map((state) => state is TrackingLoaded ? _tracking[tracking] : state.data);
-
-  /// Check if [tracking] is empty
-  bool get isEmpty => _tracking.isEmpty;
+      ).map((state) => state is TrackingLoaded ? _tracking[tracking] : state.data);
 
   /// Get all tracking objects
   Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracking);
@@ -229,7 +224,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       );
 
   /// Test if device is being tracked
-  bool contains(
+  bool has(
     Device device, {
     List<TrackingStatus> exclude: const [TrackingStatus.Closed],
   }) =>
@@ -290,11 +285,11 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<List<Tracking>> _fetch(String id) async {
     var response = await service.fetch(id);
     if (response.is200) {
-      dispatch(ClearTracking(_tracking.keys.toList()));
-      dispatch(LoadTracking(response.body));
+      add(ClearTracking(_tracking.keys.toList()));
+      add(LoadTracking(response.body));
       return UnmodifiableListView<Tracking>(response.body);
     }
-    dispatch(RaiseTrackingError(response));
+    add(RaiseTrackingError(response));
     return Future.error(response);
   }
 
@@ -490,7 +485,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
 
 // Dispatch and return future
   Future<R> _dispatch<R>(TrackingCommand<dynamic, R> command) {
-    dispatch(command);
+    add(command);
     return command.callback.future;
   }
 
@@ -513,15 +508,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   @override
   void onError(Object error, StackTrace stackTrace) {
     if (_subscriptions.isNotEmpty) {
-      dispatch(RaiseTrackingError(TrackingError(error, trace: stackTrace)));
+      add(RaiseTrackingError(TrackingError(error, trace: stackTrace)));
     } else {
       throw "Bad state: TrackingBloc is disposed. Unexpected ${TrackingError(error, trace: stackTrace)}";
     }
   }
 
   @override
-  void dispose() {
-    super.dispose();
+  Future<void> close() async {
+    super.close();
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
   }

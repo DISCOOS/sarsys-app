@@ -66,7 +66,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         setState(() {});
       },
       child: StreamBuilder(
-        stream: _configBloc.state,
+        stream: _configBloc,
         builder: (context, snapshot) {
           return snapshot.hasData
               ? Padding(

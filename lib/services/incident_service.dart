@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/services/service_response.dart';
+import 'package:SarSys/services/service.dart';
 import 'package:http/http.dart' show Client;
 
 class IncidentService {
@@ -10,7 +10,7 @@ class IncidentService {
   IncidentService(this.url, this.client);
 
   /// GET ../incidents
-  Future<ServiceResponse<List<Incident>>> fetch() async {
+  Future<ServiceResponse<List<Incident>>> load() async {
     // TODO: Implement fetch incidents
     throw "Not implemented";
   }
@@ -28,7 +28,7 @@ class IncidentService {
   }
 
   /// DELETE ../incidents/{incidentId}
-  Future<ServiceResponse<void>> delete(String id) async {
+  Future<ServiceResponse<void>> delete(String uuid) async {
     // TODO: Implement delete incident
     throw "Not implemented";
   }

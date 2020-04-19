@@ -38,9 +38,6 @@ class MissionsPage extends StatefulWidget {
 
 class MissionsPageState extends State<MissionsPage> {
   static const STATE = "missions_filter";
-  UserBloc _userBloc;
-  UnitBloc _unitBloc;
-  TrackingBloc _trackingBloc;
   StreamGroup<dynamic> _group;
 
   Set<UnitStatus> _filter;
@@ -59,11 +56,11 @@ class MissionsPageState extends State<MissionsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _userBloc = BlocProvider.of<UserBloc>(context);
-    _unitBloc = BlocProvider.of<UnitBloc>(context);
-    _trackingBloc = BlocProvider.of<TrackingBloc>(context);
     if (_group != null) _group.close();
-    _group = StreamGroup.broadcast()..add(_unitBloc.state)..add(_trackingBloc.state)..add(_userBloc.state);
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<UnitBloc>())
+      ..add(context.bloc<TrackingBloc>())
+      ..add(context.bloc<UserBloc>());
   }
 
   @override
@@ -79,7 +76,7 @@ class MissionsPageState extends State<MissionsPage> {
       builder: (BuildContext context, BoxConstraints viewportConstraints) {
         return RefreshIndicator(
           onRefresh: () async {
-            _unitBloc.fetch();
+            context.bloc<UnitBloc>().load();
           },
           child: Container(
             color: Color.fromRGBO(168, 168, 168, 0.6),
@@ -105,7 +102,10 @@ class MissionsPageState extends State<MissionsPage> {
   }
 
   List<Unit> _filteredUnits() {
-    return _unitBloc.units.values
+    return context
+        .bloc<UnitBloc>()
+        .units
+        .values
         .where((unit) => _filter.contains(unit.status))
         .where((unit) => widget.where == null || widget.where(unit))
         .where((unit) => widget.query == null || _prepare(unit).contains(widget.query.toLowerCase()))
@@ -136,9 +136,9 @@ class MissionsPageState extends State<MissionsPage> {
       );
     }
     var unit = units[index];
-    var tracking = unit.tracking == null ? null : _trackingBloc.tracking[unit.tracking];
+    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().tracking[unit.tracking];
     var status = tracking?.status ?? TrackingStatus.None;
-    return widget.withActions && _userBloc?.user?.isCommander == true
+    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
@@ -188,7 +188,7 @@ class MissionsPageState extends State<MissionsPage> {
                 color: toPointStatusColor(tracking?.point),
               ),
             ),
-            if (widget.withActions && _userBloc?.user?.isCommander == true)
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
