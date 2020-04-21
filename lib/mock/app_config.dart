@@ -11,7 +11,6 @@ import 'package:SarSys/services/service.dart';
 class AppConfigServiceMock extends Mock implements AppConfigService {
   static AppConfigService build(String asset, String baseUrl, Client client) {
     final AppConfigServiceMock mock = AppConfigServiceMock();
-    AppConfig config;
     when(mock.asset).thenAnswer((_) => asset);
     when(mock.baseUrl).thenAnswer((_) => baseUrl);
     when(mock.client).thenAnswer((_) => client);
@@ -63,8 +62,9 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
+      final uuid = _.positionalArguments[0] as String;
       await Storage.secure.delete(
-        key: 'app_config_${config.uuid}',
+        key: 'app_config_$uuid',
       );
       return ServiceResponse.noContent();
     });

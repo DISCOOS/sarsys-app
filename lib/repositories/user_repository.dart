@@ -4,6 +4,8 @@ import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:flutter/foundation.dart';
@@ -14,29 +16,66 @@ import 'package:SarSys/models/User.dart';
 class UserRepository {
   UserRepository(
     this.service, {
+    @required this.connectivity,
     this.compactWhen = 10,
   });
   final int compactWhen;
   final UserService service;
+  final ConnectivityService connectivity;
   final AuthTokenRepository _tokens = AuthTokenRepository();
 
   String _userId;
   String get userId => _userId;
 
-  User get user => _users?.get(_userId);
+  /// Get authenticated [user]
+  User get user => get(_userId);
 
-  AuthToken get token => _tokens[_userId];
-  bool get isTokenValid => token?.isValid == true;
+  /// User is online
+  bool get isOnline => connectivity.isOnline;
+
+  /// User is offline
+  bool get isOffline => connectivity.isOffline;
+
+  /// User is authenticated (token might be invalid)
+  bool get isAuthenticated => user != null;
+
+  /// Check if user has token
+  User get(String userId) => containsKey(userId) ? _users?.get(userId) : null;
+
+  /// Get [User] from given [User.userId]
+  User operator [](String userId) => get(userId);
+
+  /// Check if user has token
   bool get hasToken => _tokens.containsKey(_userId);
 
-  Iterable<String> get keys => _users != null ? List.unmodifiable(_users.toMap().keys) : null;
-  Iterable<User> get values => _users != null ? List.unmodifiable(_users.toMap().values) : null;
+  /// Get token for authenticated [user]
+  AuthToken get token => _tokens[_userId];
 
+  /// Check if token is valid
+  bool get isTokenValid => token?.isValid == true;
+
+  /// Check if token is expired
+  bool get isTokenExpired => token.isExpired == true;
+
+  /// Get all cached [User.userId]s
+  Iterable<String> get keys => _users != null ? List.unmodifiable(_users.keys) : null;
+
+  /// Get all cached [User]s
+  Iterable<User> get values => _users != null ? List.unmodifiable(_users.values) : null;
+
+  /// Check if user with [userId] is cached
   bool containsKey(String userId) => _users?.keys?.contains(userId) ?? false;
+
+  /// Check if given [user] is cached
   bool containsValue(User user) => _users?.values?.contains(user) ?? false;
 
-  Box<User> _users;
+  /// Check if repository is ready
+  bool get isReady => _users?.isOpen == true && _users.containsKey(_userId);
 
+  /// Check if local access to user data is secured
+  bool isSecured({String userId}) => _users.get(userId ?? _userId)?.security != null;
+
+  Box<User> _users;
   Future _checkState({bool open = false}) async {
     if (open) {
       _users ??= await _open();
@@ -45,14 +84,8 @@ class UserRepository {
     }
   }
 
-  /// Check if repository is ready
-  bool get isReady => _users?.isOpen == true && _users.containsKey(_userId);
-
-  /// Check if local access to user data is secured
-  bool isSecured({String userId}) => _users.get(userId ?? _userId) != null;
-
   Future<Box<User>> _open() async {
-    _tokens.load();
+    await _tokens.load();
     return Hive.openBox(
       '$UserRepository',
       encryptionKey: await Storage.hiveKey<User>(),
@@ -60,7 +93,7 @@ class UserRepository {
     );
   }
 
-  /// Load [user]
+  /// Load current [user]
   Future<User> load({
     String userId,
     bool validate = true,
@@ -75,11 +108,11 @@ class UserRepository {
         validate: validate,
         refresh: refresh,
       );
-      return await _putUser(
-        actualToken.toUser(
-          security: user?.security,
-        ),
+      await _putToken(
+        actualToken,
+        security: user?.security,
       );
+      return _users.get(actualId);
     }
     throw UserNotFoundException(actualId);
   }
@@ -114,7 +147,7 @@ class UserRepository {
     }
 
     // Is login request for user with an old token?
-    if (actualToken?.userId != _userId) {
+    if (actualId != null && actualId != _userId) {
       final response = await _validateAndRefresh(
         actualToken,
         lock: true,
@@ -125,28 +158,34 @@ class UserRepository {
     }
 
     // No existing tokens found
-    final response = await service.login(
-      userId: actualId,
-      username: username,
-      password: password,
-      idpHint: idpHint,
-    );
-    switch (response.code) {
-      case HttpStatus.ok:
-        return await _toUser(
-          response.body,
-          lock: true,
-        );
-      case HttpStatus.unauthorized:
-        throw UserUnauthorizedException(actualId);
-      case HttpStatus.forbidden:
-        throw UserForbiddenException(actualId);
-      default:
-        throw UserServiceException(
-          'Failed to login user $actualId',
-          response: response,
-        );
+    if (isOnline) {
+      final response = await service.login(
+        userId: actualId,
+        username: username,
+        password: password,
+        idpHint: idpHint,
+      );
+      switch (response.code) {
+        case HttpStatus.ok:
+          return await _toUser(
+            response.body,
+            lock: isSecured(userId: response.body.userId),
+          );
+        case HttpStatus.unauthorized:
+          throw UserUnauthorizedException('${actualId ?? username ?? 'unknown'}');
+        case HttpStatus.forbidden:
+          throw UserForbiddenException('${actualId ?? username ?? 'unknown'}');
+        default:
+          throw UserServiceException(
+            'Failed to login user ${actualId ?? username ?? 'unknown'}',
+            response: response,
+          );
+      }
     }
+    throw UserRepositoryOfflineException(
+      actualId,
+      'Unable to login user ${actualId ?? username ?? 'unknown'} in offline mode',
+    );
   }
 
   /// Refresh [AuthToken]
@@ -162,16 +201,14 @@ class UserRepository {
         force: true,
       );
       if (response.is200) {
-        return _putUser(
-          response.body,
-        );
+        return response.body;
       }
       throw UserServiceException(
-        'Failed to refresh token for user $actualId',
+        'Failed to refresh token for user ${actualId ?? 'unknown'}',
         response: response,
       );
     }
-    throw AuthTokenNotFoundException(actualId);
+    throw AuthTokenNotFoundException('${actualId ?? 'unknown'}');
   }
 
   /// Logout user
@@ -193,7 +230,7 @@ class UserRepository {
       if (response.is204) {
         final actualUser = _users.get(actualUserId);
         // In shared mode users must be locked to prevent accidental logins
-        if (SecurityMode.shared == actualUser.security.mode) {
+        if (SecurityMode.shared == actualUser?.security?.mode) {
           await lock(
             userId: actualUserId,
           );
@@ -203,17 +240,14 @@ class UserRepository {
           // Always delete untrusted users
           user: delete || actualUser.isUntrusted,
         );
-        if (!kReleaseMode) {
-          print("Logged out user $actualUserId");
-        }
         return actualUser;
       }
       throw UserServiceException(
-        'Failed to logout user $actualUserId',
+        'Failed to logout user ${actualUserId ?? 'unknown'}',
         response: response,
       );
     }
-    throw AuthTokenNotFoundException(userId ?? _userId);
+    throw AuthTokenNotFoundException(userId ?? _userId ?? 'unknown');
   }
 
   /// Clear all users
@@ -237,14 +271,14 @@ class UserRepository {
     await _checkState();
 
     final actualId = userId ?? _userId;
-    final user = _users.get(userId);
+    final user = _users.get(actualId);
     if (user != null) {
       var next;
       if (user.security != null) {
         next = user.security.cloneWith(
           pin: pin,
           locked: locked,
-          trusted: trusted,
+          trusted: trusted ?? false,
           type: type,
           mode: mode,
           heartbeat: DateTime.now(),
@@ -252,8 +286,8 @@ class UserRepository {
       } else {
         next = Security(
           pin: pin,
-          locked: locked,
-          trusted: trusted,
+          locked: locked ?? true,
+          trusted: trusted ?? false,
           type: type,
           mode: mode,
           heartbeat: DateTime.now(),
@@ -289,7 +323,7 @@ class UserRepository {
   }
 
   /// Unlock [user] access with given pin
-  Future<Security> unlock({String pin}) async {
+  Future<Security> unlock(String pin) async {
     await _checkState();
 
     final user = _users.get(userId ?? _userId);
@@ -325,12 +359,8 @@ class UserRepository {
     final actualId = userId ?? _userId;
     final actualToken = _tokens[actualId];
     if (actualToken != null) {
-      if (kDebugMode) print("Token found for $actualId: $actualToken");
       bool isValid = actualToken.isValid;
       if (isValid || !validate) {
-        if (kDebugMode) {
-          print("Token ${isValid ? 'still' : 'is not'} valid");
-        }
         return actualToken;
       }
       // Refresh token?
@@ -354,40 +384,41 @@ class UserRepository {
     bool lock = true,
     bool force = false,
   }) async {
-    if (force || token.isExpired) {
-      final response = await _refresh(token);
-      if (response.is200) {
-        return ServiceResponse.ok<User>(
-          body: await _toUser(
-            token,
-            lock: lock,
-          ),
-        );
-      }
+    // Skip when offline allowing authenticated
+    // user to remain authenticated regardless
+    // off connectivity status. Including opening
+    // the app again without being forced to
+    // refresh or authenticate, which would make
+    // the app unusable during a network partition
+    if (isOnline && (force || token.isExpired)) {
+      return await _refresh(token, lock: lock);
     }
     return ServiceResponse.ok<User>(
       body: _users.get(token.userId),
     );
   }
 
-  Future<ServiceResponse<AuthToken>> _refresh(AuthToken token) async {
+  Future<ServiceResponse<User>> _refresh(AuthToken token, {bool lock}) async {
     final response = await service.refresh(token);
     if (response.is200) {
-      return ServiceResponse.ok<AuthToken>(
-        body: await _putToken(response.body),
+      final token = response.body;
+      return ServiceResponse.ok<User>(
+        body: await _toUser(token, lock: lock),
       );
     }
-    return response;
+    return response.copyWith<User>(
+      body: _users.get(token.userId),
+    );
   }
 
   Future<User> _toUser(AuthToken token, {@required bool lock}) async {
     final userId = token.userId;
-    final security = lock ? await this.lock(userId: userId) : _users.get(userId).security;
-    return _putUser(
-      token.toUser(
-        security: security,
-      ),
+    final security = _users.get(userId)?.security;
+    await _putToken(
+      token,
+      security: lock ? security?.cloneWith(locked: true) : security,
     );
+    return _users.get(userId);
   }
 
   Future<AuthToken> _delete(
@@ -404,18 +435,14 @@ class UserRepository {
     return token;
   }
 
-  Future<AuthToken> _putToken(AuthToken token) async {
-    if (kDebugMode) {
-      print("Token written: $token");
-    }
+  Future<AuthToken> _putToken(AuthToken token, {Security security}) async {
     await _tokens.put(token);
+    await _putUser(token.toUser(security: security));
     return token;
   }
 
-  Future<User> _putUser(User user, {bool current = true}) async {
-    if (current) {
-      _userId = user.userId;
-    }
+  Future<User> _putUser(User user) async {
+    _userId = user.userId;
     await _users.put(user.userId, user);
     return user;
   }
@@ -427,28 +454,18 @@ class UserRepository {
   }
 }
 
-class UserNotSecuredException implements Exception {
-  UserNotSecuredException(this.userId);
+class UserNotSecuredException extends RepositoryException {
+  UserNotSecuredException(this.userId) : super('User $userId is not secured');
   final String userId;
-
-  @override
-  String toString() {
-    return 'User $userId is not secured';
-  }
 }
 
-class UserNotFoundException implements Exception {
-  UserNotFoundException(this.userId);
+class UserNotFoundException extends RepositoryException {
+  UserNotFoundException(this.userId) : super('User $userId not found');
   final String userId;
-
-  @override
-  String toString() {
-    return 'User $userId not found';
-  }
 }
 
-class UserUnauthorizedException implements Exception {
-  UserUnauthorizedException(this.userId);
+class UserUnauthorizedException extends RepositoryException {
+  UserUnauthorizedException(this.userId) : super('User $userId access unauthorized');
   final String userId;
 
   @override
@@ -457,8 +474,13 @@ class UserUnauthorizedException implements Exception {
   }
 }
 
-class UserForbiddenException implements Exception {
-  UserForbiddenException(this.userId);
+class UserRepositoryOfflineException extends RepositoryException {
+  UserRepositoryOfflineException(this.userId, String message) : super(message);
+  final String userId;
+}
+
+class UserForbiddenException extends RepositoryException {
+  UserForbiddenException(this.userId) : super('User $userId access forbidden');
   final String userId;
 
   @override
@@ -467,15 +489,17 @@ class UserForbiddenException implements Exception {
   }
 }
 
-class UserServiceException implements Exception {
-  UserServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
+class UserServiceException extends RepositoryException {
+  UserServiceException(
+    Object error, {
+    this.response,
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
   final ServiceResponse response;
 
   @override
   String toString() {
-    return 'UserServiceException: $error, response: $response, stackTrace: $stackTrace';
+    return 'UserServiceException: $message, response: $response, stackTrace: $stackTrace';
   }
 }
 
@@ -489,10 +513,6 @@ class AuthTokenNotFoundException implements Exception {
   }
 }
 
-class UserRepositoryNotReadyException implements Exception {
+class UserRepositoryNotReadyException extends RepositoryNotReadyException {
   UserRepositoryNotReadyException();
-  @override
-  String toString() {
-    return 'UserRepository is not ready';
-  }
 }

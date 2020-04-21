@@ -14,6 +14,17 @@ class ServiceResponse<T> extends Equatable {
   ServiceResponse({this.code, this.message, this.body, this.conflict, this.error, this.stackTrace})
       : super([code, message, body, conflict, error, stackTrace]);
 
+  ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
+    return ServiceResponse<T>(
+      body: body ?? body,
+      code: code ?? code,
+      message: message ?? message,
+      stackTrace: stackTrace,
+      conflict: conflict,
+      error: error,
+    );
+  }
+
   static ServiceResponse<T> ok<T>({T body}) {
     return ServiceResponse<T>(
       code: 200,

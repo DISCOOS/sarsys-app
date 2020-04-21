@@ -26,9 +26,11 @@ class AuthToken extends Equatable {
   final String refreshToken;
   final DateTime accessTokenExpiration;
 
+  /// Check if token is valid
+  bool get isValid => !isExpired;
+
   /// Check if token is expired
-  bool get isExpired => !isValid;
-  bool get isValid => accessTokenExpiration.isAfter(DateTime.now());
+  bool get isExpired => accessTokenExpiration.isBefore(DateTime.now());
 
   /// Factory constructor for creating a new `AuthToken` instance
   factory AuthToken.fromJson(Map<String, dynamic> json) => _$AuthTokenFromJson(json);

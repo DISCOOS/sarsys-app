@@ -103,7 +103,10 @@ class BlocProviderController {
 
     // Configure user service and repo
     final userService = UserIdentityService(client);
-    final userRepo = UserRepository(userService);
+    final userRepo = UserRepository(
+      userService,
+      connectivity: connectivityService,
+    );
     // ignore: close_sinks
     final UserBloc userBloc = UserBloc(userRepo, configBloc);
 

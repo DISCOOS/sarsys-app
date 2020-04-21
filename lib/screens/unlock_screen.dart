@@ -43,7 +43,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
   /// State for async result processing from [UserState] stream
   bool _popWhenReady = false;
 
-  UserError _lastError;
+  UserBlocError _lastError;
 
   AnimationController _animController;
   StreamSubscription<UserState> _subscription;
@@ -215,7 +215,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     return fields..add(_buildSecure());
   }
 
-  bool _isError() => _bloc.state is UserException;
+  bool _isError() => _bloc.state.isError();
 
   Widget _buildErrorText() => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
@@ -416,9 +416,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
       }
     } else {
       _popWhenReady = true;
-      await _bloc.unlock(
-        pin: _pin,
-      );
+      await _bloc.unlock(_pin);
     }
   }
 
@@ -559,11 +557,11 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
           _popTo(context);
         }
         break;
-      case UserError:
+      case UserBlocError:
         if (_lastError == null) {
           Catcher.reportCheckedError(
             state.data,
-            (state as UserError).stackTrace,
+            (state as UserBlocError).stackTrace,
           );
           _lastError = state;
         }

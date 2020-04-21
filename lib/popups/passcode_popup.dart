@@ -53,7 +53,7 @@ class PasscodeRoute extends PopupRoute {
               StreamBuilder<UserState>(
                 stream: bloc,
                 builder: (context, snapshot) {
-                  var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data is UserException;
+                  var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Center(

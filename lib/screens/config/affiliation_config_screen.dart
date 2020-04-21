@@ -40,8 +40,8 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
               user: context.bloc<UserBloc>().user,
               initialValue: _ensureAffiliation(),
               onChanged: (affiliation) => context.bloc<AppConfigBloc>().update(
-                    division: affiliation.divId,
-                    department: affiliation.depId,
+                    divId: affiliation.divId,
+                    depId: affiliation.depId,
                   ),
             ),
             if (context.bloc<UserBloc>().user.isAffiliated)

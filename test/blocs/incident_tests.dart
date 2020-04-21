@@ -2,14 +2,9 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
-
-const MethodChannel udidChannel = MethodChannel('flutter_udid');
-const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
-const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
 void main() async {
   final harness = BlocTestHarness()

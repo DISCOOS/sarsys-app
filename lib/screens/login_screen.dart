@@ -42,7 +42,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   /// State for async result processing from [UserState] stream
   bool _popWhenReady = false;
 
-  UserError _lastError;
+  UserBlocError _lastError;
 
   AnimationController _animController;
   StreamSubscription<UserState> _subscription;
@@ -238,7 +238,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  bool _isError(UserBloc bloc) => bloc.state is UserException;
+  bool _isError(UserBloc bloc) => bloc.state.isError();
 
   Widget _buildErrorText(UserBloc bloc) => Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
@@ -661,11 +661,11 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           _popTo(context);
         }
         break;
-      case UserError:
+      case UserBlocError:
         if (_lastError == null) {
           Catcher.reportCheckedError(
             state.data,
-            (state as UserError).stackTrace,
+            (state as UserBlocError).stackTrace,
           );
           _lastError = state;
         }

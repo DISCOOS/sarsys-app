@@ -33,6 +33,16 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// Get current [AppConfig] instance
   AppConfig get config => this[version];
 
+  /// Check if repository is operational.
+  /// Is true if and only if [init] or
+  /// [load] is called AND [delete] is NOT
+  /// called.
+  @override
+  bool get isReady => super.isReady && containsKey(version) && !getState(version).isDeleted;
+
+  /// Get current state
+  StorageState<AppConfig> get state => getState(version);
+
   /// POST ../configs
   Future<AppConfig> init() async => apply(
         await _ensure(force: true),
@@ -84,6 +94,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     return StorageState.local(init.copyWith(
       uuid: uuid,
       udid: udid,
+      version: version,
     ));
   }
 
@@ -94,7 +105,10 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     // Overwrite current configuration
     final next = state.value.toJson();
     next.addAll(newJson);
-    return state.replace(AppConfig.fromJson(next));
+    return state.replace(AppConfig.fromJson(next
+      ..addAll({
+        'version': version,
+      })));
   }
 
   Future<AppConfig> _load() async {
@@ -159,14 +173,16 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   }
 }
 
-class AppConfigServiceException implements Exception {
-  AppConfigServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
+class AppConfigServiceException extends RepositoryException {
+  AppConfigServiceException(
+    Object error, {
+    this.response,
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
   final ServiceResponse response;
 
   @override
   String toString() {
-    return 'AppConfigServiceException: $error, response: $response, stackTrace: $stackTrace';
+    return 'AppConfigServiceException: $message, response: $response, stackTrace: $stackTrace';
   }
 }

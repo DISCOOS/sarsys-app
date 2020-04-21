@@ -36,35 +36,35 @@ class Storage {
       }
 
       // DO NOT RE-ORDER THESE, only append! Hive expects typeId to be stable
-      _register<AppConfig>(
+      _registerStorageStateJsonAdapter<AppConfig>(
         fromJson: (data) => AppConfig.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<AuthToken>(
+      _registerTypeJsonAdapter<AuthToken>(
         fromJson: (data) => AuthToken.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<User>(
+      _registerTypeJsonAdapter<User>(
         fromJson: (data) => User.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<Incident>(
+      _registerStorageStateJsonAdapter<Incident>(
         fromJson: (data) => Incident.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<Unit>(
+      _registerStorageStateJsonAdapter<Unit>(
         fromJson: (data) => Unit.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<Personnel>(
+      _registerStorageStateJsonAdapter<Personnel>(
         fromJson: (data) => Personnel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<Device>(
+      _registerStorageStateJsonAdapter<Device>(
         fromJson: (data) => Device.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-      _register<Tracking>(
+      _registerStorageStateJsonAdapter<Tracking>(
         fromJson: (data) => Tracking.fromJson(data),
         toJson: (data) => data.toJson(),
       );
@@ -73,12 +73,25 @@ class Storage {
     }
   }
 
-  static void _register<T>({
+  static void _registerTypeJsonAdapter<T>({
     Map<String, dynamic> Function(T data) toJson,
     T Function(Map<String, dynamic> data) fromJson,
   }) {
     Hive.registerAdapter(
-      JsonHiveAdapter<T>(
+      TypeJsonAdapter<T>(
+        typeId: ++_typeId,
+        fromJson: fromJson,
+        toJson: toJson,
+      ),
+    );
+  }
+
+  static void _registerStorageStateJsonAdapter<T>({
+    Map<String, dynamic> Function(T data) toJson,
+    T Function(Map<String, dynamic> data) fromJson,
+  }) {
+    Hive.registerAdapter(
+      StorageStateJsonAdapter<T>(
         typeId: ++_typeId,
         fromJson: fromJson,
         toJson: toJson,
@@ -163,8 +176,33 @@ class StorageState<T> {
   StorageState<T> delete() => StorageState.deleted(value);
 }
 
-class JsonHiveAdapter<T> extends TypeAdapter<StorageState<T>> {
-  JsonHiveAdapter({
+class TypeJsonAdapter<T> extends TypeAdapter<T> {
+  TypeJsonAdapter({
+    this.typeId,
+    this.toJson,
+    this.fromJson,
+  });
+
+  @override
+  final typeId;
+
+  final Map<String, dynamic> Function(T value) toJson;
+  final T Function(Map<String, dynamic> value) fromJson;
+
+  @override
+  T read(BinaryReader reader) {
+    var json = reader.readMap();
+    return fromJson(json as Map<String, dynamic>);
+  }
+
+  @override
+  void write(BinaryWriter writer, T value) {
+    writer.writeMap(value != null ? toJson(value) : null);
+  }
+}
+
+class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
+  StorageStateJsonAdapter({
     this.typeId,
     this.toJson,
     this.fromJson,
@@ -181,7 +219,7 @@ class JsonHiveAdapter<T> extends TypeAdapter<StorageState<T>> {
     var json = reader.readMap();
     return StorageState(
       status: _toStatus(json['status'] as String),
-      value: fromJson(json['value'] as Map<String, dynamic>),
+      value: json['value'] != null ? fromJson(json['value'] as Map<String, dynamic>) : null,
     );
   }
 
@@ -196,7 +234,7 @@ class JsonHiveAdapter<T> extends TypeAdapter<StorageState<T>> {
   void write(BinaryWriter writer, StorageState<T> state) {
     writer.writeMap({
       'state': enumName(state.status),
-      'value': toJson(state.value),
+      'value': state.value != null ? toJson(state.value) : null,
     });
   }
 }

@@ -34,16 +34,13 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   /// Update given settings
   Future<AppConfig> update({
-    String securityPin,
-    SecurityType securityType,
-    SecurityMode securityMode,
     bool demo,
     String demoRole,
     bool onboarded,
     bool firstSetup,
-    String organization,
-    String division,
-    String department,
+    String orgId,
+    String divId,
+    String depId,
     List<String> talkGroups,
     String talkGroupCatalog,
     bool storage,
@@ -56,18 +53,20 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     bool keepScreenOn,
     bool callsignReuse,
     List<String> units,
+    SecurityType securityType,
+    SecurityMode securityMode,
+    List<String> trustedDomains,
+    int securityLockAfter,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
-          securityType: securityType,
-          securityMode: securityMode,
           demo: demo,
           demoRole: demoRole,
           onboarded: onboarded,
           firstSetup: firstSetup,
-          orgId: organization,
-          divId: division,
-          depId: department,
+          orgId: orgId,
+          divId: divId,
+          depId: depId,
           talkGroups: talkGroups,
           talkGroupCatalog: talkGroupCatalog,
           storage: storage,
@@ -80,6 +79,10 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           keepScreenOn: keepScreenOn,
           callsignReuse: callsignReuse,
           units: units,
+          securityType: securityType,
+          securityMode: securityMode,
+          securityLockAfter: securityLockAfter,
+          trustedDomains: trustedDomains,
         );
     return _dispatch(UpdateAppConfig(config));
   }
@@ -105,11 +108,20 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
     } else if (command is DeleteAppConfig) {
       yield await _delete(command);
     } else if (command is RaiseAppConfigError) {
-      yield _toError(command, command.data);
+      yield _toError(
+        command,
+        AppConfigError(
+          command.data,
+          stackTrace: StackTrace.current,
+        ),
+      );
     } else {
       yield _toError(
         command,
-        AppConfigError("Unsupported $command"),
+        AppConfigError(
+          "Unsupported $command",
+          stackTrace: StackTrace.current,
+        ),
       );
     }
   }
@@ -160,10 +172,11 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }
 
   // Complete with error and return response as error state to bloc
-  AppConfigState _toError(AppConfigCommand event, Object response) {
-    final error = AppConfigError(response);
-    event.callback.completeError(error);
-    return error;
+  AppConfigState _toError(AppConfigCommand command, AppConfigError state) {
+    command.callback.completeError(
+      AppConfigBlocException(command, state),
+    );
+    return state;
   }
 
   @override
@@ -237,7 +250,6 @@ abstract class AppConfigState<T> extends Equatable {
   isLoaded() => this is AppConfigLoaded;
   isUpdated() => this is AppConfigUpdated;
   isDeleted() => this is AppConfigDeleted;
-  isException() => this is AppConfigException;
   isError() => this is AppConfigError;
 }
 
@@ -277,21 +289,22 @@ class AppConfigDeleted extends AppConfigState<AppConfig> {
 }
 
 /// ---------------------
-/// Exceptional States
+/// Error States
 /// ---------------------
-abstract class AppConfigException extends AppConfigState<Object> {
-  final StackTrace trace;
-  AppConfigException(Object error, {this.trace}) : super(error, [trace]);
+class AppConfigError extends AppConfigState<Object> {
+  final StackTrace stackTrace;
+  AppConfigError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'AppConfigException {data: $data}';
+  String toString() => 'AppConfigError {error: $data, stackTrace: $stackTrace}';
 }
 
-/// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
-class AppConfigError extends AppConfigException {
-  final StackTrace trace;
-  AppConfigError(Object error, {this.trace}) : super(error, trace: trace);
+class AppConfigBlocException implements Exception {
+  AppConfigBlocException(this.command, this.state, {this.stackTrace});
+  final AppConfigCommand command;
+  final AppConfigState state;
+  final StackTrace stackTrace;
 
   @override
-  String toString() => 'AppConfigError {data: $data}';
+  String toString() => 'AppConfigBlocException {command: $command, state: $state, stackTrace: $stackTrace}';
 }

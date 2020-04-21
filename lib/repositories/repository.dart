@@ -63,7 +63,7 @@ abstract class ConnectionAwareRepository<S, T> {
   /// If not ready an [RepositoryNotReadyException] is thrown
   @protected
   void checkState() {
-    if (!isReady) {
+    if (_states?.isOpen != true) {
       throw RepositoryNotReadyException();
     } else if (_closed) {
       throw RepositoryIsClosedException();
@@ -130,7 +130,13 @@ abstract class ConnectionAwareRepository<S, T> {
     if (!state.isRemote) {
       if (connectivity.isOnline) {
         try {
-          return await _push(state);
+          final config = await _push(
+            state,
+          );
+          await commit(
+            StorageState.remote(config),
+          );
+          return config;
         } on SocketException {
           // Timeout - try again later
         } on Exception catch (error, stackTrace) {
@@ -156,6 +162,8 @@ abstract class ConnectionAwareRepository<S, T> {
     return state.value;
   }
 
+  Timer _timer;
+
   /// Current number of retries.
   /// Is reset on each offline -> online transition
   int get retries => _retries;
@@ -175,15 +183,24 @@ abstract class ConnectionAwareRepository<S, T> {
         );
         _backlog.removeFirst();
       } on SocketException {
-        if (connectivity.isOnline) {
-          await Future.delayed(
-            // Retry with exponential backoff to maximum 10 seconds
-            toNextTimeout(_retries, const Duration(seconds: 10)),
-          );
-        }
+        _retryOnline(status);
       } on Exception catch (error, stackTrace) {
         onError(error, stackTrace);
       }
+    }
+  }
+
+  void _retryOnline(ConnectivityStatus status) {
+    if (connectivity.isOnline) {
+      _timer?.cancel();
+      _timer = Timer(
+        toNextTimeout(_retries, const Duration(seconds: 10)),
+        () {
+          if (connectivity.isOnline) {
+            _online(status);
+          }
+        },
+      );
     }
   }
 
@@ -214,11 +231,16 @@ abstract class ConnectionAwareRepository<S, T> {
   /// Commit [state] to repository
   @protected
   Future<T> commit(StorageState<T> state) async {
-    await _states.put(
-      toKey(state),
-      state,
-    );
-    _controller.add(state);
+    final key = toKey(state);
+    final current = _states.get(key);
+    if (state.isRemote && current.isDeleted) {
+      await _states.delete(key);
+    } else {
+      await _states.put(key, state);
+    }
+    if (!_closed) {
+      _controller.add(state);
+    }
     return state.value;
   }
 
@@ -226,6 +248,7 @@ abstract class ConnectionAwareRepository<S, T> {
 
   void close() {
     _closed = true;
+    _timer?.cancel();
     _pending?.pause();
     _controller.close();
   }
@@ -236,7 +259,9 @@ class RepositoryDelegate {
   /// with the given [repo], [error], and [stackTrace].
   /// The [stacktrace] argument may be `null` if the state stream received an error without a [stackTrace].
   @mustCallSuper
-  void onError(ConnectionAwareRepository repo, Object error, StackTrace stackTrace) => null;
+  void onError(ConnectionAwareRepository repo, Object error, StackTrace stackTrace) {
+    throw RepositoryException('${repo.runtimeType}: $error', stackTrace: stackTrace);
+  }
 }
 
 /// Oversees all [repositories] and delegates responsibilities to the [RepositoryDelegate].
@@ -259,10 +284,11 @@ class RepositorySupervisor {
 
 class RepositoryException implements Exception {
   final String message;
-  RepositoryException(this.message);
+  final StackTrace stackTrace;
+  RepositoryException(this.message, {this.stackTrace});
   @override
   String toString() {
-    return '$runtimeType: {message: $message}';
+    return '$runtimeType: {message: $message, stackTrace: $stackTrace}';
   }
 }
 
