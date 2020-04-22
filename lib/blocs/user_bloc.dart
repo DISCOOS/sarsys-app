@@ -33,8 +33,11 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   @override
   get initialState => UserUnset();
 
-  /// Authenticated uses
+  /// Authenticated use
   User get user => repo.user;
+
+  /// Id of authenticated use
+  String get userId => repo.user?.userId;
 
   /// Get [AppConfig]
   AppConfig get config => configBloc.config;
@@ -137,7 +140,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   /// Load current user from secure storage
   Future<User> load({String userId}) async {
-    return _dispatch<User>(_assertUnset(LoadUser(userId: userId)));
+    return _dispatch<User>(LoadUser(userId: userId ?? repo.userId));
+//    return _dispatch<User>(_assertUnset<User>(LoadUser(userId: userId)));
   }
 
   /// Authenticate user
@@ -150,10 +154,6 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     ));
   }
 
-  UserCommand _assertUnset<T>(UserCommand command) {
-    return isAuthenticated ? RaiseUserError("User is logged in") : command;
-  }
-
   Future<User> logout({bool delete = false}) {
     return _dispatch<User>(LogoutUser(delete: delete));
   }
@@ -163,7 +163,12 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
-    return isAuthenticated ? command : RaiseUserError("User is not logged");
+    return isAuthenticated
+        ? command
+        : RaiseUserError<T>(
+            "User is not logged",
+            stackTrace: StackTrace.current,
+          );
   }
 
   Future<bool> authorize(Incident data, String passcode) {
@@ -392,7 +397,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   // Complete with error and return response as error state to bloc
   UserState _toError(UserCommand command, UserBlocError state) {
     command.callback.completeError(
-      UserBlocException(command, state),
+      UserBlocException(state, command: command),
     );
     return state;
   }
@@ -483,12 +488,13 @@ class ClearUsers extends UserCommand<void, List<User>> {
   String toString() => 'ClearUsers';
 }
 
-class RaiseUserError extends UserCommand<Object, Exception> {
+class RaiseUserError<T> extends UserCommand<dynamic, T> {
+  final Object error;
   final StackTrace stackTrace;
-  RaiseUserError(data, {this.stackTrace}) : super(data);
+  RaiseUserError(this.error, {T data, this.stackTrace}) : super(data);
 
   @override
-  String toString() => 'RaiseUserError';
+  String toString() => 'RaiseUserError {data: $data, error: $error, stackTrace: $stackTrace}';
 }
 
 /// ---------------------
@@ -601,11 +607,11 @@ class UserBlocIsOffline extends UserBlocError {
 /// ---------------------
 
 class UserBlocException implements Exception {
-  UserBlocException(this.command, this.state, {this.stackTrace});
+  UserBlocException(this.state, {this.command, this.stackTrace});
   final UserCommand command;
   final UserState state;
   final StackTrace stackTrace;
 
   @override
-  String toString() => '$runtimeType {command: $command, state: $state, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
 }

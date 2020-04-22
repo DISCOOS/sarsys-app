@@ -21,8 +21,7 @@ import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/device_service.dart';
-import 'package:SarSys/services/incident_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,11 +38,11 @@ class BlocTestHarness {
   final assetConfig = 'assets/config/app_config.json';
 
   ConnectivityServiceMock _connectivity;
-
   ConnectivityServiceMock get connectivity => _connectivity;
 
   String _username;
   String _password;
+  bool _authenticated;
   UserServiceMock get userService => _userService;
   UserServiceMock _userService;
 
@@ -59,12 +58,15 @@ class BlocTestHarness {
   DeviceBloc get deviceBloc => _deviceBloc;
   bool _withDeviceBloc = false;
 
+  IncidentServiceMock get incidentService => _incidentService;
+  IncidentServiceMock _incidentService;
+
   IncidentBloc _incidentBloc;
   IncidentBloc get incidentBloc => _incidentBloc;
   bool _withIncidentBloc = false;
 
   void install() {
-    setUpAll(() {
+    setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
       _withAssets();
 
@@ -76,15 +78,19 @@ class BlocTestHarness {
 
       // Initialize shared preferences for testing
       SharedPreferences.setMockInitialValues({});
+
+      // Delete any previous data from failed tests
+      return await Storage.destroy();
     });
 
     setUp(() async {
+      await Storage.init();
       _buildConnectivity();
       if (_withConfigBloc) {
         _buildAppConfigBloc();
       }
       if (_withUserBloc) {
-        _buildUserBloc();
+        await _buildUserBloc();
       }
       if (_withDeviceBloc) {
         _buildDeviceBloc();
@@ -92,48 +98,69 @@ class BlocTestHarness {
       if (_withIncidentBloc) {
         _buildIncidentBloc();
       }
-      return await Storage.init();
+      // Needed for await above to work
+      return Future.value();
     });
 
     tearDown(() async {
       if (_withConfigBloc) {
-        await _configBloc?.close();
+        _configBloc?.close();
       }
       if (_withUserBloc) {
-        await _userBloc?.close();
+        _userBloc?.close();
       }
       if (_withDeviceBloc) {
-        await _deviceBloc?.close();
+        _deviceBloc?.close();
       }
       if (_withIncidentBloc) {
-        await _incidentBloc?.close();
+        _incidentBloc?.close();
       }
       _connectivity?.dispose();
       if (Storage.initialized) {
         await Storage.destroy();
       }
+      // Needed for await above to work
+      return Future.value();
     });
 
-    tearDownAll(() async {});
+    tearDownAll(() async {
+      if (Storage.initialized) {
+        await Storage.destroy();
+      }
+      // Needed for await above to work
+      return Future.value();
+    });
   }
 
   void withConfigBloc() {
     _withConfigBloc = true;
   }
 
-  void withUserBloc({String username = 'username', String password = 'password'}) {
+  void withUserBloc({
+    String username = 'username',
+    String password = 'password',
+    bool authenticated = false,
+  }) {
     withConfigBloc();
     _username = username;
     _password = password;
     _withUserBloc = true;
+    _authenticated = authenticated;
   }
 
   void withDeviceBloc() {
     _withDeviceBloc = true;
   }
 
-  void withIncidentBloc() {
-    withUserBloc();
+  void withIncidentBloc({
+    String username = 'username',
+    String password = 'password',
+  }) {
+    withUserBloc(
+      username: username,
+      password: password,
+      authenticated: true,
+    );
     _withIncidentBloc = true;
   }
 
@@ -213,7 +240,7 @@ class BlocTestHarness {
     _configBloc = AppConfigBloc(configRepo);
   }
 
-  void _buildUserBloc() {
+  Future _buildUserBloc() async {
     assert(_withConfigBloc, 'UserBloc requires AppConfigBloc');
     _userService = UserServiceMock.build(
       UserRole.commander,
@@ -228,17 +255,24 @@ class BlocTestHarness {
       ),
       configBloc,
     );
+    if (_authenticated) {
+      await _userBloc.login(username: _username, password: _password);
+    }
   }
 
   void _buildIncidentBloc({UserRole role = UserRole.commander, String passcode = 'T123'}) {
     assert(_withUserBloc, 'IncidentBloc requires UserBloc');
-    final IncidentService incidentService = IncidentServiceMock.build(
+    _incidentService = IncidentServiceMock.build(
       _userBloc.repo,
-      2,
-      enumName(role),
-      passcode,
+      role: role,
+      passcode: passcode,
     );
-    _incidentBloc = IncidentBloc(IncidentRepository(incidentService), userBloc);
+    _incidentBloc = IncidentBloc(
+        IncidentRepository(
+          _incidentService,
+          connectivity: _connectivity,
+        ),
+        userBloc);
   }
 
   void _buildDeviceBloc({int tetraCount = 10, int appCount = 10}) {
@@ -274,5 +308,36 @@ class ConnectivityServiceMock extends Mock implements ConnectivityService {
 
   void dispose() {
     _controller.close();
+  }
+}
+
+Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
+  B bloc,
+  Iterable expected, {
+  Duration duration,
+  int skip = 0,
+  bool close = true,
+}) async {
+  assert(bloc != null);
+  final states = <State>[];
+  final subscription = bloc.skip(skip).listen(states.add);
+  if (duration != null) await Future.delayed(duration);
+  if (close) {
+    await bloc.close();
+  }
+  expect(states, expected);
+  await subscription.cancel();
+}
+
+void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
+  B bloc,
+  Iterable expected, {
+  bool close = true,
+}) {
+  assert(bloc != null);
+  assert(expected != null);
+  expect(bloc, emitsThrough(emitsInOrder(expected)));
+  if (close) {
+    bloc.close();
   }
 }

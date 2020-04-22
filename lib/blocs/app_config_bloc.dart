@@ -174,7 +174,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   // Complete with error and return response as error state to bloc
   AppConfigState _toError(AppConfigCommand command, AppConfigError state) {
     command.callback.completeError(
-      AppConfigBlocException(command, state),
+      AppConfigBlocException(state, command: command),
     );
     return state;
   }
@@ -299,12 +299,16 @@ class AppConfigError extends AppConfigState<Object> {
   String toString() => 'AppConfigError {error: $data, stackTrace: $stackTrace}';
 }
 
+/// ---------------------
+/// Exceptions
+/// ---------------------
+
 class AppConfigBlocException implements Exception {
-  AppConfigBlocException(this.command, this.state, {this.stackTrace});
-  final AppConfigCommand command;
+  AppConfigBlocException(this.state, {this.command, this.stackTrace});
   final AppConfigState state;
   final StackTrace stackTrace;
+  final AppConfigCommand command;
 
   @override
-  String toString() => 'AppConfigBlocException {command: $command, state: $state, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
 }

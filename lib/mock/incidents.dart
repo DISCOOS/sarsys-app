@@ -6,13 +6,34 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
+import 'package:uuid/uuid.dart';
+
+const PASSCODE = 'T123';
 
 class IncidentBuilder {
+  static Incident create(
+    String userId, {
+    int since = 0,
+    String uuid,
+    String passcode = PASSCODE,
+  }) {
+    return Incident.fromJson(
+      IncidentBuilder.createIncidentAsJson(
+        uuid ?? Uuid().v4(),
+        since,
+        userId,
+        passcode,
+      ),
+    );
+  }
+
   static Map<String, dynamic> createIncidentAsJson(String uuid, int since, String userId, String passcode) {
     final rnd = math.Random();
     return json.decode(
@@ -52,28 +73,66 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static IncidentService build(UserRepository repo, final int count, final String role, final String passcode) {
-    final Map<String, Incident> incidents = {};
+  static final Map<String, Incident> incidents = {};
+
+  Incident add(
+    String userId, {
+    int since = 0,
+    String uuid,
+    String passcode = PASSCODE,
+  }) {
+    final incident = IncidentBuilder.create(
+      userId,
+      uuid: uuid,
+      since: since,
+      passcode: passcode,
+    );
+    incidents[incident.uuid] = incident;
+    return incident;
+  }
+
+  Incident remove(uuid) {
+    return incidents.remove(uuid);
+  }
+
+  IncidentServiceMock reset() {
+    incidents.clear();
+    return this;
+  }
+
+  static MapEntry<String, Incident> _buildEntry(
+    String uuid,
+    int since,
+    User user,
+    String passcode,
+  ) =>
+      MapEntry(
+        uuid,
+        Incident.fromJson(
+          IncidentBuilder.createIncidentAsJson(
+            uuid,
+            since,
+            user.userId,
+            passcode,
+          ),
+        ),
+      );
+
+  static IncidentService build(
+    UserRepository repo, {
+    @required final UserRole role,
+    @required final String passcode,
+    final int count = 0,
+  }) {
+    incidents.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
-    final unauthorized = UserServiceMock.createToken("unauthorized", role);
-    when(mock.load()).thenAnswer((_) async {
+    final unauthorized = UserServiceMock.createToken("unauthorized", role).toUser();
+    when(mock.fetch()).thenAnswer((_) async {
       if (incidents.isEmpty) {
         var user = await repo.load();
         incidents.addEntries([
-          for (var i = 1; i <= count ~/ 2; i++)
-            MapEntry(
-              "a:x$i",
-              Incident.fromJson(
-                IncidentBuilder.createIncidentAsJson("a:x$i", i, user.userId, passcode),
-              ),
-            ),
-          for (var i = count ~/ 2 + 1; i <= count; i++)
-            MapEntry(
-              "a:y$i",
-              Incident.fromJson(
-                IncidentBuilder.createIncidentAsJson("a:y$i", i, unauthorized.toUser().userId, passcode),
-              ),
-            ),
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
+          for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
       return ServiceResponse.ok(body: incidents.values.toList(growable: false));
@@ -83,7 +142,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.userId);
       final created = Incident(
-        uuid: "m:${randomAlphaNumeric(8).toLowerCase()}",
+        uuid: incident.uuid ?? "m:${randomAlphaNumeric(8).toLowerCase()}",
         type: incident.type,
         status: incident.status,
         created: author,
@@ -111,17 +170,17 @@ class IncidentServiceMock extends Mock implements IncidentService {
           (_) => incident,
           ifAbsent: () => incident,
         );
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(body: incident);
       }
       return ServiceResponse.notFound(message: "Not found. Incident ${incident.uuid}");
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      var incident = _.positionalArguments[0];
-      if (incidents.containsKey(incident.uuid)) {
-        incidents.remove(incident.uuid);
+      var uuid = _.positionalArguments[0];
+      if (incidents.containsKey(uuid)) {
+        incidents.remove(uuid);
         return ServiceResponse.noContent();
       }
-      return ServiceResponse.notFound(message: "Not found. Incident ${incident.uuid}");
+      return ServiceResponse.notFound(message: "Not found. Incident $uuid");
     });
     return mock;
   }

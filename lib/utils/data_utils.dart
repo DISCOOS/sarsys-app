@@ -150,6 +150,8 @@ Duration asEffort(List<Point> history) => history?.isNotEmpty == true
       )
     : Duration.zero;
 
+isEmptyOrNull(value) => emptyAsNull(value) == null;
+
 emptyAsNull(value) => value is String
     ? (value.isNotEmpty == true ? value : null)
     : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);

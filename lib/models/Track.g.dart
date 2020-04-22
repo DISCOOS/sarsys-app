@@ -6,11 +6,14 @@ part of 'Track.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Track _$TrackFromJson(Map<String, dynamic> json) {
+Track _$TrackFromJson(Map json) {
   return Track(
     points: (json['points'] as List)
-        ?.map(
-            (e) => e == null ? null : Point.fromJson(e as Map<String, dynamic>))
+        ?.map((e) => e == null
+            ? null
+            : Point.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
         ?.toList(),
     type: _$enumDecodeNullable(_$TrackTypeEnumMap, json['type']),
   );

@@ -51,7 +51,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// GET ../configs
   Future<AppConfig> load() async {
     final state = await _ensure();
-    return state.isLocal ? apply(state) : _load();
+    return state.isCreated ? apply(state) : _load();
   }
 
   /// PATCH ../configs/{configId}
@@ -91,7 +91,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     var init = AppConfig.fromJson(newJson);
     final uuid = Uuid().v4();
     final udid = await FlutterUdid.udid;
-    return StorageState.local(init.copyWith(
+    return StorageState.created(init.copyWith(
       uuid: uuid,
       udid: udid,
       version: version,
@@ -118,7 +118,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
         var response = await service.fetch(state.value.uuid);
         if (response.is200) {
           await commit(
-            StorageState.remote(
+            StorageState.pushed(
               response.body,
             ),
           );
@@ -145,18 +145,18 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
       return response.body;
     }
     throw AppConfigServiceException(
-      'Failed to create AppConfig $config',
+      'Failed to create AppConfig ${state.value}',
       response: response,
     );
   }
 
   Future<AppConfig> onUpdate(StorageState<AppConfig> state) async {
-    var response = await service.update(config);
+    var response = await service.update(state.value);
     if (response.is200) {
       return response.body;
     }
     throw AppConfigServiceException(
-      'Failed to update AppConfig $config',
+      'Failed to update AppConfig ${state.value}',
       response: response,
     );
   }
@@ -164,10 +164,10 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   Future<AppConfig> onDelete(StorageState<AppConfig> state) async {
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
-      return response.body;
+      return state.value;
     }
     throw AppConfigServiceException(
-      'Failed to delete AppConfig $config',
+      'Failed to delete AppConfig ${state.value}',
       response: response,
     );
   }

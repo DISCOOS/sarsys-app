@@ -6,19 +6,24 @@ part of 'Organization.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Organization _$OrganizationFromJson(Map<String, dynamic> json) {
+Organization _$OrganizationFromJson(Map json) {
   return Organization(
     id: json['id'] as String,
     name: json['name'] as String,
     alias: json['alias'] as String,
     pattern: json['pattern'] as String,
     idpHints: (json['idpHints'] as List)?.map((e) => e as String)?.toList(),
-    functions: (json['functions'] as Map<String, dynamic>)?.map(
-      (k, e) => MapEntry(k, e as String),
+    functions: (json['functions'] as Map)?.map(
+      (k, e) => MapEntry(k as String, e as String),
     ),
-    divisions: (json['divisions'] as Map<String, dynamic>)?.map(
+    divisions: (json['divisions'] as Map)?.map(
       (k, e) => MapEntry(
-          k, e == null ? null : Division.fromJson(e as Map<String, dynamic>)),
+          k as String,
+          e == null
+              ? null
+              : Division.fromJson((e as Map)?.map(
+                  (k, e) => MapEntry(k as String, e),
+                ))),
     ),
     talkGroups: const FleetMapTalkGroupConverter()
         .fromJson(json['talk_groups'] as Map<String, dynamic>),

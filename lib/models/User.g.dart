@@ -6,7 +6,7 @@ part of 'User.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-User _$UserFromJson(Map<String, dynamic> json) {
+User _$UserFromJson(Map json) {
   return User(
     userId: json['userId'] as String,
     fname: json['fname'] as String,
@@ -16,7 +16,9 @@ User _$UserFromJson(Map<String, dynamic> json) {
     email: json['email'] as String,
     security: json['security'] == null
         ? null
-        : Security.fromJson(json['security'] as Map<String, dynamic>),
+        : Security.fromJson((json['security'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     division: json['division'] as String,
     department: json['department'] as String,
     roles: (json['roles'] as List)

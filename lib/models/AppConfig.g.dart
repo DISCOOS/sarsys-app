@@ -6,7 +6,7 @@ part of 'AppConfig.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-AppConfig _$AppConfigFromJson(Map<String, dynamic> json) {
+AppConfig _$AppConfigFromJson(Map json) {
   return AppConfig(
     uuid: json['uuid'] as String,
     udid: json['udid'] as String,

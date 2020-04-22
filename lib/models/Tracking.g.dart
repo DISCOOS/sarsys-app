@@ -6,13 +6,15 @@ part of 'Tracking.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Tracking _$TrackingFromJson(Map<String, dynamic> json) {
+Tracking _$TrackingFromJson(Map json) {
   return Tracking(
     id: json['id'] as String,
     status: _$enumDecodeNullable(_$TrackingStatusEnumMap, json['status']),
     point: json['point'] == null
         ? null
-        : Point.fromJson(json['point'] as Map<String, dynamic>),
+        : Point.fromJson((json['point'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     distance: (json['distance'] as num)?.toDouble(),
     speed: (json['speed'] as num)?.toDouble(),
     effort: json['effort'] == null
@@ -20,12 +22,20 @@ Tracking _$TrackingFromJson(Map<String, dynamic> json) {
         : Duration(microseconds: json['effort'] as int),
     devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
     history: (json['history'] as List)
-        ?.map(
-            (e) => e == null ? null : Point.fromJson(e as Map<String, dynamic>))
+        ?.map((e) => e == null
+            ? null
+            : Point.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
         ?.toList(),
-    tracks: (json['tracks'] as Map<String, dynamic>)?.map(
+    tracks: (json['tracks'] as Map)?.map(
       (k, e) => MapEntry(
-          k, e == null ? null : Track.fromJson(e as Map<String, dynamic>)),
+          k as String,
+          e == null
+              ? null
+              : Track.fromJson((e as Map)?.map(
+                  (k, e) => MapEntry(k as String, e),
+                ))),
     ),
     aggregates: (json['aggregates'] as List)?.map((e) => e as String)?.toList(),
   );

@@ -29,14 +29,20 @@ abstract class ConnectionAwareRepository<S, T> {
   Stream<StorageState<T>> get changes => _controller.stream;
 
   /// Get value from [key]
-  T operator [](S key) => _states?.get(key)?.value;
+  T operator [](S key) => get(key);
+
+  /// Get number of states
+  int get length => _states.length;
+
+  /// Get value from [key]
+  T get(S key) => getState(key)?.value;
 
   /// Get state from [key]
-  StorageState<T> getState(S key) => _states?.get(key);
+  StorageState<T> getState(S key) => containsKey(key) ? _states?.get(key) : null;
 
   /// Get backlog of states pending push to a backend API
   Iterable<S> get backlog => List.unmodifiable(_backlog);
-  final _backlog = ListQueue<S>();
+  final _backlog = LinkedHashSet();
 
   /// Get all states as unmodifiable map
   Map<S, StorageState<T>> get states => Map.unmodifiable(_states?.toMap() ?? {});
@@ -52,7 +58,7 @@ abstract class ConnectionAwareRepository<S, T> {
   bool containsKey(S key) => _states?.keys?.contains(key) ?? false;
 
   /// Check if value exists
-  bool containsData(T value) => _states?.values?.any((state) => state.value == value) ?? false;
+  bool containsValue(T value) => _states?.values?.any((state) => state.value == value) ?? false;
 
   /// Check if repository is operational
   @mustCallSuper
@@ -102,9 +108,9 @@ abstract class ConnectionAwareRepository<S, T> {
 
   /// Reads [states] from storage
   @visibleForOverriding
-  Future<Iterable<StorageState<T>>> prepare({bool force}) async {
+  Future<Iterable<StorageState<T>>> prepare({bool force = false}) async {
     if (force || _states == null) {
-      _states?.close();
+      await _states?.close();
       _states = await Hive.openBox(
         '$runtimeType',
         encryptionKey: await Storage.hiveKey<T>(),
@@ -114,7 +120,7 @@ abstract class ConnectionAwareRepository<S, T> {
       _backlog
         ..clear()
         ..addAll(
-          _states.values.where((state) => state.isLocal).map((state) => toKey(state)),
+          _states.values.where((state) => state.isCreated).map((state) => toKey(state)),
         );
     }
     return states.values;
@@ -126,15 +132,15 @@ abstract class ConnectionAwareRepository<S, T> {
     StorageState<T> state,
   ) async {
     checkState();
-    await commit(state);
-    if (!state.isRemote) {
+    final exists = await commit(validate(state));
+    if (exists && !state.isPushed) {
       if (connectivity.isOnline) {
         try {
           final config = await _push(
             state,
           );
           await commit(
-            StorageState.remote(config),
+            StorageState.pushed(config),
           );
           return config;
         } on SocketException {
@@ -173,20 +179,25 @@ abstract class ConnectionAwareRepository<S, T> {
     _pending?.cancel();
     _retries = 0;
     while (_backlog.isNotEmpty) {
-      final uuid = _backlog.first;
+      final key = _backlog.first;
       try {
-        final config = await _push(
-          getState(uuid),
-        );
-        await commit(
-          StorageState.remote(config),
-        );
-        _backlog.removeFirst();
+        if (containsKey(key)) {
+          final config = await _push(
+            getState(key),
+          );
+          await commit(
+            StorageState.pushed(config),
+          );
+        }
+        _backlog.remove(key);
       } on SocketException {
         _retryOnline(status);
       } on Exception catch (error, stackTrace) {
         onError(error, stackTrace);
       }
+    }
+    if (_backlog.isEmpty) {
+      _timer?.cancel();
     }
   }
 
@@ -216,32 +227,84 @@ abstract class ConnectionAwareRepository<S, T> {
   /// Push state to remote
   FutureOr<T> _push(StorageState<T> state) async {
     switch (state.status) {
-      case StorageStatus.local:
+      case StorageStatus.created:
         return await onCreate(state);
       case StorageStatus.changed:
         return await onUpdate(state);
       case StorageStatus.deleted:
         return await onDelete(state);
-      case StorageStatus.remote:
+      case StorageStatus.pushed:
         return state.value;
     }
     throw RepositoryException('Unable to process $state');
   }
 
+  @protected
+  StorageState<T> validate(StorageState<T> state) {
+    final key = toKey(state);
+    final isOffline = connectivity.isOffline;
+    final previous = containsKey(key) ? _states.get(key) : null;
+    switch (state.status) {
+      case StorageStatus.created:
+        if (previous == null || previous.isPushed) {
+          return state;
+        }
+        throw RepositoryStateExistsException(previous, state);
+      case StorageStatus.changed:
+        if (previous != null) {
+          // If not created, allow transition to changed
+          if (!previous.isCreated) {
+            return state;
+          } else if (isOffline) {
+            // Replace created value with updated, keeping status created
+            return previous.replace(state.value);
+          }
+          throw RepositoryIllegalStateException(previous, state);
+        }
+        throw RepositoryStateNotExistsException(state);
+      case StorageStatus.deleted:
+        if (previous != null) {
+          // If not created, or if created and offline, allow transition to deletion
+          if (!previous.isCreated || isOffline && state.isDeleted) {
+            return state;
+          }
+          throw RepositoryIllegalStateException(previous, state);
+        }
+        throw RepositoryStateNotExistsException(state);
+      case StorageStatus.pushed:
+        return state;
+    }
+    throw RepositoryIllegalStateException(previous, state);
+  }
+
   /// Commit [state] to repository
   @protected
-  Future<T> commit(StorageState<T> state) async {
+  Future<bool> commit(StorageState<T> state) async {
     final key = toKey(state);
     final current = _states.get(key);
-    if (state.isRemote && current.isDeleted) {
+    // Delete if push has succeeded or,
+    // if delete was done offline on a created stated
+    if (state.isPushed && current?.isDeleted == true || state.isDeleted && connectivity.isOffline) {
       await _states.delete(key);
+      // Can not logically exist anymore, remove it!
+      _backlog.remove(key);
     } else {
       await _states.put(key, state);
     }
     if (!_closed) {
       _controller.add(state);
     }
-    return state.value;
+    return containsKey(key);
+  }
+
+  /// Clear all states from local storage
+  Future<Iterable<T>> clear({bool compact = true}) async {
+    final elements = values.toList();
+    await _states.clear();
+    if (compact) {
+      await _states.compact();
+    }
+    return List.unmodifiable(elements);
   }
 
   bool _closed = false;
@@ -298,4 +361,29 @@ class RepositoryNotReadyException extends RepositoryException {
 
 class RepositoryIsClosedException extends RepositoryException {
   RepositoryIsClosedException() : super('is closed');
+}
+
+class RepositoryStateExistsException extends RepositoryException {
+  final StorageState previous;
+  final StorageState next;
+  RepositoryStateExistsException(
+    this.previous,
+    this.next,
+  ) : super('state $previous already exists');
+}
+
+class RepositoryStateNotExistsException extends RepositoryException {
+  final StorageState state;
+  RepositoryStateNotExistsException(
+    this.state,
+  ) : super('state $state does not exists');
+}
+
+class RepositoryIllegalStateException extends RepositoryException {
+  final StorageState previous;
+  final StorageState next;
+  RepositoryIllegalStateException(
+    this.previous,
+    this.next,
+  ) : super('is in illegal state ${previous.status}, next ${next.status} not allowed');
 }

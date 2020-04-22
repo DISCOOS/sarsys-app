@@ -6,7 +6,7 @@ part of 'BaseMap.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-BaseMap _$BaseMapFromJson(Map<String, dynamic> json) {
+BaseMap _$BaseMapFromJson(Map json) {
   return BaseMap(
     url: json['url'] as String,
     name: json['name'] as String,

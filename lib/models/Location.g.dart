@@ -6,15 +6,19 @@ part of 'Location.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Location _$LocationFromJson(Map<String, dynamic> json) {
+Location _$LocationFromJson(Map json) {
   return Location(
     point: json['point'] == null
         ? null
-        : Point.fromJson(json['point'] as Map<String, dynamic>),
+        : Point.fromJson((json['point'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     description: json['description'] as String,
     address: json['address'] == null
         ? null
-        : Address.fromJson(json['address'] as Map<String, dynamic>),
+        : Address.fromJson((json['address'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
   );
 }
 

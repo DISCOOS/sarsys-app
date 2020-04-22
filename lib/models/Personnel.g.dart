@@ -6,7 +6,7 @@ part of 'Personnel.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Personnel _$PersonnelFromJson(Map<String, dynamic> json) {
+Personnel _$PersonnelFromJson(Map json) {
   return Personnel(
     id: json['id'] as String,
     userId: json['userId'] as String,
@@ -16,7 +16,9 @@ Personnel _$PersonnelFromJson(Map<String, dynamic> json) {
     phone: json['phone'] as String,
     affiliation: json['affiliation'] == null
         ? null
-        : Affiliation.fromJson(json['affiliation'] as Map<String, dynamic>),
+        : Affiliation.fromJson((json['affiliation'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     function:
         _$enumDecodeNullable(_$OperationalFunctionEnumMap, json['function']),
     tracking: json['tracking'] as String,

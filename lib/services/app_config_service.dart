@@ -36,7 +36,7 @@ class AppConfigService {
   }
 
   /// DELETE ../app-config/{uuid}
-  Future<ServiceResponse<AppConfig>> delete(String uuid) async {
+  Future<ServiceResponse<void>> delete(String uuid) async {
     // TODO: Implement fetch app-config
     throw "Not implemented";
   }

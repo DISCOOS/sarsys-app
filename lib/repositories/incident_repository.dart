@@ -1,136 +1,123 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/services/service.dart';
-import 'package:hive/hive.dart';
-import 'package:json_patch/json_patch.dart';
-
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/models/Incident.dart';
 
-class IncidentRepository {
-  IncidentRepository(this.service, {this.compactWhen = 10});
+class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
+  IncidentRepository(
+    this.service, {
+    @required ConnectivityService connectivity,
+    int compactWhen = 10,
+  }) : super(
+          connectivity: connectivity,
+          compactWhen: compactWhen,
+        );
+
+  /// Incident service
   final IncidentService service;
-  final int compactWhen;
 
-  Incident operator [](String uuid) => _box.get(uuid);
+  /// Get [Incident.uuid] from [state]
+  @override
+  String toKey(StorageState<Incident> state) {
+    return state?.value?.uuid;
+  }
 
-  int get length => _box.length;
-  Map<String, Incident> get map => Map.unmodifiable(_box.toMap());
-  Iterable<String> get keys => List.unmodifiable(_box.keys);
-  Iterable<Incident> get values => List.unmodifiable(_box.values);
+  /// Load incidents
+  Future<List<Incident>> load({bool force = true}) async {
+    await prepare(
+      force: force ?? false,
+    );
+    return _load();
+  }
 
-  bool containsKey(String uuid) => _box.keys.contains(uuid);
-  bool containsValue(Incident incident) => _box.values.contains(incident);
+  /// Update [incident]
+  Future<Incident> create(Incident incident) async {
+    await prepare();
+    return apply(
+      StorageState.created(incident),
+    );
+  }
 
-  Box<Incident> _box;
-  bool get isReady => _box?.isOpen == true;
+  /// Update [incident]
+  Future<Incident> update(Incident incident) async {
+    await prepare();
+    return apply(
+      StorageState.changed(incident),
+    );
+  }
 
-  Future<Box<Incident>> _open() async => Hive.openBox(
-        '$IncidentRepository',
-        encryptionKey: await Storage.hiveKey<Incident>(),
-        compactionStrategy: (_, deleted) => compactWhen < deleted,
-      );
-
-  Future _prepare() async => _box ??= await _open();
+  /// Update [Incident] with given [uuid]
+  Future<Incident> delete(String uuid) async {
+    await prepare();
+    return apply(
+      StorageState.deleted(get(uuid)),
+    );
+  }
 
   /// GET ../incidents
-  Future<List<Incident>> load() async {
-    await _prepare();
-    var response = await service.load();
+  Future<List<Incident>> _load() async {
+    if (connectivity.isOnline) {
+      try {
+        var response = await service.fetch();
+        if (response.is200) {
+          await Future.wait(response.body.map(
+            (incident) => commit(
+              StorageState.pushed(
+                incident,
+              ),
+            ),
+          ));
+          return response.body;
+        }
+        throw IncidentServiceException(
+          'Failed to load incidents',
+          response: response,
+        );
+      } on SocketException {
+        // Assume offline
+      }
+    }
+    return values;
+  }
+
+  @override
+  Future<Incident> onCreate(StorageState<Incident> state) async {
+    var response = await service.create(state.value);
     if (response.is200) {
-      await _box.putAll(
-        Map.fromEntries(response.body.map(
-          (incident) => MapEntry(incident.uuid, incident),
-        )),
-      );
       return response.body;
     }
     throw IncidentServiceException(
-      'Failed to load incidents',
+      'Failed to create Incident ${state.value}',
       response: response,
     );
   }
 
-  /// POST ../incidents
-  Future<Incident> create(Incident incident) async {
-    await _prepare();
-    var response = await service.create(incident);
+  Future<Incident> onUpdate(StorageState<Incident> state) async {
+    var response = await service.update(state.value);
     if (response.is200) {
-      return _put(
-        incident,
-      );
+      return response.body;
     }
     throw IncidentServiceException(
-      'Failed to create incident $incident',
+      'Failed to update Incident ${state.value}',
       response: response,
     );
   }
 
-  /// PATCH ../incidents/{incidentId}
-  Future<Incident> update(Incident incident) async {
-    await _prepare();
-    var response = await service.update(incident);
+  Future<Incident> onDelete(StorageState<Incident> state) async {
+    var response = await service.delete(state.value.uuid);
     if (response.is204) {
-      return _put(
-        incident,
-      );
-    }
-    // TODO: Handle 409 Conflict for Incident
-    throw IncidentServiceException(
-      'Failed to update incident $incident',
-      response: response,
-    );
-  }
-
-  /// PUT ../incidents/{incidentId}
-  Future<Incident> patch(Incident incident) async {
-    await _prepare();
-    final old = this[incident.uuid];
-    final oldJson = old?.toJson() ?? {};
-    final patches = JsonPatch.diff(oldJson, incident.toJson());
-    final newJson = JsonPatch.apply(old, patches, strict: false);
-    return await update(Incident.fromJson(newJson));
-  }
-
-  /// DELETE ../incidents/{incidentId}
-  Future<Incident> delete(String uuid) async {
-    await _prepare();
-    final incident = _box.get(uuid);
-    if (incident == null) {
-      throw IncidentNotFoundException(uuid);
-    }
-    var response = await service.delete(uuid);
-    if (response.is204) {
-      // Any tracking is removed by listening to this event in TrackingBloc
-      await _box.delete(uuid);
-      return incident;
+      return state.value;
     }
     throw IncidentServiceException(
-      'Failed to delete incident $uuid',
+      'Failed to delete Incident ${state.value}',
       response: response,
     );
-  }
-
-  /// Clear incidents from local cache
-  Future<List<Incident>> clear() async {
-    await _prepare();
-    final incidents = values.toList();
-    await _box.clear();
-    return incidents;
-  }
-
-  Future<Incident> _put(Incident incident) async {
-    await _box.put(incident.uuid, incident);
-    return incident;
-  }
-}
-
-class IncidentNotFoundException implements Exception {
-  IncidentNotFoundException(this.uuid);
-  final String uuid;
-
-  @override
-  String toString() {
-    return 'Incident $uuid not found';
   }
 }
 

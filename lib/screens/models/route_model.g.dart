@@ -6,7 +6,7 @@ part of 'route_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-RouteModel _$RouteModelFromJson(Map<String, dynamic> json) {
+RouteModel _$RouteModelFromJson(Map json) {
   return RouteModel(
     json['data'],
     json['name'] as String,

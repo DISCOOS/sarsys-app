@@ -31,8 +31,10 @@ class Storage {
     if (!_initialized) {
       if (!kIsWeb) {
         var appDir = await getApplicationDocumentsDirectory();
+        var hiveDir = Directory(path_helper.join(appDir.path, 'hive'));
+        hiveDir.createSync();
         // Initialize hive
-        Hive.init(path_helper.join(appDir.absolute.path, 'hive'));
+        Hive.init(hiveDir.path);
       }
 
       // DO NOT RE-ORDER THESE, only append! Hive expects typeId to be stable
@@ -117,30 +119,31 @@ class Storage {
   }
 
   static Future destroy() async {
-    if (_initialized) {
-      // Deletes only open boxes
-      await Hive.deleteFromDisk();
+    // Deletes only open boxes
+    await Hive.deleteFromDisk();
+
+    if (!kIsWeb) {
       // Delete all remaining hive files
       var appDir = await getApplicationDocumentsDirectory();
       final hiveDir = Directory(
         path_helper.join(appDir.absolute.path, 'hive'),
       );
       if (hiveDir.existsSync()) {
-        await hiveDir.delete(recursive: true);
+        hiveDir.deleteSync(recursive: true);
       }
-      // Delete content in secure storage
-      await _storage.deleteAll();
-      // Delete all shared preferences
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.clear();
     }
-    throw 'Storage not initialized';
+
+    // Delete content in secure storage
+    await _storage.deleteAll();
+    // Delete all shared preferences
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.clear();
   }
 }
 
 enum StorageStatus {
-  local,
-  remote,
+  created,
+  pushed,
   changed,
   deleted,
 }
@@ -150,21 +153,21 @@ class StorageState<T> {
   final T value;
   final StorageStatus status;
 
-  factory StorageState.local(T value) => StorageState<T>(value: value, status: StorageStatus.local);
-  factory StorageState.remote(T value) => StorageState<T>(value: value, status: StorageStatus.remote);
+  factory StorageState.created(T value) => StorageState<T>(value: value, status: StorageStatus.created);
   factory StorageState.changed(T value) => StorageState<T>(value: value, status: StorageStatus.changed);
   factory StorageState.deleted(T value) => StorageState<T>(value: value, status: StorageStatus.deleted);
+  factory StorageState.pushed(T value) => StorageState<T>(value: value, status: StorageStatus.pushed);
 
-  get isLocal => StorageStatus.local == status;
-  get isRemote => StorageStatus.remote == status;
-  get isChanged => StorageStatus.changed == status;
-  get isDeleted => StorageStatus.deleted == status;
+  bool get isCreated => StorageStatus.created == status;
+  bool get isPushed => StorageStatus.pushed == status;
+  bool get isChanged => StorageStatus.changed == status;
+  bool get isDeleted => StorageStatus.deleted == status;
 
   StorageState<T> replace(T value) {
     switch (status) {
-      case StorageStatus.local:
-        return StorageState.local(value);
-      case StorageStatus.remote:
+      case StorageStatus.created:
+        return StorageState.created(value);
+      case StorageStatus.pushed:
       case StorageStatus.changed:
       case StorageStatus.deleted:
         return StorageState.changed(value);
@@ -219,14 +222,14 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     var json = reader.readMap();
     return StorageState(
       status: _toStatus(json['status'] as String),
-      value: json['value'] != null ? fromJson(json['value'] as Map<String, dynamic>) : null,
+      value: json['value'] != null ? fromJson(Map<String, dynamic>.from(json['value'])) : null,
     );
   }
 
   StorageStatus _toStatus(String name) {
     return StorageStatus.values.firstWhere(
       (value) => enumName(value) == name,
-      orElse: () => StorageStatus.local,
+      orElse: () => StorageStatus.created,
     );
   }
 

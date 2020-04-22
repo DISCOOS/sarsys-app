@@ -6,7 +6,7 @@ part of 'Affiliation.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Affiliation _$AffiliationFromJson(Map<String, dynamic> json) {
+Affiliation _$AffiliationFromJson(Map json) {
   return Affiliation(
     orgId: json['orgId'] as String,
     divId: json['divId'] as String,

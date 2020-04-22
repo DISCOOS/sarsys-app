@@ -6,7 +6,7 @@ part of 'Author.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Author _$AuthorFromJson(Map<String, dynamic> json) {
+Author _$AuthorFromJson(Map json) {
   return Author(
     userId: json['userId'] as String,
     timestamp: json['timestamp'] == null

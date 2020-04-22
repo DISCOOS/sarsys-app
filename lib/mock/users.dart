@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
-import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -37,7 +34,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       final user = _token.toUser();
       _token = createToken(
         _token.userId,
-        enumName(user.roles.first),
+        user.roles.first,
         email: user.email,
         maxAge: Duration.zero,
       );
@@ -68,7 +65,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         final domain = UserService.toDomain(UserServiceMock.username);
         _token = createToken(
           UserServiceMock.username,
-          enumName(actual),
+          actual,
           maxAge: _maxAge,
           email: domain != null ? UserServiceMock.username : domain,
         );
@@ -89,7 +86,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       final user = _token.toUser();
       _token = createToken(
         token.userId,
-        enumName(token.toUser().roles.first),
+        token.toUser().roles.first,
         maxAge: _maxAge,
         email: user.email,
       );
@@ -130,7 +127,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       final domain = UserService.toDomain(username);
       _token = createToken(
         username,
-        enumName(actual),
+        actual,
         maxAge: _maxAge,
         email: domain != null ? username : domain,
       );
@@ -141,7 +138,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       final user = _token.toUser();
       _token = createToken(
         token.userId,
-        enumName(user.roles.first),
+        user.roles.first,
         maxAge: _maxAge,
         email: user.email,
       );
@@ -159,7 +156,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
 
   static AuthToken createToken(
     String userId,
-    String role, {
+    UserRole role, {
     String email,
     Duration maxAge = const Duration(minutes: 5),
   }) {
@@ -169,7 +166,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       issuer: 'rkh',
       otherClaims: <String, dynamic>{
         if (email != null) 'email': email,
-        'roles': [role],
+        'roles': [enumName(role)],
         'division': 'Oslo',
         'department': 'Oslo',
       },

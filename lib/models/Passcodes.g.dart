@@ -6,7 +6,7 @@ part of 'Passcodes.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Passcodes _$PasscodesFromJson(Map<String, dynamic> json) {
+Passcodes _$PasscodesFromJson(Map json) {
   return Passcodes(
     command: json['command'] as String,
     personnel: json['personnel'] as String,

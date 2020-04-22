@@ -6,11 +6,11 @@ part of 'Division.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Division _$DivisionFromJson(Map<String, dynamic> json) {
+Division _$DivisionFromJson(Map json) {
   return Division(
     name: json['name'] as String,
-    departments: (json['departments'] as Map<String, dynamic>)?.map(
-      (k, e) => MapEntry(k, e as String),
+    departments: (json['departments'] as Map)?.map(
+      (k, e) => MapEntry(k as String, e as String),
     ),
   );
 }

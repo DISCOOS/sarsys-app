@@ -6,7 +6,7 @@ part of 'Address.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Address _$AddressFromJson(Map<String, dynamic> json) {
+Address _$AddressFromJson(Map json) {
   return Address(
     lines: (json['lines'] as List)?.map((e) => e as String)?.toList(),
     postalCode: json['postalCode'] as String,

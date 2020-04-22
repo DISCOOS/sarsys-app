@@ -6,7 +6,7 @@ part of 'TalkGroup.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-TalkGroup _$TalkGroupFromJson(Map<String, dynamic> json) {
+TalkGroup _$TalkGroupFromJson(Map json) {
   return TalkGroup(
     name: json['name'] as String,
     type: _$enumDecodeNullable(_$TalkGroupTypeEnumMap, json['type']),

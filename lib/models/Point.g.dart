@@ -6,7 +6,7 @@ part of 'Point.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Point _$PointFromJson(Map<String, dynamic> json) {
+Point _$PointFromJson(Map json) {
   return Point(
     lat: (json['lat'] as num)?.toDouble(),
     lon: (json['lon'] as num)?.toDouble(),

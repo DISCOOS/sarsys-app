@@ -2,7 +2,6 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bloc_test/bloc_test.dart';
 import 'package:mockito/mockito.dart';
 
 import 'harness.dart';
@@ -20,7 +19,7 @@ void main() async {
     // Assert
     expect(harness.userBloc.user, isNull, reason: "UserRepository SHOULD not contain User");
     expect(harness.userBloc.initialState, isA<UserUnset>(), reason: "UserBloc SHOULD be in EMPTY state");
-    await emitsExactly(harness.userBloc, [isA<UserUnset>()], skip: 0);
+    expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
   });
 
   group('WHEN UserBloc is ONLINE', () {
@@ -34,7 +33,7 @@ void main() async {
       // Assert
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
-      await emitsExactly(harness.userBloc, [isA<UserAuthenticated>()]);
+      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
     });
 
     test('and USER token is INVALID, token SHOULD be refreshed', () async {
@@ -49,7 +48,7 @@ void main() async {
       // Assert
       verify(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
-      await emitsExactly(harness.userBloc, [isA<UserAuthenticated>()]);
+      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
     });
 
     test('User SHOULD BE secured using PIN', () async {
@@ -87,7 +86,7 @@ void main() async {
 
       // Assert
       expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
-      await emitsExactly(harness.userBloc, [isA<UserBlocIsOffline>()]);
+      expectThroughInOrder(harness.userBloc, [isA<UserBlocIsOffline>()]);
     });
 
     test('and User token is INVALID, token SHOULD not refresh', () async {
@@ -103,7 +102,7 @@ void main() async {
       // Assert
       verifyNever(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
-      await emitsExactly(harness.userBloc, [isA<UserAuthenticated>()]);
+      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
     });
 
     test('User SHOULD BE secured using PIN', () async {
@@ -188,7 +187,7 @@ Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) 
   expect(harness.userBloc.isSecured, isTrue, reason: "SHOULD BE Secured");
   expect(harness.userBloc.isLocked, isTrue, reason: "SHOULD BE Locked");
   expect(harness.userBloc.isUntrusted, isTrue, reason: "SHOULD NOT BE Trusted");
-  await emitsExactly(harness.userBloc, [isA<UserLocked>()]);
+  expectThroughInOrder(harness.userBloc, [isA<UserLocked>()]);
 }
 
 Future _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(BlocTestHarness harness, bool offline) async {
@@ -208,7 +207,7 @@ Future _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(BlocTestHarness
   expect(harness.userBloc.isLocked, isTrue, reason: "SHOULD BE Locked");
   expect(harness.userBloc.isSecured, isTrue, reason: "SHOULD BE Secured");
   expect(harness.userBloc.isTrusted, isFalse, reason: "SHOULD NOT BE Trusted");
-  await emitsExactly(harness.userBloc, [isA<UserLocked>()]);
+  expectThroughInOrder(harness.userBloc, [isA<UserLocked>()]);
 }
 
 Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHarness harness, bool offline) async {
@@ -226,7 +225,7 @@ Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHar
   verify(harness.userService.logout(any));
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
   expect(harness.userBloc.repo.get(UNTRUSTED), isNull, reason: "SHOULD DELETE User");
-  await emitsExactly(harness.userBloc, [isA<UserUnset>()]);
+  expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
 }
 
 Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness harness, bool offline) async {
@@ -255,7 +254,7 @@ Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness h
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
   expect(harness.userBloc.repo.get(TRUSTED), isNotNull, reason: "SHOULD NOT DELETE User");
   expect(harness.userBloc.repo.get(TRUSTED).security.locked, isTrue, reason: "SHOULD BE Locked");
-  await emitsExactly(harness.userBloc, [isA<UserUnset>()]);
+  expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
 }
 
 Future _testAuthenticatedPersonalTrustedLogoutShouldUnsetOnly(BlocTestHarness harness, bool offline) async {
@@ -284,5 +283,5 @@ Future _testAuthenticatedPersonalTrustedLogoutShouldUnsetOnly(BlocTestHarness ha
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
   expect(harness.userBloc.repo.get(TRUSTED), isNotNull, reason: "SHOULD NOT DELETE User");
   expect(harness.userBloc.repo.get(TRUSTED).security.locked, isFalse, reason: "SHOULD BE Unlocked");
-  await emitsExactly(harness.userBloc, [isA<UserUnset>()]);
+  expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
 }

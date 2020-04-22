@@ -113,8 +113,13 @@ class BlocProviderController {
     // Configure Incident service
     final IncidentService incidentService = !demo.active
         ? IncidentService('$baseRestUrl/api/incidents', client)
-        : IncidentServiceMock.build(userRepo, 2, enumName(demo.role), "T123");
-    final IncidentBloc incidentBloc = IncidentBloc(IncidentRepository(incidentService), userBloc);
+        : IncidentServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
+    final IncidentBloc incidentBloc = IncidentBloc(
+        IncidentRepository(
+          incidentService,
+          connectivity: connectivityService,
+        ),
+        userBloc);
 
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active

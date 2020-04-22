@@ -6,7 +6,7 @@ part of 'Security.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Security _$SecurityFromJson(Map<String, dynamic> json) {
+Security _$SecurityFromJson(Map json) {
   return Security(
     pin: json['pin'] as String,
     type: _$enumDecode(_$SecurityTypeEnumMap, json['type']),

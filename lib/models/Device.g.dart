@@ -6,7 +6,7 @@ part of 'Device.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Device _$DeviceFromJson(Map<String, dynamic> json) {
+Device _$DeviceFromJson(Map json) {
   return Device(
     id: json['id'] as String,
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
@@ -14,7 +14,9 @@ Device _$DeviceFromJson(Map<String, dynamic> json) {
     number: json['number'] as String,
     point: json['point'] == null
         ? null
-        : Point.fromJson(json['point'] as Map<String, dynamic>),
+        : Point.fromJson((json['point'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     manual: json['manual'] as bool,
     status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
   );
