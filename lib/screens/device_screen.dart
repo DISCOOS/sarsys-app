@@ -56,7 +56,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   void initState() {
     super.initState();
     routeWriter = false;
-    routeData = widget?.device?.id;
+    routeData = widget?.device?.uuid;
     _device = widget.device;
   }
 
@@ -66,10 +66,10 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     if (_group != null) _group.close();
     final unit = context.bloc<TrackingBloc>().units.find(_device);
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<DeviceBloc>().changes(_device))
+      ..add(context.bloc<DeviceBloc>().onChanged(_device))
       ..add(context.bloc<TrackingBloc>().changes(unit?.tracking));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<DeviceBloc>().changes(_device).listen(_onMove);
+    _onMoved = context.bloc<DeviceBloc>().onChanged(_device).listen(_onMove);
   }
 
   @override

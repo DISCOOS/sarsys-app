@@ -83,8 +83,8 @@ class DeviceLayer extends MapPlugin {
   }
 
   List<Point> _toTrack(Map<String, Set<Tracking>> tracking, Device device) {
-    final tracks = tracking[device.id]?.first?.tracks;
-    return tracks?.isNotEmpty == true ? tracks[device.id]?.points ?? [] : [];
+    final tracks = tracking[device.uuid]?.first?.tracks;
+    return tracks?.isNotEmpty == true ? tracks[device.uuid]?.points ?? [] : [];
   }
 
   _buildTrack(

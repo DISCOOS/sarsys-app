@@ -25,7 +25,7 @@ class IncidentBuilder {
     String passcode = PASSCODE,
   }) {
     return Incident.fromJson(
-      IncidentBuilder.createIncidentAsJson(
+      createIncidentAsJson(
         uuid ?? Uuid().v4(),
         since,
         userId,

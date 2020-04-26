@@ -196,7 +196,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   bool isSameNumber(Device device, String number) =>
-      number?.isNotEmpty == true && device?.id != widget?.device?.id && device.number?.toString() == number;
+      number?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device.number?.toString() == number;
 
   Widget _buildAffiliationInfo(Organization org) => InputDecorator(
         decoration: InputDecoration(
@@ -289,7 +289,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   bool _isSameAlias(Device device, String alias) =>
-      alias?.isNotEmpty == true && device?.id != widget?.device?.id && device.alias == alias;
+      alias?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device.alias == alias;
 
   void _setText(TextEditingController controller, String value) {
     setText(controller, value);

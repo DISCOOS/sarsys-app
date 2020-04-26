@@ -52,7 +52,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     );
   }
 
-  /// Update [Incident] with given [uuid]
+  /// Delete [Incident] with given [uuid]
   Future<Incident> delete(String uuid) async {
     await prepare();
     return apply(
@@ -78,6 +78,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
         throw IncidentServiceException(
           'Failed to load incidents',
           response: response,
+          stackTrace: StackTrace.current,
         );
       } on SocketException {
         // Assume offline
@@ -95,6 +96,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     throw IncidentServiceException(
       'Failed to create Incident ${state.value}',
       response: response,
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -106,6 +108,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     throw IncidentServiceException(
       'Failed to update Incident ${state.value}',
       response: response,
+      stackTrace: StackTrace.current,
     );
   }
 
@@ -117,6 +120,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     throw IncidentServiceException(
       'Failed to delete Incident ${state.value}',
       response: response,
+      stackTrace: StackTrace.current,
     );
   }
 }

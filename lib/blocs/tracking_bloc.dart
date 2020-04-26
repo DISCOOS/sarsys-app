@@ -79,12 +79,12 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       if (DeviceStatus.Detached == device.status) {
         final tracking = find(device);
         // Remove device from active list of tracked devices? This will not impact history!
-        if (tracking?.devices?.contains(device.id) == true) {
+        if (tracking?.devices?.contains(device.uuid) == true) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
           add(
             UpdateTracking(
               tracking.cloneWith(
-                devices: List.from(tracking.devices)..remove(device.id),
+                devices: List.from(tracking.devices)..remove(device.uuid),
               ),
             ),
           );
@@ -94,14 +94,14 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       final device = (state as DeviceDeleted).data;
       final tracking = find(device);
       // Delete device data from tracking? This will impact history!
-      if (tracking != null && tracking.devices.contains(device.id)) {
+      if (tracking != null && tracking.devices.contains(device.uuid)) {
         // TODO: Move to tracking service and convert to internal TrackingMessage
         // TODO: Recalculate history, point, effort, distance and speed after device is removed
         add(
           UpdateTracking(
             tracking.cloneWith(
-              devices: List.from(tracking.devices)..remove(device.id),
-              tracks: Map.from(tracking.tracks)..remove(device.id),
+              devices: List.from(tracking.devices)..remove(device.uuid),
+              tracks: Map.from(tracking.tracks)..remove(device.uuid),
             ),
           ),
         );
@@ -238,7 +238,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       _tracking.entries
           .where((entry) => !exclude.contains(entry.value.status))
           .firstWhere(
-            (entry) => entry.value.devices.contains(device.id),
+            (entry) => entry.value.devices.contains(device.uuid),
             orElse: () => null,
           )
           ?.value;
@@ -262,7 +262,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     final Map<String, Set<Tracking>> map = {};
     _tracking.values.forEach((tracking) {
       devices(tracking.id).forEach((device) {
-        map.update(device.id, (set) {
+        map.update(device.uuid, (set) {
           set.add(tracking);
           return set;
         }, ifAbsent: () => {tracking});
@@ -303,7 +303,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     return _dispatch<Tracking>(TrackUnit(
       unit,
       point: point,
-      devices: devices?.map((device) => device.id)?.toList() ?? [],
+      devices: devices?.map((device) => device.uuid)?.toList() ?? [],
       personnel: personnel,
     ));
   }
@@ -312,7 +312,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Future<Tracking> trackPersonnel(Personnel personnel, {List<Device> devices}) {
     return _dispatch<Tracking>(TrackPersonnel(
       personnel,
-      devices: devices?.map((device) => device.id)?.toList() ?? [],
+      devices: devices?.map((device) => device.uuid)?.toList() ?? [],
     ));
   }
 
@@ -326,7 +326,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     bool append = false,
   }) {
     // Only use parameter 'devices' or 'personnel' if not null, otherwise use existing values
-    var deviceIds = (devices?.map((d) => d.id) ?? tracking.devices)?.toList();
+    var deviceIds = (devices?.map((d) => d.uuid) ?? tracking.devices)?.toList();
     var aggregateIds = (personnel?.map((p) => p.tracking)?.where((id) => id != null) ?? tracking.aggregates)?.toList();
 
     // Append unique ids
@@ -717,7 +717,7 @@ class Entities<T> {
             (entity) =>
                 null !=
                 bloc.devices(asId(entity), exclude: exclude).firstWhere(
-                      (match) => device.id == match.id,
+                      (match) => device.uuid == match.uuid,
                       orElse: () => null,
                     ),
             orElse: () => null,
@@ -740,7 +740,7 @@ class Entities<T> {
     final Map<String, T> map = {};
     asTrackingIds(exclude: exclude).values.forEach((entity) {
       bloc.devices(asId(entity), exclude: exclude).forEach((device) {
-        map.update(device.id, (set) => entity, ifAbsent: () => entity);
+        map.update(device.uuid, (set) => entity, ifAbsent: () => entity);
       });
     });
     return UnmodifiableMapView(map);

@@ -9,49 +9,28 @@ import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
-import 'package:flutter/foundation.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 
 class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
-  final DeviceRepository repo;
-  final IncidentBloc incidentBloc;
-
-  DeviceService get service => repo.service;
-
-  String get iuuid => incidentBloc.selected.uuid;
-
-  List<StreamSubscription> _subscriptions = [];
-
   DeviceBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
     _subscriptions
       ..add(incidentBloc.listen(
-        _init,
+        _processIncidentEvent,
       ))
       ..add(service.messages.listen(
-        _handle,
+        _processDeviceMessage,
       ));
   }
 
-  void _init(IncidentState state) {
+  void _processIncidentEvent(IncidentState state) {
     try {
       if (_subscriptions.isNotEmpty) {
-        // Clear out current tracking upon states given below
-        if (state.isUnset() ||
-            state.isCreated() ||
-            state.isDeleted() ||
-            (state.isUpdated() &&
-                [
-                  IncidentStatus.Cancelled,
-                  IncidentStatus.Resolved,
-                ].contains((state as IncidentUpdated).data.status))) {
-          //
-          // TODO: Mark as internal event, no message from devices service expected
-          //
-          add(UnloadDevices(repo.iuuid));
+        if (state.shouldUnload(iuuid) && repo.isReady) {
+          add(UnloadDevices(iuuid));
         } else if (state.isSelected()) {
           add(LoadDevices(state.data.uuid));
         }
@@ -64,38 +43,55 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     }
   }
 
-  void _handle(event) {
-    try {
-      add(_HandleMessage(event));
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(
-        error,
-        stackTrace,
-      );
+  void _processDeviceMessage(event) {
+    if (_subscriptions.isNotEmpty) {
+      try {
+        add(_HandleMessage(event));
+      } on Exception catch (error, stackTrace) {
+        Catcher.reportCheckedError(
+          error,
+          stackTrace,
+        );
+      }
     }
   }
 
+  /// Subscriptions released on [close]
+  List<StreamSubscription> _subscriptions = [];
+
+  /// Get [IncidentBloc]
+  final IncidentBloc incidentBloc;
+
+  /// Get [DeviceRepository]
+  final DeviceRepository repo;
+
+  /// Get [DeviceService]
+  DeviceService get service => repo.service;
+
+  /// [Incident] that manages given [devices]
+  String get iuuid => repo.iuuid;
+
+  /// Check if [Incident.uuid] is not set
+  bool get isUnset => repo.iuuid == null;
+
   @override
-  DeviceState get initialState => DevicesEmpty();
+  DevicesEmpty get initialState => DevicesEmpty();
 
   /// Stream of changes on given device
-  Stream<Device> changes(Device device) => where(
+  Stream<Device> onChanged(Device device) => where(
         (state) =>
-            (state is DeviceUpdated && state.data.id == device.id) ||
-            (state is DevicesLoaded && state.data.contains(device.id)),
-      ).map((state) => state is DevicesLoaded ? repo[device.id] : state.data);
+            (state is DeviceUpdated && state.data.uuid == device.uuid) ||
+            (state is DevicesLoaded && state.data.contains(device.uuid)),
+      ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
 
   /// Get devices
   Map<String, Device> get devices => repo.map;
-
-  /// Stream of device updates
-  Stream<Device> get updates => where((state) => state.isUpdated()).map((state) => state.data);
 
   void _assertState() {
     if (incidentBloc.isUnset) {
       throw DeviceError(
         "No incident selected. "
-        "Ensure that 'IncidentBloc.select(String id)' is called before 'DeviceBloc.load()'",
+        "Ensure that 'IncidentBloc.select(String uuid)' is called before 'DeviceBloc.load()'",
       );
     }
   }
@@ -104,7 +100,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Future<List<Device>> load() async {
     _assertState();
     return _dispatch<List<Device>>(
-      LoadDevices(iuuid),
+      LoadDevices(iuuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -112,11 +108,11 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Future<Device> create(Device device) {
     _assertState();
     return _dispatch<Device>(
-      CreateDevice(iuuid, device),
+      CreateDevice(iuuid ?? incidentBloc.selected.uuid, device),
     );
   }
 
-  /// Attach given device from incident
+  /// Attach given device to given incident
   Future<Device> attach(Device device) {
     _assertState();
     return update(
@@ -143,8 +139,16 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   /// Detach given device
   Future<Device> delete(Device device) {
     _assertState();
-    return _dispatch<void>(
+    return _dispatch<Device>(
       DeleteDevice(device),
+    );
+  }
+
+  /// Unload devices from local storage
+  Future<List<Device>> unload() {
+    _assertState();
+    return _dispatch<List<Device>>(
+      UnloadDevices(iuuid),
     );
   }
 
@@ -163,11 +167,17 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     } else if (command is UnloadDevices) {
       yield await _unload(command);
     } else if (command is RaiseDeviceError) {
-      yield _toError(command, command.data);
+      yield _toError(
+        command,
+        command.data,
+      );
     } else {
       yield _toError(
         command,
-        DeviceError("Unsupported $command"),
+        DeviceError(
+          "Unsupported $command",
+          stackTrace: StackTrace.current,
+        ),
       );
     }
   }
@@ -182,7 +192,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   Future<DeviceState> _create(CreateDevice command) async {
-    var device = await repo.create(iuuid, command.data);
+    var device = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
       DeviceCreated(device),
@@ -200,7 +210,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   Future<DeviceState> _delete(DeleteDevice command) async {
-    final device = await repo.delete(command.data);
+    final device = await repo.delete(command.data.uuid);
     return _toOK(
       command,
       DeviceDeleted(device),
@@ -227,7 +237,12 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
         }
         break;
     }
-    throw DeviceError("Device message not recognized: $event");
+    throw DeviceBlocException(
+      "Device message not recognized",
+      state,
+      command: event,
+      stackTrace: StackTrace.current,
+    );
   }
 
   // Dispatch and return future
@@ -246,18 +261,33 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   // Complete with error and return response as error state to bloc
-  DeviceState _toError(DeviceCommand event, Object response, {StackTrace stackTrace}) {
-    final error = DeviceError(response, stackTrace: stackTrace);
-    event.callback.completeError(error, stackTrace);
-    return error;
+  DeviceState _toError(DeviceCommand event, Object error) {
+    final object = error is DeviceError
+        ? error
+        : DeviceError(
+            error,
+            stackTrace: StackTrace.current,
+          );
+    event.callback.completeError(
+      object,
+      object.stackTrace,
+    );
+    return object;
   }
 
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscriptions.isNotEmpty) {
-      add(RaiseDeviceError(DeviceError(error, stackTrace: stacktrace)));
+      add(RaiseDeviceError(DeviceError(
+        error,
+        stackTrace: stacktrace,
+      )));
     } else {
-      throw "Bad state: DeviceBloc is disposed. Unexpected ${DeviceError(error, stackTrace: stacktrace)}";
+      throw DeviceBlocException(
+        error,
+        state,
+        stackTrace: stacktrace,
+      );
     }
   }
 
@@ -315,7 +345,7 @@ class _HandleMessage extends DeviceCommand<DeviceMessage, DeviceMessage> {
   String toString() => 'HandleMessage {message: $data}';
 }
 
-class UnloadDevices extends DeviceCommand<String, List<String>> {
+class UnloadDevices extends DeviceCommand<String, List<Device>> {
   UnloadDevices(String iuuid) : super(iuuid);
 
   @override
@@ -323,7 +353,7 @@ class UnloadDevices extends DeviceCommand<String, List<String>> {
 }
 
 class RaiseDeviceError extends DeviceCommand<DeviceError, DeviceError> {
-  RaiseDeviceError(data) : super(data);
+  RaiseDeviceError(DeviceError data) : super(data);
 
   @override
   String toString() => 'RaiseDeviceError {error: $data}';
@@ -343,7 +373,6 @@ abstract class DeviceState<T> extends Equatable {
   isUpdated() => this is DeviceUpdated;
   isDeleted() => this is DeviceDeleted;
   isUnloaded() => this is DevicesUnloaded;
-  isException() => this is DeviceException;
   isError() => this is DeviceError;
 }
 
@@ -358,53 +387,59 @@ class DevicesLoaded extends DeviceState<List<String>> {
   DevicesLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'DevicesLoaded';
+  String toString() => 'DevicesLoaded {devices: $data}';
 }
 
 class DeviceCreated extends DeviceState<Device> {
   DeviceCreated(Device device) : super(device);
 
   @override
-  String toString() => 'DeviceAttached';
+  String toString() => 'DeviceAttached {device: $data}';
 }
 
 class DeviceUpdated extends DeviceState<Device> {
   DeviceUpdated(Device device) : super(device);
 
   @override
-  String toString() => 'DeviceUpdated';
+  String toString() => 'DeviceUpdated {device: $data}';
 }
 
 class DeviceDeleted extends DeviceState<Device> {
   DeviceDeleted(Device device) : super(device);
 
   @override
-  String toString() => 'DeviceDetached';
+  String toString() => 'DeviceDetached {device: $data}';
 }
 
 class DevicesUnloaded extends DeviceState<List<Device>> {
   DevicesUnloaded(List<Device> devices) : super(devices);
 
   @override
-  String toString() => 'DevicesUnloaded';
+  String toString() => 'DevicesUnloaded {devices: $data}';
 }
 
 /// ---------------------
-/// Exceptional States
+/// Error states
 /// ---------------------
-abstract class DeviceException extends DeviceState<Object> {
+class DeviceError extends DeviceState<Object> {
   final StackTrace stackTrace;
-  DeviceException(Object error, {this.stackTrace}) : super(error, [stackTrace]);
+  DeviceError(Object error, {this.stackTrace}) : super(error, [stackTrace]);
 
   @override
-  String toString() => 'DeviceException {data: $data}';
+  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
 }
 
-/// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
-class DeviceError extends DeviceException {
+/// ---------------------
+/// Exceptions
+/// ---------------------
+
+class DeviceBlocException implements Exception {
+  DeviceBlocException(this.error, this.state, {this.command, this.stackTrace});
+  final Object error;
+  final DeviceState state;
   final StackTrace stackTrace;
-  DeviceError(Object error, {this.stackTrace}) : super(error, stackTrace: stackTrace);
+  final Object command;
 
   @override
-  String toString() => 'DeviceError {data: $data}';
+  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
 }

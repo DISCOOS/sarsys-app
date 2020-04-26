@@ -1,122 +1,179 @@
-import 'package:SarSys/core/storage.dart';
-import 'package:hive/hive.dart';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:json_patch/json_patch.dart';
 
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/services/device_service.dart';
+import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/services/connectivity_service.dart';
+import 'package:SarSys/services/service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 
-class DeviceRepository {
-  DeviceRepository(this.service, {this.compactWhen = 10});
+class DeviceRepository extends ConnectionAwareRepository<String, Device> {
+  DeviceRepository(
+    this.service, {
+    @required ConnectivityService connectivity,
+    int compactWhen = 10,
+  }) : super(
+          connectivity: connectivity,
+          compactWhen: compactWhen,
+        );
+
+  /// Device service
   final DeviceService service;
-  final int compactWhen;
 
-  Device operator [](String uuid) => _box.get(uuid);
-
-  Map<String, Device> get map => Map.unmodifiable(_box.toMap());
-  Iterable<String> get keys => List.unmodifiable(_box.keys);
-  Iterable<Device> get values => List.unmodifiable(_box.values);
-
-  bool containsKey(String uuid) => _box.keys.contains(uuid);
-  bool containsValue(Device device) => _box.values.contains(device);
-
-  String _iuuid;
+  /// Get [Incident.uuid]
   String get iuuid => _iuuid;
+  String _iuuid;
 
-  Box<Device> _box;
-  bool get isReady => _box?.isOpen == true && _box.containsKey(iuuid);
-  void _assert() {
-    if (!isReady) {
-      throw '$DeviceRepository is not ready';
+  /// Check if repository is operational.
+  /// Is true if and only if loaded with
+  /// [load] or at least one Device is
+  /// created with [create].
+  @override
+  bool get isReady => super.isReady && _iuuid != null;
+
+  /// Get [Device.uuid] from [state]
+  @override
+  String toKey(StorageState<Device> state) {
+    return state.value.uuid;
+  }
+
+  /// Ensure that box for given iuuid is open
+  Future<void> _ensure(String iuuid) async {
+    if (isEmptyOrNull(iuuid)) {
+      throw ArgumentError('Incident uuid can not be empty or null');
+    }
+    if (_iuuid != iuuid) {
+      await prepare(
+        force: true,
+        postfix: iuuid,
+      );
+      _iuuid = iuuid;
     }
   }
 
-  Future<Box<Device>> _open(String iuuid) async {
-    await _box?.compact();
-    await _box?.close();
-    _iuuid = iuuid;
-    return Hive.openBox(
-      '${DeviceRepository}_$iuuid',
-      encryptionKey: await Storage.hiveKey<Device>(),
-      compactionStrategy: (_, deleted) => compactWhen < deleted,
+  /// Load all devices for given [Incident.uuid]
+  Future<List<Device>> load(String iuuid) async {
+    await _ensure(iuuid);
+    if (connectivity.isOnline) {
+      try {
+        var response = await service.fetch(iuuid);
+        if (response.is200) {
+          await Future.wait(response.body.map(
+            (incident) => commit(
+              StorageState.pushed(
+                incident,
+              ),
+            ),
+          ));
+          return response.body;
+        }
+        throw DeviceServiceException(
+          'Failed to fetch devices for incident $iuuid',
+          response: response,
+          stackTrace: StackTrace.current,
+        );
+      } on SocketException {
+        // Assume offline
+      }
+    }
+    return values;
+  }
+
+  /// Update [device]
+  Future<Device> create(String iuuid, Device device) async {
+    await _ensure(iuuid);
+    return apply(
+      StorageState.created(device),
     );
   }
 
-  /// GET ../devices
-  Future<List<Device>> load(String iuuid) async {
-    var response = await service.load(iuuid);
-    if (response.is200) {
-      _box = await _open(iuuid);
-      await _box.putAll(
-        Map.fromEntries(response.body.map(
-          (device) => MapEntry(device.id, device),
-        )),
-      );
-      return response.body;
-    }
-    throw response;
-  }
-
-  /// POST ../devices
-  Future<Device> create(String iuuid, Device device) async {
-    _assert();
-    var response = await service.create(iuuid, device);
-    if (response.is200) {
-      return _put(
-        device,
-      );
-    }
-    throw response;
-  }
-
-  /// PATCH ../devices/{deviceId}
+  /// Update [device]
   Future<Device> update(Device device) async {
-    _assert();
-    var response = await service.update(device);
-    if (response.is204) {
-      return _put(
-        device,
-      );
-    }
-    throw response;
+    checkState();
+    return apply(
+      StorageState.changed(device),
+    );
   }
 
   /// PUT ../devices/{deviceId}
   Future<Device> patch(Device device) async {
-    _assert();
-    final old = this[device.id];
+    checkState();
+    final old = this[device.uuid];
     final oldJson = old?.toJson() ?? {};
     final patches = JsonPatch.diff(oldJson, device.toJson());
     final newJson = JsonPatch.apply(old, patches, strict: false);
-    var response = await service.update(Device.fromJson(newJson));
-    if (response.is204) {
-      return _put(
-        device,
-      );
-    }
-    throw response;
+    return update(
+      Device.fromJson(newJson..addAll({'uuid': device.uuid})),
+    );
   }
 
-  /// DELETE ../devices/{deviceId}
-  Future<Device> delete(Device device) async {
-    _assert();
-    var response = await service.delete(device);
-    if (response.is204) {
-      // Any tracking is removed by listening to this event in TrackingBloc
-      _box.delete(device.id);
-      return device;
-    }
-    throw response;
+  /// Delete [Device] with given [uuid]
+  Future<Device> delete(String uuid) async {
+    checkState();
+    return apply(
+      StorageState.deleted(get(uuid)),
+    );
   }
 
+  /// Unload all devices for given [iuuid]
   Future<List<Device>> unload() async {
-    _assert();
-    final devices = values.toList();
-    _box.delete(iuuid);
+    final devices = await clear();
+    _iuuid = null;
     return devices;
   }
 
-  Device _put(Device device) {
-    _box.put(device.id, device);
-    return device;
+  @override
+  Future<Device> onCreate(StorageState<Device> state) async {
+    var response = await service.create(_iuuid, state.value);
+    if (response.is200) {
+      return response.body;
+    }
+    throw DeviceServiceException(
+      'Failed to create Device ${state.value}',
+      response: response,
+      stackTrace: StackTrace.current,
+    );
+  }
+
+  @override
+  Future<Device> onUpdate(StorageState<Device> state) async {
+    var response = await service.update(state.value);
+    if (response.is200) {
+      return response.body;
+    }
+    throw DeviceServiceException(
+      'Failed to update Device ${state.value}',
+      response: response,
+      stackTrace: StackTrace.current,
+    );
+  }
+
+  @override
+  Future<Device> onDelete(StorageState<Device> state) async {
+    var response = await service.delete(state.value);
+    if (response.is204) {
+      return state.value;
+    }
+    throw DeviceServiceException(
+      'Failed to delete Device ${state.value}',
+      response: response,
+      stackTrace: StackTrace.current,
+    );
+  }
+}
+
+class DeviceServiceException implements Exception {
+  DeviceServiceException(this.error, {this.response, this.stackTrace});
+  final Object error;
+  final StackTrace stackTrace;
+  final ServiceResponse response;
+
+  @override
+  String toString() {
+    return 'DeviceServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

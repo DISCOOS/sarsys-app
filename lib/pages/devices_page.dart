@@ -198,12 +198,12 @@ class DevicesPageState extends State<DevicesPage> {
         color: Colors.red,
         icon: Icons.people,
         onTap: () async {
-          final unit = units[device.id];
+          final unit = units[device.uuid];
           if (unit != null) {
             final result = await removeFromUnit(unit, devices: [device]);
             if (result.isLeft()) return;
           }
-          final p = personnel[device.id];
+          final p = personnel[device.uuid];
           if (p != null) await removeFromPersonnel(p, devices: [device]);
         },
       );
@@ -215,7 +215,7 @@ class DevicesPageState extends State<DevicesPage> {
     Map<String, Personnel> personnel,
   ) {
     return Container(
-      key: ObjectKey(device.id),
+      key: ObjectKey(device.uuid),
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
@@ -272,12 +272,12 @@ class DevicesPageState extends State<DevicesPage> {
     Map<String, Personnel> personnel,
     Device device,
   ) {
-    final name = units[device.id]?.name ?? personnel[device.id]?.formal ?? '';
+    final name = units[device.uuid]?.name ?? personnel[device.uuid]?.formal ?? '';
     return "$name ${formatSince(device?.point?.timestamp, defaultValue: "ingen")}";
   }
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
-    return tracked[device.id]
+    return tracked[device.uuid]
             ?.firstWhere(
               (tracking) => tracking.status != TrackingStatus.None,
               orElse: () => null,

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/services/connectivity_service.dart';
@@ -45,24 +46,28 @@ abstract class ConnectionAwareRepository<S, T> {
   final _backlog = LinkedHashSet();
 
   /// Get all states as unmodifiable map
-  Map<S, StorageState<T>> get states => Map.unmodifiable(_states?.toMap() ?? {});
+  Map<S, StorageState<T>> get states => Map.unmodifiable(_isReady ? _states?.toMap() : {});
   Box<StorageState<T>> _states;
 
+  /// Get all (key,value)-pairs as unmodifiable map
+  Map<S, T> get map => Map.unmodifiable(_isReady ? Map.fromIterables(_states?.keys, _states?.values) : {});
+
   /// Get all keys as unmodifiable list
-  Iterable<S> get keys => List.unmodifiable(_states?.keys ?? []);
+  Iterable<S> get keys => List.unmodifiable(_isReady ? _states?.keys : []);
 
   /// Get all values as unmodifiable list
-  Iterable<T> get values => List.unmodifiable(_states?.values?.map((state) => state.value));
+  Iterable<T> get values => List.unmodifiable(_isReady ? _states?.values?.map((state) => state.value) : []);
 
   /// Check if key exists
-  bool containsKey(S key) => _states?.keys?.contains(key) ?? false;
+  bool containsKey(S key) => _isReady ? _states.keys.contains(key) : false;
 
   /// Check if value exists
-  bool containsValue(T value) => _states?.values?.any((state) => state.value == value) ?? false;
+  bool containsValue(T value) => _isReady ? _states.values.any((state) => state.value == value) : false;
 
   /// Check if repository is operational
   @mustCallSuper
-  bool get isReady => _states?.isOpen == true;
+  bool get isReady => _isReady;
+  bool get _isReady => _states?.isOpen == true;
 
   /// Asserts that repository is operational.
   /// Should be called before methods is called.
@@ -108,11 +113,18 @@ abstract class ConnectionAwareRepository<S, T> {
 
   /// Reads [states] from storage
   @visibleForOverriding
-  Future<Iterable<StorageState<T>>> prepare({bool force = false}) async {
+  Future<Iterable<StorageState<T>>> prepare({
+    String postfix,
+    bool force = false,
+    bool compact = false,
+  }) async {
     if (force || _states == null) {
+      if (compact) {
+        await _states?.compact();
+      }
       await _states?.close();
       _states = await Hive.openBox(
-        '$runtimeType',
+        ['$runtimeType', postfix].where((part) => !isEmptyOrNull(part)).join('_'),
         encryptionKey: await Storage.hiveKey<T>(),
         compactionStrategy: (_, deleted) => compactWhen < deleted,
       );
@@ -160,11 +172,13 @@ abstract class ConnectionAwareRepository<S, T> {
   T _offline(StorageState<T> state) {
     final key = toKey(state);
     _backlog.add(key);
-    _pending ??= connectivity.whenOnline.listen(
-      _online,
-      onError: onError,
-      cancelOnError: false,
-    );
+    if (_pending == null) {
+      _pending = connectivity.whenOnline.listen(
+        _online,
+        onError: onError,
+        cancelOnError: false,
+      );
+    }
     return state.value;
   }
 
@@ -299,10 +313,12 @@ abstract class ConnectionAwareRepository<S, T> {
 
   /// Clear all states from local storage
   Future<Iterable<T>> clear({bool compact = true}) async {
-    final elements = values.toList();
-    await _states.clear();
-    if (compact) {
-      await _states.compact();
+    final Iterable<T> elements = values.toList();
+    if (_isReady) {
+      if (compact) {
+        await _states.compact();
+      }
+      await _states.clear();
     }
     return List.unmodifiable(elements);
   }

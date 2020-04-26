@@ -71,7 +71,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: context.bloc<IncidentBloc>().changes(),
+      stream: context.bloc<IncidentBloc>().onChanged(),
       initialData: context.bloc<IncidentBloc>().selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final incident = (snapshot.hasData ? context.bloc<IncidentBloc>().selected : null);

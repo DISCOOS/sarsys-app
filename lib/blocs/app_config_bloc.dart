@@ -18,7 +18,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   AppConfigService get service => repo.service;
 
   @override
-  AppConfigState get initialState => AppConfigEmpty();
+  AppConfigEmpty get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
   bool get isReady => repo.isReady;
@@ -296,7 +296,7 @@ class AppConfigError extends AppConfigState<Object> {
   AppConfigError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'AppConfigError {error: $data, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

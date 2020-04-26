@@ -22,10 +22,10 @@ class ConnectivityService {
   bool get isCellular => ConnectivityStatus.cellular == _status;
 
   Stream<ConnectivityStatus> get changes => _controller.stream;
-  Stream<ConnectivityStatus> get whenOnline => _controller.stream.where(
+  Stream<ConnectivityStatus> get whenOnline => changes.where(
         (status) => ConnectivityStatus.offline != status,
       );
-  Stream<ConnectivityStatus> get whenOffline => _controller.stream.where(
+  Stream<ConnectivityStatus> get whenOffline => changes.where(
         (status) => ConnectivityStatus.offline == status,
       );
 

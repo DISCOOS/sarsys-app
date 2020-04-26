@@ -8,7 +8,7 @@ part of 'Device.dart';
 
 Device _$DeviceFromJson(Map json) {
   return Device(
-    id: json['id'] as String,
+    uuid: json['uuid'] as String,
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
     alias: json['alias'] as String,
     number: json['number'] as String,
@@ -23,7 +23,7 @@ Device _$DeviceFromJson(Map json) {
 }
 
 Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
-      'id': instance.id,
+      'uuid': instance.uuid,
       'type': _$DeviceTypeEnumMap[instance.type],
       'status': _$DeviceStatusEnumMap[instance.status],
       'number': instance.number,

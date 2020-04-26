@@ -40,7 +40,7 @@ class UserStatusPageState extends State<UserStatusPage> {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final state = snapshot.data;
-            if (state.isUpdated() && state.data.id == _personnel.id) {
+            if (state.isUpdated() && state.data.uuid == _personnel.id) {
               _personnel = state.data;
             }
             return _personnel == null ? Center(child: Text('Deltar ikke på aksjon')) : _buildInfoPanel(context);

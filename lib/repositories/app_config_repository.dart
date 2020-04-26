@@ -38,7 +38,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// [load] is called AND [delete] is NOT
   /// called.
   @override
-  bool get isReady => super.isReady && containsKey(version) && !getState(version).isDeleted;
+  bool get isReady => super.isReady && state?.isDeleted != null;
 
   /// Get current state
   StorageState<AppConfig> get state => getState(version);

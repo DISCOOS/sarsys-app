@@ -15,14 +15,14 @@ class DeviceService {
 
   DeviceService(this.restUrl, this.wsUrl, this.client);
 
-  /// GET ../devices
-  Future<ServiceResponse<List<Device>>> load(String tuuid) async {
+  /// GET ../devices for given [Incident.uuid]
+  Future<ServiceResponse<List<Device>>> fetch(String iuuid) async {
     // TODO: Implement fetch devices
     throw "Not implemented";
   }
 
   /// POST ../devices
-  Future<ServiceResponse<Device>> create(String tuuid, Device device) async {
+  Future<ServiceResponse<Device>> create(String iuuid, Device device) async {
     // TODO: Implement create device
     throw "Not implemented";
   }

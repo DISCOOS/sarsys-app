@@ -31,7 +31,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   UserService get service1 => repo.service;
 
   @override
-  get initialState => UserUnset();
+  UserUnset get initialState => UserUnset();
 
   /// Authenticated use
   User get user => repo.user;

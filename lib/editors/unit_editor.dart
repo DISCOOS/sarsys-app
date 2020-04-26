@@ -436,8 +436,8 @@ class _UnitEditorState extends State<UnitEditor> {
 
   List<Device> _findDevices(String query) {
     if (query.length != 0) {
-      var actual = _getActualDevices().map((device) => device.id);
-      var local = _getLocalDevices().map((device) => device.id);
+      var actual = _getActualDevices().map((device) => device.uuid);
+      var local = _getLocalDevices().map((device) => device.uuid);
       var lowercaseQuery = query.toLowerCase();
       return context
           .bloc<DeviceBloc>()
@@ -445,7 +445,7 @@ class _UnitEditorState extends State<UnitEditor> {
           .values
           .where((device) =>
               // Add locally removed devices
-              actual.contains(device.id) && !local.contains(device.id) ||
+              actual.contains(device.uuid) && !local.contains(device.uuid) ||
               context.bloc<TrackingBloc>().has(device) == false)
           .where((device) =>
               device.number.toLowerCase().contains(lowercaseQuery) ||

@@ -8,7 +8,7 @@ part 'Device.g.dart';
 
 @JsonSerializable()
 class Device extends Equatable {
-  final String id;
+  final String uuid;
   final DeviceType type;
   final DeviceStatus status;
   final String number;
@@ -19,14 +19,14 @@ class Device extends Equatable {
   final bool manual;
 
   Device({
-    @required this.id,
+    @required this.uuid,
     @required this.type,
     this.alias,
     this.number,
     this.point,
     this.manual = true,
     this.status = DeviceStatus.Attached,
-  }) : super([id, type, status, number, alias, point]);
+  }) : super([uuid, type, status, number, alias, point]);
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
@@ -44,7 +44,7 @@ class Device extends Equatable {
   Device withJson(Map<String, dynamic> json) {
     var clone = Device.fromJson(json);
     return Device(
-      id: clone.id ?? this.id,
+      uuid: clone.uuid ?? this.uuid,
       type: clone.type ?? this.type,
       status: clone.status ?? this.status,
       alias: clone.alias ?? this.alias,
@@ -64,7 +64,7 @@ class Device extends Equatable {
     bool manual,
   }) {
     return Device(
-      id: this.id,
+      uuid: this.uuid,
       type: type ?? this.type,
       status: status ?? this.status,
       alias: alias ?? this.alias,

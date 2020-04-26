@@ -379,8 +379,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
     StreamController<TrackingMessage> controller,
   ) {
     final device = Device.fromJson(message.json);
-    if (d2t.containsKey(device.id)) {
-      final trackingId = d2t[device.id];
+    if (d2t.containsKey(device.uuid)) {
+      final trackingId = d2t[device.uuid];
       // Assumes that a device is attached to a single incident only
       final incident = trackingRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(trackingId),
@@ -414,7 +414,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     final simulation = simulations[trackingId];
     if (simulation != null) {
       // Update aggregates first
-      final aggregateIds = _toAggregateIds(device.id, trackingId, trackingRepo[incidentId], a2t)
+      final aggregateIds = _toAggregateIds(device.uuid, trackingId, trackingRepo[incidentId], a2t)
         ..forEach(
           (aggregateId) => _progress(
             device,
@@ -428,12 +428,12 @@ class TrackingServiceMock extends Mock implements TrackingService {
         );
 
       // Update device position
-      simulation.devices[device.id] = device;
+      simulation.devices[device.uuid] = device;
 
       // Append to track, calculate next position, effort and speed
       final trackingList = trackingRepo[incidentId];
       final next = simulation.progress(
-        deviceIds: [device.id],
+        deviceIds: [device.uuid],
         aggregateIds: aggregateIds,
       );
       trackingList[trackingId] = next;

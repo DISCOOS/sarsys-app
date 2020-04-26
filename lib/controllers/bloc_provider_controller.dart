@@ -137,9 +137,19 @@ class BlocProviderController {
     // Configure Device service
     final DeviceService deviceService = !demo.active
         ? DeviceService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
-        : DeviceServiceMock.build(incidentBloc, demo.tetraCount, demo.appCount);
+        : DeviceServiceMock.build(
+            incidentBloc,
+            tetraCount: demo.tetraCount,
+            appCount: demo.appCount,
+            simulate: true,
+          );
     // ignore: close_sinks
-    final DeviceBloc deviceBloc = DeviceBloc(DeviceRepository(deviceService), incidentBloc);
+    final DeviceBloc deviceBloc = DeviceBloc(
+        DeviceRepository(
+          deviceService,
+          connectivity: connectivityService,
+        ),
+        incidentBloc);
 
     // Configure Tracking service
     final TrackingService trackingService = !demo.active

@@ -71,7 +71,7 @@ class _IncidentPageState extends State<IncidentPage> {
           child: Stack(
             children: [
               StreamBuilder<Incident>(
-                stream: context.bloc<IncidentBloc>().changes(),
+                stream: context.bloc<IncidentBloc>().onChanged(),
                 initialData: context.bloc<IncidentBloc>().selected,
                 builder: (context, snapshot) {
                   final incident = (snapshot.hasData ? snapshot.data : null);

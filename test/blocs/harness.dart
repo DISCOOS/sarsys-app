@@ -20,7 +20,6 @@ import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/services/device_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -54,16 +53,19 @@ class BlocTestHarness {
   AppConfigBloc get configBloc => _configBloc;
   bool _withConfigBloc = false;
 
-  DeviceBloc _deviceBloc;
-  DeviceBloc get deviceBloc => _deviceBloc;
-  bool _withDeviceBloc = false;
-
   IncidentServiceMock get incidentService => _incidentService;
   IncidentServiceMock _incidentService;
 
   IncidentBloc _incidentBloc;
   IncidentBloc get incidentBloc => _incidentBloc;
   bool _withIncidentBloc = false;
+
+  DeviceServiceMock get deviceService => _deviceService;
+  DeviceServiceMock _deviceService;
+
+  DeviceBloc _deviceBloc;
+  DeviceBloc get deviceBloc => _deviceBloc;
+  bool _withDeviceBloc = false;
 
   void install() {
     setUpAll(() async {
@@ -92,11 +94,11 @@ class BlocTestHarness {
       if (_withUserBloc) {
         await _buildUserBloc();
       }
-      if (_withDeviceBloc) {
-        _buildDeviceBloc();
-      }
       if (_withIncidentBloc) {
         _buildIncidentBloc();
+      }
+      if (_withDeviceBloc) {
+        _buildDeviceBloc();
       }
       // Needed for await above to work
       return Future.value();
@@ -268,28 +270,58 @@ class BlocTestHarness {
       passcode: passcode,
     );
     _incidentBloc = IncidentBloc(
-        IncidentRepository(
-          _incidentService,
-          connectivity: _connectivity,
-        ),
-        userBloc);
+      IncidentRepository(
+        _incidentService,
+        connectivity: _connectivity,
+      ),
+      _userBloc,
+    );
+
+    if (_authenticated) {
+      // Consume UserAuthenticated
+      expectThroughInOrder(
+        _userBloc,
+        [isA<UserAuthenticated>()],
+        close: false,
+      );
+    }
   }
 
-  void _buildDeviceBloc({int tetraCount = 10, int appCount = 10}) {
+  void _buildDeviceBloc({
+    int tetraCount = 10,
+    int appCount = 10,
+    bool simulate = false,
+  }) {
     assert(_withIncidentBloc, 'DeviceBloc requires IncidentBloc');
-    final DeviceService deviceService = DeviceServiceMock.build(
+    _deviceService = DeviceServiceMock.build(
       _incidentBloc,
-      tetraCount,
-      appCount,
+      tetraCount: tetraCount,
+      appCount: appCount,
+      simulate: simulate,
     );
-    _deviceBloc = DeviceBloc(DeviceRepository(deviceService), _incidentBloc);
+    _deviceBloc = DeviceBloc(
+      DeviceRepository(
+        _deviceService,
+        connectivity: _connectivity,
+      ),
+      _incidentBloc,
+    );
+
+    if (_authenticated) {
+      // Consume IncidentsLoaded fired by UserAuthenticated
+      expectThroughInOrder(
+        _incidentBloc,
+        [isA<IncidentsLoaded>()],
+        close: false,
+      );
+    }
   }
 }
 
 class ConnectivityServiceMock extends Mock implements ConnectivityService {
   ConnectivityServiceMock({ConnectivityStatus status = ConnectivityStatus.cellular}) : _status = status;
 
-  StreamController<ConnectivityStatus> _controller = StreamController();
+  StreamController<ConnectivityStatus> _controller = StreamController.broadcast();
   ConnectivityStatus _status = ConnectivityStatus.offline;
 
   @override
@@ -329,6 +361,19 @@ Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
   await subscription.cancel();
 }
 
+void expectThrough<B extends Bloc<dynamic, State>, State>(
+  B bloc,
+  expected, {
+  bool close = true,
+}) {
+  assert(bloc != null);
+  assert(expected != null);
+  expect(bloc, emitsThrough(expected));
+  if (close) {
+    bloc.close();
+  }
+}
+
 void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
@@ -337,6 +382,32 @@ void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   assert(bloc != null);
   assert(expected != null);
   expect(bloc, emitsThrough(emitsInOrder(expected)));
+  if (close) {
+    bloc.close();
+  }
+}
+
+Future<void> expectThroughLater<B extends Bloc<dynamic, State>, State>(
+  B bloc,
+  expected, {
+  bool close = true,
+}) async {
+  assert(bloc != null);
+  assert(expected != null);
+  await expectLater(bloc, emitsThrough(expected));
+  if (close) {
+    bloc.close();
+  }
+}
+
+Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
+  B bloc,
+  Iterable expected, {
+  bool close = true,
+}) async {
+  assert(bloc != null);
+  assert(expected != null);
+  await expectLater(bloc, emitsThrough(emitsInOrder(expected)));
   if (close) {
     bloc.close();
   }
