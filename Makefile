@@ -124,9 +124,17 @@ ios-configure:
 	else echo; echo "[!] Initialize iOS configuration aborted."; fi \
 
 test:
-	echo "Running flutter tests..."; \
-	flutter test test/incident_tests.dart
+	echo "Running flutter tests...";
+	echo "Testing proj4d..."
 	flutter test test/proj4d.dart
+	echo "Testing UserBloc..."
+	flutter test test/blocs/user_tests.dart
+	echo "Testing AppConfigBloc..."
+	flutter test test/blocs/app_config_tests.dart
+	echo "Testing IncidentBloc..."
+	flutter test test/blocs/incident_tests.dart
+	echo "Testing DeviceBloc..."
+	flutter test test/blocs/device_tests.dart
 	echo "[✓] Flutter tests complete."
 
 models:
