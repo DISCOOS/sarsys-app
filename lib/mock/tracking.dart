@@ -562,7 +562,7 @@ class _TrackSimulation {
     );
   }
 
-  Point _fromDevice(String id) => devices[id]?.point;
+  Point _fromDevice(String id) => devices[id]?.position;
   Point _fromAggregate(String id) => trackingList[id]?.point;
 
   List<num> _aggregate(List<num> sum, Point point) => point == null

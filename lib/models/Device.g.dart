@@ -12,9 +12,16 @@ Device _$DeviceFromJson(Map json) {
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
     alias: json['alias'] as String,
     number: json['number'] as String,
-    point: json['point'] == null
+    position: json['position'] == null
         ? null
-        : Point.fromJson((json['point'] as Map)?.map(
+        : Point.fromJson((json['position'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    network: json['network'] as String,
+    networkId: json['networkId'] as String,
+    allocatedTo: json['allocatedTo'] == null
+        ? null
+        : AggregateRef.fromJson((json['allocatedTo'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
     manual: json['manual'] as bool,
@@ -28,7 +35,10 @@ Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'status': _$DeviceStatusEnumMap[instance.status],
       'number': instance.number,
       'alias': instance.alias,
-      'point': instance.point?.toJson(),
+      'network': instance.network,
+      'networkId': instance.networkId,
+      'position': instance.position?.toJson(),
+      'allocatedTo': instance.allocatedTo?.toJson(),
       'manual': instance.manual,
     };
 
@@ -69,9 +79,11 @@ const _$DeviceTypeEnumMap = {
   DeviceType.App: 'App',
   DeviceType.APRS: 'APRS',
   DeviceType.AIS: 'AIS',
+  DeviceType.Spot: 'Spot',
+  DeviceType.InReach: 'InReach',
 };
 
 const _$DeviceStatusEnumMap = {
-  DeviceStatus.Attached: 'Attached',
-  DeviceStatus.Detached: 'Detached',
+  DeviceStatus.Unavailable: 'Unavailable',
+  DeviceStatus.Available: 'Available',
 };

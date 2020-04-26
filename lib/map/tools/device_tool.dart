@@ -44,7 +44,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
 
   @override
   LatLng toPoint(Device device) {
-    return toLatLng(device?.point);
+    return toLatLng(device?.position);
   }
 
   void _show(BuildContext context, List<Device> devices) {

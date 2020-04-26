@@ -344,7 +344,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
 
   Widget _buildPointField() => PointField(
         attribute: 'point',
-        initialValue: widget?.device?.point,
+        initialValue: widget?.device?.position,
         labelText: "Siste posisjon",
         hintText: 'Velg posisjon',
         errorText: 'Posisjon må oppgis',
@@ -357,7 +357,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       _formKey.currentState.save();
       var device = widget.device == null
           ? Device.fromJson(_formKey.currentState.value).cloneWith(
-              status: DeviceStatus.Attached,
+              status: DeviceStatus.Unavailable,
             )
           : widget.device.withJson(_formKey.currentState.value);
       Navigator.pop(context, device);

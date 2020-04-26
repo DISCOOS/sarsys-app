@@ -1,3 +1,4 @@
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
@@ -13,7 +14,10 @@ class Device extends Equatable {
   final DeviceStatus status;
   final String number;
   final String alias;
-  final Point point;
+  final String network;
+  final String networkId;
+  final Point position;
+  final AggregateRef allocatedTo;
 
   /// Flag indication that device is added manually
   final bool manual;
@@ -23,10 +27,23 @@ class Device extends Equatable {
     @required this.type,
     this.alias,
     this.number,
-    this.point,
+    this.position,
+    this.network,
+    this.networkId,
+    this.allocatedTo,
     this.manual = true,
-    this.status = DeviceStatus.Attached,
-  }) : super([uuid, type, status, number, alias, point]);
+    this.status = DeviceStatus.Unavailable,
+  }) : super([
+          uuid,
+          type,
+          status,
+          number,
+          alias,
+          network,
+          networkId,
+          allocatedTo,
+          position,
+        ]);
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
@@ -46,11 +63,14 @@ class Device extends Equatable {
     return Device(
       uuid: clone.uuid ?? this.uuid,
       type: clone.type ?? this.type,
-      status: clone.status ?? this.status,
       alias: clone.alias ?? this.alias,
+      position: clone.position ?? this.position,
       number: clone.number ?? this.number,
-      point: clone.point ?? this.point,
       manual: clone.manual ?? this.manual,
+      status: clone.status ?? this.status,
+      network: clone.network ?? this.network,
+      networkId: clone.networkId ?? this.networkId,
+      allocatedTo: clone.allocatedTo ?? this.allocatedTo,
     );
   }
 
@@ -59,8 +79,10 @@ class Device extends Equatable {
     DeviceType type,
     DeviceStatus status,
     String alias,
+    String network,
+    String networkId,
     String number,
-    Point point,
+    Point position,
     bool manual,
   }) {
     return Device(
@@ -68,34 +90,41 @@ class Device extends Equatable {
       type: type ?? this.type,
       status: status ?? this.status,
       alias: alias ?? this.alias,
+      network: network ?? this.network,
+      networkId: networkId ?? this.networkId,
       number: number ?? this.number,
-      point: point ?? this.point,
+      position: position ?? this.position,
       manual: manual ?? this.manual,
     );
   }
 }
 
-enum DeviceType { Tetra, App, APRS, AIS }
+enum DeviceType {
+  Tetra,
+  App,
+  APRS,
+  AIS,
+  Spot,
+  InReach,
+}
 
 String translateDeviceType(DeviceType type) {
   switch (type) {
     case DeviceType.Tetra:
       return "Nødnett";
-    case DeviceType.App:
-      return "App";
     default:
       return enumName(type);
   }
 }
 
-enum DeviceStatus { Attached, Detached }
+enum DeviceStatus { Unavailable, Available }
 
 String translateDeviceStatus(DeviceStatus status) {
   switch (status) {
-    case DeviceStatus.Attached:
-      return "Tilknyttet";
-    case DeviceStatus.Detached:
-      return "Ikke tilknyttet";
+    case DeviceStatus.Unavailable:
+      return "Ikke tilgjengelig";
+    case DeviceStatus.Available:
+      return "Tilgjengelig";
     default:
       return enumName(status);
   }

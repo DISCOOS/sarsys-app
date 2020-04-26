@@ -116,7 +116,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Future<Device> attach(Device device) {
     _assertState();
     return update(
-      device.cloneWith(status: DeviceStatus.Attached),
+      device.cloneWith(status: DeviceStatus.Unavailable),
     );
   }
 
@@ -124,7 +124,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   Future<Device> detach(Device device) {
     _assertState();
     return update(
-      device.cloneWith(status: DeviceStatus.Detached),
+      device.cloneWith(status: DeviceStatus.Available),
     );
   }
 

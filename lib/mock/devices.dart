@@ -44,7 +44,7 @@ class DeviceBuilder {
     return json.decode('{'
         '"uuid": "$uuid",'
         '"type": "${enumName(type)}",'
-        '"status": "${enumName(DeviceStatus.Attached)}",'
+        '"status": "${enumName(DeviceStatus.Unavailable)}",'
         '"number": "$number",'
         '"point": $point,'
         '"manual": false'
@@ -159,7 +159,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
             uuid: "$iuuid:d:${randomAlphaNumeric(8).toLowerCase()}",
             type: device.type,
             status: device.status,
-            point: device.point ??
+            position: device.position ??
                 Point.now(
                   center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
                   center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
@@ -241,7 +241,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   ) {
     final simulation = _DeviceSimulation(
       uuid: device.uuid,
-      point: device.point,
+      point: device.position,
       steps: 16,
       delta: DeviceBuilder.nextDouble(rnd, 0.02),
     );
@@ -266,7 +266,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
           var simulation = simulations[device.uuid];
           var point = simulation.progress(rnd.nextDouble() * 20.0);
           device = device.cloneWith(
-            point: point,
+            position: point,
           );
           devicesMap[iuuid].update(
             device.uuid,

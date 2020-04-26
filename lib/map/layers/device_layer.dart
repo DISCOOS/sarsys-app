@@ -58,7 +58,7 @@ class DeviceLayer extends MapPlugin {
     final bounds = map.getBounds();
     final tracking = options.bloc.asDeviceIds();
     final devices = options.bloc.deviceBloc.devices.values.where(
-      (device) => bounds.contains(toLatLng(device.point)),
+      (device) => bounds.contains(toLatLng(device.position)),
     );
     return options.bloc.tracking.isEmpty
         ? Container()
@@ -121,7 +121,7 @@ class DeviceLayer extends MapPlugin {
 
   Widget _buildPoint(BuildContext context, DeviceLayerOptions options, MapState map, Device device) {
     var size = options.size;
-    var location = device.point;
+    var location = device.position;
     var pos = map.project(toLatLng(location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
     var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
@@ -136,7 +136,7 @@ class DeviceLayer extends MapPlugin {
           size: size,
           outer: pixelRadius,
           opacity: options.opacity,
-          color: toPointStatusColor(device.point),
+          color: toPointStatusColor(device.position),
         ),
       ),
     );
@@ -144,7 +144,7 @@ class DeviceLayer extends MapPlugin {
 
   _buildLabel(BuildContext context, DeviceLayerOptions options, MapState map, Device device) {
     var size = options.size;
-    var location = device.point;
+    var location = device.position;
     var pos = map.project(toLatLng(location));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 

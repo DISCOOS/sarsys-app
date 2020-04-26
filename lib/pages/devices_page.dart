@@ -224,7 +224,7 @@ class DevicesPageState extends State<DevicesPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             CircleAvatar(
-              backgroundColor: toPointStatusColor(device.point),
+              backgroundColor: toPointStatusColor(device.position),
               child: Icon(toDeviceIconData(device.type)),
               foregroundColor: Colors.white,
             ),
@@ -249,7 +249,7 @@ class DevicesPageState extends State<DevicesPage> {
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(device?.point),
+                color: toPointStatusColor(device?.position),
               ),
             ),
             if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
@@ -273,7 +273,7 @@ class DevicesPageState extends State<DevicesPage> {
     Device device,
   ) {
     final name = units[device.uuid]?.name ?? personnel[device.uuid]?.formal ?? '';
-    return "$name ${formatSince(device?.point?.timestamp, defaultValue: "ingen")}";
+    return "$name ${formatSince(device?.position?.timestamp, defaultValue: "ingen")}";
   }
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {

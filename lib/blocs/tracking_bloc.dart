@@ -76,7 +76,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   void _handleDevice(DeviceState state) {
     if (state.isUpdated()) {
       final device = (state as DeviceUpdated).data;
-      if (DeviceStatus.Detached == device.status) {
+      if (DeviceStatus.Available == device.status) {
         final tracking = find(device);
         // Remove device from active list of tracked devices? This will not impact history!
         if (tracking?.devices?.contains(device.uuid) == true) {

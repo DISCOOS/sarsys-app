@@ -98,13 +98,13 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
     var result = await showDialog<Point>(
       context: params.overlay.context,
       builder: (context) => PointEditor(
-        params.data.point,
+        params.data.position,
         title: "Sett siste kjente posisjon",
         controller: Provider.of<PermissionController>(params.context),
       ),
     );
     if (result == null) return dartz.Left(false);
-    final device = await params.bloc.update(params.data.cloneWith(point: result));
+    final device = await params.bloc.update(params.data.cloneWith(position: result));
     return dartz.Right(device);
   }
 }
@@ -128,7 +128,7 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
       "Dette vil fjerne apparatet fra sporing og aksjonen. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Detached));
+    await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Available));
     return dartz.Right(params.bloc.state);
   }
 }

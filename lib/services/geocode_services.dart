@@ -403,9 +403,9 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
       .devices
       .values
       .where((p) => _prepare(p).contains(match))
-      .where((p) => p.point != null)
+      .where((p) => p.position != null)
       .map((p) => AddressLookup(
-            point: p.point,
+            point: p.position,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,

@@ -30,7 +30,7 @@ class DeviceTile extends StatelessWidget {
           toDeviceIconData(device.type),
           color: Colors.white,
         ),
-        backgroundColor: toPointStatusColor(device.point),
+        backgroundColor: toPointStatusColor(device.position),
       ),
       title: Text([device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' ')),
       onTap: () => state.selectSuggestion(device),
@@ -64,7 +64,7 @@ class DeviceChip extends StatelessWidget {
               color: Colors.white,
             ),
             maxRadius: 10.0,
-            backgroundColor: toPointStatusColor(device.point),
+            backgroundColor: toPointStatusColor(device.position),
           ),
           SizedBox(width: 6.0),
           Text(device.number, style: style),
@@ -162,20 +162,20 @@ class DeviceInfoPanel extends StatelessWidget {
                   context,
                   label: "UTM",
                   icon: Icons.my_location,
-                  location: device.point,
-                  formatter: (point) => toUTM(device.point, prefix: "", empty: "Ingen"),
+                  location: device.position,
+                  formatter: (point) => toUTM(device.position, prefix: "", empty: "Ingen"),
                 ),
                 buildCopyableLocation(
                   context,
                   label: "Desimalgrader (DD)",
                   icon: Icons.my_location,
-                  location: device.point,
-                  formatter: (point) => toDD(device.point, prefix: "", empty: "Ingen"),
+                  location: device.position,
+                  formatter: (point) => toDD(device.position, prefix: "", empty: "Ingen"),
                 ),
               ],
             ),
           ),
-          if (device.point != null)
+          if (device.position != null)
             Expanded(
               flex: 2,
               child: Column(
@@ -183,10 +183,10 @@ class DeviceInfoPanel extends StatelessWidget {
                 children: <Widget>[
                   IconButton(
                     icon: Icon(Icons.navigation, color: Colors.black45),
-                    onPressed: device.point == null
+                    onPressed: device.position == null
                         ? null
                         : () {
-                            navigateToLatLng(context, toLatLng(device.point));
+                            navigateToLatLng(context, toLatLng(device.position));
                             _onComplete(device);
                           },
                   ),
