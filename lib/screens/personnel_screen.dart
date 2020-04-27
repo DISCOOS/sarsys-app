@@ -59,7 +59,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.initState();
 
     _personnel = widget.personnel;
-    routeData = widget?.personnel?.id;
+    routeData = widget?.personnel?.uuid;
   }
 
   @override
@@ -68,10 +68,10 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<PersonnelBloc>().changes(widget.personnel))
-      ..add(context.bloc<TrackingBloc>().changes(widget.personnel?.tracking));
+      ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
+      ..add(context.bloc<TrackingBloc>().changes(widget.personnel?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().changes(widget.personnel?.tracking).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().changes(widget.personnel?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -117,8 +117,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
   PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
         personnel: _personnel,
-        tracking: context.bloc<TrackingBloc>().tracking[_personnel.tracking],
-        devices: context.bloc<TrackingBloc>().devices(_personnel.tracking),
+        tracking: context.bloc<TrackingBloc>().tracking[_personnel.tracking.uuid],
+        devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
         withHeader: false,
         withActions: context.bloc<UserBloc>().user.isCommander,
         organization: FleetMapService().fetchOrganization(Defaults.orgId),
@@ -129,7 +129,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       );
 
   Widget _buildMapTile(BuildContext context, Personnel personnel) {
-    final center = toCenter(context.bloc<TrackingBloc>().tracking[personnel.tracking]);
+    final center = toCenter(context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid]);
     return Material(
       elevation: PersonnelScreen.ELEVATION,
       borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),

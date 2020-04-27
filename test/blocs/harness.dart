@@ -6,17 +6,20 @@ import 'dart:typed_data';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
+import 'package:SarSys/mock/personnel.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
@@ -67,6 +70,13 @@ class BlocTestHarness {
   DeviceBloc get deviceBloc => _deviceBloc;
   bool _withDeviceBloc = false;
 
+  PersonnelServiceMock get personnelService => _personnelService;
+  PersonnelServiceMock _personnelService;
+
+  PersonnelBloc _personnelBloc;
+  PersonnelBloc get personnelBloc => _personnelBloc;
+  bool _withPersonnelBloc = false;
+
   void install() {
     setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
@@ -100,6 +110,9 @@ class BlocTestHarness {
       if (_withDeviceBloc) {
         _buildDeviceBloc();
       }
+      if (_withPersonnelBloc) {
+        _buildPersonnelBloc();
+      }
       // Needed for await above to work
       return Future.value();
     });
@@ -111,11 +124,14 @@ class BlocTestHarness {
       if (_withUserBloc) {
         _userBloc?.close();
       }
+      if (_withIncidentBloc) {
+        _incidentBloc?.close();
+      }
       if (_withDeviceBloc) {
         _deviceBloc?.close();
       }
-      if (_withIncidentBloc) {
-        _incidentBloc?.close();
+      if (_withPersonnelBloc) {
+        _personnelBloc?.close();
       }
       _connectivity?.dispose();
       if (Storage.initialized) {
@@ -150,10 +166,6 @@ class BlocTestHarness {
     _authenticated = authenticated;
   }
 
-  void withDeviceBloc() {
-    _withDeviceBloc = true;
-  }
-
   void withIncidentBloc({
     String username = 'username',
     String password = 'password',
@@ -164,6 +176,14 @@ class BlocTestHarness {
       authenticated: true,
     );
     _withIncidentBloc = true;
+  }
+
+  void withDeviceBloc() {
+    _withDeviceBloc = true;
+  }
+
+  void withPersonnelBloc() {
+    _withPersonnelBloc = true;
   }
 
   void _buildSecureStoragePlugin() {
@@ -258,7 +278,15 @@ class BlocTestHarness {
       configBloc,
     );
     if (_authenticated) {
-      await _userBloc.login(username: _username, password: _password);
+      await _userBloc.login(
+        username: _username,
+        password: _password,
+      );
+      expectThroughInOrder(
+        _userBloc,
+        [isA<UserAuthenticated>()],
+        close: false,
+      );
     }
   }
 
@@ -276,20 +304,11 @@ class BlocTestHarness {
       ),
       _userBloc,
     );
-
-    if (_authenticated) {
-      // Consume UserAuthenticated
-      expectThroughInOrder(
-        _userBloc,
-        [isA<UserAuthenticated>()],
-        close: false,
-      );
-    }
   }
 
   void _buildDeviceBloc({
-    int tetraCount = 10,
-    int appCount = 10,
+    int tetraCount = 0,
+    int appCount = 0,
     bool simulate = false,
   }) {
     assert(_withIncidentBloc, 'DeviceBloc requires IncidentBloc');
@@ -302,6 +321,29 @@ class BlocTestHarness {
     _deviceBloc = DeviceBloc(
       DeviceRepository(
         _deviceService,
+        connectivity: _connectivity,
+      ),
+      _incidentBloc,
+    );
+
+    if (_authenticated) {
+      // Consume IncidentsLoaded fired by UserAuthenticated
+      expectThroughInOrder(
+        _incidentBloc,
+        [isA<IncidentsLoaded>()],
+        close: false,
+      );
+    }
+  }
+
+  void _buildPersonnelBloc({
+    int count = 0,
+  }) {
+    assert(_withIncidentBloc, 'DeviceBloc requires IncidentBloc');
+    _personnelService = PersonnelServiceMock.build(count);
+    _personnelBloc = PersonnelBloc(
+      PersonnelRepository(
+        _personnelService,
         connectivity: _connectivity,
       ),
       _incidentBloc,

@@ -126,7 +126,12 @@ class BlocProviderController {
         ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
         : PersonnelServiceMock.build(demo.personnelCount);
     // ignore: close_sinks
-    final PersonnelBloc personnelBloc = PersonnelBloc(PersonnelRepository(personnelService), incidentBloc);
+    final PersonnelBloc personnelBloc = PersonnelBloc(
+        PersonnelRepository(
+          personnelService,
+          connectivity: connectivityService,
+        ),
+        incidentBloc);
 
     // Configure Unit service
     final UnitService unitService =

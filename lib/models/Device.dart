@@ -1,4 +1,5 @@
 import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
@@ -17,7 +18,8 @@ class Device extends Equatable {
   final String network;
   final String networkId;
   final Point position;
-  final AggregateRef allocatedTo;
+  @JsonKey(fromJson: _toIncidentRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Incident> allocatedTo;
 
   /// Flag indication that device is added manually
   final bool manual;
@@ -84,6 +86,7 @@ class Device extends Equatable {
     String number,
     Point position,
     bool manual,
+    AggregateRef<Incident> allocatedTo,
   }) {
     return Device(
       uuid: this.uuid,
@@ -95,8 +98,11 @@ class Device extends Equatable {
       number: number ?? this.number,
       position: position ?? this.position,
       manual: manual ?? this.manual,
+      allocatedTo: allocatedTo ?? this.allocatedTo,
     );
   }
+
+  static _toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
 }
 
 enum DeviceType {

@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -147,7 +148,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   void _handlePersonnel(PersonnelState state) {
     if (state.isUpdated()) {
       final event = state as PersonnelUpdated;
-      final tracking = _tracking[event.data.tracking];
+      final tracking = _tracking[event.data.tracking.uuid];
       // Close tracking?
       if (tracking != null) {
         if (PersonnelStatus.Retired == event.data.status) {
@@ -173,7 +174,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       }
     } else if (state.isDeleted()) {
       final event = state as PersonnelDeleted;
-      final tracking = _tracking[event.data.tracking];
+      final tracking = _tracking[event.data.tracking.uuid];
       // TODO: Move to tracking service and convert to internal TrackingMessage
       if (tracking != null) add(DeleteTracking(tracking));
     }
@@ -183,11 +184,11 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   TrackingState get initialState => TrackingEmpty();
 
   /// Stream of tracking changes for test
-  Stream<Tracking> changes(String tracking) => where(
+  Stream<Tracking> changes(String uuid) => where(
         (state) =>
-            (state is TrackingUpdated && state.data.id == tracking) ||
-            (state is TrackingLoaded && state.data.contains(tracking)),
-      ).map((state) => state is TrackingLoaded ? _tracking[tracking] : state.data);
+            (state is TrackingUpdated && state.data.id == uuid) ||
+            (state is TrackingLoaded && state.data.contains(uuid)),
+      ).map((state) => state is TrackingLoaded ? _tracking[uuid] : state.data);
 
   /// Get all tracking objects
   Map<String, Tracking> get tracking => UnmodifiableMapView<String, Tracking>(_tracking);
@@ -202,8 +203,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   /// Get personnel being tracked
   Entities<Personnel> get personnel => Entities<Personnel>(
         bloc: this,
-        data: this.personnelBloc.personnel,
-        asId: (personnel) => personnel?.tracking,
+        data: this.personnelBloc.personnels,
+        asId: (personnel) => personnel?.tracking?.uuid,
       );
 
   /// Get aggregates being tracked
@@ -251,8 +252,8 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       _tracking.containsKey(tuuid) && !exclude.contains(_tracking[tuuid].status)
           ? _tracking[tuuid]
               .devices
-              .where((id) => deviceBloc.devices.containsKey(id))
-              .map((id) => deviceBloc.devices[id])
+              .where((uuid) => deviceBloc.devices.containsKey(uuid))
+              .map((uuid) => deviceBloc.devices[uuid])
               .toList()
           : [];
 
@@ -327,7 +328,13 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }) {
     // Only use parameter 'devices' or 'personnel' if not null, otherwise use existing values
     var deviceIds = (devices?.map((d) => d.uuid) ?? tracking.devices)?.toList();
-    var aggregateIds = (personnel?.map((p) => p.tracking)?.where((id) => id != null) ?? tracking.aggregates)?.toList();
+    var aggregateIds = (personnel
+                ?.map(
+                  (p) => p.tracking.uuid,
+                )
+                ?.where((id) => id != null) ??
+            tracking.aggregates)
+        ?.toList();
 
     // Append unique ids
     if (append) {
@@ -395,7 +402,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       incidentBloc.selected.uuid,
       point: event.point,
       devices: event.data,
-      aggregates: event.personnel?.map((p) => p.tracking)?.where((id) => id != null)?.toList(),
+      aggregates: event.personnel?.map((p) => p.tracking.uuid)?.where((id) => id != null)?.toList(),
     );
     if (response.is200) {
       // TODO: Mark as internal event, no message from tracking service expected
@@ -419,7 +426,9 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     if (response.is200) {
       // TODO: Mark as internal event, no message from tracking service expected
       await personnelBloc.update(
-        event.personnel.cloneWith(tracking: response.body.id),
+        event.personnel.cloneWith(
+          tracking: AggregateRef.fromType<Tracking>(response.body.id),
+        ),
       );
       final tracking = _tracking.putIfAbsent(
         response.body.id,

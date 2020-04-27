@@ -21,7 +21,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
           compactWhen: compactWhen,
         );
 
-  /// Device service
+  /// [Device] service
   final DeviceService service;
 
   /// Get [Incident.uuid]
@@ -30,7 +30,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
-  /// [load] or at least one Device is
+  /// [load] or at least one [Device] is
   /// created with [create].
   @override
   bool get isReady => super.isReady && _iuuid != null;
@@ -83,7 +83,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
     return values;
   }
 
-  /// Update [device]
+  /// Create [device]
   Future<Device> create(String iuuid, Device device) async {
     await _ensure(iuuid);
     return apply(

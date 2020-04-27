@@ -52,7 +52,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
 
   @override
   LatLng toPoint(Personnel personnel) {
-    return toLatLng(bloc.tracking[personnel.tracking].point);
+    return toLatLng(bloc.tracking[personnel.tracking.uuid].point);
   }
 
   void _show(BuildContext context, List<Personnel> personnel) {
@@ -88,7 +88,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        final tracking = bloc.tracking[personnel.tracking];
+        final tracking = bloc.tracking[personnel.tracking.uuid];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
@@ -96,7 +96,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
             child: PersonnelWidget(
               personnel: personnel,
               tracking: tracking,
-              devices: bloc.devices(personnel.tracking),
+              devices: bloc.devices(personnel.tracking.uuid),
               onMessage: onMessage,
               withActions: user.isCommander == true,
               organization: FleetMapService().fetchOrganization(Defaults.orgId),

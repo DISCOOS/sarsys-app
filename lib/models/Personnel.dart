@@ -1,14 +1,19 @@
-import 'package:SarSys/models/Affiliation.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/utils/data_utils.dart';
+
+import 'Tracking.dart';
+import 'Unit.dart';
 
 part 'Personnel.g.dart';
 
 @JsonSerializable()
 class Personnel extends Equatable {
-  final String id;
+  final String uuid;
   final String userId;
   final PersonnelStatus status;
   final String fname;
@@ -16,14 +21,17 @@ class Personnel extends Equatable {
   final String phone;
   final Affiliation affiliation;
   final OperationalFunction function;
-  final String tracking;
+  @JsonKey(fromJson: _toUnitRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Unit> unit;
+  @JsonKey(fromJson: _toTrackingRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Tracking> tracking;
 
   String get name => "${fname ?? ''} ${lname ?? ''}";
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
   String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
 
   Personnel({
-    @required this.id,
+    @required this.uuid,
     @required this.userId,
     this.status,
     this.fname,
@@ -31,9 +39,10 @@ class Personnel extends Equatable {
     this.phone,
     this.affiliation,
     this.function,
+    this.unit,
     this.tracking,
   }) : super([
-          id,
+          uuid,
           userId,
           status,
           fname,
@@ -41,8 +50,12 @@ class Personnel extends Equatable {
           phone,
           affiliation,
           function,
+          unit,
           tracking,
         ]);
+
+  static _toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
+  static _toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;
 
   /// Get searchable string
   get searchable => props
@@ -60,39 +73,42 @@ class Personnel extends Equatable {
   Personnel withJson(Map<String, dynamic> json) {
     var clone = Personnel.fromJson(json);
     return cloneWith(
-      id: clone.id,
+      uuid: clone.uuid,
       userId: clone.userId,
       status: clone.status,
       fname: clone.fname,
       lname: clone.lname,
       phone: clone.phone,
-      affiliation: clone.affiliation,
+      unit: clone.unit,
       function: clone.function,
       tracking: clone.tracking,
+      affiliation: clone.affiliation,
     );
   }
 
   Personnel cloneWith({
-    String id,
+    String uuid,
     String userId,
-    PersonnelStatus status,
     String fname,
     String lname,
     String phone,
+    PersonnelStatus status,
     Affiliation affiliation,
+    AggregateRef<Unit> unit,
     OperationalFunction function,
-    String tracking,
+    AggregateRef<Tracking> tracking,
   }) {
     return Personnel(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      status: status ?? this.status,
+      uuid: uuid ?? this.uuid,
       fname: fname ?? this.fname,
       lname: lname ?? this.lname,
       phone: phone ?? this.phone,
-      affiliation: affiliation ?? this.affiliation,
+      unit: tracking ?? this.unit,
+      userId: userId ?? this.userId,
+      status: status ?? this.status,
       function: function ?? this.function,
       tracking: tracking ?? this.tracking,
+      affiliation: affiliation ?? this.affiliation,
     );
   }
 }

@@ -123,7 +123,7 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
         if (personnel == null) {
           final org = await FleetMapService().fetchOrganization(Defaults.orgId);
           personnel = await personnelBloc.create(Personnel(
-            id: Uuid().v4(),
+            uuid: Uuid().v4(),
             userId: user.userId,
             fname: user.fname,
             lname: user.lname,
@@ -202,7 +202,7 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
 }
 
 Personnel _findPersonnel(PersonnelBloc personnelBloc, User user) {
-  var personnel = personnelBloc.personnel.values.firstWhere(
+  var personnel = personnelBloc.personnels.values.firstWhere(
     (personnel) => personnel.userId == user.userId,
     orElse: () => null,
   );

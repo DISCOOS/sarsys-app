@@ -105,7 +105,7 @@ class PersonnelPageState extends State<PersonnelPage> {
   List<Personnel> _filteredPersonnel() {
     return context
         .bloc<PersonnelBloc>()
-        .personnel
+        .personnels
         .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
@@ -134,7 +134,7 @@ class PersonnelPageState extends State<PersonnelPage> {
     }
     var personnel = items[index];
     var unit = _toUnit(personnel);
-    var tracking = context.bloc<TrackingBloc>().tracking[personnel.tracking];
+    var tracking = context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
@@ -156,7 +156,7 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
     return Container(
-      key: ObjectKey(personnel.id),
+      key: ObjectKey(personnel.uuid),
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),

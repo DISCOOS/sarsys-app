@@ -317,7 +317,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   String _validateName(String fname, String lname) {
     Personnel personnel = context
         .bloc<PersonnelBloc>()
-        .personnel
+        .personnels
         .values
         .where(
           (personnel) => PersonnelStatus.Retired != personnel.status,
@@ -331,7 +331,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   bool _isSameName(Personnel personnel, String name) {
     return name?.isNotEmpty == true &&
-        personnel?.id != widget?.personnel?.id &&
+        personnel?.uuid != widget?.personnel?.uuid &&
         personnel?.name?.toLowerCase() == name?.toLowerCase();
   }
 
@@ -425,7 +425,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   String _validatePhone(phone) {
     Personnel match = context
         .bloc<PersonnelBloc>()
-        .personnel
+        .personnels
         .values
         .where(
           (unit) => PersonnelStatus.Retired != unit.status,
@@ -439,7 +439,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   bool _isSamePhone(Personnel personnel, String phone) {
     return phone?.isNotEmpty == true &&
-        personnel?.id != widget?.personnel?.id &&
+        personnel?.uuid != widget?.personnel?.uuid &&
         personnel?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
             phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
@@ -538,7 +538,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Point _toPoint() {
-    final tracking = context.bloc<TrackingBloc>().tracking[widget?.personnel?.tracking];
+    final tracking = context.bloc<TrackingBloc>().tracking[widget?.personnel?.tracking?.uuid];
     return tracking?.point;
   }
 
@@ -547,7 +547,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   List<Device> _getActualDevices() {
     return (widget?.personnel?.tracking != null
         ? context.bloc<TrackingBloc>().devices(
-            widget?.personnel?.tracking,
+            widget?.personnel?.tracking?.uuid,
             // Include closed tracks
             exclude: [],
           )

@@ -61,12 +61,12 @@ class PersonnelLayer extends MapPlugin {
     final tracking = options.bloc.tracking;
     final personnel = sortMapValues<String, Personnel, TrackingStatus>(
             options.bloc.personnel.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
-            (personnel) => tracking[personnel.tracking].status,
+            (personnel) => tracking[personnel.tracking.uuid].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((personnel) => tracking[personnel.tracking]?.point?.isNotEmpty == true)
+        .where((personnel) => tracking[personnel.tracking.uuid]?.point?.isNotEmpty == true)
         .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
-        .where((personnel) => bounds.contains(toLatLng(tracking[personnel.tracking].point)));
+        .where((personnel) => bounds.contains(toLatLng(tracking[personnel.tracking.uuid].point)));
     return tracking.isEmpty
         ? Container()
         : Stack(
@@ -75,15 +75,15 @@ class PersonnelLayer extends MapPlugin {
               if (options.showTail)
                 ...personnel
                     .map((personnel) =>
-                        _buildTrack(context, size, options, map, personnel, tracking[personnel.tracking]))
+                        _buildTrack(context, size, options, map, personnel, tracking[personnel.tracking.uuid]))
                     .toList(),
               if (options.showLabels)
                 ...personnel
                     .map((personnel) =>
-                        _buildLabel(context, options, map, personnel, tracking[personnel.tracking].point))
+                        _buildLabel(context, options, map, personnel, tracking[personnel.tracking.uuid].point))
                     .toList(),
               ...personnel
-                  .map((personnel) => _buildPoint(context, options, map, personnel, tracking[personnel.tracking]))
+                  .map((personnel) => _buildPoint(context, options, map, personnel, tracking[personnel.tracking.uuid]))
                   .toList(),
             ],
           );

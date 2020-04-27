@@ -8,7 +8,7 @@ part of 'Personnel.dart';
 
 Personnel _$PersonnelFromJson(Map json) {
   return Personnel(
-    id: json['id'] as String,
+    uuid: json['uuid'] as String,
     userId: json['userId'] as String,
     status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
     fname: json['fname'] as String,
@@ -21,21 +21,33 @@ Personnel _$PersonnelFromJson(Map json) {
           )),
     function:
         _$enumDecodeNullable(_$OperationalFunctionEnumMap, json['function']),
-    tracking: json['tracking'] as String,
+    unit: Personnel._toUnitRef(json['unit']),
+    tracking: Personnel._toTrackingRef(json['tracking']),
   );
 }
 
-Map<String, dynamic> _$PersonnelToJson(Personnel instance) => <String, dynamic>{
-      'id': instance.id,
-      'userId': instance.userId,
-      'status': _$PersonnelStatusEnumMap[instance.status],
-      'fname': instance.fname,
-      'lname': instance.lname,
-      'phone': instance.phone,
-      'affiliation': instance.affiliation?.toJson(),
-      'function': _$OperationalFunctionEnumMap[instance.function],
-      'tracking': instance.tracking,
-    };
+Map<String, dynamic> _$PersonnelToJson(Personnel instance) {
+  final val = <String, dynamic>{
+    'uuid': instance.uuid,
+    'userId': instance.userId,
+    'status': _$PersonnelStatusEnumMap[instance.status],
+    'fname': instance.fname,
+    'lname': instance.lname,
+    'phone': instance.phone,
+    'affiliation': instance.affiliation?.toJson(),
+    'function': _$OperationalFunctionEnumMap[instance.function],
+  };
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('unit', instance.unit?.toJson());
+  writeNotNull('tracking', instance.tracking?.toJson());
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

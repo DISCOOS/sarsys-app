@@ -98,7 +98,7 @@ class UnitRepository {
   ) =>
       unit.personnel.toList()
         ..removeWhere(
-          (next) => next.id == personnel.id,
+          (next) => next.uuid == personnel.uuid,
         );
 
   /// Get next available [Unit.number]

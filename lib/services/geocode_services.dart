@@ -376,7 +376,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPersonnel(RegExp match) => controller
       .bloc<PersonnelBloc>()
-      .personnel
+      .personnels
       .values
       .where((p) => withRetired || p.status != PersonnelStatus.Retired)
       .where((p) =>
@@ -385,12 +385,12 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in devices tracked with this personnel
           controller
               .bloc<TrackingBloc>()
-              .tracking[p.tracking]
+              .tracking[p.tracking.uuid]
               .devices
               .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
-      .where((p) => controller.bloc<TrackingBloc>().tracking[p.tracking].point != null)
+      .where((p) => controller.bloc<TrackingBloc>().tracking[p.tracking.uuid].point != null)
       .map((p) => AddressLookup(
-            point: controller.bloc<TrackingBloc>().tracking[p.tracking].point,
+            point: controller.bloc<TrackingBloc>().tracking[p.tracking.uuid].point,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,

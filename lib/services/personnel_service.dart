@@ -16,7 +16,7 @@ class PersonnelService {
   Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
-  Future<ServiceResponse<List<Personnel>>> load(String incidentId) async {
+  Future<ServiceResponse<List<Personnel>>> fetch(String incidentId) async {
     // TODO: Implement fetch Personnel
     throw "Not implemented";
   }
@@ -28,7 +28,7 @@ class PersonnelService {
   }
 
   /// PUT ../personnel/{PersonnelId}
-  Future<ServiceResponse<void>> update(Personnel personnel) async {
+  Future<ServiceResponse<Personnel>> update(Personnel personnel) async {
     // TODO: Implement update Personnel
     throw "Not implemented";
   }

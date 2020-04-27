@@ -144,7 +144,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
     );
   }
 
-  /// Unload devices from local storage
+  /// Unload [devices] from local storage
   Future<List<Device>> unload() {
     _assertState();
     return _dispatch<List<Device>>(
@@ -421,6 +421,7 @@ class DevicesUnloaded extends DeviceState<List<Device>> {
 /// ---------------------
 /// Error states
 /// ---------------------
+
 class DeviceError extends DeviceState<Object> {
   final StackTrace stackTrace;
   DeviceError(Object error, {this.stackTrace}) : super(error, [stackTrace]);

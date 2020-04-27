@@ -131,9 +131,9 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
             params.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
-                params.context.bloc<TrackingBloc>().tracking[personnel.tracking] == null ||
+                params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid] == null ||
                 // Personnel is not tracking given devices?
-                !params.context.bloc<TrackingBloc>().tracking[personnel.tracking].devices.any(
+                !params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid].devices.any(
                       (device) => params.devices?.contains(device) == true,
                     ),
           );
@@ -175,12 +175,12 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
     // Collect kept devices and personnel
     final keepDevices = params.context
         .bloc<TrackingBloc>()
-        .devices(personnel.tracking)
+        .devices(personnel.tracking.uuid)
         .where((test) => !devices.contains(test))
         .toList();
 
     final tracking = await params.context.bloc<TrackingBloc>().update(
-          params.context.bloc<TrackingBloc>().tracking[personnel.tracking],
+          params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid],
           devices: keepDevices,
           append: false,
         );
@@ -202,8 +202,8 @@ Future<Tracking> _handleTracking(
           personnel,
           devices: devices,
         );
-  } else if (params.context.bloc<TrackingBloc>().tracking.containsKey(personnel.tracking)) {
-    tracking = params.context.bloc<TrackingBloc>().tracking[personnel.tracking];
+  } else if (params.context.bloc<TrackingBloc>().tracking.containsKey(personnel.tracking.uuid)) {
+    tracking = params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid];
     tracking = await params.context.bloc<TrackingBloc>().update(
           tracking,
           point: point,

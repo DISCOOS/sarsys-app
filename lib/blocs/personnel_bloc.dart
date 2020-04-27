@@ -14,48 +14,27 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 typedef void PersonnelCallback(VoidCallback fn);
 
 class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
-  final PersonnelRepository repo;
-  final IncidentBloc incidentBloc;
-
-  PersonnelService get service => repo.service;
-
-  String get iuuid => incidentBloc.selected.uuid;
-
-  // only set once to prevent reentrant error loop
-  List<StreamSubscription> _subscriptions = [];
-
   PersonnelBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
     _subscriptions
       ..add(incidentBloc.listen(
-        _init,
+        _processIncidentEvent,
       ))
       // Process tracking messages
       ..add(service.messages.listen(
-        _handle,
+        _processPersonnelMessage,
       ));
   }
 
-  void _init(IncidentState state) {
+  void _processIncidentEvent(IncidentState state) {
     try {
       if (_subscriptions.isNotEmpty) {
-        // Clear out current tracking upon states given below
-        if (state.isUnset() ||
-            state.isCreated() ||
-            state.isDeleted() ||
-            (state.isUpdated() &&
-                [
-                  IncidentStatus.Cancelled,
-                  IncidentStatus.Resolved,
-                ].contains((state as IncidentUpdated).data.status))) {
-          //
-          // TODO: Mark as internal event, no message from personnel service expected
-          //
-          add(UnloadPersonnel(repo.iuuid));
+        if (state.shouldUnload(iuuid) && repo.isReady) {
+          add(UnloadPersonnels(repo.iuuid));
         } else if (state.isSelected()) {
-          add(LoadPersonnel(state.data.uuid));
+          add(LoadPersonnels(state.data.uuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -66,7 +45,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     }
   }
 
-  void _handle(event) {
+  void _processPersonnelMessage(event) {
     try {
       add(_HandleMessage(event));
     } on Exception catch (error, stackTrace) {
@@ -77,25 +56,43 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     }
   }
 
+  /// Subscriptions released on [close]
+  List<StreamSubscription> _subscriptions = [];
+
+  /// Get [IncidentBloc]
+  final IncidentBloc incidentBloc;
+
+  /// Get [PersonnelRepository]
+  final PersonnelRepository repo;
+
+  /// Get [PersonnelService]
+  PersonnelService get service => repo.service;
+
+  /// [Incident] that manages given [devices]
+  String get iuuid => repo.iuuid;
+
+  /// Check if [Incident.uuid] is not set
+  bool get isUnset => repo.iuuid == null;
+
   @override
-  PersonnelState get initialState => PersonnelEmpty();
+  PersonnelState get initialState => PersonnelsEmpty();
 
   /// Get personnel
-  Map<String, Personnel> get personnel => repo.map;
+  Map<String, Personnel> get personnels => repo.map;
 
-  /// Find personnel from user
+  /// Find [Personnel] from [user]
   List<Personnel> find(
     User user, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
   }) =>
       repo.find(user, exclude: exclude);
 
-  /// Stream of changes on given Personnel
-  Stream<Personnel> changes(Personnel personnel) => where(
+  /// Stream of changes on given [personnel]
+  Stream<Personnel> onChanged(Personnel personnel) => where(
         (state) =>
-            (state is PersonnelUpdated && state.data.id == personnel.id) ||
-            (state is PersonnelLoaded && state.data.contains(personnel.id)),
-      ).map((state) => state is PersonnelLoaded ? repo[personnel.id] : state.data);
+            (state is PersonnelUpdated && state.data.uuid == personnel.uuid) ||
+            (state is PersonnelsLoaded && state.data.contains(personnel.uuid)),
+      ).map((state) => state is PersonnelsLoaded ? repo[personnel.uuid] : state.data);
 
   /// Get count
   int count({
@@ -116,7 +113,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   Future<List<Personnel>> load() async {
     _assertState();
     return _dispatch<List<Personnel>>(
-      LoadPersonnel(iuuid),
+      LoadPersonnels(iuuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -124,7 +121,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   Future<Personnel> create(Personnel personnel) {
     _assertState();
     return _dispatch<Personnel>(
-      CreatePersonnel(personnel),
+      CreatePersonnel(iuuid ?? incidentBloc.selected.uuid, personnel),
     );
   }
 
@@ -144,9 +141,17 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     );
   }
 
+  /// Unload [personnels] from local storage
+  Future<List<Personnel>> unload() {
+    _assertState();
+    return _dispatch<List<Personnel>>(
+      UnloadPersonnels(iuuid),
+    );
+  }
+
   @override
   Stream<PersonnelState> mapEventToState(PersonnelCommand command) async* {
-    if (command is LoadPersonnel) {
+    if (command is LoadPersonnels) {
       yield await _load(command);
     } else if (command is CreatePersonnel) {
       yield await _create(command);
@@ -154,61 +159,67 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
       yield await _update(command);
     } else if (command is DeletePersonnel) {
       yield await _delete(command);
-    } else if (command is UnloadPersonnel) {
+    } else if (command is UnloadPersonnels) {
       yield await _unload(command);
     } else if (command is _HandleMessage) {
       yield await _process(command.data);
     } else if (command is RaisePersonnelError) {
-      yield _toError(command, command.data);
+      yield _toError(
+        command,
+        command.data,
+      );
     } else {
       yield _toError(
         command,
-        PersonnelError("Unsupported $command"),
+        PersonnelError(
+          "Unsupported $command",
+          stackTrace: StackTrace.current,
+        ),
       );
     }
   }
 
-  Future<PersonnelState> _load(LoadPersonnel command) async {
+  Future<PersonnelState> _load(LoadPersonnels command) async {
     var devices = await repo.load(command.data);
     return _toOK<List<Personnel>>(
       command,
-      PersonnelLoaded(repo.keys),
+      PersonnelsLoaded(repo.keys),
       result: devices,
     );
   }
 
   Future<PersonnelState> _create(CreatePersonnel command) async {
-    var device = await repo.create(iuuid, command.data);
+    var personnel = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
-      PersonnelCreated(device),
-      result: device,
+      PersonnelCreated(personnel),
+      result: personnel,
     );
   }
 
   Future<PersonnelState> _update(UpdatePersonnel command) async {
-    final device = await repo.update(command.data);
+    final personnel = await repo.update(command.data);
     return _toOK(
       command,
-      PersonnelUpdated(device),
-      result: device,
+      PersonnelUpdated(personnel),
+      result: personnel,
     );
   }
 
   Future<PersonnelState> _delete(DeletePersonnel command) async {
-    final device = await repo.delete(command.data);
+    final personnel = await repo.delete(command.data.uuid);
     return _toOK(
       command,
-      PersonnelDeleted(device),
-      result: device,
+      PersonnelDeleted(personnel),
+      result: personnel,
     );
   }
 
-  Future<PersonnelState> _unload(UnloadPersonnel command) async {
+  Future<PersonnelState> _unload(UnloadPersonnels command) async {
     final devices = await repo.unload();
     return _toOK(
       command,
-      PersonnelUnloaded(devices),
+      PersonnelsUnloaded(devices),
       result: devices,
     );
   }
@@ -275,85 +286,86 @@ abstract class PersonnelCommand<S, T> extends Equatable {
   PersonnelCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
-class LoadPersonnel extends PersonnelCommand<String, List<Personnel>> {
-  LoadPersonnel(String iuuid) : super(iuuid);
+class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
+  LoadPersonnels(String iuuid) : super(iuuid);
 
   @override
-  String toString() => 'LoadPersonnel {iuuid: $data}';
+  String toString() => 'LoadPersonnels {iuuid: $data}';
 }
 
 class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  CreatePersonnel(Personnel data) : super(data);
+  final String iuuid;
+  CreatePersonnel(this.iuuid, Personnel data) : super(data);
 
   @override
-  String toString() => 'CreatePersonnel {data: $data}';
+  String toString() => 'CreatePersonnel {iuuid: $iuuid, personnel: $data}';
 }
 
 class UpdatePersonnel extends PersonnelCommand<Personnel, Personnel> {
   UpdatePersonnel(Personnel data) : super(data);
 
   @override
-  String toString() => 'UpdatePersonnel {data: $data}';
+  String toString() => 'UpdatePersonnel {personnel: $data}';
 }
 
 class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
   DeletePersonnel(Personnel data) : super(data);
 
   @override
-  String toString() => 'DeletePersonnel {data: $data}';
+  String toString() => 'DeletePersonnel {personnel: $data}';
 }
 
 class _HandleMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessage> {
   _HandleMessage(PersonnelMessage data) : super(data);
 
   @override
-  String toString() => '_HandleMessage {data: $data}';
+  String toString() => '_HandleMessage {message: $data}';
 }
 
-class UnloadPersonnel extends PersonnelCommand<String, List<String>> {
-  UnloadPersonnel(String iuuid) : super(iuuid);
+class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
+  UnloadPersonnels(String iuuid) : super(iuuid);
 
   @override
-  String toString() => 'ClearPersonnel {iuuid: $data}';
+  String toString() => 'UnloadPersonnels {iuuid: $data}';
 }
 
 class RaisePersonnelError extends PersonnelCommand<PersonnelError, PersonnelError> {
   RaisePersonnelError(data) : super(data);
 
   @override
-  String toString() => 'RaisePersonnelError {data: $data}';
+  String toString() => 'RaisePersonnelError {error: $data}';
 }
 
 /// ---------------------
 /// Normal States
 /// ---------------------
+
 abstract class PersonnelState<T> extends Equatable {
   final T data;
 
   PersonnelState(this.data, [props = const []]) : super([data, ...props]);
 
-  isEmpty() => this is PersonnelEmpty;
-  isLoaded() => this is PersonnelLoaded;
+  isEmpty() => this is PersonnelsEmpty;
+  isLoaded() => this is PersonnelsLoaded;
   isCreated() => this is PersonnelCreated;
   isUpdated() => this is PersonnelUpdated;
   isDeleted() => this is PersonnelDeleted;
-  isCleared() => this is PersonnelUnloaded;
-  isException() => this is PersonnelException;
+  isUnloaded() => this is PersonnelsUnloaded;
   isError() => this is PersonnelError;
 }
 
-class PersonnelEmpty extends PersonnelState<Null> {
-  PersonnelEmpty() : super(null);
+class PersonnelsEmpty extends PersonnelState<Null> {
+  PersonnelsEmpty() : super(null);
 
   @override
-  String toString() => 'PersonnelEmpty';
+  String toString() => 'PersonnelsEmpty';
 }
 
-class PersonnelLoaded extends PersonnelState<List<String>> {
-  PersonnelLoaded(List<String> data) : super(data);
+class PersonnelsLoaded extends PersonnelState<List<String>> {
+  PersonnelsLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'PersonnelLoaded {data: $data}';
+  String toString() => 'PersonnelsLoaded {data: $data}';
 }
 
 class PersonnelCreated extends PersonnelState<Personnel> {
@@ -377,29 +389,36 @@ class PersonnelDeleted extends PersonnelState<Personnel> {
   String toString() => 'PersonnelDeleted {data: $data}';
 }
 
-class PersonnelUnloaded extends PersonnelState<List<Personnel>> {
-  PersonnelUnloaded(List<Personnel> personnel) : super(personnel);
+class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
+  PersonnelsUnloaded(List<Personnel> personnel) : super(personnel);
 
   @override
-  String toString() => 'PersonnelUnloaded {data: $data}';
+  String toString() => 'PersonnelsUnloaded {data: $data}';
 }
 
 /// ---------------------
-/// Exceptional States
+/// Error States
 /// ---------------------
-abstract class PersonnelException extends PersonnelState<Object> {
-  final StackTrace stackTrace;
-  PersonnelException(Object error, {this.stackTrace}) : super(error, [stackTrace]);
 
-  @override
-  String toString() => 'PersonnelException {data: $data}';
-}
-
-/// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
-class PersonnelError extends PersonnelException {
+class PersonnelError extends PersonnelState<Object> {
   final StackTrace stackTrace;
-  PersonnelError(Object error, {this.stackTrace}) : super(error, stackTrace: stackTrace);
+  PersonnelError(Object error, {this.stackTrace}) : super(error);
 
   @override
   String toString() => 'PersonnelError {data: $data}';
+}
+
+/// ---------------------
+/// Exceptions
+/// ---------------------
+
+class PersonnelBlocException implements Exception {
+  PersonnelBlocException(this.error, this.state, {this.command, this.stackTrace});
+  final Object error;
+  final PersonnelState state;
+  final StackTrace stackTrace;
+  final Object command;
+
+  @override
+  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
 }
