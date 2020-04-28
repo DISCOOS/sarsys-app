@@ -50,7 +50,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.initState();
     routeWriter = false;
     _unit = widget.unit;
-    routeData = widget?.unit?.id;
+    routeData = widget?.unit?.uuid;
   }
 
   @override
@@ -58,10 +58,10 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.didChangeDependencies();
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UnitBloc>().changes(widget.unit))
-      ..add(context.bloc<TrackingBloc>().changes(widget?.unit?.tracking));
+      ..add(context.bloc<UnitBloc>().onChanged(widget.unit))
+      ..add(context.bloc<TrackingBloc>().changes(widget?.unit?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().changes(widget?.unit?.tracking).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().changes(widget?.unit?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -89,7 +89,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
                 if (snapshot.data is Unit) {
                   _unit = snapshot.data;
                 }
-                final tracking = context.bloc<TrackingBloc>().tracking[_unit.tracking];
+                final tracking = context.bloc<TrackingBloc>().tracking[_unit.tracking.uuid];
                 return ListView(
                   padding: const EdgeInsets.all(UnitScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
@@ -123,7 +123,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   }
 
   Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(context.bloc<TrackingBloc>().tracking[unit.tracking]);
+    final center = toCenter(context.bloc<TrackingBloc>().tracking[unit.tracking.uuid]);
     return Material(
       elevation: UnitScreen.ELEVATION,
       borderRadius: BorderRadius.circular(UnitScreen.CORNER),

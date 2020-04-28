@@ -3,6 +3,11 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import 'AggregateRef.dart';
+import 'Incident.dart';
+import 'Tracking.dart';
+import 'Unit.dart';
+
 class LatLngConverter implements JsonConverter<LatLng, Map<String, dynamic>> {
   const LatLngConverter();
 
@@ -70,3 +75,7 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
     return names.map((name) => to(name)).toList();
   }
 }
+
+toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
+toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
+toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;

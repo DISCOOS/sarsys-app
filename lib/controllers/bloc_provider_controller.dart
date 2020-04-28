@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/mock/personnel.dart';
+import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
@@ -137,7 +137,13 @@ class BlocProviderController {
     final UnitService unitService =
         !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
     // ignore: close_sinks
-    final UnitBloc unitBloc = UnitBloc(UnitRepository(unitService), incidentBloc, personnelBloc);
+    final UnitBloc unitBloc = UnitBloc(
+        UnitRepository(
+          unitService,
+          connectivity: connectivityService,
+        ),
+        incidentBloc,
+        personnelBloc);
 
     // Configure Device service
     final DeviceService deviceService = !demo.active

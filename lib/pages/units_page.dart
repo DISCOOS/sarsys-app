@@ -136,7 +136,7 @@ class UnitsPageState extends State<UnitsPage> {
       );
     }
     var unit = units[index];
-    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().tracking[unit.tracking];
+    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().tracking[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.None;
     return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
@@ -153,7 +153,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
     return Container(
-      key: ObjectKey(unit.id),
+      key: ObjectKey(unit.uuid),
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),

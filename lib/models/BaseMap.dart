@@ -1,14 +1,15 @@
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/converters.dart';
-import 'package:equatable/equatable.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:json_annotation/json_annotation.dart';
+
+import 'core.dart';
 
 part 'BaseMap.g.dart';
 
 @JsonSerializable()
-class BaseMap extends Equatable {
+class BaseMap extends ValueObject {
   final String name;
   final String description;
   final String url;

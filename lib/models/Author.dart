@@ -1,11 +1,12 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'core.dart';
 
 part 'Author.g.dart';
 
 @JsonSerializable()
-class Author extends Equatable {
+class Author extends ValueObject {
   final String userId;
   final DateTime timestamp;
 

@@ -137,6 +137,8 @@ test:
 	flutter test test/blocs/device_tests.dart
 	echo "Testing PersonnelBloc..."
 	flutter test test/blocs/personnel_tests.dart
+	echo "Testing UnitBloc..."
+	flutter test test/blocs/unit_tests.dart
 	echo "[✓] Flutter tests complete."
 
 models:

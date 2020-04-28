@@ -1,8 +1,12 @@
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'converters.dart';
 
 part 'Unit.g.dart';
 
@@ -10,20 +14,9 @@ part 'Unit.g.dart';
   explicitToJson: true,
   anyMap: true,
 )
-class Unit extends Equatable {
-  final String id;
-  final int number;
-  final UnitType type;
-  final UnitStatus status;
-  final String phone;
-  final String callsign;
-  final String tracking;
-  final List<Personnel> personnel;
-
-  String get name => "${translateUnitType(type)} $number";
-
+class Unit extends Aggregate {
   Unit({
-    @required this.id,
+    @required String uuid,
     @required this.type,
     @required this.number,
     @required this.status,
@@ -31,16 +24,18 @@ class Unit extends Equatable {
     this.phone,
     this.tracking,
     this.personnel = const [],
-  }) : super([
-          id,
-          type,
-          number,
-          status,
-          phone,
-          callsign,
-          tracking,
-          personnel,
-        ]);
+  }) : super(uuid);
+
+  final int number;
+  final UnitType type;
+  final UnitStatus status;
+  final String phone;
+  final String callsign;
+  @JsonKey(fromJson: toTrackingRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Tracking> tracking;
+  final List<Personnel> personnel;
+
+  String get name => "${translateUnitType(type)} $number";
 
   /// Get searchable string
   get searchable => props
@@ -58,7 +53,7 @@ class Unit extends Equatable {
   Unit withJson(Map<String, dynamic> json) {
     var clone = Unit.fromJson(json);
     return cloneWith(
-      id: clone.id,
+      uuid: clone.uuid,
       type: clone.type,
       number: clone.number,
       status: clone.status,
@@ -70,17 +65,17 @@ class Unit extends Equatable {
   }
 
   Unit cloneWith({
-    String id,
+    String uuid,
     UnitType type,
     int number,
     UnitStatus status,
     String phone,
     String callsign,
-    String tracking,
     List<Personnel> personnel,
+    AggregateRef<Tracking> tracking,
   }) {
     return Unit(
-      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
       type: type ?? this.type,
       number: number ?? this.number,
       status: status ?? this.status,

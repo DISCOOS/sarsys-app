@@ -2,7 +2,7 @@ import 'package:SarSys/models/Author.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/TalkGroup.dart';
-import 'package:equatable/equatable.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -12,23 +12,9 @@ part 'Incident.g.dart';
   explicitToJson: true,
   anyMap: true,
 )
-class Incident extends Equatable {
-  final String uuid;
-  final String name;
-  final IncidentType type;
-  final IncidentStatus status;
-  final DateTime occurred;
-  final String justification;
-  final List<TalkGroup> talkgroups;
-  final Location ipp;
-  final Location meetup;
-  final Passcodes passcodes;
-  final String reference;
-  final Author created;
-  final Author changed;
-
+class Incident extends Aggregate {
   Incident({
-    @required this.uuid,
+    @required String uuid,
     @required this.name,
     @required this.type,
     @required this.status,
@@ -41,21 +27,20 @@ class Incident extends Equatable {
     @required this.created,
     @required this.changed,
     this.reference,
-  }) : super([
-          uuid,
-          name,
-          type,
-          status,
-          occurred,
-          talkgroups,
-          justification,
-          ipp,
-          meetup,
-          passcodes,
-          created,
-          changed,
-          reference,
-        ]);
+  }) : super(uuid);
+
+  final String name;
+  final IncidentType type;
+  final IncidentStatus status;
+  final DateTime occurred;
+  final String justification;
+  final List<TalkGroup> talkgroups;
+  final Location ipp;
+  final Location meetup;
+  final Passcodes passcodes;
+  final String reference;
+  final Author created;
+  final Author changed;
 
   /// Get searchable string
   get searchable => [

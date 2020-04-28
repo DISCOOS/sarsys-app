@@ -10,7 +10,7 @@ class UnitService {
   UnitService(this.url, this.client);
 
   /// GET ../units
-  Future<ServiceResponse<List<Unit>>> load(String incidentId) async {
+  Future<ServiceResponse<List<Unit>>> fetch(String incidentId) async {
     // TODO: Implement fetch units
     throw "Not implemented";
   }
@@ -22,7 +22,7 @@ class UnitService {
   }
 
   /// PUT ../units/{unitId}
-  Future<ServiceResponse<void>> update(Unit unit) async {
+  Future<ServiceResponse<Unit>> update(Unit unit) async {
     // TODO: Implement update unit
     throw "Not implemented";
   }

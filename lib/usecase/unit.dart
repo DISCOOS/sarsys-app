@@ -193,9 +193,9 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
               params.overlay.context,
               where: (unit) =>
                   // Unit is not tracking any devices or personnel?
-                  bloc.tracking[unit.tracking] == null ||
+                  bloc.tracking[unit.tracking.uuid] == null ||
                   // Unit is not tracking given devices?
-                  !bloc.tracking[unit.tracking].devices.any(
+                  !bloc.tracking[unit.tracking.uuid].devices.any(
                     (device) => params.devices?.contains(device) == true,
                   ) ||
                   // Unit is not tracking given personnel?
@@ -239,8 +239,11 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     if (!proceed) return dartz.left(false);
 
     // Collect kept devices and personnel
-    final keepDevices =
-        params.context.bloc<TrackingBloc>().devices(unit.tracking).where((test) => !devices.contains(test)).toList();
+    final keepDevices = params.context
+        .bloc<TrackingBloc>()
+        .devices(unit.tracking.uuid)
+        .where((test) => !devices.contains(test))
+        .toList();
     final keepPersonnel = unit.personnel.where((test) => !personnel.contains(test)).toList();
 
     // Remove personnel from Unit?
@@ -254,7 +257,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
 
     // Perform tracking update
     final tracking = await params.context.bloc<TrackingBloc>().update(
-          params.context.bloc<TrackingBloc>().tracking[unit.tracking],
+          params.context.bloc<TrackingBloc>().tracking[unit.tracking.uuid],
           devices: keepDevices,
           personnel: keepPersonnel,
           append: false,
@@ -281,8 +284,8 @@ Future<Tracking> _handleTracking(
           devices: devices,
           personnel: personnel,
         );
-  } else if (items.containsKey(unit.tracking)) {
-    tracking = items[unit.tracking];
+  } else if (items.containsKey(unit.tracking.uuid)) {
+    tracking = items[unit.tracking.uuid];
     tracking = await params.context.bloc<TrackingBloc>().update(
           tracking,
           point: point,

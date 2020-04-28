@@ -19,7 +19,7 @@ Device _$DeviceFromJson(Map json) {
           )),
     network: json['network'] as String,
     networkId: json['networkId'] as String,
-    allocatedTo: Device._toIncidentRef(json['allocatedTo']),
+    allocatedTo: toIncidentRef(json['allocatedTo']),
     manual: json['manual'] as bool,
     status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
   );

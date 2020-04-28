@@ -74,6 +74,9 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   /// Check if [Incident.uuid] is not set
   bool get isUnset => repo.iuuid == null;
 
+  /// Get devices
+  Map<String, Device> get devices => repo.map;
+
   @override
   DevicesEmpty get initialState => DevicesEmpty();
 
@@ -83,9 +86,6 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
             (state is DeviceUpdated && state.data.uuid == device.uuid) ||
             (state is DevicesLoaded && state.data.contains(device.uuid)),
       ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
-
-  /// Get devices
-  Map<String, Device> get devices => repo.map;
 
   void _assertState() {
     if (incidentBloc.isUnset) {
@@ -270,7 +270,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
           );
     event.callback.completeError(
       object,
-      object.stackTrace,
+      object.stackTrace ?? StackTrace.current,
     );
     return object;
   }

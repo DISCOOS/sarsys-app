@@ -1,13 +1,13 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:random_string/random_string.dart';
-
 import 'package:meta/meta.dart';
+
+import 'package:SarSys/models/core.dart';
 
 part 'Passcodes.g.dart';
 
 @JsonSerializable()
-class Passcodes extends Equatable {
+class Passcodes extends ValueObject {
   final String command;
   final String personnel;
 

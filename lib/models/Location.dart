@@ -1,5 +1,5 @@
 import 'package:SarSys/models/Point.dart';
-import 'package:equatable/equatable.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/models/Address.dart';
 
 import 'package:json_annotation/json_annotation.dart';
@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 part 'Location.g.dart';
 
 @JsonSerializable()
-class Location extends Equatable {
+class Location extends ValueObject {
   final Point point;
   final Address address;
   final String description;

@@ -1,37 +1,21 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-import 'package:SarSys/models/Affiliation.dart';
-import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/utils/data_utils.dart';
 
+import 'Affiliation.dart';
+import 'AggregateRef.dart';
+import 'converters.dart';
+import 'core.dart';
 import 'Tracking.dart';
 import 'Unit.dart';
 
 part 'Personnel.g.dart';
 
 @JsonSerializable()
-class Personnel extends Equatable {
-  final String uuid;
-  final String userId;
-  final PersonnelStatus status;
-  final String fname;
-  final String lname;
-  final String phone;
-  final Affiliation affiliation;
-  final OperationalFunction function;
-  @JsonKey(fromJson: _toUnitRef, nullable: true, includeIfNull: false)
-  final AggregateRef<Unit> unit;
-  @JsonKey(fromJson: _toTrackingRef, nullable: true, includeIfNull: false)
-  final AggregateRef<Tracking> tracking;
-
-  String get name => "${fname ?? ''} ${lname ?? ''}";
-  String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
-  String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
-
+class Personnel extends Aggregate {
   Personnel({
-    @required this.uuid,
+    @required String uuid,
     @required this.userId,
     this.status,
     this.fname,
@@ -41,21 +25,23 @@ class Personnel extends Equatable {
     this.function,
     this.unit,
     this.tracking,
-  }) : super([
-          uuid,
-          userId,
-          status,
-          fname,
-          lname,
-          phone,
-          affiliation,
-          function,
-          unit,
-          tracking,
-        ]);
+  }) : super(uuid);
 
-  static _toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
-  static _toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;
+  final String userId;
+  final PersonnelStatus status;
+  final String fname;
+  final String lname;
+  final String phone;
+  final Affiliation affiliation;
+  final OperationalFunction function;
+  @JsonKey(fromJson: toUnitRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Unit> unit;
+  @JsonKey(fromJson: toTrackingRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Tracking> tracking;
+
+  String get name => "${fname ?? ''} ${lname ?? ''}";
+  String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
+  String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
 
   /// Get searchable string
   get searchable => props

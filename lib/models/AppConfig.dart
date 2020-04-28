@@ -1,9 +1,9 @@
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -11,37 +11,9 @@ import 'package:meta/meta.dart';
 part 'AppConfig.g.dart';
 
 @JsonSerializable()
-class AppConfig extends Equatable {
-  final String uuid;
-  final String udid;
-  final int version;
-  final bool demo;
-  final String demoRole;
-  final String sentryDns;
-  final bool onboarded;
-  final bool firstSetup;
-  final String orgId;
-  final String divId;
-  final String depId;
-  final List<String> talkGroups;
-  final String talkGroupCatalog;
-  final bool storage;
-  final bool locationWhenInUse;
-  final int mapCacheTTL;
-  final int mapCacheCapacity;
-  final String locationAccuracy;
-  final int locationFastestInterval;
-  final int locationSmallestDisplacement;
-  final bool keepScreenOn;
-  final bool callsignReuse;
-  final List<String> units;
-  final SecurityType securityType;
-  final SecurityMode securityMode;
-  final List<String> trustedDomains;
-  final int securityLockAfter;
-
+class AppConfig extends Aggregate {
   AppConfig({
-    @required this.uuid,
+    @required String uuid,
     @required this.udid,
     @required this.sentryDns,
     @required this.version,
@@ -70,35 +42,33 @@ class AppConfig extends Equatable {
     this.securityLockAfter = Defaults.securityLockAfter,
   })  : this.talkGroups = talkGroups ?? const <String>[],
         this.units = units ?? const <String>[],
-        super([
-          uuid,
-          udid,
-          version,
-          demo,
-          demoRole,
-          onboarded,
-          firstSetup,
-          orgId,
-          divId,
-          depId,
-          talkGroups ?? const <String>[],
-          talkGroupCatalog,
-          storage,
-          locationWhenInUse,
-          mapCacheTTL,
-          mapCacheCapacity,
-          locationAccuracy,
-          locationFastestInterval,
-          locationSmallestDisplacement,
-          keepScreenOn,
-          callsignReuse,
-          units ?? const <String>[],
-          sentryDns,
-          securityType,
-          securityMode,
-          trustedDomains,
-          securityLockAfter,
-        ]);
+        super(uuid);
+  final String udid;
+  final int version;
+  final bool demo;
+  final String demoRole;
+  final String sentryDns;
+  final bool onboarded;
+  final bool firstSetup;
+  final String orgId;
+  final String divId;
+  final String depId;
+  final List<String> talkGroups;
+  final String talkGroupCatalog;
+  final bool storage;
+  final bool locationWhenInUse;
+  final int mapCacheTTL;
+  final int mapCacheCapacity;
+  final String locationAccuracy;
+  final int locationFastestInterval;
+  final int locationSmallestDisplacement;
+  final bool keepScreenOn;
+  final bool callsignReuse;
+  final List<String> units;
+  final SecurityType securityType;
+  final SecurityMode securityMode;
+  final List<String> trustedDomains;
+  final int securityLockAfter;
 
   /// Factory constructor for creating a new `AppConfig` instance
   factory AppConfig.fromJson(Map<String, dynamic> json) => _$AppConfigFromJson(json);

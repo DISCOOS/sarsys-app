@@ -21,8 +21,8 @@ Personnel _$PersonnelFromJson(Map json) {
           )),
     function:
         _$enumDecodeNullable(_$OperationalFunctionEnumMap, json['function']),
-    unit: Personnel._toUnitRef(json['unit']),
-    tracking: Personnel._toTrackingRef(json['tracking']),
+    unit: toUnitRef(json['unit']),
+    tracking: toTrackingRef(json['tracking']),
   );
 }
 

@@ -220,7 +220,7 @@ class _UnitEditorState extends State<UnitEditor> {
         .units
         .values
         .where(
-          (unit) => widget.unit?.id != unit.id && UnitStatus.Retired != unit.status,
+          (unit) => widget.unit?.uuid != unit.uuid && UnitStatus.Retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => isSameNumber(unit, number),
@@ -280,7 +280,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _isSameCallsign(Unit unit, String callsign) {
     return callsign?.isNotEmpty == true &&
-        unit?.id != widget?.unit?.id &&
+        unit?.uuid != widget?.unit?.uuid &&
         unit?.callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
             callsign?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
@@ -341,7 +341,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _isSamePhone(Unit unit, String phone) {
     return phone?.isNotEmpty == true &&
-        unit?.id != widget?.unit?.id &&
+        unit?.uuid != widget?.unit?.uuid &&
         unit?.phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '') ==
             phone?.toLowerCase()?.replaceAll(RegExp(r'\s|-'), '');
   }
@@ -537,14 +537,14 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Point _toPoint() {
-    final tracking = context.bloc<TrackingBloc>().tracking[widget?.unit?.tracking];
+    final tracking = context.bloc<TrackingBloc>().tracking[widget?.unit?.tracking?.uuid];
     return tracking?.point ?? widget.point;
   }
 
   List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(widget?.unit?.tracking,
+    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(widget?.unit?.tracking?.uuid,
         // Include closed tracks
         exclude: []) : [])
       ..toList()

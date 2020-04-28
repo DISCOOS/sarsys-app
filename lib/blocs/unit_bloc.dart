@@ -18,17 +18,6 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 typedef void UnitCallback(VoidCallback fn);
 
 class UnitBloc extends Bloc<UnitCommand, UnitState> {
-  final UnitRepository repo;
-  final IncidentBloc incidentBloc;
-  final PersonnelBloc personnelBloc;
-
-  UnitService get service => repo.service;
-
-  String get iuuid => incidentBloc.selected.uuid;
-
-  // only set once to prevent reentrant error loop
-  List<StreamSubscription> _subscriptions = [];
-
   UnitBloc(
     this.repo,
     this.incidentBloc,
@@ -40,29 +29,19 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     assert(personnelBloc != null, "personnelBloc can not be null");
     _subscriptions
       ..add(incidentBloc.listen(
-        _init,
+        _processIncidentEvent,
       ))
       ..add(personnelBloc.listen(
-        _handle,
+        _processPersonnelEvent,
       ));
   }
 
-  void _init(IncidentState state) {
+  void _processIncidentEvent(IncidentState state) {
     try {
       if (_subscriptions.isNotEmpty != null) {
         // Clear out current tracking upon states given below
-        if (state.isUnset() ||
-            state.isCreated() ||
-            state.isDeleted() ||
-            (state.isUpdated() &&
-                [
-                  IncidentStatus.Cancelled,
-                  IncidentStatus.Resolved,
-                ].contains((state as IncidentUpdated).data.status))) {
-          //
-          // TODO: Mark as internal event, no message from units service expected
-          //
-          add(UnloadUnits(repo.iuuid));
+        if (state.shouldUnload(iuuid) && repo.isReady) {
+          add(UnloadUnits(iuuid));
         } else if (state.isSelected()) {
           add(LoadUnits(state.data.uuid));
         }
@@ -75,7 +54,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     }
   }
 
-  void _handle(PersonnelState state) {
+  void _processPersonnelEvent(PersonnelState state) {
     try {
       if (state.isUpdated()) {
         final event = state as PersonnelUpdated;
@@ -86,7 +65,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
           );
         }
       } else if (state.isDeleted()) {
-        final event = state as PersonnelUpdated;
+        final event = state as PersonnelDeleted;
         final unit = repo.findAndRemove(event.data);
         if (unit != null) {
           _dispatch(
@@ -102,18 +81,39 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     }
   }
 
-  @override
-  UnitState get initialState => UnitsEmpty();
+  /// Subscriptions released on [close]
+  List<StreamSubscription> _subscriptions = [];
+
+  /// Get [IncidentBloc]
+  final IncidentBloc incidentBloc;
+
+  /// Get [PersonnelBloc]
+  final PersonnelBloc personnelBloc;
+
+  /// Get [UnitRepository]
+  final UnitRepository repo;
+
+  /// Get [UnitService]
+  UnitService get service => repo.service;
+
+  /// [Incident] that manages given [units]
+  String get iuuid => repo.iuuid;
+
+  /// Check if [Incident.uuid] is not set
+  bool get isUnset => repo.iuuid == null;
 
   /// Get units
   Map<String, Unit> get units => repo.map;
 
+  @override
+  UnitState get initialState => UnitsEmpty();
+
   /// Stream of changes on given unit
-  Stream<Unit> changes(Unit unit) => where(
+  Stream<Unit> onChanged(Unit unit) => where(
         (state) =>
-            (state is UnitUpdated && state.data.id == unit.id) ||
-            (state is UnitsLoaded && state.data.contains(unit.id)),
-      ).map((state) => state is UnitsLoaded ? repo[unit.id] : state.data);
+            (state is UnitUpdated && state.data.uuid == unit.uuid) ||
+            (state is UnitsLoaded && state.data.contains(unit.uuid)),
+      ).map((state) => state is UnitsLoaded ? repo[unit.uuid] : state.data);
 
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.Retired]}) => repo.count(exclude: exclude);
@@ -147,8 +147,8 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
       final number = int.tryParse(suffix) ?? 1;
 
       return Unit.fromJson({
-        "type": enumName(type),
         "number": number,
+        "type": enumName(type),
         "status": enumName(UnitStatus.Mobilized),
         "callsign": toCallsign(department, offset + number),
       });
@@ -169,7 +169,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<List<Unit>> load() async {
     _assertState();
     return _dispatch<List<Unit>>(
-      LoadUnits(iuuid),
+      LoadUnits(iuuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -177,7 +177,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<Unit> create(Unit unit) {
     _assertState();
     return _dispatch<Unit>(
-      CreateUnit(unit),
+      CreateUnit(iuuid ?? incidentBloc.selected.uuid, unit),
     );
   }
 
@@ -190,10 +190,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   /// Delete given unit
-  Future<void> delete(Unit unit) {
+  Future<Unit> delete(Unit unit) {
     _assertState();
-    return _dispatch<void>(
+    return _dispatch<Unit>(
       DeleteUnit(unit),
+    );
+  }
+
+  /// Unload [units] from local storage
+  Future<List<Unit>> unload() {
+    _assertState();
+    return _dispatch<List<Unit>>(
+      UnloadUnits(iuuid),
     );
   }
 
@@ -212,11 +220,17 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
     } else if (command is _InternalChange) {
       yield await _process(command);
     } else if (command is RaiseUnitError) {
-      yield _toError(command, command.data);
+      yield _toError(
+        command,
+        command.data,
+      );
     } else {
       yield _toError(
         command,
-        UnitError("Unsupported $command"),
+        UnitError(
+          "Unsupported $command",
+          stackTrace: StackTrace.current,
+        ),
       );
     }
   }
@@ -231,7 +245,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _create(CreateUnit command) async {
-    var device = await repo.create(iuuid, command.data);
+    var device = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
       UnitCreated(device),
@@ -249,7 +263,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _delete(DeleteUnit command) async {
-    final device = await repo.delete(command.data);
+    final device = await repo.delete(command.data.uuid);
     return _toOK(
       command,
       UnitDeleted(device),
@@ -291,18 +305,33 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   // Complete with error and return response as error state to bloc
-  UnitState _toError(UnitCommand event, Object response, {StackTrace stackTrace}) {
-    final error = UnitError(response);
-    event.callback.completeError(error, stackTrace);
+  UnitState _toError(UnitCommand event, Object error) {
+    final object = error is UnitError
+        ? error
+        : UnitError(
+            error,
+            stackTrace: StackTrace.current,
+          );
+    event.callback.completeError(
+      error,
+      object.stackTrace ?? StackTrace.current,
+    );
     return error;
   }
 
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscriptions.isNotEmpty) {
-      add(RaiseUnitError(UnitError(error, stackTrace: stacktrace)));
+      add(RaiseUnitError(UnitError(
+        error,
+        stackTrace: stacktrace,
+      )));
     } else {
-      throw "Bad state: UnitBloc is disposed. Unexpected ${UnitError(error, stackTrace: stacktrace)}";
+      throw UnitBlocException(
+        error,
+        state,
+        stackTrace: stacktrace,
+      );
     }
   }
 
@@ -332,10 +361,11 @@ class LoadUnits extends UnitCommand<String, List<Unit>> {
 }
 
 class CreateUnit extends UnitCommand<Unit, Unit> {
-  CreateUnit(Unit data) : super(data);
+  String iuuid;
+  CreateUnit(this.iuuid, Unit data) : super(data);
 
   @override
-  String toString() => 'CreateUnit {unit: $data}';
+  String toString() => 'CreateUnit {iuuid: $iuuid, unit: $data}';
 }
 
 class UpdateUnit extends UnitCommand<Unit, Unit> {
@@ -352,7 +382,7 @@ class DeleteUnit extends UnitCommand<Unit, Unit> {
   String toString() => 'DeleteUnit {unit: $data}';
 }
 
-class UnloadUnits extends UnitCommand<String, List<String>> {
+class UnloadUnits extends UnitCommand<String, List<Unit>> {
   UnloadUnits(String iuuid) : super(iuuid);
 
   @override
@@ -376,6 +406,7 @@ class RaiseUnitError extends UnitCommand<UnitError, UnitError> {
 /// ---------------------
 /// Normal States
 /// ---------------------
+
 abstract class UnitState<T> extends Equatable {
   final T data;
 
@@ -387,7 +418,6 @@ abstract class UnitState<T> extends Equatable {
   isUpdated() => this is UnitUpdated;
   isDeleted() => this is UnitDeleted;
   isUnloaded() => this is UnitsUnloaded;
-  isException() => this is UnitException;
   isError() => this is UnitError;
 }
 
@@ -434,21 +464,28 @@ class UnitsUnloaded extends UnitState<List<Unit>> {
 }
 
 /// ---------------------
-/// Exceptional States
+/// Error States
 /// ---------------------
-abstract class UnitException extends UnitState<Object> {
-  final StackTrace stackTrace;
-  UnitException(Object error, {this.stackTrace}) : super(error, [stackTrace]);
 
-  @override
-  String toString() => 'UnitException {data: $data}';
-}
-
-/// Error that should have been caught by the programmer, see [Error] for details about errors in dart.
-class UnitError extends UnitException {
+class UnitError extends UnitState<Object> {
   final StackTrace stackTrace;
-  UnitError(Object error, {this.stackTrace}) : super(error, stackTrace: stackTrace);
+  UnitError(Object error, {this.stackTrace}) : super(error);
 
   @override
   String toString() => 'UnitError {error: $data, stackTrace: $stackTrace}';
+}
+
+/// ---------------------
+/// Exceptions
+/// ---------------------
+
+class UnitBlocException implements Exception {
+  UnitBlocException(this.error, this.state, {this.command, this.stackTrace});
+  final Object error;
+  final UnitState state;
+  final StackTrace stackTrace;
+  final Object command;
+
+  @override
+  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
 }

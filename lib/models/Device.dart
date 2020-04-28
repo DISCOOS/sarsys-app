@@ -1,31 +1,19 @@
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'converters.dart';
 
 part 'Device.g.dart';
 
 @JsonSerializable()
-class Device extends Equatable {
-  final String uuid;
-  final DeviceType type;
-  final DeviceStatus status;
-  final String number;
-  final String alias;
-  final String network;
-  final String networkId;
-  final Point position;
-  @JsonKey(fromJson: _toIncidentRef, nullable: true, includeIfNull: false)
-  final AggregateRef<Incident> allocatedTo;
-
-  /// Flag indication that device is added manually
-  final bool manual;
-
+class Device extends Aggregate {
   Device({
-    @required this.uuid,
+    @required String uuid,
     @required this.type,
     this.alias,
     this.number,
@@ -35,17 +23,20 @@ class Device extends Equatable {
     this.allocatedTo,
     this.manual = true,
     this.status = DeviceStatus.Unavailable,
-  }) : super([
-          uuid,
-          type,
-          status,
-          number,
-          alias,
-          network,
-          networkId,
-          allocatedTo,
-          position,
-        ]);
+  }) : super(uuid);
+
+  final DeviceType type;
+  final DeviceStatus status;
+  final String number;
+  final String alias;
+  final String network;
+  final String networkId;
+  final Point position;
+  @JsonKey(fromJson: toIncidentRef, nullable: true, includeIfNull: false)
+  final AggregateRef<Incident> allocatedTo;
+
+  /// Flag indication that device is added manually
+  final bool manual;
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
@@ -101,8 +92,6 @@ class Device extends Equatable {
       allocatedTo: allocatedTo ?? this.allocatedTo,
     );
   }
-
-  static _toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
 }
 
 enum DeviceType {

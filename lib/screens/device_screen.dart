@@ -67,7 +67,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     final unit = context.bloc<TrackingBloc>().units.find(_device);
     _group = StreamGroup.broadcast()
       ..add(context.bloc<DeviceBloc>().onChanged(_device))
-      ..add(context.bloc<TrackingBloc>().changes(unit?.tracking));
+      ..add(context.bloc<TrackingBloc>().changes(unit?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
     _onMoved = context.bloc<DeviceBloc>().onChanged(_device).listen(_onMove);
   }
@@ -117,7 +117,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       unit: unit,
       personnel: personnel,
       device: _device,
-      tracking: context.bloc<TrackingBloc>().tracking[unit?.tracking],
+      tracking: context.bloc<TrackingBloc>().tracking[unit?.tracking?.uuid],
       organization: FleetMapService().fetchOrganization(Defaults.orgId),
       withHeader: false,
       withActions: context.bloc<UserBloc>().user?.isCommander == true,

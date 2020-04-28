@@ -7,12 +7,14 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/mock/personnel.dart';
+import 'package:SarSys/mock/personnels.dart';
+import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
@@ -20,6 +22,7 @@ import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
+import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
@@ -77,6 +80,13 @@ class BlocTestHarness {
   PersonnelBloc get personnelBloc => _personnelBloc;
   bool _withPersonnelBloc = false;
 
+  UnitServiceMock get unitService => _unitService;
+  UnitServiceMock _unitService;
+
+  UnitBloc _unitBloc;
+  UnitBloc get unitBloc => _unitBloc;
+  bool _withUnitBloc = false;
+
   void install() {
     setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
@@ -113,6 +123,9 @@ class BlocTestHarness {
       if (_withPersonnelBloc) {
         _buildPersonnelBloc();
       }
+      if (_withUnitBloc) {
+        _buildUnitBloc();
+      }
       // Needed for await above to work
       return Future.value();
     });
@@ -132,6 +145,9 @@ class BlocTestHarness {
       }
       if (_withPersonnelBloc) {
         _personnelBloc?.close();
+      }
+      if (_withUnitBloc) {
+        _unitBloc?.close();
       }
       _connectivity?.dispose();
       if (Storage.initialized) {
@@ -184,6 +200,10 @@ class BlocTestHarness {
 
   void withPersonnelBloc() {
     _withPersonnelBloc = true;
+  }
+
+  void withUnitBloc() {
+    _withUnitBloc = true;
   }
 
   void _buildSecureStoragePlugin() {
@@ -339,7 +359,7 @@ class BlocTestHarness {
   void _buildPersonnelBloc({
     int count = 0,
   }) {
-    assert(_withIncidentBloc, 'DeviceBloc requires IncidentBloc');
+    assert(_withIncidentBloc, 'PersonnelBloc requires IncidentBloc');
     _personnelService = PersonnelServiceMock.build(count);
     _personnelBloc = PersonnelBloc(
       PersonnelRepository(
@@ -354,6 +374,31 @@ class BlocTestHarness {
       expectThroughInOrder(
         _incidentBloc,
         [isA<IncidentsLoaded>()],
+        close: false,
+      );
+    }
+  }
+
+  void _buildUnitBloc({
+    int count = 0,
+  }) {
+    assert(_withIncidentBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
+    _unitService = UnitServiceMock.build(count);
+    _unitBloc = UnitBloc(
+      UnitRepository(
+        _unitService,
+        connectivity: _connectivity,
+      ),
+      _incidentBloc,
+      _personnelBloc,
+    );
+
+    if (_authenticated) {
+      // Consume PersonnelsLoaded fired by IncidentsLoaded
+      expectThroughInOrder(
+        _personnelBloc,
+        [isA<PersonnelsEmpty>()],
         close: false,
       );
     }

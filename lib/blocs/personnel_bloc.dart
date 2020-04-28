@@ -180,11 +180,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   Future<PersonnelState> _load(LoadPersonnels command) async {
-    var devices = await repo.load(command.data);
+    var personnels = await repo.load(command.data);
     return _toOK<List<Personnel>>(
       command,
       PersonnelsLoaded(repo.keys),
-      result: devices,
+      result: personnels,
     );
   }
 
@@ -216,11 +216,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   Future<PersonnelState> _unload(UnloadPersonnels command) async {
-    final devices = await repo.unload();
+    final personnels = await repo.unload();
     return _toOK(
       command,
-      PersonnelsUnloaded(devices),
-      result: devices,
+      PersonnelsUnloaded(personnels),
+      result: personnels,
     );
   }
 
@@ -253,18 +253,33 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   // Complete with error and return response as error state to bloc
-  PersonnelState _toError(PersonnelCommand event, Object response) {
-    final error = PersonnelError(response);
-    event.callback.completeError(error);
+  PersonnelState _toError(PersonnelCommand event, Object error) {
+    final object = error is PersonnelError
+        ? error
+        : PersonnelError(
+            error,
+            stackTrace: StackTrace.current,
+          );
+    event.callback.completeError(
+      error,
+      object.stackTrace ?? StackTrace.current,
+    );
     return error;
   }
 
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscriptions.isNotEmpty) {
-      add(RaisePersonnelError(PersonnelError(error, stackTrace: stacktrace)));
+      add(RaisePersonnelError(PersonnelError(
+        error,
+        stackTrace: stacktrace,
+      )));
     } else {
-      throw "Bad state: PersonnelBloc is disposed. Unexpected ${PersonnelError(error, stackTrace: stacktrace)}";
+      throw PersonnelBlocException(
+        error,
+        state,
+        stackTrace: stacktrace,
+      );
     }
   }
 

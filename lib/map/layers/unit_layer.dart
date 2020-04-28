@@ -61,12 +61,12 @@ class UnitLayer extends MapPlugin {
     final tracking = options.bloc.tracking;
     final units = sortMapValues<String, Unit, TrackingStatus>(
             options.bloc.units.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
-            (unit) => tracking[unit.tracking].status,
+            (unit) => tracking[unit.tracking.uuid].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((unit) => tracking[unit.tracking]?.point?.isNotEmpty == true)
+        .where((unit) => tracking[unit.tracking.uuid]?.point?.isNotEmpty == true)
         .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
-        .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking].point)));
+        .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking.uuid].point)));
     return tracking.isEmpty
         ? Container()
         : Stack(
@@ -74,13 +74,13 @@ class UnitLayer extends MapPlugin {
             children: [
               if (options.showTail)
                 ...units
-                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit.tracking]))
+                    .map((unit) => _buildTrack(context, size, options, map, unit, tracking[unit.tracking.uuid]))
                     .toList(),
               if (options.showLabels)
                 ...units
-                    .map((unit) => _buildLabel(context, options, map, unit, tracking[unit.tracking].point))
+                    .map((unit) => _buildLabel(context, options, map, unit, tracking[unit.tracking.uuid].point))
                     .toList(),
-              ...units.map((unit) => _buildPoint(context, options, map, unit, tracking[unit.tracking])).toList(),
+              ...units.map((unit) => _buildPoint(context, options, map, unit, tracking[unit.tracking.uuid])).toList(),
             ],
           );
   }

@@ -8,13 +8,13 @@ part of 'Unit.dart';
 
 Unit _$UnitFromJson(Map json) {
   return Unit(
-    id: json['id'] as String,
+    uuid: json['uuid'] as String,
     type: _$enumDecodeNullable(_$UnitTypeEnumMap, json['type']),
     number: json['number'] as int,
     status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
     callsign: json['callsign'] as String,
     phone: json['phone'] as String,
-    tracking: json['tracking'] as String,
+    tracking: toTrackingRef(json['tracking']),
     personnel: (json['personnel'] as List)
         ?.map((e) => e == null
             ? null
@@ -25,16 +25,26 @@ Unit _$UnitFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$UnitToJson(Unit instance) => <String, dynamic>{
-      'id': instance.id,
-      'number': instance.number,
-      'type': _$UnitTypeEnumMap[instance.type],
-      'status': _$UnitStatusEnumMap[instance.status],
-      'phone': instance.phone,
-      'callsign': instance.callsign,
-      'tracking': instance.tracking,
-      'personnel': instance.personnel?.map((e) => e?.toJson())?.toList(),
-    };
+Map<String, dynamic> _$UnitToJson(Unit instance) {
+  final val = <String, dynamic>{
+    'uuid': instance.uuid,
+    'number': instance.number,
+    'type': _$UnitTypeEnumMap[instance.type],
+    'status': _$UnitStatusEnumMap[instance.status],
+    'phone': instance.phone,
+    'callsign': instance.callsign,
+  };
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('tracking', instance.tracking?.toJson());
+  val['personnel'] = instance.personnel?.map((e) => e?.toJson())?.toList();
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

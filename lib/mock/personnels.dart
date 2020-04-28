@@ -7,6 +7,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:random_string/random_string.dart';
 import 'package:faker/faker.dart';
@@ -20,17 +21,21 @@ class PersonnelBuilder {
     PersonnelStatus status = PersonnelStatus.Mobilized,
   }) {
     return Personnel.fromJson(
-      createPersonnelAsJson(
-        uuid ?? Uuid().v4(),
-        userId,
-        status ?? PersonnelStatus.Mobilized,
-        tracking,
+      createAsJson(
+        uuid: uuid ?? Uuid().v4(),
+        userId: userId,
+        status: status ?? PersonnelStatus.Mobilized,
+        tracking: tracking,
       ),
     );
   }
 
-  static Map<String, dynamic> createPersonnelAsJson(
-          String uuid, String userId, PersonnelStatus status, String tracking) =>
+  static Map<String, dynamic> createAsJson({
+    @required String uuid,
+    @required PersonnelStatus status,
+    String userId,
+    String tracking,
+  }) =>
       json.decode('{'
           '"uuid": "$uuid",'
           '"userId": "$userId",'
@@ -51,33 +56,33 @@ class PersonnelBuilder {
 
 class PersonnelServiceMock extends Mock implements PersonnelService {
   PersonnelServiceMock();
-  final Map<String, Map<String, Personnel>> personnelRepo = {};
+  final Map<String, Map<String, Personnel>> personnelsRepo = {};
 
   Personnel add(
     String iuuid, {
     String uuid,
     String tracking,
-    PersonnelStatus status,
+    PersonnelStatus status = PersonnelStatus.Mobilized,
   }) {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
       status: status,
       tracking: tracking,
     );
-    if (personnelRepo.containsKey(iuuid)) {
-      personnelRepo[iuuid].putIfAbsent(personnel.uuid, () => personnel);
+    if (personnelsRepo.containsKey(iuuid)) {
+      personnelsRepo[iuuid].putIfAbsent(personnel.uuid, () => personnel);
     } else {
-      personnelRepo[iuuid] = {personnel.uuid: personnel};
+      personnelsRepo[iuuid] = {personnel.uuid: personnel};
     }
     return personnel;
   }
 
-  List<Personnel> remove(uuid) {
-    final iuuids = personnelRepo.entries.where(
+  List<Personnel> remove(String uuid) {
+    final iuuids = personnelsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
     return iuuids
-        .map((iuuid) => personnelRepo[iuuid].remove(uuid))
+        .map((iuuid) => personnelsRepo[iuuid].remove(uuid))
         .where(
           (personnel) => personnel != null,
         )
@@ -86,7 +91,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
   factory PersonnelServiceMock.build(final int count) {
     final PersonnelServiceMock mock = PersonnelServiceMock();
-    final personnelRepo = mock.personnelRepo;
+    final personnelRepo = mock.personnelsRepo;
 
     // ignore: close_sinks
     final StreamController<PersonnelMessage> controller = StreamController.broadcast();
@@ -106,11 +111,11 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
             MapEntry(
               "$iuuid:p:$i",
               Personnel.fromJson(
-                PersonnelBuilder.createPersonnelAsJson(
-                  "$iuuid:p:$i",
-                  "p:$i",
-                  PersonnelStatus.Mobilized,
-                  "$iuuid:t:p:$i",
+                PersonnelBuilder.createAsJson(
+                  uuid: "$iuuid:p:$i",
+                  userId: "p:$i",
+                  status: PersonnelStatus.Mobilized,
+                  tracking: "$iuuid:t:p:$i",
                 ),
               ),
             ),
@@ -136,13 +141,13 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.update(any)).thenAnswer((_) async {
       final Personnel personnel = _.positionalArguments[0];
-      var incident = personnelRepo.entries.firstWhere(
+      var personnels = personnelRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(personnel.uuid),
         orElse: () => null,
       );
-      if (incident != null) {
+      if (personnels != null) {
         return ServiceResponse.ok(
-          body: incident.value.update(personnel.uuid, (_) => personnel, ifAbsent: () => personnel),
+          body: personnels.value.update(personnel.uuid, (_) => personnel, ifAbsent: () => personnel),
         );
       }
       return ServiceResponse.notFound(

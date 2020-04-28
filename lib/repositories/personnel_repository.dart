@@ -42,7 +42,7 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
     return state.value.uuid;
   }
 
-  /// Ensure that box for given iuuid is open
+  /// Ensure that box for given [Incident.uuid] is open
   Future<void> _ensure(String iuuid) async {
     if (isEmptyOrNull(iuuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
@@ -85,9 +85,9 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
         var response = await service.fetch(iuuid);
         if (response.is200) {
           await Future.wait(response.body.map(
-            (incident) => commit(
+            (personnel) => commit(
               StorageState.pushed(
-                incident,
+                personnel,
               ),
             ),
           ));

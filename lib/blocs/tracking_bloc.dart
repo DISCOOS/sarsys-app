@@ -44,6 +44,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
     _subscriptions
+      // Handles incident state changes
       ..add(incidentBloc.listen(_init))
       // Manages tracking state for units
       ..add(unitBloc.listen(_handleUnit))
@@ -113,33 +114,29 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   void _handleUnit(UnitState state) {
     if (state.isUpdated()) {
       final event = state as UnitUpdated;
-      final tracking = _tracking[event.data.tracking];
+      final tracking = _tracking[event.data.tracking.uuid];
       // Close tracking?
       if (tracking != null) {
         if (UnitStatus.Retired == event.data.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          add(
-            UpdateTracking(
-              tracking.cloneWith(
-                status: TrackingStatus.Closed,
-                devices: [],
-              ),
+          add(UpdateTracking(
+            tracking.cloneWith(
+              status: TrackingStatus.Closed,
+              devices: [],
             ),
-          );
+          ));
         } else if (TrackingStatus.Closed == tracking.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          add(
-            UpdateTracking(
-              tracking.cloneWith(
-                status: TrackingStatus.Tracking,
-              ),
+          add(UpdateTracking(
+            tracking.cloneWith(
+              status: TrackingStatus.Tracking,
             ),
-          );
+          ));
         }
       }
     } else if (state.isDeleted()) {
       final event = state as UnitDeleted;
-      final tracking = _tracking[event.data.tracking];
+      final tracking = _tracking[event.data.tracking.uuid];
       // TODO: Move to tracking service and convert to internal TrackingMessage
       if (tracking != null) add(DeleteTracking(tracking));
     }
@@ -153,23 +150,19 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
       if (tracking != null) {
         if (PersonnelStatus.Retired == event.data.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          add(
-            UpdateTracking(
-              tracking.cloneWith(
-                status: TrackingStatus.Closed,
-                devices: [],
-              ),
+          add(UpdateTracking(
+            tracking.cloneWith(
+              status: TrackingStatus.Closed,
+              devices: [],
             ),
-          );
+          ));
         } else if (TrackingStatus.Closed == tracking.status) {
           // TODO: Move to tracking service and convert to internal TrackingMessage
-          add(
-            UpdateTracking(
-              tracking.cloneWith(
-                status: TrackingStatus.Tracking,
-              ),
+          add(UpdateTracking(
+            tracking.cloneWith(
+              status: TrackingStatus.Tracking,
             ),
-          );
+          ));
         }
       }
     } else if (state.isDeleted()) {
@@ -197,7 +190,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Entities<Unit> get units => Entities<Unit>(
         bloc: this,
         data: this.unitBloc.units,
-        asId: (unit) => unit?.tracking,
+        asId: (unit) => unit?.tracking?.uuid,
       );
 
   /// Get personnel being tracked
@@ -407,7 +400,9 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     if (response.is200) {
       // TODO: Mark as internal event, no message from tracking service expected
       await unitBloc.update(
-        event.unit.cloneWith(tracking: response.body.id),
+        event.unit.cloneWith(
+          tracking: AggregateRef.fromType<Tracking>(response.body.id),
+        ),
       );
       final tracking = _tracking.putIfAbsent(
         response.body.id,

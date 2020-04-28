@@ -361,12 +361,12 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in devices tracked with this unit
           controller
               .bloc<TrackingBloc>()
-              .tracking[unit.tracking]
+              .tracking[unit.tracking.uuid]
               .devices
               .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
-      .where((unit) => controller.bloc<TrackingBloc>().tracking[unit.tracking].point != null)
+      .where((unit) => controller.bloc<TrackingBloc>().tracking[unit.tracking.uuid].point != null)
       .map((unit) => AddressLookup(
-            point: controller.bloc<TrackingBloc>().tracking[unit.tracking].point,
+            point: controller.bloc<TrackingBloc>().tracking[unit.tracking.uuid].point,
             icon: Icons.group,
             title: unit.name,
             type: GeocodeType.Object,

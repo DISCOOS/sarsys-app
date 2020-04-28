@@ -1,10 +1,11 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+
+import 'core.dart';
 
 part 'Affiliation.g.dart';
 
 @JsonSerializable()
-class Affiliation extends Equatable {
+class Affiliation extends ValueObject {
   final String orgId;
   final String divId;
   final String depId;
