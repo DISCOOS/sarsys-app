@@ -51,7 +51,7 @@ dependencies:
   flutter_slidable: ^0.5.3
   package_info: ^0.4.0+5
   font_awesome_flutter: ^8.5.0
-  flutter_map: ^0.7.5
+  flutter_map: ^0.9.0
   badges: ^1.1.0
   sentry: ^2.2.0
   catcher: ^0.2.4
@@ -75,6 +75,8 @@ dependencies:
   flutter_udid: ^1.0.1
   simple_gravatar: ^1.0.5
   json_patch: ^2.0.0
+  cached_network_image: 2.2.0+1
+  flutter_cache_manager: 1.2.2
 
   # Mocking support
   uuid: ^2.0.2
@@ -85,13 +87,13 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dependency_overrides:
-  flutter_map:
-    # Use local branch of flutter_map
-    #path: ../flutter_map
-    git:
-    #  url: git://github.com/johnpryan/flutter_map
-      url: https://github.com/DISCOOS/flutter_map
-      ref: master
+#  flutter_map:
+#    # Use local branch of flutter_map
+#    #path: ../flutter_map
+#    git:
+#    #  url: git://github.com/johnpryan/flutter_map
+#      url: https://github.com/DISCOOS/flutter_map
+#      ref: master
 
   intro_views_flutter:
     #path: ../IntroViews-Flutter

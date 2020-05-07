@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui show instantiateImageCodec, Codec;
@@ -54,8 +55,8 @@ class ManagedCacheTileProvider extends TileProvider {
 
   ImageProvider _refreshImage(String url) => ManagedCachedNetworkImageProvider(
         url: url,
-        manager: cacheManager,
         offline: offline,
+        cacheManager: cacheManager,
         offlineAsset: offlineAsset,
         errorHandler: errorHandler,
         onPlaceholder: _addPlaceholder,
@@ -73,7 +74,40 @@ class ManagedCacheTileProvider extends TileProvider {
 }
 
 /// [ManagedCacheTileProvider] companion class implementing image provider error handling
-class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
+class ManagedCachedNetworkImageProvider extends ImageProvider<CachedNetworkImageProvider>
+    implements CachedNetworkImageProvider {
+  ManagedCachedNetworkImageProvider({
+    @required this.url,
+    @required this.errorHandler,
+    @required this.offline,
+    @required this.offlineAsset,
+    @required this.onPlaceholder,
+    @required this.cacheManager,
+    this.headers,
+    this.errorListener,
+    this.scale = 1.0,
+  })  : assert(url != null),
+        assert(scale != null);
+
+  @override
+  final BaseCacheManager cacheManager;
+
+  /// Web url of the image to load
+  @override
+  final String url;
+
+  /// Scale of the image
+  @override
+  final double scale;
+
+  /// Listener to be called when images fails to load.
+  @override
+  final ErrorListener errorListener;
+
+  /// Set headers for the image provider, for example for authentication
+  @override
+  final Map<String, String> headers;
+
   final bool offline;
   final String offlineAsset;
   final TileErrorHandler errorHandler;
@@ -81,26 +115,67 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
 
   ui.Codec placeholder;
 
-  ManagedCachedNetworkImageProvider({
-    @required String url,
-    @required this.errorHandler,
-    @required this.offline,
-    @required this.offlineAsset,
-    @required this.onPlaceholder,
-    @required BaseCacheManager manager,
-  }) : super(url, cacheManager: manager);
+  @override
+  Future<CachedNetworkImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<CachedNetworkImageProvider>(this);
+  }
 
   @override
   ImageStreamCompleter load(CachedNetworkImageProvider key, DecoderCallback decode) {
-    return (offline ? _loadFromCache(key) : super.load(key, decode))
+    return (offline ? _loadFromCache(key) : _load(key, decode))
       ..addListener(errorHandler.listen(key, key.url, (e) => TileError.toType(e)));
+  }
+
+  ImageStreamCompleter _load(CachedNetworkImageProvider key, DecoderCallback decode) {
+    final StreamController<ImageChunkEvent> chunkEvents = StreamController<ImageChunkEvent>();
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(key, chunkEvents, decode).first,
+      chunkEvents: chunkEvents.stream,
+      scale: key.scale,
+      informationCollector: () sync* {
+        yield DiagnosticsProperty<ImageProvider>(
+          'Image provider: $this \n Image key: $key',
+          this,
+          style: DiagnosticsTreeStyle.errorProperty,
+        );
+      },
+    );
+  }
+
+  Stream<ui.Codec> _loadAsync(
+    CachedNetworkImageProvider key,
+    StreamController<ImageChunkEvent> chunkEvents,
+    DecoderCallback decode,
+  ) async* {
+    assert(key == this);
+    try {
+      var mngr = cacheManager ?? DefaultCacheManager();
+      await for (var result in mngr.getFileStream(key.url, withProgress: true, headers: headers)) {
+        if (result is DownloadProgress) {
+          chunkEvents.add(ImageChunkEvent(
+            cumulativeBytesLoaded: result.downloaded,
+            expectedTotalBytes: result.totalSize,
+          ));
+        }
+        if (result is FileInfo) {
+          var file = result.file;
+          var bytes = await file.readAsBytes();
+          var decoded = await decode(bytes);
+          yield decoded;
+        }
+      }
+    } catch (e) {
+      errorListener?.call();
+      rethrow;
+    } finally {
+      await chunkEvents.close();
+    }
   }
 
   /// Only called when offline
   ImageStreamCompleter _loadFromCache(key) => MultiFrameImageStreamCompleter(
         codec: _loadAsyncFromCache(key),
         scale: key.scale,
-// TODO enable information collector on next stable release of flutter
         informationCollector: () sync* {
           yield DiagnosticsProperty<ImageProvider>(
             'Image provider: $this \n Image key: $key',
@@ -139,6 +214,20 @@ class ManagedCachedNetworkImageProvider extends CachedNetworkImageProvider {
     }
     return ui.instantiateImageCodec(bytes);
   }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is CachedNetworkImageProvider) {
+      return url == other.url && scale == other.scale;
+    }
+    return false;
+  }
+
+  @override
+  int get hashCode => hashValues(url, scale);
+
+  @override
+  String toString() => '$runtimeType("$url", scale: $scale)';
 }
 
 /// This class implements a managed file-based [TileProvider] with
