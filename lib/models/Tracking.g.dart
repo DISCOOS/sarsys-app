@@ -8,11 +8,11 @@ part of 'Tracking.dart';
 
 Tracking _$TrackingFromJson(Map json) {
   return Tracking(
-    id: json['id'] as String,
+    uuid: json['uuid'] as String,
     status: _$enumDecodeNullable(_$TrackingStatusEnumMap, json['status']),
-    point: json['point'] == null
+    position: json['position'] == null
         ? null
-        : Point.fromJson((json['point'] as Map)?.map(
+        : Position.fromJson((json['position'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
     distance: (json['distance'] as num)?.toDouble(),
@@ -20,38 +20,40 @@ Tracking _$TrackingFromJson(Map json) {
     effort: json['effort'] == null
         ? null
         : Duration(microseconds: json['effort'] as int),
-    devices: (json['devices'] as List)?.map((e) => e as String)?.toList(),
-    history: (json['history'] as List)
+    sources: (json['sources'] as List)
         ?.map((e) => e == null
             ? null
-            : Point.fromJson((e as Map)?.map(
+            : Source.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),
-    tracks: (json['tracks'] as Map)?.map(
-      (k, e) => MapEntry(
-          k as String,
-          e == null
-              ? null
-              : Track.fromJson((e as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                ))),
-    ),
-    aggregates: (json['aggregates'] as List)?.map((e) => e as String)?.toList(),
+    history: (json['history'] as List)
+        ?.map((e) => e == null
+            ? null
+            : Position.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
+        ?.toList(),
+    tracks: (json['tracks'] as List)
+        ?.map((e) => e == null
+            ? null
+            : Track.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
+        ?.toList(),
   );
 }
 
 Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
-      'id': instance.id,
+      'uuid': instance.uuid,
+      'position': instance.position?.toJson(),
       'status': _$TrackingStatusEnumMap[instance.status],
-      'point': instance.point?.toJson(),
-      'distance': instance.distance,
       'speed': instance.speed,
       'effort': instance.effort?.inMicroseconds,
-      'devices': instance.devices,
+      'distance': instance.distance,
+      'sources': instance.sources?.map((e) => e?.toJson())?.toList(),
       'history': instance.history?.map((e) => e?.toJson())?.toList(),
-      'aggregates': instance.aggregates,
-      'tracks': instance.tracks?.map((k, e) => MapEntry(k, e?.toJson())),
+      'tracks': instance.tracks?.map((e) => e?.toJson())?.toList(),
     };
 
 T _$enumDecode<T>(
@@ -87,9 +89,9 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$TrackingStatusEnumMap = {
-  TrackingStatus.None: 'None',
-  TrackingStatus.Created: 'Created',
-  TrackingStatus.Tracking: 'Tracking',
-  TrackingStatus.Paused: 'Paused',
-  TrackingStatus.Closed: 'Closed',
+  TrackingStatus.none: 'none',
+  TrackingStatus.created: 'created',
+  TrackingStatus.tracking: 'tracking',
+  TrackingStatus.paused: 'paused',
+  TrackingStatus.closed: 'closed',
 };

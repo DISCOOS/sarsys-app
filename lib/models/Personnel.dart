@@ -6,14 +6,13 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'Affiliation.dart';
 import 'AggregateRef.dart';
 import 'converters.dart';
-import 'core.dart';
 import 'Tracking.dart';
 import 'Unit.dart';
 
 part 'Personnel.g.dart';
 
 @JsonSerializable()
-class Personnel extends Aggregate {
+class Personnel extends Trackable<Map<String, dynamic>> {
   Personnel({
     @required String uuid,
     @required this.userId,
@@ -24,8 +23,17 @@ class Personnel extends Aggregate {
     this.affiliation,
     this.function,
     this.unit,
-    this.tracking,
-  }) : super(uuid);
+    AggregateRef<Tracking> tracking,
+  }) : super(uuid, tracking, fields: [
+          userId,
+          status,
+          fname,
+          lname,
+          phone,
+          affiliation,
+          function,
+          unit,
+        ]);
 
   final String userId;
   final PersonnelStatus status;
@@ -34,10 +42,12 @@ class Personnel extends Aggregate {
   final String phone;
   final Affiliation affiliation;
   final OperationalFunction function;
-  @JsonKey(fromJson: toUnitRef, nullable: true, includeIfNull: false)
+  @JsonKey(
+    fromJson: toUnitRef,
+    nullable: true,
+    includeIfNull: false,
+  )
   final AggregateRef<Unit> unit;
-  @JsonKey(fromJson: toTrackingRef, nullable: true, includeIfNull: false)
-  final AggregateRef<Tracking> tracking;
 
   String get name => "${fname ?? ''} ${lname ?? ''}";
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
@@ -89,7 +99,7 @@ class Personnel extends Aggregate {
       fname: fname ?? this.fname,
       lname: lname ?? this.lname,
       phone: phone ?? this.phone,
-      unit: tracking ?? this.unit,
+      unit: unit ?? this.unit,
       userId: userId ?? this.userId,
       status: status ?? this.status,
       function: function ?? this.function,

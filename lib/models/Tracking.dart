@@ -1,26 +1,27 @@
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+import 'AggregateRef.dart';
+import 'Source.dart';
+import 'converters.dart';
 import 'core.dart';
+import 'Position.dart';
+import 'Track.dart';
 
 part 'Tracking.g.dart';
 
-@JsonSerializable(
-  explicitToJson: true,
-)
-class Tracking extends Aggregate {
+@JsonSerializable()
+class Tracking extends Positionable<Map<String, dynamic>> {
   Tracking({
     /// Tracking id
-    @required this.id,
+    @required String uuid,
 
     /// Tracking status
     @required this.status,
 
     /// Last known position
-    this.point,
+    Position position,
 
     /// Total distance in meter
     this.distance,
@@ -31,29 +32,35 @@ class Tracking extends Aggregate {
     /// Total effort in milliseconds
     this.effort,
 
-    /// List tracked devices
-    this.devices = const [],
+    /// List of tracked sources
+    this.sources = const [],
 
-    /// List of historical points aggregated from temporally and spatially related points in tracks
+    /// List of historical positions aggregated from temporally and spatially related positions in tracks
     this.history = const [],
 
-    /// Map from device id to list of points
-    this.tracks = const {},
+    /// Map from track id to list of positions
+    this.tracks = const [],
+  }) : super(uuid, position, fields: [
+          status,
+          position,
+          distance,
+          speed,
+          effort,
+          sources,
+          history,
+          tracks,
+        ]);
 
-    /// List of ids of tracking objects being aggregated by this tracking object
-    this.aggregates = const [],
-  }) : super(id);
-
-  final String id;
   final TrackingStatus status;
-  final Point point;
-  final double distance;
   final double speed;
   final Duration effort;
-  final List<String> devices;
-  final List<Point> history;
-  final List<String> aggregates;
-  final Map<String, Track> tracks;
+  final double distance;
+  final List<Source> sources;
+  final List<Position> history;
+  final List<Track> tracks;
+
+  bool get isNotEmpty => !isEmpty;
+  bool get isEmpty => sources.isEmpty;
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
@@ -66,46 +73,84 @@ class Tracking extends Aggregate {
 
   /// Clone with given devices and state
   Tracking cloneWith({
-    TrackingStatus status,
-    Point point,
-    double distance,
     double speed,
+    double distance,
     Duration effort,
-    List<String> devices,
-    List<String> aggregates,
-    List<Point> history,
-    Map<String, Track> tracks,
+    Position position,
+    List<Source> sources,
+    List<Position> history,
+    TrackingStatus status,
+    List<Track> tracks,
   }) {
     return Tracking(
-      id: this.id,
+      uuid: this.uuid,
       status: status ?? this.status,
-      point: point ?? this.point,
+      position: position ?? this.position,
       distance: distance ?? this.distance,
       speed: speed ?? this.speed,
       effort: effort ?? this.effort,
-      devices: devices ?? this.devices,
-      aggregates: aggregates ?? this.aggregates,
+      sources: sources ?? this.sources,
       history: history ?? this.history,
       tracks: tracks ?? this.tracks,
     );
   }
+
+  /// Clone with json
+  Tracking withJson(Map<String, dynamic> json) {
+    var clone = Tracking.fromJson(json);
+    return cloneWith(
+      status: clone.status ?? status,
+      position: clone.position ?? position,
+      distance: clone.distance ?? distance,
+      speed: clone.speed ?? speed,
+      effort: clone.effort ?? effort,
+      history: clone.history ?? history,
+      tracks: clone.tracks ?? tracks,
+    );
+  }
+
+  Tracking asTracking() => cloneWith(
+        status: TrackingStatus.tracking,
+      );
+
+  Tracking asClosed() => cloneWith(
+        status: TrackingStatus.closed,
+      );
 }
 
-enum TrackingStatus { None, Created, Tracking, Paused, Closed }
+enum TrackingStatus {
+  none,
+  created,
+  tracking,
+  paused,
+  closed,
+}
 
 String translateTrackingStatus(TrackingStatus status) {
   switch (status) {
-    case TrackingStatus.None:
+    case TrackingStatus.none:
       return "Ingen";
-    case TrackingStatus.Created:
+    case TrackingStatus.created:
       return "Opprettet";
-    case TrackingStatus.Tracking:
+    case TrackingStatus.tracking:
       return "Sporer";
-    case TrackingStatus.Paused:
+    case TrackingStatus.paused:
       return "Pauset";
-    case TrackingStatus.Closed:
+    case TrackingStatus.closed:
       return "Avsluttet";
     default:
       return enumName(status);
   }
+}
+
+/// Aggregates that are tracked by a |Tracking]
+/// instance should extend or implement this class
+abstract class Trackable<T> extends Aggregate<T> {
+  Trackable(String uuid, this.tracking, {List fields = const []}) : super(uuid, fields: fields);
+  @JsonKey(
+    fromJson: toTrackingRef,
+    nullable: true,
+    includeIfNull: false,
+  )
+  final AggregateRef<Tracking> tracking;
 }

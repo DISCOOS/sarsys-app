@@ -5,7 +5,7 @@ import 'core.dart';
 part 'Affiliation.g.dart';
 
 @JsonSerializable()
-class Affiliation extends ValueObject {
+class Affiliation extends ValueObject<Map<String, dynamic>> {
   final String orgId;
   final String divId;
   final String depId;

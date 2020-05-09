@@ -12,15 +12,15 @@ Device _$DeviceFromJson(Map json) {
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
     alias: json['alias'] as String,
     number: json['number'] as String,
-    position: json['position'] == null
-        ? null
-        : Point.fromJson((json['position'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+    manual: json['manual'] as bool,
     network: json['network'] as String,
     networkId: json['networkId'] as String,
     allocatedTo: toIncidentRef(json['allocatedTo']),
-    manual: json['manual'] as bool,
+    position: json['position'] == null
+        ? null
+        : Position.fromJson((json['position'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     status: _$enumDecodeNullable(_$DeviceStatusEnumMap, json['status']),
   );
 }
@@ -28,13 +28,14 @@ Device _$DeviceFromJson(Map json) {
 Map<String, dynamic> _$DeviceToJson(Device instance) {
   final val = <String, dynamic>{
     'uuid': instance.uuid,
+    'position': instance.position?.toJson(),
+    'manual': instance.manual,
     'type': _$DeviceTypeEnumMap[instance.type],
     'status': _$DeviceStatusEnumMap[instance.status],
     'number': instance.number,
     'alias': instance.alias,
     'network': instance.network,
     'networkId': instance.networkId,
-    'position': instance.position?.toJson(),
   };
 
   void writeNotNull(String key, dynamic value) {
@@ -44,7 +45,6 @@ Map<String, dynamic> _$DeviceToJson(Device instance) {
   }
 
   writeNotNull('allocatedTo', instance.allocatedTo?.toJson());
-  val['manual'] = instance.manual;
   return val;
 }
 

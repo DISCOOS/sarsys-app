@@ -6,7 +6,7 @@ import 'core.dart';
 part 'Author.g.dart';
 
 @JsonSerializable()
-class Author extends ValueObject {
+class Author extends ValueObject<Map<String, dynamic>> {
   final String userId;
   final DateTime timestamp;
 

@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 part 'Location.g.dart';
 
 @JsonSerializable()
-class Location extends ValueObject {
+class Location extends ValueObject<Map<String, dynamic>> {
   final Point point;
   final Address address;
   final String description;

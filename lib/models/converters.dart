@@ -4,6 +4,7 @@ import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';
+import 'Coordinates.dart';
 import 'Incident.dart';
 import 'Tracking.dart';
 import 'Unit.dart';
@@ -76,6 +77,27 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
   }
 }
 
-toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
-toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
-toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;
+AggregateRef<Unit> toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
+AggregateRef<Incident> toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
+AggregateRef<Tracking> toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;
+
+double latFromJson(Object json) => _toDouble(json, 0);
+double lonFromJson(Object json) => _toDouble(json, 1);
+double altFromJson(Object json) => _toDouble(json, 2);
+
+double _toDouble(Object json, int index) {
+  if (json is List) {
+    if (index < json.length) {
+      var value = json[index];
+      if (value is num) {
+        return value.toDouble();
+      } else if (value is String) {
+        return double.parse(value);
+      }
+    }
+  }
+  return null;
+}
+
+Coordinates coordsFromJson(List json) => Coordinates.fromJson(json);
+dynamic coordsToJson(Coordinates coords) => coords.toJson();

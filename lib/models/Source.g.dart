@@ -1,35 +1,21 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Track.dart';
+part of 'Source.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Track _$TrackFromJson(Map json) {
-  return Track(
-    id: json['id'] as String,
-    status: _$enumDecodeNullable(_$TrackStatusEnumMap, json['status']),
-    source: json['source'] == null
-        ? null
-        : Source.fromJson((json['source'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    positions: (json['positions'] as List)
-        ?.map((e) => e == null
-            ? null
-            : Position.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+Source _$SourceFromJson(Map json) {
+  return Source(
+    uuid: json['uuid'] as String,
+    type: _$enumDecodeNullable(_$SourceTypeEnumMap, json['type']),
   );
 }
 
-Map<String, dynamic> _$TrackToJson(Track instance) => <String, dynamic>{
-      'id': instance.id,
-      'source': instance.source?.toJson(),
-      'status': _$TrackStatusEnumMap[instance.status],
-      'positions': instance.positions?.map((e) => e?.toJson())?.toList(),
+Map<String, dynamic> _$SourceToJson(Source instance) => <String, dynamic>{
+      'uuid': instance.uuid,
+      'type': _$SourceTypeEnumMap[instance.type],
     };
 
 T _$enumDecode<T>(
@@ -64,7 +50,7 @@ T _$enumDecodeNullable<T>(
   return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
 }
 
-const _$TrackStatusEnumMap = {
-  TrackStatus.attached: 'attached',
-  TrackStatus.detached: 'detached',
+const _$SourceTypeEnumMap = {
+  SourceType.device: 'device',
+  SourceType.trackable: 'trackable',
 };

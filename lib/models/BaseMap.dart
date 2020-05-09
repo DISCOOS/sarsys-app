@@ -9,7 +9,7 @@ import 'core.dart';
 part 'BaseMap.g.dart';
 
 @JsonSerializable()
-class BaseMap extends ValueObject {
+class BaseMap extends ValueObject<Map<String, dynamic>> {
   final String name;
   final String description;
   final String url;

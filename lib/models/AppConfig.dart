@@ -11,7 +11,7 @@ import 'package:meta/meta.dart';
 part 'AppConfig.g.dart';
 
 @JsonSerializable()
-class AppConfig extends Aggregate {
+class AppConfig extends Aggregate<Map<String, dynamic>> {
   AppConfig({
     @required String uuid,
     @required this.udid,
@@ -42,7 +42,34 @@ class AppConfig extends Aggregate {
     this.securityLockAfter = Defaults.securityLockAfter,
   })  : this.talkGroups = talkGroups ?? const <String>[],
         this.units = units ?? const <String>[],
-        super(uuid);
+        super(uuid, fields: [
+          udid,
+          sentryDns,
+          version,
+          demo,
+          demoRole,
+          onboarded,
+          firstSetup,
+          storage,
+          locationWhenInUse,
+          orgId,
+          divId,
+          depId,
+          talkGroups ?? const <String>[],
+          talkGroupCatalog,
+          mapCacheTTL,
+          mapCacheCapacity,
+          locationAccuracy,
+          locationFastestInterval,
+          locationSmallestDisplacement,
+          units ?? const <String>[],
+          keepScreenOn,
+          callsignReuse,
+          securityType,
+          securityMode,
+          trustedDomains,
+          securityLockAfter,
+        ]);
   final String udid;
   final int version;
   final bool demo;

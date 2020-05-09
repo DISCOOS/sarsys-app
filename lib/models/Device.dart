@@ -1,42 +1,47 @@
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+import 'Position.dart';
 import 'converters.dart';
 
 part 'Device.g.dart';
 
 @JsonSerializable()
-class Device extends Aggregate {
+class Device extends Positionable<Map<String, dynamic>> {
   Device({
     @required String uuid,
     @required this.type,
     this.alias,
     this.number,
-    this.position,
+    this.manual,
     this.network,
     this.networkId,
     this.allocatedTo,
-    this.manual = true,
+    Position position,
     this.status = DeviceStatus.Unavailable,
-  }) : super(uuid);
+  }) : super(uuid, position, fields: [
+          type,
+          alias,
+          number,
+          manual,
+          network,
+          networkId,
+          allocatedTo,
+          status,
+        ]);
 
+  final bool manual;
   final DeviceType type;
   final DeviceStatus status;
   final String number;
   final String alias;
   final String network;
   final String networkId;
-  final Point position;
   @JsonKey(fromJson: toIncidentRef, nullable: true, includeIfNull: false)
   final AggregateRef<Incident> allocatedTo;
-
-  /// Flag indication that device is added manually
-  final bool manual;
 
   /// Factory constructor for creating a new `Device` instance
   factory Device.fromJson(Map<String, dynamic> json) => _$DeviceFromJson(json);
@@ -57,9 +62,9 @@ class Device extends Aggregate {
       uuid: clone.uuid ?? this.uuid,
       type: clone.type ?? this.type,
       alias: clone.alias ?? this.alias,
+      manual: clone.alias ?? this.manual,
       position: clone.position ?? this.position,
       number: clone.number ?? this.number,
-      manual: clone.manual ?? this.manual,
       status: clone.status ?? this.status,
       network: clone.network ?? this.network,
       networkId: clone.networkId ?? this.networkId,
@@ -72,23 +77,23 @@ class Device extends Aggregate {
     DeviceType type,
     DeviceStatus status,
     String alias,
+    bool manual,
     String network,
     String networkId,
     String number,
-    Point position,
-    bool manual,
+    Position position,
     AggregateRef<Incident> allocatedTo,
   }) {
     return Device(
       uuid: this.uuid,
       type: type ?? this.type,
-      status: status ?? this.status,
       alias: alias ?? this.alias,
-      network: network ?? this.network,
-      networkId: networkId ?? this.networkId,
       number: number ?? this.number,
-      position: position ?? this.position,
+      status: status ?? this.status,
       manual: manual ?? this.manual,
+      network: network ?? this.network,
+      position: position ?? this.position,
+      networkId: networkId ?? this.networkId,
       allocatedTo: allocatedTo ?? this.allocatedTo,
     );
   }

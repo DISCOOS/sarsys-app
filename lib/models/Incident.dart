@@ -12,7 +12,7 @@ part 'Incident.g.dart';
   explicitToJson: true,
   anyMap: true,
 )
-class Incident extends Aggregate {
+class Incident extends Aggregate<Map<String, dynamic>> {
   Incident({
     @required String uuid,
     @required this.name,
@@ -27,7 +27,19 @@ class Incident extends Aggregate {
     @required this.created,
     @required this.changed,
     this.reference,
-  }) : super(uuid);
+  }) : super(uuid, fields: [
+          name,
+          type,
+          status,
+          occurred,
+          talkgroups,
+          justification,
+          ipp,
+          meetup,
+          passcodes,
+          created,
+          changed,
+        ]);
 
   final String name;
   final IncidentType type;

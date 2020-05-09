@@ -1,7 +1,6 @@
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -14,7 +13,7 @@ part 'Unit.g.dart';
   explicitToJson: true,
   anyMap: true,
 )
-class Unit extends Aggregate {
+class Unit extends Trackable<Map<String, dynamic>> {
   Unit({
     @required String uuid,
     @required this.type,
@@ -22,18 +21,23 @@ class Unit extends Aggregate {
     @required this.status,
     @required this.callsign,
     this.phone,
-    this.tracking,
-    this.personnel = const [],
-  }) : super(uuid);
+    this.personnels = const [],
+    AggregateRef<Tracking> tracking,
+  }) : super(uuid, tracking, fields: [
+          type,
+          number,
+          status,
+          callsign,
+          phone,
+          personnels,
+        ]);
 
   final int number;
   final UnitType type;
   final UnitStatus status;
   final String phone;
   final String callsign;
-  @JsonKey(fromJson: toTrackingRef, nullable: true, includeIfNull: false)
-  final AggregateRef<Tracking> tracking;
-  final List<Personnel> personnel;
+  final List<Personnel> personnels;
 
   String get name => "${translateUnitType(type)} $number";
 
@@ -60,7 +64,7 @@ class Unit extends Aggregate {
       phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
-      personnel: clone.personnel ?? const [],
+      personnel: clone.personnels ?? const [],
     );
   }
 
@@ -82,7 +86,7 @@ class Unit extends Aggregate {
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
-      personnel: personnel ?? this.personnel ?? const [],
+      personnels: personnel ?? this.personnels ?? const [],
     );
   }
 }

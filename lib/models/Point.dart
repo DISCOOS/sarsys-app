@@ -1,75 +1,57 @@
-import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'Coordinates.dart';
+import 'converters.dart';
+import 'core.dart';
 
 part 'Point.g.dart';
 
 @JsonSerializable()
-class Point extends Equatable {
-  final double lat;
-  final double lon;
-  final double alt;
-  final double acc;
-  final DateTime timestamp;
-  final PointType type;
-
+class Point extends ValueObject<Map<String, dynamic>> {
   Point({
-    @required this.lat,
-    @required this.lon,
-    @required this.timestamp,
-    this.alt,
-    this.acc,
-    PointType type,
-  })  : this.type = type ?? PointType.Manual,
-        super([
-          lat,
-          lon,
-          alt,
-          acc,
-          timestamp,
-          type,
+    @required this.coordinates,
+  }) : super([
+          coordinates,
+          PointType.point,
         ]);
 
-  bool get isEmpty => lat == 0 && lon == 0;
-  bool get isNotEmpty => !isEmpty;
+  @JsonKey(ignore: true)
+  double get lat => coordinates.lat;
 
-  /// Factory constructor for empty `Point`
-  factory Point.now(
-    double lat,
-    double lon, {
-    double acc,
-    double alt,
-    PointType type,
-  }) {
-    return Point(
-      lat: lat,
-      lon: lon,
-      acc: acc,
-      alt: alt,
-      type: type,
-      timestamp: DateTime.now(),
-    );
-  }
+  @JsonKey(ignore: true)
+  double get lon => coordinates.lon;
+
+  @JsonKey(ignore: true)
+  double get alt => coordinates.alt;
+
+  final PointType type = PointType.point;
+
+  @JsonKey(fromJson: coordsFromJson, toJson: coordsToJson)
+  final Coordinates coordinates;
+
+  bool get isEmpty => coordinates.isEmpty;
+  bool get isNotEmpty => !isEmpty;
 
   /// Factory constructor for creating a new `Point`  instance
   factory Point.fromJson(Map<String, dynamic> json) => _$PointFromJson(json);
+
+  /// Factory constructor for creating a new `Point`  instance
+  factory Point.fromCoords({
+    @required double lat,
+    @required double lon,
+    double alt,
+  }) =>
+      Point(
+        coordinates: Coordinates(
+          lat: lat,
+          lon: lon,
+          alt: alt,
+        ),
+      );
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$PointToJson(this);
 }
 
-enum PointType { Manual, Personnel, Device, Aggregated }
-
-String translatePointType(PointType type) {
-  switch (type) {
-    case PointType.Manual:
-      return "Manuell";
-    case PointType.Device:
-      return "Apparat";
-    case PointType.Personnel:
-      return "Mannskap";
-    case PointType.Aggregated:
-    default:
-      return "Aggregert";
-  }
-}
+enum PointType { point }

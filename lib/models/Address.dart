@@ -5,7 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'Address.g.dart';
 
 @JsonSerializable()
-class Address extends ValueObject {
+class Address extends ValueObject<Map<String, dynamic>> {
   final List<String> lines;
   final String postalCode;
   final String countryCode;

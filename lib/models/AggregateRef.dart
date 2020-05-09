@@ -14,7 +14,7 @@ class AggregateRef<T extends Aggregate> extends Equatable {
   AggregateRef({
     @required this.uuid,
   })  : type = typeOf<T>().toString(),
-        super([uuid, typeOf<T>().toString()]);
+        super([uuid]);
 
   /// Factory constructor for creating a new `AggregateRef` instance
   factory AggregateRef.fromJson(Map<String, dynamic> json) => _$AggregateRefFromJson<T>(json);

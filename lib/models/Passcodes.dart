@@ -7,7 +7,7 @@ import 'package:SarSys/models/core.dart';
 part 'Passcodes.g.dart';
 
 @JsonSerializable()
-class Passcodes extends ValueObject {
+class Passcodes extends ValueObject<Map<String, dynamic>> {
   final String command;
   final String personnel;
 

@@ -1,27 +1,33 @@
 import 'dart:math';
 
-import 'package:SarSys/models/Point.dart';
-import 'package:equatable/equatable.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+import 'Position.dart';
+import 'Source.dart';
 
 part 'Track.g.dart';
 
 @JsonSerializable()
-class Track extends Equatable {
-  final TrackType type;
-  final List<Point> points;
-
+class Track extends EntityObject<Map<String, dynamic>> {
   Track({
-    @required this.points,
-    @required this.type,
-  }) : super([
-          type,
-          points,
+    @required String id,
+    @required this.status,
+    @required this.source,
+    @required this.positions,
+  }) : super(id, fields: [
+          status,
+          source,
+          positions,
         ]);
 
-  bool get isEmpty => points.isEmpty;
-  bool get isNotEmpty => points.isNotEmpty;
+  final Source source;
+  final TrackStatus status;
+  final List<Position> positions;
+
+  bool get isNotEmpty => !isEmpty;
+  bool get isEmpty => positions?.isEmpty == true;
 
   /// Factory constructor for creating a new `Track`  instance
   factory Track.fromJson(Map<String, dynamic> json) => _$TrackFromJson(json);
@@ -29,21 +35,36 @@ class Track extends Equatable {
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$TrackToJson(this);
 
+  Track cloneWith({
+    String id,
+    TrackStatus status,
+    Source source,
+    List<Position> positions,
+  }) =>
+      Track(
+        id: id ?? this.id,
+        status: status ?? this.status,
+        source: source ?? this.source,
+        positions: positions ?? this.positions,
+      );
+
   /// Truncate to number of points and return new [Track] instance
   Track truncate(int count) => Track(
-        points: this.points.skip(max(0, points.length - count)).toList(),
-        type: this.type,
+        id: id,
+        status: status,
+        source: source,
+        positions: positions.skip(max(0, positions.length - count)).toList(),
       );
 }
 
-enum TrackType { Device, Aggregate }
+enum TrackStatus { attached, detached }
 
-String translateTrackType(TrackType type) {
-  switch (type) {
-    case TrackType.Device:
-      return "Apparat";
-    case TrackType.Aggregate:
+String translateTrackStatus(TrackStatus status) {
+  switch (status) {
+    case TrackStatus.attached:
+      return "Tilknyttet";
+    case TrackStatus.detached:
     default:
-      return "Aggregert";
+      return "Ikke tilknyttet";
   }
 }

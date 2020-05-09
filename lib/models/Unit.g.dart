@@ -14,25 +14,20 @@ Unit _$UnitFromJson(Map json) {
     status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
     callsign: json['callsign'] as String,
     phone: json['phone'] as String,
-    tracking: toTrackingRef(json['tracking']),
-    personnel: (json['personnel'] as List)
+    personnels: (json['personnels'] as List)
         ?.map((e) => e == null
             ? null
             : Personnel.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),
+    tracking: toTrackingRef(json['tracking']),
   );
 }
 
 Map<String, dynamic> _$UnitToJson(Unit instance) {
   final val = <String, dynamic>{
     'uuid': instance.uuid,
-    'number': instance.number,
-    'type': _$UnitTypeEnumMap[instance.type],
-    'status': _$UnitStatusEnumMap[instance.status],
-    'phone': instance.phone,
-    'callsign': instance.callsign,
   };
 
   void writeNotNull(String key, dynamic value) {
@@ -42,7 +37,12 @@ Map<String, dynamic> _$UnitToJson(Unit instance) {
   }
 
   writeNotNull('tracking', instance.tracking?.toJson());
-  val['personnel'] = instance.personnel?.map((e) => e?.toJson())?.toList();
+  val['number'] = instance.number;
+  val['type'] = _$UnitTypeEnumMap[instance.type];
+  val['status'] = _$UnitStatusEnumMap[instance.status];
+  val['phone'] = instance.phone;
+  val['callsign'] = instance.callsign;
+  val['personnels'] = instance.personnels?.map((e) => e?.toJson())?.toList();
   return val;
 }
 
