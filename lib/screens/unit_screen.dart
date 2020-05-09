@@ -59,9 +59,9 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<UnitBloc>().onChanged(widget.unit))
-      ..add(context.bloc<TrackingBloc>().changes(widget?.unit?.tracking?.uuid));
+      ..add(context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().changes(widget?.unit?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -89,7 +89,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
                 if (snapshot.data is Unit) {
                   _unit = snapshot.data;
                 }
-                final tracking = context.bloc<TrackingBloc>().tracking[_unit.tracking.uuid];
+                final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
                 return ListView(
                   padding: const EdgeInsets.all(UnitScreen.SPACING),
                   physics: AlwaysScrollableScrollPhysics(),
@@ -110,8 +110,8 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     return UnitInfoPanel(
       unit: _unit,
       tracking: tracking,
-      devices: tracking?.devices
-          ?.map((id) => context.bloc<TrackingBloc>().deviceBloc.devices[id])
+      devices: tracking?.sources
+          ?.map((source) => context.bloc<TrackingBloc>().deviceBloc.devices[source.uuid])
           ?.where((unit) => unit != null),
       withHeader: false,
       withActions: context.bloc<UserBloc>().user?.isCommander,
@@ -123,7 +123,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   }
 
   Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(context.bloc<TrackingBloc>().tracking[unit.tracking.uuid]);
+    final center = toCenter(context.bloc<TrackingBloc>().trackings[unit.tracking.uuid]);
     return Material(
       elevation: UnitScreen.ELEVATION,
       borderRadius: BorderRadius.circular(UnitScreen.CORNER),
@@ -157,8 +157,8 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   }
 
   LatLng toCenter(Tracking event) {
-    final location = event?.point;
-    return location != null ? toLatLng(location) : null;
+    final point = event?.position?.geometry;
+    return point != null ? toLatLng(point) : null;
   }
 
   void _onMove(Tracking event) {

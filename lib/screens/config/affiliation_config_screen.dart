@@ -49,11 +49,11 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
                   padding: const EdgeInsets.only(top: 24.0),
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      hasFloatingPlaceholder: true,
                       filled: true,
                       enabled: false,
                       isDense: false,
                       labelText: 'Informasjon',
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),

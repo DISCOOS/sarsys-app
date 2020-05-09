@@ -393,7 +393,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child = _toScreen(
           RouteSettings(
             name: isUnset ? 'incidents' : _route[RouteWriter.FIELD_NAME],
-            isInitialRoute: true,
             arguments: isUnset ? null : route,
           ),
           true,

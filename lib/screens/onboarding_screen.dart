@@ -160,7 +160,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildTitle() {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.title.copyWith(
+    final titleStyle = textTheme.headline6.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
@@ -179,13 +179,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildTopBenefit({String asset, String rationale, String statement}) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final rationaleStyle = textTheme.title.copyWith(
+    final rationaleStyle = textTheme.headline6.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
       fontSize: SizeConfig.safeBlockVertical * 4.0,
     );
-    final statementStyle = Theme.of(context).textTheme.subtitle.copyWith(
+    final statementStyle = Theme.of(context).textTheme.subtitle2.copyWith(
           fontSize: SizeConfig.safeBlockVertical * 2.5,
         );
 

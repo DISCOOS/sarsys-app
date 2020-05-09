@@ -2,11 +2,13 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/device.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chips_input/flutter_chips_input.dart';
@@ -30,7 +32,7 @@ class DeviceTile extends StatelessWidget {
           toDeviceIconData(device.type),
           color: Colors.white,
         ),
-        backgroundColor: toPointStatusColor(device.position),
+        backgroundColor: toPositionStatusColor(device.position),
       ),
       title: Text([device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' ')),
       onTap: () => state.selectSuggestion(device),
@@ -64,7 +66,7 @@ class DeviceChip extends StatelessWidget {
               color: Colors.white,
             ),
             maxRadius: 10.0,
-            backgroundColor: toPointStatusColor(device.position),
+            backgroundColor: toPositionStatusColor(device.position),
           ),
           SizedBox(width: 6.0),
           Text(device.number, style: style),
@@ -143,7 +145,7 @@ class DeviceInfoPanel extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('${device.name}', style: theme.title),
+            Text('${device.name}', style: theme.headline6),
             IconButton(
               icon: Icon(Icons.close),
               onPressed: () => _onComplete(device),
@@ -162,15 +164,23 @@ class DeviceInfoPanel extends StatelessWidget {
                   context,
                   label: "UTM",
                   icon: Icons.my_location,
-                  location: device.position,
-                  formatter: (point) => toUTM(device.position, prefix: "", empty: "Ingen"),
+                  point: device.position?.geometry,
+                  formatter: (point) => toUTM(
+                    device.position?.geometry,
+                    prefix: "",
+                    empty: "Ingen",
+                  ),
                 ),
                 buildCopyableLocation(
                   context,
                   label: "Desimalgrader (DD)",
                   icon: Icons.my_location,
-                  location: device.position,
-                  formatter: (point) => toDD(device.position, prefix: "", empty: "Ingen"),
+                  point: device.position?.geometry,
+                  formatter: (point) => toDD(
+                    device.position?.geometry,
+                    prefix: "",
+                    empty: "Ingen",
+                  ),
                 ),
               ],
             ),
@@ -186,7 +196,10 @@ class DeviceInfoPanel extends StatelessWidget {
                     onPressed: device.position == null
                         ? null
                         : () {
-                            navigateToLatLng(context, toLatLng(device.position));
+                            navigateToLatLng(
+                              context,
+                              toLatLng(device.position.geometry),
+                            );
                             _onComplete(device);
                           },
                   ),
@@ -199,7 +212,7 @@ class DeviceInfoPanel extends StatelessWidget {
 
   Widget buildCopyableLocation(
     BuildContext context, {
-    Point location,
+    Point point,
     String label,
     IconData icon,
     String formatter(Point location),
@@ -208,10 +221,10 @@ class DeviceInfoPanel extends StatelessWidget {
         context: context,
         label: label,
         icon: Icon(icon),
-        value: formatter(location),
+        value: formatter(point),
         onMessage: onMessage,
         onComplete: _onComplete,
-        onTap: () => _onGoto(location),
+        onTap: () => _onGoto(point),
       );
 
   void _onGoto(Point location) {
@@ -295,7 +308,7 @@ class DeviceInfoPanel extends StatelessWidget {
       snapshot.hasData ? snapshot.data.toAffiliationNameFromNumber(device.number) : "-";
 
   Row _buildTrackingInfo(BuildContext context) {
-    final List<Point> track = _toTrack(tracking);
+    final track = _toTrack(tracking);
     return Row(
       children: <Widget>[
         Expanded(
@@ -313,7 +326,7 @@ class DeviceInfoPanel extends StatelessWidget {
             context: context,
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(asDistance(track, tail: track.length)),
+            value: formatDistance(TrackingUtils.distance(track, tail: track.length)),
             onMessage: onMessage,
             onComplete: _onComplete,
           ),
@@ -322,13 +335,17 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  List<Point> _toTrack(Tracking tracking) =>
-      tracking?.tracks?.isNotEmpty == true ? tracking?.tracks[device.uuid]?.points ?? [] : [];
+  List<Position> _toTrack(Tracking tracking) =>
+      TrackingUtils.find(
+        tracking.tracks,
+        device.uuid,
+      )?.positions ??
+      [];
 
   Row _buildEffortInfo(BuildContext context) {
-    final List<Point> track = _toTrack(tracking);
-    final effort = asEffort(track);
-    final distance = asDistance(track, tail: track.length);
+    final track = _toTrack(tracking);
+    final effort = TrackingUtils.effort(track);
+    final distance = TrackingUtils.distance(track, tail: track.length);
     return Row(
       children: <Widget>[
         Expanded(
@@ -346,7 +363,7 @@ class DeviceInfoPanel extends StatelessWidget {
             context: context,
             label: "Gj.snitthastiget",
             icon: Icon(MdiIcons.speedometer),
-            value: "${(asSpeed(distance, effort) * 3.6).toStringAsFixed(1)} km/t",
+            value: "${(TrackingUtils.speed(distance, effort) * 3.6).toStringAsFixed(1)} km/t",
             onMessage: onMessage,
             onComplete: _onComplete,
           ),

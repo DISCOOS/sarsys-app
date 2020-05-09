@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/models/User.dart';
@@ -7,30 +11,24 @@ import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
+import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/mock/tracking.dart';
+import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
-
 import 'package:SarSys/core/defaults.dart';
-
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/services/user_service.dart';
-
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
@@ -134,8 +132,11 @@ class BlocProviderController {
         incidentBloc);
 
     // Configure Unit service
-    final UnitService unitService =
-        !demo.active ? UnitService('$baseRestUrl/api/incidents', client) : UnitServiceMock.build(demo.unitCount);
+    final UnitService unitService = !demo.active
+        ? UnitService('$baseRestUrl/api/incidents', client)
+        : UnitServiceMock.build(
+            demo.unitCount,
+          );
     // ignore: close_sinks
     final UnitBloc unitBloc = UnitBloc(
         UnitRepository(
@@ -156,24 +157,29 @@ class BlocProviderController {
           );
     // ignore: close_sinks
     final DeviceBloc deviceBloc = DeviceBloc(
-        DeviceRepository(
-          deviceService,
-          connectivity: connectivityService,
-        ),
-        incidentBloc);
+      DeviceRepository(
+        deviceService,
+        connectivity: connectivityService,
+      ),
+      incidentBloc,
+    );
 
     // Configure Tracking service
     final TrackingService trackingService = !demo.active
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : TrackingServiceMock.build(
             incidentBloc,
-            deviceService as DeviceServiceMock,
-            demo.personnelCount,
-            demo.unitCount,
+            deviceService,
+            personnelCount: demo.personnelCount,
+            unitCount: demo.unitCount,
           );
+
     // ignore: close_sinks
     final TrackingBloc trackingBloc = TrackingBloc(
-      service: trackingService,
+      TrackingRepository(
+        trackingService,
+        connectivity: connectivityService,
+      ),
       unitBloc: unitBloc,
       deviceBloc: deviceBloc,
       incidentBloc: incidentBloc,
@@ -274,8 +280,8 @@ class BlocProviderController {
 
   void _onUserState(UserState state) {
     // Handle legal transitions only
-    // 1) Initialized -> Local
-    // 2) Initialized -> Ready
+    // 1) Initialized -> Local User (not authenticated), blocks are ready to receive commands
+    // 2) Initialized -> Ready User (authenticated), blocks are ready to receive commands
     // 3) Local -> Ready
     // 4) Ready -> Local
     if ([
@@ -319,10 +325,10 @@ enum BlocProviderControllerState {
   /// Required blocs (user and config) are initialized
   Initialized,
 
-  /// Local user (not authenticated), blocks are ready to receive commands
+  /// Local User (not authenticated), blocks are ready to receive commands
   Local,
 
-  /// User authenticated, blocks are ready to receive commands
+  /// Ready User (authenticated), blocks are ready to receive commands
   Ready,
 }
 

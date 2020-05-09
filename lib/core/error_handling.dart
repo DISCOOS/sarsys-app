@@ -18,9 +18,9 @@ void runAppWithErrorHandling(final Widget app, final SentryClient client) {
     }
   };
 
-  runZoned<Future<Null>>(() async {
+  runZonedGuarded<Future<Null>>(() async {
     runApp(app);
-  }, onError: (error, stackTrace) async {
+  }, (error, stackTrace) async {
     await _reportError(client, error, stackTrace);
   });
 }

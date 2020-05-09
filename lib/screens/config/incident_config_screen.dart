@@ -61,7 +61,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
         ListTile(
           title: Text(
             "Standard enheter",
-            style: Theme.of(context).textTheme.body1,
+            style: Theme.of(context).textTheme.bodyText2,
           ),
           subtitle: Text(
             "Nye hendelser får disse lagt til automatisk",

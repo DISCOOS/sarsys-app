@@ -151,80 +151,80 @@ class MapWidget extends StatefulWidget {
   @override
   MapWidgetState createState() => MapWidgetState();
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MapWidget &&
-          runtimeType == other.runtimeType &&
-          interactive == other.interactive &&
-          withSearch == other.withSearch &&
-          withControls == other.withControls &&
-          withControlsZoom == other.withControlsZoom &&
-          withControlsTool == other.withControlsTool &&
-          withControlsLayer == other.withControlsLayer &&
-          withControlsBaseMap == other.withControlsBaseMap &&
-          withControlsOffset == other.withControlsOffset &&
-          withControlsLocateMe == other.withControlsLocateMe &&
-          withScaleBar == other.withScaleBar &&
-          withCoordsPanel == other.withCoordsPanel &&
-          withPOIs == other.withPOIs &&
-          withUnits == other.withUnits &&
-          withPersonnel == other.withPersonnel &&
-          withDevices == other.withDevices &&
-          withTracking == other.withTracking &&
-          withRead == other.withRead &&
-          withWrite == other.withWrite &&
-          readZoom == other.readZoom &&
-          readCenter == other.readCenter &&
-          readLayers == other.readLayers &&
-          incident == other.incident &&
-          onTap == other.onTap &&
-          onMessage == other.onMessage &&
-          onToolChange == other.onToolChange &&
-          mapController == other.mapController &&
-          onOpenDrawer == other.onOpenDrawer &&
-          zoom == other.zoom &&
-          center == other.center &&
-          fitBounds == other.fitBounds &&
-          fitBoundOptions == other.fitBoundOptions &&
-          showLayers == other.showLayers &&
-          showRetired == other.showRetired;
-
-  @override
-  int get hashCode =>
-      interactive.hashCode ^
-      withSearch.hashCode ^
-      withControls.hashCode ^
-      withControlsZoom.hashCode ^
-      withControlsTool.hashCode ^
-      withControlsLayer.hashCode ^
-      withControlsBaseMap.hashCode ^
-      withControlsOffset.hashCode ^
-      withControlsLocateMe.hashCode ^
-      withScaleBar.hashCode ^
-      withCoordsPanel.hashCode ^
-      withPOIs.hashCode ^
-      withUnits.hashCode ^
-      withPersonnel.hashCode ^
-      withDevices.hashCode ^
-      withTracking.hashCode ^
-      withRead.hashCode ^
-      withWrite.hashCode ^
-      readZoom.hashCode ^
-      readCenter.hashCode ^
-      readLayers.hashCode ^
-      incident.hashCode ^
-      onTap.hashCode ^
-      onMessage.hashCode ^
-      onToolChange.hashCode ^
-      mapController.hashCode ^
-      onOpenDrawer.hashCode ^
-      zoom.hashCode ^
-      center.hashCode ^
-      fitBounds.hashCode ^
-      fitBoundOptions.hashCode ^
-      showLayers.hashCode ^
-      showRetired.hashCode;
+//  @override
+//  bool operator ==(Object other) =>
+//      identical(this, other) ||
+//      other is MapWidget &&
+//          runtimeType == other.runtimeType &&
+//          interactive == other.interactive &&
+//          withSearch == other.withSearch &&
+//          withControls == other.withControls &&
+//          withControlsZoom == other.withControlsZoom &&
+//          withControlsTool == other.withControlsTool &&
+//          withControlsLayer == other.withControlsLayer &&
+//          withControlsBaseMap == other.withControlsBaseMap &&
+//          withControlsOffset == other.withControlsOffset &&
+//          withControlsLocateMe == other.withControlsLocateMe &&
+//          withScaleBar == other.withScaleBar &&
+//          withCoordsPanel == other.withCoordsPanel &&
+//          withPOIs == other.withPOIs &&
+//          withUnits == other.withUnits &&
+//          withPersonnel == other.withPersonnel &&
+//          withDevices == other.withDevices &&
+//          withTracking == other.withTracking &&
+//          withRead == other.withRead &&
+//          withWrite == other.withWrite &&
+//          readZoom == other.readZoom &&
+//          readCenter == other.readCenter &&
+//          readLayers == other.readLayers &&
+//          incident == other.incident &&
+//          onTap == other.onTap &&
+//          onMessage == other.onMessage &&
+//          onToolChange == other.onToolChange &&
+//          mapController == other.mapController &&
+//          onOpenDrawer == other.onOpenDrawer &&
+//          zoom == other.zoom &&
+//          center == other.center &&
+//          fitBounds == other.fitBounds &&
+//          fitBoundOptions == other.fitBoundOptions &&
+//          showLayers == other.showLayers &&
+//          showRetired == other.showRetired;
+//
+//  @override
+//  int get hashCode =>
+//      interactive.hashCode ^
+//      withSearch.hashCode ^
+//      withControls.hashCode ^
+//      withControlsZoom.hashCode ^
+//      withControlsTool.hashCode ^
+//      withControlsLayer.hashCode ^
+//      withControlsBaseMap.hashCode ^
+//      withControlsOffset.hashCode ^
+//      withControlsLocateMe.hashCode ^
+//      withScaleBar.hashCode ^
+//      withCoordsPanel.hashCode ^
+//      withPOIs.hashCode ^
+//      withUnits.hashCode ^
+//      withPersonnel.hashCode ^
+//      withDevices.hashCode ^
+//      withTracking.hashCode ^
+//      withRead.hashCode ^
+//      withWrite.hashCode ^
+//      readZoom.hashCode ^
+//      readCenter.hashCode ^
+//      readLayers.hashCode ^
+//      incident.hashCode ^
+//      onTap.hashCode ^
+//      onMessage.hashCode ^
+//      onToolChange.hashCode ^
+//      mapController.hashCode ^
+//      onOpenDrawer.hashCode ^
+//      zoom.hashCode ^
+//      center.hashCode ^
+//      fitBounds.hashCode ^
+//      fitBoundOptions.hashCode ^
+//      showLayers.hashCode ^
+//      showRetired.hashCode;
 }
 
 class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
@@ -348,13 +348,49 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(MapWidget old) {
     super.didUpdateWidget(old);
-    // Assumes that this.hash and this.== are up to date!
-    if (widget != old) {
+    // Assumes that 'equals'-method is up to date!
+    if (!equals(widget, old)) {
       _setup(
         wasZoom: widget.zoom != old.zoom,
       );
     }
   }
+
+  bool equals(MapWidget oldMap, MapWidget newMap) =>
+      identical(oldMap, newMap) ||
+      oldMap.interactive == newMap.interactive &&
+          oldMap.withSearch == newMap.withSearch &&
+          oldMap.withControls == newMap.withControls &&
+          oldMap.withControlsZoom == newMap.withControlsZoom &&
+          oldMap.withControlsTool == newMap.withControlsTool &&
+          oldMap.withControlsLayer == newMap.withControlsLayer &&
+          oldMap.withControlsBaseMap == newMap.withControlsBaseMap &&
+          oldMap.withControlsOffset == newMap.withControlsOffset &&
+          oldMap.withControlsLocateMe == newMap.withControlsLocateMe &&
+          oldMap.withScaleBar == newMap.withScaleBar &&
+          oldMap.withCoordsPanel == newMap.withCoordsPanel &&
+          oldMap.withPOIs == newMap.withPOIs &&
+          oldMap.withUnits == newMap.withUnits &&
+          oldMap.withPersonnel == newMap.withPersonnel &&
+          oldMap.withDevices == newMap.withDevices &&
+          oldMap.withTracking == newMap.withTracking &&
+          oldMap.withRead == newMap.withRead &&
+          oldMap.withWrite == newMap.withWrite &&
+          oldMap.readZoom == newMap.readZoom &&
+          oldMap.readCenter == newMap.readCenter &&
+          oldMap.readLayers == newMap.readLayers &&
+          oldMap.incident == newMap.incident &&
+          oldMap.onTap == newMap.onTap &&
+          oldMap.onMessage == newMap.onMessage &&
+          oldMap.onToolChange == newMap.onToolChange &&
+          oldMap.mapController == newMap.mapController &&
+          oldMap.onOpenDrawer == newMap.onOpenDrawer &&
+          oldMap.zoom == newMap.zoom &&
+          oldMap.center == newMap.center &&
+          oldMap.fitBounds == newMap.fitBounds &&
+          oldMap.fitBoundOptions == newMap.fitBoundOptions &&
+          oldMap.showLayers == newMap.showLayers &&
+          oldMap.showRetired == newMap.showRetired;
 
   @override
   void didChangeDependencies() {
@@ -960,7 +996,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text("Kart", style: Theme.of(context).textTheme.title),
+                child: Text("Kart", style: Theme.of(context).textTheme.headline6),
               ),
               Divider(),
               Expanded(

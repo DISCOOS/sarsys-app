@@ -6,7 +6,7 @@ import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/point_field.dart';
+import 'package:SarSys/widgets/position_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -136,7 +136,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
           _editedName ?? _defaultName(),
-          style: Theme.of(context).textTheme.subhead,
+          style: Theme.of(context).textTheme.subtitle2,
         ),
       ),
     );
@@ -208,7 +208,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _editedAffiliation ?? _defaultAffiliation(org),
-            style: Theme.of(context).textTheme.subhead,
+            style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
@@ -225,7 +225,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _editedOrgAlias ?? _defaultOrgAlias(org),
-            style: Theme.of(context).textTheme.subhead,
+            style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
@@ -242,7 +242,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _editedFunction ?? _defaultFunction(org),
-            style: Theme.of(context).textTheme.subhead,
+            style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
@@ -342,7 +342,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     );
   }
 
-  Widget _buildPointField() => PointField(
+  Widget _buildPointField() => PositionField(
         attribute: 'point',
         initialValue: widget?.device?.position,
         labelText: "Siste posisjon",

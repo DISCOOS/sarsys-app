@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:meta/meta.dart';
 
@@ -17,7 +18,7 @@ import 'package:hive/hive.dart';
 /// should cache all changes locally before
 /// attempting to push them to a backend API.
 ///
-abstract class ConnectionAwareRepository<S, T> {
+abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   ConnectionAwareRepository({
     @required this.connectivity,
     this.compactWhen = 10,
@@ -29,11 +30,27 @@ abstract class ConnectionAwareRepository<S, T> {
   /// Get stream of state changes
   Stream<StorageState<T>> get changes => _controller.stream;
 
+  /// Check if repository is empty
+  ///
+  /// If [isReady] is [true], then [isNotEmpty] is always [false]
+  bool get isNotEmpty => !isEmpty;
+
+  /// Check if repository is empty.
+  ///
+  /// If [isReady] is [true], then [isEmpty] is always [true]
+  bool get isEmpty => !isReady || _states.isEmpty;
+
+  /// Check if repository is online
+  get isOnline => connectivity.isOnline;
+
+  /// Check if repository is offline
+  get isOffline => connectivity.isOffline;
+
   /// Get value from [key]
   T operator [](S key) => get(key);
 
   /// Get number of states
-  int get length => _states.length;
+  int get length => _isReady ? _states.length : 0;
 
   /// Get value from [key]
   T get(S key) => getState(key)?.value;
@@ -138,32 +155,33 @@ abstract class ConnectionAwareRepository<S, T> {
     return states.values;
   }
 
-  /// Apply [state] and push to remote
+  /// Apply [next] and push to remote
   @visibleForOverriding
   FutureOr<T> apply(
     StorageState<T> state,
   ) async {
     checkState();
-    final exists = await commit(validate(state));
-    if (exists && !state.isPushed) {
+    final next = validate(state);
+    final exists = await commit(next);
+    if (exists && !next.isPushed) {
       if (connectivity.isOnline) {
         try {
-          final config = await _push(
-            state,
+          final value = await _push(
+            next,
           );
           await commit(
-            StorageState.pushed(config),
+            StorageState.pushed(value),
           );
-          return config;
+          return value;
         } on SocketException {
           // Timeout - try again later
         } on Exception catch (error, stackTrace) {
           onError(error, stackTrace);
         }
       } // if offline or a SocketException was thrown
-      return _offline(state);
+      return _offline(next);
     } // if state is remote
-    return state.value;
+    return next.value;
   }
 
   /// Subscription for handling  offline -> online
@@ -260,26 +278,28 @@ abstract class ConnectionAwareRepository<S, T> {
     final previous = containsKey(key) ? _states.get(key) : null;
     switch (state.status) {
       case StorageStatus.created:
+        // Not allowed to create same value twice
         if (previous == null || previous.isPushed) {
           return state;
         }
         throw RepositoryStateExistsException(previous, state);
       case StorageStatus.changed:
         if (previous != null) {
-          // If not created, allow transition to changed
-          if (!previous.isCreated) {
-            return state;
-          } else if (isOffline) {
-            // Replace created value with updated, keeping status created
-            return previous.replace(state.value);
+          if (!previous.isDeleted) {
+            return previous.isPushed ? state : previous.replace(state.value);
           }
+          // Not allowed to update deleted state
           throw RepositoryIllegalStateException(previous, state);
         }
         throw RepositoryStateNotExistsException(state);
       case StorageStatus.deleted:
         if (previous != null) {
-          // If not created, or if created and offline, allow transition to deletion
-          if (!previous.isCreated || isOffline && state.isDeleted) {
+          // Transition from created to deleted
+          // state directly is only allowed if
+          // offline. Since it has never been
+          // pushed, it is safe to will remove
+          // it locally directly.
+          if (!previous.isCreated || isOffline) {
             return state;
           }
           throw RepositoryIllegalStateException(previous, state);
@@ -292,13 +312,12 @@ abstract class ConnectionAwareRepository<S, T> {
   }
 
   /// Commit [state] to repository
-  @protected
   Future<bool> commit(StorageState<T> state) async {
     final key = toKey(state);
     final current = _states.get(key);
     // Delete if push has succeeded or,
-    // if delete was done offline on a created stated
-    if (state.isPushed && current?.isDeleted == true || state.isDeleted && connectivity.isOffline) {
+    // if delete was done offline on a created state
+    if (shouldDelete(next: state, current: current)) {
       await _states.delete(key);
       // Can not logically exist anymore, remove it!
       _backlog.remove(key);
@@ -309,6 +328,37 @@ abstract class ConnectionAwareRepository<S, T> {
       _controller.add(state);
     }
     return containsKey(key);
+  }
+
+  /// Test if given transition should
+  /// delete value from repository.
+  ///
+  /// Value should be delete if and only if
+  /// 1) current state origin is remote
+  /// 2) current state is created with origin local
+  //    // if delete was done offline on a created state
+  bool shouldDelete({
+    StorageState next,
+    StorageState current,
+  }) =>
+      current?.isDeleted == true && next.isPushed || current?.isCreated == true && next.isDeleted;
+
+  /// Replace [state] in repository for given [key]-[value] pair
+  Future<StorageState<T>> replace(S key, T value) async {
+    final current = _assertExist(key, value: value);
+    final next = current.replace(value);
+    await commit(next);
+    return next;
+  }
+
+  StorageState _assertExist(S key, {T value}) {
+    final state = _states.get(key);
+    if (state == null) {
+      throw RepositoryStateNotExistsException(
+        StorageState.created(value),
+      );
+    }
+    return state;
   }
 
   /// Clear all states from local storage
@@ -371,6 +421,15 @@ class RepositoryException implements Exception {
   }
 }
 
+class RepositoryIllegalStateValueException extends RepositoryException {
+  final String reason;
+  final StorageState state;
+  RepositoryIllegalStateValueException([
+    this.state,
+    this.reason,
+  ]) : super('state value [${state.value?.runtimeType} ${state.value}}] is invalid: $reason');
+}
+
 class RepositoryNotReadyException extends RepositoryException {
   RepositoryNotReadyException() : super('is not ready');
 }
@@ -390,9 +449,9 @@ class RepositoryStateExistsException extends RepositoryException {
 
 class RepositoryStateNotExistsException extends RepositoryException {
   final StorageState state;
-  RepositoryStateNotExistsException(
+  RepositoryStateNotExistsException([
     this.state,
-  ) : super('state $state does not exists');
+  ]) : super('state $state does not exists');
 }
 
 class RepositoryIllegalStateException extends RepositoryException {

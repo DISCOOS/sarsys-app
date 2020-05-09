@@ -179,7 +179,7 @@ class AffiliationFormState extends State<AffiliationForm> {
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
               value,
-              style: Theme.of(context).textTheme.subhead,
+              style: Theme.of(context).textTheme.subtitle2,
             ),
           ),
         ),

@@ -5,19 +5,19 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
 import 'package:SarSys/widgets/descriptions.dart';
-import 'package:SarSys/widgets/point_field.dart';
+import 'package:SarSys/widgets/position_field.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -215,7 +215,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Text _buildReadOnlyText(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.subhead,
+      style: Theme.of(context).textTheme.subtitle2,
     );
   }
 
@@ -518,9 +518,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Widget _buildPointField() {
-    final point = _toPoint();
-    return PointField(
-      attribute: 'point',
+    final point = _toPosition();
+    return PositionField(
+      attribute: 'position',
       initialValue: point,
       labelText: "Siste posisjon",
       hintText: 'Velg posisjon',
@@ -531,15 +531,17 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  String _toTrackingHelperText(Point point) {
-    return point != null
-        ? (PointType.Manual == point.type ? 'Manuell lagt inn.' : 'Gjennomsnitt av siste posisjoner fra apparater.')
+  String _toTrackingHelperText(Position position) {
+    return position != null
+        ? (PositionSource.manual == position.source
+            ? 'Manuell lagt inn.'
+            : 'Gjennomsnitt av siste posisjoner fra apparater.')
         : '';
   }
 
-  Point _toPoint() {
-    final tracking = context.bloc<TrackingBloc>().tracking[widget?.personnel?.tracking?.uuid];
-    return tracking?.point;
+  Position _toPosition() {
+    final tracking = context.bloc<TrackingBloc>().trackings[widget?.personnel?.tracking?.uuid];
+    return tracking?.position;
   }
 
   List<Device> _getLocalDevices() => List.from(_formKey.currentState.value['devices'] ?? <Device>[]);
@@ -582,7 +584,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           PersonnelParams(
             personnel: personnel,
             devices: devices,
-            point: devices.isEmpty ? _preparePoint() : null,
+            position: devices.isEmpty ? _preparePosition() : null,
           ),
         );
       }
@@ -592,11 +594,12 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     }
   }
 
-  Point _preparePoint() {
-    final point =
-        _formKey.currentState.value["point"] == null ? null : Point.fromJson(_formKey.currentState.value["point"]);
+  Position _preparePosition() {
+    final position = _formKey.currentState.value['position'] == null
+        ? null
+        : Position.fromJson(_formKey.currentState.value['position']);
     // Only manually added points are allowed
-    return PointType.Manual == point?.type ? point : null;
+    return PositionSource.manual == position?.source ? position : null;
   }
 
   String _defaultFName() {

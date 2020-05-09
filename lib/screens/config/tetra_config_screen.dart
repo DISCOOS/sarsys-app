@@ -106,7 +106,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
         ListTile(
           title: Text(
             "Standard talegrupper",
-            style: Theme.of(context).textTheme.body1,
+            style: Theme.of(context).textTheme.bodyText2,
           ),
           subtitle: Text(
             "Nye hendelser får disse lagt til automatisk",
@@ -124,7 +124,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                   decoration: InputDecoration(
                     labelText: "Lytt til",
                     hintText: "Søk etter talegrupper",
-                    hintStyle: Theme.of(context).textTheme.body1.copyWith(color: Colors.grey),
+                    hintStyle: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey),
                     filled: true,
                     contentPadding: const EdgeInsets.all(8.0).copyWith(bottom: 10.0),
                   ),
@@ -190,7 +190,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
               child: ListTile(
                 title: Text(
                   "Gjenbruk kallesignal",
-                  style: Theme.of(context).textTheme.body1,
+                  style: Theme.of(context).textTheme.bodyText2,
                 ),
                 subtitle: Text(
                   "Kallesignal til oppløste enheter gjenbrukes",

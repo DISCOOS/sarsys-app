@@ -26,7 +26,7 @@ class TrackingView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         _buildTrackingInfo(context, bloc),
-        _buildEffortInfo(context, bloc.tracking[tuuid]),
+        _buildEffortInfo(context, bloc.trackings[tuuid]),
       ],
     );
   }
@@ -49,7 +49,7 @@ class TrackingView extends StatelessWidget {
             context: context,
             label: "Avstand sporet",
             icon: Icon(MdiIcons.tapeMeasure),
-            value: formatDistance(bloc.tracking[tuuid]?.distance),
+            value: formatDistance(bloc.trackings[tuuid]?.distance),
             onMessage: onMessage,
             onComplete: onComplete,
           ),

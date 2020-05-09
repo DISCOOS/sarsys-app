@@ -114,31 +114,41 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   @override
   Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
-    if (command is LoadIncidents) {
-      yield* _load(command);
-    } else if (command is CreateIncident) {
-      yield* _create(command);
-    } else if (command is UpdateIncident) {
-      yield* _update(command);
-    } else if (command is SelectIncident) {
-      yield* _select(command);
-    } else if (command is DeleteIncident) {
-      yield* _delete(command);
-    } else if (command is UnloadIncidents) {
-      yield* _unload(command);
-    } else if (command is UnselectIncident) {
-      yield _unselect(command);
-    } else if (command is RaiseIncidentError) {
+    try {
+      if (command is LoadIncidents) {
+        yield* _load(command);
+      } else if (command is CreateIncident) {
+        yield* _create(command);
+      } else if (command is UpdateIncident) {
+        yield* _update(command);
+      } else if (command is SelectIncident) {
+        yield* _select(command);
+      } else if (command is DeleteIncident) {
+        yield* _delete(command);
+      } else if (command is UnloadIncidents) {
+        yield* _unload(command);
+      } else if (command is UnselectIncident) {
+        yield _unselect(command);
+      } else if (command is RaiseIncidentError) {
+        yield _toError(
+          command,
+          command.data,
+        );
+      } else {
+        yield _toError(
+          command,
+          IncidentBlocError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
+      }
+    } on Exception catch (error, stackTrace) {
       yield _toError(
         command,
-        command.data,
-      );
-    } else {
-      yield _toError(
-        command,
-        IncidentError(
-          "Unsupported $command",
-          stackTrace: StackTrace.current,
+        IncidentBlocError(
+          error,
+          stackTrace: stackTrace,
         ),
       );
     }
@@ -265,7 +275,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     } else {
       yield _toError(
         command,
-        IncidentError(
+        IncidentBlocError(
           'Incident ${command.data} not found locally',
           stackTrace: command.stackTrace,
         ),
@@ -289,7 +299,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
     }
     return _toError(
       command,
-      IncidentError('No incident was selected'),
+      IncidentBlocError('No incident was selected'),
     );
   }
 
@@ -316,9 +326,9 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
 
   // Complete with error and return response as error state to bloc
   IncidentState _toError(IncidentCommand event, Object error) {
-    final object = error is IncidentError
+    final object = error is IncidentBlocError
         ? error
-        : IncidentError(
+        : IncidentBlocError(
             error,
             stackTrace: StackTrace.current,
           );
@@ -332,7 +342,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState> {
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscription != null) {
-      add(RaiseIncidentError(IncidentError(
+      add(RaiseIncidentError(IncidentBlocError(
         error,
         stackTrace: stacktrace,
       )));
@@ -415,7 +425,7 @@ class UnloadIncidents extends IncidentCommand<void, List<Incident>> {
   String toString() => 'UnloadIncidents {}';
 }
 
-class RaiseIncidentError extends IncidentCommand<Object, IncidentError> {
+class RaiseIncidentError extends IncidentCommand<Object, IncidentBlocError> {
   RaiseIncidentError(data) : super(data);
 
   @override
@@ -436,7 +446,7 @@ abstract class IncidentState<T> extends Equatable {
   bool isUpdated() => this is IncidentUpdated;
   bool isSelected() => this is IncidentSelected;
   bool isDeleted() => this is IncidentDeleted;
-  bool isError() => this is IncidentError;
+  bool isError() => this is IncidentBlocError;
 
   /// Check if data referencing [Incident.uuid] should be unloaded
   /// This method will return true if
@@ -508,12 +518,12 @@ class IncidentsUnloaded extends IncidentState<Iterable<Incident>> {
 /// ---------------------
 /// Error States
 /// ---------------------
-class IncidentError extends IncidentState<Object> {
+class IncidentBlocError extends IncidentState<Object> {
   final StackTrace stackTrace;
-  IncidentError(Object error, {this.stackTrace}) : super(error);
+  IncidentBlocError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'runtimeType {error: $data}';
+  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

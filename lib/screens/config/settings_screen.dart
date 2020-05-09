@@ -87,7 +87,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       ListTile(
         title: Text(
           "Oppsett",
-          style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       _buildGotoAffiliationConfig(),
@@ -101,13 +101,13 @@ class SettingsScreenState extends State<SettingsScreen> {
       ListTile(
         title: Text(
           "System",
-          style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       ListTile(
         title: Text(
           "Innstillinger for ${Platform.operatingSystem} app",
-          style: Theme.of(context).textTheme.body1,
+          style: Theme.of(context).textTheme.bodyText2,
         ),
         trailing: Icon(Icons.open_in_new),
         onTap: () async {
@@ -118,7 +118,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       ListTile(
         title: Text(
           "Om SarSys",
-          style: Theme.of(context).textTheme.body1,
+          style: Theme.of(context).textTheme.bodyText2,
         ),
         trailing: Icon(Icons.keyboard_arrow_right),
         onTap: () {

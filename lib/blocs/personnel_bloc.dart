@@ -6,6 +6,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/services/personnel_service.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
@@ -47,7 +48,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   void _processPersonnelMessage(event) {
     try {
-      add(_HandleMessage(event));
+      add(_InternalMessage(event));
     } on Exception catch (error, stackTrace) {
       Catcher.reportCheckedError(
         error,
@@ -64,6 +65,9 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
+
+  /// Get [Personnel] from [uuid]
+  Personnel operator [](String uuid) => repo[uuid];
 
   /// Get [PersonnelService]
   PersonnelService get service => repo.service;
@@ -102,7 +106,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   void _assertState() {
     if (incidentBloc.isUnset) {
-      throw PersonnelError(
+      throw PersonnelBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.load()'",
       );
@@ -121,7 +125,18 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   Future<Personnel> create(Personnel personnel) {
     _assertState();
     return _dispatch<Personnel>(
-      CreatePersonnel(iuuid ?? incidentBloc.selected.uuid, personnel),
+      CreatePersonnel(
+        iuuid ?? incidentBloc.selected.uuid,
+        personnel.cloneWith(
+          // Personnels should contain a tracking reference when
+          // they are created. [TrackingBloc] will use this
+          // reference to create a [Tracking] instance which the
+          // backend will create apriori using the same uuid.
+          // This allows for offline creation of tracking objects
+          // in apps resulting in a better user experience
+          tracking: TrackingUtils.ensureRef(personnel),
+        ),
+      ),
     );
   }
 
@@ -151,29 +166,39 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   @override
   Stream<PersonnelState> mapEventToState(PersonnelCommand command) async* {
-    if (command is LoadPersonnels) {
-      yield await _load(command);
-    } else if (command is CreatePersonnel) {
-      yield await _create(command);
-    } else if (command is UpdatePersonnel) {
-      yield await _update(command);
-    } else if (command is DeletePersonnel) {
-      yield await _delete(command);
-    } else if (command is UnloadPersonnels) {
-      yield await _unload(command);
-    } else if (command is _HandleMessage) {
-      yield await _process(command.data);
-    } else if (command is RaisePersonnelError) {
+    try {
+      if (command is LoadPersonnels) {
+        yield await _load(command);
+      } else if (command is CreatePersonnel) {
+        yield await _create(command);
+      } else if (command is UpdatePersonnel) {
+        yield await _update(command);
+      } else if (command is DeletePersonnel) {
+        yield await _delete(command);
+      } else if (command is UnloadPersonnels) {
+        yield await _unload(command);
+      } else if (command is _InternalMessage) {
+        yield await _process(command);
+      } else if (command is RaisePersonnelError) {
+        yield _toError(
+          command,
+          command.data,
+        );
+      } else {
+        yield _toError(
+          command,
+          PersonnelBlocError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
+      }
+    } on Exception catch (error, stackTrace) {
       yield _toError(
         command,
-        command.data,
-      );
-    } else {
-      yield _toError(
-        command,
-        PersonnelError(
-          "Unsupported $command",
-          stackTrace: StackTrace.current,
+        PersonnelBlocError(
+          error,
+          stackTrace: stackTrace,
         ),
       );
     }
@@ -189,6 +214,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   Future<PersonnelState> _create(CreatePersonnel command) async {
+    TrackingUtils.assertRef(command.data);
     var personnel = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
@@ -198,10 +224,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   Future<PersonnelState> _update(UpdatePersonnel command) async {
+    final previous = repo[command.data.uuid];
     final personnel = await repo.update(command.data);
     return _toOK(
       command,
-      PersonnelUpdated(personnel),
+      PersonnelUpdated(personnel, previous),
       result: personnel,
     );
   }
@@ -224,17 +251,21 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
     );
   }
 
-  Future<PersonnelState> _process(PersonnelMessage event) async {
-    switch (event.type) {
+  Future<PersonnelState> _process(_InternalMessage event) async {
+    switch (event.data.type) {
       case PersonnelMessageType.PersonnelChanged:
-        if (repo.containsKey(event.puuid)) {
-          return PersonnelUpdated(
-            await repo.patch(Personnel.fromJson(event.json)),
+        if (repo.containsKey(event.data.uuid)) {
+          final current = repo[event.data.uuid];
+          final next = current.withJson(event.data.json);
+          await repo.replace(
+            event.data.uuid,
+            next,
           );
+          return PersonnelUpdated(next, current);
         }
         break;
     }
-    return PersonnelError("Personnel message not recognized: $event");
+    return PersonnelBlocError("Personnel message not recognized: $event");
   }
 
   // Dispatch and return future
@@ -254,9 +285,9 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   // Complete with error and return response as error state to bloc
   PersonnelState _toError(PersonnelCommand event, Object error) {
-    final object = error is PersonnelError
+    final object = error is PersonnelBlocError
         ? error
-        : PersonnelError(
+        : PersonnelBlocError(
             error,
             stackTrace: StackTrace.current,
           );
@@ -270,7 +301,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscriptions.isNotEmpty) {
-      add(RaisePersonnelError(PersonnelError(
+      add(RaisePersonnelError(PersonnelBlocError(
         error,
         stackTrace: stacktrace,
       )));
@@ -330,11 +361,11 @@ class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
   String toString() => 'DeletePersonnel {personnel: $data}';
 }
 
-class _HandleMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessage> {
-  _HandleMessage(PersonnelMessage data) : super(data);
+class _InternalMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessage> {
+  _InternalMessage(PersonnelMessage data) : super(data);
 
   @override
-  String toString() => '_HandleMessage {message: $data}';
+  String toString() => '_InternalMessage {message: $data}';
 }
 
 class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
@@ -344,7 +375,7 @@ class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   String toString() => 'UnloadPersonnels {iuuid: $data}';
 }
 
-class RaisePersonnelError extends PersonnelCommand<PersonnelError, PersonnelError> {
+class RaisePersonnelError extends PersonnelCommand<PersonnelBlocError, PersonnelBlocError> {
   RaisePersonnelError(data) : super(data);
 
   @override
@@ -360,13 +391,17 @@ abstract class PersonnelState<T> extends Equatable {
 
   PersonnelState(this.data, [props = const []]) : super([data, ...props]);
 
-  isEmpty() => this is PersonnelsEmpty;
-  isLoaded() => this is PersonnelsLoaded;
-  isCreated() => this is PersonnelCreated;
-  isUpdated() => this is PersonnelUpdated;
-  isDeleted() => this is PersonnelDeleted;
-  isUnloaded() => this is PersonnelsUnloaded;
-  isError() => this is PersonnelError;
+  bool isError() => this is PersonnelBlocError;
+  bool isEmpty() => this is PersonnelsEmpty;
+  bool isLoaded() => this is PersonnelsLoaded;
+  bool isCreated() => this is PersonnelCreated;
+  bool isUpdated() => this is PersonnelUpdated;
+  bool isDeleted() => this is PersonnelDeleted;
+  bool isUnloaded() => this is PersonnelsUnloaded;
+
+  bool isStatusChanged() => false;
+  bool isTracked() => (data is Personnel) ? (data as Personnel).tracking?.uuid != null : false;
+  bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.Retired : false;
 }
 
 class PersonnelsEmpty extends PersonnelState<Null> {
@@ -387,14 +422,24 @@ class PersonnelCreated extends PersonnelState<Personnel> {
   PersonnelCreated(Personnel data) : super(data);
 
   @override
+  bool isTracked() => data.tracking?.uuid != null;
+
+  @override
   String toString() => 'PersonnelCreated {data: $data}';
 }
 
 class PersonnelUpdated extends PersonnelState<Personnel> {
-  PersonnelUpdated(Personnel data) : super(data);
+  final Personnel previous;
+  PersonnelUpdated(Personnel data, this.previous) : super(data);
 
   @override
-  String toString() => 'PersonnelUpdated {data: $data}';
+  bool isTracked() => data.tracking?.uuid != null;
+
+  @override
+  bool isStatusChanged() => data.status != previous.status;
+
+  @override
+  String toString() => 'PersonnelUpdated {data: $data, previous: $previous}';
 }
 
 class PersonnelDeleted extends PersonnelState<Personnel> {
@@ -415,12 +460,12 @@ class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
 /// Error States
 /// ---------------------
 
-class PersonnelError extends PersonnelState<Object> {
+class PersonnelBlocError extends PersonnelState<Object> {
   final StackTrace stackTrace;
-  PersonnelError(Object error, {this.stackTrace}) : super(error);
+  PersonnelBlocError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'PersonnelError {data: $data}';
+  String toString() => '$runtimeType {data: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

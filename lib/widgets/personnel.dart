@@ -140,7 +140,7 @@ class PersonnelWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text('${personnel.name}', style: theme.title),
+          Text('${personnel.name}', style: theme.headline6),
           IconButton(
             icon: Icon(Icons.close),
             onPressed: () => _onComplete(personnel),
@@ -157,7 +157,7 @@ class PersonnelWidget extends StatelessWidget {
       );
 
   Widget _buildLocationView() => CoordinateView(
-        point: tracking?.point,
+        point: tracking?.position?.geometry,
         onMessage: onMessage,
         onGoto: onGoto,
         onComplete: () => _onComplete(personnel),
@@ -183,7 +183,7 @@ class PersonnelWidget extends StatelessWidget {
       );
 
   TrackingView _buildTrackingView() => TrackingView(
-        tuuid: tracking?.id,
+        tuuid: tracking?.uuid,
         onMessage: onMessage,
         onComplete: () => _onComplete(personnel),
       );

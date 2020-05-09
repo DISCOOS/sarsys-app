@@ -1,9 +1,9 @@
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/device_editor.dart';
-import 'package:SarSys/editors/point_editor.dart';
+import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -95,9 +95,9 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
   @override
   Future<dartz.Either<bool, Device>> call(params) async {
     assert(params.data != null, "Device must be supplied");
-    var result = await showDialog<Point>(
+    var result = await showDialog<Position>(
       context: params.overlay.context,
-      builder: (context) => PointEditor(
+      builder: (context) => PositionEditor(
         params.data.position,
         title: "Sett siste kjente posisjon",
         controller: Provider.of<PermissionController>(params.context),

@@ -1,7 +1,6 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -52,21 +51,23 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
       ),
     );
     if (result == null) return dartz.Left(false);
+
+    // Create incident
     final incident = await params.bloc.create(result.left);
+
+    // Create default units?
     if (result.right.isNotEmpty) {
+      final templates = result.right;
       final org = await FleetMapService().fetchOrganization(Defaults.orgId);
       final config = params.context.bloc<AppConfigBloc>().config;
       final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
-      result.right.forEach((template) async {
+      templates.forEach((template) async {
         final unit = params.context.bloc<UnitBloc>().fromTemplate(
               department,
               template,
             );
         if (unit != null) {
-          final actual = await params.context.bloc<UnitBloc>().create(unit);
-          await params.context.bloc<TrackingBloc>().trackUnit(
-                actual,
-              );
+          await params.context.bloc<UnitBloc>().create(unit);
         }
       });
     }

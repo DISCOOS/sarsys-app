@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -16,16 +16,20 @@ import 'package:uuid/uuid.dart';
 class DeviceBuilder {
   static Device create({
     String uuid,
-    Point center,
+    Position position,
     String number,
     DeviceType type = DeviceType.App,
+    DeviceStatus status = DeviceStatus.Unavailable,
+    bool randomize = false,
   }) {
     return Device.fromJson(
       createDeviceAsJson(
         uuid ?? Uuid().v4(),
         type ?? DeviceType.App,
         number ?? '1',
-        center ?? toPoint(Defaults.origo),
+        position ?? toPosition(Defaults.origo),
+        status ?? DeviceStatus.Unavailable,
+        randomize,
       ),
     );
   }
@@ -34,19 +38,23 @@ class DeviceBuilder {
     String uuid,
     DeviceType type,
     String number,
-    Point center,
+    Position position,
+    DeviceStatus status,
+    bool randomize,
   ) {
     final rnd = math.Random();
-    final point = createPointAsJson(
-      center.lat + nextDouble(rnd, 0.03),
-      center.lon + nextDouble(rnd, 0.03),
-    );
+    final actual = randomize
+        ? createPositionAsJson(
+            position.lat + nextDouble(rnd, 0.03),
+            position.lon + nextDouble(rnd, 0.03),
+          )
+        : jsonEncode(position.toJson());
     return json.decode('{'
         '"uuid": "$uuid",'
         '"type": "${enumName(type)}",'
-        '"status": "${enumName(DeviceStatus.Unavailable)}",'
+        '"status": "${enumName(status ?? DeviceStatus.Unavailable)}",'
         '"number": "$number",'
-        '"point": $point,'
+        '"position": $actual,'
         '"manual": false'
         '}');
   }
@@ -55,8 +63,12 @@ class DeviceBuilder {
     return (-100 + rnd.nextInt(200)).toDouble() / 100 * fraction;
   }
 
-  static String createPointAsJson(double lat, double lon) {
-    return json.encode(Point.now(lat, lon, type: PointType.Device).toJson());
+  static String createPositionAsJson(double lat, double lon) {
+    return json.encode(Position.now(
+      lat: lat,
+      lon: lon,
+      source: PositionSource.device,
+    ).toJson());
   }
 }
 
@@ -67,22 +79,28 @@ class DeviceServiceMock extends Mock implements DeviceService {
   Device add(
     String iuuid, {
     String uuid,
-    Point center,
+    Position position,
     String number = '1',
     DeviceType type = DeviceType.App,
+    DeviceStatus status = DeviceStatus.Unavailable,
   }) {
     final device = DeviceBuilder.create(
       uuid: uuid,
       type: type,
       number: number,
-      center: center,
+      status: status,
+      position: position,
     );
+    put(iuuid, device);
+    return device;
+  }
+
+  void put(String iuuid, Device device) {
     if (deviceRepo.containsKey(iuuid)) {
       deviceRepo[iuuid].putIfAbsent(device.uuid, () => device);
     } else {
       deviceRepo[iuuid] = {device.uuid: device};
     }
-    return device;
   }
 
   List<Device> remove(uuid) {
@@ -139,7 +157,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       }
       // Only generate devices for automatically generated incidents
       if (iuuid.startsWith('a:') && devices.isEmpty) {
-        Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.selected.ipp?.point;
+        Position center = _toCenter(bloc);
         _createDevices(DeviceType.Tetra, devices, tetraCount, iuuid, 6114000, center, rnd, simulations);
         _createDevices(DeviceType.App, devices, appCount, iuuid, 91500000, center, rnd, simulations);
       }
@@ -152,7 +170,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         devices = deviceRepo.putIfAbsent(iuuid, () => {});
       }
       var device = _.positionalArguments[1] as Device;
-      Point center = bloc.isUnset ? toPoint(Defaults.origo) : bloc.selected.ipp?.point;
+      Position center = _toCenter(bloc);
       if (simulate) {
         device = _simulate(
           Device(
@@ -160,10 +178,10 @@ class DeviceServiceMock extends Mock implements DeviceService {
             type: device.type,
             status: device.status,
             position: device.position ??
-                Point.now(
-                  center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
-                  center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
-                  type: PointType.Device,
+                Position.now(
+                  lat: center.lat + DeviceBuilder.nextDouble(rnd, 0.03),
+                  lon: center.lon + DeviceBuilder.nextDouble(rnd, 0.03),
+                  source: PositionSource.device,
                 ),
             alias: device.alias,
             number: device.number,
@@ -206,13 +224,22 @@ class DeviceServiceMock extends Mock implements DeviceService {
     return mock;
   }
 
+  static Position _toCenter(IncidentBloc bloc) {
+    return bloc.isUnset
+        ? toPosition(Defaults.origo)
+        : Position.fromPoint(
+            bloc.selected.ipp.point,
+            source: PositionSource.manual,
+          );
+  }
+
   static void _createDevices(
     DeviceType type,
     Map<String, Device> devices,
     int count,
     String iuuid,
     int number,
-    Point center,
+    Position center,
     math.Random rnd,
     Map<String, _DeviceSimulation> simulations,
   ) {
@@ -226,6 +253,8 @@ class DeviceServiceMock extends Mock implements DeviceService {
               type,
               "${++number % 10 == 0 ? ++number : number}",
               center,
+              DeviceStatus.Unavailable,
+              true,
             ),
           ),
           rnd,
@@ -241,7 +270,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   ) {
     final simulation = _DeviceSimulation(
       uuid: device.uuid,
-      point: device.position,
+      position: device.position,
       steps: 16,
       delta: DeviceBuilder.nextDouble(rnd, 0.02),
     );
@@ -264,9 +293,9 @@ class DeviceServiceMock extends Mock implements DeviceService {
       devices.take(min).forEach((device) {
         if (simulations.containsKey(device.uuid)) {
           var simulation = simulations[device.uuid];
-          var point = simulation.progress(rnd.nextDouble() * 20.0);
+          var position = simulation.progress(rnd.nextDouble() * 20.0);
           device = device.cloneWith(
-            position: point,
+            position: position,
           );
           devicesMap[iuuid].update(
             device.uuid,
@@ -292,47 +321,47 @@ class _DeviceSimulation {
   final double delta;
 
   int current;
-  Point point;
+  Position position;
 
-  _DeviceSimulation({this.delta, this.uuid, this.point, this.steps}) : current = 0;
+  _DeviceSimulation({this.delta, this.uuid, this.position, this.steps}) : current = 0;
 
-  Point progress(double acc) {
+  Position progress(double acc) {
     var leg = ((current / 4.0) % 4 + 1).toInt();
     switch (leg) {
       case 1:
-        point = Point.now(
-          point.lat,
-          point.lon + delta / steps,
+        position = Position.now(
+          lat: position.lat,
+          lon: position.lon + delta / steps,
           acc: acc,
-          type: PointType.Device,
+          source: PositionSource.device,
         );
         break;
       case 2:
-        point = Point.now(
-          point.lat - delta / steps,
-          point.lon,
+        position = Position.now(
+          lat: position.lat - delta / steps,
+          lon: position.lon,
           acc: acc,
-          type: PointType.Device,
+          source: PositionSource.device,
         );
         break;
       case 3:
-        point = Point.now(
-          point.lat,
-          point.lon - delta / steps,
+        position = Position.now(
+          lat: position.lat,
+          lon: position.lon - delta / steps,
           acc: acc,
-          type: PointType.Device,
+          source: PositionSource.device,
         );
         break;
       case 4:
-        point = Point.now(
-          point.lat + delta / steps,
-          point.lon,
+        position = Position.now(
+          lat: position.lat + delta / steps,
+          lon: position.lon,
           acc: acc,
-          type: PointType.Device,
+          source: PositionSource.device,
         );
         break;
     }
     current = (current + 1) % steps;
-    return point;
+    return position;
   }
 }

@@ -107,9 +107,9 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
   }
 
   GeocodeResult _toResult(xml.XmlElement node) {
-    final point = Point.now(
-      double.tryParse(node.findElements('nord')?.first?.text) ?? 0.0,
-      double.tryParse(node.findElements('aust')?.first?.text) ?? 0.0,
+    final point = Point.fromCoords(
+      lat: double.tryParse(node.findElements('nord')?.first?.text) ?? 0.0,
+      lon: double.tryParse(node.findElements('aust')?.first?.text) ?? 0.0,
     );
     return GeocodeResult(
       icon: Icons.place,
@@ -262,9 +262,9 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     int radius = 20,
   }) {
     final coords = feature['geometry']['coordinates'];
-    final point = Point.now(
-      coords[1] ?? 0.0,
-      coords[0] ?? 0.0,
+    final point = Point.fromCoords(
+      lat: coords[1] ?? 0.0,
+      lon: coords[0] ?? 0.0,
     );
     return GeocodeResult(
       icon: icon ?? Icons.home,
@@ -361,12 +361,11 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in devices tracked with this unit
           controller
               .bloc<TrackingBloc>()
-              .tracking[unit.tracking.uuid]
-              .devices
+              .devices(unit.tracking.uuid)
               .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
-      .where((unit) => controller.bloc<TrackingBloc>().tracking[unit.tracking.uuid].point != null)
+      .where((unit) => controller.bloc<TrackingBloc>().trackings[unit.tracking.uuid].position != null)
       .map((unit) => AddressLookup(
-            point: controller.bloc<TrackingBloc>().tracking[unit.tracking.uuid].point,
+            point: controller.bloc<TrackingBloc>().trackings[unit.tracking.uuid].position.geometry,
             icon: Icons.group,
             title: unit.name,
             type: GeocodeType.Object,
@@ -385,12 +384,11 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in devices tracked with this personnel
           controller
               .bloc<TrackingBloc>()
-              .tracking[p.tracking.uuid]
-              .devices
+              .devices(p.tracking.uuid)
               .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
-      .where((p) => controller.bloc<TrackingBloc>().tracking[p.tracking.uuid].point != null)
+      .where((p) => controller.bloc<TrackingBloc>().trackings[p.tracking.uuid].position != null)
       .map((p) => AddressLookup(
-            point: controller.bloc<TrackingBloc>().tracking[p.tracking.uuid].point,
+            point: controller.bloc<TrackingBloc>().trackings[p.tracking.uuid].position.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -405,7 +403,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
       .where((p) => _prepare(p).contains(match))
       .where((p) => p.position != null)
       .map((p) => AddressLookup(
-            point: p.position,
+            point: p.position.geometry,
             title: p.name,
             icon: Icons.person,
             type: GeocodeType.Object,
@@ -442,9 +440,9 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
           icon: Icons.home,
           title: "${address.thoroughfare ?? address.featureName} ${address.subThoroughfare ?? ''}",
           address: _toAddress(address),
-          position: toUTM(Point.now(
-            address.coordinates.latitude,
-            address.coordinates.longitude,
+          position: toUTM(Point.fromCoords(
+            lat: address.coordinates.latitude,
+            lon: address.coordinates.longitude,
           )),
           latitude: address.coordinates.latitude,
           longitude: address.coordinates.longitude,

@@ -49,8 +49,8 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final title = Theme.of(context).textTheme.title;
-    final filter = Theme.of(context).textTheme.subtitle;
+    final title = Theme.of(context).textTheme.headline6;
+    final filter = Theme.of(context).textTheme.subtitle2;
     return DraggableScrollableSheet(
       expand: false,
       builder: (context, controller) {

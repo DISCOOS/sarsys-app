@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 class LocationService {
   LocationService._internal(AppConfigBloc bloc) {
+    assert(bloc != null, "AppConfigBloc must be supplied");
     _appConfigBloc = bloc;
     _geolocator = Geolocator();
     _events.insert(0, CreateEvent(bloc.config));
@@ -31,7 +32,7 @@ class LocationService {
   StreamController<Position> _positionController = StreamController.broadcast();
   StreamController<LocationEvent> _eventController = StreamController.broadcast();
 
-  factory LocationService(AppConfigBloc bloc) {
+  factory LocationService([AppConfigBloc bloc]) {
     if (_singleton == null || _singleton.disposed) {
       _singleton = LocationService._internal(bloc);
     }

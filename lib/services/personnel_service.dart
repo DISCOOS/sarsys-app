@@ -47,8 +47,8 @@ class PersonnelService {
 enum PersonnelMessageType { PersonnelChanged }
 
 class PersonnelMessage {
-  final String puuid;
+  final String uuid;
   final PersonnelMessageType type;
   final Map<String, dynamic> json;
-  PersonnelMessage(this.puuid, this.type, this.json);
+  PersonnelMessage(this.uuid, this.type, this.json);
 }

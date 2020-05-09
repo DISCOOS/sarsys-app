@@ -13,7 +13,7 @@ class UnitBuilder {
   static Unit create({
     String uuid,
     String userId,
-    String tracking,
+    String tuuid,
     int number = 1,
     List<Personnel> personnels,
     UnitType type = UnitType.Team,
@@ -25,8 +25,8 @@ class UnitBuilder {
         type: type ?? UnitType.Team,
         number: number ?? 1,
         status: status ?? UnitStatus.Mobilized,
-        tracking: tracking,
-        personnel: (personnels ?? []).map((p) => jsonEncode(p.toJson())).toList(),
+        tuuid: tuuid,
+        personnels: (personnels ?? []).map((p) => jsonEncode(p.toJson())).toList(),
       ),
     );
   }
@@ -36,8 +36,8 @@ class UnitBuilder {
     UnitType type,
     int number,
     UnitStatus status,
-    String tracking,
-    List<String> personnel,
+    List<String> personnels,
+    String tuuid,
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
@@ -45,8 +45,8 @@ class UnitBuilder {
         '"type": "${enumName(type)}",'
         '"callsign": "${translateUnitType(type)} $number",'
         '"status": "${enumName(status)}",'
-        '"personnel": [${personnel != null ? personnel.join(',') : ''}]'
-        '${tracking != null ? ',"tracking": {"uuid": "$tracking"}' : ''}'
+        '"personnels": [${personnels != null ? personnels.join(',') : ''}],'
+        '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Unit"}'
         '}');
   }
 }
@@ -65,7 +65,7 @@ class UnitServiceMock extends Mock implements UnitService {
       uuid: uuid,
       type: type,
       status: status,
-      tracking: tracking,
+      tuuid: tracking,
     );
     if (unitsRepo.containsKey(iuuid)) {
       unitsRepo[iuuid].putIfAbsent(unit.uuid, () => unit);
@@ -108,7 +108,7 @@ class UnitServiceMock extends Mock implements UnitService {
                   type: UnitType.Team,
                   number: i,
                   status: UnitStatus.Mobilized,
-                  tracking: "$iuuid:t:u:$i",
+                  tuuid: "$iuuid:t:u:$i",
                 ),
               ),
             ),

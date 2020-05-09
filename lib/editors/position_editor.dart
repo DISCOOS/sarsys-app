@@ -5,23 +5,24 @@ import 'dart:ui';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/models/Position.dart';
+import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/coordinate_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
-class PointEditor extends StatefulWidget {
-  final Point point;
+class PositionEditor extends StatefulWidget {
+  final Position position;
   final String title;
   final Incident incident;
   final PermissionController controller;
 
-  const PointEditor(
-    this.point, {
+  const PositionEditor(
+    this.position, {
     Key key,
     this.incident,
     @required this.title,
@@ -29,14 +30,14 @@ class PointEditor extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PointEditorState createState() => _PointEditorState();
+  _PositionEditorState createState() => _PositionEditorState();
 }
 
-class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin {
+class _PositionEditorState extends State<PositionEditor> with TickerProviderStateMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
-  Point _current;
+  Position _current;
   MapSearchField _searchField;
   IncidentMapController _mapController;
 
@@ -48,16 +49,31 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
     _mapController = IncidentMapController();
     _changes = StreamController<LatLng>();
     // TODO: Use device location as default location
-    _current = widget.point == null ? Point.now(59.5, 10.09) : widget.point;
+    _current = _ensurePosition();
     _searchField = MapSearchField(
       key: _searchFieldKey,
       offset: 106.0,
       withBorder: false,
       onError: _onError,
       mapController: _mapController,
-      onMatch: (point) => setState(() => _current = Point.now(point.latitude, point.longitude)),
+      onMatch: (point) => setState(() => _setFromLatLng(point)),
     );
   }
+
+  Position _setFromLatLng(LatLng point) => _current = Position.now(
+        lat: point.latitude,
+        lon: point.longitude,
+        source: PositionSource.manual,
+      );
+
+  Object _ensurePosition() => widget.position == null
+      ? LocationService().current ??
+          Position.now(
+            lat: 59.5,
+            lon: 10.09,
+            source: PositionSource.manual,
+          )
+      : widget.position;
 
   @override
   void dispose() {
@@ -139,7 +155,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   Widget _buildUTMField() {
     return StreamBuilder<LatLng>(
-        initialData: toLatLng(_current),
+        initialData: toLatLng(_current?.geometry),
         stream: _changes.stream,
         builder: (context, snapshot) {
           return snapshot.hasData
@@ -149,7 +165,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
                     point: snapshot.data,
                     onChanged: (point) {
                       _mapController.animatedMove(point, _mapController.zoom, this);
-                      _current = Point.now(point.latitude, point.longitude);
+                      _setFromLatLng(point);
                     },
                   ),
                 )
@@ -206,7 +222,7 @@ class _PointEditorState extends State<PointEditor> with TickerProviderStateMixin
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
     if (hasGesture) {
-      _current = Point.now(position.center.latitude, position.center.longitude);
+      _setFromLatLng(position.center);
       _changes.add(position.center);
     }
   }

@@ -57,7 +57,7 @@ class POIInfoPanel extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('${poi.name}', style: theme.title),
+            Text('${poi.name}', style: theme.headline6),
             IconButton(
               icon: Icon(Icons.close),
               onPressed: onCancel ?? onComplete,

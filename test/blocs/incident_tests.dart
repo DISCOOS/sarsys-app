@@ -21,7 +21,10 @@ void main() async {
     () async {
       expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD BE unset");
       expect(harness.incidentBloc.initialState, isA<IncidentUnset>(), reason: "Unexpected incident state");
-      await expectExactlyLater(harness.incidentBloc, [isA<IncidentUnset>()]);
+      await expectExactlyLater(harness.incidentBloc, [
+        isA<IncidentUnset>(),
+        isA<IncidentsLoaded>(),
+      ]);
     },
   );
 

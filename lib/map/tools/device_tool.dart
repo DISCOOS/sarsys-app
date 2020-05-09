@@ -4,7 +4,10 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -44,14 +47,14 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
 
   @override
   LatLng toPoint(Device device) {
-    return toLatLng(device?.position);
+    return toLatLng(device?.position?.geometry);
   }
 
   void _show(BuildContext context, List<Device> devices) {
     if (devices.length == 1) {
       _showInfo(context, devices.first);
     } else {
-      final style = Theme.of(context).textTheme.title;
+      final style = Theme.of(context).textTheme.headline6;
       final size = MediaQuery.of(context).size;
       showDialog(
         context: context,
@@ -77,8 +80,8 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
 
   void _showInfo(BuildContext context, Device device) async {
     final unit = bloc.units.find(device);
-    final personnel = bloc.personnel.find(device);
-    final tracking = bloc.tracking[unit?.tracking?.uuid] ?? bloc.tracking[personnel?.tracking?.uuid];
+    final personnel = bloc.personnels.find(device);
+    final tracking = _ensureTracking(unit, personnel);
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -107,6 +110,9 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
       },
     );
   }
+
+  Tracking _ensureTracking(Unit unit, Personnel personnel) =>
+      bloc.trackings[unit?.tracking?.uuid] ?? bloc.trackings[personnel?.tracking?.uuid];
 
   void _goto(BuildContext context, Point point) {
     controller.move(toLatLng(point), controller.zoom);

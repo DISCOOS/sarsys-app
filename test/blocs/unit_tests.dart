@@ -77,7 +77,7 @@ void main() async {
       expectThrough(harness.unitBloc, isA<UnitCreated>());
     });
 
-    test('SHOULD update incident and push to backend', () async {
+    test('SHOULD update unit and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
       final incident = await _prepare(harness);
@@ -235,7 +235,7 @@ void main() async {
         equals(StorageStatus.created),
         reason: "SHOULD HAVE status CREATED",
       );
-      expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one incident");
+      expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expectThrough(harness.unitBloc, isA<UnitCreated>());
     });
 
@@ -377,7 +377,9 @@ Future _testShouldDeleteCloneWhenPersonnelIsDeleted(BlocTestHarness harness) asy
 
   // Assert
   expect(
-    harness.unitBloc.repo.states[unit.uuid].value.personnel.firstWhere((p) => p == updated, orElse: () => null)?.status,
+    harness.unitBloc.repo.states[unit.uuid].value.personnels
+        .firstWhere((p) => p == updated, orElse: () => null)
+        ?.status,
     isNull,
     reason: "SHOULD NOT contain $p2",
   );
@@ -400,7 +402,9 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
     reason: "SHOULD HAVE status OnScene",
   );
   expect(
-    harness.unitBloc.repo.states[unit.uuid].value.personnel.firstWhere((p) => p == updated, orElse: () => null)?.status,
+    harness.unitBloc.repo.states[unit.uuid].value.personnels
+        .firstWhere((p) => p == updated, orElse: () => null)
+        ?.status,
     equals(PersonnelStatus.OnScene),
     reason: "SHOULD HAVE status OnScene",
   );

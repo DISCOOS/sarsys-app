@@ -1,7 +1,13 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+
+import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
@@ -15,16 +21,11 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/device.dart';
 import 'package:SarSys/widgets/personnel.dart';
-import 'package:SarSys/widgets/point_field.dart';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:SarSys/widgets/position_field.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;
-  final Point point;
+  final Position position;
   final Iterable<Device> devices;
   final Iterable<Personnel> personnel;
   final PermissionController controller;
@@ -35,7 +36,7 @@ class UnitEditor extends StatefulWidget {
     Key key,
     @required this.controller,
     this.unit,
-    this.point,
+    this.position,
     this.type = UnitType.Team,
     this.devices = const [],
     this.personnel = const [],
@@ -148,7 +149,7 @@ class _UnitEditorState extends State<UnitEditor> {
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),
                 SizedBox(height: SPACING),
-                _buildPointField(),
+                _buildPositionField(),
                 SizedBox(height: MediaQuery.of(context).size.height / 2),
               ],
             ),
@@ -169,7 +170,7 @@ class _UnitEditorState extends State<UnitEditor> {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
           _editedName ?? _defaultName(),
-          style: Theme.of(context).textTheme.subhead,
+          style: Theme.of(context).textTheme.subtitle2,
         ),
       ),
     );
@@ -504,7 +505,7 @@ class _UnitEditorState extends State<UnitEditor> {
           .where((personnel) =>
               // Add locally removed devices
               actual.contains(personnel.uuid) && !local.contains(personnel.uuid) ||
-              context.bloc<TrackingBloc>().aggregates.elementAt(personnel.tracking.uuid) == null)
+              context.bloc<TrackingBloc>().trackables.elementAt(personnel.tracking.uuid) == null)
           .where((personnel) =>
               personnel.name.toLowerCase().contains(lowercaseQuery) ||
               translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
@@ -514,37 +515,39 @@ class _UnitEditorState extends State<UnitEditor> {
     return const <Personnel>[];
   }
 
-  Widget _buildPointField() {
-    final point = _toPoint();
-    return PointField(
-      attribute: 'point',
-      initialValue: point,
+  Widget _buildPositionField() {
+    final position = _toPosition();
+    return PositionField(
+      attribute: 'position',
+      initialValue: position,
       labelText: "Siste posisjon",
       hintText: 'Velg posisjon',
       errorText: 'Posisjon må oppgis',
-      helperText: _toTrackingHelperText(point),
+      helperText: _toTrackingHelperText(position),
       controller: widget.controller,
       onChanged: (point) => setState(() {}),
     );
   }
 
-  String _toTrackingHelperText(Point point) {
-    return point != null
-        ? (PointType.Manual == point.type
+  String _toTrackingHelperText(Position position) {
+    return position != null
+        ? (PositionSource.manual == position.source
             ? 'Manuell lagt inn.'
             : 'Gjennomsnitt av siste posisjoner fra mannskap og apparater.')
         : '';
   }
 
-  Point _toPoint() {
-    final tracking = context.bloc<TrackingBloc>().tracking[widget?.unit?.tracking?.uuid];
-    return tracking?.point ?? widget.point;
+  Position _toPosition() {
+    final tracking = context.bloc<TrackingBloc>().trackings[tuuid];
+    return tracking?.position ?? widget.position;
   }
+
+  String get tuuid => widget?.unit?.tracking?.uuid;
 
   List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
 
   List<Device> _getActualDevices() {
-    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(widget?.unit?.tracking?.uuid,
+    return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(tuuid,
         // Include closed tracks
         exclude: []) : [])
       ..toList()
@@ -554,17 +557,17 @@ class _UnitEditorState extends State<UnitEditor> {
   List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);
 
   List<Personnel> _getActualPersonnel() {
-    return (widget?.unit?.personnel ?? []).toList()..addAll(widget.personnel ?? []);
+    return (widget?.unit?.personnels ?? []).toList()..addAll(widget.personnel ?? []);
   }
 
-  Point _preparePoint() {
-    final point = _formKey.currentState.value["point"] == null
+  Position _preparePosition() {
+    final position = _formKey.currentState.value['position'] == null
         ? null
-        : Point.fromJson(
-            _formKey.currentState.value["point"],
+        : Position.fromJson(
+            _formKey.currentState.value['position'],
           );
     // Only manually added points are allowed
-    return PointType.Manual == point?.type ? point : null;
+    return PositionSource.manual == position?.source ? position : null;
   }
 
   String _defaultNumber() {
@@ -615,12 +618,9 @@ class _UnitEditorState extends State<UnitEditor> {
   void _submit() async {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
-      var unit = widget.unit == null
-          // Filter out empty text
-          ? Unit.fromJson(_formKey.currentState.value)
-          : widget.unit.withJson(_formKey.currentState.value);
       var response = true;
-      if (UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status) {
+      var unit = _toUnit();
+      if (_changedToRetired(unit)) {
         response = await prompt(
           context,
           "Oppløs ${unit.name}",
@@ -634,7 +634,7 @@ class _UnitEditorState extends State<UnitEditor> {
             unit: unit,
             devices: _devices,
             personnel: _personnel,
-            point: _preparePoint(),
+            position: _preparePosition(),
           ),
         );
       }
@@ -643,4 +643,19 @@ class _UnitEditorState extends State<UnitEditor> {
       setState(() {});
     }
   }
+
+  bool _changedToRetired(Unit unit) => UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status;
+
+  Unit _toUnit() {
+    return widget.unit == null
+        // Filter out empty text
+        ? _createdUnit()
+        : _updatedUnit();
+  }
+
+  Unit _createdUnit() => Unit.fromJson(_formKey.currentState.value).cloneWith(
+        tracking: TrackingUtils.newRef(),
+      );
+
+  Unit _updatedUnit() => widget.unit.withJson(_formKey.currentState.value);
 }

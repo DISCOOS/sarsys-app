@@ -50,7 +50,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   }
 
   PersonnelWidget _buildInfoPanel(BuildContext context) {
-    final tracking = context.bloc<TrackingBloc>().tracking[_personnel.tracking.uuid];
+    final tracking = context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid];
     return PersonnelWidget(
       personnel: _personnel,
       tracking: tracking,

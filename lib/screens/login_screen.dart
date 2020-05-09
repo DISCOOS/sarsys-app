@@ -89,10 +89,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   Widget build(BuildContext context) {
     SizeConfig.init(context);
     textTheme ??= Theme.of(context).textTheme;
-    titleStyle ??= textTheme.subhead.copyWith(
+    titleStyle ??= textTheme.subtitle2.copyWith(
       fontSize: SizeConfig.safeBlockVertical * 2.5,
     );
-    emailStyle ??= textTheme.body1.copyWith(
+    emailStyle ??= textTheme.bodyText2.copyWith(
       color: textTheme.caption.color,
       fontSize: SizeConfig.safeBlockVertical * 2.1,
     );
@@ -281,7 +281,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     FontWeight weight, {
     Color color = color,
   }) =>
-      Theme.of(context).textTheme.title.copyWith(
+      Theme.of(context).textTheme.headline6.copyWith(
             fontSize: size,
             color: color,
             fontWeight: weight,

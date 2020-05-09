@@ -45,7 +45,10 @@ class PositionTool extends MapTool {
           child: POIInfoPanel(
             poi: POI(
               name: "Posisjon",
-              point: Point.now(point.latitude, point.longitude),
+              point: Point.fromCoords(
+                lat: point.latitude,
+                lon: point.longitude,
+              ),
               type: POIType.Any,
             ),
             onMessage: onMessage,

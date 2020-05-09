@@ -68,7 +68,7 @@ class UnitInfoPanel extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('${unit.name}', style: theme.title),
+            Text('${unit.name}', style: theme.headline6),
             IconButton(
               icon: Icon(Icons.close),
               onPressed: () => _onComplete(unit),
@@ -88,19 +88,27 @@ class UnitInfoPanel extends StatelessWidget {
                   label: "UTM",
                   icon: Icons.my_location,
                   tracking: tracking,
-                  formatter: (point) => toUTM(tracking?.point, prefix: "", empty: "Ingen"),
+                  formatter: (point) => toUTM(
+                    tracking?.position?.geometry,
+                    prefix: "",
+                    empty: "Ingen",
+                  ),
                 ),
                 buildCopyableLocation(
                   context,
                   label: "Desimalgrader (DD)",
                   icon: Icons.my_location,
                   tracking: tracking,
-                  formatter: (point) => toDD(tracking?.point, prefix: "", empty: "Ingen"),
+                  formatter: (point) => toDD(
+                    tracking?.position?.geometry,
+                    prefix: "",
+                    empty: "Ingen",
+                  ),
                 ),
               ],
             ),
           ),
-          if (tracking?.point != null)
+          if (tracking?.position != null)
             Expanded(
               flex: 2,
               child: Column(
@@ -108,10 +116,15 @@ class UnitInfoPanel extends StatelessWidget {
                 children: <Widget>[
                   IconButton(
                     icon: Icon(Icons.navigation, color: Colors.black45),
-                    onPressed: tracking?.point == null
+                    onPressed: tracking?.position == null
                         ? null
                         : () {
-                            navigateToLatLng(context, toLatLng(tracking?.point));
+                            navigateToLatLng(
+                              context,
+                              toLatLng(
+                                tracking?.position?.geometry,
+                              ),
+                            );
                             _onComplete();
                           },
                   ),
@@ -133,8 +146,8 @@ class UnitInfoPanel extends StatelessWidget {
         context: context,
         label: label,
         icon: Icon(icon),
-        value: formatter(tracking?.point),
-        onTap: () => _onGoto(tracking?.point),
+        value: formatter(tracking?.position?.geometry),
+        onTap: () => _onGoto(tracking?.position?.geometry),
         onMessage: onMessage,
         onComplete: _onComplete,
       );
@@ -215,7 +228,7 @@ class UnitInfoPanel extends StatelessWidget {
       );
 
   String _toPersonnel() {
-    final personnel = unit?.personnel?.map((p) => p.formal)?.join(', ');
+    final personnel = unit?.personnels?.map((p) => p.formal)?.join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 
@@ -326,7 +339,7 @@ class UnitInfoPanel extends StatelessWidget {
             final result = await removeFromUnit(
               unit,
               devices: devices.toList(),
-              personnel: unit.personnel,
+              personnel: unit.personnels,
             );
             if (result.isRight()) {
               _onMessage("Mannskap og apparater fjernet fra ${unit.name}");

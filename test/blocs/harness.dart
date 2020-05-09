@@ -7,6 +7,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -14,6 +15,7 @@ import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/personnels.dart';
+import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/User.dart';
@@ -22,6 +24,7 @@ import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
+import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
@@ -38,12 +41,17 @@ const MethodChannel udidChannel = MethodChannel('flutter_udid');
 const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
 const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
-class BlocTestHarness {
+class BlocTestHarness implements BlocDelegate {
   final baseRestUrl = Defaults.baseRestUrl;
   final assetConfig = 'assets/config/app_config.json';
 
   ConnectivityServiceMock _connectivity;
   ConnectivityServiceMock get connectivity => _connectivity;
+
+  bool get isWifi => connectivity.isWifi;
+  bool get isOnline => connectivity.isOnline;
+  bool get isOffline => connectivity.isOffline;
+  bool get isCellular => connectivity.isCellular;
 
   String _username;
   String _password;
@@ -87,7 +95,17 @@ class BlocTestHarness {
   UnitBloc get unitBloc => _unitBloc;
   bool _withUnitBloc = false;
 
+  TrackingServiceMock get trackingService => _trackingService;
+  TrackingServiceMock _trackingService;
+
+  TrackingBloc _trackingBloc;
+  TrackingBloc get trackingBloc => _trackingBloc;
+  bool _withTrackingBloc = false;
+
+  bool _waitForIncidentsLoaded = false;
+
   void install() {
+    BlocSupervisor.delegate = this;
     setUpAll(() async {
       // Required since provider need access to service bindings prior to calling 'test()'
       _withAssets();
@@ -115,7 +133,7 @@ class BlocTestHarness {
         await _buildUserBloc();
       }
       if (_withIncidentBloc) {
-        _buildIncidentBloc();
+        await _buildIncidentBloc();
       }
       if (_withDeviceBloc) {
         _buildDeviceBloc();
@@ -125,6 +143,9 @@ class BlocTestHarness {
       }
       if (_withUnitBloc) {
         _buildUnitBloc();
+      }
+      if (_withTrackingBloc) {
+        _buildTrackingBloc();
       }
       // Needed for await above to work
       return Future.value();
@@ -149,6 +170,12 @@ class BlocTestHarness {
       if (_withUnitBloc) {
         _unitBloc?.close();
       }
+      if (_withTrackingBloc) {
+        _trackingBloc?.close();
+        _trackingService.reset();
+      }
+      events.clear();
+      errors.clear();
       _connectivity?.dispose();
       if (Storage.initialized) {
         await Storage.destroy();
@@ -196,14 +223,22 @@ class BlocTestHarness {
 
   void withDeviceBloc() {
     _withDeviceBloc = true;
+    _waitForIncidentsLoaded = true;
   }
 
   void withPersonnelBloc() {
     _withPersonnelBloc = true;
+    _waitForIncidentsLoaded = true;
   }
 
   void withUnitBloc() {
     _withUnitBloc = true;
+    _waitForIncidentsLoaded = true;
+  }
+
+  void withTrackingBloc() {
+    _withTrackingBloc = true;
+    _waitForIncidentsLoaded = true;
   }
 
   void _buildSecureStoragePlugin() {
@@ -297,6 +332,7 @@ class BlocTestHarness {
       ),
       configBloc,
     );
+
     if (_authenticated) {
       await _userBloc.login(
         username: _username,
@@ -310,7 +346,10 @@ class BlocTestHarness {
     }
   }
 
-  void _buildIncidentBloc({UserRole role = UserRole.commander, String passcode = 'T123'}) {
+  Future _buildIncidentBloc({
+    UserRole role = UserRole.commander,
+    String passcode = 'T123',
+  }) async {
     assert(_withUserBloc, 'IncidentBloc requires UserBloc');
     _incidentService = IncidentServiceMock.build(
       _userBloc.repo,
@@ -324,6 +363,15 @@ class BlocTestHarness {
       ),
       _userBloc,
     );
+
+    if (_authenticated && _waitForIncidentsLoaded) {
+      // Consume IncidentsLoaded fired by UserAuthenticated
+      await expectThroughInOrderLater(
+        _incidentBloc,
+        [isA<IncidentsLoaded>()],
+        close: false,
+      );
+    }
   }
 
   void _buildDeviceBloc({
@@ -345,15 +393,6 @@ class BlocTestHarness {
       ),
       _incidentBloc,
     );
-
-    if (_authenticated) {
-      // Consume IncidentsLoaded fired by UserAuthenticated
-      expectThroughInOrder(
-        _incidentBloc,
-        [isA<IncidentsLoaded>()],
-        close: false,
-      );
-    }
   }
 
   void _buildPersonnelBloc({
@@ -368,15 +407,6 @@ class BlocTestHarness {
       ),
       _incidentBloc,
     );
-
-    if (_authenticated) {
-      // Consume IncidentsLoaded fired by UserAuthenticated
-      expectThroughInOrder(
-        _incidentBloc,
-        [isA<IncidentsLoaded>()],
-        close: false,
-      );
-    }
   }
 
   void _buildUnitBloc({
@@ -402,6 +432,60 @@ class BlocTestHarness {
         close: false,
       );
     }
+  }
+
+  void _buildTrackingBloc({
+    int personnelCount = 0,
+    int unitCount = 0,
+  }) {
+    assert(_withIncidentBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withDeviceBloc, 'UnitBloc requires DeviceBloc');
+    assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
+    assert(_withUnitBloc, 'UnitBloc requires UnitBloc');
+    _trackingService = TrackingServiceMock.build(
+      _incidentBloc,
+      _deviceService,
+      personnelCount: personnelCount,
+      unitCount: unitCount,
+    );
+    _trackingBloc = TrackingBloc(
+      TrackingRepository(
+        _trackingService,
+        connectivity: _connectivity,
+      ),
+      incidentBloc: _incidentBloc,
+      deviceBloc: _deviceBloc,
+      personnelBloc: _personnelBloc,
+      unitBloc: _unitBloc,
+    );
+
+    if (_authenticated) {
+      // Consume PersonnelsLoaded fired by IncidentsLoaded
+      expectThroughInOrder(
+        _unitBloc,
+        [isA<UnitsEmpty>()],
+        close: false,
+      );
+    }
+  }
+
+  final errors = <Bloc, List<Object>>{};
+
+  @override
+  void onError(Bloc bloc, Object error, StackTrace stacktrace) {
+    errors.update(bloc, (errors) => errors..add(error), ifAbsent: () => [error]);
+  }
+
+  final events = <Bloc, List<Object>>{};
+
+  @override
+  void onEvent(Bloc bloc, Object event) {
+    events.update(bloc, (events) => events..add(event), ifAbsent: () => [event]);
+  }
+
+  @override
+  void onTransition(Bloc bloc, Transition transition) {
+    // TODO: implement onTransition
   }
 }
 

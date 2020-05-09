@@ -39,9 +39,9 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
         _active = active;
 
   @override
-  Iterable<Personnel> get targets => bloc.personnel
+  Iterable<Personnel> get targets => bloc.personnels
       .asTrackingIds(
-        exclude: includeRetired ? [] : [TrackingStatus.Closed],
+        exclude: includeRetired ? [] : [TrackingStatus.closed],
       )
       .values;
 
@@ -52,14 +52,14 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
 
   @override
   LatLng toPoint(Personnel personnel) {
-    return toLatLng(bloc.tracking[personnel.tracking.uuid].point);
+    return toLatLng(bloc.trackings[personnel.tracking.uuid]?.position?.geometry);
   }
 
   void _show(BuildContext context, List<Personnel> personnel) {
     if (personnel.length == 1) {
       _showInfo(context, personnel.first);
     } else {
-      final style = Theme.of(context).textTheme.title;
+      final style = Theme.of(context).textTheme.headline6;
       final size = MediaQuery.of(context).size;
       showDialog(
         context: context,
@@ -88,7 +88,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        final tracking = bloc.tracking[personnel.tracking.uuid];
+        final tracking = bloc.trackings[personnel.tracking.uuid];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,

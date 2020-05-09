@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/map/painters.dart';
@@ -58,32 +59,38 @@ class PersonnelLayer extends MapPlugin {
 
   Widget _build(BuildContext context, Size size, PersonnelLayerOptions options, MapState map) {
     final bounds = map.getBounds();
-    final tracking = options.bloc.tracking;
-    final personnel = sortMapValues<String, Personnel, TrackingStatus>(
-            options.bloc.personnel.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.Closed]),
-            (personnel) => tracking[personnel.tracking.uuid].status,
+    final tracking = options.bloc.trackings;
+    final personnels = sortMapValues<String, Personnel, TrackingStatus>(
+            options.bloc.personnels.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.closed]),
+            (personnels) => tracking[personnels.tracking.uuid].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((personnel) => tracking[personnel.tracking.uuid]?.point?.isNotEmpty == true)
-        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
-        .where((personnel) => bounds.contains(toLatLng(tracking[personnel.tracking.uuid].point)));
+        .where((personnels) => tracking[personnels.tracking.uuid]?.position?.isNotEmpty == true)
+        .where((personnels) => options.showRetired || personnels.status != PersonnelStatus.Retired)
+        .where((personnels) => bounds.contains(toLatLng(tracking[personnels.tracking.uuid]?.position?.geometry)));
     return tracking.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
             children: [
               if (options.showTail)
-                ...personnel
-                    .map((personnel) =>
-                        _buildTrack(context, size, options, map, personnel, tracking[personnel.tracking.uuid]))
+                ...personnels
+                    .map((personnels) =>
+                        _buildTrack(context, size, options, map, personnels, tracking[personnels.tracking.uuid]))
                     .toList(),
               if (options.showLabels)
-                ...personnel
-                    .map((personnel) =>
-                        _buildLabel(context, options, map, personnel, tracking[personnel.tracking.uuid].point))
+                ...personnels
+                    .map((personnels) => _buildLabel(
+                          context,
+                          options,
+                          map,
+                          personnels,
+                          tracking[personnels.tracking.uuid]?.position?.geometry,
+                        ))
                     .toList(),
-              ...personnel
-                  .map((personnel) => _buildPoint(context, options, map, personnel, tracking[personnel.tracking.uuid]))
+              ...personnels
+                  .map((personnels) =>
+                      _buildPoint(context, options, map, personnels, tracking[personnels.tracking.uuid]))
                   .toList(),
             ],
           );
@@ -94,16 +101,16 @@ class PersonnelLayer extends MapPlugin {
     Size size,
     PersonnelLayerOptions options,
     MapState map,
-    Personnel personnel,
+    Personnel personnels,
     Tracking tracking,
   ) {
-    var offsets = tracking.history.reversed.take(10).map((point) {
-      var pos = map.project(toLatLng(point));
+    var offsets = tracking.history.reversed.take(10).map((position) {
+      var pos = map.project(toLatLng(position.geometry));
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());
     }).toList(growable: false);
 
-    final color = toPointStatusColor(tracking.point);
+    final color = toPositionStatusColor(tracking.position);
 
     return CustomPaint(
       painter: LineStringPainter(
@@ -117,12 +124,12 @@ class PersonnelLayer extends MapPlugin {
   }
 
   Widget _buildPoint(
-      BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnel, Tracking tracking) {
+      BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnels, Tracking tracking) {
     var size = options.size;
-    var location = tracking.point;
-    var pos = map.project(toLatLng(location));
+    var point = tracking.position.geometry;
+    var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
+    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, tracking.position);
 
     return Positioned(
       top: pos.y,
@@ -134,14 +141,14 @@ class PersonnelLayer extends MapPlugin {
           size: size,
           opacity: options.opacity,
           outer: pixelRadius,
-          centerColor: toPersonnelStatusColor(personnel.status),
-          color: toPointStatusColor(tracking.point),
+          centerColor: toPersonnelStatusColor(personnels.status),
+          color: toPositionStatusColor(tracking.position),
         ),
       ),
     );
   }
 
-  _buildLabel(BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnel, Point point) {
+  _buildLabel(BuildContext context, PersonnelLayerOptions options, MapState map, Personnel personnels, Point point) {
     var size = options.size;
     var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
@@ -150,22 +157,22 @@ class PersonnelLayer extends MapPlugin {
       top: pos.y + size,
       left: pos.x,
       child: CustomPaint(
-        painter: LabelPainter("${personnel.fname}\n${personnel.lname}", top: size),
+        painter: LabelPainter("${personnels.fname}\n${personnels.lname}", top: size),
         size: Size(size, size),
       ),
     );
   }
 }
 
-double _toPixelRadius(MapState map, double size, double x, double y, Point point) {
-  if (point == null) return 0;
+double _toPixelRadius(MapState map, double size, double x, double y, Position position) {
+  if (position == null) return 0;
   var pixelRadius = size;
-  if (point.acc != null && point.acc > 0.0) {
+  if (position.acc != null && position.acc > 0.0) {
     var coords = ProjMath.calculateEndingGlobalCoordinates(
-      point.lat,
-      point.lon,
+      position.lat,
+      position.lon,
       45.0,
-      point.acc,
+      position.acc,
     );
     var pos = map.project(LatLng(coords.y, coords.x));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();

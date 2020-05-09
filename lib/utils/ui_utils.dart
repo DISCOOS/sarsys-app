@@ -9,6 +9,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/map_screen.dart';
@@ -138,13 +139,13 @@ Widget buildDropdown<T>({
   T selected = items.firstWhere((item) => item.value == value, orElse: () => null)?.value ?? initialValue;
   return InputDecorator(
     decoration: InputDecoration(
-      hasFloatingPlaceholder: true,
       errorText: hasError ? errorText : null,
       filled: true,
       isDense: false,
       labelText: label,
       helperText: helperText,
       contentPadding: contentPadding,
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
     ),
     child: DropdownButtonHideUnderline(
       child: ButtonTheme(
@@ -180,15 +181,15 @@ Widget buildTwoCellRow(Widget left, Widget right, {double spacing = 16.0, int lf
 
 Color toTrackingStatusColor(TrackingStatus status) {
   switch (status) {
-    case TrackingStatus.Tracking:
+    case TrackingStatus.tracking:
       return Colors.green;
-    case TrackingStatus.Paused:
+    case TrackingStatus.paused:
       return Colors.orange;
-    case TrackingStatus.Closed:
+    case TrackingStatus.closed:
       return Colors.brown;
-    case TrackingStatus.Created:
+    case TrackingStatus.created:
       return Colors.grey;
-    case TrackingStatus.None:
+    case TrackingStatus.none:
     default:
       return Colors.red;
   }
@@ -196,13 +197,13 @@ Color toTrackingStatusColor(TrackingStatus status) {
 
 IconData toTrackingIconData(TrackingStatus status) {
   switch (status) {
-    case TrackingStatus.Created:
+    case TrackingStatus.created:
       return Icons.more_horiz;
-    case TrackingStatus.Paused:
+    case TrackingStatus.paused:
       return Icons.pause;
-    case TrackingStatus.Closed:
+    case TrackingStatus.closed:
       return Icons.check_circle;
-    case TrackingStatus.Tracking:
+    case TrackingStatus.tracking:
       return Icons.play_circle_filled;
     default:
       return Icons.warning;
@@ -282,8 +283,8 @@ IconData toPersonnelIconData(Personnel personnel) {
   return Icons.person;
 }
 
-Color toPointStatusColor(Point point) {
-  final since = (point == null ? null : DateTime.now().difference(point.timestamp).inMinutes);
+Color toPositionStatusColor(Position position) {
+  final since = (position == null ? null : DateTime.now().difference(position.timestamp).inMinutes);
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }
 

@@ -37,7 +37,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
   }) : _active = active;
 
   @override
-  Iterable<Unit> get targets => bloc.units.asTrackingIds(exclude: includeRetired ? [] : [TrackingStatus.Closed]).values;
+  Iterable<Unit> get targets => bloc.units.asTrackingIds(exclude: includeRetired ? [] : [TrackingStatus.closed]).values;
 
   @override
   void doProcessTap(BuildContext context, List<Unit> units) {
@@ -46,14 +46,14 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
 
   @override
   LatLng toPoint(Unit unit) {
-    return toLatLng(bloc.tracking[unit.tracking.uuid].point);
+    return toLatLng(bloc.trackings[unit.tracking.uuid]?.position?.geometry);
   }
 
   void _show(BuildContext context, List<Unit> units) {
     if (units.length == 1) {
       _showInfo(context, units.first);
     } else {
-      final style = Theme.of(context).textTheme.title;
+      final style = Theme.of(context).textTheme.headline6;
       final size = MediaQuery.of(context).size;
       showDialog(
         context: context,
@@ -82,7 +82,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        final tracking = bloc.tracking[unit.tracking.uuid];
+        final tracking = bloc.trackings[unit.tracking.uuid];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
@@ -93,7 +93,9 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
               child: UnitInfoPanel(
                 unit: unit,
                 tracking: tracking,
-                devices: tracking.devices.map((id) => bloc.deviceBloc.devices[id]).where((unit) => unit != null),
+                devices: tracking.sources
+                    .map((source) => bloc.deviceBloc.devices[source.uuid])
+                    .where((unit) => unit != null),
                 onMessage: onMessage,
                 withActions: user?.isCommander == true,
                 onComplete: (_) => Navigator.pop(context),

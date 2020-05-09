@@ -5,13 +5,14 @@ import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/point_field.dart';
+import 'package:SarSys/widgets/position_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -322,9 +323,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
-  Widget _buildIPPField() => PointField(
+  Widget _buildIPPField() => PositionField(
         attribute: 'ipp',
-        initialValue: widget?.incident?.ipp?.point ?? widget.ipp,
+        initialValue: Position.fromPoint(
+          widget?.incident?.ipp?.point ?? widget.ipp,
+          source: PositionSource.manual,
+        ),
         labelText: "IPP",
         hintText: 'Velg IPP',
         errorText: 'IPP må oppgis',
@@ -343,9 +347,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ),
       );
 
-  Widget _buildMeetupField() => PointField(
+  Widget _buildMeetupField() => PositionField(
         attribute: 'meetup',
-        initialValue: widget?.incident?.meetup?.point ?? widget.ipp,
+        initialValue: Position.fromPoint(
+          widget?.incident?.meetup?.point ?? widget.ipp,
+          source: PositionSource.manual,
+        ),
         labelText: "Oppmøtested",
         hintText: 'Velg oppmøtested',
         errorText: 'Oppmøtested må oppgis',
@@ -460,7 +467,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
               contentPadding: EdgeInsets.zero,
               title: Text(
                 "Husk talegrupper",
-                style: Theme.of(context).textTheme.body1,
+                style: Theme.of(context).textTheme.bodyText2,
               ),
               subtitle: Text(
                 "Liste kan endres i Nødnettsoppsett",
@@ -541,7 +548,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
               contentPadding: EdgeInsets.zero,
               title: Text(
                 "Husk enheter",
-                style: Theme.of(context).textTheme.body1,
+                style: Theme.of(context).textTheme.bodyText2,
               ),
               subtitle: Text(
                 "Liste kan endres i Hendelsesoppsett",

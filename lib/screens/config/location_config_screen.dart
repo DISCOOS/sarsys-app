@@ -71,7 +71,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
             ListTile(
               title: Text(
                 "Posisjonstjeneste",
-                style: Theme.of(context).textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,

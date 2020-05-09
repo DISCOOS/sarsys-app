@@ -134,8 +134,8 @@ class PersonnelPageState extends State<PersonnelPage> {
     }
     var personnel = items[index];
     var unit = _toUnit(personnel);
-    var tracking = context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid];
-    var status = tracking?.status ?? TrackingStatus.None;
+    var tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
+    var status = tracking?.status ?? TrackingStatus.none;
     return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
@@ -187,7 +187,7 @@ class PersonnelPageState extends State<PersonnelPage> {
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(tracking?.point),
+                color: toPositionStatusColor(tracking?.position),
               ),
             ),
             if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
@@ -212,7 +212,7 @@ class PersonnelPageState extends State<PersonnelPage> {
   ) =>
       [
         unit?.name ?? '',
-        formatSince(tracking?.point?.timestamp, defaultValue: "Ingen"),
+        formatSince(tracking?.position?.timestamp, defaultValue: "Ingen"),
       ].where((value) => emptyAsNull(value) != null).join(' ');
 
   _onTap(Personnel personnel) {
@@ -255,7 +255,7 @@ class PersonnelPageState extends State<PersonnelPage> {
       );
 
   Unit _toUnit(Personnel personnel) => context.bloc<TrackingBloc>().unitBloc.units.values.firstWhere(
-        (unit) => unit.personnel?.contains(personnel) == true,
+        (unit) => unit.personnels?.contains(personnel) == true,
         orElse: () => null,
       );
 
@@ -428,11 +428,11 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
-                style: theme.textTheme.subhead,
+                style: theme.textTheme.subtitle2,
               ),
             ],
           ),

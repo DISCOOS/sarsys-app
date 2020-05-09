@@ -136,8 +136,8 @@ class MissionsPageState extends State<MissionsPage> {
       );
     }
     var unit = units[index];
-    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().tracking[unit.tracking.uuid];
-    var status = tracking?.status ?? TrackingStatus.None;
+    var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
+    var status = tracking?.status ?? TrackingStatus.none;
     return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
@@ -179,13 +179,13 @@ class MissionsPageState extends State<MissionsPage> {
             ),
             SizedBox(width: 4.0),
             Chip(
-              label: Text("${formatSince(tracking?.point?.timestamp, defaultValue: "Ingen")}"),
+              label: Text("${formatSince(tracking?.position?.timestamp, defaultValue: "Ingen")}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(tracking?.point),
+                color: toPositionStatusColor(tracking?.position),
               ),
             ),
             if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
@@ -380,11 +380,11 @@ class MissionSearch extends SearchDelegate<Unit> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
-                style: theme.textTheme.subhead,
+                style: theme.textTheme.subtitle2,
               ),
             ],
           ),

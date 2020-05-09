@@ -58,7 +58,12 @@ class IncidentBuilder {
   }
 
   static createLocationAsJson(double lat, double lon) {
-    return json.encode(Location(point: Point.now(lat, lon)).toJson());
+    return json.encode(Location(
+      point: Point.fromCoords(
+        lat: lat,
+        lon: lon,
+      ),
+    ).toJson());
   }
 
   static createRandomPasscodesAsJson() {

@@ -181,7 +181,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
   String _prepare(Incident incident) => "${incident.searchable}".toLowerCase();
 
   Widget _buildCard(Incident incident) {
-    final title = Theme.of(context).textTheme.title;
+    final title = Theme.of(context).textTheme.headline6;
     final caption = Theme.of(context).textTheme.caption;
 
     return StreamBuilder(
@@ -426,11 +426,11 @@ class IncidentSearch extends SearchDelegate<Incident> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
-                style: theme.textTheme.subhead,
+                style: theme.textTheme.subtitle2,
               ),
             ],
           ),

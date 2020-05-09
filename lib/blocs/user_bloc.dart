@@ -177,38 +177,48 @@ class UserBloc extends Bloc<UserCommand, UserState> {
 
   @override
   Stream<UserState> mapEventToState(UserCommand command) async* {
-    if (command is LoadUser) {
-      yield await _load(command);
-    } else if (command is LoginUser) {
-      yield UserAuthenticating(command.data);
-      yield await _authenticate(command);
-    } else if (command is SecureUser) {
-      yield await _secure(command);
-    } else if (command is LockUser) {
-      yield await _lock(command);
-    } else if (command is UnlockUser) {
-      yield UserUnlocking(command.data);
-      yield await _unlock(command);
-    } else if (command is LogoutUser) {
-      yield await _logout(command);
-    } else if (command is ClearUsers) {
-      yield await _clear(command);
-    } else if (command is AuthorizeUser) {
-      yield _authorize(command);
-    } else if (command is RaiseUserError) {
+    try {
+      if (command is LoadUser) {
+        yield await _load(command);
+      } else if (command is LoginUser) {
+        yield UserAuthenticating(command.data);
+        yield await _authenticate(command);
+      } else if (command is SecureUser) {
+        yield await _secure(command);
+      } else if (command is LockUser) {
+        yield await _lock(command);
+      } else if (command is UnlockUser) {
+        yield UserUnlocking(command.data);
+        yield await _unlock(command);
+      } else if (command is LogoutUser) {
+        yield await _logout(command);
+      } else if (command is ClearUsers) {
+        yield await _clear(command);
+      } else if (command is AuthorizeUser) {
+        yield _authorize(command);
+      } else if (command is RaiseUserError) {
+        yield _toError(
+          command,
+          UserBlocError(
+            command.data,
+            stackTrace: StackTrace.current,
+          ),
+        );
+      } else {
+        yield _toError(
+          command,
+          UserBlocError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
+      }
+    } on Exception catch (error, stackTrace) {
       yield _toError(
         command,
         UserBlocError(
-          command.data,
-          stackTrace: StackTrace.current,
-        ),
-      );
-    } else {
-      yield _toError(
-        command,
-        UserBlocError(
-          "Unsupported $command",
-          stackTrace: StackTrace.current,
+          error,
+          stackTrace: stackTrace,
         ),
       );
     }
@@ -578,7 +588,7 @@ class UserBlocError extends UserState<Object> {
   UserBlocError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'UserError {error: $data, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
 }
 
 class UserForbidden extends UserBlocError {

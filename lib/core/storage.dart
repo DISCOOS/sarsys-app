@@ -119,8 +119,13 @@ class Storage {
   }
 
   static Future destroy() async {
-    // Deletes only open boxes
-    await Hive.deleteFromDisk();
+    try {
+      // Deletes only open boxes
+      await Hive.deleteFromDisk();
+    } on Exception catch (e) {
+      // Don't fail on this
+      print(e);
+    }
 
     if (!kIsWeb) {
       // Delete all remaining hive files
@@ -168,9 +173,11 @@ class StorageState<T> {
       case StorageStatus.created:
         return StorageState.created(value);
       case StorageStatus.pushed:
+        return StorageState.pushed(value);
       case StorageStatus.changed:
-      case StorageStatus.deleted:
         return StorageState.changed(value);
+      case StorageStatus.deleted:
+        return StorageState.deleted(value);
       default:
         throw StorageStateException('Unknown state $status');
     }

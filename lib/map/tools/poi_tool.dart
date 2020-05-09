@@ -48,7 +48,7 @@ class POITool extends MapTool with MapSelectable<POI> {
     if (items.length == 1) {
       _showInfo(context, items.first);
     } else {
-      final style = Theme.of(context).textTheme.title;
+      final style = Theme.of(context).textTheme.headline6;
       final size = MediaQuery.of(context).size;
       showDialog(
         context: context,

@@ -1,25 +1,25 @@
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/editors/point_editor.dart';
+import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
-class PointField extends StatelessWidget {
+class PositionField extends StatelessWidget {
   final String attribute;
   final String hintText;
   final String labelText;
   final String errorText;
   final String helperText;
-  final Point initialValue;
+  final Position initialValue;
   final Incident incident;
   final bool optional;
   final bool enabled;
-  final ValueChanged<Point> onChanged;
+  final ValueChanged<Position> onChanged;
   final PermissionController controller;
 
-  const PointField({
+  const PositionField({
     Key key,
     @required this.attribute,
     @required this.labelText,
@@ -38,10 +38,10 @@ class PointField extends StatelessWidget {
   Widget build(BuildContext context) {
     return FormBuilderCustomField(
       attribute: attribute,
-      formField: FormField<Point>(
+      formField: FormField<Position>(
         enabled: enabled,
         initialValue: initialValue,
-        builder: (FormFieldState<Point> field) => GestureDetector(
+        builder: (FormFieldState<Position> field) => GestureDetector(
           child: InputDecorator(
             decoration: InputDecoration(
               filled: true,
@@ -58,8 +58,8 @@ class PointField extends StatelessWidget {
               child: field.value == null
                   ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
                   : Text(
-                      toUTM(field.value),
-                      style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 16),
+                      toUTM(field.value?.geometry),
+                      style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 16),
                     ),
             ),
           ),
@@ -73,10 +73,10 @@ class PointField extends StatelessWidget {
     );
   }
 
-  void _selectLocation(BuildContext context, FormFieldState<Point> field) async {
-    final selected = await showDialog<Point>(
+  void _selectLocation(BuildContext context, FormFieldState<Position> field) async {
+    final selected = await showDialog<Position>(
       context: context,
-      builder: (context) => PointEditor(
+      builder: (context) => PositionEditor(
         field.value,
         title: hintText,
         incident: incident,

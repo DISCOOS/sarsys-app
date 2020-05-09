@@ -89,7 +89,7 @@ class DevicesPageState extends State<DevicesPage> {
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
                 var units = context.bloc<TrackingBloc>().units.asDeviceIds();
-                var personnel = context.bloc<TrackingBloc>().personnel.asDeviceIds();
+                var personnel = context.bloc<TrackingBloc>().personnels.asDeviceIds();
                 var tracked = context.bloc<TrackingBloc>().asDeviceIds();
                 var devices = _filteredDevices();
                 return devices.isEmpty || snapshot.hasError
@@ -150,7 +150,7 @@ class DevicesPageState extends State<DevicesPage> {
             child: _buildDeviceTile(device, status, units, personnel),
             secondaryActions: <Widget>[
               _buildEditAction(device),
-              if (status != TrackingStatus.None)
+              if (status != TrackingStatus.none)
                 _buildRemoveAction(device, units, personnel)
               else ...[
                 _buildAddToUnitAction(device),
@@ -224,7 +224,7 @@ class DevicesPageState extends State<DevicesPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             CircleAvatar(
-              backgroundColor: toPointStatusColor(device.position),
+              backgroundColor: toPositionStatusColor(device.position),
               child: Icon(toDeviceIconData(device.type)),
               foregroundColor: Colors.white,
             ),
@@ -249,7 +249,7 @@ class DevicesPageState extends State<DevicesPage> {
               avatar: Icon(
                 Icons.my_location,
                 size: 16.0,
-                color: toPointStatusColor(device?.position),
+                color: toPositionStatusColor(device?.position),
               ),
             ),
             if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
@@ -279,11 +279,11 @@ class DevicesPageState extends State<DevicesPage> {
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
     return tracked[device.uuid]
             ?.firstWhere(
-              (tracking) => tracking.status != TrackingStatus.None,
+              (tracking) => tracking.status != TrackingStatus.none,
               orElse: () => null,
             )
             ?.status ??
-        TrackingStatus.None;
+        TrackingStatus.none;
   }
 
   String _toDistrict(String number) {
@@ -400,11 +400,11 @@ class DeviceSearch extends SearchDelegate<Device> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
-                style: theme.textTheme.subhead,
+                style: theme.textTheme.subtitle2,
               ),
             ],
           ),

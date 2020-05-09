@@ -291,7 +291,7 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   }) {
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
-    final titleStyle = textTheme.title.copyWith(
+    final titleStyle = textTheme.headline6.copyWith(
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,

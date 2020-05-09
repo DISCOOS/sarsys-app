@@ -99,28 +99,38 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
 
   @override
   Stream<AppConfigState> mapEventToState(AppConfigCommand command) async* {
-    if (command is InitAppConfig) {
-      yield await _init(command);
-    } else if (command is LoadAppConfig) {
-      yield await _load(command);
-    } else if (command is UpdateAppConfig) {
-      yield await _update(command);
-    } else if (command is DeleteAppConfig) {
-      yield await _delete(command);
-    } else if (command is RaiseAppConfigError) {
+    try {
+      if (command is InitAppConfig) {
+        yield await _init(command);
+      } else if (command is LoadAppConfig) {
+        yield await _load(command);
+      } else if (command is UpdateAppConfig) {
+        yield await _update(command);
+      } else if (command is DeleteAppConfig) {
+        yield await _delete(command);
+      } else if (command is RaiseAppConfigError) {
+        yield _toError(
+          command,
+          AppConfigBlocError(
+            command.data,
+            stackTrace: StackTrace.current,
+          ),
+        );
+      } else {
+        yield _toError(
+          command,
+          AppConfigBlocError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
+      }
+    } on Exception catch (error, stackTrace) {
       yield _toError(
         command,
-        AppConfigError(
-          command.data,
-          stackTrace: StackTrace.current,
-        ),
-      );
-    } else {
-      yield _toError(
-        command,
-        AppConfigError(
-          "Unsupported $command",
-          stackTrace: StackTrace.current,
+        AppConfigBlocError(
+          error,
+          stackTrace: stackTrace,
         ),
       );
     }
@@ -172,7 +182,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }
 
   // Complete with error and return response as error state to bloc
-  AppConfigState _toError(AppConfigCommand command, AppConfigError state) {
+  AppConfigState _toError(AppConfigCommand command, AppConfigBlocError state) {
     command.callback.completeError(
       AppConfigBlocException(state, command: command),
     );
@@ -250,7 +260,7 @@ abstract class AppConfigState<T> extends Equatable {
   isLoaded() => this is AppConfigLoaded;
   isUpdated() => this is AppConfigUpdated;
   isDeleted() => this is AppConfigDeleted;
-  isError() => this is AppConfigError;
+  isError() => this is AppConfigBlocError;
 }
 
 class AppConfigEmpty extends AppConfigState<Null> {
@@ -291,9 +301,9 @@ class AppConfigDeleted extends AppConfigState<AppConfig> {
 /// ---------------------
 /// Error States
 /// ---------------------
-class AppConfigError extends AppConfigState<Object> {
+class AppConfigBlocError extends AppConfigState<Object> {
   final StackTrace stackTrace;
-  AppConfigError(Object error, {this.stackTrace}) : super(error);
+  AppConfigBlocError(Object error, {this.stackTrace}) : super(error);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';

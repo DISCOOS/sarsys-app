@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
@@ -85,11 +86,18 @@ LatLng toLatLng(Point point) {
   return LatLng(point?.lat ?? 0.0, point?.lon ?? 0.0);
 }
 
-Point toPoint(LatLng point, {PointType type}) {
-  return Point.now(
-    point?.latitude ?? 0,
-    point?.longitude ?? 0,
-    type: type,
+Point toPoint(LatLng point) {
+  return Point.fromCoords(
+    lat: point?.latitude ?? 0,
+    lon: point?.longitude ?? 0,
+  );
+}
+
+Position toPosition(LatLng point) {
+  return Position.now(
+    lat: point?.latitude ?? 0,
+    lon: point?.longitude ?? 0,
+    source: PositionSource.manual,
   );
 }
 
@@ -122,33 +130,6 @@ Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(
   });
   return sortedMap;
 }
-
-double asSpeed(double distance, Duration effort) =>
-    distance.isNaN == false && effort.inMicroseconds > 0.0 ? distance / effort.inSeconds : 0.0;
-
-double asDistance(List<Point> history, {double distance = 0, int tail = 2}) {
-  distance ??= 0;
-  var offset = max(0, history.length - tail - 1);
-  var i = offset + 1;
-  history?.skip(offset)?.forEach((point) {
-    i++;
-    distance += i < history.length
-        ? ProjMath.eucledianDistance(
-            history[i]?.lat ?? point.lat,
-            history[i]?.lon ?? point.lon,
-            point.lat,
-            point.lon,
-          )
-        : 0.0;
-  });
-  return distance;
-}
-
-Duration asEffort(List<Point> history) => history?.isNotEmpty == true
-    ? history.last.timestamp.difference(
-        history.first.timestamp,
-      )
-    : Duration.zero;
 
 isEmptyOrNull(value) => emptyAsNull(value) == null;
 

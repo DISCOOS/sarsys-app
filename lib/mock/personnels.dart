@@ -17,7 +17,7 @@ class PersonnelBuilder {
   static Personnel create({
     String uuid,
     String userId,
-    String tracking,
+    String tuuid,
     PersonnelStatus status = PersonnelStatus.Mobilized,
   }) {
     return Personnel.fromJson(
@@ -25,7 +25,7 @@ class PersonnelBuilder {
         uuid: uuid ?? Uuid().v4(),
         userId: userId,
         status: status ?? PersonnelStatus.Mobilized,
-        tracking: tracking,
+        tuuid: tuuid,
       ),
     );
   }
@@ -34,7 +34,7 @@ class PersonnelBuilder {
     @required String uuid,
     @required PersonnelStatus status,
     String userId,
-    String tracking,
+    String tuuid,
   }) =>
       json.decode('{'
           '"uuid": "$uuid",'
@@ -43,8 +43,8 @@ class PersonnelBuilder {
           '"lname": "${faker.person.lastName()}",'
           '"status": "${enumName(status)}",'
           '"affiliation": ${json.encode(createAffiliation())},'
-          '"function": "${enumName(OperationalFunction.Personnel)}"'
-          '${tracking != null ? ',"tracking": {"uuid": "$tracking"}' : ''}'
+          '"function": "${enumName(OperationalFunction.Personnel)}",'
+          '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 
   static Map<String, dynamic> createAffiliation() => Affiliation(
@@ -67,7 +67,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
       status: status,
-      tracking: tracking,
+      tuuid: tracking,
     );
     if (personnelsRepo.containsKey(iuuid)) {
       personnelsRepo[iuuid].putIfAbsent(personnel.uuid, () => personnel);
@@ -115,7 +115,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
                   uuid: "$iuuid:p:$i",
                   userId: "p:$i",
                   status: PersonnelStatus.Mobilized,
-                  tracking: "$iuuid:t:p:$i",
+                  tuuid: "$iuuid:t:p:$i",
                 ),
               ),
             ),

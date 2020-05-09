@@ -9,6 +9,7 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
 
 import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
@@ -93,6 +94,9 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   /// Get [UnitRepository]
   final UnitRepository repo;
 
+  /// Get [Unit] from [uuid]
+  Unit operator [](String uuid) => repo[uuid];
+
   /// Get [UnitService]
   UnitService get service => repo.service;
 
@@ -158,7 +162,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   void _assertState() {
     if (incidentBloc.isUnset) {
-      throw UnitError(
+      throw UnitBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.load()'",
       );
@@ -177,7 +181,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   Future<Unit> create(Unit unit) {
     _assertState();
     return _dispatch<Unit>(
-      CreateUnit(iuuid ?? incidentBloc.selected.uuid, unit),
+      CreateUnit(
+        iuuid ?? incidentBloc.selected.uuid,
+        unit.cloneWith(
+          // Units should contain a tracking reference when
+          // they are created. [TrackingBloc] will use this
+          // reference to create a [Tracking] instance which the
+          // backend will create apriori using the same uuid.
+          // This allows for offline creation of tracking objects
+          // in apps resulting in a better user experience
+          tracking: TrackingUtils.ensureRef(unit),
+        ),
+      ),
     );
   }
 
@@ -207,29 +222,39 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   @override
   Stream<UnitState> mapEventToState(UnitCommand command) async* {
-    if (command is LoadUnits) {
-      yield await _load(command);
-    } else if (command is CreateUnit) {
-      yield await _create(command);
-    } else if (command is UpdateUnit) {
-      yield await _update(command);
-    } else if (command is DeleteUnit) {
-      yield await _delete(command);
-    } else if (command is UnloadUnits) {
-      yield await _unload(command);
-    } else if (command is _InternalChange) {
-      yield await _process(command);
-    } else if (command is RaiseUnitError) {
+    try {
+      if (command is LoadUnits) {
+        yield await _load(command);
+      } else if (command is CreateUnit) {
+        yield await _create(command);
+      } else if (command is UpdateUnit) {
+        yield await _update(command);
+      } else if (command is DeleteUnit) {
+        yield await _delete(command);
+      } else if (command is UnloadUnits) {
+        yield await _unload(command);
+      } else if (command is _InternalChange) {
+        yield await _process(command);
+      } else if (command is RaiseUnitError) {
+        yield _toError(
+          command,
+          command.data,
+        );
+      } else {
+        yield _toError(
+          command,
+          UnitBlocError(
+            "Unsupported $command",
+            stackTrace: StackTrace.current,
+          ),
+        );
+      }
+    } on Exception catch (error, stackTrace) {
       yield _toError(
         command,
-        command.data,
-      );
-    } else {
-      yield _toError(
-        command,
-        UnitError(
-          "Unsupported $command",
-          stackTrace: StackTrace.current,
+        UnitBlocError(
+          error,
+          stackTrace: stackTrace,
         ),
       );
     }
@@ -254,10 +279,11 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _update(UpdateUnit command) async {
+    final previous = repo[command.data.uuid];
     final device = await repo.update(command.data);
     return _toOK(
       command,
-      UnitUpdated(device),
+      UnitUpdated(device, previous),
       result: device,
     );
   }
@@ -281,11 +307,12 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   Future<UnitState> _process(_InternalChange command) async {
-    final device = await repo.patch(command.data);
+    final previous = repo[command.data.uuid];
+    final state = await repo.replace(command.data.uuid, command.data);
     return _toOK(
       command,
-      UnitUpdated(device),
-      result: device,
+      UnitUpdated(state.value, previous),
+      result: state.value,
     );
   }
 
@@ -306,9 +333,9 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
 
   // Complete with error and return response as error state to bloc
   UnitState _toError(UnitCommand event, Object error) {
-    final object = error is UnitError
+    final object = error is UnitBlocError
         ? error
-        : UnitError(
+        : UnitBlocError(
             error,
             stackTrace: StackTrace.current,
           );
@@ -322,7 +349,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   @override
   void onError(Object error, StackTrace stacktrace) {
     if (_subscriptions.isNotEmpty) {
-      add(RaiseUnitError(UnitError(
+      add(RaiseUnitError(UnitBlocError(
         error,
         stackTrace: stacktrace,
       )));
@@ -396,7 +423,7 @@ class _InternalChange extends UnitCommand<Unit, Unit> {
   String toString() => '_InternalChange {unit: $data}';
 }
 
-class RaiseUnitError extends UnitCommand<UnitError, UnitError> {
+class RaiseUnitError extends UnitCommand<UnitBlocError, UnitBlocError> {
   RaiseUnitError(data) : super(data);
 
   @override
@@ -412,13 +439,17 @@ abstract class UnitState<T> extends Equatable {
 
   UnitState(this.data, [props = const []]) : super([data, ...props]);
 
-  isEmpty() => this is UnitsEmpty;
-  isLoaded() => this is UnitsLoaded;
-  isCreated() => this is UnitCreated;
-  isUpdated() => this is UnitUpdated;
-  isDeleted() => this is UnitDeleted;
-  isUnloaded() => this is UnitsUnloaded;
-  isError() => this is UnitError;
+  bool isError() => this is UnitBlocError;
+  bool isEmpty() => this is UnitsEmpty;
+  bool isLoaded() => this is UnitsLoaded;
+  bool isCreated() => this is UnitCreated;
+  bool isUpdated() => this is UnitUpdated;
+  bool isDeleted() => this is UnitDeleted;
+  bool isUnloaded() => this is UnitsUnloaded;
+
+  bool isStatusChanged() => false;
+  bool isTracked() => (data is Unit) ? (data as Unit).tracking?.uuid != null : false;
+  bool isRetired() => (data is Unit) ? (data as Unit).status == UnitStatus.Retired : false;
 }
 
 class UnitsEmpty extends UnitState<Null> {
@@ -432,47 +463,51 @@ class UnitsLoaded extends UnitState<List<String>> {
   UnitsLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'UnitsLoaded';
+  String toString() => 'UnitsLoaded {units: $data}';
 }
 
 class UnitCreated extends UnitState<Unit> {
   UnitCreated(Unit data) : super(data);
 
   @override
-  String toString() => 'UnitCreated';
+  String toString() => 'UnitCreated {unit: $data}';
 }
 
 class UnitUpdated extends UnitState<Unit> {
-  UnitUpdated(Unit data) : super(data);
+  Unit previous;
+  UnitUpdated(Unit data, this.previous) : super(data);
 
   @override
-  String toString() => 'UnitUpdated';
+  bool isStatusChanged() => data.status != previous.status;
+
+  @override
+  String toString() => 'UnitUpdated {unit: $data, previous: $previous}';
 }
 
 class UnitDeleted extends UnitState<Unit> {
   UnitDeleted(Unit data) : super(data);
 
   @override
-  String toString() => 'UnitDeleted';
+  String toString() => 'UnitDeleted {unit: $data}';
 }
 
 class UnitsUnloaded extends UnitState<List<Unit>> {
   UnitsUnloaded(List<Unit> units) : super(units);
 
   @override
-  String toString() => 'UnitsUnloaded';
+  String toString() => 'UnitsUnloaded {units: $data}';
 }
 
 /// ---------------------
 /// Error States
 /// ---------------------
 
-class UnitError extends UnitState<Object> {
+class UnitBlocError extends UnitState<Object> {
   final StackTrace stackTrace;
-  UnitError(Object error, {this.stackTrace}) : super(error);
+  UnitBlocError(Object error, {this.stackTrace}) : super(error);
 
   @override
-  String toString() => 'UnitError {error: $data, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

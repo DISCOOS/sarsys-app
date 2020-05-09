@@ -89,7 +89,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       );
 
   void _showCreateItemSheet(context) {
-    final style = Theme.of(context).textTheme.title;
+    final style = Theme.of(context).textTheme.headline6;
     final isUnset = context.bloc<IncidentBloc>().isUnset;
     showModalBottomSheet(
       context: context,
@@ -112,7 +112,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         title: Text('Enhet', style: style),
                         onTap: () async {
                           await createUnit(
-                            point: toPoint(_mapController.center),
+                            position: toPosition(_mapController.center),
                           );
                           Navigator.pop(context);
                         },

@@ -1,12 +1,14 @@
 import 'dart:math';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/map/painters.dart';
+import 'package:SarSys/models/Position.dart';
+import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/proj4d.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -58,9 +60,9 @@ class DeviceLayer extends MapPlugin {
     final bounds = map.getBounds();
     final tracking = options.bloc.asDeviceIds();
     final devices = options.bloc.deviceBloc.devices.values.where(
-      (device) => bounds.contains(toLatLng(device.position)),
+      (device) => bounds.contains(toLatLng(device.position?.geometry)),
     );
-    return options.bloc.tracking.isEmpty
+    return options.bloc.trackings.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
@@ -82,9 +84,9 @@ class DeviceLayer extends MapPlugin {
           );
   }
 
-  List<Point> _toTrack(Map<String, Set<Tracking>> tracking, Device device) {
-    final tracks = tracking[device.uuid]?.first?.tracks;
-    return tracks?.isNotEmpty == true ? tracks[device.uuid]?.points ?? [] : [];
+  Track _toTrack(Map<String, Set<Tracking>> trackings, Device device) {
+    final tracking = trackings[device.uuid]?.first;
+    return TrackingUtils.find(tracking.tracks, device.uuid);
   }
 
   _buildTrack(
@@ -93,18 +95,18 @@ class DeviceLayer extends MapPlugin {
     DeviceLayerOptions options,
     MapState map,
     Device device,
-    Map<String, Set<Tracking>> tracking,
+    Map<String, Set<Tracking>> trackings,
   ) {
-    if (tracking != null) {
-      final tracks = _toTrack(tracking, device);
-      if (tracks?.isNotEmpty == true) {
-        var offsets = tracks.reversed.take(10).map((point) {
-          var pos = map.project(toLatLng(point));
+    if (trackings != null) {
+      final track = _toTrack(trackings, device);
+      if (track?.isNotEmpty == true) {
+        var offsets = track.positions.reversed.take(10).map((position) {
+          var pos = map.project(toLatLng(position.geometry));
           pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
           return Offset(pos.x.toDouble(), pos.y.toDouble());
         }).toList(growable: false);
 
-        final color = toPointStatusColor(tracks.last);
+        final color = toPositionStatusColor(track.positions?.last);
         return CustomPaint(
           painter: LineStringPainter(
             offsets: offsets,
@@ -121,10 +123,10 @@ class DeviceLayer extends MapPlugin {
 
   Widget _buildPoint(BuildContext context, DeviceLayerOptions options, MapState map, Device device) {
     var size = options.size;
-    var location = device.position;
-    var pos = map.project(toLatLng(location));
+    var point = device.position?.geometry;
+    var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
-    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, location);
+    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, device.position);
 
     return Positioned(
       top: pos.y,
@@ -136,7 +138,7 @@ class DeviceLayer extends MapPlugin {
           size: size,
           outer: pixelRadius,
           opacity: options.opacity,
-          color: toPointStatusColor(device.position),
+          color: toPositionStatusColor(device.position),
         ),
       ),
     );
@@ -144,8 +146,8 @@ class DeviceLayer extends MapPlugin {
 
   _buildLabel(BuildContext context, DeviceLayerOptions options, MapState map, Device device) {
     var size = options.size;
-    var location = device.position;
-    var pos = map.project(toLatLng(location));
+    var point = device.position?.geometry;
+    var pos = map.project(toLatLng(point));
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return Positioned(
@@ -158,15 +160,15 @@ class DeviceLayer extends MapPlugin {
     );
   }
 
-  double _toPixelRadius(MapState map, double size, double x, double y, Point point) {
-    if (point == null) return 0;
+  double _toPixelRadius(MapState map, double size, double x, double y, Position position) {
+    if (position == null) return 0;
     var pixelRadius = size;
-    if (point.acc != null && point.acc > 0.0) {
+    if (position.acc != null && position.acc > 0.0) {
       var coords = ProjMath.calculateEndingGlobalCoordinates(
-        point.lat,
-        point.lon,
+        position.lat,
+        position.lon,
         45.0,
-        point.acc,
+        position.acc,
       );
       var pos = map.project(LatLng(coords.y, coords.x));
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();

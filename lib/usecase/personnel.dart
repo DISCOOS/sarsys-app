@@ -1,10 +1,11 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/editors/point_editor.dart';
+import 'package:SarSys/core/streams.dart';
+import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/editors/personnel_editor.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/pages/personnel_page.dart';
@@ -17,11 +18,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
-  final Point point;
+  final Position position;
   final List<Device> devices;
   PersonnelParams({
     Personnel personnel,
-    this.point,
+    this.position,
     this.devices,
   }) : super(personnel);
 }
@@ -47,8 +48,22 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
     if (result == null) return dartz.Left(false);
 
+    // Will create personnel and tracking
     final personnel = await params.bloc.create(result.data);
-    await _handleTracking(params, personnel, devices: result.devices, point: result.point);
+
+    // Wait for tracking is created
+    final tracking = await waitThoughtState<TrackingCreated, Tracking>(
+      params.bloc,
+      map: (state) => state.data,
+      test: (state) => state.data.uuid == personnel.tracking.uuid,
+    );
+
+    // Update tracking
+    await params.context.bloc<TrackingBloc>().replace(
+          tracking,
+          devices: result.devices,
+          position: result.position,
+        );
     return dartz.Right(personnel);
   }
 }
@@ -74,41 +89,55 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       ),
     );
     if (result == null) return dartz.Left(false);
-    await params.bloc.update(result.data);
-    await _handleTracking(
-      params,
-      result.data,
-      devices: result.devices,
-      point: result.point,
-      append: false,
-    );
+
+    // Update personnel - if retired tracking bloc will handle tracking
+    final personnel = await params.bloc.update(result.data);
+
+    // Only update tracking if not retired
+    if (PersonnelStatus.Retired != personnel.status) {
+      await params.context.bloc<TrackingBloc>().replace(
+            params.context.bloc<TrackingBloc>().repo[personnel.tracking.uuid],
+            devices: result.devices,
+            position: result.position,
+          );
+    }
     return dartz.Right(result.data);
   }
 }
 
 /// Edit last known personnel location
-Future<dartz.Either<bool, Point>> editPersonnelLocation(
+Future<dartz.Either<bool, Position>> editPersonnelLocation(
   Personnel personnel,
 ) =>
     EditPersonnelLocation()(PersonnelParams(
       personnel: personnel,
     ));
 
-class EditPersonnelLocation extends UseCase<bool, Point, PersonnelParams> {
+class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Point>> call(params) async {
+  Future<dartz.Either<bool, Position>> call(params) async {
     assert(params.data != null, "Personnel must be supplied");
-    var result = await showDialog<Point>(
+
+    final tuuid = params.data.tracking.uuid;
+    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    assert(tracking != null, "Tracking not found: $tuuid");
+
+    var position = await showDialog<Position>(
       context: params.overlay.context,
-      builder: (context) => PointEditor(
-        params.point,
+      builder: (context) => PositionEditor(
+        params.position,
         title: "Sett siste kjente posisjon",
         controller: Provider.of<PermissionController>(params.context),
       ),
     );
-    if (result == null) return dartz.Left(false);
-    await _handleTracking(params, params.data, point: result);
-    return dartz.Right(result);
+    if (position == null) return dartz.Left(false);
+
+    // Update tracking with manual position
+    await params.context.bloc<TrackingBloc>().update(
+          tracking,
+          position: position,
+        );
+    return dartz.Right(position);
   }
 }
 
@@ -125,26 +154,39 @@ Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
 class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Pair<Personnel, Tracking>>> call(params) async {
+    // Get or select unit?
+    Personnel personnel = await _getOrSelectPersonnel(
+      params,
+      params.context.bloc<TrackingBloc>(),
+    );
+    if (personnel == null) return dartz.Left(false);
+
+    final tuuid = personnel.tracking.uuid;
+    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    assert(tracking != null, "Tracking not found: $tuuid");
+
+    // Add to tracking
+    final next = await params.context.bloc<TrackingBloc>().attach(
+          params.context.bloc<TrackingBloc>().repo[personnel.tracking.uuid],
+          devices: params.devices,
+        );
+    return dartz.Right(Pair.of(personnel, next));
+  }
+
+  Future<Personnel> _getOrSelectPersonnel(PersonnelParams params, TrackingBloc bloc) async {
     var personnel = params.data != null
         ? params.data
         : await selectPersonnel(
             params.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
-                params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid] == null ||
+                bloc.trackings[personnel.tracking.uuid] == null ||
                 // Personnel is not tracking given devices?
-                !params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid].devices.any(
-                      (device) => params.devices?.contains(device) == true,
-                    ),
+                !bloc.trackings[personnel.tracking.uuid].sources.any(
+                  (source) => params.devices?.any((device) => device.uuid == source.uuid) == true,
+                ),
           );
-    if (personnel == null) return dartz.Left(false);
-    final tracking = await _handleTracking(
-      params,
-      personnel,
-      devices: params.devices,
-      append: true,
-    );
-    return dartz.Right(Pair.of(personnel, tracking));
+    return personnel;
   }
 }
 
@@ -179,39 +221,12 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
         .where((test) => !devices.contains(test))
         .toList();
 
-    final tracking = await params.context.bloc<TrackingBloc>().update(
-          params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid],
+    final tracking = await params.context.bloc<TrackingBloc>().replace(
+          params.context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid],
           devices: keepDevices,
-          append: false,
         );
     return dartz.right(tracking);
   }
-}
-
-// TODO: Move to tracking service and convert to internal TrackingMessage
-Future<Tracking> _handleTracking(
-  PersonnelParams params,
-  Personnel personnel, {
-  List<Device> devices,
-  Point point,
-  bool append,
-}) async {
-  Tracking tracking;
-  if (personnel.tracking == null) {
-    tracking = await params.context.bloc<TrackingBloc>().trackPersonnel(
-          personnel,
-          devices: devices,
-        );
-  } else if (params.context.bloc<TrackingBloc>().tracking.containsKey(personnel.tracking.uuid)) {
-    tracking = params.context.bloc<TrackingBloc>().tracking[personnel.tracking.uuid];
-    tracking = await params.context.bloc<TrackingBloc>().update(
-          tracking,
-          point: point,
-          devices: devices,
-          append: append,
-        );
-  }
-  return tracking;
 }
 
 /// Transition personnel to mobilized state

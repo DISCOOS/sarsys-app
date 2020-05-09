@@ -79,7 +79,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
             (unit) => !exclude.contains(unit.status),
           )
           .where(
-            (unit) => unit.personnel.contains(personnel),
+            (unit) => unit.personnels.contains(personnel),
           );
 
   /// Find and replace given [Personnel]
@@ -116,7 +116,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
     Unit unit,
     Personnel personnel,
   ) =>
-      unit.personnel.toList()
+      unit.personnels.toList()
         ..removeWhere(
           (next) => next.uuid == personnel.uuid,
         );
@@ -145,6 +145,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
+          await clear();
           await Future.wait(response.body.map(
             (unit) => commit(
               StorageState.pushed(

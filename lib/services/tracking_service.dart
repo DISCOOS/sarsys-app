@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' show Client;
 
 class TrackingService {
@@ -17,30 +17,25 @@ class TrackingService {
   Stream<TrackingMessage> get messages => _controller.stream;
 
   /// GET ../incident/{incidentId}/tracking
-  Future<ServiceResponse<List<Tracking>>> fetch(String incidentId) async {
+  Future<ServiceResponse<List<Tracking>>> fetch(String uuid) async {
     // TODO: Implement fetch tracking
     throw "Not implemented";
   }
 
   /// POST ../incident/{incidentId}/tracking
-  Future<ServiceResponse<Tracking>> create(
-    String incidentId, {
-    Point point,
-    List<String> devices,
-    List<String> aggregates,
-  }) async {
+  Future<ServiceResponse<Tracking>> create(String iuuid, Tracking tracking) async {
     // TODO: Implement create unit tracking
     throw "Not implemented";
   }
 
-  /// PATCH ../incident/tracking/{trackingId}
+  /// PATCH ../incident/tracking/{uuid}
   Future<ServiceResponse<Tracking>> update(Tracking tracking) async {
     // TODO: Implement update tracking
     throw "Not implemented";
   }
 
-  /// DELETE ../incident/tracking/{trackingId}
-  Future<ServiceResponse<void>> delete(Tracking unit) async {
+  /// DELETE ../incident/tracking/{uuid}
+  Future<ServiceResponse<void>> delete(Tracking tracking) async {
     // TODO: Implement delete unit
     throw "Not implemented";
   }
@@ -50,11 +45,38 @@ class TrackingService {
   }
 }
 
-enum TrackingMessageType { TrackingChanged, LocationChanged }
+enum TrackingMessageType { created, updated, deleted }
 
 class TrackingMessage {
-  final String incidentId;
+  final String uuid;
   final TrackingMessageType type;
   final Map<String, dynamic> json;
-  TrackingMessage(this.incidentId, this.type, this.json);
+  TrackingMessage(this.uuid, this.type, this.json);
+
+  factory TrackingMessage.from(
+    Tracking tracking, {
+    @required TrackingMessageType type,
+  }) =>
+      TrackingMessage(
+        tracking.uuid,
+        type,
+        tracking.toJson(),
+      );
+
+  factory TrackingMessage.created(Tracking tracking) => TrackingMessage(
+        tracking.uuid,
+        TrackingMessageType.created,
+        tracking.toJson(),
+      );
+
+  factory TrackingMessage.updated(Tracking tracking) => TrackingMessage(
+        tracking.uuid,
+        TrackingMessageType.updated,
+        tracking.toJson(),
+      );
+  factory TrackingMessage.deleted(Tracking tracking) => TrackingMessage(
+        tracking.uuid,
+        TrackingMessageType.deleted,
+        tracking.toJson(),
+      );
 }

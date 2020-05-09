@@ -57,9 +57,9 @@ class _IncidentPageState extends State<IncidentPage> {
 
   @override
   Widget build(BuildContext context) {
-    labelStyle = Theme.of(context).textTheme.body1.copyWith(fontWeight: FontWeight.w400);
-    valueStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
-    unitStyle = Theme.of(context).textTheme.headline.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
+    labelStyle = Theme.of(context).textTheme.bodyText2.copyWith(fontWeight: FontWeight.w400);
+    valueStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
+    unitStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
     return RefreshIndicator(
       onRefresh: () async {
         context.bloc<IncidentBloc>().load();
@@ -376,7 +376,7 @@ class _IncidentPageState extends State<IncidentPage> {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               subtitle,
-              style: Theme.of(context).textTheme.subhead.copyWith(fontSize: 14, color: Colors.grey),
+              style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
             ),
           )
       ],

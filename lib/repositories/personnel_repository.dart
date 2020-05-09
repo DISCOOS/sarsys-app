@@ -84,6 +84,7 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
+          await clear();
           await Future.wait(response.body.map(
             (personnel) => commit(
               StorageState.pushed(
