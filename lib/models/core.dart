@@ -25,8 +25,18 @@ class JsonUtils {
     return JsonPatch.diff(o1.toJson(), o2.toJson());
   }
 
-  static Map<String, dynamic> patch(JsonObject oldJson, JsonObject newJson) {
-    final patches = JsonPatch.diff(oldJson.toJson(), newJson.toJson());
+  /// Append-only operations allowed
+  static const appendOnly = ['add', 'replace', 'move'];
+
+  static Map<String, dynamic> patch(
+    JsonObject oldJson,
+    JsonObject newJson, {
+    List<String> ops = appendOnly,
+  }) {
+    final patches = JsonPatch.diff(oldJson.toJson(), newJson.toJson())
+      ..removeWhere(
+        (diff) => !ops.contains(diff['op']),
+      );
     return JsonPatch.apply(oldJson, patches, strict: false);
   }
 }

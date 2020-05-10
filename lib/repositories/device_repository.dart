@@ -65,8 +65,9 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
           await clear();
           await Future.wait(response.body.map(
             (incident) => commit(
-              StorageState.pushed(
+              StorageState.created(
                 incident,
+                remote: true,
               ),
             ),
           ));
@@ -96,7 +97,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
   Future<Device> update(Device device) async {
     checkState();
     return apply(
-      StorageState.changed(device),
+      StorageState.updated(device),
     );
   }
 

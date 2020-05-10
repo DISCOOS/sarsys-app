@@ -339,7 +339,9 @@ void main() async {
       // Act and assert
       await _shouldCloseTrackingAutomatically<Unit>(
         harness,
-        arrange: (iuuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        arrange: (iuuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(),
+        ),
         act: (unit) async {
           await harness.unitBloc.update(
             unit.cloneWith(status: UnitStatus.Retired),
@@ -446,39 +448,25 @@ void main() async {
       final unit = await harness.unitBloc.create(UnitBuilder.create());
       final tuuid = unit.tracking.uuid;
 
-      // Assert CREATED
-      await expectThroughLater(
-        harness.trackingBloc,
-        emits(isA<TrackingCreated>()),
-        close: false,
+      // Assert local state
+      await _assertTrackingState<TrackingCreated>(
+        harness,
+        tuuid,
+        StorageStatus.created,
+        remote: false,
       );
-      expect(harness.trackingBloc.repo.length, 1, reason: "SHOULD contain one tracking");
-      expect(
-        harness.trackingBloc.repo.states[tuuid].status,
-        equals(StorageStatus.created),
-        reason: "SHOULD HAVE status CREATED",
-      );
-      expect(harness.trackingBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
-      expect(harness.trackingBloc.repo.containsKey(tuuid), isTrue, reason: "SHOULD contain tracking $tuuid");
 
-      // Act REMOTELY
+      // Act - Simulate backend
       final tracking = harness.trackingBloc.repo[tuuid];
-      await _addMessage(harness, TrackingMessage.created(tracking));
+      await _notify(harness, TrackingMessage.created(tracking));
 
-      // Assert PUSHED
-      await expectThroughLater(
-        harness.trackingBloc,
-        emitsInAnyOrder([isA<TrackingCreated>()]),
-        close: false,
+      // Assert remote state
+      await _assertTrackingState<TrackingCreated>(
+        harness,
+        tuuid,
+        StorageStatus.created,
+        remote: true,
       );
-      expect(harness.trackingBloc.repo.length, 1, reason: "SHOULD contain one tracking");
-      expect(
-        harness.trackingBloc.repo.states[tuuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
-      );
-      expect(harness.trackingBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
-      expect(harness.trackingBloc.repo.containsKey(tuuid), isTrue, reason: "SHOULD contain tracking $tuuid");
     });
 
     test('SHOULD BE empty after unload', () async {
@@ -560,7 +548,7 @@ void main() async {
       // Act and Assert
       await _testShouldUnloadWhenIncidentIsUnloaded(harness);
     });
-  });
+  }, skip: false);
 
   group('WHEN TrackingBloc is OFFLINE', () {
     test('SHOULD NOT load trackings', () async {
@@ -571,7 +559,7 @@ void main() async {
       await _shouldLoadTrackings(harness);
     });
 
-    test('SHOULD create unit tracking automatically', () async {
+    test('SHOULD create unit tracking automatically locally only', () async {
       // Arrange
       harness.connectivity.offline();
       final unit = UnitBuilder.create(personnels: [
@@ -940,7 +928,6 @@ void main() async {
 
     test('SHOULD delete personnel tracking automatically locally', () async {
       // Arrange
-      harness.connectivity.offline();
       final personnel = PersonnelBuilder.create();
       final state = await _shouldCreateTrackingAutomatically<Personnel>(
         harness,
@@ -949,6 +936,7 @@ void main() async {
       final tuuid = state.value.uuid;
 
       // Act and Assert
+      harness.connectivity.offline();
       await _shouldDeleteTrackingAutomatically<Personnel>(
         harness,
         tuuid,
@@ -982,7 +970,7 @@ void main() async {
 
       // Act REMOTELY
       final tracking = harness.trackingBloc.repo[tuuid];
-      await _addMessage(harness, TrackingMessage.created(tracking));
+      await _notify(harness, TrackingMessage.created(tracking));
 
       // Assert PUSHED
       await expectThroughLater(
@@ -991,10 +979,10 @@ void main() async {
         close: false,
       );
       expect(harness.trackingBloc.repo.length, 1, reason: "SHOULD contain one tracking");
-      expect(
-        harness.trackingBloc.repo.states[tuuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
+      expectStorageStatus(
+        harness.trackingBloc.repo.states[tuuid],
+        StorageStatus.created,
+        remote: true,
       );
       expect(harness.trackingBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
       expect(harness.trackingBloc.repo.containsKey(tuuid), isTrue, reason: "SHOULD contain tracking $tuuid");
@@ -1497,7 +1485,6 @@ Future<T> _shouldCloseTrackingAutomatically<T extends Trackable>(
   BlocTestHarness harness, {
   Future<T> Function(String iuuid) arrange,
   AsyncValueSetter<T> act,
-  bool offline = false,
 }) async {
   T trackable;
   final state = await _shouldCreateTrackingAutomatically<T>(
@@ -1512,16 +1499,28 @@ Future<T> _shouldCloseTrackingAutomatically<T extends Trackable>(
   // Act LOCALLY
   await act(trackable);
 
-  // Assert LOCALLY
-  if (offline) {
-    await _assertTrackingState(harness, tuuid, StorageStatus.changed);
-    // Act REMOTELY
-    final tracking = harness.trackingBloc.repo[tuuid];
-    await _addAndNotify(harness, tracking, TrackingMessageType.updated);
-  }
+  // Assert local state
+  await _assertTrackingState<TrackingUpdated>(
+    harness,
+    tuuid,
+    // When offline status will not change to updated
+    harness.isOnline ? StorageStatus.updated : StorageStatus.created,
+    remote: false,
+  );
 
-  // Assert REMOTELY
-  await _assertTrackingState(harness, tuuid, StorageStatus.pushed);
+  if (harness.isOnline) {
+    // Act - Simulate backend
+    final tracking = harness.trackingBloc.repo[tuuid];
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.updated);
+
+    // Assert REMOTELY
+    await _assertTrackingState(
+      harness,
+      tuuid,
+      StorageStatus.updated,
+      remote: true,
+    );
+  }
 
   return trackable;
 }
@@ -1611,9 +1610,33 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
 
   // Act LOCALLY
   final trackable = await act(incident.uuid);
+  final tuuid = trackable.tracking.uuid;
 
-  // Assert
-  return await _assertCreatedTrackingAutomatically(trackable.tracking.uuid, harness, count: count);
+  // Assert locally CREATED
+  final state = await _assertTrackingState<TrackingCreated>(
+    harness,
+    tuuid,
+    StorageStatus.created,
+    count: count,
+    remote: false,
+  );
+
+  if (harness.isOnline) {
+    // Act - Simulate backend
+    final tracking = harness.trackingBloc.repo[tuuid];
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.created);
+
+    // Assert
+    return _assertTrackingState<TrackingCreated>(
+      harness,
+      tuuid,
+      StorageStatus.created,
+      count: count,
+      remote: harness.isOnline,
+    );
+  }
+  // Local state
+  return state;
 }
 
 Future _shouldLoadTrackings(BlocTestHarness harness) async {
@@ -1662,41 +1685,37 @@ Future _assertReopensClosedTrackingAutomatically<T extends Trackable>(
   final trackable = await act();
   final tuuid = trackable.tracking.uuid;
 
-  // Assert REMOTELY
-  final remote = await _assertTrackingState<TrackingUpdated>(harness, tuuid, StorageStatus.pushed);
-  expect(remote.value.status, status, reason: "SHOULD BE ${enumName(status)}");
-}
-
-Future<StorageState<Tracking>> _assertCreatedTrackingAutomatically(
-  String tuuid,
-  BlocTestHarness harness, {
-  int count = 1,
-}) async {
-  // Assert CREATED
-  await _assertTrackingState<TrackingCreated>(
+  // Assert local state
+  await _assertTrackingState<TrackingUpdated>(
     harness,
     tuuid,
-    StorageStatus.created,
-    count: count,
+    // When offline status will not change to updated
+    harness.isOnline ? StorageStatus.updated : StorageStatus.created,
+    remote: false,
   );
 
-  // Act REMOTELY
-  final tracking = harness.trackingBloc.repo[tuuid];
-  await _addAndNotify(harness, tracking, TrackingMessageType.created);
+  if (harness.isOnline) {
+    // Act - Simulate backend
+    final tracking = harness.trackingBloc.repo[tuuid];
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.updated);
 
-  // Assert PUSHED
-  return _assertTrackingState<TrackingCreated>(
-    harness,
-    tuuid,
-    StorageStatus.pushed,
-    count: count,
-  );
+    // Assert REMOTELY
+    await _assertTrackingState(
+      harness,
+      tuuid,
+      StorageStatus.updated,
+      remote: true,
+    );
+  }
+
+  return trackable;
 }
 
 Future<StorageState<Tracking>> _assertTrackingState<T extends TrackingState>(
   BlocTestHarness harness,
   String tuuid,
-  StorageStatus type, {
+  StorageStatus status, {
+  @required bool remote,
   int count = 1,
 }) async {
   await expectThroughLater(
@@ -1706,21 +1725,21 @@ Future<StorageState<Tracking>> _assertTrackingState<T extends TrackingState>(
   );
   expect(harness.trackingBloc.repo.length, count, reason: "SHOULD contain $count tracking(s)");
   final state = harness.trackingBloc.repo.states[tuuid];
-  expect(
-    state.status,
-    equals(type),
-    reason: "SHOULD HAVE status ${enumName(type)}",
+  expectStorageStatus(
+    state,
+    status,
+    remote: remote,
   );
   expect(harness.trackingBloc.repo.containsKey(tuuid), isTrue, reason: "SHOULD contain tracking $tuuid");
   return state;
 }
 
-Future _addAndNotify(BlocTestHarness harness, Tracking tracking, TrackingMessageType type) async {
+Future _putRemoteAndNotify(BlocTestHarness harness, Tracking tracking, TrackingMessageType type) async {
   harness.trackingService.put(harness.trackingBloc.iuuid, tracking);
-  await _addMessage(harness, TrackingMessage(tracking.uuid, type, tracking.toJson()));
+  await _notify(harness, TrackingMessage(tracking.uuid, type, tracking.toJson()));
 }
 
-Future _addMessage(BlocTestHarness harness, TrackingMessage message) async {
+Future _notify(BlocTestHarness harness, TrackingMessage message) async {
   final messages = <TrackingMessage>[];
   final subscription = harness.trackingService.messages.listen(
     messages.add,

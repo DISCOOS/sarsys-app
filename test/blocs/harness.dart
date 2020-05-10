@@ -29,6 +29,7 @@ import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -582,4 +583,24 @@ Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
   if (close) {
     bloc.close();
   }
+}
+
+Stream<StorageStatus> toStatusChanges(Stream<StorageState> changes) =>
+    changes.where((state) => state.isRemote).map((state) => state.status);
+
+void expectStorageStatus(
+  StorageState actual,
+  StorageStatus expected, {
+  @required bool remote,
+}) {
+  expect(
+    actual.status,
+    equals(expected),
+    reason: "SHOULD HAVE status ${enumName(expected)}",
+  );
+  expect(
+    actual.isRemote,
+    remote ? isTrue : isFalse,
+    reason: "SHOULD HAVE ${remote ? 'remote' : 'local'} origin",
+  );
 }

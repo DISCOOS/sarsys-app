@@ -163,14 +163,14 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     checkState();
     final next = validate(state);
     final exists = await commit(next);
-    if (exists && !next.isPushed) {
+    if (exists && next.isLocal) {
       if (connectivity.isOnline) {
         try {
           final value = await _push(
             next,
           );
           await commit(
-            StorageState.pushed(value),
+            next.remote(value),
           );
           return value;
         } on SocketException {
@@ -214,11 +214,12 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       final key = _backlog.first;
       try {
         if (containsKey(key)) {
+          final state = getState(key);
           final config = await _push(
-            getState(key),
+            state,
           );
           await commit(
-            StorageState.pushed(config),
+            state.remote(config),
           );
         }
         _backlog.remove(key);
@@ -258,54 +259,44 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
 
   /// Push state to remote
   FutureOr<T> _push(StorageState<T> state) async {
-    switch (state.status) {
-      case StorageStatus.created:
-        return await onCreate(state);
-      case StorageStatus.changed:
-        return await onUpdate(state);
-      case StorageStatus.deleted:
-        return await onDelete(state);
-      case StorageStatus.pushed:
-        return state.value;
+    if (state.isLocal) {
+      switch (state.status) {
+        case StorageStatus.created:
+          return await onCreate(state);
+        case StorageStatus.updated:
+          return await onUpdate(state);
+        case StorageStatus.deleted:
+          return await onDelete(state);
+      }
+      throw RepositoryException('Unable to process $state');
     }
-    throw RepositoryException('Unable to process $state');
+    return state.value;
   }
 
   @protected
   StorageState<T> validate(StorageState<T> state) {
     final key = toKey(state);
-    final isOffline = connectivity.isOffline;
     final previous = containsKey(key) ? _states.get(key) : null;
     switch (state.status) {
       case StorageStatus.created:
         // Not allowed to create same value twice
-        if (previous == null || previous.isPushed) {
+        if (previous == null || previous.isRemote) {
           return state;
         }
         throw RepositoryStateExistsException(previous, state);
-      case StorageStatus.changed:
+      case StorageStatus.updated:
         if (previous != null) {
           if (!previous.isDeleted) {
-            return previous.isPushed ? state : previous.replace(state.value);
+            return previous.isRemote ? state : previous.replace(state.value);
           }
           // Not allowed to update deleted state
           throw RepositoryIllegalStateException(previous, state);
         }
         throw RepositoryStateNotExistsException(state);
       case StorageStatus.deleted:
-        if (previous != null) {
-          // Transition from created to deleted
-          // state directly is only allowed if
-          // offline. Since it has never been
-          // pushed, it is safe to will remove
-          // it locally directly.
-          if (!previous.isCreated || isOffline) {
-            return state;
-          }
-          throw RepositoryIllegalStateException(previous, state);
+        if (previous == null) {
+          throw RepositoryStateNotExistsException(state);
         }
-        throw RepositoryStateNotExistsException(state);
-      case StorageStatus.pushed:
         return state;
     }
     throw RepositoryIllegalStateException(previous, state);
@@ -315,8 +306,6 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   Future<bool> commit(StorageState<T> state) async {
     final key = toKey(state);
     final current = _states.get(key);
-    // Delete if push has succeeded or,
-    // if delete was done offline on a created state
     if (shouldDelete(next: state, current: current)) {
       await _states.delete(key);
       // Can not logically exist anymore, remove it!
@@ -336,17 +325,18 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   /// Value should be delete if and only if
   /// 1) current state origin is remote
   /// 2) current state is created with origin local
-  //    // if delete was done offline on a created state
   bool shouldDelete({
     StorageState next,
     StorageState current,
   }) =>
-      current?.isDeleted == true && next.isPushed || current?.isCreated == true && next.isDeleted;
+      current != null
+          ? current.isDeleted && next.isRemote || current.isCreated && current.isLocal && next.isDeleted
+          : false;
 
   /// Replace [state] in repository for given [key]-[value] pair
-  Future<StorageState<T>> replace(S key, T value) async {
+  Future<StorageState<T>> replace(S key, T value, {bool remote}) async {
     final current = _assertExist(key, value: value);
-    final next = current.replace(value);
+    final next = current.replace(value, remote: remote);
     await commit(next);
     return next;
   }

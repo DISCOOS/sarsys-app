@@ -87,8 +87,9 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
           await clear();
           await Future.wait(response.body.map(
             (personnel) => commit(
-              StorageState.pushed(
+              StorageState.created(
                 personnel,
+                remote: true,
               ),
             ),
           ));
@@ -118,7 +119,7 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
   Future<Personnel> update(Personnel personnel) async {
     checkState();
     return apply(
-      StorageState.changed(personnel),
+      StorageState.updated(personnel),
     );
   }
 

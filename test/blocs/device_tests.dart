@@ -63,10 +63,10 @@ void main() async {
 
       // Assert
       verify(harness.deviceService.create(any, any)).called(1);
-      expect(
-        harness.deviceBloc.repo.states[device.uuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
+      expectStorageStatus(
+        harness.deviceBloc.repo.states[device.uuid],
+        StorageStatus.created,
+        remote: true,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
@@ -87,10 +87,10 @@ void main() async {
 
       // Assert
       verify(harness.deviceService.update(any)).called(1);
-      expect(
-        harness.deviceBloc.repo.states[device.uuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
+      expectStorageStatus(
+        harness.deviceBloc.repo.states[device.uuid],
+        StorageStatus.updated,
+        remote: true,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
@@ -215,10 +215,10 @@ void main() async {
       await harness.deviceBloc.create(device);
 
       // Assert
-      expect(
-        harness.deviceBloc.repo.states[device.uuid].status,
-        equals(StorageStatus.created),
-        reason: "SHOULD HAVE status CREATED",
+      expectStorageStatus(
+        harness.deviceBloc.repo.states[device.uuid],
+        StorageStatus.created,
+        remote: false,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one incident");
       expectThrough(harness.deviceBloc, isA<DeviceCreated>());
@@ -238,10 +238,10 @@ void main() async {
       await harness.deviceBloc.update(device2.cloneWith(type: DeviceType.Tetra));
 
       // Assert
-      expect(
-        harness.deviceBloc.repo.states[device2.uuid].status,
-        equals(StorageStatus.created),
-        reason: "SHOULD HAVE status CREATED",
+      expectStorageStatus(
+        harness.deviceBloc.repo.states[device2.uuid],
+        StorageStatus.created,
+        remote: false,
       );
       expect(harness.deviceBloc.repo[device1.uuid].type, equals(DeviceType.App), reason: "SHOULD be type App");
       expect(harness.deviceBloc.repo[device2.uuid].type, equals(DeviceType.Tetra), reason: "SHOULD be type Tetra");

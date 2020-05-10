@@ -105,8 +105,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
           await clear();
           await Future.wait(response.body.map(
             (unit) => commit(
-              StorageState.pushed(
+              StorageState.created(
                 unit,
+                remote: true,
               ),
             ),
           ));
@@ -136,7 +137,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   Future<Tracking> update(Tracking unit) async {
     checkState();
     return apply(
-      StorageState.changed(unit),
+      StorageState.updated(unit),
     );
   }
 
@@ -218,7 +219,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   @override
   StorageState<Tracking> validate(StorageState<Tracking> state) {
     // Verify "one active track per source" policy
-    if (!(state.isPushed | state.isDeleted)) {
+    if (!(state.isRemote || state.isDeleted)) {
       final duplicates = _duplicates(state);
       if (duplicates.isNotEmpty) {
         throw TrackingSourceAlreadyTrackedException(

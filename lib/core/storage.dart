@@ -148,36 +148,53 @@ class Storage {
 
 enum StorageStatus {
   created,
-  pushed,
-  changed,
+  updated,
   deleted,
 }
 
 class StorageState<T> {
-  StorageState({this.value, this.status});
+  StorageState({
+    @required this.value,
+    @required this.status,
+    @required bool remote,
+  }) : _remote = remote;
   final T value;
+  final bool _remote;
   final StorageStatus status;
 
-  factory StorageState.created(T value) => StorageState<T>(value: value, status: StorageStatus.created);
-  factory StorageState.changed(T value) => StorageState<T>(value: value, status: StorageStatus.changed);
-  factory StorageState.deleted(T value) => StorageState<T>(value: value, status: StorageStatus.deleted);
-  factory StorageState.pushed(T value) => StorageState<T>(value: value, status: StorageStatus.pushed);
+  bool get isLocal => !_remote;
+  bool get isRemote => _remote;
+
+  factory StorageState.created(T value, {bool remote = false}) => StorageState<T>(
+        value: value,
+        status: StorageStatus.created,
+        remote: remote,
+      );
+  factory StorageState.updated(T value, {bool remote = false}) => StorageState<T>(
+        value: value,
+        status: StorageStatus.updated,
+        remote: remote,
+      );
+  factory StorageState.deleted(T value, {bool remote = false}) => StorageState<T>(
+        value: value,
+        status: StorageStatus.deleted,
+        remote: remote,
+      );
 
   bool get isCreated => StorageStatus.created == status;
-  bool get isPushed => StorageStatus.pushed == status;
-  bool get isChanged => StorageStatus.changed == status;
+  bool get isChanged => StorageStatus.updated == status;
   bool get isDeleted => StorageStatus.deleted == status;
 
-  StorageState<T> replace(T value) {
+  StorageState<T> remote(T value) => StorageState<T>(value: value, status: status, remote: true);
+
+  StorageState<T> replace(T value, {bool remote}) {
     switch (status) {
       case StorageStatus.created:
-        return StorageState.created(value);
-      case StorageStatus.pushed:
-        return StorageState.pushed(value);
-      case StorageStatus.changed:
-        return StorageState.changed(value);
+        return StorageState.created(value, remote: remote ?? _remote);
+      case StorageStatus.updated:
+        return StorageState.updated(value, remote: remote ?? _remote);
       case StorageStatus.deleted:
-        return StorageState.deleted(value);
+        return StorageState.deleted(value, remote: remote ?? _remote);
       default:
         throw StorageStateException('Unknown state $status');
     }
@@ -229,6 +246,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     var json = reader.readMap();
     return StorageState(
       status: _toStatus(json['status'] as String),
+      remote: json['remote'] != null ? json['remote'] as bool : false,
       value: json['value'] != null ? fromJson(Map<String, dynamic>.from(json['value'])) : null,
     );
   }
@@ -244,6 +262,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
   void write(BinaryWriter writer, StorageState<T> state) {
     writer.writeMap({
       'state': enumName(state.status),
+      'remote': state?._remote != null ? state._remote : null,
       'value': state.value != null ? toJson(state.value) : null,
     });
   }

@@ -648,26 +648,36 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   }
 
   Stream<TrackingState> _process(_HandleMessage event) async* {
+    final remote = !event.internal;
     switch (event.data.type) {
       case TrackingMessageType.created:
-        final tracking = Tracking.fromJson(event.data.json);
-        await (event.internal
-            // Force local state
-            ? repo.commit(StorageState.created(tracking))
-            // Commit remote state
-            : repo.commit(StorageState.pushed(tracking)));
-        yield TrackingCreated(tracking);
+        var next;
+        final current = repo.states[event.data.uuid];
+        if (current == null) {
+          // Not found
+          next = Tracking.fromJson(event.data.json);
+          await repo.commit(
+            StorageState.created(next, remote: remote),
+          );
+        } else {
+          next = _merge(current, event);
+          await (current.isLocal
+              // Replace local value
+              ? repo.replace(event.data.uuid, next, remote: remote)
+              // Commit remote state
+              : repo.commit(StorageState.created(next, remote: remote)));
+        }
+        yield TrackingCreated(next);
         break;
       case TrackingMessageType.updated:
-        final tracking = repo[event.data.uuid];
-        if (tracking != null) {
-          // Merge with existing
-          final next = Tracking.fromJson(event.data.json);
-          await (event.internal
+        final current = repo.states[event.data.uuid];
+        if (current != null) {
+          Tracking next = _merge(current, event);
+          await (current.isLocal
               // Replace local value
-              ? repo.replace(event.data.uuid, next)
+              ? repo.replace(event.data.uuid, next, remote: !event.internal)
               // Commit remote state
-              : repo.commit(StorageState.pushed(tracking)));
+              : repo.commit(StorageState.updated(next, remote: remote)));
           yield TrackingUpdated(next);
         }
         break;
@@ -675,11 +685,9 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         final tracking = repo[event.data.uuid];
         if (tracking != null) {
           final next = TrackingUtils.close(tracking);
-          await (event.internal
-              // Force deleted as local value
-              ? repo.commit(StorageState<Tracking>.deleted(next))
-              // Commit remote state
-              : repo.commit(StorageState.pushed(tracking)));
+          await repo.commit(
+            StorageState.deleted(next, remote: remote),
+          );
           yield TrackingDeleted(next);
         }
         break;
@@ -691,6 +699,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
           stackTrace: StackTrace.current,
         );
     }
+  }
+
+  Tracking _merge(StorageState<Tracking> current, _HandleMessage event) {
+    final json = JsonUtils.patch(
+      current.value,
+      Tracking.fromJson(event.data.json),
+    );
+    final next = Tracking.fromJson(json);
+    return next;
   }
 
   // Dispatch and return future

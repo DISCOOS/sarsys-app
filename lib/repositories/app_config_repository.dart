@@ -58,7 +58,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   Future<AppConfig> update(AppConfig config) async {
     checkState();
     return apply(
-      StorageState.changed(config),
+      StorageState.updated(config),
     );
   }
 
@@ -118,8 +118,9 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
         var response = await service.fetch(state.value.uuid);
         if (response.is200) {
           await commit(
-            StorageState.pushed(
+            StorageState.created(
               response.body,
+              remote: true,
             ),
           );
           return response.body;

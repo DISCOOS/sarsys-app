@@ -63,10 +63,10 @@ void main() async {
 
       // Assert
       verify(harness.personnelService.create(any, any)).called(1);
-      expect(
-        harness.personnelBloc.repo.states[personnel.uuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
+      expectStorageStatus(
+        harness.personnelBloc.repo.states[personnel.uuid],
+        StorageStatus.created,
+        remote: true,
       );
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
@@ -88,10 +88,10 @@ void main() async {
 
       // Assert
       verify(harness.personnelService.update(any)).called(1);
-      expect(
-        harness.personnelBloc.repo.states[personnel.uuid].status,
-        equals(StorageStatus.pushed),
-        reason: "SHOULD HAVE status PUSHED",
+      expectStorageStatus(
+        harness.personnelBloc.repo.states[personnel.uuid],
+        StorageStatus.updated,
+        remote: true,
       );
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");

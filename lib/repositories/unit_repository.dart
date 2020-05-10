@@ -79,7 +79,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
             (unit) => !exclude.contains(unit.status),
           )
           .where(
-            (unit) => unit.personnels.contains(personnel),
+            (unit) => unit.personnels.any((p) => p.uuid == personnel.uuid),
           );
 
   /// Find and replace given [Personnel]
@@ -148,8 +148,9 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
           await clear();
           await Future.wait(response.body.map(
             (unit) => commit(
-              StorageState.pushed(
+              StorageState.created(
                 unit,
+                remote: true,
               ),
             ),
           ));
@@ -179,7 +180,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
   Future<Unit> update(Unit unit) async {
     checkState();
     return apply(
-      StorageState.changed(unit),
+      StorageState.updated(unit),
     );
   }
 

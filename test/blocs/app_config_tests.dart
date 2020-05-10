@@ -1,7 +1,6 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/AppConfig.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
@@ -71,11 +70,11 @@ void main() async {
 
         // Assert
         await expectLater(
-          harness.configBloc.repo.changes.map((state) => state.status),
-          emits(StorageStatus.pushed),
+          toStatusChanges(harness.configBloc.repo.changes),
+          emits(StorageStatus.created),
         );
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
-        expect(harness.configBloc.repo.state.status, StorageStatus.pushed, reason: "SHOULD HAVE remote state");
+        expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       },
     );
 
@@ -93,12 +92,12 @@ void main() async {
 
         // Assert
         await expectLater(
-          harness.configBloc.repo.changes.map((state) => state.status),
-          emits(StorageStatus.pushed),
+          toStatusChanges(harness.configBloc.repo.changes),
+          emits(StorageStatus.created),
         );
         // Assert
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
-        expect(harness.configBloc.repo.state.status, StorageStatus.pushed, reason: "SHOULD HAVE remote state");
+        expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       },
     );
 
@@ -110,7 +109,7 @@ void main() async {
         await harness.configBloc.load();
         harness.connectivity.offline();
         await harness.configBloc.update();
-        expect(harness.configBloc.repo.state.status, StorageStatus.changed, reason: "SHOULD HAVE local state");
+        expect(harness.configBloc.repo.state.status, StorageStatus.updated, reason: "SHOULD HAVE local state");
         expect(harness.configBloc.repo.backlog.length, 1, reason: "SHOULD have a backlog");
 
         // Act
@@ -118,11 +117,11 @@ void main() async {
 
         // Assert
         await expectLater(
-          harness.configBloc.repo.changes.map((state) => state.status),
-          emits(StorageStatus.pushed),
+          toStatusChanges(harness.configBloc.repo.changes),
+          emits(StorageStatus.updated),
         );
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
-        expect(harness.configBloc.repo.state.status, StorageStatus.pushed, reason: "SHOULD HAVE remote state");
+        expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       },
     );
 
@@ -165,42 +164,51 @@ Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) a
   _setConnectivity(offline, harness);
   final oldConfig = await harness.configBloc.load();
   final newConfig = oldConfig.copyWith(demoRole: 'personnel');
-  final status = offline ? StorageStatus.created : StorageStatus.pushed;
 
   // Act
   final gotConfig = await harness.configBloc.update(demoRole: 'personnel');
 
   // Assert
   expect(gotConfig, equals(newConfig), reason: "SHOULD have changed AppConfig");
-  expect(harness.configBloc.repo.state.status, status, reason: "SHOULD HAVE ${enumName(status)} state");
+  expectStorageStatus(
+    harness.configBloc.repo.state,
+    offline ? StorageStatus.created : StorageStatus.updated,
+    remote: !offline,
+  );
   expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>(), isA<AppConfigUpdated>()]);
 }
 
 Future _testAppConfigShouldLoadWithDefaultValues(BlocTestHarness harness, bool offline) async {
   // Arrange
   _setConnectivity(offline, harness);
-  final status = offline ? StorageStatus.created : StorageStatus.pushed;
 
   // Act
   await harness.configBloc.load();
 
   // Assert
   expect(harness.configBloc.config, isNotNull, reason: "SHOULD have AppConfig");
-  expect(harness.configBloc.repo.state.status, status, reason: "SHOULD HAVE ${enumName(status)} state");
+  expectStorageStatus(
+    harness.configBloc.repo.state,
+    StorageStatus.created,
+    remote: !offline,
+  );
   expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>()]);
 }
 
 Future _testAppConfigShouldInitializeWithDefaultValues(BlocTestHarness harness, bool offline) async {
   // Arrange
   _setConnectivity(offline, harness);
-  final status = offline ? StorageStatus.created : StorageStatus.pushed;
 
   // Act
   await harness.configBloc.init();
 
   // Assert
   expect(harness.configBloc.repo.config, isNotNull, reason: "AppConfigRepository SHOULD have AppConfig");
-  expect(harness.configBloc.repo.state.status, status, reason: "SHOULD HAVE ${enumName(status)} state");
+  expectStorageStatus(
+    harness.configBloc.repo.state,
+    StorageStatus.created,
+    remote: !offline,
+  );
   expectThroughInOrder(harness.configBloc, [isA<AppConfigInitialized>()]);
 }
 

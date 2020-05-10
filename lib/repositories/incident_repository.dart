@@ -48,7 +48,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
   Future<Incident> update(Incident incident) async {
     await prepare();
     return apply(
-      StorageState.changed(incident),
+      StorageState.updated(incident),
     );
   }
 
@@ -69,8 +69,9 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
           await clear();
           await Future.wait(response.body.map(
             (incident) => commit(
-              StorageState.pushed(
+              StorageState.created(
                 incident,
+                remote: true,
               ),
             ),
           ));
