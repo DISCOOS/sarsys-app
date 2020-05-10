@@ -495,9 +495,10 @@ class _UnitEditorState extends State<UnitEditor> {
 
   List<Personnel> _findPersonnel(String query) {
     if (query.length != 0) {
-      var actual = _getActualPersonnel().map((personnel) => personnel.uuid);
-      var local = _getLocalPersonnel().map((personnel) => personnel.uuid);
-      var lowercaseQuery = query.toLowerCase();
+      final actual = _getActualPersonnel().map((personnel) => personnel.uuid);
+      final local = _getLocalPersonnel().map((personnel) => personnel.uuid);
+      final lowercaseQuery = query.toLowerCase();
+      final personnels = context.bloc<TrackingBloc>().units.personnels().keys;
       return context
           .bloc<PersonnelBloc>()
           .personnels
@@ -505,7 +506,7 @@ class _UnitEditorState extends State<UnitEditor> {
           .where((personnel) =>
               // Add locally removed devices
               actual.contains(personnel.uuid) && !local.contains(personnel.uuid) ||
-              context.bloc<TrackingBloc>().trackables.elementAt(personnel.tracking.uuid) == null)
+              personnels.contains(personnel.uuid) == null)
           .where((personnel) =>
               personnel.name.toLowerCase().contains(lowercaseQuery) ||
               translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))

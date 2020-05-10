@@ -60,11 +60,20 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   }
 
   /// Test if source [suuid] is being tracked
+  ///
+  /// If [tracks] is [true] search is performed
+  /// on `Tracking.tracks[].source.uuid` instead
+  /// of `Tracking.sources[].uuid` (default is false).
+  ///
+  /// Returns empty list if [source.uuid] is not found
+  /// for given set of excluded [TrackingStatus.values].
+  ///
   bool has(
     String suuid, {
+    bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      find(suuid) != null;
+      find(suuid, tracks: tracks, exclude: exclude) != null;
 
   /// Find tracking from given source [suuid].
   ///
@@ -85,15 +94,19 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
     String suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
-  }) =>
-      _sources.containsKey(suuid)
-          ? _sources[suuid]
-              .map(get)
-              .where(
-                (tracking) => !exclude.contains(tracking.status),
-              )
-              .toList()
-          : [];
+  }) {
+    if (tracks) {
+      throw UnimplementedError('Search in tracks not implemented');
+    }
+    return _sources.containsKey(suuid)
+        ? _sources[suuid]
+            .map(get)
+            .where(
+              (tracking) => !exclude.contains(tracking.status),
+            )
+            .toList()
+        : [];
+  }
 
   /// GET ../units
   Future<List<Tracking>> load(String iuuid) async {

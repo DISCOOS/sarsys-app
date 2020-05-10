@@ -4,14 +4,15 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 /// Wait for given rule result from stream of results
-Future<T> waitThoughtState<S, T>(
+FutureOr<T> waitThoughtState<S, T>(
   Bloc bloc, {
+  @required T Function(S state) map,
   bool fail = false,
   Duration timeout = const Duration(
     milliseconds: 100,
   ),
   bool Function(S state) test,
-  T Function(S state) map,
+  FutureOr<T> Function(T value) act,
 }) async {
   try {
     await bloc
@@ -24,7 +25,11 @@ Future<T> waitThoughtState<S, T>(
       throw TimeoutException("Failed wait for $T", timeout);
     }
   }
-  return map == null ? bloc.state : map(bloc.state);
+  final value = map(bloc.state);
+  if (act == null) {
+    return value;
+  }
+  return await act(value);
 }
 
 /// Wait for given rule result from stream of results

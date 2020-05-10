@@ -68,13 +68,17 @@ class TrackingUtils {
           .where((aggregate) => !activeOnly || isSourceActive(aggregate))
           .map((aggregate) => PositionableSource.from<T>(
                 aggregate,
-                position: aggregate is Trackable
-                    ? repo[aggregate.tracking?.uuid]?.position
-                    : toPosition(
-                        aggregate,
-                      ),
+                position: _toPosition(aggregate, repo),
               ))
           .toList();
+
+  static Position _toPosition(aggregate, TrackingRepository repo) {
+    return aggregate is Trackable && repo.containsKey(aggregate.tracking?.uuid)
+        ? repo[aggregate.tracking.uuid].position
+        : toPosition(
+            aggregate,
+          );
+  }
 
   /// Gets position from aggregate if it is [Positionable]
   static Position toPosition<T>(T aggregate) => aggregate is Positionable ? aggregate.position : null;

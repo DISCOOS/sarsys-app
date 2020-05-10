@@ -40,10 +40,10 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
 
   @override
   Iterable<Personnel> get targets => bloc.personnels
-      .asTrackingIds(
+      .where(
         exclude: includeRetired ? [] : [TrackingStatus.closed],
       )
-      .values;
+      .trackables;
 
   @override
   void doProcessTap(BuildContext context, List<Personnel> personnel) {

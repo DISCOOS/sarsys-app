@@ -50,7 +50,6 @@ class Source extends EntityObject<Map<String, dynamic>> {
         return SourceType.device;
       case Unit:
       case Personnel:
-      case Tracking:
         return SourceType.trackable;
     }
     throw ArgumentError(

@@ -60,7 +60,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
     // Update tracking
     await params.context.bloc<TrackingBloc>().replace(
-          tracking,
+          tracking.uuid,
           devices: result.devices,
           position: result.position,
         );
@@ -96,7 +96,7 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     // Only update tracking if not retired
     if (PersonnelStatus.Retired != personnel.status) {
       await params.context.bloc<TrackingBloc>().replace(
-            params.context.bloc<TrackingBloc>().repo[personnel.tracking.uuid],
+            personnel.tracking.uuid,
             devices: result.devices,
             position: result.position,
           );
@@ -134,7 +134,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
 
     // Update tracking with manual position
     await params.context.bloc<TrackingBloc>().update(
-          tracking,
+          tracking.uuid,
           position: position,
         );
     return dartz.Right(position);
@@ -167,7 +167,7 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
 
     // Add to tracking
     final next = await params.context.bloc<TrackingBloc>().attach(
-          params.context.bloc<TrackingBloc>().repo[personnel.tracking.uuid],
+          personnel.tracking.uuid,
           devices: params.devices,
         );
     return dartz.Right(Pair.of(personnel, next));
@@ -222,7 +222,7 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
         .toList();
 
     final tracking = await params.context.bloc<TrackingBloc>().replace(
-          params.context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid],
+          personnel.tracking.uuid,
           devices: keepDevices,
         );
     return dartz.right(tracking);

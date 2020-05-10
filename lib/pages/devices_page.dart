@@ -88,8 +88,8 @@ class DevicesPageState extends State<DevicesPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var units = context.bloc<TrackingBloc>().units.asDeviceIds();
-                var personnel = context.bloc<TrackingBloc>().personnels.asDeviceIds();
+                var units = context.bloc<TrackingBloc>().units.devices();
+                var personnel = context.bloc<TrackingBloc>().personnels.devices();
                 var tracked = context.bloc<TrackingBloc>().asDeviceIds();
                 var devices = _filteredDevices();
                 return devices.isEmpty || snapshot.hasError

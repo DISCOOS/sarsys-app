@@ -67,7 +67,13 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   Box<StorageState<T>> _states;
 
   /// Get all (key,value)-pairs as unmodifiable map
-  Map<S, T> get map => Map.unmodifiable(_isReady ? Map.fromIterables(_states?.keys, _states?.values) : {});
+  Map<S, T> get map => Map.unmodifiable(_isReady
+      ? Map.fromIterables(
+          _states?.keys,
+          _states?.values?.map(
+            (s) => s.value,
+          ))
+      : {});
 
   /// Get all keys as unmodifiable list
   Iterable<S> get keys => List.unmodifiable(_isReady ? _states?.keys : []);

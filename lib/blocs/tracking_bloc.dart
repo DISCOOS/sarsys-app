@@ -10,7 +10,6 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Source.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/models/core.dart';
@@ -315,42 +314,32 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
   Map<String, Tracking> get trackings => repo.map;
 
   /// Get units being tracked
-  Entities<Unit> get units => Entities<Unit>(
+  TrackableQuery<Unit> get units => TrackableQuery<Unit>(
         bloc: this,
         data: this.unitBloc.units,
-        asId: (unit) => unit?.tracking?.uuid,
       );
 
   /// Get [personnels] being tracked
-  Entities<Personnel> get personnels => Entities<Personnel>(
+  TrackableQuery<Personnel> get personnels => TrackableQuery<Personnel>(
         bloc: this,
         data: this.personnelBloc.personnels,
-        asId: (personnel) => personnel?.tracking?.uuid,
       );
 
-  /// Get aggregates being tracked
-  Entities<Tracking> get trackables => Entities<Tracking>(
-        bloc: this,
-        data: Map.fromEntries(
-          repo.values.where((tracking) => tracking.sources.isNotEmpty).fold(
-            {},
-            (map, tracking) => map.toList()
-              ..addAll(
-                tracking.sources
-                    .where((source) => SourceType.trackable == source.type)
-                    .map((source) => MapEntry(source.uuid, repo[source.uuid])),
-              ),
-          ),
-        ),
-        asId: (aggregate) => aggregate?.uuid,
-      );
-
-  /// Test if [device] is being tracked
+  /// Test if [aggregate] is being tracked
+  ///
+  /// If [tracks] is [true] search is performed
+  /// on `Tracking.tracks[].source.uuid` instead
+  /// of `Tracking.sources[].uuid` (default is false).
+  ///
+  /// Returns empty list if [source.uuid] is not found
+  /// for given set of excluded [TrackingStatus.values].
+  ///
   bool has(
-    Device device, {
+    Aggregate aggregate, {
+    bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      repo.has(device.uuid);
+      repo.has(aggregate.uuid, tracks: tracks, exclude: exclude);
 
   /// Find tracking from given [aggregate].
   ///
@@ -425,14 +414,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     );
   }
 
-  /// Attach [devices] and [personnels] to given [tracking]
+  /// Attach [devices] and [personnels] to given [Tracking.uuid]
   Future<Tracking> attach(
-    Tracking tracking, {
+    String tuuid, {
     Position position,
     TrackingStatus status,
     List<Device> devices,
     List<Personnel> personnels,
   }) {
+    final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
       personnels,
@@ -444,23 +434,31 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
             sources,
             calculate: false,
           );
-    return update(
-      next,
-      status: status,
-      position: position,
+    return _dispatch(
+      UpdateTracking(
+        TrackingUtils.calculate(
+          next,
+          status: status,
+          position: position?.cloneWith(
+            // Always manual when from outside
+            source: PositionSource.manual,
+          ),
+        ),
+      ),
     );
   }
 
-  /// Replace [devices] and [personnels] in given [tracking]
+  /// Replace [devices] and [personnels] in given given [Tracking.uuid]
   ///
   /// Only [devices] and [personnels] already attached are replaced.
   Future<Tracking> replace(
-    Tracking tracking, {
+    String tuuid, {
     Position position,
     TrackingStatus status,
     List<Device> devices,
     List<Personnel> personnels,
   }) {
+    final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
       personnels,
@@ -472,45 +470,61 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
             sources,
             calculate: false,
           );
-    return update(
-      next,
-      status: status,
-      position: position,
+    return _dispatch(
+      UpdateTracking(
+        TrackingUtils.calculate(
+          next,
+          status: status,
+          position: position?.cloneWith(
+            // Always manual when from outside
+            source: PositionSource.manual,
+          ),
+        ),
+      ),
     );
   }
 
-  /// Detach [devices] and [personnel] from given [tracking]
+  /// Detach [devices] and [personnels] from given [Tracking.uuid]
   Future<Tracking> detach(
-    Tracking tracking, {
+    String tuuid, {
     Position position,
     TrackingStatus status,
     List<Device> devices,
-    List<Personnel> personnel,
+    List<Personnel> personnels,
   }) {
+    final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
-      personnel,
+      personnels,
     );
     final next = sources == null
         ? tracking
-        : TrackingUtils.deleteAll(
+        : TrackingUtils.detachAll(
             tracking,
             sources.map((s) => s.uuid),
             calculate: false,
           );
-    return update(
-      next,
-      status: status,
-      position: position,
+    return _dispatch(
+      UpdateTracking(
+        TrackingUtils.calculate(
+          next,
+          status: status,
+          position: position?.cloneWith(
+            // Always manual when from outside
+            source: PositionSource.manual,
+          ),
+        ),
+      ),
     );
   }
 
-  /// Update given [tracking]
+  /// Update given [Tracking.uuid]
   Future<Tracking> update(
-    Tracking tracking, {
+    String tuuid, {
     Position position,
     TrackingStatus status,
   }) {
+    final tracking = _assertExists(tuuid);
     return _dispatch(
       UpdateTracking(
         TrackingUtils.calculate(
@@ -525,12 +539,12 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     );
   }
 
-  List<PositionableSource<Aggregate>> _toSources(List<Device> devices, List<Personnel> personnel) {
+  List<PositionableSource<Aggregate>> _toSources(List<Device> devices, List<Personnel> personnels) {
     final replaceDevices = devices != null;
-    final replacePersonnel = personnel != null;
+    final replacePersonnel = personnels != null;
     final sources = [
       if (replaceDevices) ...TrackingUtils.toSources(devices, repo),
-      if (replacePersonnel) ...TrackingUtils.toSources(personnel, repo),
+      if (replacePersonnel) ...TrackingUtils.toSources(personnels, repo),
     ];
     return sources;
   }
@@ -762,6 +776,14 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
   }
+
+  Tracking _assertExists(String tuuid) {
+    final tracking = repo[tuuid];
+    if (tracking == null) {
+      throw TrackingNotFoundException(tuuid, state);
+    }
+    return tracking;
+  }
 }
 
 /// ---------------------
@@ -903,6 +925,14 @@ class TrackingBlocError extends TrackingState<Object> {
 /// ---------------------
 /// Exceptions
 /// ---------------------
+///
+class TrackingNotFoundException extends TrackingBlocException {
+  TrackingNotFoundException(String tuuid, TrackingState state)
+      : super(
+          'Tracking $tuuid not found',
+          state,
+        );
+}
 
 class TrackingBlocException implements Exception {
   TrackingBlocException(this.error, this.state, {this.command, this.stackTrace});
@@ -916,94 +946,148 @@ class TrackingBlocException implements Exception {
   String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
 }
 
-/// ------------------------------------------
-/// Helper class for querying tracked entities
-/// ------------------------------------------
-class Entities<T> {
+/// -------------------------------------------------
+/// Helper class for querying [Trackable] aggregates
+/// -------------------------------------------------
+class TrackableQuery<T extends Trackable> {
   final TrackingBloc bloc;
   final Map<String, T> _data;
-  final String Function(T entity) asId;
 
-  Entities({
+  TrackableQuery({
     /// [TrackingBloc] managing tracking objects
     @required this.bloc,
 
-    /// Mapping from entity id to value object
+    /// Mapping from [Aggregate.uuid] to Aggregate of type [T]
     @required Map<String, T> data,
+  }) : this._data = UnmodifiableMapView(data);
 
-    /// Mapping from entity to tracking id
-    @required this.asId,
-  }) : this._data = data;
+  /// Get map of [Tracking.uuid] to aggregate of type [T]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping if found.
+  ///
+  Map<String, T> get map => _data;
 
-  /// Test if entity is being tracked
-  bool contains(
-    T entity, {
-    List<TrackingStatus> exclude: const [TrackingStatus.closed],
-  }) =>
-      asId(entity) != null &&
-      bloc.trackings.containsKey(asId(entity)) &&
-      !exclude.contains(bloc.trackings[asId(entity)].status);
+  /// Get tracked aggregates of type [T]
+  Iterable<T> get trackables => _data.values;
 
-  /// Get entry with given tracking id
-  T elementAt(
-    String tracking, {
-    List<TrackingStatus> exclude: const [TrackingStatus.closed],
-  }) =>
-      _data.values.firstWhere(
-        (entity) => contains(entity, exclude: exclude) && tracking == asId(entity),
+  /// Get [Tracking] instances
+  Iterable<Tracking> get trackings => _data.keys.map((tuuid) => bloc.repo[tuuid]);
+
+  /// Test if given [trackable] is a source in any [Tracking] in this [TrackableQuery]
+  bool contains(T trackable) => _data.containsKey(trackable.uuid);
+
+  /// Get [Tracking] from given [Trackable] of type [T]
+  Tracking elementAt(T trackable) => bloc.repo[trackable.tracking.uuid];
+
+  /// Get aggregate of type [T] tracked by given [Tracking.uuid]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping if found.
+  ///
+  T trackedBy(String tuuid) => _data.values.firstWhere(
+        (trackable) => trackable.tracking.uuid == tuuid,
         orElse: () => null,
       );
 
-  /// Find entity tracking given device
+  /// Find aggregate of type [T] tracking [tracked]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping.
+  ///
   T find(
-    Device device, {
+    Aggregate tracked, {
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
-  }) =>
-      asTrackingIds(exclude: exclude).values.firstWhere(
-            (entity) =>
-                null !=
-                bloc.devices(asId(entity), exclude: exclude).firstWhere(
-                      (match) => device.uuid == match.uuid,
-                      orElse: () => null,
-                    ),
+  }) {
+    var found;
+    // Use direct lookup if trackable
+    final tuuid = tracked is Trackable ? tracked.tracking.uuid : null;
+    if (tuuid != null) {
+      found = trackedBy(tuuid);
+    }
+    // Search in sources?
+    if (found == null) {
+      found = where(exclude: exclude).trackables.firstWhere(
+            (trackable) =>
+                bloc.repo[trackable.tracking?.uuid]?.sources?.any(
+                  (source) => source.uuid == tracked.uuid,
+                ) ??
+                false,
             orElse: () => null,
           );
+    }
+    return found;
+  }
 
-  /// Get entities being tracked as a map of tracking id to entity object
-  Map<String, T> asTrackingIds({
+  /// Get filtered map of [Tracking.uuid] to [Device] or
+  /// [Trackable] tracked by aggregate of type [T]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping.
+  ///
+  TrackableQuery<T> where({
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      UnmodifiableMapView(
-        Map.fromEntries(
-          _data.entries.where((entry) => contains(entry.value, exclude: exclude)),
+      TrackableQuery(
+        bloc: bloc,
+        data: Map.fromEntries(
+          _data.entries.where(
+            (entry) => !exclude.contains(elementAt(entry.value)?.status),
+          ),
         ),
       );
 
-  /// Get entities for all tracked devices.
-  Map<String, T> asDeviceIds({
+  /// Get map of [Device.uuid] to tracked by aggregate of type [T]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping.
+  ///
+  Map<String, T> devices({
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
     final Map<String, T> map = {};
-    asTrackingIds(exclude: exclude).values.forEach((entity) {
-      bloc.devices(asId(entity), exclude: exclude).forEach((device) {
-        map.update(device.uuid, (set) => entity, ifAbsent: () => entity);
+    trackables.forEach((trackable) {
+      bloc.devices(trackable.tracking.uuid).forEach((device) {
+        map.update(device.uuid, (set) => trackable, ifAbsent: () => trackable);
       });
     });
     return UnmodifiableMapView(map);
   }
 
-  /// Get devices being tracked by entities of given type
-  Map<String, Device> devices({
+  /// Get map of [Personnel.uuid] to tracked by aggregate of type [T]
+  ///
+  /// The 'only one active tracking for each source'
+  /// rule guarantees a one-to-one mapping.
+  ///
+  /// Only aggregates of type [Unit] are allowed to track
+  /// [Personnel]. The [Tracking] referenced by [Unit] will
+  /// append the [Tracking.position] of the [Tracking]
+  /// referenced by [Personnel].
+  ///
+  Map<String, T> personnels({
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
-  }) =>
-      UnmodifiableMapView(
-        Map.fromEntries(
-          _data.values
-              .where((entity) => contains(entity, exclude: exclude))
-              .map((entry) => bloc.trackings[asId(entry)]?.sources ?? [])
-              .reduce((l1, l2) => List.from(l1)..addAll(l2))
-              .where((source) => bloc.deviceBloc.repo.containsKey(source.uuid))
-              .map((source) => MapEntry(source.uuid, bloc.deviceBloc.repo[source.uuid])),
-        ),
-      );
+  }) {
+    final Map<String, T> map = {};
+    final personnels = bloc.personnels.where(exclude: exclude);
+    // For each Unit
+    trackables.forEach((trackable) {
+      // Find tracking of unit
+      final tracking = elementAt(trackable);
+      // Collect tracking of personnels
+      tracking.sources
+          // Only consider personnels that exists
+          .where((source) => personnels.map.containsKey(source.uuid))
+          // Get personnel from source uuid
+          .map((source) => personnels.map[source.uuid])
+          // Update mapping between personnel and trackable T
+          .forEach(
+            (personnel) => map.update(
+              personnel.uuid,
+              (set) => trackable,
+              ifAbsent: () => trackable,
+            ),
+          );
+    });
+    return UnmodifiableMapView(map);
+  }
 }

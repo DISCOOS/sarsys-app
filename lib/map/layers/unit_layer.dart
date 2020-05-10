@@ -61,7 +61,7 @@ class UnitLayer extends MapPlugin {
     final bounds = map.getBounds();
     final tracking = options.bloc.trackings;
     final units = sortMapValues<String, Unit, TrackingStatus>(
-            options.bloc.units.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.closed]),
+            options.bloc.units.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
             (unit) => tracking[unit.tracking.uuid].status,
             (s1, s2) => s1.index - s2.index)
         .values

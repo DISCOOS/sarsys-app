@@ -37,7 +37,11 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
   }) : _active = active;
 
   @override
-  Iterable<Unit> get targets => bloc.units.asTrackingIds(exclude: includeRetired ? [] : [TrackingStatus.closed]).values;
+  Iterable<Unit> get targets => bloc.units
+      .where(
+        exclude: includeRetired ? [] : [TrackingStatus.closed],
+      )
+      .trackables;
 
   @override
   void doProcessTap(BuildContext context, List<Unit> units) {

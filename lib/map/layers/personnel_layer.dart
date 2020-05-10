@@ -59,16 +59,16 @@ class PersonnelLayer extends MapPlugin {
 
   Widget _build(BuildContext context, Size size, PersonnelLayerOptions options, MapState map) {
     final bounds = map.getBounds();
-    final tracking = options.bloc.trackings;
+    final trackings = options.bloc.trackings;
     final personnels = sortMapValues<String, Personnel, TrackingStatus>(
-            options.bloc.personnels.asTrackingIds(exclude: options.showRetired ? [] : [TrackingStatus.closed]),
-            (personnels) => tracking[personnels.tracking.uuid].status,
+            options.bloc.personnels.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
+            (personnel) => trackings[personnel.tracking.uuid].status,
             (s1, s2) => s1.index - s2.index)
         .values
-        .where((personnels) => tracking[personnels.tracking.uuid]?.position?.isNotEmpty == true)
-        .where((personnels) => options.showRetired || personnels.status != PersonnelStatus.Retired)
-        .where((personnels) => bounds.contains(toLatLng(tracking[personnels.tracking.uuid]?.position?.geometry)));
-    return tracking.isEmpty
+        .where((personnel) => trackings[personnel.tracking.uuid]?.position?.isNotEmpty == true)
+        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
+        .where((personne) => bounds.contains(toLatLng(trackings[personne.tracking.uuid]?.position?.geometry)));
+    return trackings.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
@@ -76,7 +76,7 @@ class PersonnelLayer extends MapPlugin {
               if (options.showTail)
                 ...personnels
                     .map((personnels) =>
-                        _buildTrack(context, size, options, map, personnels, tracking[personnels.tracking.uuid]))
+                        _buildTrack(context, size, options, map, personnels, trackings[personnels.tracking.uuid]))
                     .toList(),
               if (options.showLabels)
                 ...personnels
@@ -85,12 +85,12 @@ class PersonnelLayer extends MapPlugin {
                           options,
                           map,
                           personnels,
-                          tracking[personnels.tracking.uuid]?.position?.geometry,
+                          trackings[personnels.tracking.uuid]?.position?.geometry,
                         ))
                     .toList(),
               ...personnels
                   .map((personnels) =>
-                      _buildPoint(context, options, map, personnels, tracking[personnels.tracking.uuid]))
+                      _buildPoint(context, options, map, personnels, trackings[personnels.tracking.uuid]))
                   .toList(),
             ],
           );

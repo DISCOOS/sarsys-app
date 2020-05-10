@@ -84,7 +84,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
 
     // Update tracking
     await params.context.bloc<TrackingBloc>().replace(
-          tracking,
+          tracking.uuid,
           devices: result.devices,
           position: result.position,
           personnels: result.personnel,
@@ -121,7 +121,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
     // Only update tracking if not retired
     if (UnitStatus.Retired != unit.status) {
       await params.context.bloc<TrackingBloc>().replace(
-            params.context.bloc<TrackingBloc>().repo[unit.tracking.uuid],
+            unit.tracking.uuid,
             devices: result.devices,
             position: result.position,
             personnels: result.personnel,
@@ -160,7 +160,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
 
     // Update tracking with manual position
     await params.context.bloc<TrackingBloc>().update(
-          tracking,
+          tracking.uuid,
           position: position,
         );
 
@@ -205,7 +205,7 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
 
     // Add devices and personnel to tracking
     final next = await params.context.bloc<TrackingBloc>().attach(
-          params.context.bloc<TrackingBloc>().repo[unit.tracking.uuid],
+          unit.tracking.uuid,
           devices: params.devices,
           personnels: params.personnel,
         );
@@ -287,7 +287,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
 
     // Perform tracking update
     final tracking = await params.context.bloc<TrackingBloc>().replace(
-          params.context.bloc<TrackingBloc>().trackings[unit.tracking.uuid],
+          unit.tracking.uuid,
           devices: keepDevices,
           personnels: keepPersonnel,
         );
