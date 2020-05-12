@@ -2,6 +2,7 @@ import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
+import 'package:bloc/bloc.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
@@ -22,6 +23,9 @@ void main() async {
   final client = Client();
   final bucket = await readAppState(PageStorageBucket());
 
+  // This will catch any fatal errors before the app is stated
+  BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
+
   // Build and initialize bloc provider
   final controller = BlocProviderController.build(client, demo: DemoParams(true));
   controller.init().then((_) {
@@ -29,7 +33,6 @@ void main() async {
       _buildApp(controller, bucket),
       controller.bloc<AppConfigBloc>().config.sentryDns,
     );
-//  runApp(_buildApp(controller));
   }).catchError((error, stackTrace) {
     runApp(FatalErrorApp(
       error: error,
@@ -56,9 +59,10 @@ Future _rebuildApp(
 ) async {
   if (BlocProviderControllerState.Built == state) {
     // Wait for user and config blocs to initialize
-    await controller.init().catchError(
-          (error, stackTrace) => Catcher.reportCheckedError(error, stackTrace),
-        );
+    await controller.init().catchError((error, stackTrace) => Catcher.reportCheckedError(
+          error,
+          stackTrace,
+        ));
 
     // Restart app to rehydrate with blocs just built and initiated
     runAppWithCatcher(
@@ -132,6 +136,8 @@ void runAppWithCatcher(Widget app, String sentryDns) {
     value: (_) => ConsoleHandler(),
   );
 
+  BlocSupervisor.delegate = CatcherBlocDelegate();
+
   Catcher(
     app,
     debugConfig: CatcherOptions(
@@ -149,4 +155,17 @@ void runAppWithCatcher(Widget app, String sentryDns) {
       localizationOptions: [localizationOptions],
     ),
   );
+}
+
+class CatcherBlocDelegate implements BlocDelegate {
+  @override
+  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+    Catcher.reportCheckedError(error, stackTrace);
+  }
+
+  @override
+  void onEvent(Bloc bloc, Object event) {}
+
+  @override
+  void onTransition(Bloc bloc, Transition transition) {}
 }

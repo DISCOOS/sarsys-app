@@ -1,10 +1,19 @@
+import 'dart:io';
+
+import 'package:SarSys/utils/ui_utils.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class FatalErrorApp extends StatelessWidget {
+  static final navigatorKey = new GlobalKey<NavigatorState>();
   final error;
   final stackTrace;
+
+  static bool noEmailClient = false;
 
   const FatalErrorApp({
     Key key,
@@ -15,6 +24,7 @@ class FatalErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'SarSys',
       theme: ThemeData(
         primaryColor: Colors.grey[850],
@@ -23,31 +33,60 @@ class FatalErrorApp extends StatelessWidget {
           textTheme: ButtonTextTheme.primary,
         ),
       ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('SarSys kunne ikke starte'),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.send),
-              tooltip: "Send feilmelding",
-              onPressed: () async {
-                final Email email = Email(
-                  body: 'Feilmelding\n\n$error\n\n$stackTrace',
-                  subject: 'SarSys kunne ikke starte',
-                  recipients: ['support@discoos.org'],
-                );
-                await FlutterEmailSender.send(email);
-              },
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SingleChildScrollView(
-            child: _buildErrorPanel(error, stackTrace),
+      localizationsDelegates: [
+        GlobalWidgetsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        DefaultMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        DefaultCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en', 'US'), // English
+        const Locale('nb', 'NO'), // Norwegian Bokmål
+      ],
+      home: StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('SarSys kunne ikke starte'),
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.send),
+                tooltip: "Send feilmelding",
+                onPressed: noEmailClient
+                    ? null
+                    : () async {
+                        final Email email = Email(
+                          body: 'Feilmelding\n\n$error\n\n$stackTrace',
+                          subject: 'SarSys kunne ikke starte',
+                          recipients: ['support@discoos.org'],
+                        );
+                        try {
+                          await FlutterEmailSender.send(email);
+                        } on Exception {
+                          setState(() => noEmailClient = true);
+                          prompt(
+                            navigatorKey.currentState.overlay.context,
+                            "Feilmelding kunne ikke sendes",
+                            "Kopier feilmeldingen eller ta en skjermdump og send den til support@discoos.org",
+                          );
+                        }
+                      },
+              ),
+              IconButton(
+                icon: Icon(Icons.close),
+                tooltip: "Lukk app",
+                onPressed: () => exit(0),
+              ),
+            ],
           ),
-        ),
-      ),
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SingleChildScrollView(
+              child: _buildErrorPanel(error, stackTrace),
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -98,4 +137,20 @@ class FatalErrorApp extends StatelessWidget {
       ],
     );
   }
+}
+
+class FatalErrorAppBlocDelegate extends FatalErrorApp implements BlocDelegate {
+  @override
+  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+    runApp(FatalErrorApp(
+      error: error,
+      stackTrace: stackTrace,
+    ));
+  }
+
+  @override
+  void onEvent(Bloc bloc, Object event) {}
+
+  @override
+  void onTransition(Bloc bloc, Transition transition) {}
 }

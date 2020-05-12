@@ -208,31 +208,20 @@ class BlocProviderController {
 
   /// Initialize required blocs (config and user)
   Future<BlocProviderController> init() async {
-    final result = Completer<BlocProviderController>();
     if (BlocProviderControllerState.Built == _state) {
-      // Fail fast on first error
-      await Future.wait<dynamic>([
-        bloc<AppConfigBloc>().load(),
-        bloc<UserBloc>().load(),
-      ]).catchError(
-        (e) => result.completeError(e, StackTrace.current),
-      );
-      if (!result.isCompleted) {
-        // Override demo parameter from persisted config
-        _demo = bloc<AppConfigBloc>().config.toDemoParams();
+      await bloc<AppConfigBloc>().load();
+      await bloc<UserBloc>().load();
 
-        // Allow _onUserChange to transition to next legal state
-        _controller.add(BlocProviderControllerState.Initialized);
+      // Override demo parameter from persisted config
+      _demo = bloc<AppConfigBloc>().config.toDemoParams();
 
-        // Set state depending on user state
-        _onUserState(bloc<UserBloc>().state);
+      // Allow _onUserChange to transition to next legal state
+      _controller.add(BlocProviderControllerState.Initialized);
 
-        result.complete(this);
-      }
-    } else {
-      result.complete(this);
+      // Set state depending on user state
+      _onUserState(bloc<UserBloc>().state);
     }
-    return result.future;
+    return this;
   }
 
   BlocProviderController _set({
