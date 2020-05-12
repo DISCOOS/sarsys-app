@@ -274,14 +274,14 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   // Complete with error and return response as error state to bloc
-  DeviceState _toError(DeviceCommand event, Object error) {
+  DeviceState _toError(DeviceCommand command, Object error) {
     final object = error is DeviceBlocError
         ? error
         : DeviceBlocError(
             error,
             stackTrace: StackTrace.current,
           );
-    event.callback.completeError(
+    command.callback.completeError(
       object,
       object.stackTrace ?? StackTrace.current,
     );

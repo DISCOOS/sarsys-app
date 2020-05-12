@@ -10,6 +10,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -201,6 +202,13 @@ class StorageState<T> {
   }
 
   StorageState<T> delete() => StorageState.deleted(value);
+
+  @override
+  String toString() {
+    return '$runtimeType {value: ${_toValueAsString()}, remote: $_remote, status: $status}';
+  }
+
+  String _toValueAsString() => '${value?.runtimeType} ${value is Aggregate ? '{${(value as Aggregate).uuid}}' : ''}';
 }
 
 class TypeJsonAdapter<T> extends TypeAdapter<T> {
