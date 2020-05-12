@@ -169,7 +169,15 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     checkState();
     final next = validate(state);
     final exists = await commit(next);
-    if (exists && next.isLocal) {
+    if (exists) {
+      return await schedule(next);
+    }
+    return next.value;
+  }
+
+  /// Schedule state change
+  Future<T> schedule(StorageState<T> next) async {
+    if (next.isLocal) {
       if (connectivity.isOnline) {
         try {
           final value = await _push(
@@ -186,7 +194,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
         }
       } // if offline or a SocketException was thrown
       return _offline(next);
-    } // if state is remote
+    }
     return next.value;
   }
 
