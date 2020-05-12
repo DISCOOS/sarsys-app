@@ -43,7 +43,9 @@ class FatalErrorApp extends StatelessWidget {
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: _buildErrorPanel(error, stackTrace),
+          child: SingleChildScrollView(
+            child: _buildErrorPanel(error, stackTrace),
+          ),
         ),
       ),
     );
@@ -51,19 +53,9 @@ class FatalErrorApp extends StatelessWidget {
 
   Column _buildErrorPanel(error, stackTrace) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            "Feilmelding",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        Divider(),
-        SelectableText(
-          "$error",
-        ),
         Padding(
           padding: const EdgeInsets.only(top: 16.0),
           child: Text(
@@ -80,12 +72,24 @@ class FatalErrorApp extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 16.0),
           child: Text(
+            "Feilmelding",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Divider(),
+        SelectableText(
+          "$error",
+          style: TextStyle(fontSize: 12.0),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Text(
             "Detaljer",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
         Divider(),
-        Expanded(
+        Flexible(
           child: SelectableText(
             "$stackTrace",
             style: TextStyle(fontSize: 12.0),
