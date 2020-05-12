@@ -112,9 +112,8 @@ class UserRepository {
         actualToken,
         security: user?.security,
       );
-      return _users.get(actualId);
     }
-    throw UserNotFoundException(actualId);
+    return _users.get(actualId);
   }
 
   /// Authenticate [user]

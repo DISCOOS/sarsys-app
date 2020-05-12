@@ -141,7 +141,6 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   /// Load current user from secure storage
   Future<User> load({String userId}) async {
     return _dispatch<User>(LoadUser(userId: userId ?? repo.userId));
-//    return _dispatch<User>(_assertUnset<User>(LoadUser(userId: userId)));
   }
 
   /// Authenticate user
@@ -163,12 +162,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
-    return isAuthenticated
-        ? command
-        : RaiseUserError<T>(
-            "User is not logged",
-            stackTrace: StackTrace.current,
-          );
+    if (isAuthenticated) {
+      return command;
+    }
+    throw UserBlocError(
+      "User is not logged",
+      stackTrace: StackTrace.current,
+    );
   }
 
   Future<bool> authorize(Incident data, String passcode) {
@@ -196,14 +196,6 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         yield await _clear(command);
       } else if (command is AuthorizeUser) {
         yield _authorize(command);
-      } else if (command is RaiseUserError) {
-        yield _toError(
-          command,
-          UserBlocError(
-            command.data,
-            stackTrace: StackTrace.current,
-          ),
-        );
       } else {
         yield _toError(
           command,
@@ -336,7 +328,13 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   UserState _toEvent(UserCommand command, Object result) {
-    if (result is User) {
+    if (result == null) {
+      return _toOK(
+        command,
+        UserUnset(),
+        result: _toAuthResult(command),
+      );
+    } else if (result is User) {
       if (kDebugMode) {
         developer.log("User parsed from token: $user", level: Level.CONFIG.value);
       }
@@ -354,7 +352,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         _toSecurityState(),
         result: security,
       );
-    } else if (result is UserNotFoundException) {
+    } else if (result is UserNotFoundException || result is UserNotSecuredException) {
       return _toError(
         command,
         UserUnauthorized(result),
@@ -405,16 +403,18 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   // Complete with error and return response as error state to bloc
-  UserState _toError(UserCommand command, UserBlocError state) {
+  UserState _toError(UserCommand command, Object error) {
+    final object = error is UserBlocError
+        ? error
+        : UserBlocError(
+            error,
+            stackTrace: StackTrace.current,
+          );
     command.callback.completeError(
-      UserBlocException(state, command: command),
+      object,
+      object.stackTrace ?? StackTrace.current,
     );
-    return state;
-  }
-
-  @override
-  void onError(Object error, StackTrace stackTrace) {
-    add(RaiseUserError(UserBlocError(error, stackTrace: stackTrace)));
+    return object;
   }
 }
 
@@ -496,15 +496,6 @@ class ClearUsers extends UserCommand<void, List<User>> {
 
   @override
   String toString() => 'ClearUsers';
-}
-
-class RaiseUserError<T> extends UserCommand<dynamic, T> {
-  final Object error;
-  final StackTrace stackTrace;
-  RaiseUserError(this.error, {T data, this.stackTrace}) : super(data);
-
-  @override
-  String toString() => 'RaiseUserError {data: $data, error: $error, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

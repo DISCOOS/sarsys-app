@@ -227,7 +227,7 @@ class TypeJsonAdapter<T> extends TypeAdapter<T> {
   @override
   T read(BinaryReader reader) {
     var json = reader.readMap();
-    return fromJson(json as Map<String, dynamic>);
+    return fromJson(Map<String, dynamic>.from(json));
   }
 
   @override

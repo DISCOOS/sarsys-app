@@ -1,5 +1,6 @@
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -23,6 +24,18 @@ void main() async {
   });
 
   group('WHEN UserBloc is ONLINE', () {
+    test('SHOULD load state as EMPTY and UNSET', () async {
+      // Arrange
+      harness.connectivity.cellular();
+
+      // Act
+      await harness.userBloc.load();
+
+      // Assert
+      expect(harness.userBloc.user, isNull, reason: "SHOULD NOT have user");
+      expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
+    });
+
     test('and UNSET, user SHOULD login', () async {
       // Arrange
       harness.connectivity.cellular();
@@ -34,6 +47,20 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
+    });
+
+    test('SHOULD reload user', () async {
+      // Arrange
+      harness.connectivity.cellular();
+      await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+
+      // Act
+      await harness.userBloc.load();
+
+      // Assert
+      expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
+      expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
+      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
     });
 
     test('and USER token is INVALID, token SHOULD be refreshed', () async {
@@ -80,13 +107,28 @@ void main() async {
 
       // Act
       await expectLater(
-        harness.userBloc.login(username: UNTRUSTED, password: PASSWORD),
-        throwsA(isA<UserBlocException>()),
+        () => harness.userBloc.login(username: UNTRUSTED, password: PASSWORD),
+        throwsA(isA<UserBlocIsOffline>().having((error) => error.data, 'data', isA<UserRepositoryOfflineException>())),
       );
 
       // Assert
       expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
       expectThroughInOrder(harness.userBloc, [isA<UserBlocIsOffline>()]);
+    });
+
+    test('SHOULD reload previous user', () async {
+      // Arrange
+      harness.connectivity.cellular();
+      await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+
+      // Act
+      harness.connectivity.offline();
+      await harness.userBloc.load();
+
+      // Assert
+      expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
+      expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
+      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
     });
 
     test('and User token is INVALID, token SHOULD not refresh', () async {
@@ -138,12 +180,12 @@ Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) 
 
   // Act - throws when not secured
   await expectLater(
-    harness.userBloc.lock(),
-    throwsA(isA<UserBlocException>()),
+    () => harness.userBloc.lock(),
+    throwsA(isA<UserBlocError>().having((error) => error.data, 'data', isA<UserNotSecuredException>())),
   );
   await expectLater(
-    harness.userBloc.unlock('ABC'),
-    throwsA(isA<UserBlocException>()),
+    () => harness.userBloc.unlock('ABC'),
+    throwsA(isA<UserBlocError>().having((error) => error.data, 'data', isA<UserNotSecuredException>())),
   );
 
   // Act - secure default to locked
@@ -172,8 +214,8 @@ Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) 
 
   // Assert - throws with incorrect pin
   await expectLater(
-    harness.userBloc.unlock('ABC'),
-    throwsA(isA<UserBlocException>()),
+    () => harness.userBloc.unlock('ABC'),
+    throwsA(isA<UserForbidden>()),
   );
 
   // Act - unlock with correct pin
