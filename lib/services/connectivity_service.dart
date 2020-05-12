@@ -51,7 +51,7 @@ class ConnectivityService {
     _subscription = Connectivity().onConnectivityChanged.listen(_handle);
   }
 
-  void _handle(ConnectivityResult result) async {
+  Future<ConnectivityStatus> _handle(ConnectivityResult result) async {
     await test();
     final previousStatus = _status;
     _result = result;
@@ -59,6 +59,7 @@ class ConnectivityService {
     if (previousStatus != _status) {
       _controller.add(_status);
     }
+    return _status;
   }
 
   ConnectivityStatus _getStatusFromResult(ConnectivityResult result) {
