@@ -611,7 +611,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.8, color: Colors.white),
+                style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.5, color: Colors.white),
                 textAlign: icon == null ? TextAlign.center : TextAlign.left,
               ),
             ),
@@ -645,7 +645,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             if (icon != null) icon,
             Text(
               label,
-              style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.8),
+              style: TextStyle(fontSize: SizeConfig.safeBlockVertical * 2.4),
               textAlign: icon == null ? TextAlign.center : TextAlign.left,
             ),
           ],
