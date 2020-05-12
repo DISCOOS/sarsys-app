@@ -182,11 +182,18 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }
 
   // Complete with error and return response as error state to bloc
-  AppConfigState _toError(AppConfigCommand command, AppConfigBlocError state) {
+  AppConfigState _toError(AppConfigCommand command, Object error) {
+    final object = error is AppConfigBlocError
+        ? error
+        : AppConfigBlocError(
+            error,
+            stackTrace: StackTrace.current,
+          );
     command.callback.completeError(
-      AppConfigBlocException(state, command: command),
+      object,
+      object.stackTrace ?? StackTrace.current,
     );
-    return state;
+    return object;
   }
 
   @override

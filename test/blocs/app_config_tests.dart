@@ -45,6 +45,17 @@ void main() async {
       await _testAppConfigShouldLoadWithDefaultValues(harness, true);
     });
 
+    // This situation simulates partial onboarding
+    // offline where second attempt loads local
+    // state instead of remote
+    //
+    test('AppConfig SHOULD reload with default values', () async {
+      // Arrange
+      await _testAppConfigShouldLoadWithDefaultValues(harness, true);
+      // Act and Assert
+      await _testAppConfigShouldLoadWithDefaultValues(harness, true);
+    });
+
     test('AppConfig SHOULD update values', () async {
       // Arrange
       await _testAppConfigShouldUpdateValues(harness, true);
@@ -192,7 +203,11 @@ Future _testAppConfigShouldLoadWithDefaultValues(BlocTestHarness harness, bool o
     StorageStatus.created,
     remote: !offline,
   );
-  expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>()]);
+  expectThroughInOrder(
+    harness.configBloc,
+    [isA<AppConfigLoaded>()],
+    close: false,
+  );
 }
 
 Future _testAppConfigShouldInitializeWithDefaultValues(BlocTestHarness harness, bool offline) async {

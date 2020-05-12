@@ -51,7 +51,10 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// GET ../configs
   Future<AppConfig> load() async {
     final state = await _ensure();
-    return state.isCreated ? apply(state) : _load();
+    if (state.isLocal) {
+      return containsKey(version) ? schedule(state) : apply(state);
+    }
+    return _load();
   }
 
   /// PATCH ../configs/{configId}
@@ -184,6 +187,6 @@ class AppConfigServiceException extends RepositoryException {
 
   @override
   String toString() {
-    return 'AppConfigServiceException: $message, response: $response, stackTrace: $stackTrace';
+    return 'AppConfigServiceException { $message, response: $response, stackTrace: $stackTrace}';
   }
 }
