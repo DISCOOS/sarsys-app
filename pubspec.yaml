@@ -87,13 +87,16 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dependency_overrides:
-#  flutter_map:
+  flutter_map:
 #    # Use local branch of flutter_map
 #    #path: ../flutter_map
-#    git:
+    git:
 #    #  url: git://github.com/johnpryan/flutter_map
-#      url: https://github.com/DISCOOS/flutter_map
-#      ref: master
+      # Merged PR https://github.com/johnpryan/flutter_map/pull/577 Evict error tiles
+      # Merged PR https://github.com/johnpryan/flutter_map/pull/584 Observe TileLayerOptions changes
+      url: https://github.com/DISCOOS/flutter_map
+      #ref: master
+      ref: track_change_and_evict_errors
 
   intro_views_flutter:
     #path: ../IntroViews-Flutter

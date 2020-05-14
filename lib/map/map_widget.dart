@@ -288,8 +288,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   bool _hasFitToBounds = false;
   bool _attemptRestore = true;
 
-  /// Tile error data persisted across map reloads
-  final Map<BaseMap, TileErrorData> _tileErrorData = {};
+//  /// Tile error data persisted across map reloads
+//  final Map<BaseMap, TileErrorData> _tileErrorData = {};
 
   /// Placeholder shown when a tile fails to load
   final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
@@ -304,21 +304,12 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
 
   /// Flag indicating that network connection is offline
-  bool get _offline {
-    final status = Provider.of<ConnectivityStatus>(context);
-    return status == null || ConnectivityStatus.offline == status;
-  }
-
-  StreamSubscription _subscription;
+  bool _offline = false;
 
   @override
   void initState() {
     super.initState();
     _setup();
-    _subscription = ConnectivityService().changes.listen((status) async {
-      if (ConnectivityStatus.offline != status) await _removePlaceholders();
-      setState(() {});
-    });
   }
 
   @override
@@ -330,11 +321,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _locationController?.dispose();
     _isLocating?.dispose();
     _isMeasuring?.dispose();
-    _subscription?.cancel();
     _permissionController?.dispose();
     _isLocating = null;
     _isMeasuring = null;
-    _subscription = null;
     _mapController = null;
     _mapToolController = null;
     _locationController = null;
@@ -396,7 +385,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    //
     _initWakeLock();
 
     // Ensure all controllers are set
@@ -468,10 +456,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _mapController.progress.addListener(_onMoveProgress);
   }
 
+  void _update() {
+    final status = Provider.of<ConnectivityStatus>(context);
+    _offline = (status == null || ConnectivityStatus.offline == status);
+  }
+
   void _setBaseMap(BaseMap map) {
     _currentBaseMap = map;
-    final data = _tileErrorData.putIfAbsent(map, () => TileErrorData(map));
-    if (data.isFatal()) _onFatalTileError(data);
   }
 
   Set<String> _resolveLayers() => widget.withRead && widget.readLayers
@@ -591,6 +582,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    _update();
     return Stack(
       overflow: Overflow.clip,
       children: [
@@ -599,36 +591,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (widget.withSearch) _buildSearchBar(),
       ],
     );
-  }
-
-  // Removes all offline placeholders from caches when online.
-  // This ensures that actual tiles are loaded instead of placeholders.
-  FutureOr<int> _removePlaceholders() async {
-    int removed = 0;
-    final errors = _tileErrorData.values.where(
-      (data) => data.errors.isNotEmpty,
-    );
-    if (errors.isNotEmpty) {
-      final fileCache = FileCacheService(context.bloc<AppConfigBloc>().config);
-      await Future.forEach<TileErrorData>(errors, (data) async {
-        final images = data.errors.values
-            .where(
-              (error) => error.image is ManagedCachedNetworkImageProvider,
-            )
-            .map((error) => error.image);
-        await Future.forEach(images, (key) async {
-          await fileCache.removeFile(key.url);
-          removed++;
-        });
-        removed += data.placeholders.length;
-        data.placeholders
-          ..forEach((key) => imageCache.evict(key))
-          ..clear()
-          ..length;
-        data.errors.clear();
-      });
-    }
-    return removed;
   }
 
   Widget _buildMap() {
@@ -710,32 +672,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         maxZoom: _currentBaseMap.maxZoom,
         subdomains: _currentBaseMap.subdomains,
         tms: _currentBaseMap.tms,
+        errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
-        tileProvider: _buildTileProvider(_currentBaseMap),
+        tileProvider: ManagedCacheTileProvider(FileCacheService(context.bloc<AppConfigBloc>().config)),
+        overrideTilesWhenUrlChanges: true,
+        offline: _offline,
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
       );
-
-  TileProvider _buildTileProvider(BaseMap map) => map.offline
-      ? ManagedFileTileProvider(
-          _tileErrorData[map],
-          errorImage: _tileErrorImage,
-          onFatal: (data) => _onFatalTileError(data),
-        )
-      : ManagedCacheTileProvider(
-          _tileErrorData[map],
-          offline: _offline,
-          errorImage: _tileErrorImage,
-          offlineImage: _tileOfflineImage,
-          offlineAsset: _fileOfflineAsset,
-          cacheManager: FileCacheService(context.bloc<AppConfigBloc>().config),
-          onFatal: (data) => _onFatalTileError(data),
-        );
-
-  void _onFatalTileError(TileErrorData data) {
-    if (widget.onMessage != null) {
-      final reason = data.explain().map((type) => translateTileErrorType(type));
-      widget.onMessage("Kartdata ${reason.isNotEmpty ? reason.join(', ') : ' kan ikke lastes'}");
-    }
-  }
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();
@@ -843,7 +786,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           if (widget.withControlsTool)
             MapControl(
               icon: MdiIcons.tapeMeasure,
-//          icon: MdiIcons.mathCompass,
               listenable: _isMeasuring,
               children: [
                 MapControl(
@@ -1044,7 +986,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _onLocationChanged(LatLng point, bool goto, bool locked) {
-    _setLayerOptions();
+    if (mounted) {
+      _setLayerOptions();
+    }
   }
 
   void _showLayerSheet(context) {

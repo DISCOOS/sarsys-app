@@ -1,5 +1,6 @@
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
+import 'package:SarSys/widgets/network_sensitive.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
 import 'package:bloc/bloc.dart';
@@ -7,7 +8,9 @@ import 'package:catcher/catcher_plugin.dart';
 import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 
 import 'blocs/app_config_bloc.dart';
 import 'core/app_state.dart';
@@ -77,13 +80,55 @@ Widget _createApp(
   BlocProviderController controller,
   PageStorageBucket bucket,
 ) {
-  return SarSysApp(
-    key: UniqueKey(),
+  return PageStorage(
     bucket: bucket,
-    controller: controller,
-    navigatorKey: Catcher.navigatorKey,
+    child: NetworkSensitive(
+      child: Provider<Client>(
+        create: (BuildContext context) => controller.client,
+        child: Provider<BlocProviderController>(
+          create: (BuildContext context) => controller,
+          child: MultiBlocProvider(
+            providers: controller.all,
+            child: SarSysApp(
+              key: UniqueKey(),
+              bucket: bucket,
+              navigatorKey: Catcher.navigatorKey,
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }
+
+/*
+
+  Widget _buildWithProviders({
+    @required BuildContext context,
+    @required Widget child,
+  }) =>
+      PageStorage(
+        bucket: widget.bucket,
+        child: NetworkSensitive(
+          child: Provider<Client>(
+            create: (BuildContext context) => widget.controller.client,
+            child: Provider<PermissionController>(
+              create: (BuildContext context) => controller,
+              child: Provider<BlocProviderController>(
+                create: (BuildContext context) => widget.controller,
+                child: MultiBlocProvider(
+                  providers: widget.controller.all,
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+
+
+ */
 
 // Convenience method for running apps with Catcher
 void runAppWithCatcher(Widget app, String sentryDns) {
@@ -116,9 +161,9 @@ void runAppWithCatcher(Widget app, String sentryDns) {
     "Connection closed before full header was received",
     "SocketException: OS Error: Connection timed out",
     "SocketException: OS Error: Software caused connection abort",
-    // Silence tile errors, see TileErrorHandler
-    TileError.NOT_FOUND, //"Couldn't download or retrieve file"
-    TileError.IS_INVALID, //"Could not instantiate image codec"
+//    // Silence tile errors, see TileErrorHandler
+//    TileError.NOT_FOUND, //"Couldn't download or retrieve file"
+//    TileError.IS_INVALID, //"Could not instantiate image codec"
     // Silence Overlay assertion errors thrown by form_field_builder.
     // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
     "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true."

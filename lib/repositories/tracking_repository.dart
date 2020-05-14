@@ -29,7 +29,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   String get iuuid => _iuuid;
   String _iuuid;
 
-  /// Map for efficient tracking lookup from source
+  /// Map for efficient tracking lookup from [Source.uuid]
   final _sources = <String, Set<String>>{};
 
   /// Check if repository is operational.
@@ -95,14 +95,16 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) {
-    if (tracks) {
-      throw UnimplementedError('Search in tracks not implemented');
-    }
     return _sources.containsKey(suuid)
         ? _sources[suuid]
             .map(get)
+            // Only if status is not excluded from search
             .where(
               (tracking) => !exclude.contains(tracking.status),
+            )
+            // Only check if source is attached if tracks are not included in search
+            .where(
+              (tracking) => tracks || tracking.sources.any((source) => suuid == source.uuid),
             )
             .toList()
         : [];
@@ -185,18 +187,19 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
     final tuuid = state.value.uuid;
     final exists = await super.commit(state);
     if (exists) {
-      _addToSourceIndex(state.value, tuuid);
+      _addToIndex(state.value, tuuid);
     } else {
-      _removeFromSourceIndex(state.value, tuuid);
+      _removeFromIndex(state.value, tuuid);
     }
     return exists;
   }
 
-  void _addToSourceIndex(Tracking tracking, String tuuid) {
-    tracking.sources.forEach(
-      (source) {
+  void _addToIndex(Tracking tracking, String tuuid) {
+    // Add to
+    tracking.tracks.forEach(
+      (track) {
         _sources.update(
-          source.uuid,
+          track.source.uuid,
           (tuuids) => tuuids..add(tuuid),
           ifAbsent: () => {tuuid},
         );
@@ -205,17 +208,17 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
     );
   }
 
-  void _removeFromSourceIndex(Tracking tracking, String tuuid) {
+  void _removeFromIndex(Tracking tracking, String tuuid) {
     final empty = [];
-    tracking.sources.forEach(
-      (source) {
+    tracking.tracks.forEach(
+      (track) {
         final tuuids = _sources.update(
-          source.uuid,
+          track.source.uuid,
           (tuuids) => tuuids..remove(tuuid),
           ifAbsent: () => {},
         );
         if (tuuids.isEmpty) {
-          empty.add(source.uuid);
+          empty.add(track.source.uuid);
         }
       },
     );

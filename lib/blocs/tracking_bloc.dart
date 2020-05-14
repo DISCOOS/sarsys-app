@@ -122,7 +122,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
     try {
       if (state.isLocationChanged() || state.isStatusChanged()) {
         final device = state.data as Device;
-        final trackings = find(device);
+        final trackings = find(device, tracks: true);
         if (trackings.isNotEmpty) {
           final next = state.isAvailable()
               ? TrackingUtils.attachAll(
@@ -134,17 +134,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
                   [device.uuid],
                 );
           add(_toInternalChange(next));
-        } else if (state.isUnavailable()) {
-          // Look for detached device in tracks
-          final trackings = find(device, tracks: true);
-          if (trackings.isNotEmpty) {
-            // Re-attach device
-            final next = TrackingUtils.attachAll(
-              trackings.first,
-              [PositionableSource.from<Device>(device)],
-            );
-            add(_toInternalChange(next));
-          }
         }
       } else if (state.isDeleted()) {
         final device = state.data;
