@@ -352,7 +352,9 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         _toSecurityState(),
         result: security,
       );
-    } else if (result is UserNotFoundException || result is UserNotSecuredException) {
+    } else if (result is UserNotFoundException ||
+        result is UserNotSecuredException ||
+        result is UserUnauthorizedException) {
       return _toError(
         command,
         UserUnauthorized(result),
@@ -411,7 +413,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
             stackTrace: StackTrace.current,
           );
     command.callback.completeError(
-      object,
+      object.data,
       object.stackTrace ?? StackTrace.current,
     );
     return object;

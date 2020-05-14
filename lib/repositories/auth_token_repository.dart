@@ -10,7 +10,7 @@ class AuthTokenRepository {
   final int compactWhen;
 
   Box<AuthToken> _tokens;
-  AuthToken operator [](String userId) => _tokens?.get(userId);
+  AuthToken operator [](String userId) => userId == null ? null : _tokens?.get(userId);
 
   AuthToken get(String userId) => _tokens.get(userId);
   Iterable<String> get keys => List.unmodifiable(_tokens?.keys ?? []);

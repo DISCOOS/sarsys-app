@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/services/service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
@@ -96,7 +97,7 @@ class UserIdentityService extends UserService {
           scopes: _scopes,
           promptValues: idpPrompt,
           // Use actual username if found, otherwise passed username
-          loginHint: username,
+          loginHint: emptyAsNull(username),
           additionalParameters: {
             if (hint != null) 'kc_idp_hint': hint,
           },

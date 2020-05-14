@@ -101,7 +101,7 @@ class UserRepository {
   }) async {
     await _checkState(open: true);
 
-    final actualId = userId ?? _userId;
+    var actualId = userId ?? _userId;
     if (containsKey(actualId)) {
       final actualToken = await _getToken(
         userId: actualId,
@@ -112,8 +112,9 @@ class UserRepository {
         actualToken,
         security: user?.security,
       );
+      actualId = _userId;
     }
-    return _users.get(actualId);
+    return actualId == null ? null : _users.get(actualId);
   }
 
   /// Authenticate [user]

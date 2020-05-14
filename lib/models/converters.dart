@@ -77,9 +77,17 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
   }
 }
 
-AggregateRef<Unit> toUnitRef(json) => json != null ? AggregateRef<Unit>.fromJson(json) : null;
-AggregateRef<Incident> toIncidentRef(json) => json != null ? AggregateRef<Incident>.fromJson(json) : null;
-AggregateRef<Tracking> toTrackingRef(json) => json != null ? AggregateRef<Tracking>.fromJson(json) : null;
+AggregateRef<Unit> toUnitRef(dynamic json) {
+  return json != null ? AggregateRef<Unit>.fromJson(Map<String, dynamic>.from(json)) : null;
+}
+
+AggregateRef<Incident> toIncidentRef(dynamic json) {
+  return json != null ? AggregateRef<Incident>.fromJson(Map<String, dynamic>.from(json)) : null;
+}
+
+AggregateRef<Tracking> toTrackingRef(dynamic json) {
+  return json != null ? AggregateRef<Tracking>.fromJson(Map<String, dynamic>.from(json)) : null;
+}
 
 double latFromJson(Object json) => _toDouble(json, 0);
 double lonFromJson(Object json) => _toDouble(json, 1);
