@@ -104,22 +104,15 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
             backgroundColor: Colors.grey[300],
             body: SafeArea(
               child: Center(
-                child: FractionallySizedBox(
-                  alignment: Alignment.center,
-                  widthFactor: 0.90,
-                  heightFactor: 0.90,
-                  child: Material(
-                    elevation: 4,
-                    borderRadius: BorderRadius.circular(4.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(4.0),
-                      ),
-                      child: Container(
-                        child: _buildBody(context, context.bloc<UserBloc>()),
-                      ),
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(4.0),
                     ),
+                    child: _buildBody(context, context.bloc<UserBloc>()),
                   ),
                 ),
               ),
@@ -129,15 +122,21 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   }
 
   Widget _buildBody(BuildContext context, UserBloc bloc) {
-    return AnimatedCrossFade(
-      duration: Duration(microseconds: 300),
-      crossFadeState: _inProgress(bloc) ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-      firstChild: _buildProgress(context),
-      secondChild: _buildForm(context, bloc),
-    );
+    return _inProgress(bloc)
+        ? FractionallySizedBox(
+            alignment: Alignment.topCenter,
+            widthFactor: 0.90,
+            child: _buildProgress(context),
+          )
+        : FractionallySizedBox(
+            alignment: Alignment.center,
+            widthFactor: 0.90,
+            heightFactor: 0.90,
+            child: _buildForm(context, bloc),
+          );
   }
 
-  bool _inProgress(UserBloc bloc) => bloc.isAuthenticated || bloc?.state?.isPending() == true;
+  bool _inProgress(UserBloc bloc) => bloc.isAuthenticating || bloc?.state?.isPending() == true;
 
   Container _buildProgress(BuildContext context) {
     _animController ??= AnimationController(
@@ -156,8 +155,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         children: [
           Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              _buildTitle(context),
               Padding(
                 padding: EdgeInsets.all(8),
                 child: SizedBox(
