@@ -2,6 +2,8 @@ import 'package:catcher/mode/page_report_mode.dart';
 import 'package:catcher/model/report.dart';
 import 'package:flutter/material.dart';
 
+import 'fatal_error_app.dart';
+
 class ScreenReportMode extends PageReportMode {
   final bool showStackTrace;
   static bool _reentrant = false;
@@ -41,81 +43,28 @@ class ScreenReportState extends State<ScreenReport> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Uventet feil"),
-          leading: IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () => _cancelReport(),
+      appBar: AppBar(
+        title: Text("Uventet feil"),
+        leading: IconButton(
+          icon: Icon(Icons.close),
+          onPressed: () => _cancelReport(),
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.send),
+            tooltip: "Send feilmelding",
+            onPressed: () => _acceptReport(),
           ),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.send),
-              tooltip: "Send feilmelding",
-              onPressed: () => _acceptReport(),
-            ),
-          ],
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: FatalErrorWidget(
+          widget.report.error,
+          widget.report.stackTrace,
         ),
-        body: Container(
-            padding: EdgeInsets.all(16.0),
-            decoration: BoxDecoration(color: Colors.white),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SelectableText(
-                  "${widget.report.error}",
-                  style: _getTextStyle(15),
-                  textAlign: TextAlign.start,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    "Løsningsforslag",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Divider(),
-                Text(
-                  "Dersom feilen vedvarer kan du forsøke å slette alle app-data "
-                  "via telefonens innstillinger. Hvis det ikke fungerer så prøv "
-                  "å installer appen på nytt. \n\n"
-                  "Send gjerne denne feilmeldingen til oss med knappen øverst til høyre.",
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    "Detaljer",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Divider(),
-                Expanded(child: _getStackTraceWidget()),
-              ],
-            )));
-  }
-
-  TextStyle _getTextStyle(double fontSize) {
-    return TextStyle(fontSize: fontSize, color: Colors.black, decoration: TextDecoration.none);
-  }
-
-  Widget _getStackTraceWidget() {
-    if (widget.mode.showStackTrace) {
-      var items = widget.report.stackTrace.toString().split("\n");
-      return SizedBox(
-        height: 300.0,
-        child: ListView.builder(
-          padding: EdgeInsets.all(8.0),
-          itemCount: items.length,
-          itemBuilder: (BuildContext context, int index) {
-            return Text(
-              '${items[index]}',
-              style: _getTextStyle(10),
-            );
-          },
-        ),
-      );
-    } else {
-      return Container();
-    }
+      ),
+    );
   }
 
   _acceptReport() {

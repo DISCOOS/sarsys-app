@@ -4,7 +4,6 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -79,62 +78,74 @@ class FatalErrorApp extends StatelessWidget {
               ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SingleChildScrollView(
-              child: _buildErrorPanel(error, stackTrace),
-            ),
-          ),
+          body: FatalErrorWidget(error, stackTrace),
         );
       }),
     );
   }
+}
 
-  Column _buildErrorPanel(error, stackTrace) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            "Forslag til løsning",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+class FatalErrorWidget extends StatelessWidget {
+  final error;
+  final stackTrace;
+  const FatalErrorWidget(
+    this.error,
+    this.stackTrace, {
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Text(
+                "Forslag til løsning",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(),
+            Text(
+              "Dersom feilen vedvarer kan du forsøke å slette alle app-data "
+              "via telefonens innstillinger. Hvis det ikke fungerer så prøv "
+              "å installer appen på nytt. \n\n"
+              "Send gjerne denne feilmeldingen til oss med knappen øverst til høyre.",
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Text(
+                "Feilmelding",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(),
+            SelectableText(
+              "$error",
+              style: TextStyle(fontSize: 12.0),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Text(
+                "Detaljer",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(),
+            Flexible(
+              child: SelectableText(
+                "$stackTrace",
+                style: TextStyle(fontSize: 12.0),
+              ),
+            ),
+          ],
         ),
-        Divider(),
-        Text(
-          "Forsøk å slette alle app-data via telefonens innstillinger.\n"
-          "Hvis det ikke fungerer så prøv å installer appen på nytt. \n\n"
-          "Send gjerne denne feilmeldingen til oss med knappen øverst til høyre.",
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            "Feilmelding",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        Divider(),
-        SelectableText(
-          "$error",
-          style: TextStyle(fontSize: 12.0),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Text(
-            "Detaljer",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        Divider(),
-        Flexible(
-          child: SelectableText(
-            "$stackTrace",
-            style: TextStyle(fontSize: 12.0),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

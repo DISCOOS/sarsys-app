@@ -20,7 +20,6 @@ import 'package:SarSys/screens/personnel_screen.dart';
 import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
-import 'package:SarSys/controllers/bloc_provider_controller.dart';
 import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
@@ -40,17 +39,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 
 class SarSysApp extends StatefulWidget {
   final PageStorageBucket bucket;
-  final BlocProviderController controller;
+//  final BlocProviderController controller;
   final GlobalKey<NavigatorState> navigatorKey;
   const SarSysApp({
     Key key,
     @required this.bucket,
-    @required this.controller,
+//    @required this.controller,
     @required this.navigatorKey,
   }) : super(key: key);
 
@@ -63,9 +61,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   PermissionController controller;
 
-  UserBloc get userBloc => widget.controller.bloc<UserBloc>();
-  AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
-  IncidentBloc get incidentBloc => widget.controller.bloc<IncidentBloc>();
+  UserBloc get userBloc => context.bloc<UserBloc>();
+  AppConfigBloc get configBloc => context.bloc<AppConfigBloc>();
+  IncidentBloc get incidentBloc => context.bloc<IncidentBloc>();
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
@@ -143,18 +141,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       PageStorage(
         bucket: widget.bucket,
         child: NetworkSensitive(
-          child: Provider<Client>(
-            create: (BuildContext context) => widget.controller.client,
-            child: Provider<PermissionController>(
-              create: (BuildContext context) => controller,
-              child: Provider<BlocProviderController>(
-                create: (BuildContext context) => widget.controller,
-                child: MultiBlocProvider(
-                  providers: widget.controller.all,
-                  child: child,
-                ),
-              ),
-            ),
+          child: Provider<PermissionController>(
+            create: (BuildContext context) => controller,
+            child: child,
           ),
         ),
       );
@@ -209,7 +198,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case MapScreen.ROUTE:
         child = _toMapScreen(
           settings: settings,
-          incident: widget.controller.bloc<IncidentBloc>().selected,
+          incident: context.bloc<IncidentBloc>().selected,
         );
         break;
       case LoginScreen.ROUTE:
@@ -333,7 +322,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
   }
 
-  Map<String, Unit> get units => widget.controller.bloc<UnitBloc>().units;
+  Map<String, Unit> get units => context.bloc<UnitBloc>().units;
 
   Widget _toPersonnelScreen(RouteSettings settings, bool persisted) {
     var personnel;
@@ -348,7 +337,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : PersonnelScreen(personnel: personnel);
   }
 
-  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().personnels;
+  Map<String, Personnel> get personnels => context.bloc<PersonnelBloc>().personnels;
 
   Widget _toDeviceScreen(RouteSettings settings, bool persisted) {
     var device;
@@ -363,7 +352,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : DeviceScreen(device: device);
   }
 
-  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().devices;
+  Map<String, Device> get devices => context.bloc<DeviceBloc>().devices;
 
   Widget _toHome() {
     Widget child;

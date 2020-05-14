@@ -1,4 +1,5 @@
 import 'package:SarSys/services/connectivity_service.dart';
+import 'package:catcher/core/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +15,10 @@ class NetworkSensitive extends StatelessWidget {
     return StreamProvider<ConnectivityStatus>(
       initialData: service.status,
       create: (context) => ConnectivityService().changes,
+      catchError: (error, stackTrace) => Catcher.reportCheckedError(
+        error,
+        stackTrace,
+      ),
       child: child,
     );
   }
