@@ -292,7 +292,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
             stackTrace: StackTrace.current,
           );
     event.callback.completeError(
-      error,
+      object.data,
       object.stackTrace ?? StackTrace.current,
     );
     return error;
