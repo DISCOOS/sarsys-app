@@ -200,7 +200,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
   Container _buildForm(BuildContext context) {
     _animController?.stop(canceled: false);
-    if (!_pinComplete) {
+    if (!(_pinComplete || _isPopped)) {
       _focusNode.requestFocus();
     }
 
@@ -432,7 +432,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
       _changePin = !_confirmPin;
     }
     _pinComplete = true;
-    if (!_changePin) {
+    if (!(_changePin || _isPopped)) {
       _pinController.clear();
       _focusNode.requestFocus();
     }

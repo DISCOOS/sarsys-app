@@ -78,7 +78,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bloc = BlocProvider.of<UserBloc>(context);
+    final bloc = context.bloc<UserBloc>();
     _subscription?.cancel();
     _subscription = bloc.listen((UserState state) {
       _process(state, bloc, context);
@@ -162,7 +162,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
               Padding(
                 padding: EdgeInsets.all(8),
                 child: SizedBox(
-                  height: 300,
+                  height: 500,
                   child: _buildRipple(
                     _buildIcon(),
                   ),
@@ -189,23 +189,33 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       padding: EdgeInsets.all(24.0),
       child: Form(
         key: _formKey,
-        child: ListView(
-          shrinkWrap: true,
-          reverse: true,
-          controller: _scrollController,
-          children: [
-            Column(
-              children: [
-                _buildTitle(context),
-                // Logo
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _buildIcon(),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints viewportConstraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: viewportConstraints.maxHeight,
                 ),
-                ..._buildFields(bloc),
-              ],
-            ),
-          ],
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildTitle(context),
+                      // Logo
+                      Expanded(
+                          child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildIcon(),
+                      )),
+                      ..._buildFields(bloc),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -304,7 +314,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              _buildCircle(200 + (24 * _animController.value)),
+              _buildCircle(200 + (12 * _animController.value)),
               Align(child: icon),
             ],
           );
