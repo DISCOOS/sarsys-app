@@ -541,7 +541,7 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Unit>(
         harness,
         tuuid,
-        act: (tuuid) => harness.unitBloc.delete(unit),
+        act: (tuuid) => harness.unitBloc.delete(unit.uuid),
       );
     });
 
@@ -559,7 +559,7 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Personnel>(
         harness,
         tuuid,
-        act: (tuuid) => harness.personnelBloc.delete(personnel),
+        act: (tuuid) => harness.personnelBloc.delete(personnel.uuid),
       );
     });
 
@@ -1054,7 +1054,7 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Unit>(
         harness,
         tuuid,
-        act: (tuuid) => harness.unitBloc.delete(unit),
+        act: (tuuid) => harness.unitBloc.delete(unit.uuid),
       );
     });
 
@@ -1072,7 +1072,7 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Personnel>(
         harness,
         tuuid,
-        act: (tuuid) => harness.personnelBloc.delete(personnel),
+        act: (tuuid) => harness.personnelBloc.delete(personnel.uuid),
       );
     });
 
@@ -1149,11 +1149,11 @@ void main() async {
 
       // Assert
       expect(harness.trackingBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
-      expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD contain 0 trackings");
+      expect(harness.trackingBloc.repo.length, 1, reason: "SHOULD contain one tracking");
       expect(
         harness.trackingBloc.repo.containsKey(tracking.uuid),
-        isFalse,
-        reason: "SHOULD not contain tracking ${tracking.uuid}",
+        isTrue,
+        reason: "SHOULD contain tracking ${tracking.uuid}",
       );
       expectThroughInOrder(harness.trackingBloc, [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()]);
     });
@@ -1201,7 +1201,7 @@ void main() async {
 }
 
 FutureOr<Tracking> _attachDeviceToTrackable(BlocTestHarness harness, Trackable trackable, Device device) async =>
-    await waitThoughtState<TrackingCreated, Tracking>(
+    await waitThroughStateWithData<TrackingCreated, Tracking>(
       harness.trackingBloc,
       map: (state) => state.data,
       test: (state) => trackable.tracking.uuid == state.data.uuid,
@@ -1385,7 +1385,7 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
   expect(t2.tracks.map((e) => e.source.uuid), contains(d3.uuid), reason: "SHOULD NOT contain uuid of d3");
 
   // Act
-  await harness.deviceBloc.delete(d3);
+  await harness.deviceBloc.delete(d3.uuid);
 
   // Assert
   await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()), close: false);
@@ -1454,7 +1454,7 @@ Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable>(
   expect(
     () async => await harness.trackingBloc.attach(last.uuid, devices: [d1]),
     throwsA(
-      isA<TrackingBlocError>().having((error) => error.data, 'data', isA<TrackingSourceAlreadyTrackedException>()),
+      isA<TrackingSourceAlreadyTrackedException>(),
     ),
     reason: "SHOULD throw TrackingError",
   );

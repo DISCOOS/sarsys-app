@@ -22,7 +22,7 @@ Future<dartz.Either<bool, Device>> createDevice() => CreateDevice()(DeviceParams
 
 class CreateDevice extends UseCase<bool, Device, DeviceParams> {
   @override
-  Future<dartz.Either<bool, Device>> call(params) async {
+  Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await showDialog<Device>(
       context: params.overlay.context,
@@ -42,7 +42,7 @@ Future<dartz.Either<bool, Device>> attachDevice() => AttachDevice()(DeviceParams
 
 class AttachDevice extends UseCase<bool, Device, DeviceParams> {
   @override
-  Future<dartz.Either<bool, Device>> call(params) async {
+  Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data == null, "Device should not be supplied");
     var result = await prompt(
       params.overlay.context,
@@ -65,7 +65,7 @@ Future<dartz.Either<bool, Device>> editDevice(
 
 class EditDevice extends UseCase<bool, Device, DeviceParams> {
   @override
-  Future<dartz.Either<bool, Device>> call(params) async {
+  Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data != null, "Device must be supplied");
     // The widget returned by the builder does not share a context with the location that
     // showDialog is originally called from. Provider.of will therefore fail.
@@ -93,7 +93,7 @@ Future<dartz.Either<bool, Device>> editDeviceLocation(
 
 class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
   @override
-  Future<dartz.Either<bool, Device>> call(params) async {
+  Future<dartz.Either<bool, Device>> execute(params) async {
     assert(params.data != null, "Device must be supplied");
     var result = await showDialog<Position>(
       context: params.overlay.context,
@@ -120,7 +120,7 @@ Future<dartz.Either<bool, DeviceState>> detachDevice(
 
 class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
   @override
-  Future<dartz.Either<bool, DeviceState>> call(params) async {
+  Future<dartz.Either<bool, DeviceState>> execute(params) async {
     assert(params.data != null, "Device must be supplied");
     var response = await prompt(
       params.overlay.context,
@@ -144,7 +144,7 @@ Future<dartz.Either<bool, DeviceState>> deleteDevice(
 
 class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
   @override
-  Future<dartz.Either<bool, DeviceState>> call(params) async {
+  Future<dartz.Either<bool, DeviceState>> execute(params) async {
     assert(params.data != null, "Unit must be supplied");
     var response = await prompt(
       params.overlay.context,
@@ -153,7 +153,7 @@ class DeleteDevice extends UseCase<bool, DeviceState, DeviceParams> {
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.delete(params.data);
+    await params.bloc.delete(params.data.uuid);
     return dartz.Right(params.bloc.state);
   }
 }

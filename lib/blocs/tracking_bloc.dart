@@ -17,12 +17,16 @@ import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:bloc/bloc.dart';
+import 'package:catcher/catcher_plugin.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import 'mixins.dart';
+
 typedef void TrackingCallback(VoidCallback fn);
 
-class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
+class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
+    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>> {
   TrackingBloc(
     this.repo, {
     @required this.incidentBloc,
@@ -96,9 +100,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         }
       }
     } on Exception catch (error, stackTrace) {
-      add(
-        RaiseTrackingError(error, stackTrace: stackTrace),
-      );
+      Catcher.reportCheckedError(error, stackTrace);
     }
   }
 
@@ -147,9 +149,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         }
       }
     } on Exception catch (error, stackTrace) {
-      add(
-        RaiseTrackingError(error, stackTrace: stackTrace),
-      );
+      Catcher.reportCheckedError(error, stackTrace);
     }
   }
 
@@ -212,9 +212,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         }
       }
     } on Exception catch (error, stackTrace) {
-      add(
-        RaiseTrackingError(error, stackTrace: stackTrace),
-      );
+      Catcher.reportCheckedError(error, stackTrace);
     }
   }
 
@@ -274,9 +272,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         }
       }
     } on Exception catch (error, stackTrace) {
-      add(
-        RaiseTrackingError(error, stackTrace: stackTrace),
-      );
+      Catcher.reportCheckedError(error, stackTrace);
     }
   }
 
@@ -589,11 +585,6 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
         yield await _unload(command);
       } else if (command is _HandleMessage) {
         yield* _process(command);
-      } else if (command is RaiseTrackingError) {
-        yield _toError(
-          command,
-          command.data,
-        );
       } else {
         yield _toError(
           command,
@@ -737,33 +728,18 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState> {
             stackTrace: StackTrace.current,
           );
     event.callback.completeError(
-      object,
+      object.data,
       object.stackTrace ?? StackTrace.current,
     );
     return object;
   }
 
   @override
-  void onError(Object error, StackTrace stackTrace) {
-    if (_subscriptions.isNotEmpty) {
-      add(RaiseTrackingError(TrackingBlocError(
-        error,
-        stackTrace: stackTrace,
-      )));
-    } else {
-      throw TrackingBlocException(
-        error,
-        state,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  @override
   Future<void> close() async {
-    super.close();
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
+    await repo.dispose();
+    return super.close();
   }
 
   Tracking _assertExists(String tuuid) {
@@ -821,16 +797,6 @@ class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
 
   @override
   String toString() => 'UnloadTrackings {iuuid: $data}';
-}
-
-class RaiseTrackingError extends TrackingCommand<TrackingBlocError, TrackingBlocError> {
-  RaiseTrackingError(Object error, {StackTrace stackTrace})
-      : super(
-          TrackingBlocError(error, stackTrace: stackTrace),
-        );
-
-  @override
-  String toString() => 'RaiseTrackingError {error: $data}';
 }
 
 /// ---------------------

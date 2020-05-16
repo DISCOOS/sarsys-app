@@ -198,7 +198,7 @@ class PermissionController {
     var notify = true;
     if (configBloc.isReady) {
       final config = configBloc.config;
-      notify = config != (await configBloc.update(locationWhenInUse: locationWhenInUse));
+      notify = config != (await configBloc.updateWith(locationWhenInUse: locationWhenInUse));
     }
     return notify;
   }

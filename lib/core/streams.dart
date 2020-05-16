@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 /// Wait for given rule result from stream of results
-FutureOr<T> waitThoughtState<S, T>(
+FutureOr<T> waitThroughStateWithData<S, T>(
   Bloc bloc, {
   @required T Function(S state) map,
   bool fail = false,
@@ -33,7 +33,7 @@ FutureOr<T> waitThoughtState<S, T>(
 }
 
 /// Wait for given rule result from stream of results
-Future<Type> awaitThoughtStates(
+Future waitThoughtStates(
   Bloc bloc, {
   @required List<Type> expected,
   bool fail = false,

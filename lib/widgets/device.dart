@@ -335,7 +335,7 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  List<Position> _toTrack(Tracking tracking) =>
+  Iterable<Position> _toTrack(Tracking tracking) =>
       TrackingUtils.find(
         tracking.tracks,
         device.uuid,

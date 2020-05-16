@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/unit_screen.dart';
@@ -13,7 +14,6 @@ import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class MissionsPage extends StatefulWidget {
@@ -314,7 +314,7 @@ class UnitAvatar extends StatelessWidget {
 }
 
 class MissionSearch extends SearchDelegate<Unit> {
-  static final _storage = new FlutterSecureStorage();
+  static final _storage = Storage.secure;
   static const RECENT_KEY = "search/unit/recent";
 
   ValueNotifier<Set<String>> _recent = ValueNotifier(null);

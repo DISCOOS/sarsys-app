@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/screens/first_setup_screen.dart';
 import 'package:SarSys/screens/login_screen.dart';
-import 'package:SarSys/screens/onboarding_screen.dart';
+import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -47,22 +46,28 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
   void didChangeDependencies() {
     super.didChangeDependencies();
     _listening = false;
+    _trackAccessChanges();
+  }
+
+  void _trackAccessChanges() {
     _subscription?.cancel();
-    _subscription = BlocProvider.of<UserBloc>(context)?.listen((state) {
+    _subscription = context.bloc<UserBloc>()?.listen((state) {
       // Skip initial event
-      if (_listening && (state.isUnset() || state.isLocked())) {
-        final config = BlocProvider.of<AppConfigBloc>(context)?.config;
-        if (config?.onboarded != true) {
-          Navigator.of(context)?.pushReplacementNamed(OnboardingScreen.ROUTE);
-        } else if (config?.firstSetup != true) {
-          Navigator.of(context)?.pushReplacementNamed(FirstSetupScreen.ROUTE);
-        } else {
+      if (_listening) {
+        if (_shouldLogin(state)) {
           Navigator.of(context)?.pushReplacementNamed(LoginScreen.ROUTE);
+        } else if (_shouldUnlock(state)) {
+          Navigator.of(context)?.pushReplacementNamed(UnlockScreen.ROUTE);
         }
       }
       _listening = true;
     });
   }
+
+  bool _shouldLogin(UserState state) =>
+      state.isUnset() || state.isLocked() || state.isUnauthorized() || state.isForbidden();
+
+  bool _shouldUnlock(UserState state) => state.isLocked();
 
   @override
   void dispose() {

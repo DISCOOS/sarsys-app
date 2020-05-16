@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/app_state.dart';
+import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
@@ -317,10 +317,10 @@ void jumpToLatLngBounds(
 
 void _stopFollowMe(BuildContext context) {
   // Disable location lock?
-  var model = readState<MapWidgetStateModel>(context, MapWidgetState.STATE, defaultValue: MapWidgetStateModel());
+  var model = getPageState<MapWidgetStateModel>(context, MapWidgetState.STATE, defaultValue: MapWidgetStateModel());
   if (model?.following == true) {
-    writeState(context, MapWidgetState.STATE, model.cloneWith(following: false));
-    writeAppState(PageStorage.of(context));
+    putPageState(context, MapWidgetState.STATE, model.cloneWith(following: false));
+    writePageStorageBucket(PageStorage.of(context));
   }
 }
 

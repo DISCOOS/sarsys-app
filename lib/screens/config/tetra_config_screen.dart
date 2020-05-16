@@ -31,7 +31,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _bloc = context.bloc<AppConfigBloc>();
   }
 
   @override //new
@@ -86,7 +86,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                           .toList()
                       : null,
                   onChanged: (value) => setState(() {
-                    _bloc.update(talkGroupCatalog: value);
+                    _bloc.updateWith(talkGroupCatalog: value);
                   }),
                   value: _bloc.config?.talkGroupCatalog ?? Defaults.talkGroupCatalog,
                 ),
@@ -162,7 +162,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
                   },
                   onChanged: (value) => setState(() {
                     final items = value.map((tg) => tg.name).toList();
-                    _bloc.update(talkGroups: List<String>.from(items));
+                    _bloc.updateWith(talkGroups: List<String>.from(items));
                   }),
                   // BUG: These are required, no default values are given.
                   obscureText: false,
@@ -199,7 +199,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
           Switch(
             value: _bloc.config.callsignReuse,
             onChanged: (value) => setState(() {
-              _bloc.update(callsignReuse: value);
+              _bloc.updateWith(callsignReuse: value);
             }),
           ),
         ],

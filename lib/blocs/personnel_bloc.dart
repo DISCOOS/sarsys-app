@@ -12,9 +12,17 @@ import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'mixins.dart';
+
 typedef void PersonnelCallback(VoidCallback fn);
 
-class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
+class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
+    with
+        LoadableBloc<List<Personnel>>,
+        CreatableBloc<Personnel>,
+        UpdatableBloc<Personnel>,
+        DeletableBloc<Personnel>,
+        UnloadableBloc<List<Personnel>> {
   PersonnelBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
@@ -85,7 +93,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   Map<String, Personnel> get personnels => repo.map;
 
   /// Find [Personnel] from [user]
-  List<Personnel> find(
+  Iterable<Personnel> find(
     User user, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
   }) =>
@@ -106,9 +114,10 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
 
   void _assertState() {
     if (incidentBloc.isUnset) {
-      throw PersonnelBlocError(
+      throw PersonnelBlocException(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.load()'",
+        state,
       );
     }
   }
@@ -149,10 +158,10 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   /// Delete given personnel
-  Future<Personnel> delete(Personnel personnel) {
+  Future<Personnel> delete(String uuid) {
     _assertState();
     return _dispatch<Personnel>(
-      DeletePersonnel(personnel),
+      DeletePersonnel(repo[uuid]),
     );
   }
 
@@ -179,11 +188,6 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
         yield await _unload(command);
       } else if (command is _InternalMessage) {
         yield await _process(command);
-      } else if (command is RaisePersonnelError) {
-        yield _toError(
-          command,
-          command.data,
-        );
       } else {
         yield _toError(
           command,
@@ -299,26 +303,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState> {
   }
 
   @override
-  void onError(Object error, StackTrace stacktrace) {
-    if (_subscriptions.isNotEmpty) {
-      add(RaisePersonnelError(PersonnelBlocError(
-        error,
-        stackTrace: stacktrace,
-      )));
-    } else {
-      throw PersonnelBlocException(
-        error,
-        state,
-        stackTrace: stacktrace,
-      );
-    }
-  }
-
-  @override
   Future<void> close() async {
-    super.close();
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
+    await repo.dispose();
+    return super.close();
   }
 }
 
@@ -373,13 +362,6 @@ class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
 
   @override
   String toString() => 'UnloadPersonnels {iuuid: $data}';
-}
-
-class RaisePersonnelError extends PersonnelCommand<PersonnelBlocError, PersonnelBlocError> {
-  RaisePersonnelError(data) : super(data);
-
-  @override
-  String toString() => 'RaisePersonnelError {error: $data}';
 }
 
 /// ---------------------

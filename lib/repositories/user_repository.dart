@@ -8,6 +8,7 @@ import 'package:SarSys/repositories/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/user_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
@@ -23,6 +24,8 @@ class UserRepository {
   final UserService service;
   final ConnectivityService connectivity;
   final AuthTokenRepository _tokens = AuthTokenRepository();
+
+  static const CURRENT_USER_ID_KEY = 'current_user_id';
 
   String _userId;
   String get userId => _userId;
@@ -40,37 +43,38 @@ class UserRepository {
   bool get isAuthenticated => user != null;
 
   /// Check if user has token
-  User get(String userId) => containsKey(userId) ? _users?.get(userId) : null;
+  User get(String userId) => isReady && _isNotNull(userId) ? _users?.get(userId) : null;
+  bool _isNotNull(String userId) => emptyAsNull(userId) != null;
 
   /// Get [User] from given [User.userId]
   User operator [](String userId) => get(userId);
 
   /// Check if user has token
-  bool get hasToken => _tokens.containsKey(_userId);
+  bool get hasToken => isReady && _tokens.containsKey(_userId);
 
   /// Get token for authenticated [user]
-  AuthToken get token => _tokens[_userId];
+  AuthToken get token => isReady ? _tokens[_userId] : null;
 
   /// Check if token is valid
   bool get isTokenValid => token?.isValid == true;
 
   /// Check if token is expired
-  bool get isTokenExpired => token.isExpired == true;
+  bool get isTokenExpired => token?.isExpired == true;
 
   /// Get all cached [User.userId]s
-  Iterable<String> get keys => _users != null ? List.unmodifiable(_users.keys) : null;
+  Iterable<String> get keys => isReady && _users != null ? List.unmodifiable(_users.keys) : null;
 
   /// Get all cached [User]s
-  Iterable<User> get values => _users != null ? List.unmodifiable(_users.values) : null;
+  Iterable<User> get values => isReady && _users != null ? List.unmodifiable(_users.values) : null;
 
   /// Check if user with [userId] is cached
-  bool containsKey(String userId) => _users?.keys?.contains(userId) ?? false;
+  bool containsKey(String userId) => !isReady ? false : (_users?.keys?.contains(userId) ?? false);
 
   /// Check if given [user] is cached
-  bool containsValue(User user) => _users?.values?.contains(user) ?? false;
+  bool containsValue(User user) => !isReady ? false : (_users?.values?.contains(user) ?? false);
 
   /// Check if repository is ready
-  bool get isReady => _users?.isOpen == true && _users.containsKey(_userId);
+  bool get isReady => _users?.isOpen == true;
 
   /// Check if local access to user data is secured
   bool isSecured({String userId}) => _users.get(userId ?? _userId)?.security != null;
@@ -79,6 +83,7 @@ class UserRepository {
   Future _checkState({bool open = false}) async {
     if (open) {
       _users ??= await _open();
+      _userId = await Storage.secure.read(key: CURRENT_USER_ID_KEY);
     } else if (!isReady) {
       throw UserRepositoryNotReadyException();
     }
@@ -114,7 +119,7 @@ class UserRepository {
       );
       actualId = _userId;
     }
-    return actualId == null ? null : _users.get(actualId);
+    return get(actualId);
   }
 
   /// Authenticate [user]
@@ -431,7 +436,7 @@ class UserRepository {
     if (user) {
       await _users.delete(userId);
     }
-    _unset(userId);
+    await _unset(userId);
     return token;
   }
 
@@ -443,14 +448,22 @@ class UserRepository {
 
   Future<User> _putUser(User user) async {
     _userId = user.userId;
+    await Storage.secure.write(
+      key: CURRENT_USER_ID_KEY,
+      value: _userId,
+    );
     await _users.put(user.userId, user);
     return user;
   }
 
-  void _unset(String userId) {
+  Future _unset(String userId) async {
     if (userId == _userId) {
       _userId = null;
+      await Storage.secure.delete(
+        key: CURRENT_USER_ID_KEY,
+      );
     }
+    return Future.value();
   }
 }
 

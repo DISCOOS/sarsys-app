@@ -61,8 +61,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _configBloc = BlocProvider.of<AppConfigBloc>(context);
-    _incidentBloc = BlocProvider.of<IncidentBloc>(context);
+    _configBloc = context.bloc<AppConfigBloc>();
+    _incidentBloc = context.bloc<IncidentBloc>();
   }
 
   @override
@@ -591,7 +591,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
       Incident incident;
       const closed = [IncidentStatus.Cancelled, IncidentStatus.Resolved];
       final current = widget?.incident?.status;
-      final userId = BlocProvider.of<UserBloc>(context).user?.userId;
+      final userId = context.bloc<UserBloc>().user?.userId;
 
       _formKey.currentState.save();
 
@@ -600,13 +600,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
         final talkGroups = List<String>.from(
           list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
         );
-        await _configBloc.update(talkGroups: talkGroups);
+        await _configBloc.updateWith(talkGroups: talkGroups);
       }
 
       if (widget.incident == null) {
         final units = List<String>.from(_formKey.currentState.value['units']);
         if (_rememberUnits) {
-          await _configBloc.update(units: units);
+          await _configBloc.updateWith(units: units);
         }
         Navigator.pop(
           context,

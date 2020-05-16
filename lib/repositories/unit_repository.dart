@@ -206,9 +206,9 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
 
   /// Unload all devices for given [iuuid]
   Future<List<Unit>> unload() async {
-    final devices = await clear();
+    final units = values;
     _iuuid = null;
-    return devices;
+    return units;
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/map_widget.dart';
@@ -41,13 +43,32 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   bool _showFAB = true;
 
+  bool _unloaded = false;
+  StreamSubscription<IncidentState> _subscription;
+  Incident get incident => _unloaded ? null : widget.incident;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _listenForIncidentStates();
+  }
+
+  /// Initialize blocs and restart app after blocs are rebuilt
+  void _listenForIncidentStates() {
+    _subscription?.cancel();
+    _subscription = context.bloc<IncidentBloc>().listen((state) {
+      setState(() {
+        _unloaded = state.shouldUnload(widget.incident?.uuid);
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      resizeToAvoidBottomInset: false,
       floatingActionButton: _showFAB && context.bloc<UserBloc>()?.user?.isCommander == true
           ? FloatingActionButton(
               onPressed: () {
@@ -62,8 +83,8 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   }
 
   Widget _buildMap() => MapWidget(
+        incident: incident,
         center: widget.center,
-        incident: widget.incident,
         fitBounds: widget.fitBounds,
         fitBoundOptions: widget.fitBoundOptions,
         mapController: _mapController,
@@ -163,5 +184,11 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       label: label,
       onPressed: onPressed,
     );
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

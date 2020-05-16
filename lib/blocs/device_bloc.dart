@@ -10,9 +10,17 @@ import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'mixins.dart';
+
 typedef void DeviceCallback(VoidCallback fn);
 
-class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
+class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
+    with
+        LoadableBloc<List<Device>>,
+        CreatableBloc<Device>,
+        UpdatableBloc<Device>,
+        DeletableBloc<Device>,
+        UnloadableBloc<List<Device>> {
   DeviceBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
@@ -97,6 +105,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   /// Fetch [devices] from [service]
+  @override
   Future<List<Device>> load() async {
     _assertState();
     return _dispatch<List<Device>>(
@@ -105,6 +114,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   /// Create given [device]
+  @override
   Future<Device> create(Device device) {
     _assertState();
     return _dispatch<Device>(
@@ -129,6 +139,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   /// Update given [device]
+  @override
   Future<Device> update(Device device) {
     _assertState();
     return _dispatch<Device>(
@@ -137,14 +148,16 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
   }
 
   /// Detach given device
-  Future<Device> delete(Device device) {
+  @override
+  Future<Device> delete(String uuid) {
     _assertState();
     return _dispatch<Device>(
-      DeleteDevice(device),
+      DeleteDevice(repo[uuid]),
     );
   }
 
   /// Unload [devices] from local storage
+  @override
   Future<List<Device>> unload() {
     _assertState();
     return _dispatch<List<Device>>(
@@ -167,11 +180,6 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
         yield await _process(command.data);
       } else if (command is UnloadDevices) {
         yield await _unload(command);
-      } else if (command is RaiseDeviceError) {
-        yield _toError(
-          command,
-          command.data,
-        );
       } else {
         yield _toError(
           command,
@@ -282,33 +290,18 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState> {
             stackTrace: StackTrace.current,
           );
     command.callback.completeError(
-      object,
+      object.data,
       object.stackTrace ?? StackTrace.current,
     );
     return object;
   }
 
   @override
-  void onError(Object error, StackTrace stackTrace) {
-    if (_subscriptions.isNotEmpty) {
-      add(RaiseDeviceError(DeviceBlocError(
-        error,
-        stackTrace: stackTrace,
-      )));
-    } else {
-      throw DeviceBlocException(
-        error,
-        state,
-        stackTrace: stackTrace,
-      );
-    }
-  }
-
-  @override
   Future<void> close() async {
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
-    super.close();
+    await repo.dispose();
+    return super.close();
   }
 }
 
@@ -363,13 +356,6 @@ class UnloadDevices extends DeviceCommand<String, List<Device>> {
 
   @override
   String toString() => 'UnloadDevices {iuuid: $data}';
-}
-
-class RaiseDeviceError extends DeviceCommand<DeviceBlocError, DeviceBlocError> {
-  RaiseDeviceError(DeviceBlocError data) : super(data);
-
-  @override
-  String toString() => 'RaiseDeviceError {error: $data}';
 }
 
 /// ---------------------

@@ -24,7 +24,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _bloc = context.bloc<AppConfigBloc>();
     _ttl.text = "${_bloc.config.mapCacheTTL}";
     _capacity.text = "${_bloc.config.mapCacheCapacity}";
   }
@@ -90,7 +90,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.update(mapCacheTTL: int.parse(value ?? 0));
+                _bloc.updateWith(mapCacheTTL: int.parse(value ?? 0));
               },
             ),
           ),
@@ -125,7 +125,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.update(mapCacheCapacity: int.parse(value ?? 0));
+                _bloc.updateWith(mapCacheCapacity: int.parse(value ?? 0));
               },
             ),
           ),
@@ -184,7 +184,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
             child: Switch(
               value: _bloc.config.keepScreenOn,
               onChanged: (value) => setState(() {
-                _bloc.update(keepScreenOn: value);
+                _bloc.updateWith(keepScreenOn: value);
               }),
             ),
           ),

@@ -89,24 +89,15 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         .toList();
   }
 
-  factory PersonnelServiceMock.build(final int count) {
+  factory PersonnelServiceMock.build(final int count, {List<String> iuuids = const []}) {
     final PersonnelServiceMock mock = PersonnelServiceMock();
-    final personnelRepo = mock.personnelsRepo;
+    final personnelsRepo = mock.personnelsRepo;
 
-    // ignore: close_sinks
-    final StreamController<PersonnelMessage> controller = StreamController.broadcast();
-
-    when(mock.messages).thenAnswer((_) => controller.stream);
-
-    when(mock.fetch(any)).thenAnswer((_) async {
-      final String iuuid = _.positionalArguments[0];
-      var personnel = personnelRepo[iuuid];
-      if (personnel == null) {
-        personnel = personnelRepo.putIfAbsent(iuuid, () => {});
-      }
-      // Only generate personnel for automatically generated incidents
-      if (iuuid.startsWith('a:') && personnel.isEmpty) {
-        personnel.addEntries([
+    // Only generate units for automatically generated iuuids
+    iuuids.forEach((iuuid) {
+      if (iuuid.startsWith('a:')) {
+        final personnels = personnelsRepo.putIfAbsent(iuuid, () => {});
+        personnels.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(
               "$iuuid:p:$i",
@@ -121,6 +112,19 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
             ),
         ]);
       }
+    });
+
+    // ignore: close_sinks
+    final StreamController<PersonnelMessage> controller = StreamController.broadcast();
+
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
+    when(mock.fetch(any)).thenAnswer((_) async {
+      final String iuuid = _.positionalArguments[0];
+      var personnel = personnelsRepo[iuuid];
+      if (personnel == null) {
+        personnel = personnelsRepo.putIfAbsent(iuuid, () => {});
+      }
       return ServiceResponse.ok(
         body: personnel.values.toList(growable: false),
       );
@@ -129,19 +133,16 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     when(mock.create(any, any)).thenAnswer((_) async {
       final iuuid = _.positionalArguments[0];
       final Personnel personnel = _.positionalArguments[1];
-      final repo = personnelRepo[iuuid];
-      if (repo == null) {
-        return ServiceResponse.notFound(message: "Incident not found: $iuuid");
-      }
+      final personnels = personnelsRepo.putIfAbsent(iuuid, () => {});
       final String uuid = iuuid.startsWith('a:') ? "$iuuid:p:${randomAlphaNumeric(8).toLowerCase()}" : personnel.uuid;
       return ServiceResponse.ok(
-        body: repo.putIfAbsent(uuid, () => personnel.cloneWith(uuid: uuid)),
+        body: personnels.putIfAbsent(uuid, () => personnel.cloneWith(uuid: uuid)),
       );
     });
 
     when(mock.update(any)).thenAnswer((_) async {
       final Personnel personnel = _.positionalArguments[0];
-      var personnels = personnelRepo.entries.firstWhere(
+      var personnels = personnelsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(personnel.uuid),
         orElse: () => null,
       );
@@ -157,7 +158,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.delete(any)).thenAnswer((_) async {
       final Personnel personnel = _.positionalArguments[0];
-      var incident = personnelRepo.entries.firstWhere(
+      var incident = personnelsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(personnel.uuid),
         orElse: () => null,
       );

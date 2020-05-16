@@ -24,7 +24,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _bloc = context.bloc<AppConfigBloc>();
   }
 
   @override //new
@@ -106,7 +106,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
               );
             },
             onChanged: (value) => setState(() {
-              _bloc.update(units: List<String>.from(value));
+              _bloc.updateWith(units: List<String>.from(value));
             }),
             // BUG: These are required, no default values are given.
             obscureText: false,

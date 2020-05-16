@@ -27,7 +27,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = BlocProvider.of<AppConfigBloc>(context);
+    _bloc = context.bloc<AppConfigBloc>();
     _interval.text = "${_bloc.config.locationFastestInterval ~/ 1000}";
     _displacement.text = "${_bloc.config.locationSmallestDisplacement}";
     _locationService = LocationService(_bloc);
@@ -173,7 +173,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                         child: Text("${LocationService.toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
-              onChanged: (value) => setState(() => _bloc.update(locationAccuracy: enumName(value))),
+              onChanged: (value) => setState(() => _bloc.updateWith(locationAccuracy: enumName(value))),
               value: _bloc.config?.toLocationAccuracy(),
             ),
           ),
@@ -208,7 +208,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.update(locationSmallestDisplacement: int.parse(value ?? 0));
+                _bloc.updateWith(locationSmallestDisplacement: int.parse(value ?? 0));
               },
             ),
           ),
@@ -243,7 +243,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.update(locationFastestInterval: int.parse(value ?? 0) * 1000);
+                _bloc.updateWith(locationFastestInterval: int.parse(value ?? 0) * 1000);
               },
             ),
           ),

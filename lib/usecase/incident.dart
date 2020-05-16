@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -20,6 +21,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+
+import 'package:SarSys/core/extensions.dart';
 
 class IncidentParams extends BlocParams<IncidentBloc, Incident> {
   final Point ipp;
@@ -39,7 +42,7 @@ Future<dartz.Either<bool, Incident>> createIncident({
 
 class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
-  Future<dartz.Either<bool, Incident>> call(params) async {
+  Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data == null, "Incident should not be supplied");
     final controller = Provider.of<PermissionController>(params.context);
 
@@ -82,7 +85,7 @@ Future<dartz.Either<bool, Incident>> selectIncident(
 
 class SelectIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
-  Future<dartz.Either<bool, Incident>> call(params) async {
+  Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.uuid != null, "Incident uuid must be given");
     try {
       final incident = await params.bloc.select(
@@ -103,11 +106,17 @@ Future<dartz.Either<bool, Personnel>> joinIncident(
 
 class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Incident is required");
-    final user = BlocProvider.of<UserBloc>(params.context).user;
+    final user = params.context.bloc<UserBloc>().user;
     assert(user != null, "UserBloc contains no user");
-    final personnelBloc = BlocProvider.of<PersonnelBloc>(params.context);
+
+    if (shouldRegister(params)) {
+      return await _mobilize(
+        params,
+        user,
+      );
+    }
 
     final join = await prompt(
       params.overlay.context,
@@ -116,29 +125,38 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
     );
 
     if (join) {
-      try {
-        await params.bloc.select(
-          params.data.uuid,
-        );
-        var personnel = _findPersonnel(personnelBloc, user);
-        if (personnel == null) {
-          final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-          personnel = await personnelBloc.create(Personnel(
-            uuid: Uuid().v4(),
-            userId: user.userId,
-            fname: user.fname,
-            lname: user.lname,
-            phone: user.phone,
-            status: PersonnelStatus.Mobilized,
-            affiliation: org.toAffiliationFromUser(user),
-          ));
-        }
-        return dartz.Right(personnel);
-      } on Exception catch (e, stackTrace) {
-        Catcher.reportCheckedError(e, stackTrace);
-      }
+      await params.bloc.select(params.data.uuid);
+      await waitThoughtStates(
+        params.context.bloc<PersonnelBloc>(),
+        expected: [PersonnelsLoaded],
+      );
+      return _mobilize(params, user);
     }
     return dartz.Left(false);
+  }
+
+  bool shouldRegister(IncidentParams params) => !params.bloc.isUnset && params.data.uuid == params.bloc.selected?.uuid;
+
+  Future<dartz.Either<bool, Personnel>> _mobilize(IncidentParams params, User user) async {
+    try {
+      var personnel = _findPersonnel(params, user);
+      if (personnel == null) {
+        final org = await FleetMapService().fetchOrganization(Defaults.orgId);
+        personnel = await params.context.bloc<PersonnelBloc>().create(Personnel(
+              uuid: Uuid().v4(),
+              userId: user.userId,
+              fname: user.fname,
+              lname: user.lname,
+              phone: user.phone,
+              status: PersonnelStatus.Mobilized,
+              affiliation: org.toAffiliationFromUser(user),
+            ));
+      }
+      return dartz.right(personnel);
+    } on Exception catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
+    }
+    return dartz.left(false);
   }
 }
 
@@ -146,11 +164,10 @@ Future<dartz.Either<bool, Personnel>> leaveIncident() => LeaveIncident()(Inciden
 
 class LeaveIncident extends UseCase<bool, Personnel, IncidentParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data == null, "Incident should not be given");
-    final user = BlocProvider.of<UserBloc>(params.context).user;
+    final user = params.context.bloc<UserBloc>().user;
     assert(user != null, "UserBloc contains no user");
-    final personnelBloc = BlocProvider.of<PersonnelBloc>(params.context);
 
     final leave = await prompt(
       params.overlay.context,
@@ -160,19 +177,26 @@ class LeaveIncident extends UseCase<bool, Personnel, IncidentParams> {
 
     if (leave) {
       try {
+        Personnel personnel = await _retire(params, user);
         await params.bloc.unselect();
-        var personnel = _findPersonnel(personnelBloc, user);
-        if (personnel != null) {
-          personnel = await personnelBloc.update(
-            personnel.cloneWith(status: PersonnelStatus.Retired),
-          );
-        }
         return dartz.Right(personnel);
       } on Exception catch (e, stackTrace) {
         Catcher.reportCheckedError(e, stackTrace);
       }
     }
     return dartz.Left(false);
+  }
+
+  Future<Personnel> _retire(IncidentParams params, User user) async {
+    var personnel = _findPersonnel(params, user);
+    if (personnel != null) {
+      personnel = await params.context.bloc<PersonnelBloc>().update(
+            personnel.cloneWith(
+              status: PersonnelStatus.Retired,
+            ),
+          );
+    }
+    return personnel;
   }
 }
 
@@ -183,7 +207,7 @@ Future<dartz.Either<bool, Incident>> editIncident(
 
 class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
-  Future<dartz.Either<bool, Incident>> call(params) async {
+  Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data != null, "Incident is required");
     final controller = Provider.of<PermissionController>(params.context);
 
@@ -202,10 +226,9 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   }
 }
 
-Personnel _findPersonnel(PersonnelBloc personnelBloc, User user) {
-  var personnel = personnelBloc.personnels.values.firstWhere(
-    (personnel) => personnel.userId == user.userId,
-    orElse: () => null,
-  );
-  return personnel;
+Personnel _findPersonnel(IncidentParams params, User user) {
+  return params.context.bloc<PersonnelBloc>().find(
+    user,
+    exclude: const [],
+  ).firstOrNull;
 }

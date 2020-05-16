@@ -126,7 +126,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () async {
                   timer?.cancel();
                   timer = null;
-                  await context.bloc<AppConfigBloc>().update(
+                  await context.bloc<AppConfigBloc>().updateWith(
                         onboarded: true,
                       );
                   Navigator.pushReplacementNamed(context, FirstSetupScreen.ROUTE);

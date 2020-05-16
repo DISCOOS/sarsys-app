@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/cupertino.dart';
@@ -72,6 +73,21 @@ class FatalErrorApp extends StatelessWidget {
                       },
               ),
               IconButton(
+                icon: Icon(Icons.delete),
+                tooltip: "Slett data",
+                onPressed: () async {
+                  final delete = await prompt(
+                    navigatorKey.currentState.overlay.context,
+                    "Slette alle data?",
+                    "Dette vil slette alle data SarSys har lagret. Vil du fortsette?",
+                  );
+                  if (delete) {
+                    await Storage.destroy();
+                    exit(0);
+                  }
+                },
+              ),
+              IconButton(
                 icon: Icon(Icons.close),
                 tooltip: "Lukk app",
                 onPressed: () => exit(0),
@@ -113,9 +129,9 @@ class FatalErrorWidget extends StatelessWidget {
             Divider(),
             Text(
               "Dersom feilen vedvarer kan du forsøke å slette alle app-data "
-              "via telefonens innstillinger. Hvis det ikke fungerer så prøv "
+              "med knappen oppe til høyre (søppeldunk). Hvis det ikke fungerer så prøv "
               "å installer appen på nytt. \n\n"
-              "Send gjerne denne feilmeldingen til oss med knappen øverst til høyre.",
+              "Send gjerne denne feilmeldingen til oss med sende-knappen oppe til høyre (pil).",
             ),
             Padding(
               padding: const EdgeInsets.only(top: 16.0),

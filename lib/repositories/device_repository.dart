@@ -123,7 +123,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
 
   /// Unload all devices for given [iuuid]
   Future<List<Device>> unload() async {
-    final devices = await clear();
+    final devices = values;
     _iuuid = null;
     return devices;
   }

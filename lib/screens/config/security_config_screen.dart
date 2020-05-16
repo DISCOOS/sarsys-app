@@ -1,3 +1,4 @@
+import 'package:SarSys/screens/change_pin_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/models/Security.dart';
@@ -31,6 +32,18 @@ class _SecurityConfigScreenState extends State<SecurityConfigScreen> {
         child: ListView(
           shrinkWrap: true,
           children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.phonelink_lock),
+              title: Text('Endre pin', style: TextStyle(fontSize: 14)),
+              onTap: () async {
+                Navigator.popAndPushNamed(
+                  context,
+                  ChangePinScreen.ROUTE,
+                  arguments: {'popOnClose': true},
+                );
+              },
+            ),
+            Divider(),
             _buildSecurityModeField(),
             SizedBox(
               height: 16,

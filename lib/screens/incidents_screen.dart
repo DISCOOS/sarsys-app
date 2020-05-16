@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
@@ -14,7 +15,6 @@ import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class IncidentsScreen extends Screen<IncidentsScreenState> {
   static const ROUTE = 'incident/list';
@@ -358,7 +358,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
 }
 
 class IncidentSearch extends SearchDelegate<Incident> {
-  static final _storage = new FlutterSecureStorage();
+  static final _storage = Storage.secure;
   static const RECENT_KEY = "search/incident/recent";
 
   final Set<IncidentStatus> filter;

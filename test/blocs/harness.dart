@@ -444,7 +444,6 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     assert(_withUnitBloc, 'UnitBloc requires UnitBloc');
     _trackingService = TrackingServiceMock.build(
-      _incidentBloc,
       _deviceService,
       personnelCount: personnelCount,
       unitCount: unitCount,

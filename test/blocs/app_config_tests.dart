@@ -119,7 +119,7 @@ void main() async {
         harness.connectivity.cellular();
         await harness.configBloc.load();
         harness.connectivity.offline();
-        await harness.configBloc.update();
+        await harness.configBloc.updateWith();
         expect(harness.configBloc.repo.state.status, StorageStatus.updated, reason: "SHOULD HAVE local state");
         expect(harness.configBloc.repo.backlog.length, 1, reason: "SHOULD have a backlog");
 
@@ -177,7 +177,7 @@ Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) a
   final newConfig = oldConfig.copyWith(demoRole: 'personnel');
 
   // Act
-  final gotConfig = await harness.configBloc.update(demoRole: 'personnel');
+  final gotConfig = await harness.configBloc.updateWith(demoRole: 'personnel');
 
   // Assert
   expect(gotConfig, equals(newConfig), reason: "SHOULD have changed AppConfig");

@@ -50,24 +50,25 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   T operator [](S key) => get(key);
 
   /// Get number of states
-  int get length => _isReady ? _states.length : 0;
+  int get length => isReady ? _states.length : 0;
 
   /// Get value from [key]
   T get(S key) => getState(key)?.value;
 
   /// Get state from [key]
-  StorageState<T> getState(S key) => containsKey(key) ? _states?.get(key) : null;
+  StorageState<T> getState(S key) => isReady && _isNotNull(key) ? _states?.get(key) : null;
+  bool _isNotNull(S key) => key != null;
 
   /// Get backlog of states pending push to a backend API
   Iterable<S> get backlog => List.unmodifiable(_backlog);
   final _backlog = LinkedHashSet();
 
   /// Get all states as unmodifiable map
-  Map<S, StorageState<T>> get states => Map.unmodifiable(_isReady ? _states?.toMap() : {});
+  Map<S, StorageState<T>> get states => Map.unmodifiable(isReady ? _states?.toMap() : {});
   Box<StorageState<T>> _states;
 
   /// Get all (key,value)-pairs as unmodifiable map
-  Map<S, T> get map => Map.unmodifiable(_isReady
+  Map<S, T> get map => Map.unmodifiable(isReady
       ? Map.fromIterables(
           _states?.keys,
           _states?.values?.map(
@@ -76,21 +77,20 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       : {});
 
   /// Get all keys as unmodifiable list
-  Iterable<S> get keys => List.unmodifiable(_isReady ? _states?.keys : []);
+  Iterable<S> get keys => List.unmodifiable(isReady ? _states?.keys : []);
 
   /// Get all values as unmodifiable list
-  Iterable<T> get values => List.unmodifiable(_isReady ? _states?.values?.map((state) => state.value) : []);
+  Iterable<T> get values => List.unmodifiable(isReady ? _states?.values?.map((state) => state.value) : []);
 
   /// Check if key exists
-  bool containsKey(S key) => _isReady ? _states.keys.contains(key) : false;
+  bool containsKey(S key) => isReady ? _states.keys.contains(key) : false;
 
   /// Check if value exists
-  bool containsValue(T value) => _isReady ? _states.values.any((state) => state.value == value) : false;
+  bool containsValue(T value) => isReady ? _states.values.any((state) => state.value == value) : false;
 
   /// Check if repository is operational
   @mustCallSuper
-  bool get isReady => _isReady;
-  bool get _isReady => _states?.isOpen == true;
+  bool get isReady => _states?.isOpen == true;
 
   /// Asserts that repository is operational.
   /// Should be called before methods is called.
@@ -99,8 +99,8 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   void checkState() {
     if (_states?.isOpen != true) {
       throw RepositoryNotReadyException();
-    } else if (_closed) {
-      throw RepositoryIsClosedException();
+    } else if (_disposed) {
+      throw RepositoryIsDisposedException();
     }
   }
 
@@ -158,7 +158,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
           _states.values.where((state) => state.isCreated).map((state) => toKey(state)),
         );
     }
-    return states.values;
+    return _states.values;
   }
 
   /// Apply [next] and push to remote
@@ -290,7 +290,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   @protected
   StorageState<T> validate(StorageState<T> state) {
     final key = toKey(state);
-    final previous = containsKey(key) ? _states.get(key) : null;
+    final previous = isReady ? _states.get(key) : null;
     switch (state.status) {
       case StorageStatus.created:
         // Not allowed to create same value twice
@@ -318,6 +318,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
 
   /// Commit [state] to repository
   Future<bool> commit(StorageState<T> state) async {
+    checkState();
     final key = toKey(state);
     final current = _states.get(key);
     if (shouldDelete(next: state, current: current)) {
@@ -327,7 +328,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     } else {
       await _states.put(key, state);
     }
-    if (!_closed) {
+    if (!_disposed) {
       _controller.add(state);
     }
     return containsKey(key);
@@ -368,7 +369,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   /// Clear all states from local storage
   Future<Iterable<T>> clear({bool compact = true}) async {
     final Iterable<T> elements = values.toList();
-    if (_isReady) {
+    if (isReady) {
       if (compact) {
         await _states.compact();
       }
@@ -377,13 +378,21 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     return List.unmodifiable(elements);
   }
 
-  bool _closed = false;
+  bool _disposed = false;
 
-  void close() {
-    _closed = true;
-    _timer?.cancel();
-    _pending?.pause();
+  /// Dispose repository
+  ///
+  /// After this point it can
+  /// not used again.
+  Future dispose() async {
+    _disposed = true;
     _controller.close();
+    _timer?.cancel();
+    _pending?.cancel();
+    _timer = null;
+    _pending = null;
+    //_states?.close();
+    return Future.value();
   }
 }
 
@@ -438,8 +447,8 @@ class RepositoryNotReadyException extends RepositoryException {
   RepositoryNotReadyException() : super('is not ready');
 }
 
-class RepositoryIsClosedException extends RepositoryException {
-  RepositoryIsClosedException() : super('is closed');
+class RepositoryIsDisposedException extends RepositoryException {
+  RepositoryIsDisposedException() : super('is disposed');
 }
 
 class RepositoryStateExistsException extends RepositoryException {

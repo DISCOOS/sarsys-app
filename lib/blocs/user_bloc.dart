@@ -18,10 +18,11 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/user_service.dart';
 
 import 'app_config_bloc.dart';
+import 'mixins.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
-class UserBloc extends Bloc<UserCommand, UserState> {
+class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, UnloadableBloc<List<User>> {
   UserBloc(this.repo, this.configBloc);
 
   final UserRepository repo;
@@ -139,7 +140,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
   }
 
   /// Load current user from secure storage
-  Future<User> load({String userId}) async {
+  Future<User> load() async {
     return _dispatch<User>(LoadUser(userId: userId ?? repo.userId));
   }
 
@@ -157,8 +158,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     return _dispatch<User>(LogoutUser(delete: delete));
   }
 
-  Future<List<User>> clear() {
-    return _dispatch<List<User>>(ClearUsers());
+  Future<List<User>> unload() {
+    return _dispatch<List<User>>(UnloadUsers());
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
@@ -192,8 +193,8 @@ class UserBloc extends Bloc<UserCommand, UserState> {
         yield await _unlock(command);
       } else if (command is LogoutUser) {
         yield await _logout(command);
-      } else if (command is ClearUsers) {
-        yield await _clear(command);
+      } else if (command is UnloadUsers) {
+        yield await _unload(command);
       } else if (command is AuthorizeUser) {
         yield _authorize(command);
       } else {
@@ -299,7 +300,7 @@ class UserBloc extends Bloc<UserCommand, UserState> {
     );
   }
 
-  Future<UserState> _clear(ClearUsers command) async {
+  Future<UserState> _unload(UnloadUsers command) async {
     await repo.logout();
     var users = await repo.clear();
     _authorized.clear();
@@ -493,11 +494,11 @@ class LogoutUser extends UserCommand<bool, User> {
   String toString() => 'LogoutUser {data: $data}';
 }
 
-class ClearUsers extends UserCommand<void, List<User>> {
-  ClearUsers() : super(null);
+class UnloadUsers extends UserCommand<void, List<User>> {
+  UnloadUsers() : super(null);
 
   @override
-  String toString() => 'ClearUsers';
+  String toString() => 'UnloadUsers {}';
 }
 
 /// ---------------------

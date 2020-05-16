@@ -37,7 +37,7 @@ Future<dartz.Either<bool, Personnel>> createPersonnel({
 
 class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data == null, "Personnel should not be supplied");
     var result = await showDialog<PersonnelParams>(
       context: params.overlay.context,
@@ -52,7 +52,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     final personnel = await params.bloc.create(result.data);
 
     // Wait for tracking is created
-    final tracking = await waitThoughtState<TrackingCreated, Tracking>(
+    final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
       params.bloc,
       map: (state) => state.data,
       test: (state) => state.data.uuid == personnel.tracking.uuid,
@@ -78,7 +78,7 @@ Future<dartz.Either<bool, Personnel>> editPersonnel(
 
 class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
     var result = await showDialog<PersonnelParams>(
       context: params.overlay.context,
@@ -115,7 +115,7 @@ Future<dartz.Either<bool, Position>> editPersonnelLocation(
 
 class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Position>> call(params) async {
+  Future<dartz.Either<bool, Position>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
 
     final tuuid = params.data.tracking.uuid;
@@ -153,7 +153,7 @@ Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
 
 class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Pair<Personnel, Tracking>>> call(params) async {
+  Future<dartz.Either<bool, Pair<Personnel, Tracking>>> execute(params) async {
     // Get or select unit?
     Personnel personnel = await _getOrSelectPersonnel(
       params,
@@ -202,7 +202,7 @@ Future<dartz.Either<bool, Tracking>> removeFromPersonnel(
 
 class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Tracking>> call(PersonnelParams params) async {
+  Future<dartz.Either<bool, Tracking>> execute(PersonnelParams params) async {
     final personnel = params.data;
     final devices = params.devices ?? [];
 
@@ -239,7 +239,7 @@ Future<dartz.Either<bool, Personnel>> mobilizePersonnel(
 
 class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.Mobilized,
@@ -256,7 +256,7 @@ Future<dartz.Either<bool, Personnel>> checkInPersonnel(
 
 class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.OnScene,
@@ -274,7 +274,7 @@ Future<dartz.Either<bool, Personnel>> retirePersonnel(
 
 class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, Personnel>> call(params) async {
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.Retired,
@@ -305,7 +305,7 @@ Future<dartz.Either<bool, PersonnelState>> deletePersonnel(
 
 class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
   @override
-  Future<dartz.Either<bool, PersonnelState>> call(params) async {
+  Future<dartz.Either<bool, PersonnelState>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
     var response = await prompt(
       params.overlay.context,
@@ -314,7 +314,7 @@ class DeletePersonnel extends UseCase<bool, PersonnelState, PersonnelParams> {
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.delete(params.data);
+    await params.bloc.delete(params.data.uuid);
     return dartz.Right(params.bloc.state);
   }
 }

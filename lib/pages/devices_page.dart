@@ -5,6 +5,7 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -22,7 +23,6 @@ import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class DevicesPage extends StatefulWidget {
@@ -334,7 +334,7 @@ class DevicesPageState extends State<DevicesPage> {
 }
 
 class DeviceSearch extends SearchDelegate<Device> {
-  static final _storage = new FlutterSecureStorage();
+  static final _storage = Storage.secure;
   static const RECENT_KEY = "search/device/recent";
 
   ValueNotifier<Set<String>> _recent = ValueNotifier(null);

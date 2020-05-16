@@ -411,7 +411,7 @@ class PersonnelContactView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final units = BlocProvider.of<UnitBloc>(context).find(personnel);
+    final units = context.bloc<UnitBloc>().find(personnel);
     return Row(
       children: <Widget>[
         Expanded(

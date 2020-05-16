@@ -33,13 +33,6 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// Get current [AppConfig] instance
   AppConfig get config => this[version];
 
-  /// Check if repository is operational.
-  /// Is true if and only if [init] or
-  /// [load] is called AND [delete] is NOT
-  /// called.
-  @override
-  bool get isReady => super.isReady && state?.isDeleted != null;
-
   /// Get current state
   StorageState<AppConfig> get state => getState(version);
 

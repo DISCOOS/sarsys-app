@@ -127,47 +127,53 @@ class DeviceServiceMock extends Mock implements DeviceService {
     int tetraCount = 0,
     int appCount = 0,
     bool simulate = false,
+    List<String> iuuids = const [],
   }) {
     final rnd = math.Random();
-    final Map<String, Map<String, Device>> deviceRepo = {}; // iuuid -> devices
+    final Map<String, Map<String, Device>> devicesRepo = {}; // iuuid -> devices
     final Map<String, _DeviceSimulation> simulations = {}; // duuid -> simulation
     final StreamController<DeviceMessage> controller = StreamController.broadcast();
-    deviceRepo.clear();
+    devicesRepo.clear();
     final simulator = simulate
         ? Timer.periodic(
             Duration(seconds: 2),
             (_) => _progress(
               rnd,
               bloc,
-              deviceRepo,
+              devicesRepo,
               simulations,
               controller,
             ),
           )
         : null;
-    final DeviceServiceMock mock = DeviceServiceMock._internal(deviceRepo, simulator);
+    final DeviceServiceMock mock = DeviceServiceMock._internal(devicesRepo, simulator);
+
+    // Only generate devices for automatically generated iuuids
+    iuuids.forEach((iuuid) {
+      if (iuuid.startsWith('a:')) {
+        final devices = devicesRepo.putIfAbsent(iuuid, () => {});
+        Position center = _toCenter(bloc);
+        _createDevices(DeviceType.Tetra, devices, tetraCount, iuuid, 6114000, center, rnd, simulations);
+        _createDevices(DeviceType.App, devices, appCount, iuuid, 91500000, center, rnd, simulations);
+      }
+    });
+
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
     // Mock all service methods
     when(mock.fetch(any)).thenAnswer((_) async {
       final String iuuid = _.positionalArguments[0];
-      var devices = deviceRepo[iuuid];
+      var devices = devicesRepo[iuuid];
       if (devices == null) {
-        devices = deviceRepo.putIfAbsent(iuuid, () => {});
-      }
-      // Only generate devices for automatically generated incidents
-      if (iuuid.startsWith('a:') && devices.isEmpty) {
-        Position center = _toCenter(bloc);
-        _createDevices(DeviceType.Tetra, devices, tetraCount, iuuid, 6114000, center, rnd, simulations);
-        _createDevices(DeviceType.App, devices, appCount, iuuid, 91500000, center, rnd, simulations);
+        devices = devicesRepo.putIfAbsent(iuuid, () => {});
       }
       return ServiceResponse.ok(body: devices.values.toList());
     });
     when(mock.create(any, any)).thenAnswer((_) async {
       var iuuid = _.positionalArguments[0] as String;
-      var devices = deviceRepo[iuuid];
+      var devices = devicesRepo[iuuid];
       if (devices == null) {
-        devices = deviceRepo.putIfAbsent(iuuid, () => {});
+        devices = devicesRepo.putIfAbsent(iuuid, () => {});
       }
       var device = _.positionalArguments[1] as Device;
       Position center = _toCenter(bloc);
@@ -197,7 +203,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     });
     when(mock.update(any)).thenAnswer((_) async {
       var device = _.positionalArguments[0] as Device;
-      var incident = deviceRepo.entries.firstWhere(
+      var incident = devicesRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(device.uuid),
         orElse: null,
       );
@@ -210,7 +216,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var device = _.positionalArguments[0] as Device;
-      var incident = deviceRepo.entries.firstWhere(
+      var incident = devicesRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(device.uuid),
         orElse: null,
       );
@@ -286,7 +292,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     StreamController<DeviceMessage> controller,
   ) {
     final iuuid = bloc.selected?.uuid;
-    if (iuuid != null) {
+    if (iuuid != null && devicesMap.containsKey(iuuid)) {
       final devices = devicesMap[iuuid].values.toList()..shuffle();
       // only update 10% each iteration
       final min = math.min(math.max((devices.length * 0.2).toInt(), 1), 3);

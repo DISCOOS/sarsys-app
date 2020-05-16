@@ -16,9 +16,17 @@ import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'mixins.dart';
+
 typedef void UnitCallback(VoidCallback fn);
 
-class UnitBloc extends Bloc<UnitCommand, UnitState> {
+class UnitBloc extends Bloc<UnitCommand, UnitState>
+    with
+        LoadableBloc<List<Unit>>,
+        CreatableBloc<Unit>,
+        UpdatableBloc<Unit>,
+        DeletableBloc<Unit>,
+        UnloadableBloc<List<Unit>> {
   UnitBloc(
     this.repo,
     this.incidentBloc,
@@ -205,10 +213,10 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
   }
 
   /// Delete given unit
-  Future<Unit> delete(Unit unit) {
+  Future<Unit> delete(String uuid) {
     _assertState();
     return _dispatch<Unit>(
-      DeleteUnit(unit),
+      DeleteUnit(repo[uuid]),
     );
   }
 
@@ -235,11 +243,6 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
         yield await _unload(command);
       } else if (command is _InternalChange) {
         yield await _process(command);
-      } else if (command is RaiseUnitError) {
-        yield _toError(
-          command,
-          command.data,
-        );
       } else {
         yield _toError(
           command,
@@ -340,33 +343,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState> {
             stackTrace: StackTrace.current,
           );
     event.callback.completeError(
-      error,
+      object.data,
       object.stackTrace ?? StackTrace.current,
     );
     return error;
   }
 
   @override
-  void onError(Object error, StackTrace stacktrace) {
-    if (_subscriptions.isNotEmpty) {
-      add(RaiseUnitError(UnitBlocError(
-        error,
-        stackTrace: stacktrace,
-      )));
-    } else {
-      throw UnitBlocException(
-        error,
-        state,
-        stackTrace: stacktrace,
-      );
-    }
-  }
-
-  @override
   Future<void> close() async {
-    super.close();
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
+    await repo.dispose();
+    return super.close();
   }
 }
 
@@ -421,13 +409,6 @@ class _InternalChange extends UnitCommand<Unit, Unit> {
 
   @override
   String toString() => '_InternalChange {unit: $data}';
-}
-
-class RaiseUnitError extends UnitCommand<UnitBlocError, UnitBlocError> {
-  RaiseUnitError(data) : super(data);
-
-  @override
-  String toString() => 'RaiseUnitError {error: $data}';
 }
 
 /// ---------------------

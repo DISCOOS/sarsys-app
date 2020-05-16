@@ -19,6 +19,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path_helper;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'page_state.dart';
+
 class Storage {
   static int _typeId = 0;
   static bool _initialized = false;
@@ -38,6 +40,15 @@ class Storage {
         Hive.init(hiveDir.path);
       }
 
+      _register();
+
+      _initialized = true;
+    }
+    return Future.value();
+  }
+
+  static void _register() {
+    if (_typeId == 0) {
       // DO NOT RE-ORDER THESE, only append! Hive expects typeId to be stable
       _registerStorageStateJsonAdapter<AppConfig>(
         fromJson: (data) => AppConfig.fromJson(data),
@@ -71,8 +82,6 @@ class Storage {
         fromJson: (data) => Tracking.fromJson(data),
         toJson: (data) => data.toJson(),
       );
-
-      _initialized = true;
     }
   }
 
@@ -119,7 +128,15 @@ class Storage {
     throw 'Storage not initialized';
   }
 
-  static Future destroy() async {
+  static Future clear() async {
+    clearPageStates();
+    // Delete all shared preferences
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.clear();
+  }
+
+  static Future destroy({bool reinitialize = false}) async {
+    _initialized = false;
     try {
       // Deletes only open boxes
       await Hive.deleteFromDisk();
@@ -143,7 +160,8 @@ class Storage {
     await _storage.deleteAll();
     // Delete all shared preferences
     final prefs = await SharedPreferences.getInstance();
-    return prefs.clear();
+    await prefs.clear();
+    return reinitialize ? init() : Future.value();
   }
 }
 

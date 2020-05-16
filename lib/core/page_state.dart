@@ -1,29 +1,33 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/screens/screen.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-T readState<T>(BuildContext context, String identifier, {T defaultValue}) =>
+const String PAGE_STORAGE_BUCKET_FILE_PATH = "page_storage_bucket.json";
+
+T getPageState<T>(BuildContext context, String identifier, {T defaultValue}) =>
     PageStorage.of(context)?.readState(context, identifier: identifier) ?? defaultValue;
 
-T writeState<T>(BuildContext context, String identifier, T value) {
-  PageStorage.of(context)?.writeState(context, value, identifier: identifier);
+T putPageState<T>(BuildContext context, String identifier, T value, {bool write = true}) {
+  final bucket = PageStorage.of(context);
+  if (bucket != null) {
+    bucket.writeState(context, value, identifier: identifier);
+    if (write) {
+      writePageStorageBucket(bucket);
+    }
+  }
   return value;
 }
 
-Future<PageStorageBucket> readAppState(PageStorageBucket bucket, {BuildContext context}) async {
+Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {BuildContext context}) async {
   // TODO: Store app_state using Hive
-  final json = readFromFile(await getApplicationDocumentsDirectory(), "app_state.json");
+  final json = readFromFile(await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
   if (json != null) {
     bucket.writeState(context, json[RouteWriter.STATE], identifier: RouteWriter.STATE);
     bucket.writeState(context, json[UnitsPageState.STATE], identifier: UnitsPageState.STATE);
@@ -40,7 +44,7 @@ Future<PageStorageBucket> readAppState(PageStorageBucket bucket, {BuildContext c
   return bucket;
 }
 
-_writeTypedState<T>(
+void _writeTypedState<T>(
   BuildContext context,
   PageStorageBucket bucket,
   Object identifier,
@@ -63,14 +67,14 @@ Map<String, dynamic> readFromFile(Directory dir, String fileName) {
   return values;
 }
 
-Future writeAppState(PageStorageBucket bucket, {BuildContext context}) async {
+Future writePageStorageBucket(PageStorageBucket bucket, {BuildContext context}) async {
   final json = {
     RouteWriter.STATE: bucket.readState(context, identifier: RouteWriter.STATE),
     UnitsPageState.STATE: bucket.readState(context, identifier: UnitsPageState.STATE),
     DevicesPageState.STATE: bucket.readState(context, identifier: DevicesPageState.STATE),
     MapWidgetState.STATE: _readTypedState<MapWidgetStateModel>(context, bucket, MapWidgetState.STATE)?.toJson(),
   };
-  writeToFile(json, await getApplicationDocumentsDirectory(), "app_state.json");
+  writeToFile(json, await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
 }
 
 T _readTypedState<T>(BuildContext context, PageStorageBucket bucket, Object identifier, {T defaultValue}) {
@@ -92,10 +96,6 @@ void deleteFile(Directory dir, String fileName) {
   }
 }
 
-Future clearAppStateAndData(BuildContext context) async {
-  await BlocProvider.of<AppConfigBloc>(context).init();
-  await BlocProvider.of<UserBloc>(context).clear();
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.clear();
-  deleteFile(await getApplicationDocumentsDirectory(), "app_state.json");
+Future clearPageStates() async {
+  deleteFile(await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
 }

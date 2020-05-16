@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,7 +39,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 
 import '../models/AppConfig.dart';
 
-class BlocProviderController {
+class BlocController {
   final Client client;
 
   DemoParams _demo;
@@ -48,16 +49,24 @@ class BlocProviderController {
 
   T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
 
-  BlocProvider<T> toProvider<T extends Bloc>() => BlocProvider<T>(
-        create: (_) => _blocs[typeOf<T>()] as T,
+  BlocProvider<T> toProvider<T extends Bloc>() => BlocProvider.value(
+        value: _blocs[typeOf<T>()] as T,
       );
 
-  BlocProviderControllerState _state = BlocProviderControllerState.Empty;
-  BlocProviderControllerState get state => _state;
+  BlocControllerState _state = BlocControllerState.Empty;
+  BlocControllerState get state => _state;
+  bool get isEmpty => state == BlocControllerState.Empty;
+  bool get isBuilt => state.index >= BlocControllerState.Built.index;
+  bool get isInitialized => state.index >= BlocControllerState.Initialized.index;
+  bool get isLocal => state == BlocControllerState.Local;
+  bool get isReady => state == BlocControllerState.Ready;
+
+  bool shouldInitialize(BlocControllerState state) => state == BlocControllerState.Built;
+  bool shouldAuthenticate(BlocControllerState state) => state == BlocControllerState.Local;
 
   List<StreamSubscription> _subscriptions = [];
-  StreamController<BlocProviderControllerState> _controller = StreamController.broadcast();
-  Stream<BlocProviderControllerState> get onChange => _controller.stream;
+  StreamController<BlocControllerState> _controller = StreamController.broadcast();
+  Stream<BlocControllerState> get onChange => _controller.stream;
 
   List<BlocProvider> get all => [
         toProvider<AppConfigBloc>(),
@@ -69,20 +78,20 @@ class BlocProviderController {
         toProvider<TrackingBloc>(),
       ];
 
-  BlocProviderController._internal(
+  BlocController._internal(
     this.client,
     DemoParams demo,
   ) : _demo = demo ?? DemoParams.NONE;
 
   /// Create providers for mocking
-  factory BlocProviderController.build(
+  factory BlocController.build(
     Client client, {
     DemoParams demo = DemoParams.NONE,
   }) {
-    return _build(BlocProviderController._internal(client, demo), demo, client);
+    return _build(BlocController._internal(client, demo), demo, client);
   }
 
-  static BlocProviderController _build(BlocProviderController providers, DemoParams demo, Client client) {
+  static BlocController _build(BlocController providers, DemoParams demo, Client client) {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
@@ -122,7 +131,10 @@ class BlocProviderController {
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active
         ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
-        : PersonnelServiceMock.build(demo.personnelCount);
+        : PersonnelServiceMock.build(
+            demo.personnelCount,
+            iuuids: incidentBloc.repo.keys,
+          );
     // ignore: close_sinks
     final PersonnelBloc personnelBloc = PersonnelBloc(
         PersonnelRepository(
@@ -136,6 +148,7 @@ class BlocProviderController {
         ? UnitService('$baseRestUrl/api/incidents', client)
         : UnitServiceMock.build(
             demo.unitCount,
+            iuuids: incidentBloc.repo.keys,
           );
     // ignore: close_sinks
     final UnitBloc unitBloc = UnitBloc(
@@ -154,7 +167,9 @@ class BlocProviderController {
             tetraCount: demo.tetraCount,
             appCount: demo.appCount,
             simulate: true,
+            iuuids: incidentBloc.repo.keys,
           );
+
     // ignore: close_sinks
     final DeviceBloc deviceBloc = DeviceBloc(
       DeviceRepository(
@@ -168,10 +183,10 @@ class BlocProviderController {
     final TrackingService trackingService = !demo.active
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : TrackingServiceMock.build(
-            incidentBloc,
             deviceService,
             personnelCount: demo.personnelCount,
             unitCount: demo.unitCount,
+            iuuids: incidentBloc.repo.keys,
           );
 
     // ignore: close_sinks
@@ -201,30 +216,70 @@ class BlocProviderController {
   /// Rebuild providers with given demo parameters.
   ///
   /// Returns true if one or more providers was rebuilt
-  bool _rebuild({
+  Future<bool> _rebuild({
+    bool force = false,
     DemoParams demo = DemoParams.NONE,
-  }) =>
-      this.demo == demo ? false : _build(this, demo, client) != null;
+  }) async {
+    if (force || _demo != demo) {
+      _unset();
+      return _build(this, demo, client) != null;
+    }
+    return false;
+  }
 
-  /// Initialize required blocs (config and user)
-  Future<BlocProviderController> init() async {
-    if (BlocProviderControllerState.Built == _state) {
-      await bloc<AppConfigBloc>().load();
-      await bloc<UserBloc>().load();
-
-      // Override demo parameter from persisted config
-      _demo = bloc<AppConfigBloc>().config.toDemoParams();
-
-      // Allow _onUserChange to transition to next legal state
-      _controller.add(BlocProviderControllerState.Initialized);
-
-      // Set state depending on user state
-      _onUserState(bloc<UserBloc>().state);
+  /// Initialize application state
+  Future<BlocController> init() async {
+    if (BlocControllerState.Built == _state) {
+      await _init();
     }
     return this;
   }
 
-  BlocProviderController _set({
+  Future _init() async {
+    // Load current app-config.
+    // A new app-config will be
+    // created after first install.
+    await bloc<AppConfigBloc>().load();
+
+    // If 'current_user_id' in
+    // secure storage exists in bloc
+    // and access token is valid, this
+    // will load incidents for given
+    // user. If any incident matches
+    // 'selected_iuuid' in secure storage
+    // it will be selected as current
+    // incident.
+    await bloc<UserBloc>().load();
+
+    // Override demo parameter from persisted config
+    _demo = bloc<AppConfigBloc>().config.toDemoParams();
+
+    // Allow _onUserChange to transition to next legal state
+    _controller.add(_state = BlocControllerState.Initialized);
+
+    // Set state depending on user state
+    _onUserState(bloc<UserBloc>().state);
+  }
+
+  /// Reset application
+  Future<void> reset() async {
+    // Notify blocs not ready, will show splash screen.
+    _controller.add(_state = BlocControllerState.Empty);
+
+    // Initialize logout and delete user
+    await bloc<UserBloc>().logout(delete: true);
+
+    // Close
+    _unset();
+
+    // Destroy all data
+    await Storage.destroy(reinitialize: true);
+
+    // Rebuild blocs, will show onboarding screen
+    _rebuild(demo: _demo, force: true);
+  }
+
+  BlocController _set({
     @required DemoParams demo,
     @required AppConfigBloc configBloc,
     @required UserBloc userBloc,
@@ -234,8 +289,6 @@ class BlocProviderController {
     @required DeviceBloc deviceBloc,
     @required TrackingBloc trackingBloc,
   }) {
-    _unset();
-
     _demo = demo;
 
     _blocs[configBloc.runtimeType] = configBloc;
@@ -250,16 +303,16 @@ class BlocProviderController {
     _subscriptions..add(configBloc.listen(_onConfigState))..add(userBloc.listen(_onUserState));
 
     // Notify that providers are ready
-    _controller.add(_state = BlocProviderControllerState.Built);
+    _controller.add(_state = BlocControllerState.Built);
 
     return this;
   }
 
-  void _onConfigState(AppConfigState state) {
+  void _onConfigState(AppConfigState state) async {
     // Only rebuild when in local or ready state
-    if ([
-      BlocProviderControllerState.Local,
-      BlocProviderControllerState.Ready,
+    if (const [
+      BlocControllerState.Local,
+      BlocControllerState.Ready,
     ].contains(_state)) {
       if (state.isInitialized() || state.isLoaded() || state.isUpdated()) {
         _rebuild(demo: (state.data as AppConfig).toDemoParams());
@@ -268,17 +321,21 @@ class BlocProviderController {
   }
 
   void _onUserState(UserState state) {
+    if (state.isPending()) {
+      return;
+    }
     // Handle legal transitions only
     // 1) Initialized -> Local User (not authenticated), blocks are ready to receive commands
     // 2) Initialized -> Ready User (authenticated), blocks are ready to receive commands
     // 3) Local -> Ready
     // 4) Ready -> Local
-    if ([
-      BlocProviderControllerState.Initialized,
-      BlocProviderControllerState.Local,
-      BlocProviderControllerState.Ready,
+    if (const [
+      BlocControllerState.Initialized,
+      BlocControllerState.Local,
+      BlocControllerState.Ready,
     ].contains(_state)) {
-      var next = state.isAuthenticated() ? BlocProviderControllerState.Ready : BlocProviderControllerState.Local;
+      final isReady = state.isAuthenticated() || state.isUnlocked();
+      var next = isReady ? BlocControllerState.Ready : BlocControllerState.Local;
       if (next != _state) {
         _state = next;
         _controller.add(_state);
@@ -287,15 +344,15 @@ class BlocProviderController {
   }
 
   void _unset() {
+    // Notify blocs not ready, will show splash screen
+    _controller.add(_state = BlocControllerState.Empty);
+
     // Cancel state change subscriptions on current blocs
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
 
     // Dispose current blocs
     _blocs.values.forEach((bloc) => bloc.close());
-
-    // Notify that provider is not ready
-    _controller.add(_state = BlocProviderControllerState.Empty);
   }
 
   void dispose() {
@@ -304,7 +361,7 @@ class BlocProviderController {
   }
 }
 
-enum BlocProviderControllerState {
+enum BlocControllerState {
   /// Controller is empty, no blocs available
   Empty,
 

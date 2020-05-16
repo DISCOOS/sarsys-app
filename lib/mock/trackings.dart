@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Source.dart';
@@ -89,20 +88,20 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   Tracking put(String iuuid, Tracking tracking) {
-    if (trackingRepo.containsKey(iuuid)) {
-      trackingRepo[iuuid].putIfAbsent(tracking.uuid, () => tracking);
+    if (trackingsRepo.containsKey(iuuid)) {
+      trackingsRepo[iuuid].putIfAbsent(tracking.uuid, () => tracking);
     } else {
-      trackingRepo[iuuid] = {tracking.uuid: tracking};
+      trackingsRepo[iuuid] = {tracking.uuid: tracking};
     }
     return tracking;
   }
 
   List<Tracking> remove(String uuid) {
-    final iuuids = trackingRepo.entries.where(
+    final iuuids = trackingsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
     return iuuids
-        .map((iuuid) => trackingRepo[iuuid].remove(uuid))
+        .map((iuuid) => trackingsRepo[iuuid].remove(uuid))
         .where(
           (unit) => unit != null,
         )
@@ -112,28 +111,65 @@ class TrackingServiceMock extends Mock implements TrackingService {
   void reset() {
     s2t.clear();
     simulations.clear();
-    trackingRepo.clear();
+    trackingsRepo.clear();
     controller.close();
   }
 
   final Map<String, String> s2t = {}; // suuid -> tuuid
   final Map<String, _TrackSimulation> simulations = {}; // tuuid -> simulation
-  final Map<String, Map<String, Tracking>> trackingRepo = {}; // iuuid -> tuuid -> tracking
+  final Map<String, Map<String, Tracking>> trackingsRepo = {}; // iuuid -> tuuid -> tracking
   final StreamController<TrackingMessage> controller = StreamController.broadcast();
 
   factory TrackingServiceMock.build(
-    IncidentBloc incidentBloc,
     DeviceServiceMock deviceServiceMock, {
     int personnelCount,
     int unitCount,
     bool simulate = false,
+    List<String> iuuids = const [],
   }) {
     final TrackingServiceMock mock = TrackingServiceMock(simulate: simulate);
+
+    // Only generate tracking for automatically generated incidents
+    iuuids.forEach((iuuid) {
+      if (iuuid.startsWith('a:')) {
+        final trackings = mock.trackingsRepo.putIfAbsent(iuuid, () => {});
+        // Create unit tracking
+        trackings.addEntries(
+          _createTrackingUnits(
+            iuuid,
+            mock.s2t,
+            unitCount,
+          ),
+        );
+
+        // Create personnel tracking
+        trackings.addEntries(
+          _createTrackingPersonnel(
+            iuuid,
+            mock.s2t,
+            personnelCount,
+          ),
+        );
+
+        // Create simulations?
+        if (simulate) {
+          trackings.keys.forEach(
+            (uuid) => _simulate(
+              uuid,
+              trackings,
+              deviceServiceMock.deviceRepo[iuuid],
+              mock.simulations,
+            ),
+          );
+        }
+        mock.trackingsRepo.putIfAbsent(iuuid, () => trackings);
+      }
+    });
 
     deviceServiceMock.messages.listen((message) => _handle(
           message,
           mock.s2t,
-          mock.trackingRepo,
+          mock.trackingsRepo,
           mock.simulations,
           mock.controller,
         ));
@@ -144,43 +180,11 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
     when(mock.fetch(any)).thenAnswer((_) async {
       final String iuuid = _.positionalArguments[0];
-      var trackingList = mock.trackingRepo[iuuid];
+      var trackingList = mock.trackingsRepo[iuuid];
       if (trackingList == null) {
-        trackingList = mock.trackingRepo.putIfAbsent(iuuid, () => {});
+        trackingList = mock.trackingsRepo.putIfAbsent(iuuid, () => {});
       }
-      // Only generate tracking for automatically generated incidents
-      if (iuuid.startsWith('a:') && trackingList.isEmpty) {
-        // Create unit tracking
-        trackingList.addEntries(
-          _createTrackingUnits(
-            iuuid,
-            mock.s2t,
-            unitCount,
-          ),
-        );
 
-        // Create personnel tracking
-        trackingList.addEntries(
-          _createTrackingPersonnel(
-            iuuid,
-            mock.s2t,
-            personnelCount,
-          ),
-        );
-
-        // Create simulations?
-        if (simulate) {
-          trackingList.keys.forEach(
-            (uuid) => _simulate(
-              uuid,
-              trackingList,
-              deviceServiceMock.deviceRepo[iuuid],
-              mock.simulations,
-            ),
-          );
-        }
-      }
-      mock.trackingRepo.putIfAbsent(iuuid, () => trackingList);
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
 
@@ -192,7 +196,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         s2t: mock.s2t,
         tracking: tracking,
         simulations: mock.simulations,
-        trackingRepo: mock.trackingRepo,
+        trackingRepo: mock.trackingsRepo,
         deviceRepo: deviceServiceMock.deviceRepo,
         simulate: simulate,
       );
@@ -201,7 +205,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     when(mock.update(any)).thenAnswer((_) async {
       var request = _.positionalArguments[0] as Tracking;
       // Assumes that a device is attached to a single incident only
-      var incident = mock.trackingRepo.entries.firstWhere(
+      var incident = mock.trackingsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(request.uuid),
         orElse: () => null,
       );
@@ -269,7 +273,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     when(mock.delete(any)).thenAnswer((_) async {
       var tracking = _.positionalArguments[0];
       // Assumes that a device is attached to a single incident only
-      var incident = mock.trackingRepo.entries.firstWhere(
+      var incident = mock.trackingsRepo.entries.firstWhere(
         (entry) => entry.value.containsKey(tracking.uuid),
         orElse: () => null,
       );

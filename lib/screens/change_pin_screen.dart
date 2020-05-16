@@ -32,7 +32,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   String _pin;
 
   /// Forces user to enter current pin before changing it
-  bool _verifyPin;
+  bool _verifyPin = false;
 
   /// Asks user to enter new pin
   bool _newPin = false;
@@ -47,7 +47,10 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   bool _changePin = false;
 
   /// Indicates that all four digits are entered
-  bool _pinComplete = false;
+  bool get _pinComplete => _pinController?.text?.length == 1;
+
+  /// Securing with pin is in progress
+  bool _isSecuring = false;
 
   AnimationController _animController;
 
@@ -81,14 +84,13 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
 
   @override
   void didChangeDependencies() {
-    _bloc = BlocProvider.of<UserBloc>(context);
-    _pin = null;
+    _bloc = context.bloc<UserBloc>();
     _verifyPin = _bloc.isSecured;
     _newPin = !_verifyPin;
-    _wrongPin = false;
-    _changePin = false;
-    _confirmPin = false;
-    _pinComplete = false;
+//    _pin = null;
+//    _wrongPin = false;
+//    _changePin = false;
+//    _confirmPin = false;
     super.didChangeDependencies();
   }
 
@@ -146,63 +148,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   }
 
   Widget _buildBody(BuildContext context) {
-    return AnimatedCrossFade(
-      duration: Duration(microseconds: 300),
-      crossFadeState: _inProgress() ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-      firstChild: _buildProgress(context),
-      secondChild: _buildForm(context),
-    );
-  }
-
-  bool _inProgress() => _bloc?.state?.isPending() == true;
-
-  Container _buildProgress(BuildContext context) {
-    _animController ??= AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 1),
-    );
-
-    _animController.repeat();
-
-    return Container(
-      padding: EdgeInsets.all(24.0),
-      child: ListView(
-        shrinkWrap: true,
-        reverse: true,
-        controller: _scrollController,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: SizedBox(
-                  height: 300,
-                  child: _buildRipple(
-                    _buildIcon(),
-                  ),
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  'Endrer pin, vent litt',
-                  style: _toStyle(context, 22, FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Container _buildForm(BuildContext context) {
-    _animController?.stop(canceled: false);
-    if (!(_pinComplete || _isPopped)) {
-      _focusNode.requestFocus();
-    }
+    _requesFocus();
 
     return Container(
       padding: EdgeInsets.all(24.0),
@@ -228,6 +174,12 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
         ),
       ),
     );
+  }
+
+  void _requesFocus() {
+    if (!(_pinComplete || _isPopped || _isSecuring)) {
+      _focusNode.requestFocus();
+    }
   }
 
   List<Widget> _buildFields() {
@@ -286,31 +238,6 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
         alignment: Alignment.center,
       );
 
-  Widget _buildRipple(Widget icon) => AnimatedBuilder(
-        animation: CurvedAnimation(
-          parent: _animController,
-          curve: Curves.elasticInOut,
-        ),
-        builder: (context, child) {
-          return Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              _buildCircle(200 + (24 * _animController.value)),
-              Align(child: icon),
-            ],
-          );
-        },
-      );
-
-  Widget _buildCircle(double radius) => Container(
-        width: radius,
-        height: radius,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.lightBlue.withOpacity(_animController.value / 3),
-        ),
-      );
-
   Widget _buildSecure() => StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
           return Column(
@@ -356,12 +283,16 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
         _bloc.isSecured ? 'ENDRE' : 'OPPRETT',
         () async {
           try {
+            _isSecuring = true;
             await _bloc.secure(
               _pin,
               locked: false,
             );
             _popTo(context);
-          } on Exception {/* Is handled by StreamBuilder */}
+          } on Exception {
+            /* Is handled by StreamBuilder */
+            _isSecuring = false;
+          }
         },
         enabled: enabled,
       );
@@ -390,8 +321,9 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
         padding: const EdgeInsets.only(top: 24.0),
         child: PinCodeTextField(
           length: 4,
-          obsecureText: false,
           autoFocus: true,
+          obsecureText: false,
+          enabled: !_changePin,
           inputFormatters: [
             WhitelistingTextInputFormatter(RegExp('[0-9]')),
           ],
@@ -431,7 +363,6 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
       _confirmPin = _wrongPin;
       _changePin = !_confirmPin;
     }
-    _pinComplete = true;
     if (!(_changePin || _isPopped)) {
       _pinController.clear();
       _focusNode.requestFocus();

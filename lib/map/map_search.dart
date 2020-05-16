@@ -1,4 +1,4 @@
-import 'package:SarSys/controllers/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -52,6 +52,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   final _controller = TextEditingController();
 
   LatLng _match;
+  MapSearchEngine engine;
   OverlayEntry _overlayEntry;
 
   bool get hasFocus => _focusNode?.hasFocus ?? false;
@@ -72,6 +73,16 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _focusNode.dispose();
     widget.mapController?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    engine = MapSearchEngine(
+      Provider.of<Client>(context),
+      Provider.of<BlocController>(context),
+      withRetired: widget.withRetired,
+    );
   }
 
   void setQuery(String query) => setState(() {
@@ -113,10 +124,12 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
                   autofocus: false,
                   controller: _controller,
                   onSubmitted: (value) => _search(value),
+                  style: TextStyle(height: 1.4),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
                     hintMaxLines: 1,
+                    hintStyle: TextStyle(height: 1.4),
                     hintText: widget.hintText ?? "Søk her",
                   ),
                 ),
@@ -280,13 +293,8 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
   }
 
   Future<bool> _searchGeocode(String value) async {
-    final manager = MapSearchEngine(
-      Provider.of<Client>(context),
-      Provider.of<BlocProviderController>(context),
-      withRetired: widget.withRetired,
-    );
     try {
-      final results = await manager.search(value);
+      final results = await engine.search(value);
       if (results.length > 0) {
         _showResults(results);
       }
@@ -315,7 +323,7 @@ class MapSearchEngine {
 
   MapSearchEngine(
     this.client,
-    BlocProviderController controller, {
+    BlocController controller, {
     bool withRetired,
   })  : this._placeGeocoderService = PlaceGeocoderService(client),
         this._addressGeocoderService = AddressGeocoderService(client),

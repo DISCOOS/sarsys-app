@@ -29,7 +29,7 @@ Future<dartz.Either<bool, Point>> editIPP(
 
 class EditPoi extends UseCase<bool, Point, PoiParams> {
   @override
-  Future<dartz.Either<bool, Point>> call(params) async {
+  Future<dartz.Either<bool, Point>> execute(params) async {
     assert(params.incident != null, "Incident must be supplied");
     var result = await showDialog<Position>(
       context: params.overlay.context,
@@ -69,7 +69,7 @@ Future<dartz.Either<bool, Point>> editMeetup(
 
 class EditMeetup extends UseCase<bool, Point, PoiParams> {
   @override
-  Future<dartz.Either<bool, Point>> call(params) async {
+  Future<dartz.Either<bool, Point>> execute(params) async {
     assert(params.incident != null, "Incident must be supplied");
     var result = await showDialog<Position>(
       context: params.overlay.context,

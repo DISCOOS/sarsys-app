@@ -108,7 +108,7 @@ void main() async {
       // Act
       await expectLater(
         () => harness.userBloc.login(username: UNTRUSTED, password: PASSWORD),
-        throwsA(isA<UserBlocIsOffline>().having((error) => error.data, 'data', isA<UserRepositoryOfflineException>())),
+        throwsA(isA<UserRepositoryOfflineException>()),
       );
 
       // Assert
@@ -181,11 +181,11 @@ Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) 
   // Act - throws when not secured
   await expectLater(
     () => harness.userBloc.lock(),
-    throwsA(isA<UserBlocError>().having((error) => error.data, 'data', isA<UserNotSecuredException>())),
+    throwsA(isA<UserNotSecuredException>()),
   );
   await expectLater(
     () => harness.userBloc.unlock('ABC'),
-    throwsA(isA<UserBlocError>().having((error) => error.data, 'data', isA<UserNotSecuredException>())),
+    throwsA(isA<UserNotSecuredException>()),
   );
 
   // Act - secure default to locked
@@ -215,7 +215,7 @@ Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) 
   // Assert - throws with incorrect pin
   await expectLater(
     () => harness.userBloc.unlock('ABC'),
-    throwsA(isA<UserForbidden>()),
+    throwsA(isA<UserForbiddenException>()),
   );
 
   // Act - unlock with correct pin
@@ -275,7 +275,7 @@ Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness h
   harness.connectivity.cellular();
   harness.userService.setCredentials(username: TRUSTED);
   await harness.configBloc.init();
-  await harness.configBloc.update(
+  await harness.configBloc.updateWith(
     securityMode: SecurityMode.shared,
     trustedDomains: [UserService.toDomain(TRUSTED)],
   );
@@ -304,7 +304,7 @@ Future _testAuthenticatedPersonalTrustedLogoutShouldUnsetOnly(BlocTestHarness ha
   harness.connectivity.cellular();
   harness.userService.setCredentials(username: TRUSTED);
   await harness.configBloc.init();
-  await harness.configBloc.update(
+  await harness.configBloc.updateWith(
     securityMode: SecurityMode.personal,
     trustedDomains: [UserService.toDomain(TRUSTED)],
   );

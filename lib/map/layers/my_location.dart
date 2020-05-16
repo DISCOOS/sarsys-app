@@ -11,21 +11,6 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart' hide Path;
 
 class MyLocationOptions extends LayerOptions {
-  double size;
-  LatLng point;
-  LatLng next;
-  LatLng previous;
-  double bearing;
-  double accuracy;
-  double opacity;
-  int milliSeconds;
-  TickerProvider tickerProvider;
-  StreamController<Null> locationUpdateController;
-  Color color;
-
-  AnimationController _controller;
-  bool get isAnimating => _controller != null;
-
   MyLocationOptions(
     this.point, {
     this.size = 30.0,
@@ -34,10 +19,31 @@ class MyLocationOptions extends LayerOptions {
     this.opacity = 0.6,
     this.milliSeconds = 500,
     this.color = Colors.green,
-    this.tickerProvider,
-    this.locationUpdateController,
+    @required this.tickerProvider,
+    @required this.locationUpdateController,
     Stream<Null> rebuild,
-  }) : super(rebuild: rebuild);
+  }) : super(rebuild: rebuild) {
+    assert(tickerProvider != null, 'tickerProvider can not be null');
+    assert(locationUpdateController != null, 'locationUpdateController can not be null');
+  }
+
+  // Allow external change
+  double accuracy;
+
+  final double bearing;
+  final double opacity;
+  final int milliSeconds;
+  final TickerProvider tickerProvider;
+  final StreamController<Null> locationUpdateController;
+  final Color color;
+
+  double size;
+  LatLng point;
+  LatLng next;
+  LatLng previous;
+
+  AnimationController _controller;
+  bool get isAnimating => _controller != null;
 
   void cancel() {
     if (_controller != null) {

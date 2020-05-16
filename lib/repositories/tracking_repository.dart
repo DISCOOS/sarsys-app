@@ -176,9 +176,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
 
   /// Unload all devices for given [iuuid]
   Future<List<Tracking>> unload() async {
-    final devices = await clear();
+    final trackings = values;
     _iuuid = null;
-    return devices;
+    return trackings;
   }
 
   /// Commit [state] to repository

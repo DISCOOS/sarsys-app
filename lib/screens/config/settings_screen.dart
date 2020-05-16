@@ -2,12 +2,13 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/app_state.dart';
+import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 import 'incident_config_screen.dart';
 import 'location_config_screen.dart';
@@ -31,7 +32,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _configBloc = BlocProvider.of<AppConfigBloc>(context);
+    _configBloc = context.bloc<AppConfigBloc>();
   }
 
   @override //new
@@ -172,7 +173,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   ListTile _buildPermissionsConfig() {
     return ListTile(
       title: Text("Tillatelser"),
-      subtitle: Text('Endre tillatelser'),
+      subtitle: Text('Se tillatelser som er gitt'),
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
@@ -224,7 +225,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget _buildFactoryReset() {
     return GestureDetector(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -245,7 +246,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         );
         if (reset) {
           Navigator.pop(context);
-          await clearAppStateAndData(context);
+          await Provider.of<BlocController>(context, listen: false).reset();
         }
       },
     );

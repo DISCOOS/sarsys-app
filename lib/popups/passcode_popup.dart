@@ -29,7 +29,7 @@ class PasscodeRoute extends PopupRoute {
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-    final bloc = BlocProvider.of<UserBloc>(context);
+    final bloc = context.bloc<UserBloc>();
     return Center(
       child: Material(
         elevation: 4.0,

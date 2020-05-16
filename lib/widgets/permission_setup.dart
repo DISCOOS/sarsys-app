@@ -33,7 +33,7 @@ class PermissionSetupState extends State<PermissionSetup> {
     super.didChangeDependencies();
     if (_permissions == null) {
       _permissions = PermissionController(
-        configBloc: BlocProvider.of<AppConfigBloc>(context),
+        configBloc: context.bloc<AppConfigBloc>(),
         onPrompt: _onPrompt,
       );
       // Track permission changes and update views

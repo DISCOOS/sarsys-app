@@ -148,34 +148,51 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
 
     return Container(
       padding: EdgeInsets.all(24.0),
-      child: ListView(
-        shrinkWrap: true,
-        reverse: true,
-        controller: _scrollController,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              _buildTitle(context),
-              Padding(
-                padding: EdgeInsets.all(8),
-                child: SizedBox(
-                  height: 500,
-                  child: _buildRipple(
-                    _buildIcon(),
-                  ),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints viewportConstraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: viewportConstraints.minHeight * 2,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _buildTitle(context),
+                    // Logo
+                    Expanded(
+                        child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: SizedBox(
+                        height: 400,
+                        child: _buildRipple(
+                          _buildIcon(),
+                        ),
+                      ),
+                    )),
+//                      Padding(
+//                        padding: EdgeInsets.all(8),
+//                        child: SizedBox(
+//                          height: 500,
+//                          child: _buildRipple(
+//                            _buildIcon(),
+//                          ),
+//                        ),
+//                      ),
+                    Text(
+                      'Logger deg inn, vent litt',
+                      style: _toStyle(context, 22, FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                'Logger deg inn, vent litt',
-                style: _toStyle(context, 22, FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -308,13 +325,14 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
   Widget _buildRipple(Widget icon) => AnimatedBuilder(
         animation: CurvedAnimation(
           parent: _animController,
-          curve: Curves.elasticInOut,
+          curve: Curves.elasticOut,
+          reverseCurve: Curves.elasticIn,
         ),
         builder: (context, child) {
           return Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              _buildCircle(200 + (12 * _animController.value)),
+              _buildCircle(180 + (36 * _animController.value)),
               Align(child: icon),
             ],
           );

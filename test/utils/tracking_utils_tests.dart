@@ -423,13 +423,13 @@ void main() {
     final tbl1 = PersonnelBuilder.create(tuuid: Uuid().v4());
     final tbl1s1 = PositionableSource.from(tbl1, position: p1);
     final tbl1t1 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl1.tracking.uuid), [tbl1s1]);
-    final tbl1t1s1 = PositionableSource.from(tbl1t1);
+    final tbl1t1s1 = PositionableSource.from(tbl1, position: tbl1t1.position);
 
     // ARRANGE trackable 2 as unit
     final tbl2 = UnitBuilder.create(tuuid: Uuid().v4());
     final tbl2s2 = PositionableSource.from(tbl2, position: p2);
     final tbl2t2 = TrackingUtils.attachAll(TrackingBuilder.create(uuid: tbl2.tracking.uuid), [tbl2s2]);
-    final tbl2t2s2 = PositionableSource.from(tbl2t2);
+    final tbl2t2s2 = PositionableSource.from(tbl2, position: tbl2t2.position);
 
     // ACT on two tracking objects
     final t1 = TrackingUtils.attachAll(t0, [tbl1t1s1, tbl2t2s2]);

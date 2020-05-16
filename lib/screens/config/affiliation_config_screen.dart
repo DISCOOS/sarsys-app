@@ -39,7 +39,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
               key: _affiliationKey,
               user: context.bloc<UserBloc>().user,
               initialValue: _ensureAffiliation(),
-              onChanged: (affiliation) => context.bloc<AppConfigBloc>().update(
+              onChanged: (affiliation) => context.bloc<AppConfigBloc>().updateWith(
                     divId: affiliation.divId,
                     depId: affiliation.depId,
                   ),

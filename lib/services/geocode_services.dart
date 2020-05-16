@@ -7,7 +7,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/controllers/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
@@ -286,7 +286,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
 class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
   final bool withRetired;
   final AddressGeocoderService service;
-  final BlocProviderController controller;
+  final BlocController controller;
 
   @override
   Client get client => service.client;

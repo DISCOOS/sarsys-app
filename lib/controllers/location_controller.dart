@@ -58,7 +58,10 @@ class LocationController {
     );
   }
 
+  bool _disposed = false;
+
   void dispose() {
+    _disposed = true;
     options?.cancel();
     mapController?.cancel();
     permissionController?.dispose();
@@ -177,7 +180,7 @@ class LocationController {
   void _onReady(Completer<LatLng> completer) async {
     try {
       final status = await _service.configure();
-      if (_service.isReady.value) {
+      if (!_disposed && _service.isReady.value) {
         final point = _toLatLng(_service.current);
         _options?.cancel();
         _options = MyLocationOptions(

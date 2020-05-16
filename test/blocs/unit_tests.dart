@@ -110,7 +110,7 @@ void main() async {
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
-      await harness.unitBloc.delete(unit);
+      await harness.unitBloc.delete(unit.uuid);
 
       // Assert
       verify(harness.unitService.delete(any)).called(1);
@@ -280,7 +280,7 @@ void main() async {
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
-      await harness.unitBloc.delete(unit);
+      await harness.unitBloc.delete(unit.uuid);
 
       // Assert
       expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -306,7 +306,6 @@ void main() async {
     test('SHOULD be empty after reload', () async {
       // Arrange
       harness.connectivity.offline();
-      harness.connectivity.offline();
       await _prepare(harness);
       final unit = UnitBuilder.create();
       await harness.unitBloc.create(unit);
@@ -317,7 +316,7 @@ void main() async {
       await harness.unitBloc.load();
 
       // Assert
-      expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
+      expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expectThroughInOrder(harness.unitBloc, [isA<UnitsUnloaded>(), isA<UnitsLoaded>()]);
     });
 
@@ -372,7 +371,7 @@ Future _testShouldDeleteCloneWhenPersonnelIsDeleted(BlocTestHarness harness) asy
   final unit = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1, p2]));
 
   // Act
-  final updated = await harness.personnelBloc.delete(p2);
+  final updated = await harness.personnelBloc.delete(p2.uuid);
   await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
 
   // Assert

@@ -109,7 +109,7 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
       // Act
-      await harness.personnelBloc.delete(personnel);
+      await harness.personnelBloc.delete(personnel.uuid);
 
       // Assert
       verify(harness.personnelService.delete(any)).called(1);
@@ -268,7 +268,7 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
       // Act
-      await harness.personnelBloc.delete(personnel);
+      await harness.personnelBloc.delete(personnel.uuid);
 
       // Assert
       expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -294,7 +294,6 @@ void main() async {
     test('SHOULD be empty after reload', () async {
       // Arrange
       harness.connectivity.offline();
-      harness.connectivity.offline();
       await _prepare(harness);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
@@ -305,7 +304,7 @@ void main() async {
       await harness.personnelBloc.load();
 
       // Assert
-      expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
     });
 

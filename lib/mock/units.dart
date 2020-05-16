@@ -87,17 +87,14 @@ class UnitServiceMock extends Mock implements UnitService {
         .toList();
   }
 
-  static UnitService build(final int count) {
+  static UnitService build(final int count, {List<String> iuuids = const []}) {
     final UnitServiceMock mock = UnitServiceMock();
     final unitsRepo = mock.unitsRepo;
-    when(mock.fetch(any)).thenAnswer((_) async {
-      final String iuuid = _.positionalArguments[0];
-      var units = unitsRepo[iuuid];
-      if (units == null) {
-        units = unitsRepo.putIfAbsent(iuuid, () => {});
-      }
-      // Only generate devices for automatically generated iuuids
-      if (iuuid.startsWith('a:') && units.isEmpty) {
+
+    // Only generate units for automatically generated iuuids
+    iuuids.forEach((iuuid) {
+      if (iuuid.startsWith('a:')) {
+        final units = unitsRepo.putIfAbsent(iuuid, () => {});
         units.addEntries([
           for (var i = 1; i <= count; i++)
             MapEntry(
@@ -114,6 +111,14 @@ class UnitServiceMock extends Mock implements UnitService {
             ),
         ]);
       }
+    });
+
+    when(mock.fetch(any)).thenAnswer((_) async {
+      final String iuuid = _.positionalArguments[0];
+      var units = unitsRepo[iuuid];
+      if (units == null) {
+        units = unitsRepo.putIfAbsent(iuuid, () => {});
+      }
       return ServiceResponse.ok(
         body: units.values.toList(growable: false),
       );
@@ -121,12 +126,7 @@ class UnitServiceMock extends Mock implements UnitService {
     when(mock.create(any, any)).thenAnswer((_) async {
       final iuuid = _.positionalArguments[0];
       final Unit unit = _.positionalArguments[1];
-      final units = unitsRepo[iuuid];
-      if (units == null) {
-        return ServiceResponse.notFound(
-          message: "Incident not found: $iuuid",
-        );
-      }
+      final units = unitsRepo.putIfAbsent(iuuid, () => {});
       final String uuid = iuuid.startsWith('a:') ? "$iuuid:u${randomAlphaNumeric(8).toLowerCase()}" : unit.uuid;
       return ServiceResponse.ok(
         body: units.putIfAbsent(uuid, () => unit.cloneWith(uuid: uuid)),

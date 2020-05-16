@@ -46,7 +46,7 @@ Future<dartz.Either<bool, Unit>> createUnit({
 
 class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Unit>> call(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
     assert(params.data == null, "Unit should not be supplied");
     var next = params.position;
     // Select unit position?
@@ -76,7 +76,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
     final unit = await params.bloc.create(result.data);
 
     // Wait for tracking is created
-    final tracking = await waitThoughtState<TrackingCreated, Tracking>(
+    final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
       params.context.bloc<TrackingBloc>(),
       map: (state) => state.data,
       test: (state) => state.data.uuid == unit.tracking.uuid,
@@ -103,7 +103,7 @@ Future<dartz.Either<bool, Unit>> editUnit(
 
 class EditUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Unit>> call(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
     assert(params.data != null, "Unit must be supplied");
     var result = await showDialog<UnitParams>(
       context: params.overlay.context,
@@ -141,7 +141,7 @@ Future<dartz.Either<bool, Position>> editUnitLocation(
 
 class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
   @override
-  Future<dartz.Either<bool, Position>> call(params) async {
+  Future<dartz.Either<bool, Position>> execute(params) async {
     assert(params.data != null, "Unit must be supplied");
 
     final tuuid = params.data.tracking.uuid;
@@ -182,7 +182,7 @@ Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit({
 
 class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
   @override
-  Future<dartz.Either<bool, Pair<Unit, Tracking>>> call(params) async {
+  Future<dartz.Either<bool, Pair<Unit, Tracking>>> execute(params) async {
     // Get or select unit?
     var unit = await _getOrSelectUnit(
       params,
@@ -251,7 +251,7 @@ Future<dartz.Either<bool, Tracking>> removeFromUnit(
 
 class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   @override
-  Future<dartz.Either<bool, Tracking>> call(UnitParams params) async {
+  Future<dartz.Either<bool, Tracking>> execute(UnitParams params) async {
     final unit = params.data;
     final devices = params.devices ?? [];
     final personnel = params.personnel ?? [];
@@ -327,7 +327,7 @@ Future<dartz.Either<bool, Unit>> mobilizeUnit(
 
 class MobilizeUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Unit>> call(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
       UnitStatus.Mobilized,
@@ -345,7 +345,7 @@ Future<dartz.Either<bool, Unit>> deployUnit(
 
 class DeployUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Unit>> call(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
       UnitStatus.Deployed,
@@ -363,7 +363,7 @@ Future<dartz.Either<bool, Unit>> retireUnit(
 
 class RetireUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Unit>> call(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
       UnitStatus.Retired,
@@ -394,7 +394,7 @@ Future<dartz.Either<bool, UnitState>> deleteUnit(
 
 class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
   @override
-  Future<dartz.Either<bool, UnitState>> call(params) async {
+  Future<dartz.Either<bool, UnitState>> execute(params) async {
     assert(params.data != null, "Unit must be supplied");
     var response = await prompt(
       params.overlay.context,
@@ -403,7 +403,7 @@ class DeleteUnit extends UseCase<bool, UnitState, UnitParams> {
           "Endringen kan ikke omgjøres. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.delete(params.data);
+    await params.bloc.delete(params.data.uuid);
     return dartz.Right(params.bloc.state);
   }
 }

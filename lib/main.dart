@@ -5,16 +5,15 @@ import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/controllers/bloc_provider_controller.dart';
+import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
-import 'package:provider/provider.dart';
 
 import 'blocs/app_config_bloc.dart';
-import 'core/app_state.dart';
-import 'map/tile_providers.dart';
+import 'core/page_state.dart';
 
 void main() async {
   // Required since provider need access to service bindings prior to calling 'runApp()'
@@ -24,16 +23,18 @@ void main() async {
   await Storage.init();
 
   final client = Client();
-  final bucket = await readAppState(PageStorageBucket());
+  final bucket = await readPageStorageBucket(PageStorageBucket());
 
   // This will catch any fatal errors before the app is stated
   BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
 
   // Build and initialize bloc provider
-  final controller = BlocProviderController.build(client, demo: DemoParams(true));
+  final controller = BlocController.build(client, demo: DemoParams(true));
+
+  // SarSysApp widget will handle rebuilds
   controller.init().then((_) {
     runAppWithCatcher(
-      _buildApp(controller, bucket),
+      _createApp(controller, bucket),
       controller.bloc<AppConfigBloc>().config.sentryDns,
     );
   }).catchError((error, stackTrace) {
@@ -44,91 +45,26 @@ void main() async {
   });
 }
 
-// Build SarSys app with given controller
-Widget _buildApp(BlocProviderController controller, PageStorageBucket bucket) {
-  // Listen for controller build events
-  controller.onChange.listen(
-    (state) => _rebuildApp(state, controller, bucket),
-  );
-
-  // Called once upon start of app
-  return _createApp(controller, bucket);
-}
-
-Future _rebuildApp(
-  BlocProviderControllerState state,
-  BlocProviderController controller,
-  PageStorageBucket bucket,
-) async {
-  if (BlocProviderControllerState.Built == state) {
-    // Wait for user and config blocs to initialize
-    await controller.init().catchError((error, stackTrace) => Catcher.reportCheckedError(
-          error,
-          stackTrace,
-        ));
-
-    // Restart app to rehydrate with blocs just built and initiated
-    runAppWithCatcher(
-      _createApp(controller, bucket),
-      controller.bloc<AppConfigBloc>().config.sentryDns,
-    );
-  }
-}
-
 // Convenience method for creating SarSysApp
 Widget _createApp(
-  BlocProviderController controller,
+  BlocController controller,
   PageStorageBucket bucket,
 ) {
-  return PageStorage(
-    bucket: bucket,
+  debugPrint("main:_createApp: ${controller.state}");
+
+  // SarSysApp widget calls
+  // Phoenix.rebirth to restart
+  // after bloc rebuilds
+  return Phoenix(
     child: NetworkSensitive(
-      child: Provider<Client>(
-        create: (BuildContext context) => controller.client,
-        child: Provider<BlocProviderController>(
-          create: (BuildContext context) => controller,
-          child: MultiBlocProvider(
-            providers: controller.all,
-            child: SarSysApp(
-              key: UniqueKey(),
-              bucket: bucket,
-              navigatorKey: Catcher.navigatorKey,
-            ),
-          ),
-        ),
+      child: SarSysApp(
+        bucket: bucket,
+        controller: controller,
+        navigatorKey: Catcher.navigatorKey,
       ),
     ),
   );
 }
-
-/*
-
-  Widget _buildWithProviders({
-    @required BuildContext context,
-    @required Widget child,
-  }) =>
-      PageStorage(
-        bucket: widget.bucket,
-        child: NetworkSensitive(
-          child: Provider<Client>(
-            create: (BuildContext context) => widget.controller.client,
-            child: Provider<PermissionController>(
-              create: (BuildContext context) => controller,
-              child: Provider<BlocProviderController>(
-                create: (BuildContext context) => widget.controller,
-                child: MultiBlocProvider(
-                  providers: widget.controller.all,
-                  child: child,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-
-
- */
 
 // Convenience method for running apps with Catcher
 void runAppWithCatcher(Widget app, String sentryDns) {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
@@ -11,7 +12,8 @@ import 'package:flutter/foundation.dart';
 
 typedef void AppConfigCallback(VoidCallback fn);
 
-class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
+class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
+    with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
   AppConfigBloc(this.repo);
   final AppConfigRepository repo;
 
@@ -21,19 +23,25 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   AppConfigEmpty get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
-  bool get isReady => repo.isReady;
+  bool get isReady => repo.isReady && repo.state?.isDeleted != null;
 
   /// Get config
   AppConfig get config => repo.config;
 
   /// Initialize config from [service]
+  @override
   Future<AppConfig> init() async => _dispatch(InitAppConfig());
 
   /// Load config from [service]
+  @override
   Future<AppConfig> load() async => _dispatch(LoadAppConfig());
 
-  /// Update given settings
-  Future<AppConfig> update({
+  /// Load config from [service]
+  @override
+  Future<AppConfig> update(AppConfig data) async => _dispatch(UpdateAppConfig(data));
+
+  /// Update with given settings
+  Future<AppConfig> updateWith({
     bool demo,
     String demoRole,
     bool onboarded,
@@ -84,7 +92,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
           securityLockAfter: securityLockAfter,
           trustedDomains: trustedDomains,
         );
-    return _dispatch(UpdateAppConfig(config));
+    return update(config);
   }
 
   Future<AppConfig> delete() {
@@ -108,14 +116,6 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
         yield await _update(command);
       } else if (command is DeleteAppConfig) {
         yield await _delete(command);
-      } else if (command is RaiseAppConfigError) {
-        yield _toError(
-          command,
-          AppConfigBlocError(
-            command.data,
-            stackTrace: StackTrace.current,
-          ),
-        );
       } else {
         yield _toError(
           command,
@@ -197,13 +197,8 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState> {
   }
 
   @override
-  void onError(Object error, StackTrace stacktrace) {
-    add(RaiseAppConfigError(error, stackTrace: stacktrace));
-  }
-
-  @override
-  Future<void> close() {
-    repo.close();
+  Future<void> close() async {
+    await repo.dispose();
     return super.close();
   }
 }
@@ -244,14 +239,6 @@ class DeleteAppConfig extends AppConfigCommand<AppConfig> {
 
   @override
   String toString() => 'DeleteAppConfig {}';
-}
-
-class RaiseAppConfigError extends AppConfigCommand<Object> {
-  final StackTrace stackTrace;
-  RaiseAppConfigError(data, {this.stackTrace}) : super(data);
-
-  @override
-  String toString() => 'RaiseAppConfigError {error: $data, stackTrace: $stackTrace}';
 }
 
 /// ---------------------

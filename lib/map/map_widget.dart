@@ -7,7 +7,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
-import 'package:SarSys/core/app_state.dart';
+import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/map/basemap_card.dart';
 import 'package:SarSys/map/layers/coordate_layer.dart';
 import 'package:SarSys/map/layers/device_layer.dart';
@@ -150,81 +150,6 @@ class MapWidget extends StatefulWidget {
 
   @override
   MapWidgetState createState() => MapWidgetState();
-
-//  @override
-//  bool operator ==(Object other) =>
-//      identical(this, other) ||
-//      other is MapWidget &&
-//          runtimeType == other.runtimeType &&
-//          interactive == other.interactive &&
-//          withSearch == other.withSearch &&
-//          withControls == other.withControls &&
-//          withControlsZoom == other.withControlsZoom &&
-//          withControlsTool == other.withControlsTool &&
-//          withControlsLayer == other.withControlsLayer &&
-//          withControlsBaseMap == other.withControlsBaseMap &&
-//          withControlsOffset == other.withControlsOffset &&
-//          withControlsLocateMe == other.withControlsLocateMe &&
-//          withScaleBar == other.withScaleBar &&
-//          withCoordsPanel == other.withCoordsPanel &&
-//          withPOIs == other.withPOIs &&
-//          withUnits == other.withUnits &&
-//          withPersonnel == other.withPersonnel &&
-//          withDevices == other.withDevices &&
-//          withTracking == other.withTracking &&
-//          withRead == other.withRead &&
-//          withWrite == other.withWrite &&
-//          readZoom == other.readZoom &&
-//          readCenter == other.readCenter &&
-//          readLayers == other.readLayers &&
-//          incident == other.incident &&
-//          onTap == other.onTap &&
-//          onMessage == other.onMessage &&
-//          onToolChange == other.onToolChange &&
-//          mapController == other.mapController &&
-//          onOpenDrawer == other.onOpenDrawer &&
-//          zoom == other.zoom &&
-//          center == other.center &&
-//          fitBounds == other.fitBounds &&
-//          fitBoundOptions == other.fitBoundOptions &&
-//          showLayers == other.showLayers &&
-//          showRetired == other.showRetired;
-//
-//  @override
-//  int get hashCode =>
-//      interactive.hashCode ^
-//      withSearch.hashCode ^
-//      withControls.hashCode ^
-//      withControlsZoom.hashCode ^
-//      withControlsTool.hashCode ^
-//      withControlsLayer.hashCode ^
-//      withControlsBaseMap.hashCode ^
-//      withControlsOffset.hashCode ^
-//      withControlsLocateMe.hashCode ^
-//      withScaleBar.hashCode ^
-//      withCoordsPanel.hashCode ^
-//      withPOIs.hashCode ^
-//      withUnits.hashCode ^
-//      withPersonnel.hashCode ^
-//      withDevices.hashCode ^
-//      withTracking.hashCode ^
-//      withRead.hashCode ^
-//      withWrite.hashCode ^
-//      readZoom.hashCode ^
-//      readCenter.hashCode ^
-//      readLayers.hashCode ^
-//      incident.hashCode ^
-//      onTap.hashCode ^
-//      onMessage.hashCode ^
-//      onToolChange.hashCode ^
-//      mapController.hashCode ^
-//      onOpenDrawer.hashCode ^
-//      zoom.hashCode ^
-//      center.hashCode ^
-//      fitBounds.hashCode ^
-//      fitBoundOptions.hashCode ^
-//      showLayers.hashCode ^
-//      showRetired.hashCode;
 }
 
 class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
@@ -288,17 +213,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   bool _hasFitToBounds = false;
   bool _attemptRestore = true;
 
-//  /// Tile error data persisted across map reloads
-//  final Map<BaseMap, TileErrorData> _tileErrorData = {};
-
   /// Placeholder shown when a tile fails to load
   final ImageProvider _tileErrorImage = Image.asset("assets/error_tile.png").image;
 
   /// Placeholder shown while loading images
   final ImageProvider _tilePendingImage = Image.asset("assets/pending_tile.png").image;
-
-  /// Asset name for offline tiles
-  final String _fileOfflineAsset = "assets/offline_tile.png";
 
   /// Placeholder shown when tiles are not found in offline mode
   final ImageProvider _tileOfflineImage = Image.asset("assets/offline_tile.png").image;
@@ -385,22 +304,24 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _initWakeLock();
+    if (mounted) {
+      _initWakeLock();
 
-    // Ensure all controllers are set
-    _ensureMapToolController();
-    _ensureLocationControllers();
+      // Ensure all controllers are set
+      _ensureMapToolController();
+      _ensureLocationControllers();
 
-    // Ensure base maps are loaded from storage
-    _ensureBaseMaps();
+      // Ensure base maps are loaded from storage
+      _ensureBaseMaps();
 
-    // Only ensure center if not set already
-    _center ??= _ensureCenter();
+      // Only ensure center if not set already
+      _center ??= _ensureCenter();
 
-    if (_attemptRestore) {
-      _zoom = _readState(STATE_ZOOM, defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
-      _center = _readState(STATE_CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
-      _attemptRestore = false;
+      if (_attemptRestore) {
+        _zoom = _readState(STATE_ZOOM, defaultValue: widget.zoom ?? Defaults.zoom, read: widget.readZoom);
+        _center = _readState(STATE_CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
+        _attemptRestore = false;
+      }
     }
   }
 
@@ -465,9 +386,13 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _currentBaseMap = map;
   }
 
-  Set<String> _resolveLayers() => widget.withRead && widget.readLayers
-      ? (FilterSheet.read(context, STATE_FILTERS, defaultValue: _withLayers()..retainAll(widget.showLayers.toSet())))
-      : (_withLayers()..retainAll(widget.showLayers.toSet()));
+  Set<String> _resolveLayers() =>
+      widget.withRead && widget.readLayers ? (_readLayers()) : (_withLayers()..retainAll(widget.showLayers.toSet()));
+
+  Set<String> _readLayers() => FilterSheet.read(context, STATE_FILTERS, defaultValue: _withLayers())
+    ..retainAll(
+      widget.showLayers.toSet(),
+    );
 
   void _ensureMapToolController() {
     if (widget.withControlsTool) {
@@ -1030,7 +955,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   T _readState<T>(String identifier, {T defaultValue, bool read = true, T orElse}) {
     if (widget.withRead && read) {
-      final model = readState<MapWidgetStateModel>(context, STATE);
+      final model = getPageState<MapWidgetStateModel>(
+        context,
+        STATE,
+        defaultValue: _defaultState(),
+      );
       switch (identifier) {
         case STATE_CENTER:
           return model?.center ?? defaultValue;
@@ -1051,7 +980,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   T _writeState<T>(String identifier, T value) {
     if (widget.withWrite) {
-      var model = readState<MapWidgetStateModel>(context, STATE);
+      var model = getPageState<MapWidgetStateModel>(
+        context,
+        STATE,
+        defaultValue: _defaultState(),
+      );
       switch (identifier) {
         case STATE_CENTER:
           model = model.cloneWith(
@@ -1086,10 +1019,20 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         default:
           throw '_writeState: Unexpected identifier $identifier';
       }
-      writeState<MapWidgetStateModel>(context, STATE, model);
-      writeAppState(PageStorage.of(context));
+      putPageState<MapWidgetStateModel>(context, STATE, model);
     }
     return value;
+  }
+
+  MapWidgetStateModel _defaultState() {
+    return MapWidgetStateModel(
+      zoom: _zoom,
+      center: _center,
+      incident: widget.incident?.uuid,
+      baseMap: _currentBaseMap,
+      filters: _readLayers().toList(),
+      following: _isLocating.value.locked,
+    );
   }
 }
 

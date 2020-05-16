@@ -107,7 +107,7 @@ void main() async {
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
-      await harness.deviceBloc.delete(device);
+      await harness.deviceBloc.delete(device.uuid);
 
       // Assert
       verify(harness.deviceService.delete(any)).called(1);
@@ -257,7 +257,7 @@ void main() async {
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
-      await harness.deviceBloc.delete(device);
+      await harness.deviceBloc.delete(device.uuid);
 
       // Assert
       expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -283,7 +283,6 @@ void main() async {
     test('SHOULD be empty after reload', () async {
       // Arrange
       harness.connectivity.offline();
-      harness.connectivity.offline();
       await _prepare(harness);
       final device = DeviceBuilder.create();
       await harness.deviceBloc.create(device);
@@ -294,7 +293,7 @@ void main() async {
       await harness.deviceBloc.load();
 
       // Assert
-      expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
+      expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expectThroughInOrder(harness.deviceBloc, [isA<DevicesUnloaded>(), isA<DevicesLoaded>()]);
     });
 

@@ -69,7 +69,7 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
               .length;
 
   /// Find personnel from user
-  List<Personnel> find(
+  Iterable<Personnel> find(
     User user, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
   }) =>
@@ -145,9 +145,9 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
 
   /// Unload all devices for given [iuuid]
   Future<List<Personnel>> unload() async {
-    final devices = await clear();
+    final personnels = values;
     _iuuid = null;
-    return devices;
+    return personnels;
   }
 
   @override
