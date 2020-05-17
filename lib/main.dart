@@ -1,4 +1,5 @@
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/repositories/repository.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
@@ -117,7 +118,9 @@ void runAppWithCatcher(Widget app, String sentryDns) {
     value: (_) => ConsoleHandler(),
   );
 
+  // Catch unhandled bloc and repository exceptions
   BlocSupervisor.delegate = CatcherBlocDelegate();
+  RepositorySupervisor.delegate = CatcherRepositoryDelegate();
 
   Catcher(
     app,
@@ -149,4 +152,11 @@ class CatcherBlocDelegate implements BlocDelegate {
 
   @override
   void onTransition(Bloc bloc, Transition transition) {}
+}
+
+class CatcherRepositoryDelegate implements RepositoryDelegate {
+  @override
+  void onError(ConnectionAwareRepository repo, Object error, StackTrace stackTrace) {
+    Catcher.reportCheckedError(error, stackTrace);
+  }
 }
