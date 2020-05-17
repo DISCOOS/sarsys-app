@@ -78,6 +78,7 @@ class SarSysIcons {
       default:
         return Icon(
           MdiIcons.graph,
+          size: size * 2.5,
         );
     }
   }
