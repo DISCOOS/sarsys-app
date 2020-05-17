@@ -22,6 +22,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/device.dart';
 import 'package:SarSys/widgets/personnel.dart';
 import 'package:SarSys/widgets/position_field.dart';
+import 'package:uuid/uuid.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;
@@ -620,7 +621,8 @@ class _UnitEditorState extends State<UnitEditor> {
     if (_formKey.currentState.validate()) {
       _formKey.currentState.save();
       var response = true;
-      var unit = _toUnit();
+      final create = widget.unit == null;
+      var unit = create ? _createdUnit() : _updatedUnit();
       if (_changedToRetired(unit)) {
         response = await prompt(
           context,
@@ -647,14 +649,8 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _changedToRetired(Unit unit) => UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status;
 
-  Unit _toUnit() {
-    return widget.unit == null
-        // Filter out empty text
-        ? _createdUnit()
-        : _updatedUnit();
-  }
-
   Unit _createdUnit() => Unit.fromJson(_formKey.currentState.value).cloneWith(
+        uuid: Uuid().v4(),
         tracking: TrackingUtils.newRef(),
       );
 

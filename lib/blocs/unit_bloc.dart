@@ -177,6 +177,15 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
     }
   }
 
+  void _assertData(Unit data) {
+    if (data?.uuid == null) {
+      throw ArgumentError(
+        "Unit have no uuid",
+      );
+    }
+    TrackingUtils.assertRef(data);
+  }
+
   /// Fetch units from [service]
   Future<List<Unit>> load() async {
     _assertState();
@@ -264,39 +273,42 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   }
 
   Future<UnitState> _load(LoadUnits command) async {
-    var devices = await repo.load(command.data);
+    var units = await repo.load(command.data);
     return _toOK(
       command,
       UnitsLoaded(repo.keys),
-      result: devices,
+      result: units,
     );
   }
 
   Future<UnitState> _create(CreateUnit command) async {
-    var device = await repo.create(command.iuuid, command.data);
+    _assertData(command.data);
+    var unit = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
-      UnitCreated(device),
-      result: device,
+      UnitCreated(unit),
+      result: unit,
     );
   }
 
   Future<UnitState> _update(UpdateUnit command) async {
+    _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final device = await repo.update(command.data);
+    final unit = await repo.update(command.data);
     return _toOK(
       command,
-      UnitUpdated(device, previous),
-      result: device,
+      UnitUpdated(unit, previous),
+      result: unit,
     );
   }
 
   Future<UnitState> _delete(DeleteUnit command) async {
-    final device = await repo.delete(command.data.uuid);
+    _assertData(command.data);
+    final unit = await repo.delete(command.data.uuid);
     return _toOK(
       command,
-      UnitDeleted(device),
-      result: device,
+      UnitDeleted(unit),
+      result: unit,
     );
   }
 
