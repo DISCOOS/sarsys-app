@@ -50,6 +50,7 @@ class IncidentBuilder {
       '"talkgroups": ['
       '{"name": "RK-RIKS-1", "type": "Tetra"}'
       '],'
+      '"exercise": true,'
       '"passcodes": ${createPasscodesAsJson(passcode)},'
       '"created": ${createAuthor(userId)},'
       '"changed": ${createAuthor(userId)}'

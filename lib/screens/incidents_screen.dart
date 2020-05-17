@@ -195,36 +195,13 @@ class _IncidentsPageState extends State<IncidentsPage> {
               key: ObjectKey(incident.uuid),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ListTile(
-                  selected: context.bloc<IncidentBloc>().selected == incident,
-                  title: Text(
-                    incident.name,
-                    style: title,
-                  ),
-                  subtitle: Text(
-                    incident.reference ?? 'Ingen referanse',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.black.withOpacity(0.5),
-                    ),
-                  ),
-                  trailing: Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          translateIncidentStatus(incident.status),
-                          style: caption,
-                        ),
-                        Text(
-                          "${formatSince(incident.occurred)}",
-                          style: caption,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                incident?.exercise == true
+                    ? Banner(
+                        message: "Øvelse",
+                        location: BannerLocation.topEnd,
+                        child: _buildCardHeader(context, incident, title, caption),
+                      )
+                    : _buildCardHeader(context, incident, title, caption),
                 if (isAuthorized) _buildMapTile(incident),
                 if (isAuthorized)
                   Padding(
@@ -303,6 +280,43 @@ class _IncidentsPageState extends State<IncidentsPage> {
             ),
           );
         });
+  }
+
+  ListTile _buildCardHeader(BuildContext context, Incident incident, TextStyle title, TextStyle caption) {
+    return ListTile(
+      selected: context.bloc<IncidentBloc>().selected == incident,
+      title: Text(
+        incident.name,
+        style: title,
+      ),
+      subtitle: Text(
+        incident.reference ?? 'Ingen referanse',
+        style: TextStyle(
+          fontSize: 14.0,
+          color: Colors.black.withOpacity(0.5),
+        ),
+      ),
+      trailing: _buildCardStatus(incident, caption),
+    );
+  }
+
+  Padding _buildCardStatus(Incident incident, TextStyle caption) {
+    return Padding(
+      padding: EdgeInsets.only(top: 8.0, right: (incident.exercise ? 24.0 : 0.0)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Text(
+            translateIncidentStatus(incident.status),
+            style: caption,
+          ),
+          Text(
+            "${formatSince(incident.occurred)}",
+            style: caption,
+          ),
+        ],
+      ),
+    );
   }
 
   bool get hasRoles => context.bloc<UserBloc>()?.hasRoles == true;

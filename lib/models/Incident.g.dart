@@ -48,6 +48,7 @@ Incident _$IncidentFromJson(Map json) {
         : Author.fromJson((json['changed'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
+    exercise: json['exercise'] as bool,
     reference: json['reference'] as String,
   );
 }
@@ -66,6 +67,7 @@ Map<String, dynamic> _$IncidentToJson(Incident instance) => <String, dynamic>{
       'reference': instance.reference,
       'created': instance.created?.toJson(),
       'changed': instance.changed?.toJson(),
+      'exercise': instance.exercise,
     };
 
 T _$enumDecode<T>(

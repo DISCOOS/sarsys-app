@@ -26,6 +26,7 @@ class Incident extends Aggregate<Map<String, dynamic>> {
     @required this.passcodes,
     @required this.created,
     @required this.changed,
+    this.exercise = false,
     this.reference,
   }) : super(uuid, fields: [
           name,
@@ -53,6 +54,7 @@ class Incident extends Aggregate<Map<String, dynamic>> {
   final String reference;
   final Author created;
   final Author changed;
+  final bool exercise;
 
   /// Get searchable string
   get searchable => [
@@ -88,6 +90,7 @@ class Incident extends Aggregate<Map<String, dynamic>> {
       created: clone.created ?? Author.fromJson(this.created?.toJson()),
       occurred: clone.occurred ?? this.occurred,
       justification: clone.justification ?? this.justification,
+      exercise: clone.exercise ?? this.exercise,
       reference: clone.reference ?? this.reference,
       passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
       ipp: clone.ipp ?? Location.fromJson(this.ipp.toJson()),
@@ -110,6 +113,7 @@ class Incident extends Aggregate<Map<String, dynamic>> {
       justification: this.justification,
       reference: this.reference,
       passcodes: this.passcodes,
+      exercise: this.exercise,
       ipp: this.ipp,
       meetup: this.meetup,
       talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
@@ -123,12 +127,13 @@ class Incident extends Aggregate<Map<String, dynamic>> {
     IncidentStatus status,
     Author created,
     Author changed,
-    DateTime occured,
+    DateTime occurred,
     String justification,
     String reference,
     Passcodes passcodes,
     Location ipp,
     Location meetup,
+    bool exercise,
     List<TalkGroup> talkGroups,
   }) {
     return Incident(
@@ -138,9 +143,10 @@ class Incident extends Aggregate<Map<String, dynamic>> {
       status: status ?? this.status,
       created: created ?? this.created,
       changed: changed ?? this.changed,
-      occurred: occured ?? this.occurred,
+      occurred: occurred ?? this.occurred,
       justification: justification ?? this.justification,
       reference: reference ?? this.reference,
+      exercise: exercise ?? this.exercise,
       passcodes: passcodes ?? Passcodes.fromJson(this.passcodes.toJson()),
       ipp: ipp ?? Location.fromJson(this.ipp.toJson()),
       meetup: meetup ?? Location.fromJson(this.meetup.toJson()),
