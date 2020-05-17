@@ -36,7 +36,7 @@ class UnitScreen extends Screen<_UnitScreenState> {
 class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProviderStateMixin {
   _UnitScreenState(Unit unit) : super(title: "${unit.name}", withDrawer: false);
 
-  final _controller = IncidentMapController();
+  final _controller = MapWidgetController();
 
   Unit _unit;
   StreamGroup<dynamic> _group;

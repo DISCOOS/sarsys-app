@@ -18,7 +18,7 @@ class MapSearchField extends StatefulWidget {
   final ErrorCallback onError;
   final MatchCallback onMatch;
   final VoidCallback onCleared;
-  final IncidentMapController mapController;
+  final MapWidgetController mapController;
 
   final Widget prefixIcon;
 
@@ -155,13 +155,12 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
 
   /// Hide overlay with results if shown, clear content and unfocus textfield
   void clear() async {
-    setState(() {
-      _match = null;
-      _hideResults();
-      _controller.clear();
-      if (widget.onCleared != null) widget.onCleared();
-      FocusScope.of(context).unfocus();
-    });
+    _match = null;
+    _hideResults();
+    _controller.clear();
+    if (widget.onCleared != null) widget.onCleared();
+    FocusScope.of(context).requestFocus(new FocusNode());
+    setState(() {});
   }
 
   void _hideResults() {

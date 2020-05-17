@@ -39,7 +39,7 @@ class MapScreen extends StatefulWidget {
 
 class MapScreenState extends RouteWriter<MapScreen, String> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _mapController = IncidentMapController();
+  final _mapController = MapWidgetController();
 
   bool _showFAB = true;
 

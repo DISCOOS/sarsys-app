@@ -83,7 +83,7 @@ class MapWidget extends StatefulWidget {
   final ActionCallback onMessage;
   final ToolCallback onToolChange;
   final PositionCallback onPositionChanged;
-  final IncidentMapController mapController;
+  final MapWidgetController mapController;
 
   final GestureTapCallback onOpenDrawer;
 
@@ -145,7 +145,7 @@ class MapWidget extends StatefulWidget {
     this.onOpenDrawer,
     Image placeholder,
     MapController mapController,
-  })  : this.mapController = mapController ?? IncidentMapController(),
+  })  : this.mapController = mapController ?? MapWidgetController(),
         super(key: key);
 
   @override
@@ -192,7 +192,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   double _zoom = Defaults.zoom;
 
   MapControls _mapControls;
-  IncidentMapController _mapController;
+  MapWidgetController _mapController;
   MapToolController _mapToolController;
   LocationController _locationController;
   PermissionController _permissionController;
@@ -647,9 +647,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               onError: (message) => widget.onMessage(message),
               onMatch: _onSearchMatch,
               onCleared: _onSearchCleared,
-              prefixIcon: GestureDetector(
-                child: Icon(Icons.menu),
-                onTap: () {
+              prefixIcon: IconButton(
+                icon: Icon(Icons.menu),
+                onPressed: () {
                   _searchFieldKey.currentState.clear();
                   if (widget.onOpenDrawer != null) {
                     widget.onOpenDrawer();
@@ -1037,7 +1037,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 }
 
 /// Incident MapController that supports animated move operations
-class IncidentMapController extends MapControllerImpl {
+class MapWidgetController extends MapControllerImpl {
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
 
   AnimationController _controller;

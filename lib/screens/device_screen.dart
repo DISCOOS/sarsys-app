@@ -43,7 +43,7 @@ class DeviceScreen extends Screen<_DeviceScreenState> {
 class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerProviderStateMixin {
   _DeviceScreenState(Device device) : super(title: "${device.name}", withDrawer: false);
 
-  final _controller = IncidentMapController();
+  final _controller = MapWidgetController();
 
   Device _device;
   StreamGroup<dynamic> _group;

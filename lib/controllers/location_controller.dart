@@ -19,7 +19,7 @@ typedef LocationCallback = void Function(LatLng point, bool located, bool locked
 
 class LocationController {
   final AppConfigBloc configBloc;
-  final IncidentMapController mapController;
+  final MapWidgetController mapController;
   final PermissionController permissionController;
   final TickerProvider tickerProvider;
   final TrackingCallback onTrackingChanged;
