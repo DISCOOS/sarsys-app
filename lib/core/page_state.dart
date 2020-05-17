@@ -11,8 +11,14 @@ import 'package:flutter/widgets.dart';
 
 const String PAGE_STORAGE_BUCKET_FILE_PATH = "page_storage_bucket.json";
 
-T getPageState<T>(BuildContext context, String identifier, {T defaultValue}) =>
-    PageStorage.of(context)?.readState(context, identifier: identifier) ?? defaultValue;
+T getPageState<T>(BuildContext context, String identifier, {T defaultValue}) {
+  var value;
+  final bucket = PageStorage.of(context);
+  if (bucket != null) {
+    value = bucket.readState(context, identifier: identifier);
+  }
+  return value ?? defaultValue;
+}
 
 T putPageState<T>(BuildContext context, String identifier, T value, {bool write = true}) {
   final bucket = PageStorage.of(context);

@@ -143,33 +143,36 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     //
     return _buildWithProviders(
         context: context,
-        child: MaterialApp(
-          navigatorKey: widget.navigatorKey,
-          navigatorObservers: [RouteWriter.observer],
-          debugShowCheckedModeBanner: false,
-          title: 'SarSys',
-          theme: ThemeData(
-            primaryColor: Color(0xFF0d2149),
-            buttonTheme: ButtonThemeData(
-              height: 36.0,
-              textTheme: ButtonTextTheme.primary,
+        child: PageStorage(
+          bucket: widget.bucket,
+          child: MaterialApp(
+            navigatorKey: widget.navigatorKey,
+            navigatorObservers: [RouteWriter.observer],
+            debugShowCheckedModeBanner: false,
+            title: 'SarSys',
+            theme: ThemeData(
+              primaryColor: Color(0xFF0d2149),
+              buttonTheme: ButtonThemeData(
+                height: 36.0,
+                textTheme: ButtonTextTheme.primary,
+              ),
             ),
+            home: _toHome(),
+            onGenerateRoute: (settings) => _toRoute(
+              settings,
+            ),
+            localizationsDelegates: [
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              DefaultMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              DefaultCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [
+              const Locale('en', 'US'), // English
+              const Locale('nb', 'NO'), // Norwegian Bokmål
+            ],
           ),
-          home: _toHome(),
-          onGenerateRoute: (settings) => _toRoute(
-            settings,
-          ),
-          localizationsDelegates: [
-            GlobalWidgetsLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            DefaultMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            DefaultCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: [
-            const Locale('en', 'US'), // English
-            const Locale('nb', 'NO'), // Norwegian Bokmål
-          ],
         ));
   }
 
@@ -177,21 +180,18 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     @required BuildContext context,
     @required Widget child,
   }) =>
-      PageStorage(
-        bucket: widget.bucket,
-        child: Provider<PermissionController>(
-          // Lazily create when first asked for it
-          create: (BuildContext context) => PermissionController(
-            configBloc: configBloc,
-          ),
+      Provider<PermissionController>(
+        // Lazily create when first asked for it
+        create: (BuildContext context) => PermissionController(
+          configBloc: configBloc,
+        ),
+        child: Provider.value(
+          value: widget.controller.client,
           child: Provider.value(
-            value: widget.controller.client,
-            child: Provider.value(
-              value: widget.controller,
-              child: MultiBlocProvider(
-                providers: widget.controller.all,
-                child: child,
-              ),
+            value: widget.controller,
+            child: MultiBlocProvider(
+              providers: widget.controller.all,
+              child: child,
             ),
           ),
         ),
@@ -327,14 +327,24 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return defaultValue;
   }
 
-  WidgetBuilder _toChecked(Widget child) => (context) => AccessChecker(
-        key: _checkerKey,
-        child: child,
-        configBloc: widget.controller.bloc<AppConfigBloc>(),
-      );
+  WidgetBuilder _toChecked(Widget child) {
+    return _toUnchecked(AccessChecker(
+      key: _checkerKey,
+      child: child,
+      configBloc: widget.controller.bloc<AppConfigBloc>(),
+    ));
+  }
 
   WidgetBuilder _toUnchecked(Widget child) {
-    return (context) => child;
+    return (context) => PageStorage(
+        // widget.bucket will be uses
+        // instead for of the PageStorageBucket
+        // instance in each ModalRoute,
+        // effectively sharing the bucket
+        // across all pages shown with
+        // modal routes
+        bucket: widget.bucket,
+        child: child);
   }
 
   Widget _toMapScreen({RouteSettings settings, Incident incident}) {
