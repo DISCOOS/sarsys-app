@@ -85,6 +85,9 @@ class Organization extends Equatable {
 
   /// Get full affiliation name as comma-separated list of organization, division and department names
   String toFullName(Affiliation affiliation, {String empty = 'Ingen'}) {
+    if (affiliation.orgId == null) {
+      return empty;
+    }
     if (affiliation.orgId != id) {
       throw 'Organization ids does not match. Expected $id, found ${affiliation.orgId}';
     }

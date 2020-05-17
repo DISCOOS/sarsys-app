@@ -41,15 +41,15 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
     assert(deviceBloc != null, "deviceBloc can not be null");
     _subscriptions
       // Handles incident state changes
-      ..add(incidentBloc.listen(_handleIncidentEvent))
+      ..add(incidentBloc.listen(_processIncidentState))
       // Manages tracking state for units
-      ..add(unitBloc.listen(_handleUnitEvent))
+      ..add(unitBloc.listen(_processUnitState))
       // Manages tracking state for personnel
-      ..add(personnelBloc.listen(_handlePersonnelEvent))
+      ..add(personnelBloc.listen(_processPersonnelState))
       // Manages tracking state for devices
-      ..add(deviceBloc.listen(_processDeviceEvent))
+      ..add(deviceBloc.listen(_processDeviceState))
       // Process tracking messages
-      ..add(service.messages.listen(_handleMessage));
+      ..add(service.messages.listen(_processMessage));
   }
 
   /// Get [IncidentBloc]
@@ -89,7 +89,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _handleIncidentEvent(IncidentState state) {
+  void _processIncidentState(IncidentState state) {
     try {
       if (_subscriptions.isNotEmpty) {
         // Clear out current tracking upon states given below
@@ -120,7 +120,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   /// aggregate values after associated source and
   /// track entries are removed.
   ///
-  void _processDeviceEvent(DeviceState state) {
+  void _processDeviceState(DeviceState state) {
     try {
       if (state.isLocationChanged() || state.isStatusChanged()) {
         final device = state.data as Device;
@@ -171,7 +171,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   ///
   /// Event [UnitDeleted] will delete associated [Tracking].
   ///
-  void _handleUnitEvent(UnitState state) {
+  void _processUnitState(UnitState state) {
     try {
       if (state.isCreated() && state.isTracked() && !state.isRetired()) {
         final unit = (state as UnitCreated).data;
@@ -234,7 +234,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   ///
   /// Event [PersonnelDeleted] will delete associated [Tracking].
   ///
-  void _handlePersonnelEvent(PersonnelState state) {
+  void _processPersonnelState(PersonnelState state) {
     try {
       if (state.isCreated() && state.isTracked() && !state.isRetired()) {
         final personnel = (state as PersonnelCreated).data;
@@ -279,7 +279,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   /// Dispatches [TrackingMessage]s from
   /// [TrackingService] as an internal [_HandleMessage]
   /// command processed by method [_process]
-  void _handleMessage(TrackingMessage event) {
+  void _processMessage(TrackingMessage event) {
     if (repo.containsKey(event.uuid)) {
       add(_HandleMessage(
         event,

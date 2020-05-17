@@ -45,7 +45,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           routeWriter: false,
         );
 
-  final _controller = IncidentMapController();
+  final _controller = MapWidgetController();
 
   Personnel _personnel;
   StreamGroup<dynamic> _group;

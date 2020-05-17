@@ -39,14 +39,14 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
 
   Position _current;
   MapSearchField _searchField;
-  IncidentMapController _mapController;
+  MapWidgetController _mapController;
 
   StreamController<LatLng> _changes;
 
   @override
   void initState() {
     super.initState();
-    _mapController = IncidentMapController();
+    _mapController = MapWidgetController();
     _changes = StreamController<LatLng>();
     // TODO: Use device location as default location
     _current = _ensurePosition();

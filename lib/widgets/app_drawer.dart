@@ -51,16 +51,16 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  ListTile _buildMissionsPageAction(bool isUnset, BuildContext context) {
-    return ListTile(
-      enabled: !isUnset,
-      leading: const Icon(Icons.assignment),
-      title: Text('Oppdrag', style: TextStyle(fontSize: 14)),
-      onTap: () {
-        Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_MISSION_LIST);
-      },
-    );
-  }
+//  ListTile _buildMissionsPageAction(bool isUnset, BuildContext context) {
+//    return ListTile(
+//      enabled: !isUnset,
+//      leading: const Icon(Icons.assignment),
+//      title: Text('Oppdrag', style: TextStyle(fontSize: 14)),
+//      onTap: () {
+//        Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_MISSION_LIST);
+//      },
+//    );
+//  }
 
   ListTile _buildLogoutAction(User user, BuildContext context, UserBloc userBloc) {
     return ListTile(

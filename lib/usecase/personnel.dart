@@ -53,7 +53,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
     // Wait for tracking is created
     final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
-      params.bloc,
+      params.context.bloc<TrackingBloc>(),
       map: (state) => state.data,
       test: (state) => state.data.uuid == personnel.tracking.uuid,
     );

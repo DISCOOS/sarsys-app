@@ -4,6 +4,7 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
+import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -23,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:uuid/uuid.dart';
 
 class PersonnelEditor extends StatefulWidget {
   const PersonnelEditor({
@@ -561,13 +564,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   void _submit() async {
     if (_formKey.currentState.validate() && (managed || _affiliationKey.currentState.validate())) {
       _formKey.currentState.save();
-      final affiliation = managed ? widget.personnel.affiliation : _affiliationKey.currentState.save();
+      final create = widget.personnel == null;
 
       // Get personnel from current state
-      var personnel = (widget.personnel == null
-              ? Personnel.fromJson(_formKey.currentState.value)
-              : widget.personnel.withJson(_formKey.currentState.value))
-          .cloneWith(affiliation: affiliation);
+      var personnel = create ? _createPersonnel() : _updatePersonnel();
 
       var response = true;
       if (PersonnelStatus.Retired == personnel.status && personnel.status != widget?.personnel?.status) {
@@ -593,6 +593,19 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       setState(() {});
     }
   }
+
+  Affiliation _toAffiliation() => managed ? widget.personnel.affiliation : _affiliationKey.currentState.save();
+
+  Personnel _createPersonnel() => Personnel.fromJson(_formKey.currentState.value).cloneWith(
+        uuid: Uuid().v4(),
+        affiliation: _toAffiliation(),
+        // Backend will use this as tuuid to create new tracking
+        tracking: AggregateRef.fromType<Tracking>(Uuid().v4()),
+      );
+
+  Personnel _updatePersonnel() => widget.personnel.withJson(_formKey.currentState.value).cloneWith(
+        affiliation: _toAffiliation(),
+      );
 
   Position _preparePosition() {
     final position = _formKey.currentState.value['position'] == null

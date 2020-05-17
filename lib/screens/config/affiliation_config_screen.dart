@@ -22,7 +22,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
       backgroundColor: Colors.white,
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Tihørighet"),
+        title: Text("Tilhørighet"),
         automaticallyImplyLeading: true,
         centerTitle: false,
         leading: IconButton(
