@@ -122,6 +122,15 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
     }
   }
 
+  void _assertData(Personnel data) {
+    if (data?.uuid == null) {
+      throw ArgumentError(
+        "Personnel have no uuid",
+      );
+    }
+    TrackingUtils.assertRef(data);
+  }
+
   /// Fetch personnel from [service]
   Future<List<Personnel>> load() async {
     _assertState();
@@ -218,7 +227,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   }
 
   Future<PersonnelState> _create(CreatePersonnel command) async {
-    assertData(command.data);
+    _assertData(command.data);
     var personnel = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
@@ -228,7 +237,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   }
 
   Future<PersonnelState> _update(UpdatePersonnel command) async {
-    assertData(command.data);
+    _assertData(command.data);
     final previous = repo[command.data.uuid];
     final personnel = await repo.update(command.data);
     return _toOK(
@@ -239,7 +248,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   }
 
   Future<PersonnelState> _delete(DeletePersonnel command) async {
-    assertData(command.data);
+    _assertData(command.data);
     final personnel = await repo.delete(command.data.uuid);
     return _toOK(
       command,
@@ -310,15 +319,6 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
     _subscriptions.clear();
     await repo.dispose();
     return super.close();
-  }
-
-  void assertData(Personnel data) {
-    if (data?.uuid == null) {
-      throw ArgumentError(
-        "Personnel have no uuid",
-      );
-    }
-    TrackingUtils.assertRef(data);
   }
 }
 

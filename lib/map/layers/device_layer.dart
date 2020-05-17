@@ -86,7 +86,7 @@ class DeviceLayer extends MapPlugin {
 
   Track _toTrack(Map<String, Set<Tracking>> trackings, Device device) {
     final tracking = trackings[device.uuid]?.first;
-    return TrackingUtils.find(tracking.tracks, device.uuid);
+    return tracking != null ? TrackingUtils.find(tracking.tracks, device.uuid) : null;
   }
 
   _buildTrack(

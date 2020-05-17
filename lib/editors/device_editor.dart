@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:uuid/uuid.dart';
 
 class DeviceEditor extends StatefulWidget {
   final Device device;
@@ -130,7 +131,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
         labelText: "Navn",
         filled: true,
         enabled: false,
-        isDense: true,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -160,7 +160,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
         hintText: 'Skriv inn',
         filled: true,
         enabled: true,
-        isDense: true,
         labelText: 'Nummer',
         suffix: GestureDetector(
           child: Icon(
@@ -263,7 +262,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
       decoration: InputDecoration(
         hintText: 'Skriv inn',
         filled: true,
-        isDense: true,
         labelText: 'Alias',
         suffix: GestureDetector(
           child: Icon(
@@ -352,21 +350,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
         onChanged: (point) => setState(() {}),
       );
 
-  void _submit(BuildContext context) async {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
-      var device = widget.device == null
-          ? Device.fromJson(_formKey.currentState.value).cloneWith(
-              status: DeviceStatus.Unavailable,
-            )
-          : widget.device.withJson(_formKey.currentState.value);
-      Navigator.pop(context, device);
-    } else {
-      // Show errors
-      setState(() {});
-    }
-  }
-
   DeviceType _getActualType(DeviceType defaultValue) {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('type') == true
@@ -387,4 +370,25 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ? Device.fromJson(values).number ?? widget?.device?.number
         : widget?.device?.number;
   }
+
+  void _submit(BuildContext context) async {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      final create = widget.device == null;
+      var device = create ? _createDevice() : _updateDevice();
+      Navigator.pop(context, device);
+    } else {
+      // Show errors
+      setState(() {});
+    }
+  }
+
+  Device _createDevice() {
+    return Device.fromJson(_formKey.currentState.value).cloneWith(
+      uuid: Uuid().v4(),
+      status: DeviceStatus.Unavailable,
+    );
+  }
+
+  Device _updateDevice() => widget.device.withJson(_formKey.currentState.value);
 }

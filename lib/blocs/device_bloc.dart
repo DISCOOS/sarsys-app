@@ -104,6 +104,14 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
     }
   }
 
+  void _assertData(Device data) {
+    if (data?.uuid == null) {
+      throw ArgumentError(
+        "Device have no uuid",
+      );
+    }
+  }
+
   /// Fetch [devices] from [service]
   @override
   Future<List<Device>> load() async {
@@ -210,6 +218,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   }
 
   Future<DeviceState> _create(CreateDevice command) async {
+    _assertData(command.data);
     var device = await repo.create(command.iuuid, command.data);
     return _toOK(
       command,
@@ -219,6 +228,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   }
 
   Future<DeviceState> _update(UpdateDevice command) async {
+    _assertData(command.data);
     final previous = repo[command.data.uuid];
     final device = await repo.update(command.data);
     return _toOK(
@@ -229,6 +239,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   }
 
   Future<DeviceState> _delete(DeleteDevice command) async {
+    _assertData(command.data);
     final device = await repo.delete(command.data.uuid);
     return _toOK(
       command,

@@ -335,12 +335,15 @@ class DeviceInfoPanel extends StatelessWidget {
     );
   }
 
-  Iterable<Position> _toTrack(Tracking tracking) =>
-      TrackingUtils.find(
-        tracking.tracks,
-        device.uuid,
-      )?.positions ??
-      [];
+  Iterable<Position> _toTrack(Tracking tracking) {
+    return (tracking != null
+            ? TrackingUtils.find(
+                tracking.tracks,
+                device.uuid,
+              )?.positions
+            : null) ??
+        [];
+  }
 
   Row _buildEffortInfo(BuildContext context) {
     final track = _toTrack(tracking);
@@ -386,7 +389,7 @@ class DeviceInfoPanel extends StatelessWidget {
                 _buildCreateAction(context),
                 _buildAddToUnitAction(context),
               ],
-              if (device.manual) _buildDeleteAction(context),
+              if (device.manual == true) _buildDeleteAction(context),
             ],
           ),
           data: ButtonBarThemeData(

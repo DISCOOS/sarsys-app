@@ -62,7 +62,7 @@ class Device extends Positionable<Map<String, dynamic>> {
       uuid: clone.uuid ?? this.uuid,
       type: clone.type ?? this.type,
       alias: clone.alias ?? this.alias,
-      manual: clone.alias ?? this.manual,
+      manual: clone.manual ?? this.manual,
       position: clone.position ?? this.position,
       number: clone.number ?? this.number,
       status: clone.status ?? this.status,
@@ -74,6 +74,7 @@ class Device extends Positionable<Map<String, dynamic>> {
 
   /// Clone device and set given location
   Device cloneWith({
+    String uuid,
     DeviceType type,
     DeviceStatus status,
     String alias,
@@ -85,7 +86,7 @@ class Device extends Positionable<Map<String, dynamic>> {
     AggregateRef<Incident> allocatedTo,
   }) {
     return Device(
-      uuid: this.uuid,
+      uuid: uuid ?? this.uuid,
       type: type ?? this.type,
       alias: alias ?? this.alias,
       number: number ?? this.number,
