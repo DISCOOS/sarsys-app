@@ -369,11 +369,39 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   /// Clear all states from local storage
   Future<Iterable<T>> clear({bool compact = true}) async {
     final Iterable<T> elements = values.toList();
-    if (isReady) {
+    if (_states?.isOpen == true) {
       if (compact) {
         await _states.compact();
       }
       await _states.clear();
+    }
+    return List.unmodifiable(elements);
+  }
+
+  /// Evict states from local storage
+  Future<Iterable<T>> evict({
+    bool remote = true,
+    bool local = false,
+    bool compact = true,
+  }) async {
+    if (remote && local) {
+      return clear();
+    }
+    final Iterable<T> elements = values.toList();
+    if (_states?.isOpen == true) {
+      final keys = [];
+      _states.keys.forEach((key) {
+        final state = _states.get(key);
+        if (remote && state.isRemote) {
+          keys.add(key);
+        } else if (local && state.isLocal) {
+          keys.add(key);
+        }
+      });
+      await _states.deleteAll(keys);
+      if (compact) {
+        await _states.compact();
+      }
     }
     return List.unmodifiable(elements);
   }

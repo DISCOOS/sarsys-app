@@ -32,7 +32,6 @@ T putPageState<T>(BuildContext context, String identifier, T value, {bool write 
 }
 
 Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {BuildContext context}) async {
-  // TODO: Store app_state using Hive
   final json = readFromFile(await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
   if (json != null) {
     bucket.writeState(context, json[RouteWriter.STATE], identifier: RouteWriter.STATE);
@@ -46,6 +45,11 @@ Future<PageStorageBucket> readPageStorageBucket(PageStorageBucket bucket, {Build
       (state) => MapWidgetStateModel.fromJson(state),
       defaultValue: () => MapWidgetStateModel(),
     );
+  } else {
+    bucket.writeState(context, null, identifier: RouteWriter.STATE);
+    bucket.writeState(context, null, identifier: UnitsPageState.STATE);
+    bucket.writeState(context, null, identifier: DevicesPageState.STATE);
+    bucket.writeState(context, null, identifier: MapWidgetState.STATE);
   }
   return bucket;
 }
@@ -104,4 +108,5 @@ void deleteFile(Directory dir, String fileName) {
 
 Future clearPageStates() async {
   deleteFile(await getApplicationDocumentsDirectory(), PAGE_STORAGE_BUCKET_FILE_PATH);
+  return Future.value();
 }

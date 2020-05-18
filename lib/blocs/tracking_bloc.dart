@@ -914,7 +914,11 @@ class TrackableQuery<T extends Trackable> {
 
     /// Mapping from [Aggregate.uuid] to Aggregate of type [T]
     @required Map<String, T> data,
-  }) : this._data = UnmodifiableMapView(data);
+  }) : this._data = UnmodifiableMapView(_toTracked(data, bloc.repo));
+
+  static Map<String, T> _toTracked<String, T extends Trackable>(Map<String, T> data, TrackingRepository repo) {
+    return Map.from(data)..removeWhere((_, trackable) => !repo.containsKey(trackable.tracking.uuid));
+  }
 
   /// Get map of [Tracking.uuid] to aggregate of type [T]
   ///

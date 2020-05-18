@@ -2,11 +2,9 @@ import 'package:SarSys/core/streams.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/editors/unit_editor.dart';
 import 'package:SarSys/models/Device.dart';
@@ -56,7 +54,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         builder: (context) => PositionEditor(
           next,
           title: "Velg enhetens posisjon",
-          controller: Provider.of<PermissionController>(params.context),
+          controller: params.controller,
         ),
       );
       if (next == null) return dartz.Left(false);
@@ -67,7 +65,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         position: next,
         devices: params.devices,
         personnel: params.personnel,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -110,7 +108,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
       builder: (context) => UnitEditor(
         unit: params.data,
         devices: params.devices,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -153,7 +151,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
       builder: (context) => PositionEditor(
         params.position,
         title: "Sett siste kjente posisjon",
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (position == null) return dartz.Left(false);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -14,6 +15,7 @@ import 'package:SarSys/widgets/coordinate_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PositionEditor extends StatefulWidget {
   final Position position;
@@ -66,8 +68,8 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
         source: PositionSource.manual,
       );
 
-  Object _ensurePosition() => widget.position == null
-      ? LocationService().current ??
+  Object _ensurePosition() => widget.position?.isNotEmpty != true
+      ? LocationService(context.bloc<AppConfigBloc>()).current ??
           Position.now(
             lat: 59.5,
             lon: 10.09,

@@ -253,17 +253,18 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Row _buildIPP(Incident incident) {
+    final isEmpty = incident.ipp?.point?.isNotEmpty != true;
     return Row(
       children: <Widget>[
         Expanded(
           flex: 5,
           child: _buildValueTile(
-            toUTM(incident.ipp?.point),
+            toUTM(incident.ipp?.point, empty: "Ikke oppgitt"),
             label: "IPP",
             subtitle: incident?.ipp?.description,
             icon: Icons.navigation,
-            onIconTap: () => navigateToLatLng(context, toLatLng(incident?.ipp?.point)),
-            onValueTap: () => jumpToPoint(context, center: incident?.ipp?.point, incident: incident),
+            onIconTap: isEmpty ? null : () => navigateToLatLng(context, toLatLng(incident?.ipp?.point)),
+            onValueTap: isEmpty ? null : () => jumpToPoint(context, center: incident?.ipp?.point, incident: incident),
             onValueLongPress: () => copy(
               toUTM(incident?.ipp?.point, prefix: "", empty: "Ingen"),
               widget.onMessage,
@@ -276,6 +277,7 @@ class _IncidentPageState extends State<IncidentPage> {
   }
 
   Row _buildMeetup(Incident incident) {
+    final isEmpty = incident.meetup?.point?.isNotEmpty != true;
     return Row(
       children: <Widget>[
         Expanded(
@@ -285,8 +287,9 @@ class _IncidentPageState extends State<IncidentPage> {
             label: "Oppmøte",
             subtitle: incident?.meetup?.description,
             icon: Icons.navigation,
-            onIconTap: () => navigateToLatLng(context, toLatLng(incident?.meetup?.point)),
-            onValueTap: () => jumpToPoint(context, center: incident?.meetup?.point, incident: incident),
+            onIconTap: isEmpty ? null : () => navigateToLatLng(context, toLatLng(incident?.meetup?.point)),
+            onValueTap:
+                isEmpty ? null : () => jumpToPoint(context, center: incident?.meetup?.point, incident: incident),
             onValueLongPress: () => copy(
               toUTM(incident?.meetup?.point, prefix: "", empty: "Ingen"),
               widget.onMessage,

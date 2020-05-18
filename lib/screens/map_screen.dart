@@ -109,7 +109,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
         onOpenDrawer: () => _scaffoldKey.currentState.openDrawer(),
       );
 
-  void _showCreateItemSheet(context) {
+  void _showCreateItemSheet(BuildContext context) {
     final style = Theme.of(context).textTheme.headline6;
     final isUnset = context.bloc<IncidentBloc>().isUnset;
     showModalBottomSheet(

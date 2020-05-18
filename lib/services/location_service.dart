@@ -1,8 +1,12 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/utils/data_utils.dart' as utils;
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong/latlong.dart';
 import 'dart:async';
 
 import 'package:permission_handler/permission_handler.dart';
@@ -47,6 +51,11 @@ class LocationService {
   Iterable<LocationEvent> get events => List.unmodifiable(_events);
 
   LocationEvent operator [](int index) => _events[index];
+
+  static LatLng toLatLng(Position position) =>
+      position == null ? Defaults.origo : LatLng(position?.latitude, position?.longitude);
+
+  static Point toPoint(Position position) => utils.toPoint(toLatLng(position));
 
   Future<Position> update() async {
     if (_isReady.value) {

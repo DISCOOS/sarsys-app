@@ -32,7 +32,7 @@ class DeviceLayerOptions extends LayerOptions {
     this.showTail = false,
     this.showLabels = true,
     this.onMessage,
-  }) : super(rebuild: bloc.map((_) => null));
+  }) : super(rebuild: bloc.deviceBloc.where((state) => state.isLocationChanged()).map((_) => null));
 }
 
 class DeviceLayer extends MapPlugin {
@@ -58,11 +58,11 @@ class DeviceLayer extends MapPlugin {
 
   Widget _build(BuildContext context, Size size, DeviceLayerOptions options, MapState map) {
     final bounds = map.getBounds();
-    final tracking = options.bloc.asDeviceIds();
+    final ids = options.bloc.asDeviceIds();
     final devices = options.bloc.deviceBloc.devices.values.where(
       (device) => bounds.contains(toLatLng(device.position?.geometry)),
     );
-    return options.bloc.trackings.isEmpty
+    return devices.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
@@ -75,7 +75,7 @@ class DeviceLayer extends MapPlugin {
                           options,
                           map,
                           device,
-                          tracking,
+                          ids,
                         ))
                     .toList(),
               if (options.showLabels) ...devices.map((device) => _buildLabel(context, options, map, device)).toList(),

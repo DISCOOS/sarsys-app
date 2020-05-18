@@ -145,7 +145,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
           if (context.bloc<UserBloc>()?.user?.isCommander == true)
             IconButton(
               icon: Icon(Icons.more_vert),
-              onPressed: () async => await editIncident(context.bloc<IncidentBloc>().selected),
+              onPressed: () => editIncident(context.bloc<IncidentBloc>().selected),
             )
         ];
       case UserScreen.TAB_STATUS:

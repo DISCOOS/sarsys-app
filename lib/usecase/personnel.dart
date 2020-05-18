@@ -1,6 +1,5 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/editors/personnel_editor.dart';
@@ -15,7 +14,6 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
@@ -43,7 +41,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       context: params.overlay.context,
       builder: (context) => PersonnelEditor(
         devices: params.devices,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -85,7 +83,7 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -127,7 +125,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
       builder: (context) => PositionEditor(
         params.position,
         title: "Sett siste kjente posisjon",
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (position == null) return dartz.Left(false);

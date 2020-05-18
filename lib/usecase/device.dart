@@ -1,5 +1,4 @@
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/device_editor.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/models/Device.dart';
@@ -10,7 +9,6 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class DeviceParams extends BlocParams<DeviceBloc, Device> {
   final Unit unit;
@@ -27,7 +25,7 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
     var result = await showDialog<Device>(
       context: params.overlay.context,
       builder: (context) => DeviceEditor(
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -73,7 +71,7 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
       context: params.overlay.context,
       builder: (context) => DeviceEditor(
         device: params.data,
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -100,7 +98,7 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
       builder: (context) => PositionEditor(
         params.data.position,
         title: "Sett siste kjente posisjon",
-        controller: Provider.of<PermissionController>(params.context),
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);

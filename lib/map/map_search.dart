@@ -1,5 +1,6 @@
 import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -339,6 +340,17 @@ class MapSearchEngine {
       _placeGeocoderService.search(query),
       _addressGeocoderService.search(query),
       _localGeocoderService.search(query),
+    ];
+    final results = await Future.wait(futures).catchError(
+      (error, stackTrace) => print(error),
+    );
+    return results.fold<List<GeocodeResult>>([], (fold, results) => fold..addAll(results));
+  }
+
+  Future<List<GeocodeResult>> lookup(Point point) async {
+    final futures = [
+      _addressGeocoderService.lookup(point),
+      _localGeocoderService.lookup(point),
     ];
     final results = await Future.wait(futures).catchError(
       (error, stackTrace) => print(error),

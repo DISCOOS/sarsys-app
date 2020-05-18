@@ -45,7 +45,8 @@ class LocationController {
     this.tickerProvider,
     this.onTrackingChanged,
     this.onLocationChanged,
-  })  : assert(mapController != null, "mapController must not be null"),
+  })  : assert(configBloc != null, "configBloc must not be null"),
+        assert(mapController != null, "mapController must not be null"),
         assert(permissionController != null, "permissionController must not be null"),
         _service = LocationService(configBloc);
 

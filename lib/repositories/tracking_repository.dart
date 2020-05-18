@@ -117,7 +117,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await clear();
+          await evict();
           await Future.wait(response.body.map(
             (unit) => commit(
               StorageState.created(

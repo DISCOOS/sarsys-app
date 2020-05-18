@@ -83,6 +83,14 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
 
   bool _isOn(Incident incident, IncidentState state) => (incident == null || state.data.uuid == incident.uuid);
 
+  void _assertData(Incident data) {
+    if (data?.uuid == null) {
+      throw ArgumentError(
+        "Incident have no uuid",
+      );
+    }
+  }
+
   /// Fetch incidents from [repo]
   Future<List<Incident>> load() async {
     return _dispatch(
@@ -196,6 +204,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
   }
 
   Stream<IncidentState> _create(CreateIncident command) async* {
+    _assertData(command.data);
     // Execute command
     final incident = await repo.create(command.data);
     final unselected = command.selected ? await _unset() : null;
@@ -217,6 +226,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
   }
 
   Stream<IncidentState> _update(UpdateIncident command) async* {
+    _assertData(command.data);
     // Execute command
     var incident = await repo.update(command.data);
     var select = command.selected && command.data.uuid != _iuuid;

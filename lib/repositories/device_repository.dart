@@ -62,7 +62,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await clear();
+          await evict();
           await Future.wait(response.body.map(
             (incident) => commit(
               StorageState.created(

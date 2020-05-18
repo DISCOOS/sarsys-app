@@ -1,7 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
+import 'package:SarSys/core/proj4d.dart';
+import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Point.dart';
@@ -9,6 +15,7 @@ import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -16,7 +23,10 @@ import 'package:SarSys/widgets/position_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class IncidentEditor extends StatefulWidget {
   final Point ipp;
@@ -45,10 +55,19 @@ class _IncidentEditorState extends State<IncidentEditor> {
   IncidentBloc _incidentBloc;
   bool _rememberUnits = true;
   bool _rememberTalkGroups = true;
+  MapSearchEngine _engine;
+
+  Location _ipp;
+  Location _meetup;
+
+  TextEditingController _ippController;
+  TextEditingController _meetupController;
 
   @override
   void initState() {
     super.initState();
+    _ippController = TextEditingController(text: _ipp?.description ?? '');
+    _meetupController = TextEditingController(text: _meetup?.description ?? '');
     _init();
   }
 
@@ -63,6 +82,43 @@ class _IncidentEditorState extends State<IncidentEditor> {
     super.didChangeDependencies();
     _configBloc = context.bloc<AppConfigBloc>();
     _incidentBloc = context.bloc<IncidentBloc>();
+    _engine = MapSearchEngine(
+      Provider.of<Client>(context),
+      Provider.of<BlocController>(context),
+    );
+    _updatePoints();
+    _updateDescriptions();
+  }
+
+  void _updatePoints() {
+    _ipp = widget?.incident?.ipp ?? widget.ipp;
+    if (_ipp?.point?.isNotEmpty != true) {
+      _ipp = _updatePoint(_ipp, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    }
+    _meetup = widget?.incident?.meetup ?? widget.ipp;
+    if (_meetup?.point?.isNotEmpty != true) {
+      _meetup = _updatePoint(_meetup, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    }
+  }
+
+  void _updateDescriptions() async {
+    if (_ipp?.description == null && _ipp?.point?.isNotEmpty == true) {
+      _ipp = await _updateDescription(_ipp, _ipp.point, 'ipp_description');
+      setText(_ippController, _ipp.description);
+      _formKey.currentState?.save();
+    }
+    if (_meetup?.description == null && _meetup?.point?.isNotEmpty == true) {
+      _meetup = await _updateDescription(_meetup, _meetup.point, 'meetup_description');
+      setText(_meetupController, _meetup.description);
+      _formKey.currentState?.save();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ippController.dispose();
+    _meetupController.dispose();
+    super.dispose();
   }
 
   @override
@@ -325,46 +381,58 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   Widget _buildIPPField() => PositionField(
         attribute: 'ipp',
-        initialValue: Position.fromPoint(
-          widget?.incident?.ipp?.point ?? widget.ipp,
-          source: PositionSource.manual,
+        initialValue: toPosition(
+          _ipp?.point,
+          defaultValue: widget.ipp,
         ),
         labelText: "IPP",
         hintText: 'Velg IPP',
         errorText: 'IPP må oppgis',
         controller: widget.controller,
         optional: false,
-        onChanged: (point) => setState(() {}),
-      );
-
-  Widget _buildIPPDescriptionField() => FormBuilderTextField(
-        maxLines: 1,
-        attribute: 'ipp_description',
-        initialValue: widget?.incident?.ipp?.description,
-        decoration: InputDecoration(
-          labelText: "Stedsnavn",
-          filled: true,
-        ),
+        onChanged: (Position position) async {
+          _ipp = _updatePoint(_ipp, position.geometry);
+          _ipp = await _updateDescription(_ipp, position.geometry, 'ipp_description');
+          setText(_ippController, _ipp.description);
+          _formKey.currentState.save();
+          setState(() {});
+        },
       );
 
   Widget _buildMeetupField() => PositionField(
         attribute: 'meetup',
-        initialValue: Position.fromPoint(
-          widget?.incident?.meetup?.point ?? widget.ipp,
-          source: PositionSource.manual,
+        initialValue: toPosition(
+          _meetup?.point,
+          defaultValue: widget.ipp,
         ),
         labelText: "Oppmøtested",
         hintText: 'Velg oppmøtested',
         errorText: 'Oppmøtested må oppgis',
         controller: widget.controller,
         optional: false,
-        onChanged: (point) => setState(() {}),
+        onChanged: (Position position) async {
+          _meetup = _updatePoint(_meetup, position.geometry);
+          _meetup = await _updateDescription(_meetup, position.geometry, 'meetup_description');
+          setText(_meetupController, _meetup.description);
+          _formKey.currentState.save();
+          setState(() {});
+        },
+      );
+
+  Widget _buildIPPDescriptionField() => FormBuilderTextField(
+        maxLines: 1,
+        attribute: 'ipp_description',
+        controller: _ippController,
+        decoration: InputDecoration(
+          labelText: "Stedsnavn",
+          filled: true,
+        ),
       );
 
   Widget _buildMeetupDescriptionField() => FormBuilderTextField(
         maxLines: 1,
         attribute: 'meetup_description',
-        initialValue: widget?.incident?.meetup?.description,
+        controller: _meetupController,
         decoration: InputDecoration(
           labelText: "Stedsnavn",
           filled: true,
@@ -566,6 +634,69 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
+  Location _updatePoint(Location location, Point point) {
+    return location?.cloneWith(
+          point: point,
+        ) ??
+        Location(point: point);
+  }
+
+  Future<Location> _updateDescription(Location location, Point point, String attribute) async {
+    try {
+      final description = await _lookup(point);
+      if (_formKey.currentState != null) {
+        _formKey.currentState.setAttributeValue(attribute, description);
+        _formKey.currentState.fields[attribute].currentState.didChange(description);
+        _formKey.currentState.save();
+      }
+      return location.cloneWith(
+        description: description,
+      );
+    } on SocketException {
+      // Discard connection errors
+    }
+    return location;
+  }
+
+  Future<String> _lookup(Point point) async {
+    if (point?.isNotEmpty == true) {
+      final results = await _engine.lookup(point);
+      if (results.isNotEmpty) {
+        var idx = 0;
+        var current = 0;
+        var distance = double.infinity;
+        results.forEach((result) {
+          final next = ProjMath.eucledianDistance(
+            point.lat,
+            point.lon,
+            result.latitude,
+            result.longitude,
+          );
+          if (next < distance) {
+            current = idx;
+            distance = next;
+          }
+          idx++;
+        });
+        final closest = results.elementAt(current);
+        return closest != null
+            ? '${[
+                closest.title,
+                closest.address,
+              ].join(', ')}'
+            : null;
+      }
+    }
+    return null;
+  }
+
+  Position toPosition(Point point, {Point defaultValue}) {
+    return Position.fromPoint(
+      point ?? defaultValue ?? LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
+      source: PositionSource.manual,
+    );
+  }
+
   _isValid(List<String> fields) {
     var state = _formKey.currentState;
     return _formKey.currentState == null ||
@@ -573,14 +704,17 @@ class _IncidentEditorState extends State<IncidentEditor> {
             fields.length;
   }
 
-  Map<String, dynamic> _toJson() {
+  Map<String, dynamic> _toJson({String uuid}) {
     Map<String, dynamic> json = Map.from(_formKey.currentState.value);
+    if (uuid != null) {
+      json['uuid'] = uuid;
+    }
     json['ipp'] = Location(
-      point: Point.fromJson(json['ipp']),
+      point: Position.fromJson(json['ipp']).geometry,
       description: emptyAsNull(json['ipp_description']),
     ).toJson();
     json['meetup'] = Location(
-      point: Point.fromJson(json['meetup']),
+      point: Position.fromJson(json['meetup']).geometry,
       description: emptyAsNull(json['meetup_description']),
     ).toJson();
     return json;
@@ -610,7 +744,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         }
         Navigator.pop(
           context,
-          Pair<Incident, List<String>>.of(Incident.fromJson(_toJson()).withAuthor(userId), units),
+          Pair<Incident, List<String>>.of(_create(userId), units),
         );
       } else {
         incident = widget.incident.withJson(_toJson(), userId: userId);
@@ -639,6 +773,10 @@ class _IncidentEditorState extends State<IncidentEditor> {
       setState(() {});
     }
   }
+
+  Incident _create(String userId) => Incident.fromJson(
+        _toJson(uuid: Uuid().v4()),
+      ).withAuthor(userId);
 
   void _update(Incident incident) {
     _incidentBloc.update(incident);

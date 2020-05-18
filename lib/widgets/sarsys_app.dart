@@ -143,36 +143,33 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     //
     return _buildWithProviders(
         context: context,
-        child: PageStorage(
-          bucket: widget.bucket,
-          child: MaterialApp(
-            navigatorKey: widget.navigatorKey,
-            navigatorObservers: [RouteWriter.observer],
-            debugShowCheckedModeBanner: false,
-            title: 'SarSys',
-            theme: ThemeData(
-              primaryColor: Color(0xFF0d2149),
-              buttonTheme: ButtonThemeData(
-                height: 36.0,
-                textTheme: ButtonTextTheme.primary,
-              ),
+        child: MaterialApp(
+          navigatorKey: widget.navigatorKey,
+          navigatorObservers: [RouteWriter.observer],
+          debugShowCheckedModeBanner: false,
+          title: 'SarSys',
+          theme: ThemeData(
+            primaryColor: Color(0xFF0d2149),
+            buttonTheme: ButtonThemeData(
+              height: 36.0,
+              textTheme: ButtonTextTheme.primary,
             ),
-            home: _toHome(),
-            onGenerateRoute: (settings) => _toRoute(
-              settings,
-            ),
-            localizationsDelegates: [
-              GlobalWidgetsLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              DefaultMaterialLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              DefaultCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: [
-              const Locale('en', 'US'), // English
-              const Locale('nb', 'NO'), // Norwegian Bokmål
-            ],
           ),
+          home: _toHome(),
+          onGenerateRoute: (settings) => _toRoute(
+            settings,
+          ),
+          localizationsDelegates: [
+            GlobalWidgetsLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            DefaultMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            DefaultCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            const Locale('en', 'US'), // English
+            const Locale('nb', 'NO'), // Norwegian Bokmål
+          ],
         ));
   }
 
@@ -224,8 +221,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else {
       throw StateError("Unexpected application state");
     }
-
-    writePageStorageBucket(widget.bucket);
 
     return MaterialPageRoute(
       builder: builder,
@@ -476,6 +471,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else {
       throw StateError("Unexpected state");
     }
-    return child;
+    return PageStorage(
+      child: child,
+      bucket: widget.bucket,
+    );
   }
 }

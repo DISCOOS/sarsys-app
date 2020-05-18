@@ -108,12 +108,16 @@ class MapWidget extends StatefulWidget {
   /// Control offset from top of map canvas
   final double withControlsOffset;
 
+  /// [GlobalKey] for sharing map state between parent widgets
+  final GlobalKey sharedKey;
+
   MapWidget({
     Key key,
     this.zoom,
     this.center,
     this.incident,
     this.fitBounds,
+    this.sharedKey,
     this.fitBoundOptions = FIT_BOUNDS_OPTIONS,
     this.interactive = true,
     this.withPOIs = true,
@@ -137,7 +141,7 @@ class MapWidget extends StatefulWidget {
     this.readCenter = false,
     this.readLayers = false,
     this.showRetired = false,
-    this.showLayers = MapWidgetState.DEFAULT_LAYERS,
+    this.showLayers = MapWidgetState.ALL_LAYERS,
     this.onTap,
     this.onMessage,
     this.onPositionChanged,
@@ -167,6 +171,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   static const LAYER_COORDS = "Koordinater";
   static const LAYER_SCALE = "Målestokk";
 
+  /// All layers available
   static const ALL_LAYERS = [
     LAYER_POI,
     LAYER_UNIT,
@@ -176,12 +181,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     LAYER_SCALE,
     LAYER_COORDS,
   ];
-  static const DEFAULT_LAYERS = [
+
+  /// Layers enabled by default
+  static const DEFAULT_LAYERS_ENABLED = [
     LAYER_POI,
     LAYER_UNIT,
+    LAYER_PERSONNEL,
     LAYER_SCALE,
   ];
 
+  final _uniqueMapKey = UniqueKey();
   final _searchFieldKey = GlobalKey<MapSearchFieldState>();
 
   BaseMap _currentBaseMap;
@@ -386,13 +395,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _currentBaseMap = map;
   }
 
-  Set<String> _resolveLayers() =>
-      widget.withRead && widget.readLayers ? (_readLayers()) : (_withLayers()..retainAll(widget.showLayers.toSet()));
+  Set<String> _resolveLayers() {
+    final layers = widget.withRead && widget.readLayers ? _readLayers() : _withLayers();
+    return layers;
+  }
 
-  Set<String> _readLayers() => FilterSheet.read(context, STATE_FILTERS, defaultValue: _withLayers())
-    ..retainAll(
-      widget.showLayers.toSet(),
-    );
+  Set<String> _readLayers() => FilterSheet.read(
+        context,
+        STATE_FILTERS,
+        defaultValue: _withLayers()..retainAll(DEFAULT_LAYERS_ENABLED),
+      );
 
   void _ensureMapToolController() {
     if (widget.withControlsTool) {
@@ -521,7 +533,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   Widget _buildMap() {
     _fitToBoundsOnce();
     return FlutterMap(
-      key: widget.incident == null ? GlobalKey() : ObjectKey(widget.incident),
+      key: _mapKey,
       mapController: _mapController,
       options: MapOptions(
         zoom: _zoom,
@@ -550,6 +562,28 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       layers: _setLayerOptions(),
     );
   }
+
+  /// Get actual key to FlutterMap
+  ///
+  /// If FlutterMap is
+  /// located in same position
+  /// in the widget tree FlutterMap
+  /// state will be reused.
+  ///
+  /// If [widget.incident] is given,
+  /// an ObjectKey based on it is
+  /// returned.
+  ///
+  /// If [widget.sharedKey] is
+  /// given, an this key is used,
+  /// which allows for sharing the
+  /// same state across parent widgets
+  /// in the same location in the
+  /// tree
+  ///
+  /// Else a [GlobalKey] will be used.
+  ///
+  Key get _mapKey => widget.incident == null ? widget.sharedKey ?? _uniqueMapKey : ObjectKey(widget.incident);
 
   bool get isFollowing => _isLocating.value.locked || _readState(STATE_FOLLOWING, defaultValue: false);
 
@@ -925,18 +959,20 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         initial: _useLayers,
         identifier: STATE_FILTERS,
         bucket: PageStorage.of(context),
-        onBuild: () => _withLayers().map(
+        onBuild: () => _withLayers(retainOnly: true).map(
           (name) => FilterData(
             key: name,
             title: name,
           ),
         ),
-        onChanged: (Set<String> selected) => setState(() => _useLayers = selected),
+        onChanged: (Set<String> selected) {
+          setState(() => _useLayers = selected);
+        },
       ),
     );
   }
 
-  Set<String> _withLayers() {
+  Set<String> _withLayers({bool retainOnly = false}) {
     final layers = ALL_LAYERS.toList();
     if (!widget.withScaleBar) layers.remove(LAYER_SCALE);
     if (!widget.withCoordsPanel) layers.remove(LAYER_COORDS);
@@ -945,6 +981,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     if (!widget.withPersonnel) layers.remove(LAYER_PERSONNEL);
     if (!widget.withDevices) layers.remove(LAYER_DEVICE);
     if (!widget.withTracking) layers.remove(LAYER_TRACKING);
+    if (retainOnly) {
+      layers.retainWhere((layer) => widget.showLayers.contains(layer));
+    }
     return layers.toSet();
   }
 

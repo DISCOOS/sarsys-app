@@ -128,13 +128,6 @@ class Storage {
     throw 'Storage not initialized';
   }
 
-  static Future clear() async {
-    clearPageStates();
-    // Delete all shared preferences
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.clear();
-  }
-
   static Future destroy({bool reinitialize = false}) async {
     _initialized = false;
     try {
@@ -158,6 +151,10 @@ class Storage {
 
     // Delete content in secure storage
     await _storage.deleteAll();
+
+    // Delete all page states
+    await clearPageStates();
+
     // Delete all shared preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();

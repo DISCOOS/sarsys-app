@@ -38,7 +38,7 @@ String toUTM(
   String prefix = "UTM",
   String empty = "Velg",
 }) {
-  if (point == null) return empty;
+  if (point?.isNotEmpty != true) return empty;
   var src = ProjCoordinate.from2D(point.lon, point.lat);
   var proj = toUTMProj(zone: zone, isSouth: isSouth);
   var dst = proj.project(src);

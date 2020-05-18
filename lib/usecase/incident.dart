@@ -3,7 +3,6 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/incident_editor.dart';
@@ -19,7 +18,6 @@ import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/extensions.dart';
@@ -44,13 +42,12 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data == null, "Incident should not be supplied");
-    final controller = Provider.of<PermissionController>(params.context);
 
     var result = await showDialog<Pair<Incident, List<String>>>(
       context: params.overlay.context,
       builder: (context) => IncidentEditor(
         ipp: params.ipp,
-        controller: controller,
+        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -124,7 +121,7 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
       'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
     );
 
-    if (join) {
+    if (join == true) {
       await params.bloc.select(params.data.uuid);
       await waitThoughtStates(
         params.context.bloc<PersonnelBloc>(),
@@ -209,7 +206,6 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data != null, "Incident is required");
-    final controller = Provider.of<PermissionController>(params.context);
 
     var incident = await showDialog<Incident>(
       context: params.overlay.context,
@@ -217,7 +213,7 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
       builder: (context) => IncidentEditor(
         incident: params.data,
         ipp: params.ipp,
-        controller: controller,
+        controller: params.controller,
       ),
     );
     if (incident == null) return dartz.Left(false);

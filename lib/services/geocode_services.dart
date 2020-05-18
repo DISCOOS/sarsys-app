@@ -414,7 +414,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
   String _prepare(Object object) => "$object".replaceAll(RegExp(r'\s*'), '').toLowerCase();
 }
 
-class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
+class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService, GeocodeSearchPoint {
   @override
   Client get client => null;
 
@@ -434,23 +434,49 @@ class LocalGeocoderService with GeocodeSearchQuery implements GeocodeService {
     }
   }
 
-  List<GeocodeResult> _toSearchResults(List<Address> addresses) => addresses
-      .map(
-        (address) => GeocodeResult(
-          icon: Icons.home,
-          title: "${address.thoroughfare ?? address.featureName} ${address.subThoroughfare ?? ''}",
-          address: _toAddress(address),
-          position: toUTM(Point.fromCoords(
-            lat: address.coordinates.latitude,
-            lon: address.coordinates.longitude,
-          )),
-          latitude: address.coordinates.latitude,
-          longitude: address.coordinates.longitude,
-          type: GeocodeType.Object,
-          source: name,
-        ),
-      )
-      .toList();
+  @override
+  Future<List<GeocodeResult>> lookup(
+    Point point, {
+    String title,
+    IconData icon,
+    GeocodeType type,
+    int radius = 20,
+  }) async {
+    try {
+      var results = await Geocoder.local.findAddressesFromCoordinates(Coordinates(
+        point.lat,
+        point.lon,
+      ));
+      return _toSearchResults(results);
+    } on Exception {
+      return [];
+    }
+  }
+
+  List<GeocodeResult> _toSearchResults(
+    List<Address> addresses, {
+    String title,
+    IconData icon,
+    GeocodeType type,
+    int radius = 20,
+  }) =>
+      addresses
+          .map(
+            (address) => GeocodeResult(
+              icon: icon,
+              title: title ?? "${address.thoroughfare ?? address.featureName} ${address.subThoroughfare ?? ''}",
+              address: _toAddress(address),
+              position: toUTM(Point.fromCoords(
+                lat: address.coordinates.latitude,
+                lon: address.coordinates.longitude,
+              )),
+              latitude: address.coordinates.latitude,
+              longitude: address.coordinates.longitude,
+              type: type ?? GeocodeType.Object,
+              source: name,
+            ),
+          )
+          .toList();
 
   static String _toAddress(Address address) => [
         [

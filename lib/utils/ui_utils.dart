@@ -328,7 +328,7 @@ void jumpToMe(
   BuildContext context, {
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) async {
-  final service = LocationService(BlocProvider.of<AppConfigBloc>(context));
+  final service = LocationService(context.bloc<AppConfigBloc>());
   var status = service.status;
   if (PermissionStatus.unknown == status) {
     status = await service.configure();
@@ -365,7 +365,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   final url = Platform.isIOS ? "comgooglemaps://?q" : "google.navigation:q";
   var success = await launch("$url=${point.latitude},${point.longitude}");
   if (success == false && Platform.isIOS) {
-    final service = LocationService(BlocProvider.of<AppConfigBloc>(context));
+    final service = LocationService(context.bloc<AppConfigBloc>());
     var status = service.status;
     if (PermissionStatus.unknown == status) {
       status = await service.configure();
