@@ -90,6 +90,8 @@ void runAppWithCatcher(Widget app, String sentryDns) {
   var exceptions = [
     // Silence map tile cache host lookup
     "SocketException: Failed host lookup",
+    // Silence flutter_cache_manager exceptions
+    "HttpExceptionWithStatus",
     // Silence general map tile fetch failures thrown by FlutterMap
     "FetchFailure",
     "FileSystemException: Cannot open file",
