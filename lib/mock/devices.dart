@@ -176,11 +176,12 @@ class DeviceServiceMock extends Mock implements DeviceService {
         devices = devicesRepo.putIfAbsent(iuuid, () => {});
       }
       var device = _.positionalArguments[1] as Device;
+      final duuid = device.uuid;
       Position center = _toCenter(bloc);
       if (simulate) {
         device = _simulate(
           Device(
-            uuid: "$iuuid:d:${randomAlphaNumeric(8).toLowerCase()}",
+            uuid: duuid,
             type: device.type,
             status: device.status,
             position: device.position ??

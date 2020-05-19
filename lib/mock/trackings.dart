@@ -300,7 +300,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }) {
 //    final position = tracking.position;
     final sources = tracking.sources;
-    final tuuid = iuuid.startsWith('a:') ? "$iuuid:t:${randomAlphaNumeric(8).toLowerCase()}" : tracking.uuid;
+    final tuuid = tracking.uuid;
 
     // Sanity checks
     final found = sources.where(((source) => s2t.containsKey(source.uuid)));

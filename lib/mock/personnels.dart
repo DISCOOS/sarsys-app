@@ -134,9 +134,9 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
       final iuuid = _.positionalArguments[0];
       final Personnel personnel = _.positionalArguments[1];
       final personnels = personnelsRepo.putIfAbsent(iuuid, () => {});
-      final String uuid = iuuid.startsWith('a:') ? "$iuuid:p:${randomAlphaNumeric(8).toLowerCase()}" : personnel.uuid;
+      final String puuid = personnel.uuid;
       return ServiceResponse.ok(
-        body: personnels.putIfAbsent(uuid, () => personnel.cloneWith(uuid: uuid)),
+        body: personnels.putIfAbsent(puuid, () => personnel.cloneWith(uuid: puuid)),
       );
     });
 
