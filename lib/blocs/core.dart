@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
@@ -92,16 +93,28 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
 /// [BlocEvent] bus implementation
 class BlocEventBus {
   /// Registered event routes from Type to to handlers
-  final Map<Type, List<BlocEventHandler>> _routes = {};
+  final Map<Type, Set<BlocEventHandler>> _routes = {};
 
   /// Subscribe to event with given handler
   void subscribe<T extends BlocEvent>(BlocEventHandler<T> handler) => _routes.update(
         typeOf<T>(),
         (handlers) => handlers..add(handler),
-        ifAbsent: () => [handler],
+        ifAbsent: () => {handler},
       );
 
-  void publish(BlocEvent event) => toHandlers(event).forEach((handler) => handler.handle(event));
+  /// Unsubscribe given event handler
+  void unsubscribe<T extends BlocEvent>(BlocEventHandler<T> handler) {
+    final handlers = _routes[typeOf<T>()] ?? {};
+    handlers.remove(handler);
+    if (handlers.isEmpty) {
+      _routes.remove(typeOf<T>());
+    }
+  }
+
+  /// Unsubscribe all event handlers
+  void unsubscribeAll() => _routes.clear();
+
+  void publish(Bloc bloc, BlocEvent event) => toHandlers(event).forEach((handler) => handler.handle(bloc, event));
 
   /// Get all handlers for given event
   Iterable<BlocEventHandler> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
@@ -134,5 +147,25 @@ abstract class BlocEvent<T> extends Equatable {
 }
 
 abstract class BlocEventHandler<T extends BlocEvent> {
-  void handle(T event);
+  void handle(Bloc bloc, T event);
+}
+
+class AppBlocDelegate implements BlocDelegate {
+  AppBlocDelegate(this.bus);
+  final BlocEventBus bus;
+
+  @override
+  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
+    Catcher.reportCheckedError(error, stackTrace);
+  }
+
+  @override
+  void onEvent(Bloc bloc, Object event) {
+    if (event is BlocEvent) {
+      bus.publish(bloc, event);
+    }
+  }
+
+  @override
+  void onTransition(Bloc bloc, Transition transition) {}
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -40,7 +41,15 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import '../models/AppConfig.dart';
 
 class BlocController {
+  BlocController._internal(
+    this.client,
+    DemoParams demo,
+  ) : _demo = demo ?? DemoParams.NONE;
+
   final Client client;
+  final AppBlocDelegate delegate = AppBlocDelegate(BlocEventBus());
+
+  BlocEventBus get bus => delegate.bus;
 
   DemoParams _demo;
   DemoParams get demo => _demo;
@@ -77,11 +86,6 @@ class BlocController {
         toProvider<DeviceBloc>(),
         toProvider<TrackingBloc>(),
       ];
-
-  BlocController._internal(
-    this.client,
-    DemoParams demo,
-  ) : _demo = demo ?? DemoParams.NONE;
 
   /// Create providers for mocking
   factory BlocController.build(
@@ -344,6 +348,9 @@ class BlocController {
   }
 
   void _unset() {
+    // Unsubscribe all event handlers
+    bus.unsubscribeAll();
+
     // Notify blocs not ready, will show splash screen
     _controller.add(_state = BlocControllerState.Empty);
 

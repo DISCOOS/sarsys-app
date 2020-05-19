@@ -12,6 +12,7 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/core/catcher.dart';
@@ -56,7 +57,7 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
 
     // Create incident and  mobilize current user
     final incident = await params.bloc.create(result.left, selected: true);
-    await _mobilize(params, user);
+//    await _mobilize(params, user);
 
     // Create default units?
     if (result.right.isNotEmpty) {

@@ -22,10 +22,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         UpdatableBloc<Personnel>,
         DeletableBloc<Personnel>,
         UnloadableBloc<List<Personnel>> {
+  ///
+  /// Default constructor
+  ///
   PersonnelBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
+
     _subscriptions
       ..add(incidentBloc.listen(
         _processIncidentEvent,

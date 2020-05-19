@@ -36,7 +36,7 @@ void main() async {
   controller.init().then((_) {
     runAppWithCatcher(
       _createApp(controller, bucket),
-      controller.bloc<AppConfigBloc>().config.sentryDns,
+      controller,
     );
   }).catchError((error, stackTrace) {
     runApp(FatalErrorApp(
@@ -68,7 +68,8 @@ Widget _createApp(
 }
 
 // Convenience method for running apps with Catcher
-void runAppWithCatcher(Widget app, String sentryDns) {
+void runAppWithCatcher(Widget app, BlocController controller) {
+  final sentryDns = controller.bloc<AppConfigBloc>().config.sentryDns;
   final localizationOptions = LocalizationOptions(
     "nb",
     notificationReportModeTitle: "En feil har oppstått",
@@ -121,8 +122,8 @@ void runAppWithCatcher(Widget app, String sentryDns) {
   );
 
   // Catch unhandled bloc and repository exceptions
-  BlocSupervisor.delegate = CatcherBlocDelegate();
-  RepositorySupervisor.delegate = CatcherRepositoryDelegate();
+  BlocSupervisor.delegate = controller.delegate;
+  RepositorySupervisor.delegate = AppRepositoryDelegate();
 
   Catcher(
     app,
@@ -143,20 +144,7 @@ void runAppWithCatcher(Widget app, String sentryDns) {
   );
 }
 
-class CatcherBlocDelegate implements BlocDelegate {
-  @override
-  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
-    Catcher.reportCheckedError(error, stackTrace);
-  }
-
-  @override
-  void onEvent(Bloc bloc, Object event) {}
-
-  @override
-  void onTransition(Bloc bloc, Transition transition) {}
-}
-
-class CatcherRepositoryDelegate implements RepositoryDelegate {
+class AppRepositoryDelegate implements RepositoryDelegate {
   @override
   void onError(ConnectionAwareRepository repo, Object error, StackTrace stackTrace) {
     Catcher.reportCheckedError(error, stackTrace);
