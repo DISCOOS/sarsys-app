@@ -42,6 +42,8 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data == null, "Incident should not be supplied");
+    final user = params.context.bloc<UserBloc>().user;
+    assert(user != null, "UserBloc contains no user");
 
     var result = await showDialog<Pair<Incident, List<String>>>(
       context: params.overlay.context,
@@ -52,8 +54,9 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // Create incident
-    final incident = await params.bloc.create(result.left);
+    // Create incident and  mobilize current user
+    final incident = await params.bloc.create(result.left, selected: true);
+    await _mobilize(params, user);
 
     // Create default units?
     if (result.right.isNotEmpty) {
@@ -84,10 +87,13 @@ class SelectIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.uuid != null, "Incident uuid must be given");
+    final user = params.context.bloc<UserBloc>().user;
+    assert(user != null, "UserBloc contains no user");
     try {
       final incident = await params.bloc.select(
         params.uuid,
       );
+      await _mobilize(params, user);
       return dartz.Right(incident);
     } on Exception catch (e, stackTrace) {
       Catcher.reportCheckedError(e, stackTrace);
@@ -108,7 +114,7 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
     final user = params.context.bloc<UserBloc>().user;
     assert(user != null, "UserBloc contains no user");
 
-    if (shouldRegister(params)) {
+    if (_shouldRegister(params)) {
       return await _mobilize(
         params,
         user,
@@ -130,30 +136,6 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
       return _mobilize(params, user);
     }
     return dartz.Left(false);
-  }
-
-  bool shouldRegister(IncidentParams params) => !params.bloc.isUnset && params.data.uuid == params.bloc.selected?.uuid;
-
-  Future<dartz.Either<bool, Personnel>> _mobilize(IncidentParams params, User user) async {
-    try {
-      var personnel = _findPersonnel(params, user);
-      if (personnel == null) {
-        final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-        personnel = await params.context.bloc<PersonnelBloc>().create(Personnel(
-              uuid: Uuid().v4(),
-              userId: user.userId,
-              fname: user.fname,
-              lname: user.lname,
-              phone: user.phone,
-              status: PersonnelStatus.Mobilized,
-              affiliation: org.toAffiliationFromUser(user),
-            ));
-      }
-      return dartz.right(personnel);
-    } on Exception catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
-    }
-    return dartz.left(false);
   }
 }
 
@@ -183,18 +165,6 @@ class LeaveIncident extends UseCase<bool, Personnel, IncidentParams> {
     }
     return dartz.Left(false);
   }
-
-  Future<Personnel> _retire(IncidentParams params, User user) async {
-    var personnel = _findPersonnel(params, user);
-    if (personnel != null) {
-      personnel = await params.context.bloc<PersonnelBloc>().update(
-            personnel.cloneWith(
-              status: PersonnelStatus.Retired,
-            ),
-          );
-    }
-    return personnel;
-  }
 }
 
 Future<dartz.Either<bool, Incident>> editIncident(
@@ -222,9 +192,48 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   }
 }
 
+bool _shouldRegister(
+  IncidentParams params,
+) =>
+    !params.bloc.isUnset && params.data.uuid == params.bloc.selected?.uuid;
+
 Personnel _findPersonnel(IncidentParams params, User user) {
   return params.context.bloc<PersonnelBloc>().find(
     user,
     exclude: const [],
   ).firstOrNull;
+}
+
+Future<dartz.Either<bool, Personnel>> _mobilize(IncidentParams params, User user) async {
+  try {
+    var personnel = _findPersonnel(params, user);
+    if (personnel == null) {
+      final org = await FleetMapService().fetchOrganization(Defaults.orgId);
+      personnel = await params.context.bloc<PersonnelBloc>().create(Personnel(
+            uuid: Uuid().v4(),
+            userId: user.userId,
+            fname: user.fname,
+            lname: user.lname,
+            phone: user.phone,
+            status: PersonnelStatus.Mobilized,
+            affiliation: org.toAffiliationFromUser(user),
+          ));
+    }
+    return dartz.right(personnel);
+  } on Exception catch (e, stackTrace) {
+    Catcher.reportCheckedError(e, stackTrace);
+  }
+  return dartz.left(false);
+}
+
+Future<Personnel> _retire(IncidentParams params, User user) async {
+  var personnel = _findPersonnel(params, user);
+  if (personnel != null) {
+    personnel = await params.context.bloc<PersonnelBloc>().update(
+          personnel.cloneWith(
+            status: PersonnelStatus.Retired,
+          ),
+        );
+  }
+  return personnel;
 }

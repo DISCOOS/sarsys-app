@@ -70,6 +70,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   UserBloc get userBloc => widget.controller.bloc<UserBloc>();
   AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
   IncidentBloc get incidentBloc => widget.controller.bloc<IncidentBloc>();
+  PersonnelBloc get personnelBloc => widget.controller.bloc<PersonnelBloc>();
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
@@ -441,14 +442,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         final _route = Map.from(route);
         final uuid = _route.elementAt('incidentId');
         if (uuid != null) {
-          // On first load bloc's are not loaded yet
-          incidentBloc.firstWhere((state) => state.isLoaded()).then((_) async {
-            _route['incident'] = await selectIncident(uuid);
-            NavigationService().pushReplacementNamed(
-              _route[RouteWriter.FIELD_NAME],
-              arguments: route,
-            );
-          });
+          // Wait for personnel to load
+          // before selecting, This is
+          // an optimization that
+          // prevents user to be added
+          // as personnel multiple times
+          selectOnLoad(_route, uuid, route);
         }
         bool isUnset = incidentBloc.isUnset;
         child = _toScreen(
@@ -475,5 +474,15 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       child: child,
       bucket: widget.bucket,
     );
+  }
+
+  void selectOnLoad(Map _route, uuid, Map route) async {
+    personnelBloc.firstWhere((state) => state.isLoaded()).then((_) async {
+      _route['incident'] = await selectIncident(uuid);
+      NavigationService().pushReplacementNamed(
+        _route[RouteWriter.FIELD_NAME],
+        arguments: route,
+      );
+    });
   }
 }
