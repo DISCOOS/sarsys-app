@@ -1,17 +1,16 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 
+import 'core.dart';
 import 'mixins.dart';
+import 'user_bloc.dart';
 
-class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
+class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBlocError>
     with
         LoadableBloc<List<Incident>>,
         CreatableBloc<Incident>,
@@ -93,7 +92,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
 
   /// Fetch incidents from [repo]
   Future<List<Incident>> load() async {
-    return _dispatch(
+    return dispatch(
       LoadIncidents(),
     );
   }
@@ -103,22 +102,22 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     if (emptyAsNull(uuid) == null) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
-    return _dispatch(SelectIncident(uuid));
+    return dispatch(SelectIncident(uuid));
   }
 
   /// Unselect [selected]
   Future<Incident> unselect() {
-    return _dispatch(UnselectIncident());
+    return dispatch(UnselectIncident());
   }
 
   /// Create given incident
   Future<Incident> create(Incident incident, {bool selected = true}) {
-    return _dispatch<Incident>(CreateIncident(incident, selected: selected));
+    return dispatch<Incident>(CreateIncident(incident, selected: selected));
   }
 
   /// Update given incident
   Future<Incident> update(Incident incident, {bool selected = true}) {
-    return _dispatch(UpdateIncident(incident, selected: selected));
+    return dispatch(UpdateIncident(incident, selected: selected));
   }
 
   /// Delete given incident
@@ -126,48 +125,32 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     if (isEmptyOrNull(uuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
-    return _dispatch(DeleteIncident(uuid));
+    return dispatch(DeleteIncident(uuid));
   }
 
   /// Clear all incidents
   Future<List<Incident>> unload() {
-    return _dispatch(UnloadIncidents());
+    return dispatch(UnloadIncidents());
   }
 
   @override
-  Stream<IncidentState> mapEventToState(IncidentCommand command) async* {
-    try {
-      if (command is LoadIncidents) {
-        yield* _load(command);
-      } else if (command is CreateIncident) {
-        yield* _create(command);
-      } else if (command is UpdateIncident) {
-        yield* _update(command);
-      } else if (command is SelectIncident) {
-        yield* _select(command);
-      } else if (command is DeleteIncident) {
-        yield* _delete(command);
-      } else if (command is UnloadIncidents) {
-        yield* _unload(command);
-      } else if (command is UnselectIncident) {
-        yield await _unselect(command);
-      } else {
-        yield _toError(
-          command,
-          IncidentBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        IncidentBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<IncidentState> execute(IncidentCommand command) async* {
+    if (command is LoadIncidents) {
+      yield* _load(command);
+    } else if (command is CreateIncident) {
+      yield* _create(command);
+    } else if (command is UpdateIncident) {
+      yield* _update(command);
+    } else if (command is SelectIncident) {
+      yield* _select(command);
+    } else if (command is DeleteIncident) {
+      yield* _delete(command);
+    } else if (command is UnloadIncidents) {
+      yield* _unload(command);
+    } else if (command is UnselectIncident) {
+      yield await _unselect(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
@@ -188,7 +171,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     );
 
     // Complete request
-    final loaded = _toOK(
+    final loaded = toOK(
       command,
       IncidentsLoaded(incidents),
       result: repo.values.toList(),
@@ -210,7 +193,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     final unselected = command.selected ? await _unset() : null;
     final selected = command.selected ? await _set(incident) : null;
     // Complete request
-    final created = _toOK<Incident>(
+    final created = toOK(
       command,
       IncidentCreated(incident),
       result: incident,
@@ -234,7 +217,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     final selected = select ? await _set(incident) : null;
     final selectionChanged = unselected != selected;
     // Complete request
-    final updated = _toOK<Incident>(
+    final updated = toOK(
       command,
       IncidentUpdated(incident),
       result: incident,
@@ -260,7 +243,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     // Unselect if was selected
     final unselected = command.data == _iuuid ? await _unset(selected) : null;
     // Complete request
-    final deleted = _toOK<Incident>(
+    final deleted = toOK(
       command,
       IncidentDeleted(incident),
       result: incident,
@@ -278,7 +261,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     List<Incident> incidents = await repo.clear();
     // Complete request
     final unselected = await _unset(selected);
-    final unloaded = _toOK(
+    final unloaded = toOK(
       command,
       IncidentsUnloaded(incidents),
     );
@@ -293,7 +276,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     if (repo.containsKey(command.data)) {
       final incident = repo[command.data];
       final unselected = await _unset();
-      final selected = _toOK(
+      final selected = toOK(
         command,
         await _set(repo[command.data]),
         result: incident,
@@ -307,7 +290,7 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
         }
       }
     } else {
-      yield _toError(
+      yield toError(
         command,
         IncidentBlocError(
           'Incident ${command.data} not found locally',
@@ -332,13 +315,13 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
   Future<IncidentState> _unselect(IncidentCommand command) async {
     final unselected = await _unset();
     if (unselected != null) {
-      return _toOK(
+      return toOK(
         command,
         unselected,
         result: unselected.data,
       );
     }
-    return _toError(
+    return toError(
       command,
       IncidentBlocError('No incident was selected'),
     );
@@ -354,36 +337,6 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     return incident != null ? IncidentUnset(incident) : null;
   }
 
-  // Dispatch and return future
-  Future<T> _dispatch<T>(IncidentCommand<Object, T> command) {
-    add(command);
-    return command.callback.future;
-  }
-
-  // Complete request and return given state to bloc
-  IncidentState _toOK<T>(IncidentCommand event, IncidentState state, {T result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  IncidentState _toError(IncidentCommand event, Object error) {
-    final object = error is IncidentBlocError
-        ? error
-        : IncidentBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    event.callback.completeError(
-      object.data,
-      object.stackTrace,
-    );
-    return object;
-  }
-
   @override
   Future<void> close() async {
     _subscription?.cancel();
@@ -391,17 +344,22 @@ class IncidentBloc extends Bloc<IncidentCommand, IncidentState>
     await repo.dispose();
     return super.close();
   }
+
+  @override
+  IncidentBlocError createError(Object error, {StackTrace stackTrace}) => IncidentBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 }
 
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class IncidentCommand<S, T> extends Equatable {
-  final S data;
-  final Completer<T> callback = Completer();
-  final StackTrace stackTrace = StackTrace.current;
-
-  IncidentCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class IncidentCommand<S, T> extends BlocCommand<S, T> {
+  IncidentCommand(
+    S data, {
+    props = const [],
+  }) : super(data, props);
 }
 
 class LoadIncidents extends IncidentCommand<void, List<Incident>> {
@@ -413,7 +371,7 @@ class LoadIncidents extends IncidentCommand<void, List<Incident>> {
 
 class CreateIncident extends IncidentCommand<Incident, Incident> {
   final bool selected;
-  CreateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
+  CreateIncident(Incident data, {this.selected = true}) : super(data, props: [selected]);
 
   @override
   String toString() => 'CreateIncident {data: $data, selected: $selected}';
@@ -421,7 +379,7 @@ class CreateIncident extends IncidentCommand<Incident, Incident> {
 
 class UpdateIncident extends IncidentCommand<Incident, Incident> {
   final bool selected;
-  UpdateIncident(Incident data, {this.selected = true}) : super(data, [selected]);
+  UpdateIncident(Incident data, {this.selected = true}) : super(data, props: [selected]);
 
   @override
   String toString() => 'UpdateIncident {data: $data, selected: $selected}';
@@ -458,10 +416,12 @@ class UnloadIncidents extends IncidentCommand<void, List<Incident>> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class IncidentState<T> extends Equatable {
-  final T data;
-
-  IncidentState(this.data, [props = const []]) : super([data, ...props]);
+abstract class IncidentState<T> extends BlocEvent<T> {
+  IncidentState(
+    T data, {
+    StackTrace stackTrace,
+    props = const [],
+  }) : super(data, props: props, stackTrace: stackTrace);
 
   bool isUnset() => this is IncidentUnset;
   bool isLoaded() => this is IncidentsLoaded;
@@ -503,7 +463,7 @@ class IncidentsLoaded extends IncidentState<Iterable<Incident>> {
 
 class IncidentCreated extends IncidentState<Incident> {
   final bool selected;
-  IncidentCreated(Incident data, {this.selected = true}) : super(data, [selected]);
+  IncidentCreated(Incident data, {this.selected = true}) : super(data, props: [selected]);
 
   @override
   String toString() => 'IncidentCreated {incident: $data, selected: $selected}';
@@ -511,7 +471,7 @@ class IncidentCreated extends IncidentState<Incident> {
 
 class IncidentUpdated extends IncidentState<Incident> {
   final bool selected;
-  IncidentUpdated(Incident data, {this.selected = true}) : super(data, [selected]);
+  IncidentUpdated(Incident data, {this.selected = true}) : super(data, props: [selected]);
 
   @override
   String toString() => 'IncidentUpdated {incident: $data, selected: $selected}';
@@ -542,8 +502,10 @@ class IncidentsUnloaded extends IncidentState<Iterable<Incident>> {
 /// Error States
 /// ---------------------
 class IncidentBlocError extends IncidentState<Object> {
-  final StackTrace stackTrace;
-  IncidentBlocError(Object error, {this.stackTrace}) : super(error);
+  IncidentBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';

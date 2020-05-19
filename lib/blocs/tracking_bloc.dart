@@ -16,16 +16,15 @@ import 'package:SarSys/models/core.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
-import 'package:bloc/bloc.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import 'core.dart';
 import 'mixins.dart';
 
 typedef void TrackingCallback(VoidCallback fn);
 
-class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
+class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBlocError>
     with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>> {
   TrackingBloc(
     this.repo, {
@@ -394,7 +393,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   /// Load [trackings] from [service]
   Future<List<Tracking>> load() async {
     _assertState();
-    return _dispatch<List<Tracking>>(
+    return dispatch<List<Tracking>>(
       LoadTrackings(_ensureIuuid()),
     );
   }
@@ -419,7 +418,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
             sources,
             calculate: false,
           );
-    return _dispatch(
+    return dispatch<Tracking>(
       UpdateTracking(
         TrackingUtils.calculate(
           next,
@@ -455,7 +454,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
             sources,
             calculate: false,
           );
-    return _dispatch(
+    return dispatch<Tracking>(
       UpdateTracking(
         TrackingUtils.calculate(
           next,
@@ -489,7 +488,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
             sources.map((s) => s.uuid),
             calculate: false,
           );
-    return _dispatch(
+    return dispatch<Tracking>(
       UpdateTracking(
         TrackingUtils.calculate(
           next,
@@ -510,7 +509,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
     TrackingStatus status,
   }) {
     final tracking = _assertExists(tuuid);
-    return _dispatch(
+    return dispatch<Tracking>(
       UpdateTracking(
         TrackingUtils.calculate(
           tracking,
@@ -537,7 +536,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
   /// Unload [trackings] from local storage
   Future<List<Tracking>> unload() {
     _assertState();
-    return _dispatch<List<Tracking>>(
+    return dispatch<List<Tracking>>(
       UnloadTrackings(iuuid),
     );
   }
@@ -573,41 +572,25 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
       );
 
   @override
-  Stream<TrackingState> mapEventToState(TrackingCommand command) async* {
-    try {
-      if (command is LoadTrackings) {
-        yield await _load(command);
-      } else if (command is UpdateTracking) {
-        yield await _update(command);
-      } else if (command is DeleteTracking) {
-        yield await _delete(command);
-      } else if (command is UnloadTrackings) {
-        yield await _unload(command);
-      } else if (command is _HandleMessage) {
-        yield* _process(command);
-      } else {
-        yield _toError(
-          command,
-          TrackingBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        TrackingBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<TrackingState> execute(TrackingCommand command) async* {
+    if (command is LoadTrackings) {
+      yield await _load(command);
+    } else if (command is UpdateTracking) {
+      yield await _update(command);
+    } else if (command is DeleteTracking) {
+      yield await _delete(command);
+    } else if (command is UnloadTrackings) {
+      yield await _unload(command);
+    } else if (command is _HandleMessage) {
+      yield* _process(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
   Future<TrackingState> _load(LoadTrackings command) async {
     var trackings = await repo.load(command.data);
-    return _toOK(
+    return toOK(
       command,
       TrackingsLoaded(repo.keys),
       result: trackings,
@@ -616,7 +599,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
 
   Future<TrackingState> _update(UpdateTracking command) async {
     final tracking = await repo.update(command.data);
-    return _toOK(
+    return toOK(
       command,
       TrackingUpdated(tracking),
       result: tracking,
@@ -625,7 +608,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
 
   Future<TrackingState> _delete(DeleteTracking command) async {
     final tracking = await repo.delete(command.data.uuid);
-    return _toOK(
+    return toOK(
       command,
       TrackingDeleted(tracking),
       result: tracking,
@@ -634,7 +617,7 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
 
   Future<TrackingState> _unload(UnloadTrackings command) async {
     final trackings = await repo.unload();
-    return _toOK(
+    return toOK(
       command,
       TrackingsUnloaded(trackings),
       result: trackings,
@@ -704,35 +687,19 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
     return next;
   }
 
-  // Dispatch and return future
-  Future<T> _dispatch<T>(TrackingCommand<Object, T> command) {
-    add(command);
-    return command.callback.future;
+  Tracking _assertExists(String tuuid) {
+    final tracking = repo[tuuid];
+    if (tracking == null) {
+      throw TrackingNotFoundException(tuuid, state);
+    }
+    return tracking;
   }
 
-  // Complete request and return given state to bloc
-  Future<TrackingState> _toOK<T>(TrackingCommand event, TrackingState state, {T result}) async {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  TrackingState _toError(TrackingCommand event, Object error) {
-    final object = error is TrackingBlocError
-        ? error
-        : TrackingBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    event.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return object;
-  }
+  @override
+  TrackingBlocError createError(Object error, {StackTrace stackTrace}) => TrackingBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 
   @override
   Future<void> close() async {
@@ -741,24 +708,16 @@ class TrackingBloc extends Bloc<TrackingCommand, TrackingState>
     await repo.dispose();
     return super.close();
   }
-
-  Tracking _assertExists(String tuuid) {
-    final tracking = repo[tuuid];
-    if (tracking == null) {
-      throw TrackingNotFoundException(tuuid, state);
-    }
-    return tracking;
-  }
 }
 
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class TrackingCommand<T, R> extends Equatable {
-  final T data;
-  final Completer<R> callback = Completer();
-
-  TrackingCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class TrackingCommand<D, R> extends BlocCommand<D, R> {
+  TrackingCommand(
+    D data, {
+    props = const [],
+  }) : super(data, props);
 }
 
 class LoadTrackings extends TrackingCommand<String, List<Tracking>> {
@@ -802,23 +761,18 @@ class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class TrackingState<T> extends Equatable {
-  final T data;
-
-  TrackingState(this.data, [props = const []]) : super([data, ...props]);
+abstract class TrackingState<T> extends BlocEvent<T> {
+  TrackingState(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   isEmpty() => this is TrackingsEmpty;
-
   isLoaded() => this is TrackingsLoaded;
-
   isCreated() => this is TrackingCreated;
-
   isUpdated() => this is TrackingUpdated;
-
   isDeleted() => this is TrackingDeleted;
-
   isUnloaded() => this is TrackingsUnloaded;
-
   isError() => this is TrackingBlocError;
 }
 

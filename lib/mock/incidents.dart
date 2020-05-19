@@ -12,7 +12,6 @@ import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
-import 'package:random_string/random_string.dart';
 import 'package:uuid/uuid.dart';
 
 const PASSCODE = 'T123';

@@ -1,20 +1,19 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/services/device_service.dart';
-import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'core.dart';
 import 'mixins.dart';
+import 'incident_bloc.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 
-class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
+class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     with
         LoadableBloc<List<Device>>,
         CreatableBloc<Device>,
@@ -116,7 +115,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   @override
   Future<List<Device>> load() async {
     _assertState();
-    return _dispatch<List<Device>>(
+    return dispatch<List<Device>>(
       LoadDevices(iuuid ?? incidentBloc.selected.uuid),
     );
   }
@@ -125,7 +124,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   @override
   Future<Device> create(Device device) {
     _assertState();
-    return _dispatch<Device>(
+    return dispatch<Device>(
       CreateDevice(iuuid ?? incidentBloc.selected.uuid, device),
     );
   }
@@ -150,7 +149,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   @override
   Future<Device> update(Device device) {
     _assertState();
-    return _dispatch<Device>(
+    return dispatch<Device>(
       UpdateDevice(device),
     );
   }
@@ -159,7 +158,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   @override
   Future<Device> delete(String uuid) {
     _assertState();
-    return _dispatch<Device>(
+    return dispatch<Device>(
       DeleteDevice(repo[uuid]),
     );
   }
@@ -168,49 +167,33 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   @override
   Future<List<Device>> unload() {
     _assertState();
-    return _dispatch<List<Device>>(
+    return dispatch<List<Device>>(
       UnloadDevices(iuuid),
     );
   }
 
   @override
-  Stream<DeviceState> mapEventToState(DeviceCommand command) async* {
-    try {
-      if (command is LoadDevices) {
-        yield await _load(command);
-      } else if (command is CreateDevice) {
-        yield await _create(command);
-      } else if (command is UpdateDevice) {
-        yield await _update(command);
-      } else if (command is DeleteDevice) {
-        yield await _delete(command);
-      } else if (command is _HandleMessage) {
-        yield await _process(command.data);
-      } else if (command is UnloadDevices) {
-        yield await _unload(command);
-      } else {
-        yield _toError(
-          command,
-          DeviceBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        DeviceBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<DeviceState> execute(DeviceCommand command) async* {
+    if (command is LoadDevices) {
+      yield await _load(command);
+    } else if (command is CreateDevice) {
+      yield await _create(command);
+    } else if (command is UpdateDevice) {
+      yield await _update(command);
+    } else if (command is DeleteDevice) {
+      yield await _delete(command);
+    } else if (command is _HandleMessage) {
+      yield await _process(command.data);
+    } else if (command is UnloadDevices) {
+      yield await _unload(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
   Future<DeviceState> _load(LoadDevices command) async {
     var devices = await repo.load(command.data);
-    return _toOK(
+    return toOK(
       command,
       DevicesLoaded(repo.keys),
       result: devices,
@@ -220,7 +203,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   Future<DeviceState> _create(CreateDevice command) async {
     _assertData(command.data);
     var device = await repo.create(command.iuuid, command.data);
-    return _toOK(
+    return toOK(
       command,
       DeviceCreated(device),
       result: device,
@@ -231,7 +214,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
     _assertData(command.data);
     final previous = repo[command.data.uuid];
     final device = await repo.update(command.data);
-    return _toOK(
+    return toOK(
       command,
       DeviceUpdated(device, previous),
       result: device,
@@ -241,7 +224,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
   Future<DeviceState> _delete(DeleteDevice command) async {
     _assertData(command.data);
     final device = await repo.delete(command.data.uuid);
-    return _toOK(
+    return toOK(
       command,
       DeviceDeleted(device),
       result: device,
@@ -250,7 +233,7 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
 
   Future<DeviceState> _unload(UnloadDevices command) async {
     final devices = await repo.unload();
-    return _toOK(
+    return toOK(
       command,
       DevicesUnloaded(devices),
       result: devices,
@@ -277,35 +260,11 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
     );
   }
 
-  // Dispatch and return future
-  Future<T> _dispatch<T>(DeviceCommand<Object, T> command) {
-    add(command);
-    return command.callback.future;
-  }
-
-  // Complete request and return given state to bloc
-  DeviceState _toOK<T>(DeviceCommand event, DeviceState state, {T result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  DeviceState _toError(DeviceCommand command, Object error) {
-    final object = error is DeviceBlocError
-        ? error
-        : DeviceBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    command.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return object;
-  }
+  @override
+  DeviceBlocError createError(Object error, {StackTrace stackTrace}) => DeviceBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 
   @override
   Future<void> close() async {
@@ -319,11 +278,8 @@ class DeviceBloc extends Bloc<DeviceCommand, DeviceState>
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class DeviceCommand<S, T> extends Equatable {
-  final S data;
-  final Completer<T> callback = Completer();
-
-  DeviceCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class DeviceCommand<S, T> extends BlocCommand<S, T> {
+  DeviceCommand(S data, [props = const []]) : super(data, props);
 }
 
 class LoadDevices extends DeviceCommand<String, List<Device>> {
@@ -372,10 +328,12 @@ class UnloadDevices extends DeviceCommand<String, List<Device>> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class DeviceState<T> extends Equatable {
-  final T data;
-
-  DeviceState(this.data, [props = const []]) : super([data, ...props]);
+abstract class DeviceState<T> extends BlocEvent<T> {
+  DeviceState(
+    T data, {
+    StackTrace stackTrace,
+    props = const [],
+  }) : super(data, props: props, stackTrace: stackTrace);
 
   bool isError() => this is DeviceBlocError;
   bool isEmpty() => this is DevicesEmpty;
@@ -443,8 +401,10 @@ class DevicesUnloaded extends DeviceState<List<Device>> {
 /// ---------------------
 
 class DeviceBlocError extends DeviceState<Object> {
-  final StackTrace stackTrace;
-  DeviceBlocError(Object error, {this.stackTrace}) : super(error, [stackTrace]);
+  DeviceBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';

@@ -1,18 +1,18 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/models/AppConfig.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/services/app_config_service.dart';
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 
+import 'core.dart';
+import 'mixins.dart';
+
 typedef void AppConfigCallback(VoidCallback fn);
 
-class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
+class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfigBlocError>
     with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
   AppConfigBloc(this.repo);
   final AppConfigRepository repo;
@@ -30,15 +30,15 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
 
   /// Initialize config from [service]
   @override
-  Future<AppConfig> init() async => _dispatch(InitAppConfig());
+  Future<AppConfig> init() async => dispatch(InitAppConfig());
 
   /// Load config from [service]
   @override
-  Future<AppConfig> load() async => _dispatch(LoadAppConfig());
+  Future<AppConfig> load() async => dispatch(LoadAppConfig());
 
   /// Load config from [service]
   @override
-  Future<AppConfig> update(AppConfig data) async => _dispatch(UpdateAppConfig(data));
+  Future<AppConfig> update(AppConfig data) async => dispatch(UpdateAppConfig(data));
 
   /// Update with given settings
   Future<AppConfig> updateWith({
@@ -96,49 +96,27 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
   }
 
   Future<AppConfig> delete() {
-    return _dispatch<AppConfig>(DeleteAppConfig());
-  }
-
-  // Dispatch and return future
-  Future<T> _dispatch<T>(AppConfigCommand<T> command) {
-    add(command);
-    return command.callback.future;
+    return dispatch<AppConfig>(DeleteAppConfig());
   }
 
   @override
-  Stream<AppConfigState> mapEventToState(AppConfigCommand command) async* {
-    try {
-      if (command is InitAppConfig) {
-        yield await _init(command);
-      } else if (command is LoadAppConfig) {
-        yield await _load(command);
-      } else if (command is UpdateAppConfig) {
-        yield await _update(command);
-      } else if (command is DeleteAppConfig) {
-        yield await _delete(command);
-      } else {
-        yield _toError(
-          command,
-          AppConfigBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        AppConfigBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<AppConfigState> execute(AppConfigCommand command) async* {
+    if (command is InitAppConfig) {
+      yield await _init(command);
+    } else if (command is LoadAppConfig) {
+      yield await _load(command);
+    } else if (command is UpdateAppConfig) {
+      yield await _update(command);
+    } else if (command is DeleteAppConfig) {
+      yield await _delete(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
   Future<AppConfigState> _init(InitAppConfig event) async {
     var config = await repo.init();
-    return _toOK(
+    return toOK(
       event,
       AppConfigInitialized(config),
       result: config,
@@ -147,7 +125,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
 
   Future<AppConfigState> _load(LoadAppConfig event) async {
     var config = await repo.load();
-    return _toOK(
+    return toOK(
       event,
       AppConfigLoaded(config),
       result: config,
@@ -156,7 +134,7 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
 
   Future<AppConfigState> _update(UpdateAppConfig event) async {
     var config = await repo.update(event.data);
-    return _toOK(
+    return toOK(
       event,
       AppConfigUpdated(config),
       result: config,
@@ -165,36 +143,18 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
 
   Future<AppConfigState> _delete(DeleteAppConfig event) async {
     var config = await repo.delete();
-    return _toOK(
+    return toOK(
       event,
       AppConfigDeleted(config),
       result: config,
     );
   }
 
-  // Complete request and return given state to bloc
-  AppConfigState _toOK(AppConfigCommand event, AppConfigState state, {AppConfig result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
   // Complete with error and return response as error state to bloc
-  AppConfigState _toError(AppConfigCommand command, Object error) {
-    final object = error is AppConfigBlocError
-        ? error
-        : AppConfigBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    command.callback.completeError(
-      object,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return object;
-  }
+  AppConfigBlocError createError(Object error, {StackTrace stackTrace}) => AppConfigBlocError(
+        error,
+        stackTrace: stackTrace,
+      );
 
   @override
   Future<void> close() async {
@@ -206,11 +166,8 @@ class AppConfigBloc extends Bloc<AppConfigCommand, AppConfigState>
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class AppConfigCommand<T> extends Equatable {
-  final T data;
-  final Completer<T> callback = Completer();
-
-  AppConfigCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class AppConfigCommand<T> extends BlocCommand<T, T> {
+  AppConfigCommand(T data, [props = const []]) : super(data, props);
 }
 
 class InitAppConfig extends AppConfigCommand<AppConfig> {
@@ -244,10 +201,12 @@ class DeleteAppConfig extends AppConfigCommand<AppConfig> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class AppConfigState<T> extends Equatable {
-  final T data;
-
-  AppConfigState(this.data, [props = const []]) : super([data, ...props]);
+abstract class AppConfigState<T> extends BlocEvent {
+  AppConfigState(
+    T data, {
+    StackTrace stackTrace,
+    props = const [],
+  }) : super(data, props: props, stackTrace: stackTrace);
 
   isEmpty() => this is AppConfigEmpty;
   isInitialized() => this is AppConfigInitialized;
@@ -296,8 +255,10 @@ class AppConfigDeleted extends AppConfigState<AppConfig> {
 /// Error States
 /// ---------------------
 class AppConfigBlocError extends AppConfigState<Object> {
-  final StackTrace stackTrace;
-  AppConfigBlocError(Object error, {this.stackTrace}) : super(error);
+  AppConfigBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';

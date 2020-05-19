@@ -1,22 +1,21 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
-import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'core.dart';
 import 'mixins.dart';
+import 'incident_bloc.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 
-class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
+class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, PersonnelBlocError>
     with
         LoadableBloc<List<Personnel>>,
         CreatableBloc<Personnel>,
@@ -134,7 +133,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   /// Fetch personnel from [service]
   Future<List<Personnel>> load() async {
     _assertState();
-    return _dispatch<List<Personnel>>(
+    return dispatch<List<Personnel>>(
       LoadPersonnels(iuuid ?? incidentBloc.selected.uuid),
     );
   }
@@ -142,7 +141,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   /// Create given personnel
   Future<Personnel> create(Personnel personnel) {
     _assertState();
-    return _dispatch<Personnel>(
+    return dispatch<Personnel>(
       CreatePersonnel(
         iuuid ?? incidentBloc.selected.uuid,
         personnel.cloneWith(
@@ -161,7 +160,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   /// Update given personnel
   Future<Personnel> update(Personnel personnel) {
     _assertState();
-    return _dispatch<Personnel>(
+    return dispatch<Personnel>(
       UpdatePersonnel(personnel),
     );
   }
@@ -169,7 +168,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   /// Delete given personnel
   Future<Personnel> delete(String uuid) {
     _assertState();
-    return _dispatch<Personnel>(
+    return dispatch<Personnel>(
       DeletePersonnel(repo[uuid]),
     );
   }
@@ -177,49 +176,33 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   /// Unload [personnels] from local storage
   Future<List<Personnel>> unload() {
     _assertState();
-    return _dispatch<List<Personnel>>(
+    return dispatch<List<Personnel>>(
       UnloadPersonnels(iuuid),
     );
   }
 
   @override
-  Stream<PersonnelState> mapEventToState(PersonnelCommand command) async* {
-    try {
-      if (command is LoadPersonnels) {
-        yield await _load(command);
-      } else if (command is CreatePersonnel) {
-        yield await _create(command);
-      } else if (command is UpdatePersonnel) {
-        yield await _update(command);
-      } else if (command is DeletePersonnel) {
-        yield await _delete(command);
-      } else if (command is UnloadPersonnels) {
-        yield await _unload(command);
-      } else if (command is _InternalMessage) {
-        yield await _process(command);
-      } else {
-        yield _toError(
-          command,
-          PersonnelBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        PersonnelBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<PersonnelState> execute(PersonnelCommand command) async* {
+    if (command is LoadPersonnels) {
+      yield await _load(command);
+    } else if (command is CreatePersonnel) {
+      yield await _create(command);
+    } else if (command is UpdatePersonnel) {
+      yield await _update(command);
+    } else if (command is DeletePersonnel) {
+      yield await _delete(command);
+    } else if (command is UnloadPersonnels) {
+      yield await _unload(command);
+    } else if (command is _InternalMessage) {
+      yield await _process(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
   Future<PersonnelState> _load(LoadPersonnels command) async {
     var personnels = await repo.load(command.data);
-    return _toOK<List<Personnel>>(
+    return toOK(
       command,
       PersonnelsLoaded(repo.keys),
       result: personnels,
@@ -229,7 +212,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   Future<PersonnelState> _create(CreatePersonnel command) async {
     _assertData(command.data);
     var personnel = await repo.create(command.iuuid, command.data);
-    return _toOK(
+    return toOK(
       command,
       PersonnelCreated(personnel),
       result: personnel,
@@ -240,7 +223,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
     _assertData(command.data);
     final previous = repo[command.data.uuid];
     final personnel = await repo.update(command.data);
-    return _toOK(
+    return toOK(
       command,
       PersonnelUpdated(personnel, previous),
       result: personnel,
@@ -250,7 +233,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
   Future<PersonnelState> _delete(DeletePersonnel command) async {
     _assertData(command.data);
     final personnel = await repo.delete(command.data.uuid);
-    return _toOK(
+    return toOK(
       command,
       PersonnelDeleted(personnel),
       result: personnel,
@@ -259,7 +242,7 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
 
   Future<PersonnelState> _unload(UnloadPersonnels command) async {
     final personnels = await repo.unload();
-    return _toOK(
+    return toOK(
       command,
       PersonnelsUnloaded(personnels),
       result: personnels,
@@ -283,35 +266,11 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
     return PersonnelBlocError("Personnel message not recognized: $event");
   }
 
-  // Dispatch and return future
-  Future<T> _dispatch<T>(PersonnelCommand<Object, T> command) {
-    add(command);
-    return command.callback.future;
-  }
-
-  // Complete request and return given state to bloc
-  PersonnelState _toOK<T>(PersonnelCommand event, PersonnelState state, {T result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  PersonnelState _toError(PersonnelCommand event, Object error) {
-    final object = error is PersonnelBlocError
-        ? error
-        : PersonnelBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    event.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return error;
-  }
+  @override
+  PersonnelBlocError createError(Object error, {StackTrace stackTrace}) => PersonnelBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 
   @override
   Future<void> close() async {
@@ -325,11 +284,8 @@ class PersonnelBloc extends Bloc<PersonnelCommand, PersonnelState>
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class PersonnelCommand<S, T> extends Equatable {
-  final S data;
-  final Completer<T> callback = Completer();
-
-  PersonnelCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class PersonnelCommand<S, T> extends BlocCommand<S, T> {
+  PersonnelCommand(S data, [props = const []]) : super(data, props);
 }
 
 class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
@@ -379,10 +335,12 @@ class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
 /// Normal States
 /// ---------------------
 
-abstract class PersonnelState<T> extends Equatable {
-  final T data;
-
-  PersonnelState(this.data, [props = const []]) : super([data, ...props]);
+abstract class PersonnelState<T> extends BlocEvent<T> {
+  PersonnelState(
+    T data, {
+    StackTrace stackTrace,
+    props = const [],
+  }) : super(data, props: props, stackTrace: stackTrace);
 
   bool isError() => this is PersonnelBlocError;
   bool isEmpty() => this is PersonnelsEmpty;
@@ -454,8 +412,10 @@ class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
 /// ---------------------
 
 class PersonnelBlocError extends PersonnelState<Object> {
-  final StackTrace stackTrace;
-  PersonnelBlocError(Object error, {this.stackTrace}) : super(error);
+  PersonnelBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {data: $data, stackTrace: $stackTrace}';

@@ -1451,8 +1451,8 @@ Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable>(
   final last = harness.trackingBloc.repo[trackables.last.tracking.uuid];
 
   // Assert
-  expect(
-    () async => await harness.trackingBloc.attach(last.uuid, devices: [d1]),
+  await expectLater(
+    () => harness.trackingBloc.attach(last.uuid, devices: [d1]),
     throwsA(
       isA<TrackingSourceAlreadyTrackedException>(),
     ),

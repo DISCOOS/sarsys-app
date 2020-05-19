@@ -7,18 +7,33 @@ import 'package:mockito/mockito.dart';
 
 import 'harness.dart';
 
+const UNTRUSTED = 'username';
+const PASSWORD = 'password';
+
 void main() async {
   final harness = BlocTestHarness()
     ..withIncidentBloc()
     ..install();
-//  final unauthorized = UserServiceMock.createToken(
-//    "unauthorized",
-//    UserRole.commander,
-//  ).toUser();
 
   test(
     'Incident bloc should be EMPTY and UNSET',
     () async {
+      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD BE unset");
+      expect(harness.incidentBloc.initialState, isA<IncidentUnset>(), reason: "Unexpected incident state");
+      await expectExactlyLater(harness.incidentBloc, [
+        isA<IncidentUnset>(),
+      ]);
+    },
+  );
+
+  test(
+    'Incident bloc should be load when user is authenticated',
+    () async {
+      // Act
+      await harness.configBloc.init();
+      await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+
+      // Assert
       expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD BE unset");
       expect(harness.incidentBloc.initialState, isA<IncidentUnset>(), reason: "Unexpected incident state");
       await expectExactlyLater(harness.incidentBloc, [

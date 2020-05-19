@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
 
-import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
@@ -17,12 +16,14 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/user_service.dart';
 
-import 'app_config_bloc.dart';
+import 'core.dart';
 import 'mixins.dart';
+import 'app_config_bloc.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
-class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, UnloadableBloc<List<User>> {
+class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
+    with LoadableBloc<User>, UnloadableBloc<List<User>> {
   UserBloc(this.repo, this.configBloc);
 
   final UserRepository repo;
@@ -126,27 +127,27 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
 
   /// Secure user access with given settings
   Future<Security> secure(String pin, {bool locked}) async {
-    return _dispatch<Security>(SecureUser(pin, locked: locked));
+    return dispatch<Security>(SecureUser(pin, locked: locked));
   }
 
   /// Lock user access using current security settings
   Future<dynamic> lock() async {
-    return _dispatch<dynamic>(LockUser());
+    return dispatch<dynamic>(LockUser());
   }
 
   /// Unlock user access
   Future<dynamic> unlock(String pin) async {
-    return _dispatch<dynamic>(UnlockUser(pin));
+    return dispatch<dynamic>(UnlockUser(pin));
   }
 
   /// Load current user from secure storage
   Future<User> load() async {
-    return _dispatch<User>(LoadUser(userId: userId ?? repo.userId));
+    return dispatch<User>(LoadUser(userId: userId ?? repo.userId));
   }
 
   /// Authenticate user
   Future<User> login({String userId, String username, String password, String idpHint}) {
-    return _dispatch<User>(LoginUser(
+    return dispatch<User>(LoginUser(
       userId: userId,
       username: username,
       password: password,
@@ -155,11 +156,11 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
   }
 
   Future<User> logout({bool delete = false}) {
-    return _dispatch<User>(LogoutUser(delete: delete));
+    return dispatch<User>(LogoutUser(delete: delete));
   }
 
   Future<List<User>> unload() {
-    return _dispatch<List<User>>(UnloadUsers());
+    return dispatch<List<User>>(UnloadUsers());
   }
 
   UserCommand _assertAuthenticated<T>(UserCommand command) {
@@ -173,47 +174,31 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
   }
 
   Future<bool> authorize(Incident data, String passcode) {
-    return _dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
+    return dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
   }
 
   @override
-  Stream<UserState> mapEventToState(UserCommand command) async* {
-    try {
-      if (command is LoadUser) {
-        yield await _load(command);
-      } else if (command is LoginUser) {
-        yield UserAuthenticating(command.data);
-        yield await _authenticate(command);
-      } else if (command is SecureUser) {
-        yield await _secure(command);
-      } else if (command is LockUser) {
-        yield await _lock(command);
-      } else if (command is UnlockUser) {
-        yield UserUnlocking(command.data);
-        yield await _unlock(command);
-      } else if (command is LogoutUser) {
-        yield await _logout(command);
-      } else if (command is UnloadUsers) {
-        yield await _unload(command);
-      } else if (command is AuthorizeUser) {
-        yield _authorize(command);
-      } else {
-        yield _toError(
-          command,
-          UserBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        UserBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<UserState> execute(UserCommand command) async* {
+    if (command is LoadUser) {
+      yield await _load(command);
+    } else if (command is LoginUser) {
+      yield UserAuthenticating(command.data);
+      yield await _authenticate(command);
+    } else if (command is SecureUser) {
+      yield await _secure(command);
+    } else if (command is LockUser) {
+      yield await _lock(command);
+    } else if (command is UnlockUser) {
+      yield UserUnlocking(command.data);
+      yield await _unlock(command);
+    } else if (command is LogoutUser) {
+      yield await _logout(command);
+    } else if (command is UnloadUsers) {
+      yield await _unload(command);
+    } else if (command is AuthorizeUser) {
+      yield _authorize(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
@@ -293,7 +278,7 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
       delete: command.data,
     );
     _authorized.clear();
-    return _toOK(
+    return toOK(
       command,
       UserUnset(),
       result: user,
@@ -304,7 +289,7 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
     await repo.logout();
     var users = await repo.clear();
     _authorized.clear();
-    return _toOK(
+    return toOK(
       command,
       UserUnset(),
       result: users,
@@ -317,20 +302,14 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.uuid, () => state);
-      return _toOK(command, state, result: true);
+      return toOK(command, state, result: true);
     }
-    return _toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
-  }
-
-  // Dispatch and return future
-  Future<T> _dispatch<T>(UserCommand<dynamic, T> command) {
-    add(command);
-    return command.callback.future;
+    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
   }
 
   UserState _toEvent(UserCommand command, Object result) {
     if (result == null) {
-      return _toOK(
+      return toOK(
         command,
         UserUnset(),
         result: _toAuthResult(command),
@@ -339,7 +318,7 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
       if (kDebugMode) {
         developer.log("User parsed from token: $user", level: Level.CONFIG.value);
       }
-      return _toOK(
+      return toOK(
         command,
         UserAuthenticated(user),
         result: _toAuthResult(command),
@@ -348,7 +327,7 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
       if (kDebugMode) {
         developer.log("Security set: $security", level: Level.CONFIG.value);
       }
-      return _toOK(
+      return toOK(
         command,
         _toSecurityState(),
         result: security,
@@ -356,22 +335,22 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
     } else if (result is UserNotFoundException ||
         result is UserNotSecuredException ||
         result is UserUnauthorizedException) {
-      return _toError(
+      return toError(
         command,
         UserUnauthorized(result),
       );
     } else if (result is UserForbiddenException) {
-      return _toError(
+      return toError(
         command,
         UserForbidden(result),
       );
     } else if (result is UserRepositoryOfflineException) {
-      return _toError(
+      return toError(
         command,
         UserBlocIsOffline(result),
       );
     }
-    return _toError(
+    return toError(
       command,
       UserBlocError(
         'Unknown result: $result',
@@ -396,39 +375,18 @@ class UserBloc extends Bloc<UserCommand, UserState> with LoadableBloc<User>, Unl
               );
   }
 
-  // Complete request and return given state to bloc
-  UserState _toOK<T>(UserCommand event, UserState state, {T result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  UserState _toError(UserCommand command, Object error) {
-    final object = error is UserBlocError
-        ? error
-        : UserBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    command.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return object;
-  }
+  @override
+  UserBlocError createError(Object error, {StackTrace stackTrace}) => UserBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 }
 
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class UserCommand<S, T> extends Equatable {
-  final S data;
-  final Completer<T> callback = Completer();
-
-  UserCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class UserCommand<S, T> extends BlocCommand<S, T> {
+  UserCommand(S data, [props = const []]) : super(data, props);
 }
 
 class LoadUser extends UserCommand<String, User> {
@@ -504,10 +462,12 @@ class UnloadUsers extends UserCommand<void, List<User>> {
 /// ---------------------
 /// Normal states
 /// ---------------------
-abstract class UserState<T> extends Equatable {
-  final T data;
-
-  UserState(this.data, [props = const []]) : super([data, ...props]);
+abstract class UserState<T> extends BlocEvent<T> {
+  UserState(
+    Object data, {
+    StackTrace stackTrace,
+    props = const [],
+  }) : super(data, props: props, stackTrace: stackTrace);
 
   isUnset() => this is UserUnset;
   isLocked() => this is UserLocked;
@@ -568,7 +528,7 @@ class UserAuthorized extends UserState<User> {
     this.incident,
     this.command,
     this.personnel,
-  ) : super(user, [incident]);
+  ) : super(user, props: [incident]);
   @override
   String toString() => 'UserAuthorized';
 }
@@ -578,8 +538,10 @@ class UserAuthorized extends UserState<User> {
 /// ---------------------
 
 class UserBlocError extends UserState<Object> {
-  final StackTrace stackTrace;
-  UserBlocError(Object error, {this.stackTrace}) : super(error);
+  UserBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';

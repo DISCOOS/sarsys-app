@@ -9,7 +9,6 @@ import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
-import 'package:random_string/random_string.dart';
 import 'package:faker/faker.dart';
 import 'package:uuid/uuid.dart';
 

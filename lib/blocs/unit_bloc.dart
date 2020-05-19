@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -11,16 +9,17 @@ import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 
-import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'core.dart';
 import 'mixins.dart';
+import 'incident_bloc.dart';
+import 'personnel_bloc.dart';
 
 typedef void UnitCallback(VoidCallback fn);
 
-class UnitBloc extends Bloc<UnitCommand, UnitState>
+class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     with
         LoadableBloc<List<Unit>>,
         CreatableBloc<Unit>,
@@ -69,7 +68,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
         final event = state as PersonnelUpdated;
         final unit = repo.findAndReplace(event.data);
         if (unit != null) {
-          _dispatch(
+          dispatch(
             _InternalChange(unit),
           );
         }
@@ -77,7 +76,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
         final event = state as PersonnelDeleted;
         final unit = repo.findAndRemove(event.data);
         if (unit != null) {
-          _dispatch(
+          dispatch(
             _InternalChange(unit),
           );
         }
@@ -189,7 +188,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   /// Fetch units from [service]
   Future<List<Unit>> load() async {
     _assertState();
-    return _dispatch<List<Unit>>(
+    return dispatch<List<Unit>>(
       LoadUnits(iuuid ?? incidentBloc.selected.uuid),
     );
   }
@@ -197,7 +196,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   /// Create given unit
   Future<Unit> create(Unit unit) {
     _assertState();
-    return _dispatch<Unit>(
+    return dispatch<Unit>(
       CreateUnit(
         iuuid ?? incidentBloc.selected.uuid,
         unit.cloneWith(
@@ -216,7 +215,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   /// Update given unit
   Future<Unit> update(Unit unit) {
     _assertState();
-    return _dispatch<Unit>(
+    return dispatch<Unit>(
       UpdateUnit(unit),
     );
   }
@@ -224,7 +223,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   /// Delete given unit
   Future<Unit> delete(String uuid) {
     _assertState();
-    return _dispatch<Unit>(
+    return dispatch<Unit>(
       DeleteUnit(repo[uuid]),
     );
   }
@@ -232,49 +231,33 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   /// Unload [units] from local storage
   Future<List<Unit>> unload() {
     _assertState();
-    return _dispatch<List<Unit>>(
+    return dispatch<List<Unit>>(
       UnloadUnits(iuuid),
     );
   }
 
   @override
-  Stream<UnitState> mapEventToState(UnitCommand command) async* {
-    try {
-      if (command is LoadUnits) {
-        yield await _load(command);
-      } else if (command is CreateUnit) {
-        yield await _create(command);
-      } else if (command is UpdateUnit) {
-        yield await _update(command);
-      } else if (command is DeleteUnit) {
-        yield await _delete(command);
-      } else if (command is UnloadUnits) {
-        yield await _unload(command);
-      } else if (command is _InternalChange) {
-        yield await _process(command);
-      } else {
-        yield _toError(
-          command,
-          UnitBlocError(
-            "Unsupported $command",
-            stackTrace: StackTrace.current,
-          ),
-        );
-      }
-    } on Exception catch (error, stackTrace) {
-      yield _toError(
-        command,
-        UnitBlocError(
-          error,
-          stackTrace: stackTrace,
-        ),
-      );
+  Stream<UnitState> execute(UnitCommand command) async* {
+    if (command is LoadUnits) {
+      yield await _load(command);
+    } else if (command is CreateUnit) {
+      yield await _create(command);
+    } else if (command is UpdateUnit) {
+      yield await _update(command);
+    } else if (command is DeleteUnit) {
+      yield await _delete(command);
+    } else if (command is UnloadUnits) {
+      yield await _unload(command);
+    } else if (command is _InternalChange) {
+      yield await _process(command);
+    } else {
+      yield toUnsupported(command);
     }
   }
 
   Future<UnitState> _load(LoadUnits command) async {
     var units = await repo.load(command.data);
-    return _toOK(
+    return toOK(
       command,
       UnitsLoaded(repo.keys),
       result: units,
@@ -284,7 +267,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   Future<UnitState> _create(CreateUnit command) async {
     _assertData(command.data);
     var unit = await repo.create(command.iuuid, command.data);
-    return _toOK(
+    return toOK(
       command,
       UnitCreated(unit),
       result: unit,
@@ -295,7 +278,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
     _assertData(command.data);
     final previous = repo[command.data.uuid];
     final unit = await repo.update(command.data);
-    return _toOK(
+    return toOK(
       command,
       UnitUpdated(unit, previous),
       result: unit,
@@ -305,7 +288,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   Future<UnitState> _delete(DeleteUnit command) async {
     _assertData(command.data);
     final unit = await repo.delete(command.data.uuid);
-    return _toOK(
+    return toOK(
       command,
       UnitDeleted(unit),
       result: unit,
@@ -314,7 +297,7 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
 
   Future<UnitState> _unload(UnloadUnits command) async {
     final devices = await repo.unload();
-    return _toOK(
+    return toOK(
       command,
       UnitsUnloaded(devices),
       result: devices,
@@ -324,42 +307,18 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
   Future<UnitState> _process(_InternalChange command) async {
     final previous = repo[command.data.uuid];
     final state = await repo.replace(command.data.uuid, command.data);
-    return _toOK(
+    return toOK(
       command,
       UnitUpdated(state.value, previous),
       result: state.value,
     );
   }
 
-  // Dispatch and return future
-  Future<T> _dispatch<T>(UnitCommand<Object, T> command) {
-    add(command);
-    return command.callback.future;
-  }
-
-  // Complete request and return given state to bloc
-  UnitState _toOK<T>(UnitCommand event, UnitState state, {T result}) {
-    if (result != null)
-      event.callback.complete(result);
-    else
-      event.callback.complete();
-    return state;
-  }
-
-  // Complete with error and return response as error state to bloc
-  UnitState _toError(UnitCommand event, Object error) {
-    final object = error is UnitBlocError
-        ? error
-        : UnitBlocError(
-            error,
-            stackTrace: StackTrace.current,
-          );
-    event.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
-    return error;
-  }
+  @override
+  UnitBlocError createError(Object error, {StackTrace stackTrace}) => UnitBlocError(
+        error,
+        stackTrace: StackTrace.current,
+      );
 
   @override
   Future<void> close() async {
@@ -373,11 +332,8 @@ class UnitBloc extends Bloc<UnitCommand, UnitState>
 /// ---------------------
 /// Commands
 /// ---------------------
-abstract class UnitCommand<S, T> extends Equatable {
-  final S data;
-  final Completer<T> callback = Completer();
-
-  UnitCommand(this.data, [props = const []]) : super([data, ...props]);
+abstract class UnitCommand<S, T> extends BlocCommand<S, T> {
+  UnitCommand(S data, [props = const []]) : super(data, props);
 }
 
 class LoadUnits extends UnitCommand<String, List<Unit>> {
@@ -427,10 +383,11 @@ class _InternalChange extends UnitCommand<Unit, Unit> {
 /// Normal States
 /// ---------------------
 
-abstract class UnitState<T> extends Equatable {
-  final T data;
-
-  UnitState(this.data, [props = const []]) : super([data, ...props]);
+abstract class UnitState<T> extends BlocEvent<T> {
+  UnitState(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   bool isError() => this is UnitBlocError;
   bool isEmpty() => this is UnitsEmpty;
@@ -496,8 +453,10 @@ class UnitsUnloaded extends UnitState<List<Unit>> {
 /// ---------------------
 
 class UnitBlocError extends UnitState<Object> {
-  final StackTrace stackTrace;
-  UnitBlocError(Object error, {this.stackTrace}) : super(error);
+  UnitBlocError(
+    Object error, {
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
 
   @override
   String toString() => '$runtimeType {error: $data, stackTrace: $stackTrace}';
