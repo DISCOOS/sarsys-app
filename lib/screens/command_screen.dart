@@ -91,11 +91,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           ),
           body: tabs[routeData],
           bottomNavigationBar: BottomAppBar(
-            shape: context.bloc<UserBloc>().user.isCommander ? CircularNotchedRectangle() : null,
+            shape: isCommander(context) ? CircularNotchedRectangle() : null,
             notchMargin: 8.0,
             elevation: 16.0,
             child: FractionallySizedBox(
-              widthFactor: context.bloc<UserBloc>().user.isCommander ? 0.80 : 1.0,
+              widthFactor: isCommander(context) ? 0.80 : 1.0,
               alignment: Alignment.bottomLeft,
               child: BottomNavigationBar(
                 currentIndex: routeData,
@@ -126,6 +126,8 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       },
     );
   }
+
+  bool isCommander(BuildContext context) => context.bloc<UserBloc>()?.user?.isCommander == true;
 
   _toTitle(Incident incident, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
@@ -191,7 +193,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   }
 
   StatelessWidget _buildFAB() {
-    if (context.bloc<UserBloc>().user.isCommander) {
+    if (isCommander(context)) {
       switch (routeData) {
         case CommandScreen.TAB_MISSIONS:
           return FloatingActionButton(
