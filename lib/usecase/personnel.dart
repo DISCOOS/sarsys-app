@@ -175,7 +175,7 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
     var personnel = params.data != null
         ? params.data
         : await selectPersonnel(
-            params.context,
+            params.overlay.context,
             where: (personnel) =>
                 // Personnel is not tracking any devices?
                 bloc.trackings[personnel.tracking.uuid] == null ||
