@@ -44,6 +44,8 @@ class LocationService {
   }
 
   Position get current => _current;
+  Point get currentAsPoint => _current == null ? null : toPoint(_current);
+  LatLng get currentAsLatLng => _current == null ? null : toLatLng(_current);
   PermissionStatus get status => _status;
   ValueNotifier<bool> get isReady => _isReady;
   Stream<Position> get stream => _positionController.stream;

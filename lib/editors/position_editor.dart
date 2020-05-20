@@ -50,8 +50,6 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
     super.initState();
     _mapController = MapWidgetController();
     _changes = StreamController<LatLng>();
-    // TODO: Use device location as default location
-    _current = _ensurePosition();
     _searchField = MapSearchField(
       key: _searchFieldKey,
       offset: 106.0,
@@ -62,14 +60,23 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
     );
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _current ??= _ensurePosition();
+  }
+
   Position _setFromLatLng(LatLng point) => _current = Position.now(
         lat: point.latitude,
         lon: point.longitude,
         source: PositionSource.manual,
       );
 
-  Object _ensurePosition() => widget.position?.isNotEmpty != true
-      ? LocationService(context.bloc<AppConfigBloc>()).current ??
+  Position _ensurePosition() => widget.position?.isNotEmpty != true
+      ? Position.fromPoint(
+            LocationService(context.bloc<AppConfigBloc>()).currentAsPoint,
+            source: PositionSource.manual,
+          ) ??
           Position.now(
             lat: 59.5,
             lon: 10.09,
