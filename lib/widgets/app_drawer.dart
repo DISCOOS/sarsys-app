@@ -39,6 +39,7 @@ class AppDrawer extends StatelessWidget {
           _buildMyPageAction(context),
           _buildMyHistoryAction(isUnset, context),
           Divider(),
+          _buildCommandHeader(isUnset, context),
 //          _buildMissionsPageAction(isUnset, context),
           _buildUnitsPageAction(isUnset, context),
           _buildPersonnelsPageAction(isUnset, context),
@@ -200,6 +201,22 @@ class AppDrawer extends StatelessWidget {
                 leaveIncident();
               },
             ),
+    );
+  }
+
+  ListTile _buildCommandHeader(bool isUnset, BuildContext context) {
+    final labels = ['Aksjonsledelse'];
+
+    return ListTile(
+      enabled: !isUnset,
+      title: Wrap(
+        children: labels
+            .map((label) => Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyText2,
+                ))
+            .toList(),
+      ),
     );
   }
 

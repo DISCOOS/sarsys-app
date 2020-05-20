@@ -4,7 +4,6 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
@@ -19,7 +18,6 @@ import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/usecase/personnel.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,7 +44,7 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data == null, "Incident should not be supplied");
-    final user = _assertUser(params);
+    _assertUser(params);
 
     var result = await showDialog<Pair<Incident, List<String>>>(
       context: params.overlay.context,
