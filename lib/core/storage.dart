@@ -30,6 +30,29 @@ class Storage {
   static FlutterSecureStorage get secure => _storage;
   static FlutterSecureStorage _storage = FlutterSecureStorage();
 
+  static String userKey(User user, String suffix) => '${user.userId}_$suffix';
+
+  static Future<String> readUserValue(
+    User user, {
+    String suffix,
+    String defaultValue,
+  }) =>
+      _storage.read(key: userKey(user, suffix)) ?? defaultValue;
+
+  static Future<void> writeUserValue(
+    User user, {
+    String key,
+    String value,
+  }) =>
+      _storage.write(key: '${user.userId}_$key', value: value);
+
+  static Future<void> deleteUserValue(
+    User user, {
+    String key,
+    String defaultValue,
+  }) =>
+      _storage.delete(key: '${user.userId}_$key');
+
   static Future init() async {
     if (!_initialized) {
       if (!kIsWeb) {

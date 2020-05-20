@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
@@ -177,6 +178,7 @@ class BlocTestHarness implements BlocDelegate {
       }
       events.clear();
       errors.clear();
+      bus.unsubscribeAll();
       _connectivity?.dispose();
       if (Storage.initialized) {
         await Storage.destroy();
@@ -407,6 +409,7 @@ class BlocTestHarness implements BlocDelegate {
         connectivity: _connectivity,
       ),
       _incidentBloc,
+      bus,
     );
   }
 
@@ -469,6 +472,7 @@ class BlocTestHarness implements BlocDelegate {
     }
   }
 
+  final bus = BlocEventBus();
   final errors = <Bloc, List<Object>>{};
 
   @override

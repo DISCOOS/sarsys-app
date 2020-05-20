@@ -21,13 +21,13 @@ class IncidentService {
     throw "Not implemented";
   }
 
-  /// PUT ../incidents/{incidentId}
+  /// PUT ../incidents/{iuuid}
   Future<ServiceResponse<Incident>> update(Incident incident) async {
     // TODO: Implement update incident
     throw "Not implemented";
   }
 
-  /// DELETE ../incidents/{incidentId}
+  /// DELETE ../incidents/{iuuid}
   Future<ServiceResponse<void>> delete(String uuid) async {
     // TODO: Implement delete incident
     throw "Not implemented";

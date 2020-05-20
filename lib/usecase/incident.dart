@@ -1,15 +1,19 @@
+import 'dart:async';
+
 import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/incident_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/usecase/personnel.dart';
@@ -19,7 +23,6 @@ import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/extensions.dart';
 
@@ -43,8 +46,7 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
     assert(params.data == null, "Incident should not be supplied");
-    final user = params.context.bloc<UserBloc>().user;
-    assert(user != null, "UserBloc contains no user");
+    final user = _assertUser(params);
 
     var result = await showDialog<Pair<Incident, List<String>>>(
       context: params.overlay.context,
@@ -55,12 +57,12 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // Create incident and  mobilize current user
+    // Create incident (user will be mobilized with use-case MobilizeUser)
     final incident = await params.bloc.create(result.left, selected: true);
-//    await _mobilize(params, user);
 
     // Create default units?
     if (result.right.isNotEmpty) {
+      // TODO: Move to use-case in IncidentBloc
       final templates = result.right;
       final org = await FleetMapService().fetchOrganization(Defaults.orgId);
       final config = params.context.bloc<AppConfigBloc>().config;
@@ -87,19 +89,17 @@ Future<dartz.Either<bool, Incident>> selectIncident(
 class SelectIncident extends UseCase<bool, Incident, IncidentParams> {
   @override
   Future<dartz.Either<bool, Incident>> execute(params) async {
-    assert(params.uuid != null, "Incident uuid must be given");
-    final user = params.context.bloc<UserBloc>().user;
-    assert(user != null, "UserBloc contains no user");
-    try {
-      final incident = await params.bloc.select(
-        params.uuid,
-      );
-      await _mobilize(params, user);
-      return dartz.Right(incident);
-    } on Exception catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
-    }
-    return dartz.Left(false);
+    final user = _assertUser(params);
+    // Read from storage if not set in params
+    final iuuid = params.uuid ??
+        await Storage.readUserValue(
+          user,
+          suffix: IncidentBloc.SELECTED_IUUID_KEY_SUFFIX,
+        );
+
+    assert(iuuid != null, "Incident uuid must be given");
+    final incident = await params.bloc.select(iuuid);
+    return dartz.Right(incident);
   }
 }
 
@@ -112,14 +112,11 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Incident is required");
-    final user = params.context.bloc<UserBloc>().user;
-    assert(user != null, "UserBloc contains no user");
+    final user = params.bloc.userBloc.user;
+    assert(user != null, "User must bed authenticated");
 
     if (_shouldRegister(params)) {
-      return await _mobilize(
-        params,
-        user,
-      );
+      return await mobilizeUser();
     }
 
     final join = await prompt(
@@ -130,11 +127,12 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
 
     if (join == true) {
       await params.bloc.select(params.data.uuid);
-      await waitThoughtStates(
-        params.context.bloc<PersonnelBloc>(),
-        expected: [PersonnelsLoaded],
+      final personnel = await _findPersonnel(
+        params,
+        user,
+        wait: true,
       );
-      return _mobilize(params, user);
+      return dartz.right(personnel);
     }
     return dartz.Left(false);
   }
@@ -146,8 +144,7 @@ class LeaveIncident extends UseCase<bool, Personnel, IncidentParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data == null, "Incident should not be given");
-    final user = params.context.bloc<UserBloc>().user;
-    assert(user != null, "UserBloc contains no user");
+    final user = _assertUser(params);
 
     final leave = await prompt(
       params.overlay.context,
@@ -156,13 +153,10 @@ class LeaveIncident extends UseCase<bool, Personnel, IncidentParams> {
     );
 
     if (leave) {
-      try {
-        Personnel personnel = await _retire(params, user);
-        await params.bloc.unselect();
-        return dartz.Right(personnel);
-      } on Exception catch (e, stackTrace) {
-        Catcher.reportCheckedError(e, stackTrace);
-      }
+      Personnel personnel = await _retire(params, user);
+      await params.bloc.unselect();
+      params.pushReplacementNamed(IncidentsScreen.ROUTE);
+      return dartz.Right(personnel);
     }
     return dartz.Left(false);
   }
@@ -193,42 +187,37 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
   }
 }
 
+User _assertUser(IncidentParams params) {
+  final user = params.bloc.userBloc.user;
+  assert(user != null, "User must bed authenticated");
+  return user;
+}
+
 bool _shouldRegister(
   IncidentParams params,
 ) =>
     !params.bloc.isUnset && params.data.uuid == params.bloc.selected?.uuid;
 
-Personnel _findPersonnel(IncidentParams params, User user) {
-  return params.context.bloc<PersonnelBloc>().find(
+FutureOr<Personnel> _findPersonnel(IncidentParams params, User user, {bool wait = false}) async {
+  // Look for existing personnel
+  final personnel = params.context.bloc<PersonnelBloc>().find(
     user,
     exclude: const [],
   ).firstOrNull;
-}
-
-Future<dartz.Either<bool, Personnel>> _mobilize(IncidentParams params, User user) async {
-  try {
-    var personnel = _findPersonnel(params, user);
-    if (personnel == null) {
-      final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-      personnel = await params.context.bloc<PersonnelBloc>().create(Personnel(
-            uuid: Uuid().v4(),
-            userId: user.userId,
-            fname: user.fname,
-            lname: user.lname,
-            phone: user.phone,
-            status: PersonnelStatus.Mobilized,
-            affiliation: org.toAffiliationFromUser(user),
-          ));
-    }
-    return dartz.right(personnel);
-  } on Exception catch (e, stackTrace) {
-    Catcher.reportCheckedError(e, stackTrace);
+  // Wait for personnel to be created
+  if (wait && personnel == null) {
+    return await waitThroughStateWithData<PersonnelState, Personnel>(
+      params.context.bloc<PersonnelBloc>(),
+      test: (state) => state.isCreated() && (state.data as Personnel).userId == user.userId,
+      map: (state) => state.data,
+    );
   }
-  return dartz.left(false);
+  return personnel;
 }
 
+// TODO: Move to new use-case RetireUser in PersonnelBloc
 Future<Personnel> _retire(IncidentParams params, User user) async {
-  var personnel = _findPersonnel(params, user);
+  var personnel = await _findPersonnel(params, user);
   if (personnel != null) {
     personnel = await params.context.bloc<PersonnelBloc>().update(
           personnel.cloneWith(

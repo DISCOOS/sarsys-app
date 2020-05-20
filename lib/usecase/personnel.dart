@@ -1,5 +1,9 @@
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/editors/personnel_editor.dart';
@@ -7,13 +11,19 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/pages/personnel_page.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:SarSys/core/extensions.dart';
+import 'package:uuid/uuid.dart';
 
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
@@ -49,6 +59,7 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     // Will create personnel and tracking
     final personnel = await params.bloc.create(result.data);
 
+    // TODO: Move to use case replaceTracking
     // Wait for tracking is created
     final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
       params.context.bloc<TrackingBloc>(),
@@ -225,6 +236,56 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
         );
     return dartz.right(tracking);
   }
+}
+
+/// Mobilize current [user] if not already mobilized
+Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(PersonnelParams());
+
+class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements BlocEventHandler<PersonnelsLoaded> {
+  @override
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
+    if (params.context.bloc<IncidentBloc>().isUnset) {
+      return dartz.left(false);
+    }
+    final user = params.context.bloc<UserBloc>().user;
+    assert(user != null, "UserBloc contains no user");
+    try {
+      var personnel = _findUser(params, user);
+      if (personnel == null) {
+        final org = await FleetMapService().fetchOrganization(Defaults.orgId);
+        personnel = await params.bloc.create(Personnel(
+          uuid: Uuid().v4(),
+          userId: user.userId,
+          fname: user.fname,
+          lname: user.lname,
+          phone: user.phone,
+          status: PersonnelStatus.Mobilized,
+          affiliation: org.toAffiliationFromUser(user),
+        ));
+        return dartz.right(personnel);
+      } else if (personnel.status != PersonnelStatus.Mobilized) {
+        return _transitionPersonnel(
+          PersonnelParams(personnel: personnel),
+          PersonnelStatus.Mobilized,
+        );
+      }
+      // Already mobilized
+      return dartz.right(personnel);
+    } on Exception catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
+    }
+    return dartz.left(false);
+  }
+
+  @override
+  void handle(Bloc bloc, PersonnelsLoaded event) => execute(PersonnelParams());
+}
+
+Personnel _findUser(PersonnelParams params, User user) {
+  return params.bloc.find(
+    user,
+    exclude: const [],
+  ).firstOrNull;
 }
 
 /// Transition personnel to mobilized state

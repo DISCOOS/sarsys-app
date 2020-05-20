@@ -23,15 +23,15 @@ class CommandScreen extends StatefulWidget {
   static const TAB_DEVICES = 2;
   static const TAB_MISSIONS = 3;
 
-  static const ROUTE_MISSION_LIST = 'mission/list';
   static const ROUTE_UNIT_LIST = 'unit/list';
   static const ROUTE_DEVICE_LIST = 'device/list';
   static const ROUTE_PERSONNEL_LIST = 'personnel/list';
+  static const ROUTE_MISSION_LIST = 'mission/list';
 
   static const ROUTES = [
     ROUTE_UNIT_LIST,
-    ROUTE_DEVICE_LIST,
     ROUTE_PERSONNEL_LIST,
+    ROUTE_DEVICE_LIST,
     ROUTE_MISSION_LIST,
   ];
 

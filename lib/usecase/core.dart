@@ -33,6 +33,12 @@ class BlocParams<B extends Bloc, T> extends Equatable {
   BuildContext get context => NavigationService().context;
   PermissionController get controller => Provider.of<PermissionController>(context, listen: false);
 
+  Future<T> pushReplacementNamed<T extends Object>(String path, {Object arguments}) =>
+      NavigationService().pushReplacementNamed<T>(
+        path,
+        arguments: arguments,
+      );
+
   BlocParams(
     this.data,
   )   : this.bloc = BlocProvider.of<B>(NavigationService().context),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/usecase/core.dart';
 import 'package:bloc/bloc.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
@@ -8,6 +9,33 @@ import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
+  BaseBloc({this.bus}) {
+    // Publish own events to bus?
+    if (bus != null) {
+      _subscriptions.add(listen(
+        (state) => bus.publish(this, state),
+      ));
+    }
+  }
+
+  /// Get [BlocEventBus]
+  final BlocEventBus bus;
+
+  /// Subscriptions released on [close]
+  final List<StreamSubscription> _subscriptions = [];
+  List<StreamSubscription> get subscriptions => List.unmodifiable(_subscriptions);
+
+  /// [BlocEventHandler]s released on [close]
+  List<BlocEventHandler> _handlers = [];
+  List<BlocEventHandler> get handlers => List.unmodifiable(_handlers);
+
+  void registerEventHandler<T extends BlocEvent>(BlocEventHandler handler) => _handlers.add(
+        bus.subscribe<T>(handler),
+      );
+  void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
+        subscription,
+      );
+
   @override
   @protected
   Stream<S> mapEventToState(C command) async* {
@@ -88,6 +116,22 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
 
   @visibleForOverriding
   Error createError(Object error, {StackTrace stackTrace});
+
+  @override
+  @mustCallSuper
+  Future<void> close() {
+    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.clear();
+    _handlers.forEach((handler) => bus.unsubscribe(handler));
+    _handlers.clear();
+    return super.close();
+  }
+}
+
+typedef BlocHandlerBuilder = UseCase Function<T extends BlocEvent>(Bloc bloc, T event);
+
+abstract class BlocEventHandler<T extends BlocEvent> {
+  void handle(Bloc bloc, T event);
 }
 
 /// [BlocEvent] bus implementation
@@ -96,11 +140,14 @@ class BlocEventBus {
   final Map<Type, Set<BlocEventHandler>> _routes = {};
 
   /// Subscribe to event with given handler
-  void subscribe<T extends BlocEvent>(BlocEventHandler<T> handler) => _routes.update(
-        typeOf<T>(),
-        (handlers) => handlers..add(handler),
-        ifAbsent: () => {handler},
-      );
+  BlocEventHandler<T> subscribe<T extends BlocEvent>(BlocEventHandler<T> handler) {
+    _routes.update(
+      typeOf<T>(),
+      (handlers) => handlers..add(handler),
+      ifAbsent: () => {handler},
+    );
+    return handler;
+  }
 
   /// Unsubscribe given event handler
   void unsubscribe<T extends BlocEvent>(BlocEventHandler<T> handler) {
@@ -146,10 +193,6 @@ abstract class BlocEvent<T> extends Equatable {
   BlocEvent(this.data, {this.stackTrace, props = const []}) : super([data, ...props]);
 }
 
-abstract class BlocEventHandler<T extends BlocEvent> {
-  void handle(Bloc bloc, T event);
-}
-
 class AppBlocDelegate implements BlocDelegate {
   AppBlocDelegate(this.bus);
   final BlocEventBus bus;
@@ -160,11 +203,7 @@ class AppBlocDelegate implements BlocDelegate {
   }
 
   @override
-  void onEvent(Bloc bloc, Object event) {
-    if (event is BlocEvent) {
-      bus.publish(bloc, event);
-    }
-  }
+  void onEvent(Bloc bloc, Object event) {}
 
   @override
   void onTransition(Bloc bloc, Transition transition) {}

@@ -31,7 +31,7 @@ enum POIType { IPP, Meetup, Any }
 
 class POILayerOptions extends LayerOptions {
   IncidentBloc bloc;
-  String incidentId;
+  String iuuid;
   double bearing;
   double opacity;
   Icon icon;
@@ -43,7 +43,7 @@ class POILayerOptions extends LayerOptions {
 
   POILayerOptions(
     this.bloc, {
-    this.incidentId,
+    this.iuuid,
     this.icon,
     this.builder,
     this.bearing,
@@ -77,7 +77,7 @@ class POILayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, POILayerOptions params, MapState map) {
     int index = 0;
-    List<Widget> icons = toItems(params.bloc.get(params.incidentId) ?? params.bloc.selected)
+    List<Widget> icons = toItems(params.bloc.get(params.iuuid) ?? params.bloc.selected)
         .where((poi) => map.bounds.contains(toLatLng(poi.point)))
         .map((poi) => _buildIcon(context, map, params, toLatLng(poi.point), poi.name, index++))
         .toList();

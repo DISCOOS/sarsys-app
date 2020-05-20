@@ -1,8 +1,6 @@
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'models/route_model.dart';
 
@@ -152,8 +150,6 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
         putPageState(context, STATE, {
           'name': route,
           'data': data,
-          // TODO: Move to UserCache using Hive
-          'incidentId': context.bloc<IncidentBloc>()?.selected?.uuid,
         });
       }
     }

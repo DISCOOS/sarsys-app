@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/usecase/personnel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -95,7 +96,7 @@ class BlocController {
     return _build(BlocController._internal(client, demo), demo, client);
   }
 
-  static BlocController _build(BlocController providers, DemoParams demo, Client client) {
+  static BlocController _build(BlocController controller, DemoParams demo, Client client) {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
@@ -145,7 +146,11 @@ class BlocController {
           personnelService,
           connectivity: connectivityService,
         ),
-        incidentBloc);
+        incidentBloc,
+        controller.bus);
+
+    // Ensure user is mobilized
+    personnelBloc.registerEventHandler<PersonnelsLoaded>(MobilizeUser());
 
     // Configure Unit service
     final UnitService unitService = !demo.active
@@ -205,7 +210,7 @@ class BlocController {
       personnelBloc: personnelBloc,
     );
 
-    return providers._set(
+    return controller._set(
       demo: demo,
       configBloc: configBloc,
       userBloc: userBloc,

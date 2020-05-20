@@ -14,22 +14,27 @@ FutureOr<T> waitThroughStateWithData<S, T>(
   bool Function(S state) test,
   FutureOr<T> Function(T value) act,
 }) async {
+  T value;
   try {
     await bloc
         .firstWhere(
           (state) => state is S && (test == null || test(state)),
         )
         .timeout(timeout);
+
+    // Map state to value
+    value = map(bloc.state);
+
+    // Act on value?
+    if (act != null) {
+      value = await act(value);
+    }
   } on Exception {
     if (fail) {
-      throw TimeoutException("Failed wait for $T", timeout);
+      throw TimeoutException("Failed to wait for $T", timeout);
     }
   }
-  final value = map(bloc.state);
-  if (act == null) {
-    return value;
-  }
-  return await act(value);
+  return value;
 }
 
 /// Wait for given rule result from stream of results

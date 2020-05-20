@@ -352,7 +352,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _initWakeLock() async {
     _wakeLockWasOn = await Wakelock.isEnabled;
-    await Wakelock.toggle(on: context.bloc<AppConfigBloc>().config.keepScreenOn);
+    if (mounted) {
+      await Wakelock.toggle(on: context.bloc<AppConfigBloc>().config.keepScreenOn);
+    }
   }
 
   void _restoreWakeLock() async {
@@ -785,7 +787,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         ? null
         : POILayerOptions(
             context.bloc<IncidentBloc>(),
-            incidentId: widget.incident.uuid,
+            iuuid: widget.incident.uuid,
             align: AnchorAlign.top,
             icon: Icon(
               Icons.location_on,

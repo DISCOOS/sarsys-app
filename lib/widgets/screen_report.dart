@@ -1,3 +1,5 @@
+import 'package:SarSys/services/navigation_service.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/mode/page_report_mode.dart';
 import 'package:catcher/model/report.dart';
 import 'package:flutter/material.dart';
@@ -54,6 +56,21 @@ class ScreenReportState extends State<ScreenReport> {
             icon: Icon(Icons.send),
             tooltip: "Send feilmelding",
             onPressed: () => _acceptReport(),
+          ),
+          IconButton(
+            icon: Icon(Icons.delete),
+            tooltip: "Slett data",
+            onPressed: () async {
+              final delete = await prompt(
+                NavigationService().overlay.context,
+                "Slette alle data?",
+                "Dette vil slette alle data SarSys har lagret. Vil du fortsette?",
+              );
+              if (delete) {
+                Navigator.pop(NavigationService().overlay.context);
+                await NavigationService().controller.reset();
+              }
+            },
           ),
         ],
       ),

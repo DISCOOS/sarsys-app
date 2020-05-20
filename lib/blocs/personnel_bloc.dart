@@ -25,24 +25,25 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, this.incidentBloc) {
+  PersonnelBloc(this.repo, this.incidentBloc, BlocEventBus bus) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
 
-    _subscriptions
-      ..add(incidentBloc.listen(
-        _processIncidentEvent,
-      ))
-      // Process tracking messages
-      ..add(service.messages.listen(
-        _processPersonnelMessage,
-      ));
+    // Process Incident events
+    registerStreamSubscription(incidentBloc.listen(
+      _processIncidentEvent,
+    ));
+
+    // Process Tracking messages
+    registerStreamSubscription(service.messages.listen(
+      _processPersonnelMessage,
+    ));
   }
 
   void _processIncidentEvent(IncidentState state) {
     try {
-      if (_subscriptions.isNotEmpty) {
+      if (subscriptions.isNotEmpty) {
         if (state.shouldUnload(iuuid) && repo.isReady) {
           add(UnloadPersonnels(repo.iuuid));
         } else if (state.isSelected()) {
@@ -57,7 +58,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  void _processPersonnelMessage(event) {
+  void _processPersonnelMessage(PersonnelMessage event) {
     try {
       add(_InternalMessage(event));
     } on Exception catch (error, stackTrace) {
@@ -67,9 +68,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       );
     }
   }
-
-  /// Subscriptions released on [close]
-  List<StreamSubscription> _subscriptions = [];
 
   /// Get [IncidentBloc]
   final IncidentBloc incidentBloc;
@@ -278,10 +276,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   @override
   Future<void> close() async {
-    _subscriptions.forEach((subscription) => subscription.cancel());
-    _subscriptions.clear();
+    super.close();
     await repo.dispose();
-    return super.close();
   }
 }
 

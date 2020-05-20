@@ -16,13 +16,13 @@ class TrackingService {
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  /// GET ../incident/{incidentId}/tracking
+  /// GET ../incident/{iuuid}/tracking
   Future<ServiceResponse<List<Tracking>>> fetch(String uuid) async {
     // TODO: Implement fetch tracking
     throw "Not implemented";
   }
 
-  /// POST ../incident/{incidentId}/tracking
+  /// POST ../incident/{iuuid}/tracking
   Future<ServiceResponse<Tracking>> create(String iuuid, Tracking tracking) async {
     // TODO: Implement create unit tracking
     throw "Not implemented";

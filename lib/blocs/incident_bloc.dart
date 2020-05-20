@@ -5,6 +5,7 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:flutter/foundation.dart';
 
 import 'core.dart';
 import 'mixins.dart';
@@ -26,7 +27,12 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     );
   }
 
-  static const SELECTED_IUUID_KEY = 'selected_iuuid';
+  /// Key suffix for storing
+  /// selected [Incident.uuid]
+  /// in [Storage.secure] for
+  /// each user
+  ///
+  static const SELECTED_IUUID_KEY_SUFFIX = 'selected_iuuid';
 
   /// Get [UserBloc]
   final UserBloc userBloc;
@@ -155,14 +161,14 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   }
 
   Stream<IncidentState> _load(LoadIncidents command) async* {
-    // Read from storage if set locally
-    final iuuid = _iuuid ?? await Storage.secure.read(key: SELECTED_IUUID_KEY);
+    // Get currently selected uuid
+    final iuuid = _iuuid;
 
     // Execute command
     final incidents = await repo.load();
 
     // Unselect and reselect
-    final unselected = await _unset();
+    final unselected = await _unset(clear: true);
     final selected = await _set(
       incidents.firstWhere(
         (incident) => iuuid == incident.uuid,
@@ -190,7 +196,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     _assertData(command.data);
     // Execute command
     final incident = await repo.create(command.data);
-    final unselected = command.selected ? await _unset() : null;
+    final unselected = command.selected ? await _unset(clear: true) : null;
     final selected = command.selected ? await _set(incident) : null;
     // Complete request
     final created = toOK(
@@ -213,7 +219,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     // Execute command
     var incident = await repo.update(command.data);
     var select = command.selected && command.data.uuid != _iuuid;
-    final unselected = select ? await _unset() : null;
+    final unselected = select ? await _unset(clear: true) : null;
     final selected = select ? await _set(incident) : null;
     final selectionChanged = unselected != selected;
     // Complete request
@@ -241,7 +247,12 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     // Execute command
     var incident = await repo.delete(command.data);
     // Unselect if was selected
-    final unselected = command.data == _iuuid ? await _unset(selected) : null;
+    final unselected = command.data == _iuuid
+        ? await _unset(
+            selected: selected,
+            clear: true,
+          )
+        : null;
     // Complete request
     final deleted = toOK(
       command,
@@ -260,7 +271,10 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     // Execute command
     List<Incident> incidents = await repo.clear();
     // Complete request
-    final unselected = await _unset(selected);
+    final unselected = await _unset(
+      selected: selected,
+      clear: false,
+    );
     final unloaded = toOK(
       command,
       IncidentsUnloaded(incidents),
@@ -275,19 +289,17 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   Stream<IncidentState> _select(SelectIncident command) async* {
     if (repo.containsKey(command.data)) {
       final incident = repo[command.data];
-      final unselected = await _unset();
+      final unselected = command.data != _iuuid ? await _unset(clear: true) : null;
       final selected = toOK(
         command,
         await _set(repo[command.data]),
         result: incident,
       );
-      if (unselected != selected) {
-        if (unselected != null) {
-          yield unselected;
-        }
-        if (selected != null) {
-          yield selected;
-        }
+      if (unselected != null) {
+        yield unselected;
+      }
+      if (selected != null) {
+        yield selected;
       }
     } else {
       yield toError(
@@ -303,8 +315,9 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   Future<IncidentSelected> _set(Incident data) async {
     _iuuid = data?.uuid;
     if (_iuuid != null) {
-      await Storage.secure.write(
-        key: SELECTED_IUUID_KEY,
+      await Storage.writeUserValue(
+        userBloc.user,
+        key: SELECTED_IUUID_KEY_SUFFIX,
         value: _iuuid,
       );
       return IncidentSelected(data);
@@ -313,7 +326,9 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   }
 
   Future<IncidentState> _unselect(IncidentCommand command) async {
-    final unselected = await _unset();
+    final unselected = await _unset(
+      clear: true,
+    );
     if (unselected != null) {
       return toOK(
         command,
@@ -327,12 +342,18 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     );
   }
 
-  Future<IncidentState> _unset([Incident selected]) async {
+  Future<IncidentState> _unset({
+    @required bool clear,
+    Incident selected,
+  }) async {
     final incident = _iuuid == null ? null : repo[_iuuid] ?? selected;
     _iuuid = null;
-    await Storage.secure.delete(
-      key: SELECTED_IUUID_KEY,
-    );
+
+    if (clear) {
+      await Storage.secure.delete(
+        key: SELECTED_IUUID_KEY_SUFFIX,
+      );
+    }
 
     return incident != null ? IncidentUnset(incident) : null;
   }

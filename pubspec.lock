@@ -420,7 +420,7 @@ packages:
       name: flutter_form_builder
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.10.0"
+    version: "3.10.1"
   flutter_image:
     dependency: transitive
     description:
@@ -464,9 +464,11 @@ packages:
   flutter_map:
     dependency: "direct main"
     description:
-      path: "../flutter_map"
-      relative: true
-    source: path
+      path: "."
+      ref: track_change_and_evict_errors
+      resolved-ref: "3826eba321ef6b1f8d5bb1a5b252d20d41aa7a23"
+      url: "https://github.com/DISCOOS/flutter_map"
+    source: git
     version: "0.9.0"
   flutter_phoenix:
     dependency: "direct main"
@@ -638,7 +640,7 @@ packages:
       name: image_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.6.6+1"
+    version: "0.6.6+4"
   image_picker_platform_interface:
     dependency: transitive
     description:
@@ -916,6 +918,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.2.1"
+  platform_detect:
+    dependency: transitive
+    description:
+      name: platform_detect
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.4.0"
   plugin_platform_interface:
     dependency: transitive
     description:
@@ -1263,7 +1272,7 @@ packages:
       name: url_launcher_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.1+5"
+    version: "0.1.1+6"
   usage:
     dependency: transitive
     description:

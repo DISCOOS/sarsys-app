@@ -16,13 +16,13 @@ class PersonnelService {
   Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
-  Future<ServiceResponse<List<Personnel>>> fetch(String incidentId) async {
+  Future<ServiceResponse<List<Personnel>>> fetch(String iuuid) async {
     // TODO: Implement fetch Personnel
     throw "Not implemented";
   }
 
   /// POST ../personnel
-  Future<ServiceResponse<Personnel>> create(String incidentId, Personnel personnel) async {
+  Future<ServiceResponse<Personnel>> create(String iuuid, Personnel personnel) async {
     // TODO: Implement create Personnel
     throw "Not implemented";
   }
