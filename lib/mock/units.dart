@@ -126,9 +126,8 @@ class UnitServiceMock extends Mock implements UnitService {
       final iuuid = _.positionalArguments[0];
       final Unit unit = _.positionalArguments[1];
       final units = unitsRepo.putIfAbsent(iuuid, () => {});
-      final String uuuid = unit.uuid;
       return ServiceResponse.ok(
-        body: units.putIfAbsent(uuuid, () => unit.cloneWith(uuid: uuuid)),
+        body: units.putIfAbsent(unit.uuid, () => unit),
       );
     });
     when(mock.update(any)).thenAnswer((_) async {

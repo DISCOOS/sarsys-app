@@ -239,11 +239,13 @@ class AffiliationFormState extends State<AffiliationForm> {
                   context,
                   DEP_FIELD,
                   'Avdeling',
-                  division?.departments[depId],
+                  _toDepartment(division, depId),
                   depId,
                 );
         });
   }
+
+  String _toDepartment(Division division, String depId) => division?.departments?.elementAt(depId) ?? '-';
 
   FormBuilderCustomField<String> _buildReadOnly(
     BuildContext context,

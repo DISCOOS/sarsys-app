@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';

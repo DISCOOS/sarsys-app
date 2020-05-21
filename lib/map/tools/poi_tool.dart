@@ -2,7 +2,7 @@ import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/usecase/poi.dart';
+import 'package:SarSys/usecase/poi_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/poi_widget.dart';

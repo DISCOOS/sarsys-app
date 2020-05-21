@@ -79,48 +79,41 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     return Container(
       child: Padding(
         padding: const EdgeInsets.all(0),
-        child: Stack(
+        child: ListView(
+          padding: const EdgeInsets.all(UnitScreen.SPACING),
+          physics: AlwaysScrollableScrollPhysics(),
           children: [
+            _buildMapTile(context, _unit),
             StreamBuilder(
-              initialData: _unit,
-              stream: _group.stream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                if (snapshot.data is Unit) {
-                  _unit = snapshot.data;
-                }
-                final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
-                return ListView(
-                  padding: const EdgeInsets.all(UnitScreen.SPACING),
-                  physics: AlwaysScrollableScrollPhysics(),
-                  children: [
-                    _buildMapTile(context, _unit),
-                    _buildInfoPanel(tracking, context),
-                  ],
-                );
-              },
-            ),
+                initialData: _unit,
+                stream: _group.stream,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+                  if (snapshot.data is Unit) {
+                    _unit = snapshot.data;
+                  }
+                  final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
+                  return _buildInfoPanel(tracking, context);
+                }),
           ],
         ),
       ),
     );
   }
 
-  UnitWidget _buildInfoPanel(Tracking tracking, BuildContext context) {
-    return UnitWidget(
-      unit: _unit,
-      tracking: tracking,
-      devices: tracking?.sources
-          ?.map((source) => context.bloc<TrackingBloc>().deviceBloc.devices[source.uuid])
-          ?.where((unit) => unit != null),
-      withHeader: false,
-      withActions: context.bloc<UserBloc>().user?.isCommander,
-      onMessage: showMessage,
-      onChanged: (unit) => setState(() => _unit = unit),
-      onDelete: () => Navigator.pop(context),
-      onGoto: (point) => jumpToPoint(context, center: point),
-    );
-  }
+  UnitWidget _buildInfoPanel(Tracking tracking, BuildContext context) => UnitWidget(
+        unit: _unit,
+        tracking: tracking,
+        devices: tracking?.sources
+            ?.map((source) => context.bloc<TrackingBloc>().deviceBloc.devices[source.uuid])
+            ?.where((unit) => unit != null),
+        withHeader: false,
+        withActions: context.bloc<UserBloc>().user?.isCommander,
+        onMessage: showMessage,
+        onChanged: (unit) => setState(() => _unit = unit),
+        onDelete: () => Navigator.pop(context),
+        onGoto: (point) => jumpToPoint(context, center: point),
+      );
 
   Widget _buildMapTile(BuildContext context, Unit unit) {
     final center = toCenter(context.bloc<TrackingBloc>().trackings[unit.tracking.uuid]);
@@ -133,19 +126,26 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
           borderRadius: BorderRadius.circular(UnitScreen.CORNER),
           child: GestureDetector(
             child: MapWidget(
+              key: ObjectKey(unit.uuid),
               center: center,
               zoom: 16.0,
               interactive: false,
-              withPOIs: false,
+              withUnits: true,
               withDevices: false,
+              withPersonnel: false,
               withRead: true,
+              withWrite: true,
               withControls: true,
               withControlsZoom: true,
+              withControlsLayer: true,
+              withControlsBaseMap: true,
               withControlsOffset: 16.0,
               showRetired: UnitStatus.Retired == unit.status,
               showLayers: [
-                MapWidgetState.LAYER_UNIT,
+                MapWidgetState.LAYER_POI,
+                MapWidgetState.LAYER_PERSONNEL,
                 MapWidgetState.LAYER_TRACKING,
+                MapWidgetState.LAYER_SCALE,
               ],
               mapController: _controller,
             ),

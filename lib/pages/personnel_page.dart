@@ -8,8 +8,8 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/screens/personnel_screen.dart';
-import 'package:SarSys/usecase/personnel.dart';
-import 'package:SarSys/usecase/unit.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
+import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
@@ -236,7 +236,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           caption: 'KNYTT',
           color: Theme.of(context).buttonColor,
           icon: Icons.people,
-          onTap: () async => await addToUnit(personnel: [personnel]),
+          onTap: () async => await addToUnit(personnels: [personnel]),
         ),
       );
 
@@ -248,7 +248,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           icon: Icons.people,
           onTap: () async {
             if (unit != null) {
-              await removeFromUnit(unit, personnel: [personnel]);
+              await removeFromUnit(unit, personnels: [personnel]);
             }
           },
         ),
@@ -265,7 +265,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           caption: 'OPPRETT',
           color: Theme.of(context).buttonColor,
           icon: Icons.group_add,
-          onTap: () async => await createUnit(personnel: [personnel]),
+          onTap: () async => await createUnit(personnels: [personnel]),
         ),
       );
 

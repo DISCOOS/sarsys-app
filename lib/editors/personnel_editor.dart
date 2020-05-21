@@ -14,7 +14,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/usecase/personnel.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
@@ -187,7 +187,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 Divider(),
                 Padding(
                   padding: const EdgeInsets.only(left: 12.0),
-                  child: Text("Poisisjonering", style: caption),
+                  child: Text("Posisjonering", style: caption),
                 ),
                 SizedBox(height: SPACING),
                 _buildDeviceListField(),

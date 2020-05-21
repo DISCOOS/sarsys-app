@@ -18,7 +18,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
         UpdatableBloc<Incident>,
         DeletableBloc<Incident>,
         UnloadableBloc<List<Incident>> {
-  IncidentBloc(this.repo, this.userBloc) {
+  IncidentBloc(this.repo, BlocEventBus bus, this.userBloc) : super(bus: bus) {
     assert(this.repo != null, "repository can not be null");
     assert(this.repo.service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
@@ -117,8 +117,16 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   }
 
   /// Create given incident
-  Future<Incident> create(Incident incident, {bool selected = true}) {
-    return dispatch<Incident>(CreateIncident(incident, selected: selected));
+  Future<Incident> create(
+    Incident incident, {
+    bool selected = true,
+    List<String> units = const [],
+  }) {
+    return dispatch<Incident>(CreateIncident(
+      incident,
+      selected: selected,
+      units: units,
+    ));
   }
 
   /// Update given incident
@@ -201,7 +209,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     // Complete request
     final created = toOK(
       command,
-      IncidentCreated(incident),
+      IncidentCreated(incident, units: command.units),
       result: incident,
     );
     // Notify listeners
@@ -392,10 +400,15 @@ class LoadIncidents extends IncidentCommand<void, List<Incident>> {
 
 class CreateIncident extends IncidentCommand<Incident, Incident> {
   final bool selected;
-  CreateIncident(Incident data, {this.selected = true}) : super(data, props: [selected]);
+  final List<String> units;
+  CreateIncident(
+    Incident data, {
+    this.selected = true,
+    this.units,
+  }) : super(data, props: [selected, units]);
 
   @override
-  String toString() => 'CreateIncident {data: $data, selected: $selected}';
+  String toString() => 'CreateIncident {data: $data, selected: $selected, units: $units}';
 }
 
 class UpdateIncident extends IncidentCommand<Incident, Incident> {
@@ -484,10 +497,15 @@ class IncidentsLoaded extends IncidentState<Iterable<Incident>> {
 
 class IncidentCreated extends IncidentState<Incident> {
   final bool selected;
-  IncidentCreated(Incident data, {this.selected = true}) : super(data, props: [selected]);
+  final List<String> units;
+  IncidentCreated(
+    Incident data, {
+    this.selected = true,
+    this.units,
+  }) : super(data, props: [selected, units]);
 
   @override
-  String toString() => 'IncidentCreated {incident: $data, selected: $selected}';
+  String toString() => 'IncidentCreated {incident: $data, selected: $selected, units: $units}';
 }
 
 class IncidentUpdated extends IncidentState<Incident> {

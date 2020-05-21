@@ -55,6 +55,9 @@ class BlocTestHarness implements BlocDelegate {
   bool get isOffline => connectivity.isOffline;
   bool get isCellular => connectivity.isCellular;
 
+  BlocEventBus get bus => _bus;
+  BlocEventBus _bus = BlocEventBusMock();
+
   String _username;
   String _password;
   bool _authenticated;
@@ -364,6 +367,7 @@ class BlocTestHarness implements BlocDelegate {
         _incidentService,
         connectivity: _connectivity,
       ),
+      bus,
       _userBloc,
     );
 
@@ -408,8 +412,8 @@ class BlocTestHarness implements BlocDelegate {
         _personnelService,
         connectivity: _connectivity,
       ),
-      _incidentBloc,
       bus,
+      _incidentBloc,
     );
   }
 
@@ -424,6 +428,7 @@ class BlocTestHarness implements BlocDelegate {
         _unitService,
         connectivity: _connectivity,
       ),
+      bus,
       _incidentBloc,
       _personnelBloc,
     );
@@ -472,7 +477,6 @@ class BlocTestHarness implements BlocDelegate {
     }
   }
 
-  final bus = BlocEventBus();
   final errors = <Bloc, List<Object>>{};
 
   @override
@@ -492,6 +496,8 @@ class BlocTestHarness implements BlocDelegate {
     // TODO: implement onTransition
   }
 }
+
+class BlocEventBusMock extends Mock implements BlocEventBus {}
 
 class ConnectivityServiceMock extends Mock implements ConnectivityService {
   ConnectivityServiceMock({ConnectivityStatus status = ConnectivityStatus.cellular}) : _status = status;

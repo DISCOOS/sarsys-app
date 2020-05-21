@@ -1,4 +1,5 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';
@@ -14,6 +15,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:SarSys/core/extensions.dart';
 
 class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   final User user;
@@ -87,7 +90,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
+      builder: (BuildContext context) {
         final tracking = bloc.trackings[personnel.tracking.uuid];
         return Dialog(
           elevation: 0,
@@ -96,6 +99,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
             child: PersonnelWidget(
               personnel: personnel,
               tracking: tracking,
+              unit: context.bloc<UnitBloc>().repo.find(personnel).firstOrNull,
               devices: bloc.devices(personnel.tracking.uuid),
               onMessage: onMessage,
               withActions: user.isCommander == true,

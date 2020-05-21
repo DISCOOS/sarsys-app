@@ -30,7 +30,7 @@ import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
 import 'package:SarSys/services/navigation_service.dart';
-import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/incident_user_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/access_checker.dart';

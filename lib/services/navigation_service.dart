@@ -8,10 +8,11 @@ class NavigationService {
   factory NavigationService() => _instance;
 
   static final _instance = NavigationService._();
-  static final GlobalKey<NavigatorState> navigatorKey = Catcher.navigatorKey;
+  static final GlobalKey<NavigatorState> _navigatorKey = Catcher.navigatorKey;
+  static GlobalKey<NavigatorState> get navigatorKey => _navigatorKey;
 
   OverlayState get overlay => navigatorKey.currentState.overlay;
-  BuildContext get context => navigatorKey.currentState.context;
+  BuildContext get context => navigatorKey.currentContext;
 
   BlocController get controller => Provider.of<BlocController>(context);
 

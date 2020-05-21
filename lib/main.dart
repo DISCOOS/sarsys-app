@@ -1,5 +1,6 @@
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/services/navigation_service.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
 import 'package:SarSys/widgets/sarsys_app.dart';
@@ -61,7 +62,7 @@ Widget _createApp(
       child: SarSysApp(
         bucket: bucket,
         controller: controller,
-        navigatorKey: Catcher.navigatorKey,
+        navigatorKey: NavigationService.navigatorKey,
       ),
     ),
   );

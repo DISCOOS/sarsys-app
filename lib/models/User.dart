@@ -66,6 +66,8 @@ class User extends Equatable {
   String get initials => '${fname.substring(0, 1)}${lname.substring(0, 1)}'.toUpperCase();
 
   bool get hasRoles => roles.isNotEmpty;
+  // TODO: Implement admin role
+  bool get isAdmin => false;
   bool get isCommander => roles.contains(UserRole.commander);
   bool get isPlanningChief => roles.contains(UserRole.planning_chief);
   bool get isOperationsChief => roles.contains(UserRole.operations_chief);

@@ -173,12 +173,16 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   void _processUnitState(UnitState state) {
     try {
       if (state.isCreated() && state.isTracked() && !state.isRetired()) {
-        final unit = (state as UnitCreated).data;
+        final created = (state as UnitCreated);
+        final unit = created.data;
         final tracking = TrackingUtils.create(
           unit,
-          sources: TrackingUtils.toSources(unit.personnels, repo),
+          sources: [
+            ...TrackingUtils.toSources(unit.personnels, repo),
+            ...TrackingUtils.toSources(created.devices, repo),
+          ],
         );
-        // Backend will perform this apriori
+        // TODO: Backend will perform this apriori
         add(_toInternalCreate(
           tracking,
         ));
@@ -195,7 +199,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             next,
           ));
         } else if (!state.isRetired()) {
-          // Backend will perform this apriori
+          // TODO: Backend will perform this apriori
           add(_toInternalCreate(
             tracking,
           ));
@@ -204,7 +208,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final unit = (state as UnitDeleted).data;
         final tracking = repo[unit.tracking?.uuid];
         if (tracking != null) {
-          // Backend will perform this apriori
+          // TODO: Backend will perform this apriori
           add(_toInternalDelete(
             tracking,
           ));

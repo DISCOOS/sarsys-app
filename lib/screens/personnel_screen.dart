@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -19,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong/latlong.dart';
+import 'package:SarSys/core/extensions.dart';
 
 class PersonnelScreen extends Screen<_PersonnelScreenState> {
   static const ROUTE = 'personnel';
@@ -65,7 +67,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
@@ -91,23 +92,22 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         padding: const EdgeInsets.all(0),
         child: Stack(
           children: [
-            StreamBuilder(
-              initialData: _personnel,
-              stream: _group.stream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                if (snapshot.data is Personnel) {
-                  _personnel = snapshot.data;
-                }
-                return ListView(
-                  padding: const EdgeInsets.all(PersonnelScreen.SPACING),
-                  physics: AlwaysScrollableScrollPhysics(),
-                  children: [
-                    _buildMapTile(context, _personnel),
-                    _buildInfoPanel(context),
-                  ],
-                );
-              },
+            ListView(
+              padding: const EdgeInsets.all(PersonnelScreen.SPACING),
+              physics: AlwaysScrollableScrollPhysics(),
+              children: [
+                StreamBuilder(
+                    initialData: _personnel,
+                    stream: _group.stream,
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+                      if (snapshot.data is Personnel) {
+                        _personnel = snapshot.data;
+                      }
+                      return _buildMapTile(context, _personnel);
+                    }),
+                _buildInfoPanel(context),
+              ],
             ),
           ],
         ),
@@ -117,6 +117,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
   PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
         personnel: _personnel,
+        unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
         tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
         withHeader: false,
@@ -139,13 +140,13 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
           child: GestureDetector(
             child: MapWidget(
-              key: ObjectKey(personnel),
+              key: ObjectKey(personnel.uuid),
               center: center,
               zoom: 16.0,
               interactive: false,
-              withPOIs: true,
               withUnits: false,
               withDevices: false,
+              withPersonnel: true,
               withRead: true,
               withWrite: true,
               withControls: true,
@@ -154,10 +155,12 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               withControlsBaseMap: true,
               withControlsOffset: 16.0,
               showRetired: PersonnelStatus.Retired == personnel.status,
-//              showLayers: [
-//                MapWidgetState.LAYER_PERSONNEL,
-//                MapWidgetState.LAYER_TRACKING,
-//              ],
+              showLayers: [
+                MapWidgetState.LAYER_POI,
+                MapWidgetState.LAYER_PERSONNEL,
+                MapWidgetState.LAYER_TRACKING,
+                MapWidgetState.LAYER_SCALE,
+              ],
               mapController: _controller,
             ),
             onTap: () => center == null

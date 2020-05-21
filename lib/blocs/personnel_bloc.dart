@@ -5,6 +5,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/services/personnel_service.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
@@ -25,7 +26,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, this.incidentBloc, BlocEventBus bus) : super(bus: bus) {
+  PersonnelBloc(this.repo, BlocEventBus bus, this.incidentBloc) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
@@ -39,6 +40,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     registerStreamSubscription(service.messages.listen(
       _processPersonnelMessage,
     ));
+
+    // Ensure user is mobilized
+    registerEventHandler<PersonnelsLoaded>(MobilizeUser());
   }
 
   void _processIncidentEvent(IncidentState state) {

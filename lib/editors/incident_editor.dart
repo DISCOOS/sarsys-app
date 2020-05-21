@@ -592,7 +592,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         onPressed: _ipp is Location
             ? () {
                 _meetup = _ipp.cloneWith();
-                _updateField('meetup', _meetup.point);
+                _updateField('meetup', toPosition(_meetup.point));
                 setState(() {});
               }
             : null,
@@ -604,7 +604,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         onPressed: _meetup is Location
             ? () {
                 _ipp = _meetup.cloneWith();
-                _updateField('ipp', _ipp.point);
+                _updateField('ipp', toPosition(_ipp.point));
                 setState(() {});
               }
             : null,

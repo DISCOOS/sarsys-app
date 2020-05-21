@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -20,7 +19,6 @@ import 'package:SarSys/widgets/device_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:SarSys/map/map_controls.dart';
 import 'package:latlong/latlong.dart';
 
 class DeviceScreen extends Screen<_DeviceScreenState> {
@@ -63,11 +61,6 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
-    final unit = context.bloc<TrackingBloc>().units.find(_device);
-    _group = StreamGroup.broadcast()
-      ..add(context.bloc<DeviceBloc>().onChanged(_device))
-      ..add(context.bloc<TrackingBloc>().onChanged(unit?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
     _onMoved = context.bloc<DeviceBloc>().onChanged(_device).listen(_onMove);
   }
@@ -87,23 +80,22 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     return Container(
       child: Padding(
         padding: const EdgeInsets.all(0),
-        child: Stack(
+        child: ListView(
+          padding: const EdgeInsets.all(DeviceScreen.SPACING),
+          physics: AlwaysScrollableScrollPhysics(),
           children: [
-            StreamBuilder(
+            _buildMapTile(context, _device),
+            StreamBuilder<Device>(
               initialData: _device,
-              stream: _group.stream,
+              stream: context.bloc<DeviceBloc>().onChanged(_device),
               builder: (context, snapshot) {
-                if (snapshot.data is Device) _device = snapshot.data;
+                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+                if (snapshot.data is Device) {
+                  _device = snapshot.data;
+                }
                 final unit = context.bloc<TrackingBloc>().units.find(_device);
                 final personnel = context.bloc<TrackingBloc>().personnels.find(_device);
-                return ListView(
-                  padding: const EdgeInsets.all(DeviceScreen.SPACING),
-                  physics: AlwaysScrollableScrollPhysics(),
-                  children: [
-                    _buildMapTile(context, _device),
-                    _buildInfoPanel(unit, personnel, context),
-                  ],
-                );
+                return _buildInfoPanel(unit, personnel, context);
               },
             ),
           ],
@@ -112,21 +104,19 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     );
   }
 
-  DeviceWidget _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) {
-    return DeviceWidget(
-      unit: unit,
-      personnel: personnel,
-      device: _device,
-      tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
-      organization: FleetMapService().fetchOrganization(Defaults.orgId),
-      withHeader: false,
-      withActions: context.bloc<UserBloc>().user?.isCommander == true,
-      onMessage: showMessage,
-      onChanged: (device) => setState(() => _device = device),
-      onDelete: () => Navigator.pop(context),
-      onGoto: (point) => jumpToPoint(context, center: point),
-    );
-  }
+  DeviceWidget _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
+        unit: unit,
+        personnel: personnel,
+        device: _device,
+        tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
+        organization: FleetMapService().fetchOrganization(Defaults.orgId),
+        withHeader: false,
+        withActions: context.bloc<UserBloc>().user?.isCommander == true,
+        onMessage: showMessage,
+        onChanged: (device) => setState(() => _device = device),
+        onDelete: () => Navigator.pop(context),
+        onGoto: (point) => jumpToPoint(context, center: point),
+      );
 
   Widget _buildMapTile(BuildContext context, Device device) {
     final center = toCenter(device.position?.geometry);
@@ -135,67 +125,36 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
       borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
       child: Container(
         height: 240.0,
-        child: Stack(
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
-              child: GestureDetector(
-                child: MapWidget(
-                  center: center,
-                  zoom: 16.0,
-                  interactive: false,
-                  withPOIs: false,
-                  withUnits: false,
-                  withRead: true,
-                  showLayers: [
-                    MapWidgetState.LAYER_DEVICE,
-                    MapWidgetState.LAYER_TRACKING,
-                  ],
-                  mapController: _controller,
-                ),
-                onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
+          child: GestureDetector(
+            child: MapWidget(
+              key: ObjectKey(device.uuid),
+              center: center,
+              zoom: 16.0,
+              interactive: false,
+              withUnits: false,
+              withDevices: true,
+              withPersonnel: false,
+              withTracking: false,
+              withRead: true,
+              withWrite: true,
+              withControls: true,
+              withControlsZoom: true,
+              withControlsLayer: true,
+              withControlsBaseMap: true,
+              withControlsOffset: 16.0,
+              showLayers: [
+                MapWidgetState.LAYER_POI,
+                MapWidgetState.LAYER_DEVICE,
+                MapWidgetState.LAYER_SCALE,
+              ],
+              mapController: _controller,
             ),
-            _buildControls(device),
-          ],
+            onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildControls(Device device) {
-    return MapControls(
-      top: 16.0,
-      controls: [
-        MapControl(
-          icon: Icons.add,
-          onPressed: () {
-            if (device?.position != null) {
-              var zoom = math.min(_controller.zoom + 1, Defaults.maxZoom);
-              _controller.animatedMove(
-                toCenter(device?.position?.geometry),
-                zoom,
-                this,
-                milliSeconds: 250,
-              );
-            }
-          },
-        ),
-        MapControl(
-          icon: Icons.remove,
-          onPressed: () {
-            if (device?.position != null) {
-              var zoom = math.max(_controller.zoom - 1, Defaults.minZoom);
-              _controller.animatedMove(
-                toCenter(device?.position?.geometry),
-                zoom,
-                this,
-                milliSeconds: 250,
-              );
-            }
-          },
-        ),
-      ],
     );
   }
 

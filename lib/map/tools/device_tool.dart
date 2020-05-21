@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/tools/map_tools.dart';

@@ -1,4 +1,8 @@
-import 'package:SarSys/core/streams.dart';
+import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,12 +24,14 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final Position position;
   final List<Device> devices;
   final List<Personnel> personnels;
+  final List<String> templates;
 
   UnitParams({
     Unit unit,
     this.position,
     this.devices,
     this.personnels,
+    this.templates,
   }) : super(unit);
 }
 
@@ -33,12 +39,12 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
 Future<dartz.Either<bool, Unit>> createUnit({
   Position position,
   List<Device> devices,
-  List<Personnel> personnel,
+  List<Personnel> personnels,
 }) =>
     CreateUnit()(UnitParams(
       devices: devices,
       position: position,
-      personnels: personnel,
+      personnels: personnels,
     ));
 
 class CreateUnit extends UseCase<bool, Unit, UnitParams> {
@@ -69,24 +75,49 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // This will create unit and tracking
-    final unit = await params.bloc.create(result.data);
-
-    // Wait for tracking is created
-    final tracking = await waitThroughStateWithData<TrackingCreated, Tracking>(
-      params.context.bloc<TrackingBloc>(),
-      map: (state) => state.data,
-      test: (state) => state.data.uuid == unit.tracking.uuid,
+    // This will create unit.
+    //
+    // Tracking will be created
+    // from UnitCreated by TrackingBloc
+    //
+    final unit = await params.bloc.create(
+      result.data,
+      devices: result.devices,
+      position: result.position,
     );
 
-    // Update tracking
-    await params.context.bloc<TrackingBloc>().replace(
-          tracking.uuid,
-          devices: result.devices,
-          position: result.position,
-          personnels: result.personnels,
-        );
     return dartz.Right(unit);
+  }
+}
+
+class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> implements BlocEventHandler<IncidentCreated> {
+  @override
+  Future<dartz.Either<bool, List<Unit>>> execute(UnitParams params) async {
+    assert(params.templates?.isNotEmpty == true, "templates must be supplied");
+
+    final org = await FleetMapService().fetchOrganization(Defaults.orgId);
+    final config = params.context.bloc<AppConfigBloc>().config;
+    final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
+    final units = <Unit>[];
+    params.templates.forEach((template) async {
+      final unit = params.bloc.fromTemplate(
+        department,
+        template,
+      );
+      if (unit != null) {
+        units.add(
+          await params.bloc.create(unit),
+        );
+      }
+    });
+    return dartz.right(units);
+  }
+
+  @override
+  void handle(Bloc bloc, IncidentCreated event) {
+    if (event.units?.isNotEmpty == true) {
+      execute(UnitParams(templates: event.units));
+    }
   }
 }
 
@@ -168,13 +199,13 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
 /// Add given devices and personnel to tracking of given unit
 Future<dartz.Either<bool, Unit>> addToUnit({
   List<Device> devices,
-  List<Personnel> personnel,
+  List<Personnel> personnels,
   Unit unit,
 }) =>
     AddToUnit()(UnitParams(
       unit: unit,
       devices: devices,
-      personnels: personnel,
+      personnels: personnels,
     ));
 
 class AddToUnit extends UseCase<bool, Unit, UnitParams> {
@@ -184,7 +215,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     if (!hasSelectableUnits(params, params.context.bloc<TrackingBloc>())) {
       return createUnit(
         devices: params.devices,
-        personnel: params.personnels,
+        personnels: params.personnels,
       );
     }
 
@@ -255,12 +286,12 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
 Future<dartz.Either<bool, Tracking>> removeFromUnit(
   Unit unit, {
   List<Device> devices,
-  List<Personnel> personnel,
+  List<Personnel> personnels,
 }) =>
     RemoveFromUnit()(UnitParams(
       unit: unit,
       devices: devices,
-      personnels: personnel,
+      personnels: personnels,
     ));
 
 class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
@@ -268,12 +299,12 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   Future<dartz.Either<bool, Tracking>> execute(UnitParams params) async {
     final unit = params.data;
     final devices = params.devices ?? [];
-    final personnel = params.personnels ?? [];
+    final personnels = params.personnels ?? [];
 
     // Notify intent
     final names = List.from([
       ...devices.map((device) => device.name).toList(),
-      ...personnel.map((personnel) => personnel.name).toList(),
+      ...personnels.map((personnel) => personnel.name).toList(),
     ]).join((', '));
     var proceed = await prompt(
       params.overlay.context,
@@ -288,7 +319,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
         .devices(unit.tracking.uuid)
         .where((test) => !devices.contains(test))
         .toList();
-    final keepPersonnel = unit.personnels.where((test) => !personnel.contains(test)).toList();
+    final keepPersonnel = unit.personnels.where((test) => !personnels.contains(test)).toList();
 
     // Remove personnel from Unit?
     if (params.personnels?.isNotEmpty == true) {

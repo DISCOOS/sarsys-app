@@ -1,10 +1,13 @@
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/usecase/personnel.dart';
+import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
+import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
 import 'package:SarSys/widgets/coordinate_view.dart';
@@ -19,6 +22,7 @@ class PersonnelWidget extends StatelessWidget {
   final bool withName;
   final bool withHeader;
   final bool withActions;
+  final Unit unit;
   final Tracking tracking;
   final Personnel personnel;
   final Iterable<Device> devices;
@@ -31,6 +35,7 @@ class PersonnelWidget extends StatelessWidget {
 
   const PersonnelWidget({
     Key key,
+    @required this.unit,
     @required this.personnel,
     @required this.onMessage,
     this.tracking,
@@ -191,12 +196,13 @@ class PersonnelWidget extends StatelessWidget {
       child: ButtonBarTheme(
         // make buttons use the appropriate styles for cards
         child: ButtonBar(
-          alignment: MainAxisAlignment.start,
+          alignment: MainAxisAlignment.end,
+          layoutBehavior: ButtonBarLayoutBehavior.constrained,
           children: <Widget>[
             _buildEditAction(context),
-            if (devices?.isNotEmpty == true) _buildRemoveAction(context),
             _buildTransitionAction(context),
-            _buildDeleteAction(context),
+            if (unit != null) _buildRemoveFromUnitAction(context) else _buildAddToUnitAction(context),
+            if (context.bloc<UserBloc>().user.isAdmin) _buildDeleteAction(context),
           ],
         ),
         data: ButtonBarThemeData(
@@ -209,8 +215,9 @@ class PersonnelWidget extends StatelessWidget {
 
   Widget _buildEditAction(BuildContext context) => Tooltip(
         message: "Endre mannskap",
-        child: FlatButton(
-          child: Text(
+        child: FlatButton.icon(
+          icon: Icon(Icons.edit),
+          label: Text(
             "ENDRE",
             textAlign: TextAlign.center,
           ),
@@ -228,22 +235,39 @@ class PersonnelWidget extends StatelessWidget {
         ),
       );
 
-  Widget _buildRemoveAction(BuildContext context) => Tooltip(
-        message: "Fjern apparater fra mannskap",
-        child: FlatButton(
-          child: Text(
-            "FJERN",
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () async {
-            final result = await removeFromPersonnel(personnel, devices: devices.toList());
-            if (result.isRight()) {
-              _onMessage("Apparater fjernet fra ${personnel.name}");
-              _onChanged(personnel);
-              _onComplete();
-            }
-          },
-        ),
+  Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
+        message: "Knytt apparat til enhet",
+        child: FlatButton.icon(
+            icon: Icon(Icons.people),
+            label: Text(
+              'KNYTT',
+              textAlign: TextAlign.center,
+            ),
+            onPressed: () async {
+              final result = await addToUnit(personnels: [personnel], unit: unit);
+              if (result.isRight()) {
+                var actual = result.toIterable().first;
+                _onMessage("${personnel.name} er tilknyttet ${actual.name}");
+                _onChanged(personnel);
+              }
+            }),
+      );
+
+  Widget _buildRemoveFromUnitAction(BuildContext context) => Tooltip(
+        message: "Fjern apparat fra enhet",
+        child: FlatButton.icon(
+            icon: Icon(Icons.people),
+            label: Text(
+              'FJERN',
+              textAlign: TextAlign.center,
+            ),
+            onPressed: () async {
+              final result = await removeFromUnit(unit, personnels: [personnel]);
+              if (result.isRight()) {
+                _onMessage("${personnel.name} er fjernet fra ${unit.name}");
+                _onChanged(personnel);
+              }
+            }),
       );
 
   Widget _buildTransitionAction(BuildContext context) {
@@ -258,69 +282,104 @@ class PersonnelWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildMobilizeAction(BuildContext context) => Tooltip(
-        message: "Registrer som mobilisert",
-        child: FlatButton(
-          child: Text(
-            "MOBILISERT",
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () async {
-            final result = await mobilizePersonnel(personnel);
-            if (result.isRight()) {
-              final actual = result.toIterable().first;
-              _onMessage("${actual.name} er registert mobilisert");
-              _onChanged(actual);
-              _onComplete();
-            }
-          },
+  Widget _buildMobilizeAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    final color = toPersonnelStatusColor(PersonnelStatus.Mobilized);
+    return Tooltip(
+      message: "Registrer som mobilisert",
+      child: FlatButton.icon(
+        icon: Icon(
+          Icons.check,
+          color: color,
         ),
-      );
+        label: Text(
+          "MOBILISERT",
+          textAlign: TextAlign.center,
+          style: button.copyWith(
+            color: color,
+          ),
+        ),
+        onPressed: () async {
+          final result = await mobilizePersonnel(personnel);
+          if (result.isRight()) {
+            final actual = result.toIterable().first;
+            _onMessage("${actual.name} er registert mobilisert");
+            _onChanged(actual);
+            _onComplete();
+          }
+        },
+      ),
+    );
+  }
 
-  Widget _buildOnSceneAction(BuildContext context) => Tooltip(
-        message: "Registrer som ankommet",
-        child: FlatButton(
-          child: Text(
-            "ANKOMMET",
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () async {
-            final result = await checkInPersonnel(personnel);
-            if (result.isRight()) {
-              final actual = result.toIterable().first;
-              _onMessage("${actual.name} er registert ankommet");
-              _onChanged(actual);
-              _onComplete();
-            }
-          },
+  Widget _buildOnSceneAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    final color = toPersonnelStatusColor(PersonnelStatus.OnScene);
+    return Tooltip(
+      message: "Registrer som ankommet",
+      child: FlatButton.icon(
+        icon: Icon(
+          Icons.check,
+          color: color,
         ),
-      );
+        label: Text(
+          "ANKOMMET",
+          textAlign: TextAlign.center,
+          style: button.copyWith(
+            color: color,
+          ),
+        ),
+        onPressed: () async {
+          final result = await checkInPersonnel(personnel);
+          if (result.isRight()) {
+            final actual = result.toIterable().first;
+            _onMessage("${actual.name} er registert ankommet");
+            _onChanged(actual);
+            _onComplete();
+          }
+        },
+      ),
+    );
+  }
 
-  Widget _buildRetireAction(BuildContext context) => Tooltip(
-        message: "Dimitter og avslutt sporing",
-        child: FlatButton(
-          child: Text(
-            "DIMITTERT",
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () async {
-            final result = await retirePersonnel(personnel);
-            if (result.isRight()) {
-              final actual = result.toIterable().first;
-              _onMessage("${actual.name} er dimmitert");
-              _onChanged(actual);
-              _onComplete();
-            }
-          },
+  Widget _buildRetireAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    final color = toPersonnelStatusColor(PersonnelStatus.Retired);
+    return Tooltip(
+      message: "Dimitter og avslutt sporing",
+      child: FlatButton.icon(
+        icon: Icon(
+          Icons.archive,
+          color: color,
         ),
-      );
+        label: Text(
+          "DIMITTERT",
+          textAlign: TextAlign.center,
+          style: button.copyWith(color: color),
+        ),
+        onPressed: () async {
+          final result = await retirePersonnel(personnel);
+          if (result.isRight()) {
+            final actual = result.toIterable().first;
+            _onMessage("${actual.name} er dimmitert");
+            _onChanged(actual);
+            _onComplete();
+          }
+        },
+      ),
+    );
+  }
 
   Widget _buildDeleteAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett mannskap",
-      child: FlatButton(
-          child: Text(
+      child: FlatButton.icon(
+          icon: Icon(
+            Icons.delete,
+            color: Colors.red,
+          ),
+          label: Text(
             'SLETT',
             textAlign: TextAlign.center,
             style: button.copyWith(color: Colors.red),

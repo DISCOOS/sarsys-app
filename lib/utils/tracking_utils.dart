@@ -64,7 +64,7 @@ class TrackingUtils {
     TrackingRepository repo, {
     bool activeOnly = true,
   }) =>
-      aggregates
+      (aggregates ?? [])
           .where((aggregate) => !activeOnly || isSourceActive(aggregate))
           .map((aggregate) => PositionableSource.from<T>(
                 aggregate,

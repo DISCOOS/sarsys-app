@@ -1,3 +1,4 @@
+import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Personnel.dart';
@@ -5,8 +6,9 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/device.dart';
-import 'package:SarSys/usecase/unit.dart';
+import 'package:SarSys/usecase/device_use_cases.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
+import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -127,7 +129,7 @@ class DeviceWidget extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
               child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
             ),
-            _buildActions(context, unit)
+            _buildActions(context)
           ] else
             SizedBox(height: 16.0)
         ],
@@ -347,8 +349,8 @@ class DeviceWidget extends StatelessWidget {
               child: buildCopyableText(
                 context: context,
                 label: "Tilhørighet",
-                icon: Icon(MdiIcons.graph),
-                value: _ensureAffiliation(snapshot),
+                icon: _ensureAffiliationIconData(snapshot),
+                value: _ensureAffiliationName(snapshot),
                 onMessage: onMessage,
                 onComplete: _onComplete,
               ),
@@ -357,8 +359,12 @@ class DeviceWidget extends StatelessWidget {
         );
       });
 
-  String _ensureAffiliation(AsyncSnapshot<Organization> snapshot) =>
-      snapshot.hasData ? snapshot.data.toAffiliationNameFromNumber(device.number) : "-";
+  String _ensureAffiliationName(AsyncSnapshot<Organization> snapshot) =>
+      snapshot.hasData ? snapshot.data.toAffiliationNameFromNumber(device.number) : '-';
+
+  Icon _ensureAffiliationIconData(AsyncSnapshot<Organization> snapshot) => snapshot.hasData
+      ? SarSysIcons.of(snapshot.data.toAffiliationFromNumber(device.number)?.orgId)
+      : Icon(MdiIcons.graph);
 
   Row _buildTrackingInfo(BuildContext context) {
     final track = _toTrack(tracking);
@@ -368,7 +374,7 @@ class DeviceWidget extends StatelessWidget {
           child: buildCopyableText(
             context: context,
             label: "Knyttet til",
-            icon: Icon(Icons.group),
+            icon: Icon(Icons.link),
             value: unit?.name ?? personnel?.formal ?? "Ingen",
             onMessage: onMessage,
             onComplete: _onComplete,
@@ -428,20 +434,20 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, Unit unit) => Padding(
+  Widget _buildActions(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: ButtonBarTheme(
           // make buttons use the appropriate styles for cards
           child: ButtonBar(
-            alignment: MainAxisAlignment.start,
+            alignment: MainAxisAlignment.end,
             children: <Widget>[
               _buildEditAction(context),
               if (unit != null)
                 _buildRemoveFromUnitAction(context)
-              else ...[
-                _buildCreateAction(context),
+              else if (personnel != null)
+                _buildRemoveFromPersonnelAction(context)
+              else
                 _buildAddToUnitAction(context),
-              ],
               if (device.manual == true) _buildDeleteAction(context),
             ],
           ),
@@ -452,27 +458,11 @@ class DeviceWidget extends StatelessWidget {
         ),
       );
 
-  Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
-        message: "Knytt apparat til enhet",
-        child: FlatButton(
-            child: Text(
-              'KNYTT',
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              final result = await addToUnit(devices: [device], unit: unit);
-              if (result.isRight()) {
-                var actual = result.toIterable().first;
-                _onMessage("${device.name} er tilknyttet ${actual.name}");
-                _onChanged(device);
-              }
-            }),
-      );
-
   Widget _buildEditAction(BuildContext context) => Tooltip(
         message: "Endre apparat",
-        child: FlatButton(
-          child: Text(
+        child: FlatButton.icon(
+          icon: Icon(Icons.edit),
+          label: Text(
             'ENDRE',
             textAlign: TextAlign.center,
           ),
@@ -487,46 +477,83 @@ class DeviceWidget extends StatelessWidget {
         ),
       );
 
-  Widget _buildCreateAction(BuildContext context) => Tooltip(
-        message: "Opprett enhet fra apparat",
-        child: FlatButton(
-          child: Text(
-            'OPPRETT',
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () async {
-            final result = await createUnit(devices: [device]);
-            if (result.isRight()) {
-              final actual = result.toIterable().first;
-              _onMessage("${device.name} er tilknyttet ${actual.name}");
-              _onChanged(device);
-            }
-          },
-        ),
-      );
-
-  Widget _buildRemoveFromUnitAction(BuildContext context) => Tooltip(
-        message: "Fjern apparat fra enhet",
-        child: FlatButton(
-            child: Text(
-              'FJERN',
+  Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
+        message: "Knytt apparat til mannskap",
+        child: FlatButton.icon(
+            icon: Icon(Icons.person),
+            label: Text(
+              'KNYTT',
               textAlign: TextAlign.center,
             ),
             onPressed: () async {
-              final result = await removeFromUnit(unit, devices: [device]);
+              final result = await addToPersonnel([device], personnel: personnel);
               if (result.isRight()) {
-                _onMessage("${device.name} er fjernet fra ${unit.name}");
+                var actual = result.toIterable().first;
+                _onMessage("${device.name} er tilknyttet ${actual.left.name}");
                 _onChanged(device);
               }
             }),
       );
 
+  Widget _buildRemoveFromUnitAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    return Tooltip(
+      message: "Fjern apparat fra unit",
+      child: FlatButton.icon(
+          icon: Icon(
+            Icons.people,
+            color: Colors.red,
+          ),
+          label: Text(
+            'FJERN',
+            textAlign: TextAlign.center,
+            style: button.copyWith(
+              color: Colors.red,
+            ),
+          ),
+          onPressed: () async {
+            final result = await removeFromUnit(unit, devices: [device]);
+            if (result.isRight()) {
+              _onMessage("${device.name} er fjernet fra ${unit.name}");
+              _onChanged(device);
+            }
+          }),
+    );
+  }
+
+  Widget _buildRemoveFromPersonnelAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    return Tooltip(
+      message: "Fjern apparat fra mannskap",
+      child: FlatButton.icon(
+          icon: Icon(
+            Icons.person,
+            color: Colors.red,
+          ),
+          label: Text(
+            'FJERN',
+            textAlign: TextAlign.center,
+            style: button.copyWith(
+              color: Colors.red,
+            ),
+          ),
+          onPressed: () async {
+            final result = await removeFromPersonnel(personnel, devices: [device]);
+            if (result.isRight()) {
+              _onMessage("${device.name} er fjernet fra ${unit.name}");
+              _onChanged(device);
+            }
+          }),
+    );
+  }
+
   Widget _buildDeleteAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett apparat lagt til manuelt",
-      child: FlatButton(
-          child: Text(
+      child: FlatButton.icon(
+          icon: Icon(MdiIcons.cellphoneBasic),
+          label: Text(
             'SLETT',
             textAlign: TextAlign.center,
             style: button.copyWith(color: Colors.red),

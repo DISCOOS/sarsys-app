@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/usecase/personnel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -131,6 +130,7 @@ class BlocController {
           incidentService,
           connectivity: connectivityService,
         ),
+        controller.bus,
         userBloc);
 
     // Configure Personnel service
@@ -146,11 +146,8 @@ class BlocController {
           personnelService,
           connectivity: connectivityService,
         ),
-        incidentBloc,
-        controller.bus);
-
-    // Ensure user is mobilized
-    personnelBloc.registerEventHandler<PersonnelsLoaded>(MobilizeUser());
+        controller.bus,
+        incidentBloc);
 
     // Configure Unit service
     final UnitService unitService = !demo.active
@@ -165,6 +162,7 @@ class BlocController {
           unitService,
           connectivity: connectivityService,
         ),
+        controller.bus,
         incidentBloc,
         personnelBloc);
 

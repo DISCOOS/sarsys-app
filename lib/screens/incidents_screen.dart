@@ -7,7 +7,7 @@ import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/popups/passcode_popup.dart';
 import 'package:SarSys/screens/screen.dart';
-import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/incident_user_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/utils/ui_utils.dart';

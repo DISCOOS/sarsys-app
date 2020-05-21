@@ -1,10 +1,7 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/incident_editor.dart';
@@ -13,9 +10,8 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
-import 'package:SarSys/usecase/personnel.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:dartz/dartz.dart' as dartz;
@@ -55,26 +51,15 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // Create incident (user will be mobilized with use-case MobilizeUser)
-    final incident = await params.bloc.create(result.left, selected: true);
-
-    // Create default units?
-    if (result.right.isNotEmpty) {
-      // TODO: Move to use-case in IncidentBloc
-      final templates = result.right;
-      final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-      final config = params.context.bloc<AppConfigBloc>().config;
-      final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
-      templates.forEach((template) async {
-        final unit = params.context.bloc<UnitBloc>().fromTemplate(
-              department,
-              template,
-            );
-        if (unit != null) {
-          await params.context.bloc<UnitBloc>().create(unit);
-        }
-      });
-    }
+    // Create incident
+    // * units will be created with CreateUnits in UnitBloc
+    // * user will be mobilized with MobilizeUser in PersonnelBloc
+    //
+    final incident = await params.bloc.create(
+      result.left,
+      selected: true,
+      units: result.right,
+    );
     return dartz.Right(incident);
   }
 }

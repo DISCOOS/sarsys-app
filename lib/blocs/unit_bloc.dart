@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/services/unit_service.dart';
+import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 
@@ -29,9 +32,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         UnloadableBloc<List<Unit>> {
   UnitBloc(
     this.repo,
+    BlocEventBus bus,
     this.incidentBloc,
     this.personnelBloc,
-  ) {
+  ) : super(bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
@@ -43,6 +47,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       ..add(personnelBloc.listen(
         _processPersonnelEvent,
       ));
+
+    // Create units from templates if given
+    registerEventHandler<IncidentCreated>(CreateUnits());
   }
 
   void _processIncidentEvent(IncidentState state) {
@@ -196,7 +203,11 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   /// Create given unit
-  Future<Unit> create(Unit unit) {
+  Future<Unit> create(
+    Unit unit, {
+    Position position,
+    List<Device> devices,
+  }) {
     _assertState();
     return dispatch<Unit>(
       CreateUnit(
@@ -210,6 +221,8 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
           // in apps resulting in a better user experience
           tracking: TrackingUtils.ensureRef(unit),
         ),
+        devices: devices,
+        position: position,
       ),
     );
   }
@@ -271,7 +284,11 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     var unit = await repo.create(command.iuuid, command.data);
     return toOK(
       command,
-      UnitCreated(unit),
+      UnitCreated(
+        unit,
+        position: command.position,
+        devices: command.devices,
+      ),
       result: unit,
     );
   }
@@ -346,11 +363,20 @@ class LoadUnits extends UnitCommand<String, List<Unit>> {
 }
 
 class CreateUnit extends UnitCommand<Unit, Unit> {
-  String iuuid;
-  CreateUnit(this.iuuid, Unit data) : super(data);
+  final String iuuid;
+  final Position position;
+  final List<Device> devices;
+
+  CreateUnit(
+    this.iuuid,
+    Unit data, {
+    this.position,
+    this.devices,
+  }) : super(data, [iuuid, position, devices]);
 
   @override
-  String toString() => 'CreateUnit {iuuid: $iuuid, unit: $data}';
+  String toString() => 'CreateUnit {iuuid: $iuuid, unit: $data, '
+      'position: $position, devices: $devices}';
 }
 
 class UpdateUnit extends UnitCommand<Unit, Unit> {
@@ -387,9 +413,10 @@ class _InternalChange extends UnitCommand<Unit, Unit> {
 
 abstract class UnitState<T> extends BlocEvent<T> {
   UnitState(
-    Object error, {
+    Object data, {
     StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
+    props = const [],
+  }) : super(data, stackTrace: stackTrace, props: props);
 
   bool isError() => this is UnitBlocError;
   bool isEmpty() => this is UnitsEmpty;
@@ -419,14 +446,21 @@ class UnitsLoaded extends UnitState<List<String>> {
 }
 
 class UnitCreated extends UnitState<Unit> {
-  UnitCreated(Unit data) : super(data);
+  final Position position;
+  final List<Device> devices;
+  UnitCreated(
+    Unit data, {
+    this.position,
+    this.devices,
+  }) : super(data, props: [position, devices]);
 
   @override
-  String toString() => 'UnitCreated {unit: $data}';
+  String toString() => 'UnitCreated {unit: $data, '
+      'position: $position, devices: $devices}';
 }
 
 class UnitUpdated extends UnitState<Unit> {
-  Unit previous;
+  final Unit previous;
   UnitUpdated(Unit data, this.previous) : super(data);
 
   @override

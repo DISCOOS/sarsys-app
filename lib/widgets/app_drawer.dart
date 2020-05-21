@@ -8,7 +8,7 @@ import 'package:SarSys/screens/config/settings_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
-import 'package:SarSys/usecase/incident.dart';
+import 'package:SarSys/usecase/incident_user_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
