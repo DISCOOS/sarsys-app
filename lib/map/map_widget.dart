@@ -78,6 +78,8 @@ class MapWidget extends StatefulWidget {
   final bool readCenter;
   final bool readLayers;
 
+  final String writeKeySuffix;
+
   final Incident incident;
   final TapCallback onTap;
   final ActionCallback onMessage;
@@ -141,6 +143,7 @@ class MapWidget extends StatefulWidget {
     this.readCenter = false,
     this.readLayers = false,
     this.showRetired = false,
+    this.writeKeySuffix,
     this.showLayers = MapWidgetState.ALL_LAYERS,
     this.onTap,
     this.onMessage,
@@ -186,7 +189,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   static const DEFAULT_LAYERS_ENABLED = [
     LAYER_POI,
     LAYER_UNIT,
-    LAYER_PERSONNEL,
     LAYER_SCALE,
   ];
 

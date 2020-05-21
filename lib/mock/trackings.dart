@@ -165,13 +165,15 @@ class TrackingServiceMock extends Mock implements TrackingService {
       }
     });
 
-    deviceServiceMock.messages.listen((message) => _handle(
-          message,
-          mock.s2t,
-          mock.trackingsRepo,
-          mock.simulations,
-          mock.controller,
-        ));
+    if (simulate) {
+      deviceServiceMock.messages.listen((message) => _handle(
+            message,
+            mock.s2t,
+            mock.trackingsRepo,
+            mock.simulations,
+            mock.controller,
+          ));
+    }
 
     when(mock.messages).thenAnswer(
       (_) => mock.controller.stream,
@@ -472,10 +474,27 @@ class TrackingServiceMock extends Mock implements TrackingService {
     // Calculate
     final simulation = simulations[tuuid];
     if (simulation != null) {
-      // Update aggregates first
-      final auuids = _toAggregateIds(device.uuid, tuuid, trackingRepo[iuuid], s2t)
+      // Update first order aggregates:
+      // * device -> personnel
+      // * device -> unit
+      final s2a1 = _toAggregateIds(device.uuid, tuuid, trackingRepo[iuuid], s2t)
         ..forEach(
-          (auuid) => _progress(
+          (suuid, auuid) => _progress(
+            device,
+            iuuid,
+            auuid,
+            s2t,
+            simulations,
+            trackingRepo,
+            controller,
+          ),
+        );
+
+      // Update second order aggregates:
+      // * personnel -> unit
+      final s2a2 = _toAggregateIds(device.uuid, tuuid, trackingRepo[iuuid], s2a1)
+        ..forEach(
+          (suuid, auuid) => _progress(
             device,
             iuuid,
             auuid,
@@ -492,7 +511,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       // Append to track, calculate next position, effort and speed
       final trackingList = trackingRepo[iuuid];
       final next = simulation.progress(
-        suuids: [...auuids, device.uuid],
+        suuids: {...s2a1.keys, ...s2a2.keys, device.uuid},
       );
       trackingList[tuuid] = next;
       trackingRepo.update(iuuid, (_) => trackingList);
@@ -508,22 +527,18 @@ class TrackingServiceMock extends Mock implements TrackingService {
     }
   }
 
-  static List<String> _toAggregateIds(
+  static Map<String, String> _toAggregateIds(
     String suuid,
     String tuuid,
     Map<String, Tracking> trackingList,
     Map<String, String> s2t,
   ) =>
-      s2t.entries
-          .where((e) => tuuid == e.key)
-          .where(
+      Map.fromEntries(s2t.entries.where((e) => tuuid == e.key).where(
             (e) => trackingList[e.key]
                 ?.sources
                 // Only match aggregates
                 ?.any((source) => SourceType.trackable == source.type && source.uuid == suuid),
-          )
-          .map((e) => e.value)
-          .toList();
+          ));
 }
 
 class _TrackSimulation {

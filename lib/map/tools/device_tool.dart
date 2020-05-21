@@ -12,8 +12,8 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/device.dart';
-import 'package:SarSys/widgets/selector_panel.dart';
+import 'package:SarSys/widgets/device_widgets.dart';
+import 'package:SarSys/widgets/selector_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -63,7 +63,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorPanel<Device>(
+            child: SelectorWidget<Device>(
               size: size,
               style: style,
               icon: Icons.group,
@@ -89,21 +89,17 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: SizedBox(
-            height: math.min(tracking == null ? 496 : 680.0, MediaQuery.of(context).size.height),
-            width: MediaQuery.of(context).size.width - 96,
-            child: SingleChildScrollView(
-              child: DeviceInfoPanel(
-                unit: unit,
-                personnel: personnel,
-                device: device,
-                tracking: tracking,
-                onMessage: onMessage,
-                withActions: user?.isCommander == true,
-                organization: FleetMapService().fetchOrganization(Defaults.orgId),
-                onComplete: (_) => Navigator.pop(context),
-                onGoto: (point) => _goto(context, point),
-              ),
+          child: SingleChildScrollView(
+            child: DeviceWidget(
+              unit: unit,
+              personnel: personnel,
+              device: device,
+              tracking: tracking,
+              onMessage: onMessage,
+              withActions: user?.isCommander == true,
+              organization: FleetMapService().fetchOrganization(Defaults.orgId),
+              onComplete: (_) => Navigator.pop(context),
+              onGoto: (point) => _goto(context, point),
             ),
           ),
         );

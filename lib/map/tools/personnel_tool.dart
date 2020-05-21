@@ -8,8 +8,8 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/selector_panel.dart';
-import 'package:SarSys/widgets/personnel.dart';
+import 'package:SarSys/widgets/selector_widget.dart';
+import 'package:SarSys/widgets/personnel_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -68,7 +68,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorPanel<Personnel>(
+            child: SelectorWidget<Personnel>(
               size: size,
               style: style,
               icon: Icons.group,

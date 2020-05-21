@@ -55,6 +55,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
   IncidentBloc _incidentBloc;
   bool _rememberUnits = true;
   bool _rememberTalkGroups = true;
+  bool _isExercise = false;
   MapSearchEngine _engine;
 
   Location _ipp;
@@ -62,6 +63,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
 
   TextEditingController _ippController;
   TextEditingController _meetupController;
+
+  get createNew => widget.incident == null;
 
   @override
   void initState() {
@@ -75,6 +78,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     var catalogs = await FleetMapService().fetchTalkGroupCatalogs(Defaults.orgId)
       ..sort();
     _tgCatalog.value = catalogs;
+    _isExercise = widget.incident?.exercise ?? false;
   }
 
   @override
@@ -86,31 +90,60 @@ class _IncidentEditorState extends State<IncidentEditor> {
       Provider.of<Client>(context),
       Provider.of<BlocController>(context),
     );
-    _updatePoints();
+    _initLocation();
     _updateDescriptions();
   }
 
-  void _updatePoints() {
-    _ipp = widget?.incident?.ipp ?? widget.ipp;
-    if (_ipp?.point?.isNotEmpty != true) {
-      _ipp = _updatePoint(_ipp, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+  void _initLocation() {
+    _ipp = widget?.incident?.ipp ?? _toLocation(_ipp, widget.ipp);
+    _meetup = widget?.incident?.meetup ?? _toLocation(_meetup, widget.ipp);
+  }
+
+  void _setMeetupToMe() async {
+    _meetup = _toLocation(_meetup, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    _updateField('meetup', toPosition(_meetup.point));
+    _meetup = await _updateDescriptionFromPoint(
+      _meetup,
+      'meetup_description',
+      _meetupController,
+      point: _meetup.point,
+    );
+    if (mounted) {
+      setState(() {});
     }
-    _meetup = widget?.incident?.meetup ?? widget.ipp;
-    if (_meetup?.point?.isNotEmpty != true) {
-      _meetup = _updatePoint(_meetup, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+  }
+
+  void _setIppToMe() async {
+    _ipp = _toLocation(_ipp, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    _updateField('ipp', toPosition(_ipp.point));
+    _ipp = await _updateDescriptionFromPoint(
+      _ipp,
+      'ipp_description',
+      _ippController,
+      point: _ipp.point,
+    );
+    if (mounted) {
+      setState(() {});
     }
   }
 
   void _updateDescriptions() async {
     if (_ipp?.description == null && _ipp?.point?.isNotEmpty == true) {
-      _ipp = await _updateDescription(_ipp, _ipp.point, 'ipp_description');
+      _ipp = await _updateDescriptionFromPoint(
+        _ipp,
+        'ipp_description',
+        _ippController,
+        point: _ipp.point,
+      );
       setText(_ippController, _ipp.description);
-      _formKey.currentState?.save();
     }
     if (_meetup?.description == null && _meetup?.point?.isNotEmpty == true) {
-      _meetup = await _updateDescription(_meetup, _meetup.point, 'meetup_description');
-      setText(_meetupController, _meetup.description);
-      _formKey.currentState?.save();
+      _meetup = await _updateDescriptionFromPoint(
+        _meetup,
+        'meetup_description',
+        _meetupController,
+        point: _meetup.point,
+      );
     }
   }
 
@@ -127,7 +160,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(widget.incident == null ? 'Ny aksjon' : 'Endre aksjon'),
+        title: Text(createNew ? 'Ny aksjon' : 'Endre aksjon'),
         centerTitle: false,
         leading: GestureDetector(
           child: Icon(Icons.close),
@@ -137,8 +170,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
         ),
         actions: <Widget>[
           FlatButton(
-            child: Text(widget.incident == null ? 'OPPRETT' : 'OPPDATER',
-                style: TextStyle(fontSize: 14.0, color: Colors.white)),
+            child: Text(createNew ? 'OPPRETT' : 'OPPDATER', style: TextStyle(fontSize: 14.0, color: Colors.white)),
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             onPressed: () => _submit(context),
           ),
@@ -168,12 +200,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
                   _buildPoiStep(),
                   _buildClassificationStep(),
                   _buildTGStep(),
-                  if (widget.incident == null) _buildPreparationStep(),
+                  if (createNew) _buildPreparationStep(),
                   _buildReferenceStep(),
                 ],
               ),
               Container(
-                padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+                padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom / 2),
               ),
             ],
           ),
@@ -189,7 +221,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
       content: _buildReferenceField(),
       isActive: _currentStep >= 0,
       state: _isValid(['reference'])
-          ? (_currentStep > (widget.incident == null ? 5 : 4) ? StepState.complete : StepState.indexed)
+          ? (_currentStep > (createNew ? 5 : 4) ? StepState.complete : StepState.indexed)
           : StepState.error,
     );
   }
@@ -231,12 +263,35 @@ class _IncidentEditorState extends State<IncidentEditor> {
       title: Text('Plasseringer'),
       subtitle: Text('Oppgi hendelsens plasseringer'),
       content: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           _buildIPPField(),
           _buildIPPDescriptionField(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _buildCopyFromMeetupButton(),
+              FlatButton.icon(
+                icon: Icon(Icons.my_location),
+                label: Text("Min posisjon"),
+                onPressed: () => _setIppToMe(),
+              ),
+            ],
+          ),
           SizedBox(height: 16.0),
           _buildMeetupField(),
           _buildMeetupDescriptionField(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _buildCopyFromIppButton(),
+              FlatButton.icon(
+                icon: Icon(Icons.my_location),
+                label: Text("Min posisjon"),
+                onPressed: () => _setMeetupToMe(),
+              ),
+            ],
+          ),
         ],
       ),
       isActive: _currentStep >= 0,
@@ -271,6 +326,8 @@ class _IncidentEditorState extends State<IncidentEditor> {
           _buildJustificationField(),
           SizedBox(height: 16.0),
           _buildOccurredField(),
+          SizedBox(height: 16.0),
+          _buildExerciseField()
         ],
       ),
       isActive: _currentStep >= 0,
@@ -305,6 +362,39 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
+  Widget _buildExerciseField() {
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 3,
+            child: ListTile(
+              enabled: createNew,
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                "Øvelse",
+                style: Theme.of(context).textTheme.bodyText2,
+              ),
+              subtitle: Text(
+                "Kan ikke endres etter opprettelse",
+              ),
+            ),
+          ),
+          Switch(
+            value: _isExercise,
+            onChanged: createNew
+                ? (value) => setState(() {
+                      _isExercise = !_isExercise;
+                    })
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNameField() {
     return FormBuilderTextField(
       maxLines: 1,
@@ -315,9 +405,18 @@ class _IncidentEditorState extends State<IncidentEditor> {
         hintText: 'Oppgi stedsnavn',
         filled: true,
       ),
+      onChanged: (value) {
+        if (emptyAsNull(_ipp?.description) == null) {
+          _ipp = _toLocation(_ipp, widget.ipp);
+          _updateDescription('ipp_description', value, _ippController);
+        }
+      },
       validators: [
         FormBuilderValidators.required(errorText: 'Navn må fylles inn'),
       ],
+      autocorrect: true,
+      textCapitalization: TextCapitalization.sentences,
+      style: TextStyle(fontSize: 16.0),
     );
   }
 
@@ -334,6 +433,9 @@ class _IncidentEditorState extends State<IncidentEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Begrunnelse må fylles inn'),
       ],
+      autocorrect: true,
+      textCapitalization: TextCapitalization.sentences,
+      style: TextStyle(fontSize: 16.0),
     );
   }
 
@@ -391,8 +493,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
         controller: widget.controller,
         optional: false,
         onChanged: (Position position) async {
-          _ipp = _updatePoint(_ipp, position.geometry);
-          _ipp = await _updateDescription(_ipp, position.geometry, 'ipp_description');
+          _ipp = _toLocation(_ipp, position.geometry);
+          _ipp = await _updateDescriptionFromPoint(
+            _ipp,
+            'ipp_description',
+            _ippController,
+            point: position.geometry,
+          );
           setText(_ippController, _ipp.description);
           _formKey.currentState.save();
           setState(() {});
@@ -411,8 +518,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
         controller: widget.controller,
         optional: false,
         onChanged: (Position position) async {
-          _meetup = _updatePoint(_meetup, position.geometry);
-          _meetup = await _updateDescription(_meetup, position.geometry, 'meetup_description');
+          _meetup = _toLocation(_meetup, position.geometry);
+          _meetup = await _updateDescriptionFromPoint(
+            _meetup,
+            'meetup_description',
+            _meetupController,
+            point: position.geometry,
+          );
           setText(_meetupController, _meetup.description);
           _formKey.currentState.save();
           setState(() {});
@@ -426,7 +538,28 @@ class _IncidentEditorState extends State<IncidentEditor> {
         decoration: InputDecoration(
           labelText: "Stedsnavn",
           filled: true,
+          suffixIcon: GestureDetector(
+            child: Icon(Icons.refresh),
+            onTap: () async {
+              if (_ipp.point is Point) {
+                _updateDescriptionFromPoint(
+                  _ipp,
+                  'ipp_description',
+                  _ippController,
+                );
+              } else if (_ipp?.description == null) {
+                _updateDescription(
+                  'ipp_description',
+                  _formKey.currentState.value['name'],
+                  _ippController,
+                );
+              }
+            },
+          ),
         ),
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(fontSize: 16.0),
       );
 
   Widget _buildMeetupDescriptionField() => FormBuilderTextField(
@@ -434,9 +567,47 @@ class _IncidentEditorState extends State<IncidentEditor> {
         attribute: 'meetup_description',
         controller: _meetupController,
         decoration: InputDecoration(
-          labelText: "Stedsnavn",
-          filled: true,
-        ),
+            labelText: "Stedsnavn",
+            filled: true,
+            suffixIcon: GestureDetector(
+              child: Icon(Icons.refresh),
+              onTap: () async {
+                if (_meetup.point is Point) {
+                  _updateDescriptionFromPoint(
+                    _meetup,
+                    'meetup_description',
+                    _meetupController,
+                  );
+                }
+              },
+            )),
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(fontSize: 16.0),
+      );
+
+  Widget _buildCopyFromIppButton() => FlatButton.icon(
+        icon: Icon(Icons.content_copy),
+        label: Text("IPP"),
+        onPressed: _ipp is Location
+            ? () {
+                _meetup = _ipp.cloneWith();
+                _updateField('meetup', _meetup.point);
+                setState(() {});
+              }
+            : null,
+      );
+
+  Widget _buildCopyFromMeetupButton() => FlatButton.icon(
+        icon: Icon(Icons.content_copy),
+        label: Text("Oppmøte"),
+        onPressed: _meetup is Location
+            ? () {
+                _ipp = _meetup.cloneWith();
+                _updateField('ipp', _ipp.point);
+                setState(() {});
+              }
+            : null,
       );
 
   Widget _buildTGField() {
@@ -495,11 +666,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
             ],
             // BUG: These are required, no default values are given.
             obscureText: false,
-            autocorrect: false,
             inputType: TextInputType.text,
             keyboardAppearance: Brightness.dark,
             inputAction: TextInputAction.done,
-            textCapitalization: TextCapitalization.none,
+            autocorrect: true,
+            textCapitalization: TextCapitalization.sentences,
+            textStyle: TextStyle(height: 1.8, fontSize: 16.0),
           ),
         ),
       ),
@@ -595,11 +767,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
         },
         // BUG: These are required, no default values are given.
         obscureText: false,
-        autocorrect: false,
         inputType: TextInputType.text,
         keyboardAppearance: Brightness.dark,
         inputAction: TextInputAction.done,
-        textCapitalization: TextCapitalization.none,
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
+        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
       ),
     );
   }
@@ -634,21 +807,22 @@ class _IncidentEditorState extends State<IncidentEditor> {
     );
   }
 
-  Location _updatePoint(Location location, Point point) {
+  Location _toLocation(Location location, Point point) {
     return location?.cloneWith(
           point: point,
         ) ??
         Location(point: point);
   }
 
-  Future<Location> _updateDescription(Location location, Point point, String attribute) async {
+  Future<Location> _updateDescriptionFromPoint(
+    Location location,
+    String attribute,
+    TextEditingController controller, {
+    Point point,
+  }) async {
     try {
-      final description = await _lookup(point);
-      if (_formKey.currentState != null) {
-        _formKey.currentState.setAttributeValue(attribute, description);
-        _formKey.currentState.fields[attribute].currentState.didChange(description);
-        _formKey.currentState.save();
-      }
+      final description = await _lookup(point ?? location.point);
+      _updateDescription(attribute, description, controller);
       return location.cloneWith(
         description: description,
       );
@@ -656,6 +830,27 @@ class _IncidentEditorState extends State<IncidentEditor> {
       // Discard connection errors
     }
     return location;
+  }
+
+  void _updateField<T>(
+    String attribute,
+    T value,
+  ) {
+    if (_formKey.currentState != null) {
+      _formKey.currentState.setAttributeValue(attribute, value);
+      _formKey.currentState.fields[attribute].currentState.didChange(value);
+      _formKey.currentState.save();
+    }
+  }
+
+  void _updateDescription(
+    String attribute,
+    String description,
+    TextEditingController controller,
+  ) {
+    _updateField(attribute, description);
+    setText(controller, description);
+    setText(controller, description);
   }
 
   Future<String> _lookup(Point point) async {
@@ -691,10 +886,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
   }
 
   Position toPosition(Point point, {Point defaultValue}) {
-    return Position.fromPoint(
-      point ?? defaultValue ?? LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
-      source: PositionSource.manual,
-    );
+    return point is Point
+        ? Position.fromPoint(
+            point ?? defaultValue,
+            source: PositionSource.manual,
+          )
+        : null;
   }
 
   _isValid(List<String> fields) {
@@ -717,6 +914,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
       point: Position.fromJson(json['meetup']).geometry,
       description: emptyAsNull(json['meetup_description']),
     ).toJson();
+    json['exercise'] = _isExercise;
     return json;
   }
 
@@ -734,10 +932,13 @@ class _IncidentEditorState extends State<IncidentEditor> {
         final talkGroups = List<String>.from(
           list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
         );
-        await _configBloc.updateWith(talkGroups: talkGroups);
+        await _configBloc.updateWith(
+          talkGroups: talkGroups,
+          talkGroupCatalog: _formKey.currentState.value['tgCatalog'],
+        );
       }
 
-      if (widget.incident == null) {
+      if (createNew) {
         final units = List<String>.from(_formKey.currentState.value['units']);
         if (_rememberUnits) {
           await _configBloc.updateWith(units: units);

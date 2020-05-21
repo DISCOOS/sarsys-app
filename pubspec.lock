@@ -387,11 +387,9 @@ packages:
   flutter_chips_input:
     dependency: "direct main"
     description:
-      path: "."
-      ref: master
-      resolved-ref: "5e7bb92fc53ff4551c5aa2974edd3b3cca6a2b23"
-      url: "https://github.com/danvick/flutter_chips_input.git"
-    source: git
+      path: "../flutter_chips_input"
+      relative: true
+    source: path
     version: "1.8.1"
   flutter_colorpicker:
     dependency: transitive
@@ -1188,7 +1186,7 @@ packages:
       name: test
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.14.3"
+    version: "1.14.4"
   test_api:
     dependency: transitive
     description:
@@ -1342,7 +1340,7 @@ packages:
       name: webkit_inspection_protocol
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.4"
+    version: "0.7.1"
   wkt_parser:
     dependency: transitive
     description:

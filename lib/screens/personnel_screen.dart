@@ -14,7 +14,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/personnel.dart';
+import 'package:SarSys/widgets/personnel_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -139,20 +139,25 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
           child: GestureDetector(
             child: MapWidget(
+              key: ObjectKey(personnel),
               center: center,
               zoom: 16.0,
               interactive: false,
-              withPOIs: false,
+              withPOIs: true,
               withUnits: false,
+              withDevices: false,
               withRead: true,
+              withWrite: true,
               withControls: true,
               withControlsZoom: true,
+              withControlsLayer: true,
+              withControlsBaseMap: true,
               withControlsOffset: 16.0,
               showRetired: PersonnelStatus.Retired == personnel.status,
-              showLayers: [
-                MapWidgetState.LAYER_PERSONNEL,
-                MapWidgetState.LAYER_TRACKING,
-              ],
+//              showLayers: [
+//                MapWidgetState.LAYER_PERSONNEL,
+//                MapWidgetState.LAYER_TRACKING,
+//              ],
               mapController: _controller,
             ),
             onTap: () => center == null

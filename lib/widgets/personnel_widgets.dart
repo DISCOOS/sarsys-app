@@ -53,11 +53,8 @@ class PersonnelWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (withHeader) ...[
-          _buildHeader(personnel, theme, context),
-          Divider(),
-        ] else
-          SizedBox(height: 8.0),
+        if (withHeader) _buildHeader(context, personnel, theme),
+        if (withHeader) Divider() else SizedBox(height: 8.0),
         if (Orientation.portrait == orientation) _buildPortrait() else _buildLandscape(),
         if (withActions) ...[
           Divider(),
@@ -134,7 +131,7 @@ class PersonnelWidget extends StatelessWidget {
       ? Divider(indent: 16.0, endIndent: 16.0)
       : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
-  Padding _buildHeader(Personnel personnel, TextTheme theme, BuildContext context) {
+  Padding _buildHeader(BuildContext context, Personnel personnel, TextTheme theme) {
     return Padding(
       padding: EdgeInsets.only(left: 16, top: 8),
       child: Row(

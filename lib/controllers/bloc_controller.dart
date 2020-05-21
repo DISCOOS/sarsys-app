@@ -196,6 +196,7 @@ class BlocController {
             personnelCount: demo.personnelCount,
             unitCount: demo.unitCount,
             iuuids: incidentBloc.repo.keys,
+            simulate: demo.simulate,
           );
 
     // ignore: close_sinks
@@ -397,6 +398,7 @@ class DemoParams {
   final int personnelCount;
   final int tetraCount;
   final int appCount;
+  final bool simulate;
 
   static const NONE = const DemoParams(false);
 
@@ -407,6 +409,7 @@ class DemoParams {
     this.tetraCount = 15,
     this.appCount = 30,
     this.role = UserRole.commander,
+    this.simulate = true,
   });
 
   @override
@@ -419,9 +422,16 @@ class DemoParams {
           unitCount == other.unitCount &&
           personnelCount == other.personnelCount &&
           tetraCount == other.tetraCount &&
-          appCount == other.appCount;
+          appCount == other.appCount &&
+          simulate == other.simulate;
 
   @override
   int get hashCode =>
-      active.hashCode ^ role.hashCode ^ unitCount.hashCode ^ personnelCount.hashCode ^ tetraCount.hashCode;
+      active.hashCode ^
+      role.hashCode ^
+      unitCount.hashCode ^
+      personnelCount.hashCode ^
+      tetraCount.hashCode ^
+      appCount.hashCode ^
+      simulate.hashCode;
 }

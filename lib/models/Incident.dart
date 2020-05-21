@@ -40,6 +40,8 @@ class Incident extends Aggregate<Map<String, dynamic>> {
           passcodes,
           created,
           changed,
+          exercise,
+          reference,
         ]);
 
   final String name;

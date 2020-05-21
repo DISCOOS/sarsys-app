@@ -19,8 +19,8 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/device.dart';
-import 'package:SarSys/widgets/personnel.dart';
+import 'package:SarSys/widgets/device_widgets.dart';
+import 'package:SarSys/widgets/personnel_widgets.dart';
 import 'package:SarSys/widgets/position_field.dart';
 import 'package:uuid/uuid.dart';
 
@@ -28,7 +28,7 @@ class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Position position;
   final Iterable<Device> devices;
-  final Iterable<Personnel> personnel;
+  final Iterable<Personnel> personnels;
   final PermissionController controller;
 
   final UnitType type;
@@ -40,7 +40,7 @@ class UnitEditor extends StatefulWidget {
     this.position,
     this.type = UnitType.Team,
     this.devices = const [],
-    this.personnel = const [],
+    this.personnels = const [],
   }) : super(key: key);
 
   @override
@@ -60,7 +60,7 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _phoneController = TextEditingController();
 
   List<Device> _devices;
-  List<Personnel> _personnel;
+  List<Personnel> _personnels;
 
   String _editedName;
 
@@ -72,6 +72,14 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   @override
+  void dispose() {
+    _numberController.dispose();
+    _callsignController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _set();
@@ -79,7 +87,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _set() {
     _devices ??= _getActualDevices();
-    _personnel ??= _getActualPersonnel();
+    _personnels ??= _getActualPersonnel();
   }
 
   void _init() async {
@@ -113,7 +121,7 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      extendBody: true,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.unit == null ? 'Ny enhet' : 'Endre enhet'),
         centerTitle: false,
@@ -427,11 +435,12 @@ class _UnitEditorState extends State<UnitEditor> {
         valueTransformer: (values) => values.map((device) => device).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
-        autocorrect: false,
+        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
         inputType: TextInputType.text,
         keyboardAppearance: Brightness.dark,
         inputAction: TextInputAction.done,
-        textCapitalization: TextCapitalization.none,
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
       ),
     );
   }
@@ -447,8 +456,11 @@ class _UnitEditorState extends State<UnitEditor> {
           .values
           .where((device) =>
               // Add locally removed devices
-              actual.contains(device.uuid) && !local.contains(device.uuid) ||
-              context.bloc<TrackingBloc>().has(device) == false)
+              _canAddDevice(
+                actual,
+                device,
+                local,
+              ))
           .where((device) =>
               device.number.toLowerCase().contains(lowercaseQuery) ||
               device.type.toString().toLowerCase().contains(lowercaseQuery))
@@ -458,19 +470,36 @@ class _UnitEditorState extends State<UnitEditor> {
     return const <Device>[];
   }
 
+  /*
+
+    bool _canAddPersonnel(
+      Iterable<String> actual, Personnel personnel, Iterable<String> local, TrackableQuery<Unit> units) {
+    return actual.contains(personnel.uuid) && !local.contains(personnel.uuid) || units.find(personnel) == null;
+  }
+
+
+   */
+
+  bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
+    return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
+  }
+
   Widget _buildPersonnelListField() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
-        attribute: 'personnel',
+        attribute: 'personnels',
         maxChips: 15,
         initialValue: _getActualPersonnel(),
-        onChanged: (personnel) => _personnel = List.from(personnel),
+        actionLabel: "Testing",
+        onChanged: (personnel) => _personnels = List.from(personnel),
         decoration: InputDecoration(
           labelText: "Mannskap",
           hintText: "Søk etter mannskap",
           helperText: "Posisjon til mannskap blir lagret",
           filled: true,
+          alignLabelWithHint: true,
+          hintMaxLines: 3,
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
         findSuggestions: _findPersonnel,
@@ -485,11 +514,12 @@ class _UnitEditorState extends State<UnitEditor> {
         valueTransformer: (values) => values.map((personnel) => personnel.toJson()).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
-        autocorrect: false,
         inputType: TextInputType.text,
         keyboardAppearance: Brightness.dark,
         inputAction: TextInputAction.done,
-        textCapitalization: TextCapitalization.none,
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
+        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
       ),
     );
   }
@@ -499,22 +529,30 @@ class _UnitEditorState extends State<UnitEditor> {
       final actual = _getActualPersonnel().map((personnel) => personnel.uuid);
       final local = _getLocalPersonnel().map((personnel) => personnel.uuid);
       final lowercaseQuery = query.toLowerCase();
-      final personnels = context.bloc<TrackingBloc>().units.personnels().keys;
-      return context
+      final units = context.bloc<TrackingBloc>().units;
+      final found = context
           .bloc<PersonnelBloc>()
           .personnels
           .values
-          .where((personnel) =>
-              // Add locally removed devices
-              actual.contains(personnel.uuid) && !local.contains(personnel.uuid) ||
-              personnels.contains(personnel.uuid) == null)
+          .where((personnel) => _canAddPersonnel(
+                actual,
+                personnel,
+                local,
+                units,
+              ))
           .where((personnel) =>
               personnel.name.toLowerCase().contains(lowercaseQuery) ||
               translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
           .take(5)
           .toList(growable: false);
+      return found;
     }
     return const <Personnel>[];
+  }
+
+  bool _canAddPersonnel(
+      Iterable<String> actual, Personnel personnel, Iterable<String> local, TrackableQuery<Unit> units) {
+    return actual.contains(personnel.uuid) && !local.contains(personnel.uuid) || units.find(personnel) == null;
   }
 
   Widget _buildPositionField() {
@@ -556,10 +594,10 @@ class _UnitEditorState extends State<UnitEditor> {
       ..addAll(widget.devices ?? []);
   }
 
-  List<Personnel> _getLocalPersonnel() => List.from(_personnel ?? <Device>[]);
+  List<Personnel> _getLocalPersonnel() => List.from(_personnels ?? <Device>[]);
 
   List<Personnel> _getActualPersonnel() {
-    return (widget?.unit?.personnels ?? []).toList()..addAll(widget.personnel ?? []);
+    return (widget?.unit?.personnels ?? []).toList()..addAll(widget.personnels ?? []);
   }
 
   Position _preparePosition() {
@@ -636,7 +674,7 @@ class _UnitEditorState extends State<UnitEditor> {
           UnitParams(
             unit: unit,
             devices: _devices,
-            personnel: _personnel,
+            personnels: _personnels,
             position: _preparePosition(),
           ),
         );

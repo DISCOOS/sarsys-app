@@ -7,7 +7,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class POIInfoPanel extends StatelessWidget {
+class POIWidget extends StatelessWidget {
   final POI poi;
   final ActionCallback onMessage;
   final VoidCallback onCancel;
@@ -17,7 +17,7 @@ class POIInfoPanel extends StatelessWidget {
   final ValueChanged<Point> onChanged;
   final AsyncValueGetter<Either<bool, Point>> onEdit;
 
-  const POIInfoPanel({
+  const POIWidget({
     Key key,
     @required this.poi,
     @required this.onMessage,
@@ -32,22 +32,20 @@ class POIInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    return SizedBox(
-      height: math.min(260.0, MediaQuery.of(context).size.height - 96),
-      width: MediaQuery.of(context).size.width - 96,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            _buildHeader(theme, context),
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: 300.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _buildHeader(theme, context),
+          Divider(),
+          _buildLocationInfo(context, theme),
+          if (onEdit != null) ...[
             Divider(),
-            _buildLocationInfo(context, theme),
-            if (onEdit != null) ...[
-              Divider(),
-              _buildActions(context),
-            ]
-          ],
-        ),
+            _buildActions(context),
+          ]
+        ],
       ),
     );
   }

@@ -16,7 +16,7 @@ import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/device.dart';
+import 'package:SarSys/widgets/device_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -112,8 +112,8 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     );
   }
 
-  DeviceInfoPanel _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) {
-    return DeviceInfoPanel(
+  DeviceWidget _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) {
+    return DeviceWidget(
       unit: unit,
       personnel: personnel,
       device: _device,

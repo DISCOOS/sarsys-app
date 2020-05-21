@@ -106,10 +106,10 @@ dependency_overrides:
       url: https://github.com/aagarwal1012/IntroViews-Flutter.git
       ref: master
   flutter_chips_input:
-    #path: ../flutter_chips_input
-    git:
-      url: https://github.com/danvick/flutter_chips_input.git
-      ref: master
+    path: ../flutter_chips_input
+#    git:
+#      url: https://github.com/danvick/flutter_chips_input.git
+#      ref: master
 
   pin_code_fields:
     #path: ../pin_code_fields

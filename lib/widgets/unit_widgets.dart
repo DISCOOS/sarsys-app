@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class UnitInfoPanel extends StatelessWidget {
+class UnitWidget extends StatelessWidget {
   final Unit unit;
   final Tracking tracking;
   final Iterable<Device> devices;
@@ -21,7 +21,7 @@ class UnitInfoPanel extends StatelessWidget {
   final VoidCallback onDelete;
   final ActionCallback onMessage;
 
-  const UnitInfoPanel({
+  const UnitWidget({
     Key key,
     @required this.unit,
     @required this.tracking,
@@ -38,30 +38,87 @@ class UnitInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        if (withHeader) _buildHeader(unit, theme, context),
-        if (withHeader) Divider() else SizedBox(height: 8.0),
-        _buildMetaInfo(context),
-        _buildContactInfo(context),
-        _buildPersonnelInfo(context),
-        Divider(),
-        _buildLocationInfo(context, theme),
-        Divider(),
-        _buildTrackingInfo(context),
-        _buildEffortInfo(context),
-        if (withActions) ...[
-          Divider(),
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-            child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
-          ),
-          _buildActions(context)
-        ]
-      ],
+    Orientation orientation = MediaQuery.of(context).orientation;
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: orientation == Orientation.portrait ? 300.0 : 600.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (withHeader) _buildHeader(unit, theme, context),
+          if (withHeader) Divider() else SizedBox(height: 8.0),
+          if (Orientation.portrait == orientation) _buildPortrait(context, theme) else _buildLandscape(context, theme),
+          if (withActions) ...[
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+              child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
+            ),
+            _buildActions(context)
+          ] else
+            SizedBox(height: 16.0)
+        ],
+      ),
     );
   }
+
+  Widget _buildPortrait(BuildContext context, TextTheme theme) => Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMetaInfo(context),
+            _buildContactInfo(context),
+            _buildPersonnelInfo(context),
+            _buildDivider(Orientation.portrait),
+            _buildLocationInfo(context, theme),
+            _buildDivider(Orientation.portrait),
+            _buildTrackingInfo(context),
+            _buildEffortInfo(context)
+          ],
+        ),
+      );
+
+  Widget _buildLandscape(BuildContext context, TextTheme theme) => Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              fit: FlexFit.loose,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _buildMetaInfo(context),
+                  _buildContactInfo(context),
+                  _buildPersonnelInfo(context),
+                ],
+              ),
+            ),
+            _buildDivider(Orientation.landscape),
+            Flexible(
+              fit: FlexFit.loose,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _buildLocationInfo(context, theme),
+                  _buildTrackingInfo(context),
+                  _buildEffortInfo(context),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation
+      ? Divider(indent: 16.0, endIndent: 16.0)
+      : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
   Padding _buildHeader(Unit unit, TextTheme theme, BuildContext context) => Padding(
         padding: EdgeInsets.only(left: 16, top: 8),

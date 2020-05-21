@@ -194,6 +194,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
       withScaleBar: true,
       withControls: true,
       withControlsZoom: true,
+      withControlsBaseMap: true,
       withControlsLocateMe: true,
       withControlsOffset: 180,
       onPositionChanged: _onPositionChanged,

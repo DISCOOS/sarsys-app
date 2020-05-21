@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';
@@ -8,8 +6,8 @@ import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/selector_panel.dart';
-import 'package:SarSys/widgets/unit.dart';
+import 'package:SarSys/widgets/selector_widget.dart';
+import 'package:SarSys/widgets/unit_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -66,7 +64,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorPanel<Unit>(
+            child: SelectorWidget<Unit>(
               size: size,
               style: style,
               icon: Icons.group,
@@ -90,21 +88,15 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: SizedBox(
-            height: math.min(550.0, MediaQuery.of(context).size.height - 96),
-            width: MediaQuery.of(context).size.width - 96,
-            child: SingleChildScrollView(
-              child: UnitInfoPanel(
-                unit: unit,
-                tracking: tracking,
-                devices: tracking.sources
-                    .map((source) => bloc.deviceBloc.devices[source.uuid])
-                    .where((unit) => unit != null),
-                onMessage: onMessage,
-                withActions: user?.isCommander == true,
-                onComplete: (_) => Navigator.pop(context),
-                onGoto: (point) => _goto(context, point),
-              ),
+          child: SingleChildScrollView(
+            child: UnitWidget(
+              unit: unit,
+              tracking: tracking,
+              devices: bloc.devices(unit.tracking.uuid),
+              onMessage: onMessage,
+              withActions: user?.isCommander == true,
+              onComplete: (_) => Navigator.pop(context),
+              onGoto: (point) => _goto(context, point),
             ),
           ),
         );

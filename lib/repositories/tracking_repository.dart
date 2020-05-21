@@ -73,7 +73,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      find(suuid, tracks: tracks, exclude: exclude) != null;
+      find(suuid, tracks: tracks, exclude: exclude).isNotEmpty;
 
   /// Find tracking from given source [suuid].
   ///

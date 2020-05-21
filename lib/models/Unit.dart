@@ -64,7 +64,7 @@ class Unit extends Trackable<Map<String, dynamic>> {
       phone: clone.phone,
       callsign: clone.callsign,
       tracking: clone.tracking,
-      personnel: clone.personnels ?? const [],
+      personnels: clone.personnels ?? const [],
     );
   }
 
@@ -75,7 +75,7 @@ class Unit extends Trackable<Map<String, dynamic>> {
     UnitStatus status,
     String phone,
     String callsign,
-    List<Personnel> personnel,
+    List<Personnel> personnels,
     AggregateRef<Tracking> tracking,
   }) {
     return Unit(
@@ -86,7 +86,7 @@ class Unit extends Trackable<Map<String, dynamic>> {
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
       tracking: tracking ?? this.tracking,
-      personnels: personnel ?? this.personnels ?? const [],
+      personnels: personnels ?? this.personnels ?? const [],
     );
   }
 }

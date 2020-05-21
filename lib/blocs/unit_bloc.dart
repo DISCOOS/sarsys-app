@@ -11,6 +11,7 @@ import 'package:SarSys/utils/tracking_utils.dart';
 
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:uuid/uuid.dart';
 
 import 'core.dart';
 import 'mixins.dart';
@@ -158,6 +159,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       final number = int.tryParse(suffix) ?? 1;
 
       return Unit.fromJson({
+        "uuid": Uuid().v4(),
         "number": number,
         "type": enumName(type),
         "status": enumName(UnitStatus.Mobilized),

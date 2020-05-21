@@ -3,7 +3,7 @@ import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/poi_info_panel.dart';
+import 'package:SarSys/widgets/poi_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -42,7 +42,7 @@ class PositionTool extends MapTool {
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
-          child: POIInfoPanel(
+          child: POIWidget(
             poi: POI(
               name: "Posisjon",
               point: Point.fromCoords(

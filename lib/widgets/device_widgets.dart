@@ -78,7 +78,7 @@ class DeviceChip extends StatelessWidget {
   }
 }
 
-class DeviceInfoPanel extends StatelessWidget {
+class DeviceWidget extends StatelessWidget {
   final Unit unit;
   final Personnel personnel;
   final Device device;
@@ -92,7 +92,7 @@ class DeviceInfoPanel extends StatelessWidget {
   final VoidCallback onDelete;
   final Future<Organization> organization;
 
-  const DeviceInfoPanel({
+  const DeviceWidget({
     Key key,
     @required this.unit,
     @required this.personnel,
@@ -111,41 +111,94 @@ class DeviceInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        if (withHeader) _buildHeader(theme, context),
-        if (withHeader) Divider() else SizedBox(height: 8.0),
-        _buildTypeAndStatusInfo(context),
-        if (organization != null && DeviceType.Tetra == device.type) _buildTetraInfo(context),
-        Divider(),
-        if (organization != null && DeviceType.Tetra == device.type) ...[
-          _buildAffiliationInfo(context),
-          Divider(),
+    Orientation orientation = MediaQuery.of(context).orientation;
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: orientation == Orientation.portrait ? 300.0 : 600.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (withHeader) _buildHeader(theme, context),
+          if (withHeader) Divider() else SizedBox(height: 8.0),
+          if (Orientation.portrait == orientation) _buildPortrait(context, theme) else _buildLandscape(context, theme),
+          if (withActions) ...[
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+              child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
+            ),
+            _buildActions(context, unit)
+          ] else
+            SizedBox(height: 16.0)
         ],
-        _buildLocationInfo(context, theme),
-        Divider(),
-        _buildTrackingInfo(context),
-        Divider(),
-        _buildEffortInfo(context),
-        if (withActions) ...[
-          Divider(),
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-            child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
-          ),
-          _buildActions(context, unit)
-        ]
-      ],
+      ),
     );
   }
+
+  Widget _buildPortrait(BuildContext context, TextTheme theme) => Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _buildData(context, theme),
+      ));
+
+  Widget _buildLandscape(BuildContext context, TextTheme theme) {
+    final items = _buildData(context, theme);
+    final median = items.length ~/ 2;
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: items.take(median).toList(),
+            ),
+          ),
+          _buildDivider(Orientation.landscape),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: items.skip(median).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildData(BuildContext context, TextTheme theme) => [
+        _buildTypeAndStatusInfo(context),
+        if (organization != null && DeviceType.Tetra == device.type) _buildTetraInfo(context),
+        _buildDivider(Orientation.portrait),
+        if (organization != null && DeviceType.Tetra == device.type) ...[
+          _buildAffiliationInfo(context),
+          _buildDivider(Orientation.portrait),
+        ],
+        _buildLocationInfo(context, theme),
+        _buildDivider(Orientation.portrait),
+        _buildTrackingInfo(context),
+        _buildDivider(Orientation.portrait),
+        _buildEffortInfo(context)
+      ];
+
+  Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation
+      ? Divider(indent: 16.0, endIndent: 16.0)
+      : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
   Padding _buildHeader(TextTheme theme, BuildContext context) => Padding(
         padding: EdgeInsets.only(left: 16, top: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('${device.name}', style: theme.headline6),
+            Text('Apparat ${device.name}', style: theme.headline6),
             IconButton(
               icon: Icon(Icons.close),
               onPressed: () => _onComplete(device),
@@ -409,7 +462,7 @@ class DeviceInfoPanel extends StatelessWidget {
             onPressed: () async {
               final result = await addToUnit(devices: [device], unit: unit);
               if (result.isRight()) {
-                var actual = result.toIterable().first.left;
+                var actual = result.toIterable().first;
                 _onMessage("${device.name} er tilknyttet ${actual.name}");
                 _onChanged(device);
               }

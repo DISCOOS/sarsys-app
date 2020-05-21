@@ -92,7 +92,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
         personnel,
       );
       return unit.cloneWith(
-        personnel: next..add(personnel),
+        personnels: next..add(personnel),
       );
     }
     return unit;
@@ -103,7 +103,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
     final unit = find(personnel, exclude: []).firstOrNull;
     if (unit != null) {
       return unit.cloneWith(
-        personnel: _findAndRemove(
+        personnels: _findAndRemove(
           unit,
           personnel,
         ),

@@ -386,7 +386,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   Device _createDevice() {
     return Device.fromJson(_formKey.currentState.value).cloneWith(
       uuid: Uuid().v4(),
-      status: DeviceStatus.Unavailable,
+      status: DeviceStatus.Available,
     );
   }
 

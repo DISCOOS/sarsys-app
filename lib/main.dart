@@ -92,7 +92,9 @@ void runAppWithCatcher(Widget app, BlocController controller) {
     // Silence map tile cache host lookup
     "SocketException: Failed host lookup",
     // Silence flutter_cache_manager exceptions
-    "HttpExceptionWithStatus",
+    "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",
+    "HttpException: Invalid statusCode: 500, uri = https://opencache2.statkart.no",
+    "HttpException: Invalid statusCode: 500, uri = https://opencache3.statkart.no",
     // Silence general map tile fetch failures thrown by FlutterMap
     "FetchFailure",
     "FileSystemException: Cannot open file",

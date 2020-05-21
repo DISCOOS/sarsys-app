@@ -14,19 +14,18 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/usecase/core.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 
 class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final Position position;
   final List<Device> devices;
-  final List<Personnel> personnel;
+  final List<Personnel> personnels;
 
   UnitParams({
     Unit unit,
     this.position,
     this.devices,
-    this.personnel,
+    this.personnels,
   }) : super(unit);
 }
 
@@ -39,7 +38,7 @@ Future<dartz.Either<bool, Unit>> createUnit({
     CreateUnit()(UnitParams(
       devices: devices,
       position: position,
-      personnel: personnel,
+      personnels: personnel,
     ));
 
 class CreateUnit extends UseCase<bool, Unit, UnitParams> {
@@ -64,7 +63,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
       builder: (context) => UnitEditor(
         position: next,
         devices: params.devices,
-        personnel: params.personnel,
+        personnels: params.personnels,
         controller: params.controller,
       ),
     );
@@ -85,7 +84,7 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
           tracking.uuid,
           devices: result.devices,
           position: result.position,
-          personnels: result.personnel,
+          personnels: result.personnels,
         );
     return dartz.Right(unit);
   }
@@ -122,7 +121,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
             unit.tracking.uuid,
             devices: result.devices,
             position: result.position,
-            personnels: result.personnel,
+            personnels: result.personnels,
           );
     }
     return dartz.Right(result.data);
@@ -167,7 +166,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
 }
 
 /// Add given devices and personnel to tracking of given unit
-Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit({
+Future<dartz.Either<bool, Unit>> addToUnit({
   List<Device> devices,
   List<Personnel> personnel,
   Unit unit,
@@ -175,12 +174,20 @@ Future<dartz.Either<bool, Pair<Unit, Tracking>>> addToUnit({
     AddToUnit()(UnitParams(
       unit: unit,
       devices: devices,
-      personnel: personnel,
+      personnels: personnel,
     ));
 
-class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
+class AddToUnit extends UseCase<bool, Unit, UnitParams> {
   @override
-  Future<dartz.Either<bool, Pair<Unit, Tracking>>> execute(params) async {
+  Future<dartz.Either<bool, Unit>> execute(params) async {
+    // Create unit instead?
+    if (!hasSelectableUnits(params, params.context.bloc<TrackingBloc>())) {
+      return createUnit(
+        devices: params.devices,
+        personnel: params.personnels,
+      );
+    }
+
     // Get or select unit?
     var unit = await _getOrSelectUnit(
       params,
@@ -188,27 +195,27 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
     );
     if (unit == null) return dartz.Left(false);
 
-    final tuuid = unit.tracking.uuid;
-    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
-    assert(tracking != null, "Tracking not found: $tuuid");
-
     // Add personnel to Unit?
-    if (params.personnel?.isNotEmpty == true) {
+    if (params.personnels?.isNotEmpty == true) {
       params.bloc.update(
         unit.cloneWith(
-          personnel: List.from(unit.personnels ?? [])..addAll(params.personnel),
+          personnels: List.from(unit.personnels ?? [])..addAll(params.personnels),
         ),
       );
     }
 
-    // Add devices and personnel to tracking
-    final next = await params.context.bloc<TrackingBloc>().attach(
+    final tuuid = unit.tracking.uuid;
+    final tracking = params.context.bloc<TrackingBloc>().repo[tuuid];
+    assert(tracking != null, "Tracking not found: $tuuid");
+
+    // Add devices and personnel to unit tracking
+    await params.context.bloc<TrackingBloc>().attach(
           unit.tracking.uuid,
           devices: params.devices,
-          personnels: params.personnel,
+          personnels: params.personnels,
         );
 
-    return dartz.Right(Pair.of(unit, next));
+    return dartz.Right(unit);
   }
 
   Future<Unit> _getOrSelectUnit(
@@ -221,17 +228,26 @@ class AddToUnit extends UseCase<bool, Pair<Unit, Tracking>, UnitParams> {
               params.overlay.context,
               where: (unit) =>
                   // Unit is not tracking any devices or personnel?
-                  bloc.trackings[unit.tracking.uuid] == null ||
-                  // Unit is not tracking given devices?
-                  !bloc.trackings[unit.tracking.uuid].sources.any(
-                    (source) => params.devices?.any((device) => device.uuid == source.uuid) == true,
-                  ) ||
-                  // Unit is not tracking given personnel?
-                  !unit.personnels.any(
-                    (personnel) => params.personnel?.contains(personnel) == true,
-                  ),
+                  _canSelectUnit(params, bloc, unit),
               // Sort units with less amount of devices on top
             );
+
+  bool hasSelectableUnits(
+    UnitParams params,
+    TrackingBloc bloc,
+  ) =>
+      params.bloc.repo.isNotEmpty && params.bloc.repo.values.any((unit) => _canSelectUnit(params, bloc, unit));
+
+  bool _canSelectUnit(UnitParams params, TrackingBloc bloc, Unit unit) =>
+      bloc.trackings[unit.tracking.uuid] == null ||
+      // Unit is not tracking given devices?
+      !bloc.trackings[unit.tracking.uuid].sources.any(
+        (source) => params.devices?.any((device) => device.uuid == source.uuid) == true,
+      ) ||
+      // Unit is not tracking given personnel?
+      !unit.personnels.any(
+        (personnel) => params.personnels?.contains(personnel) == true,
+      );
 }
 
 /// Remove tracking of given devices and personnel from unit.
@@ -244,7 +260,7 @@ Future<dartz.Either<bool, Tracking>> removeFromUnit(
     RemoveFromUnit()(UnitParams(
       unit: unit,
       devices: devices,
-      personnel: personnel,
+      personnels: personnel,
     ));
 
 class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
@@ -252,7 +268,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
   Future<dartz.Either<bool, Tracking>> execute(UnitParams params) async {
     final unit = params.data;
     final devices = params.devices ?? [];
-    final personnel = params.personnel ?? [];
+    final personnel = params.personnels ?? [];
 
     // Notify intent
     final names = List.from([
@@ -275,10 +291,10 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     final keepPersonnel = unit.personnels.where((test) => !personnel.contains(test)).toList();
 
     // Remove personnel from Unit?
-    if (params.personnel?.isNotEmpty == true) {
+    if (params.personnels?.isNotEmpty == true) {
       params.bloc.update(
         unit.cloneWith(
-          personnel: keepPersonnel,
+          personnels: keepPersonnel,
         ),
       );
     }

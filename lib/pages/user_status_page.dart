@@ -4,7 +4,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/personnel.dart';
+import 'package:SarSys/widgets/personnel_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

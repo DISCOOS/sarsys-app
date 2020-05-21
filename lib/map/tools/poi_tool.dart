@@ -5,8 +5,8 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/usecase/poi.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/poi_info_panel.dart';
-import 'package:SarSys/widgets/selector_panel.dart';
+import 'package:SarSys/widgets/poi_widget.dart';
+import 'package:SarSys/widgets/selector_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -57,11 +57,11 @@ class POITool extends MapTool with MapSelectable<POI> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorPanel<POI>(
+            child: SelectorWidget<POI>(
               size: size,
               style: style,
               icon: Icons.group,
-              title: "Velg enhet",
+              title: "Velg punkt",
               items: items,
               onSelected: _showInfo,
               itemBuilder: (BuildContext context, POI poi) => Text("${poi.name}"),
@@ -83,7 +83,7 @@ class POITool extends MapTool with MapSelectable<POI> {
           backgroundColor: Colors.white,
           child: StatefulBuilder(builder: (context, StateSetter setState) {
             actual ??= poi.point;
-            return POIInfoPanel(
+            return POIWidget(
               poi: POIType.IPP == poi.type
                   ? POI(
                       name: "IPP",

@@ -19,6 +19,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/affilliation.dart';
 import 'package:SarSys/widgets/descriptions.dart';
+import 'package:SarSys/widgets/device_widgets.dart';
 import 'package:SarSys/widgets/position_field.dart';
 
 import 'package:flutter/material.dart';
@@ -76,6 +77,14 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _initFNameController();
     _initLNameController();
     _initPhoneController();
+  }
+
+  @override
+  void dispose() {
+    _fnameController.dispose();
+    _lnameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 
   @override
@@ -278,6 +287,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
               FormBuilderValidators.required(errorText: 'Må fylles inn'),
               (value) => _validateName(value, _fnameController.text),
             ],
+            autocorrect: true,
+            textCapitalization: TextCapitalization.sentences,
           );
   }
 
@@ -314,6 +325,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
               FormBuilderValidators.required(errorText: 'Må fylles inn'),
               (value) => _validateName(value, _lnameController.text),
             ],
+            autocorrect: true,
+            textCapitalization: TextCapitalization.sentences,
           );
   }
 
@@ -452,7 +465,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Widget _buildDeviceListField() {
-    final style = Theme.of(context).textTheme.caption;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
@@ -468,32 +480,23 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           contentPadding: EdgeInsets.fromLTRB(12.0, 8.0, 8.0, 16.0),
         ),
         findSuggestions: _findDevices,
-        chipBuilder: (context, state, device) {
-          return InputChip(
-            key: ObjectKey(device),
-            label: Text(device.number, style: style),
-            onDeleted: () => state.deleteChip(device),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        },
-        suggestionBuilder: (context, state, device) {
-          return ListTile(
-            key: ObjectKey(device),
-            leading: CircleAvatar(
-              child: Text(enumName(device.status).substring(0, 1)),
-            ),
-            title: Text(device.number),
-            onTap: () => state.selectSuggestion(device),
-          );
-        },
+        chipBuilder: (context, state, device) => DeviceChip(
+          device: device,
+          state: state,
+        ),
+        suggestionBuilder: (context, state, device) => DeviceTile(
+          device: device,
+          state: state,
+        ),
         valueTransformer: (values) => values.map((device) => device).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
-        autocorrect: false,
         inputType: TextInputType.text,
         keyboardAppearance: Brightness.dark,
         inputAction: TextInputAction.done,
-        textCapitalization: TextCapitalization.none,
+        autocorrect: true,
+        textCapitalization: TextCapitalization.sentences,
+        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
       ),
     );
   }
@@ -509,8 +512,11 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           .values
           .where((device) =>
               // Add locally removed devices
-              actual.contains(device.uuid) && !local.contains(device.uuid) ||
-              context.bloc<TrackingBloc>().has(device) == false)
+              _canAddDevice(
+                actual,
+                device,
+                local,
+              ))
           .where((device) =>
               device.number.toLowerCase().contains(lowercaseQuery) ||
               device.type.toString().toLowerCase().contains(lowercaseQuery))
@@ -518,6 +524,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           .toList(growable: false);
     }
     return const <Device>[];
+  }
+
+  bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
+    return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
   }
 
   Widget _buildPointField() {
