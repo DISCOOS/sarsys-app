@@ -93,6 +93,8 @@ void runAppWithCatcher(Widget app, BlocController controller) {
     // Silence map tile cache host lookup
     "SocketException: Failed host lookup",
     // Silence flutter_cache_manager exceptions
+    "Could not instantiate image codec",
+    "Couldn't download or retrieve file",
     "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",
     "HttpException: Invalid statusCode: 500, uri = https://opencache2.statkart.no",
     "HttpException: Invalid statusCode: 500, uri = https://opencache3.statkart.no",
@@ -104,12 +106,6 @@ void runAppWithCatcher(Widget app, BlocController controller) {
     "Connection closed before full header was received",
     "SocketException: OS Error: Connection timed out",
     "SocketException: OS Error: Software caused connection abort",
-//    // Silence tile errors, see TileErrorHandler
-//    TileError.NOT_FOUND, //"Couldn't download or retrieve file"
-//    TileError.IS_INVALID, //"Could not instantiate image codec"
-    // Silence Overlay assertion errors thrown by form_field_builder.
-    // See https://github.com/danvick/flutter_chips_input/pull/13 for proposed fix.
-    "package:flutter/src/widgets/overlay.dart': failed assertion: line 133 pos 12: '_overlay != null': is not true."
   ];
 
   final Map<String, ReportMode> explicitReportModesMap = Map.fromIterable(
