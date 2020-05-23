@@ -56,7 +56,7 @@ class BlocTestHarness implements BlocDelegate {
   bool get isCellular => connectivity.isCellular;
 
   BlocEventBus get bus => _bus;
-  BlocEventBus _bus = BlocEventBusMock();
+  BlocEventBus _bus = BlocEventBus();
 
   String _username;
   String _password;
@@ -218,11 +218,12 @@ class BlocTestHarness implements BlocDelegate {
   void withIncidentBloc({
     String username = 'username',
     String password = 'password',
+    bool authenticated = true,
   }) {
     withUserBloc(
       username: username,
       password: password,
-      authenticated: true,
+      authenticated: authenticated,
     );
     _withIncidentBloc = true;
   }
@@ -370,6 +371,8 @@ class BlocTestHarness implements BlocDelegate {
       bus,
       _userBloc,
     );
+
+    await _configBloc.init();
 
     if (_authenticated && _waitForIncidentsLoaded) {
       // Consume IncidentsLoaded fired by UserAuthenticated

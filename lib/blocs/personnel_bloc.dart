@@ -5,7 +5,6 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/services/personnel_service.dart';
-import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
@@ -31,27 +30,24 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
 
-    // Process Incident events
     registerStreamSubscription(incidentBloc.listen(
-      _processIncidentEvent,
+      // Load and unload personnels as needed
+      _processIncidentState,
     ));
 
-    // Process Tracking messages
     registerStreamSubscription(service.messages.listen(
+      // Update from messages pushed from backend
       _processPersonnelMessage,
     ));
-
-    // Ensure user is mobilized
-    registerEventHandler<PersonnelsLoaded>(MobilizeUser());
   }
 
-  void _processIncidentEvent(IncidentState state) {
+  void _processIncidentState(IncidentState state) {
     try {
-      if (subscriptions.isNotEmpty) {
-        if (state.shouldUnload(iuuid) && repo.isReady) {
-          add(UnloadPersonnels(repo.iuuid));
-        } else if (state.isSelected()) {
-          add(LoadPersonnels(state.data.uuid));
+      if (hasSubscriptions) {
+        if (state.shouldLoad(iuuid)) {
+          dispatch(LoadPersonnels(state.data.uuid));
+        } else if (state.shouldUnload(iuuid) && repo.isReady) {
+          dispatch(UnloadPersonnels(repo.iuuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -118,7 +114,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       repo.count(exclude: exclude);
 
   void _assertState() {
-    if (incidentBloc.isUnset) {
+    if (incidentBloc.isUnselected) {
       throw PersonnelBlocException(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.load()'",
@@ -247,7 +243,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   Future<PersonnelState> _unload(UnloadPersonnels command) async {
-    final personnels = await repo.unload();
+    final personnels = await repo.close();
     return toOK(
       command,
       PersonnelsUnloaded(personnels),

@@ -26,6 +26,9 @@ typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBlocError>
     with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>> {
+  ///
+  /// Default constructor
+  ///
   TrackingBloc(
     this.repo, {
     @required this.incidentBloc,
@@ -38,17 +41,30 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     assert(unitBloc != null, "unitBloc can not be null");
     assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
-    _subscriptions
-      // Handles incident state changes
-      ..add(incidentBloc.listen(_processIncidentState))
-      // Manages tracking state for units
-      ..add(unitBloc.listen(_processUnitState))
-      // Manages tracking state for personnel
-      ..add(personnelBloc.listen(_processPersonnelState))
-      // Manages tracking state for devices
-      ..add(deviceBloc.listen(_processDeviceState))
-      // Process tracking messages
-      ..add(service.messages.listen(_processMessage));
+
+    registerStreamSubscription(
+      // Load and unload trackings as needed
+      incidentBloc.listen(_processIncidentState),
+    );
+    registerStreamSubscription(
+      // Updates tracking for unit
+      // apriori to changes made in backend.
+      unitBloc.listen(_processUnitState),
+    );
+    registerStreamSubscription(
+      // Updates tracking for personnel
+      // apriori to changes made in backend.
+      personnelBloc.listen(_processPersonnelState),
+    );
+    registerStreamSubscription(
+      // Updates tracking for device
+      // apriori to changes made in backend.
+      deviceBloc.listen(_processDeviceState),
+    );
+    registerStreamSubscription(
+      // Update from messages pushed from backend
+      service.messages.listen(_processMessage),
+    );
   }
 
   /// Get [IncidentBloc]
@@ -69,9 +85,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// Get [TrackingService]
   TrackingService get service => repo.service;
 
-  /// Subscriptions released on [close]
-  List<StreamSubscription> _subscriptions = [];
-
   /// [Incident] that manages given [devices]
   String get iuuid => repo.iuuid;
 
@@ -90,12 +103,11 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   void _processIncidentState(IncidentState state) {
     try {
-      if (_subscriptions.isNotEmpty) {
-        // Clear out current tracking upon states given below
-        if (state.shouldUnload(iuuid)) {
-          add(UnloadTrackings(iuuid));
-        } else if (state.isSelected()) {
-          add(LoadTrackings(state.data.uuid));
+      if (hasSubscriptions) {
+        if (state.shouldLoad(iuuid)) {
+          dispatch(LoadTrackings(state.data.uuid));
+        } else if (state.shouldUnload(iuuid) && repo.isReady) {
+          dispatch(UnloadTrackings(iuuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -382,7 +394,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   void _assertState() {
-    if (incidentBloc.isUnset) {
+    if (incidentBloc.isUnselected) {
       throw TrackingBlocException(
         "No incident selected. Ensure that "
         "'IncidentBloc.select(String uuid)' is called before 'TrackingBloc.load()'",
@@ -620,7 +632,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   Future<TrackingState> _unload(UnloadTrackings command) async {
-    final trackings = await repo.unload();
+    final trackings = await repo.close();
     return toOK(
       command,
       TrackingsUnloaded(trackings),
@@ -707,8 +719,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
 
   @override
   Future<void> close() async {
-    _subscriptions.forEach((subscription) => subscription.cancel());
-    _subscriptions.clear();
     await repo.dispose();
     return super.close();
   }

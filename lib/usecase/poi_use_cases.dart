@@ -39,7 +39,6 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
             ),
         title: "Endre IPP",
         incident: params.incident,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -79,7 +78,6 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
             ),
         title: "Endre oppmøte",
         incident: params.incident,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);

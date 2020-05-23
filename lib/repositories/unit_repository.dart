@@ -44,17 +44,18 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
   }
 
   /// Ensure that box for given [Incident.uuid] is open
-  Future<void> _ensure(String iuuid) async {
+  Future<Iterable<StorageState<Unit>>> _ensure(String iuuid) async {
     if (isEmptyOrNull(iuuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
     if (_iuuid != iuuid) {
+      _iuuid = iuuid;
       await prepare(
         force: true,
         postfix: iuuid,
       );
-      _iuuid = iuuid;
     }
+    return Future.value(states.values);
   }
 
   /// Get [Unit] count
@@ -205,10 +206,9 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
   }
 
   /// Unload all devices for given [iuuid]
-  Future<List<Unit>> unload() async {
-    final units = values;
+  Future<List<Unit>> close() async {
     _iuuid = null;
-    return units;
+    return super.close();
   }
 
   @override

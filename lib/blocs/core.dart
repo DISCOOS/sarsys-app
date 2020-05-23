@@ -1,19 +1,21 @@
 import 'dart:async';
+import 'dart:collection';
 
-import 'package:SarSys/usecase/core.dart';
 import 'package:bloc/bloc.dart';
-
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/usecase/core.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
   BaseBloc({this.bus}) {
     // Publish own events to bus?
     if (bus != null) {
       _subscriptions.add(listen(
-        (state) => bus.publish(this, state),
+        (state) => scheduleMicrotask(() => bus.publish(this, state)),
       ));
     }
   }
@@ -23,36 +25,60 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
 
   /// Subscriptions released on [close]
   final List<StreamSubscription> _subscriptions = [];
-  List<StreamSubscription> get subscriptions => List.unmodifiable(_subscriptions);
-
-  /// [BlocEventHandler]s released on [close]
-  List<BlocEventHandler> _handlers = [];
-  List<BlocEventHandler> get handlers => List.unmodifiable(_handlers);
-
-  void registerEventHandler<T extends BlocEvent>(BlocEventHandler handler) => _handlers.add(
-        bus.subscribe<T>(handler),
-      );
+  bool get hasSubscriptions => _subscriptions.isNotEmpty;
   void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
         subscription,
       );
 
   @override
+  void add(C command) {
+    if (_dispatchQueue.isEmpty) {
+      // Process LATER but BEFORE any asynchronous
+      // events like Future, Timer or DOM Event
+      scheduleMicrotask(_process);
+    }
+    _dispatchQueue.add(command);
+  }
+
+  /// Dispatch command and return future of value [T]
+  Future<T> dispatch<T>(C command) {
+    add(command);
+    return command.callback.future;
+  }
+
+  /// Process [BlocCommand] in FIFO-manner until [_dispatchQueue] is empty
+  void _process() async {
+    while (_dispatchQueue.isNotEmpty) {
+      // Dispatch next command and wait for result
+      final command = _dispatchQueue.first;
+      super.add(command);
+      //await command.callback.future;
+      // Only remove after execution is completed
+      _dispatchQueue.removeFirst();
+    }
+  }
+
+  /// Queue of [BlocCommand]s processed in FIFO manner.
+  ///
+  /// This queue ensures that each command is processed
+  /// in order waiting for it to complete of fail. This
+  /// prevents concurrent writes which will result in
+  /// an unexpected behaviour due to race conditions.
+  final _dispatchQueue = ListQueue<C>();
+
+  @override
   @protected
   Stream<S> mapEventToState(C command) async* {
     try {
-      final errors = <Error>[];
-
-      final stream = execute(command).handleError((error, stackTrace) => errors.add(toError(
-            command,
-            createError(
-              error,
-              stackTrace: stackTrace,
-            ),
-          )));
-      yield* stream;
-      for (var error in errors) {
-        yield error;
-      }
+      yield* execute(command).handleError((error, stackTrace) {
+        throw toError(
+          command,
+          createError(
+            error,
+            stackTrace: stackTrace,
+          ),
+        );
+      });
     } on Exception catch (error, stackTrace) {
       yield toError(
         command,
@@ -62,13 +88,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         ),
       );
     }
-  }
-
-  /// Dispatch command and return future
-  @protected
-  Future<S> dispatch<S>(C command) {
-    add(command);
-    return command.callback.future;
   }
 
   /// Complete request and
@@ -122,8 +141,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   Future<void> close() {
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
-    _handlers.forEach((handler) => bus.unsubscribe(handler));
-    _handlers.clear();
     return super.close();
   }
 }
@@ -136,6 +153,12 @@ abstract class BlocEventHandler<T extends BlocEvent> {
 
 /// [BlocEvent] bus implementation
 class BlocEventBus {
+  BlocEventBus({
+    BlocDelegate delegate,
+  }) : delegate = delegate ?? BlocSupervisor.delegate;
+
+  final BlocDelegate delegate;
+
   /// Registered event routes from Type to to handlers
   final Map<Type, Set<BlocEventHandler>> _routes = {};
 
@@ -161,23 +184,22 @@ class BlocEventBus {
   /// Unsubscribe all event handlers
   void unsubscribeAll() => _routes.clear();
 
-  void publish(Bloc bloc, BlocEvent event) => toHandlers(event).forEach((handler) => handler.handle(bloc, event));
+  void publish(Bloc bloc, BlocEvent event) {
+    toHandlers(event).forEach((handler) {
+      try {
+        handler.handle(bloc, event);
+      } on Exception catch (error, stackTrace) {
+        delegate.onError(
+          bloc,
+          error,
+          stackTrace,
+        );
+      }
+    });
+  }
 
   /// Get all handlers for given event
   Iterable<BlocEventHandler> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
-
-  /// Get a single handler for given event.
-  ///
-  /// If none or more than one is registered, an [InvalidOperation] is thrown.
-  BlocEventHandler toHandler(BlocEvent event) {
-    final handlers = _routes[event.runtimeType];
-    if (handlers == null) {
-      throw ArgumentError('No handler found for $event');
-    } else if (handlers.length > 1) {
-      throw StateError('More than one handler found for $event: $handlers');
-    }
-    return handlers.first;
-  }
 }
 
 class BlocCommand<D, R> extends Equatable {
@@ -190,7 +212,18 @@ class BlocCommand<D, R> extends Equatable {
 abstract class BlocEvent<T> extends Equatable {
   final T data;
   final StackTrace stackTrace;
-  BlocEvent(this.data, {this.stackTrace, props = const []}) : super([data, ...props]);
+
+  DateTime get created => props.last;
+
+  BlocEvent(this.data, {this.stackTrace, props = const []})
+      : super([
+          data,
+          ...props,
+          // Ensures events with no
+          // props are published by
+          // Bloc
+          DateTime.now(),
+        ]);
 }
 
 class AppBlocDelegate implements BlocDelegate {

@@ -2046,13 +2046,13 @@ Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
   // Act
   await harness.incidentBloc.delete(incident.uuid);
   await expectThroughLater(
-    harness.unitBloc,
-    emits(isA<UnitsUnloaded>()),
+    harness.personnelBloc,
+    emits(isA<PersonnelsUnloaded>()),
     close: false,
   );
   await expectThroughLater(
-    harness.personnelBloc,
-    emits(isA<PersonnelsUnloaded>()),
+    harness.unitBloc,
+    emits(isA<UnitsUnloaded>()),
     close: false,
   );
 
@@ -2111,7 +2111,7 @@ Future<Incident> _prepare(BlocTestHarness harness) async {
 
   // Prepare IncidentBloc
   await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare TrackingBloc
   await expectThroughLater(harness.trackingBloc, emits(isA<TrackingsLoaded>()), close: false);

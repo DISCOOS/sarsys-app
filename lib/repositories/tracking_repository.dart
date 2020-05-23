@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/tracking_service.dart';
@@ -175,10 +176,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   }
 
   /// Unload all devices for given [iuuid]
-  Future<List<Tracking>> unload() async {
-    final trackings = values;
+  Future<List<Tracking>> close() async {
     _iuuid = null;
-    return trackings;
+    return super.close();
   }
 
   /// Commit [state] to repository
@@ -200,7 +200,15 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
       (track) {
         _sources.update(
           track.source.uuid,
-          (tuuids) => tuuids..add(tuuid),
+          (tuuids) {
+            if (track.status == TrackStatus.attached) {
+              tuuids.add(tuuid);
+            } else {
+              print('remove $tuuid');
+              tuuids.remove(tuuid);
+            }
+            return tuuids;
+          },
           ifAbsent: () => {tuuid},
         );
         return;

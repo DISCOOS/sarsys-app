@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,9 +55,8 @@ class BlocController {
   DemoParams _demo;
   DemoParams get demo => _demo;
 
-  final _blocs = <Type, Bloc>{};
-
   T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
+  final _blocs = <Type, Bloc>{};
 
   BlocProvider<T> toProvider<T extends Bloc>() => BlocProvider.value(
         value: _blocs[typeOf<T>()] as T,
@@ -73,7 +73,19 @@ class BlocController {
   bool shouldInitialize(BlocControllerState state) => state == BlocControllerState.Built;
   bool shouldAuthenticate(BlocControllerState state) => state == BlocControllerState.Local;
 
-  List<StreamSubscription> _subscriptions = [];
+  /// [BlocEventHandler]s released on [_unset]
+  List<BlocEventHandler> _handlers = [];
+  List<BlocEventHandler> get handlers => List.unmodifiable(_handlers);
+  void registerEventHandler<T extends BlocEvent>(BlocEventHandler<T> handler) => _handlers.add(
+        bus.subscribe<T>(handler),
+      );
+
+  /// Subscriptions released on [close]
+  final List<StreamSubscription> _subscriptions = [];
+  List<StreamSubscription> get subscriptions => List.unmodifiable(_subscriptions);
+  void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
+        subscription,
+      );
   StreamController<BlocControllerState> _controller = StreamController.broadcast();
   Stream<BlocControllerState> get onChange => _controller.stream;
 
@@ -297,6 +309,11 @@ class BlocController {
     @required DeviceBloc deviceBloc,
     @required TrackingBloc trackingBloc,
   }) {
+    assert(
+      _blocs.isEmpty,
+      "Should be empty, forgot to call _unset?",
+    );
+
     _demo = demo;
 
     _blocs[configBloc.runtimeType] = configBloc;
@@ -308,7 +325,13 @@ class BlocController {
     _blocs[trackingBloc.runtimeType] = trackingBloc;
 
     // Rebuild providers when demo parameters changes
-    _subscriptions..add(configBloc.listen(_onConfigState))..add(userBloc.listen(_onUserState));
+    registerStreamSubscription(configBloc.listen(_onConfigState));
+
+    // Handle changes in user state
+    registerStreamSubscription(userBloc.listen(_onUserState));
+
+    // Ensure user is mobilized
+    registerEventHandler<PersonnelsLoaded>(MobilizeUser());
 
     // Notify that providers are ready
     _controller.add(_state = BlocControllerState.Built);
@@ -358,12 +381,17 @@ class BlocController {
     // Notify blocs not ready, will show splash screen
     _controller.add(_state = BlocControllerState.Empty);
 
+    // Unsubscribe handlers
+    _handlers.forEach((handler) => bus.unsubscribe(handler));
+    _handlers.clear();
+
     // Cancel state change subscriptions on current blocs
     _subscriptions.forEach((subscription) => subscription.cancel());
     _subscriptions.clear();
 
     // Dispose current blocs
     _blocs.values.forEach((bloc) => bloc.close());
+    _blocs.clear();
   }
 
   void dispose() {

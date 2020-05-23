@@ -5,7 +5,6 @@ import 'package:SarSys/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/bloc_controller.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/models/Incident.dart';
@@ -32,13 +31,10 @@ class IncidentEditor extends StatefulWidget {
   final Point ipp;
   final Incident incident;
 
-  final PermissionController controller;
-
   const IncidentEditor({
     Key key,
     this.ipp,
     this.incident,
-    @required this.controller,
   }) : super(key: key);
 
   @override
@@ -490,7 +486,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
         labelText: "IPP",
         hintText: 'Velg IPP',
         errorText: 'IPP må oppgis',
-        controller: widget.controller,
         optional: false,
         onChanged: (Position position) async {
           _ipp = _toLocation(_ipp, position.geometry);
@@ -515,7 +510,6 @@ class _IncidentEditorState extends State<IncidentEditor> {
         labelText: "Oppmøtested",
         hintText: 'Velg oppmøtested',
         errorText: 'Oppmøtested må oppgis',
-        controller: widget.controller,
         optional: false,
         onChanged: (Position position) async {
           _meetup = _toLocation(_meetup, position.geometry);

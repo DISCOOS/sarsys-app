@@ -448,11 +448,11 @@ class UserRepository {
 
   Future<User> _putUser(User user) async {
     _userId = user.userId;
+    await _users.put(user.userId, user);
     await Storage.secure.write(
       key: CURRENT_USER_ID_KEY,
       value: _userId,
     );
-    await _users.put(user.userId, user);
     return user;
   }
 

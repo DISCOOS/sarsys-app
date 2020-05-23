@@ -30,6 +30,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         UpdatableBloc<Unit>,
         DeletableBloc<Unit>,
         UnloadableBloc<List<Unit>> {
+  ///
+  /// Default constructor
+  ///
   UnitBloc(
     this.repo,
     BlocEventBus bus,
@@ -40,26 +43,33 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     assert(service != null, "service can not be null");
     assert(incidentBloc != null, "incidentBloc can not be null");
     assert(personnelBloc != null, "personnelBloc can not be null");
-    _subscriptions
-      ..add(incidentBloc.listen(
-        _processIncidentEvent,
-      ))
-      ..add(personnelBloc.listen(
-        _processPersonnelEvent,
-      ));
 
-    // Create units from templates if given
-    registerEventHandler<IncidentCreated>(CreateUnits());
+    registerStreamSubscription(incidentBloc.listen(
+      // 1) Load and unloads units as needed
+      // 2) Creates units from templates if
+      //    give in IncidentCreated
+      _processIncidentState,
+    ));
+
+    registerStreamSubscription(personnelBloc.listen(
+      // Keeps local Personnel instances in sync
+      // TODO: Replace with direct lookup instead
+      _processPersonnelState,
+    ));
   }
 
-  void _processIncidentEvent(IncidentState state) {
+  void _processIncidentState(IncidentState state) async {
     try {
-      if (_subscriptions.isNotEmpty != null) {
-        // Clear out current tracking upon states given below
-        if (state.shouldUnload(iuuid) && repo.isReady) {
-          add(UnloadUnits(iuuid));
-        } else if (state.isSelected()) {
-          add(LoadUnits(state.data.uuid));
+      if (hasSubscriptions) {
+        if (state.shouldLoad(iuuid)) {
+          await dispatch(LoadUnits((state.data as Incident).uuid));
+          if (state is IncidentCreated) {
+            if (state.units.isNotEmpty) {
+              createUnits(bloc: this, templates: state.units);
+            }
+          }
+        } else if (state.shouldUnload(iuuid) && repo.isReady) {
+          dispatch(UnloadUnits(iuuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -70,7 +80,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     }
   }
 
-  void _processPersonnelEvent(PersonnelState state) {
+  void _processPersonnelState(PersonnelState state) {
     try {
       if (state.isUpdated()) {
         final event = state as PersonnelUpdated;
@@ -97,9 +107,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     }
   }
 
-  /// Subscriptions released on [close]
-  List<StreamSubscription> _subscriptions = [];
-
   /// Get [IncidentBloc]
   final IncidentBloc incidentBloc;
 
@@ -117,6 +124,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   /// [Incident] that manages given [units]
   String get iuuid => repo.iuuid;
+
+  /// Check if [Incident.uuid] is set
+  bool get isSet => repo.iuuid != null;
 
   /// Check if [Incident.uuid] is not set
   bool get isUnset => repo.iuuid == null;
@@ -177,7 +187,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   void _assertState() {
-    if (incidentBloc.isUnset) {
+    if (incidentBloc.isUnselected) {
       throw UnitBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.load()'",
@@ -315,11 +325,11 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   Future<UnitState> _unload(UnloadUnits command) async {
-    final devices = await repo.unload();
+    final units = await repo.close();
     return toOK(
       command,
-      UnitsUnloaded(devices),
-      result: devices,
+      UnitsUnloaded(units),
+      result: units,
     );
   }
 
@@ -341,10 +351,24 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   @override
   Future<void> close() async {
-    _subscriptions.forEach((subscription) => subscription.cancel());
-    _subscriptions.clear();
     await repo.dispose();
     return super.close();
+  }
+}
+
+/// ---------------------
+/// Event handlers
+/// ---------------------
+
+class IncidentCreatedHandler implements BlocEventHandler<IncidentCreated> {
+  IncidentCreatedHandler(this.bloc);
+  final UnitBloc bloc;
+
+  @override
+  void handle(_, IncidentCreated event) {
+    if (event.units?.isNotEmpty == true) {
+      createUnits(templates: event.units, bloc: bloc);
+    }
   }
 }
 

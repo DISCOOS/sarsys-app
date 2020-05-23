@@ -7,6 +7,7 @@ import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
+import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/service.dart';
@@ -78,7 +79,7 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static final Map<String, Incident> incidents = {};
+  static final Map<String, Incident> _incidents = {};
 
   Incident add(
     String userId, {
@@ -92,16 +93,16 @@ class IncidentServiceMock extends Mock implements IncidentService {
       since: since,
       passcode: passcode,
     );
-    incidents[incident.uuid] = incident;
+    _incidents[incident.uuid] = incident;
     return incident;
   }
 
   Incident remove(uuid) {
-    return incidents.remove(uuid);
+    return _incidents.remove(uuid);
   }
 
   IncidentServiceMock reset() {
-    incidents.clear();
+    _incidents.clear();
     return this;
   }
 
@@ -124,26 +125,33 @@ class IncidentServiceMock extends Mock implements IncidentService {
       );
 
   static IncidentService build(
-    UserRepository repo, {
+    UserRepository users, {
     @required final UserRole role,
     @required final String passcode,
     final int count = 0,
   }) {
-    incidents.clear();
+    _incidents.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized", role).toUser();
     when(mock.fetch()).thenAnswer((_) async {
-      if (incidents.isEmpty) {
-        var user = await repo.load();
-        incidents.addEntries([
+      final authorized = await users.load();
+      if (authorized == null) {
+        return ServiceResponse.unauthorized();
+      }
+      if (_incidents.isEmpty) {
+        var user = await users.load();
+        _incidents.addEntries([
           for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
-      return ServiceResponse.ok(body: incidents.values.toList(growable: false));
+      return ServiceResponse.ok(body: _incidents.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final authorized = await repo.load();
+      final authorized = await users.load();
+      if (authorized == null) {
+        return ServiceResponse.unauthorized();
+      }
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.userId);
       final created = Incident(
@@ -164,13 +172,13 @@ class IncidentServiceMock extends Mock implements IncidentService {
         talkgroups: incident.talkgroups,
         reference: incident.reference,
       );
-      incidents.putIfAbsent(created.uuid, () => created);
+      _incidents.putIfAbsent(created.uuid, () => created);
       return ServiceResponse.ok(body: created);
     });
     when(mock.update(any)).thenAnswer((_) async {
       var incident = _.positionalArguments[0];
-      if (incidents.containsKey(incident.uuid)) {
-        incidents.update(
+      if (_incidents.containsKey(incident.uuid)) {
+        _incidents.update(
           incident.uuid,
           (_) => incident,
           ifAbsent: () => incident,
@@ -181,8 +189,8 @@ class IncidentServiceMock extends Mock implements IncidentService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var uuid = _.positionalArguments[0];
-      if (incidents.containsKey(uuid)) {
-        incidents.remove(uuid);
+      if (_incidents.containsKey(uuid)) {
+        _incidents.remove(uuid);
         return ServiceResponse.noContent();
       }
       return ServiceResponse.notFound(message: "Not found. Incident $uuid");

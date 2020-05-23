@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -8,6 +9,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UnitWidget extends StatelessWidget {
   final Unit unit;
@@ -353,7 +355,7 @@ class UnitWidget extends StatelessWidget {
             children: <Widget>[
               _buildEditAction(context),
               _buildTransitionAction(context),
-              _buildDeleteAction(context),
+              if (context.bloc<UserBloc>().user.isAdmin) _buildDeleteAction(context),
             ],
           ),
           data: ButtonBarThemeData(

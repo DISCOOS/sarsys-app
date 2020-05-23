@@ -1,5 +1,4 @@
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
@@ -16,11 +15,9 @@ import 'package:uuid/uuid.dart';
 class DeviceEditor extends StatefulWidget {
   final Device device;
   final DeviceType type;
-  final PermissionController controller;
 
   const DeviceEditor({
     Key key,
-    @required this.controller,
     this.device,
     this.type = DeviceType.Tetra,
   }) : super(key: key);
@@ -346,7 +343,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
         labelText: "Siste posisjon",
         hintText: 'Velg posisjon',
         errorText: 'Posisjon må oppgis',
-        controller: widget.controller,
         onChanged: (point) => setState(() {}),
       );
 

@@ -2,7 +2,6 @@ import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/position_editor.dart';
@@ -28,11 +27,14 @@ import 'package:uuid/uuid.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
   final List<Device> devices;
+  IncidentBloc get incidentBloc => bloc.incidentBloc;
+  User get user => incidentBloc.userBloc.user;
   PersonnelParams({
     Personnel personnel,
     this.position,
     this.devices,
-  }) : super(personnel);
+    PersonnelBloc bloc,
+  }) : super(personnel, bloc: bloc);
 }
 
 /// Create personnel with tracking of given devices
@@ -51,7 +53,6 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       context: params.overlay.context,
       builder: (context) => PersonnelEditor(
         devices: params.devices,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -94,7 +95,6 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -136,7 +136,6 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
       builder: (context) => PositionEditor(
         params.position,
         title: "Sett siste kjente posisjon",
-        controller: params.controller,
       ),
     );
     if (position == null) return dartz.Left(false);
@@ -244,10 +243,11 @@ Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(Personnel
 class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements BlocEventHandler<PersonnelsLoaded> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
-    if (params.context.bloc<IncidentBloc>().isUnset) {
+    if (params.incidentBloc.isUnselected) {
       return dartz.left(false);
     }
-    final user = params.context.bloc<UserBloc>().user;
+
+    final user = params.user;
     assert(user != null, "UserBloc contains no user");
     try {
       var personnel = _findUser(params, user);
@@ -278,7 +278,7 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements 
   }
 
   @override
-  void handle(Bloc bloc, PersonnelsLoaded event) => execute(PersonnelParams());
+  void handle(Bloc bloc, PersonnelsLoaded event) => call(PersonnelParams(bloc: bloc));
 }
 
 Personnel _findUser(PersonnelParams params, User user) {

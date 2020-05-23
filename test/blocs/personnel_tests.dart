@@ -22,7 +22,7 @@ void main() async {
       expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD BE unset");
       expect(harness.personnelBloc.personnels.length, 0, reason: "SHOULD BE empty");
       expect(harness.personnelBloc.initialState, isA<PersonnelsEmpty>(), reason: "Unexpected personnel state");
-      await expectExactlyLater(harness.personnelBloc, [isA<PersonnelsEmpty>()]);
+      expect(harness.personnelBloc, emits(isA<PersonnelsEmpty>()));
     },
   );
 
@@ -223,7 +223,7 @@ void main() async {
         equals(StorageStatus.created),
         reason: "SHOULD HAVE status CREATED",
       );
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one incident");
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expectThrough(harness.personnelBloc, isA<PersonnelCreated>());
     });
 
@@ -476,7 +476,7 @@ Future<Incident> _prepare(BlocTestHarness harness) async {
 
   // Prepare IncidentBloc
   await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare PersonnelBloc
   await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()), close: false);

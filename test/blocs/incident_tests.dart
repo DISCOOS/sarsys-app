@@ -12,16 +12,17 @@ const PASSWORD = 'password';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withIncidentBloc()
+    ..withIncidentBloc(authenticated: false)
     ..install();
 
   test(
     'Incident bloc should be EMPTY and UNSET',
     () async {
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD BE unset");
-      expect(harness.incidentBloc.initialState, isA<IncidentUnset>(), reason: "Unexpected incident state");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
+      expect(harness.incidentBloc.repo.isEmpty, isTrue, reason: "SHOULD BE empty");
+      expect(harness.incidentBloc.initialState, isA<IncidentsEmpty>(), reason: "Unexpected incident state");
       await expectExactlyLater(harness.incidentBloc, [
-        isA<IncidentUnset>(),
+        isA<IncidentsEmpty>(),
       ]);
     },
   );
@@ -29,23 +30,50 @@ void main() async {
   test(
     'Incident bloc should be load when user is authenticated',
     () async {
-      // Act
-      await harness.configBloc.init();
-      await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+      // Arrange
+      await _authenticate(harness);
 
       // Assert
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD BE unset");
-      expect(harness.incidentBloc.initialState, isA<IncidentUnset>(), reason: "Unexpected incident state");
-      await expectExactlyLater(harness.incidentBloc, [
-        isA<IncidentUnset>(),
-        isA<IncidentsLoaded>(),
-      ]);
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
+      expect(harness.incidentBloc.initialState, isA<IncidentsEmpty>(), reason: "Unexpected incident state");
+    },
+  );
+
+  test(
+    'Incident bloc should be unload when user is logged out',
+    () async {
+      // Arrange
+      await _authenticate(harness);
+      await expectThroughLater(harness.incidentBloc, emits(isA<IncidentsLoaded>()), close: false);
+
+      // Act
+      await harness.userBloc.logout();
+
+      // Assert
+      await expectThroughLater(harness.incidentBloc, emits(isA<IncidentsUnloaded>()));
+    },
+  );
+
+  test(
+    'Incident bloc should be reload when user is logged in again',
+    () async {
+      // Arrange
+      await _authenticate(harness);
+      await harness.userBloc.logout();
+      await expectThroughLater(harness.incidentBloc, emits(isA<IncidentsUnloaded>()), close: false);
+
+      // Act
+      await _authenticate(harness);
+
+      // Assert
+      await expectThroughLater(harness.incidentBloc, emits(isA<IncidentsLoaded>()));
     },
   );
 
   group('WHEN IncidentBloc is ONLINE', () {
     test('SHOULD load incidents', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       harness.incidentService.add(harness.userBloc.userId);
       harness.incidentService.add(harness.userBloc.userId);
@@ -55,12 +83,17 @@ void main() async {
 
       // Assert
       expect(incidents.length, 2, reason: "SHOULD contain two incidents");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD NOT be in SELECTED state");
-      expect(harness.incidentBloc, emits(isA<IncidentsLoaded>()));
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
+      await expectThroughLater(
+        harness.incidentBloc,
+        emits(isA<IncidentsLoaded>()),
+        close: false,
+      );
     });
 
     test('SHOULD selected first incident', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       harness.incidentService.add(harness.userBloc.userId);
       harness.incidentService.add(harness.userBloc.userId);
@@ -70,13 +103,14 @@ void main() async {
       await harness.incidentBloc.select(incidents.first.uuid);
 
       // Assert
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incidents.first.uuid), reason: "SHOULD select first");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentsLoaded>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD selected last incident', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       harness.incidentService.add(harness.userBloc.userId);
       harness.incidentService.add(harness.userBloc.userId);
@@ -86,13 +120,14 @@ void main() async {
       await harness.incidentBloc.select(incidents.last.uuid);
 
       // Assert
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incidents.last.uuid), reason: "SHOULD select last");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentsLoaded>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD create incident and push to backend', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
       await harness.incidentBloc.load();
@@ -103,13 +138,14 @@ void main() async {
       // Assert
       verify(harness.incidentService.create(any)).called(1);
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident.uuid), reason: "SHOULD select created");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentCreated>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD update incident and push to backend', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       final incident = harness.incidentService.add(harness.userBloc.userId);
       await harness.incidentBloc.load();
@@ -121,13 +157,14 @@ void main() async {
       // Assert
       verify(harness.incidentService.update(any)).called(1);
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident.uuid), reason: "SHOULD select created");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentUpdated>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD delete incident and push to backend', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       final incident = harness.incidentService.add(harness.userBloc.userId);
       await harness.incidentBloc.load();
@@ -141,13 +178,14 @@ void main() async {
       // Assert
       verify(harness.incidentService.delete(any)).called(1);
       expect(harness.incidentBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.incidentBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnset>(), isA<IncidentDeleted>()]);
+      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnselected>(), isA<IncidentDeleted>()]);
     });
 
     test('SHOULD BE empty and UNSET after unload', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       final incident = harness.incidentService.add(harness.userBloc.userId);
       await harness.incidentBloc.load();
@@ -160,13 +198,14 @@ void main() async {
 
       // Assert
       expect(harness.incidentBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.incidentBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnset>(), isA<IncidentsUnloaded>()]);
+      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnselected>(), isA<IncidentsUnloaded>()]);
     });
 
     test('SHOULD reload one incident after unload', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.cellular();
       final incident = harness.incidentService.add(harness.userBloc.userId);
       await harness.incidentBloc.load();
@@ -179,7 +218,7 @@ void main() async {
       await harness.incidentBloc.load();
 
       // Assert
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentsUnloaded>(), isA<IncidentsLoaded>()]);
     });
@@ -188,6 +227,7 @@ void main() async {
   group('WHEN IncidentBloc is OFFLINE', () {
     test('SHOULD load as EMPTY', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       harness.incidentService.add(harness.userBloc.userId);
       harness.incidentService.add(harness.userBloc.userId);
@@ -198,12 +238,16 @@ void main() async {
       // Assert
       verifyZeroInteractions(harness.incidentService);
       expect(incidents.length, 0, reason: "SHOULD NOT contain incidents");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD NOT be in SELECTED state");
-      expect(harness.incidentBloc, emits(isA<IncidentsLoaded>()));
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
+      await expectThroughLater(
+        harness.incidentBloc,
+        emits(isA<IncidentsLoaded>()),
+      );
     });
 
     test('SHOULD selected first incident with state CREATED', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident1 = IncidentBuilder.create(harness.userBloc.userId);
       final incident2 = IncidentBuilder.create(harness.userBloc.userId);
@@ -220,13 +264,14 @@ void main() async {
         equals(StorageStatus.created),
         reason: "SHOULD HAVE status CREATED",
       );
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident1.uuid), reason: "SHOULD selected first");
       expect(harness.incidentBloc, emitsThrough(isA<IncidentSelected>()));
     });
 
     test('SHOULD selected last incident with state CREATED', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident1 = IncidentBuilder.create(harness.userBloc.userId);
       final incident2 = IncidentBuilder.create(harness.userBloc.userId);
@@ -243,13 +288,14 @@ void main() async {
         equals(StorageStatus.created),
         reason: "SHOULD HAVE status CREATED",
       );
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident2.uuid), reason: "SHOULD selected last");
       expect(harness.incidentBloc, emitsThrough(isA<IncidentSelected>()));
     });
 
     test('SHOULD create incident with state CREATED', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
 
@@ -264,13 +310,14 @@ void main() async {
         reason: "SHOULD HAVE status CREATED",
       );
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident.uuid), reason: "SHOULD select created");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentCreated>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD update incident with state CREATED', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
       await harness.incidentBloc.create(incident, selected: false);
@@ -287,13 +334,14 @@ void main() async {
         reason: "SHOULD HAVE status CREATED",
       );
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
-      expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD be in SELECTED state");
+      expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident.uuid), reason: "SHOULD select created");
       expectThroughInOrder(harness.incidentBloc, [isA<IncidentUpdated>(), isA<IncidentSelected>()]);
     });
 
     test('SHOULD delete local incident', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
       await harness.incidentBloc.create(incident);
@@ -306,13 +354,14 @@ void main() async {
       // Assert
       verifyZeroInteractions(harness.incidentService);
       expect(harness.incidentBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.incidentBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnset>(), isA<IncidentDeleted>()]);
+      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnselected>(), isA<IncidentDeleted>()]);
     });
 
     test('SHOULD BE empty and UNSET after unload', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
       await harness.incidentBloc.create(incident);
@@ -325,13 +374,14 @@ void main() async {
       // Assert
       verifyZeroInteractions(harness.incidentService);
       expect(harness.incidentBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.incidentBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnset>(), isA<IncidentsUnloaded>()]);
+      expectThroughInOrder(harness.incidentBloc, [isA<IncidentUnselected>(), isA<IncidentsUnloaded>()]);
     });
 
-    test('SHOULD reload as EMPTY after unload', () async {
+    test('SHOULD reload local values after unload', () async {
       // Arrange
+      await _authenticate(harness);
       harness.connectivity.offline();
       final incident = IncidentBuilder.create(harness.userBloc.userId);
       await harness.incidentBloc.create(incident);
@@ -343,10 +393,30 @@ void main() async {
       await harness.incidentBloc.load();
 
       // Assert
-      verifyZeroInteractions(harness.incidentService);
-      expect(harness.incidentBloc.isUnset, isTrue, reason: "SHOULD be unset");
-      expect(harness.incidentBloc.repo.length, 0, reason: "SHOULD contain no incidents");
+      verifyNoMoreInteractions(harness.incidentService);
+      expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD be unset");
+      expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
       expect(harness.incidentBloc, emits(isA<IncidentsUnloaded>()));
     });
   });
+}
+
+// Authenticate user
+// Since 'authenticate = false' is passed
+// to Harness to allow for testing of
+// initial states and transitions of
+// IncidentBloc, all tests that require
+// an authenticated user must call this
+Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
+  await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+  // Wait for UserAuthenticated event
+  // Wait until incidents are loaded
+  await expectThroughLater(
+    harness.incidentBloc,
+    emits(isA<IncidentsLoaded>()),
+    close: false,
+  );
+  if (reset) {
+    clearInteractions(harness.incidentService);
+  }
 }

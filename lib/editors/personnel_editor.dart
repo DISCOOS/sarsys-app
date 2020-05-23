@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/AggregateRef.dart';
@@ -31,7 +30,6 @@ import 'package:uuid/uuid.dart';
 class PersonnelEditor extends StatefulWidget {
   const PersonnelEditor({
     Key key,
-    @required this.controller,
     this.personnel,
     this.devices = const [],
     this.status = PersonnelStatus.Mobilized,
@@ -39,7 +37,6 @@ class PersonnelEditor extends StatefulWidget {
 
   final Personnel personnel;
   final Iterable<Device> devices;
-  final PermissionController controller;
 
   final PersonnelStatus status;
 
@@ -539,7 +536,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       hintText: 'Velg posisjon',
       errorText: 'Posisjon må oppgis',
       helperText: _toTrackingHelperText(point),
-      controller: widget.controller,
       onChanged: (point) => setState(() {}),
     );
   }

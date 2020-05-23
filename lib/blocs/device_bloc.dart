@@ -15,31 +15,37 @@ typedef void DeviceCallback(VoidCallback fn);
 
 class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     with
-        LoadableBloc<List<Device>>,
+        LoadableBloc<Iterable<Device>>,
         CreatableBloc<Device>,
         UpdatableBloc<Device>,
         DeletableBloc<Device>,
-        UnloadableBloc<List<Device>> {
+        UnloadableBloc<Iterable<Device>> {
+  ///
+  /// Default constructor
+  ///
   DeviceBloc(this.repo, this.incidentBloc) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(this.incidentBloc != null, "incidentBloc can not be null");
-    _subscriptions
-      ..add(incidentBloc.listen(
-        _processIncidentEvent,
-      ))
-      ..add(service.messages.listen(
-        _processDeviceMessage,
-      ));
+
+    registerStreamSubscription(incidentBloc.listen(
+      // Load and unload devices as needed
+      _processIncidentState,
+    ));
+
+    registerStreamSubscription(service.messages.listen(
+      // Update from messages pushed from backend
+      _processDeviceMessage,
+    ));
   }
 
-  void _processIncidentEvent(IncidentState state) {
+  void _processIncidentState(IncidentState state) {
     try {
-      if (_subscriptions.isNotEmpty) {
-        if (state.shouldUnload(iuuid) && repo.isReady) {
-          add(UnloadDevices(iuuid));
-        } else if (state.isSelected()) {
-          add(LoadDevices(state.data.uuid));
+      if (hasSubscriptions) {
+        if (state.shouldLoad(iuuid)) {
+          dispatch(LoadDevices(state.data.uuid));
+        } else if (state.shouldUnload(iuuid) && repo.isReady) {
+          dispatch(UnloadDevices(repo.iuuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -51,9 +57,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   }
 
   void _processDeviceMessage(event) {
-    if (_subscriptions.isNotEmpty) {
+    if (hasSubscriptions) {
       try {
-        add(_HandleMessage(event));
+        dispatch(_HandleMessage(event));
       } on Exception catch (error, stackTrace) {
         Catcher.reportCheckedError(
           error,
@@ -62,9 +68,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       }
     }
   }
-
-  /// Subscriptions released on [close]
-  List<StreamSubscription> _subscriptions = [];
 
   /// Get [IncidentBloc]
   final IncidentBloc incidentBloc;
@@ -95,7 +98,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
 
   void _assertState() {
-    if (incidentBloc.isUnset) {
+    if (incidentBloc.isUnselected) {
       throw DeviceBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String uuid)' is called before 'DeviceBloc.load()'",
@@ -113,9 +116,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Fetch [devices] from [service]
   @override
-  Future<List<Device>> load() async {
+  Future<Iterable<Device>> load() async {
     _assertState();
-    return dispatch<List<Device>>(
+    return dispatch<Iterable<Device>>(
       LoadDevices(iuuid ?? incidentBloc.selected.uuid),
     );
   }
@@ -165,9 +168,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Unload [devices] from local storage
   @override
-  Future<List<Device>> unload() {
+  Future<Iterable<Device>> unload() {
     _assertState();
-    return dispatch<List<Device>>(
+    return dispatch<Iterable<Device>>(
       UnloadDevices(iuuid),
     );
   }
@@ -232,7 +235,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   }
 
   Future<DeviceState> _unload(UnloadDevices command) async {
-    final devices = await repo.unload();
+    final devices = await repo.close();
     return toOK(
       command,
       DevicesUnloaded(devices),
@@ -268,8 +271,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   @override
   Future<void> close() async {
-    _subscriptions.forEach((subscription) => subscription.cancel());
-    _subscriptions.clear();
     await repo.dispose();
     return super.close();
   }
@@ -282,7 +283,7 @@ abstract class DeviceCommand<S, T> extends BlocCommand<S, T> {
   DeviceCommand(S data, [props = const []]) : super(data, props);
 }
 
-class LoadDevices extends DeviceCommand<String, List<Device>> {
+class LoadDevices extends DeviceCommand<String, Iterable<Device>> {
   LoadDevices(String iuuid) : super(iuuid);
 
   @override
@@ -318,7 +319,7 @@ class _HandleMessage extends DeviceCommand<DeviceMessage, DeviceMessage> {
   String toString() => 'HandleMessage {message: $data}';
 }
 
-class UnloadDevices extends DeviceCommand<String, List<Device>> {
+class UnloadDevices extends DeviceCommand<String, Iterable<Device>> {
   UnloadDevices(String iuuid) : super(iuuid);
 
   @override
@@ -389,8 +390,8 @@ class DeviceDeleted extends DeviceState<Device> {
   String toString() => 'DeviceDetached {device: $data}';
 }
 
-class DevicesUnloaded extends DeviceState<List<Device>> {
-  DevicesUnloaded(List<Device> devices) : super(devices);
+class DevicesUnloaded extends DeviceState<Iterable<Device>> {
+  DevicesUnloaded(Iterable<Device> devices) : super(devices);
 
   @override
   String toString() => 'DevicesUnloaded {devices: $data}';

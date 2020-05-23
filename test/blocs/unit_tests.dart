@@ -545,7 +545,7 @@ Future<Incident> _prepare(BlocTestHarness harness) async {
 
   // Prepare IncidentBloc
   await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare UnitBloc
   await expectThroughLater(harness.unitBloc, emits(isA<UnitsLoaded>()), close: false);

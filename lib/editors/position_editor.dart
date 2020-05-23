@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/map/painters.dart';
@@ -21,14 +20,11 @@ class PositionEditor extends StatefulWidget {
   final Position position;
   final String title;
   final Incident incident;
-  final PermissionController controller;
-
   const PositionEditor(
     this.position, {
     Key key,
     this.incident,
     @required this.title,
-    @required this.controller,
   }) : super(key: key);
 
   @override

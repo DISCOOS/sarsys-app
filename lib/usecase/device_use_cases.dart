@@ -24,9 +24,7 @@ class CreateDevice extends UseCase<bool, Device, DeviceParams> {
     assert(params.data == null, "Device should not be supplied");
     var result = await showDialog<Device>(
       context: params.overlay.context,
-      builder: (context) => DeviceEditor(
-        controller: params.controller,
-      ),
+      builder: (context) => DeviceEditor(),
     );
     if (result == null) return dartz.Left(false);
 
@@ -71,7 +69,6 @@ class EditDevice extends UseCase<bool, Device, DeviceParams> {
       context: params.overlay.context,
       builder: (context) => DeviceEditor(
         device: params.data,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -98,7 +95,6 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
       builder: (context) => PositionEditor(
         params.data.position,
         title: "Sett siste kjente posisjon",
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);

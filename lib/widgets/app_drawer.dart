@@ -22,7 +22,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
     final User user = userBloc.user;
-    final isUnset = context.bloc<IncidentBloc>().isUnset;
+    final isUnset = context.bloc<IncidentBloc>().isUnselected;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.

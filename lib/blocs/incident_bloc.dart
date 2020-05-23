@@ -18,13 +18,18 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
         UpdatableBloc<Incident>,
         DeletableBloc<Incident>,
         UnloadableBloc<List<Incident>> {
+  ///
+  /// Default constructor
+  ///
   IncidentBloc(this.repo, BlocEventBus bus, this.userBloc) : super(bus: bus) {
     assert(this.repo != null, "repository can not be null");
     assert(this.repo.service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
-    _subscription = userBloc.listen(
-      _processUserEvent,
-    );
+
+    registerStreamSubscription(userBloc.listen(
+      // Load and unload incidents as needed
+      _processUserState,
+    ));
   }
 
   /// Key suffix for storing
@@ -44,25 +49,25 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   IncidentService get service => repo.service;
 
   String _iuuid;
-  StreamSubscription _subscription;
 
-  void _processUserEvent(UserState state) {
-    if (_subscription != null) {
-      if (!isUnset && state.isUnset()) {
-        if (!isUnset) {
-          add(UnselectIncident());
-        }
-      } else if (state.isAuthenticated()) {
-        add(LoadIncidents());
+  void _processUserState(UserState state) {
+    if (hasSubscriptions) {
+      if (state.shouldLoad()) {
+        dispatch(LoadIncidents());
+      } else if (state.shouldUnload() && repo.isReady) {
+        dispatch(UnloadIncidents());
       }
     }
   }
 
   @override
-  IncidentUnset get initialState => IncidentUnset();
+  IncidentsEmpty get initialState => IncidentsEmpty();
+
+  /// Check if ab incident selected
+  bool get isSelected => _iuuid != null;
 
   /// Check if no incident selected
-  bool get isUnset => _iuuid == null;
+  bool get isUnselected => _iuuid == null;
 
   /// Get selected incident
   Incident get selected => repo[_iuuid];
@@ -188,7 +193,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     final loaded = toOK(
       command,
       IncidentsLoaded(incidents),
-      result: repo.values.toList(),
+      result: incidents,
     );
     // Notify listeners
     if (unselected != null) {
@@ -277,7 +282,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   Stream<IncidentState> _unload(UnloadIncidents command) async* {
     final selected = this.selected;
     // Execute command
-    List<Incident> incidents = await repo.clear();
+    List<Incident> incidents = await repo.close();
     // Complete request
     final unselected = await _unset(
       selected: selected,
@@ -363,13 +368,11 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
       );
     }
 
-    return incident != null ? IncidentUnset(incident) : null;
+    return incident != null ? IncidentUnselected(incident) : null;
   }
 
   @override
   Future<void> close() async {
-    _subscription?.cancel();
-    _subscription = null;
     await repo.dispose();
     return super.close();
   }
@@ -453,39 +456,67 @@ class UnloadIncidents extends IncidentCommand<void, List<Incident>> {
 abstract class IncidentState<T> extends BlocEvent<T> {
   IncidentState(
     T data, {
-    StackTrace stackTrace,
     props = const [],
+    StackTrace stackTrace,
   }) : super(data, props: props, stackTrace: stackTrace);
 
-  bool isUnset() => this is IncidentUnset;
+  bool isEmpty() => this is IncidentsEmpty;
   bool isLoaded() => this is IncidentsLoaded;
   bool isCreated() => this is IncidentCreated;
   bool isUpdated() => this is IncidentUpdated;
-  bool isSelected() => this is IncidentSelected;
   bool isDeleted() => this is IncidentDeleted;
   bool isError() => this is IncidentBlocError;
+  bool isUnselected() => this is IncidentUnselected;
+  bool isSelected() =>
+      this is IncidentCreated && (this as IncidentCreated).selected ||
+      this is IncidentUpdated && (this as IncidentUpdated).selected ||
+      this is IncidentSelected;
 
-  /// Check if data referencing [Incident.uuid] should be unloaded
+  /// Check if data referencing [Incident.uuid] should be loaded
   /// This method will return true if
-  /// 1. IncidentBloc was unset
-  /// 2. Given Incident was changed to a status that should unload data
-  bool shouldUnload(String uuid,
+  /// 1. Incident was selected
+  /// 2. Incident was a status that should load data
+  /// 3. [Incident.uuid] in [IncidentState.data] is equal to [iuuid] given
+  bool shouldLoad(String iuuid,
           {List<IncidentStatus> include: const [
             IncidentStatus.Resolved,
             IncidentStatus.Cancelled,
           ]}) =>
-      isUnset() ||
-      (isUpdated() && (this as IncidentUpdated).data.uuid == uuid) &&
+      (isSelected() && (data as Incident).uuid != iuuid) &&
+      !include.contains(
+        (data as Incident).status,
+      );
+
+  /// Check if data referencing [Incident.uuid] should be unloaded
+  /// This method will return true if
+  /// 1. Incident was unselected
+  /// 2. Incident was changed to a status that should unload data
+  /// 3. [Incident.uuid] in [IncidentState.data] is equal to [iuuid] given
+  bool shouldUnload(String iuuid,
+          {List<IncidentStatus> include: const [
+            IncidentStatus.Resolved,
+            IncidentStatus.Cancelled,
+          ]}) =>
+      isEmpty() ||
+      isUnselected() ||
+      (isUpdated() && (data as Incident).uuid == iuuid) &&
           include.contains(
-            (this as IncidentUpdated).data.status,
+            (data as Incident).status,
           );
 }
 
-class IncidentUnset extends IncidentState<Incident> {
-  IncidentUnset([Incident incident]) : super(incident);
+class IncidentsEmpty extends IncidentState<void> {
+  IncidentsEmpty() : super(null);
 
   @override
-  String toString() => 'IncidentUnset {incident: $data}';
+  String toString() => 'IncidentsEmpty';
+}
+
+class IncidentUnselected extends IncidentState<Incident> {
+  IncidentUnselected([Incident incident]) : super(incident);
+
+  @override
+  String toString() => 'IncidentUnselected {incident: $data}';
 }
 
 class IncidentsLoaded extends IncidentState<Iterable<Incident>> {

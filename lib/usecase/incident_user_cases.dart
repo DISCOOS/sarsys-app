@@ -46,14 +46,15 @@ class CreateIncident extends UseCase<bool, Incident, IncidentParams> {
       context: params.overlay.context,
       builder: (context) => IncidentEditor(
         ipp: params.ipp,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
 
     // Create incident
-    // * units will be created with CreateUnits in UnitBloc
-    // * user will be mobilized with MobilizeUser in PersonnelBloc
+    // * units will be created with CreateUnits in
+    // UnitBloc user will be mobilized with
+    // MobilizeUser invoked by BlocEvent handler
+    // registered in BlocController
     //
     final incident = await params.bloc.create(
       result.left,
@@ -99,7 +100,7 @@ class JoinIncident extends UseCase<bool, Personnel, IncidentParams> {
     assert(user != null, "User must bed authenticated");
 
     if (_shouldRegister(params)) {
-      return await mobilizeUser();
+      return mobilizeUser();
     }
 
     final join = await prompt(
@@ -161,7 +162,6 @@ class EditIncident extends UseCase<bool, Incident, IncidentParams> {
       builder: (context) => IncidentEditor(
         incident: params.data,
         ipp: params.ipp,
-        controller: params.controller,
       ),
     );
     if (incident == null) return dartz.Left(false);
@@ -179,7 +179,7 @@ User _assertUser(IncidentParams params) {
 bool _shouldRegister(
   IncidentParams params,
 ) =>
-    !params.bloc.isUnset && params.data.uuid == params.bloc.selected?.uuid;
+    !params.bloc.isUnselected && params.data.uuid == params.bloc.selected?.uuid;
 
 FutureOr<Personnel> _findPersonnel(IncidentParams params, User user, {bool wait = false}) async {
   // Look for existing personnel

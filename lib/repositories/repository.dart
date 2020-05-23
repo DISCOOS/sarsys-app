@@ -322,11 +322,11 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     final key = toKey(state);
     final current = _states.get(key);
     if (shouldDelete(next: state, current: current)) {
-      await _states.delete(key);
+      _states.delete(key);
       // Can not logically exist anymore, remove it!
       _backlog.remove(key);
     } else {
-      await _states.put(key, state);
+      _states.put(key, state);
     }
     if (!_disposed) {
       _controller.add(state);
@@ -402,6 +402,20 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       if (compact) {
         await _states.compact();
       }
+    }
+    return List.unmodifiable(elements);
+  }
+
+  /// Close repository.
+  ///
+  /// All cached keys and values will be
+  /// dropped from memory and local file
+  /// is closed after all active read and
+  /// write operations finished.
+  Future<List<T>> close() async {
+    final Iterable<T> elements = values.toList();
+    if (_states?.isOpen == true) {
+      await _states.close();
     }
     return List.unmodifiable(elements);
   }

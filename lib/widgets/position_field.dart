@@ -1,4 +1,3 @@
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Position.dart';
@@ -17,7 +16,6 @@ class PositionField extends StatelessWidget {
   final bool optional;
   final bool enabled;
   final ValueChanged<Position> onChanged;
-  final PermissionController controller;
 
   const PositionField({
     Key key,
@@ -25,7 +23,6 @@ class PositionField extends StatelessWidget {
     @required this.labelText,
     @required this.hintText,
     @required this.errorText,
-    @required this.controller,
     this.incident,
     this.initialValue,
     this.onChanged,
@@ -80,7 +77,6 @@ class PositionField extends StatelessWidget {
         field.value,
         title: hintText,
         incident: incident,
-        controller: controller,
       ),
     );
     if (selected != field.value) {

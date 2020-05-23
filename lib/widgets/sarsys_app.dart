@@ -507,7 +507,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
-      bool isUnset = incidentBloc.isUnset;
+      bool isUnset = incidentBloc.isUnselected;
       child = _toScreen(
         RouteSettings(
           name: isUnset ? 'incidents' : state[RouteWriter.FIELD_NAME],

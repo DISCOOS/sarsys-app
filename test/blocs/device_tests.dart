@@ -22,7 +22,7 @@ void main() async {
       expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD BE unset");
       expect(harness.deviceBloc.devices.length, 0, reason: "SHOULD BE empty");
       expect(harness.deviceBloc.initialState, isA<DevicesEmpty>(), reason: "Unexpected device state");
-      await expectExactlyLater(harness.deviceBloc, [isA<DevicesEmpty>()]);
+      expect(harness.deviceBloc, emits(isA<DevicesEmpty>()));
     },
   );
 
@@ -465,7 +465,7 @@ Future<Incident> _prepare(BlocTestHarness harness) async {
 
   // Prepare IncidentBloc
   await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare DeviceBloc
   await expectThroughLater(harness.deviceBloc, emits(isA<DevicesLoaded>()), close: false);

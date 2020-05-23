@@ -111,7 +111,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   void _showCreateItemSheet(BuildContext context) {
     final style = Theme.of(context).textTheme.headline6;
-    final isUnset = context.bloc<IncidentBloc>().isUnset;
+    final isSelected = context.bloc<IncidentBloc>().isSelected;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -126,7 +126,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                   children: <Widget>[
                     ListTile(title: Text("Opprett", style: style)),
                     Divider(),
-                    if (!isUnset)
+                    if (isSelected)
                       ListTile(
                         dense: landscape,
                         leading: Icon(Icons.group_add),
@@ -138,7 +138,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                           Navigator.pop(context);
                         },
                       ),
-                    if (isUnset)
+                    if (!isSelected)
                       ListTile(
                         dense: landscape,
                         leading: Icon(Icons.warning),

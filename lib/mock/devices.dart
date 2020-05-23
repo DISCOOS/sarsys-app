@@ -231,7 +231,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
   }
 
   static Position _toCenter(IncidentBloc bloc) {
-    return bloc.isUnset
+    return bloc.isUnselected
         ? toPosition(Defaults.origo)
         : Position.fromPoint(
             bloc.selected.ipp.point,

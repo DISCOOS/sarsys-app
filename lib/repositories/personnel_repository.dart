@@ -144,10 +144,9 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
   }
 
   /// Unload all devices for given [iuuid]
-  Future<List<Personnel>> unload() async {
-    final personnels = values;
+  Future<List<Personnel>> close() async {
     _iuuid = null;
-    return personnels;
+    return super.close();
   }
 
   @override

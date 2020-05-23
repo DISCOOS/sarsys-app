@@ -1,6 +1,4 @@
 import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:dartz/dartz.dart' as dartz;
@@ -32,7 +30,8 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
     this.devices,
     this.personnels,
     this.templates,
-  }) : super(unit);
+    UnitBloc bloc,
+  }) : super(unit, bloc: bloc);
 }
 
 /// Create unit with tracking of given devices
@@ -59,7 +58,6 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         builder: (context) => PositionEditor(
           next,
           title: "Velg enhetens posisjon",
-          controller: params.controller,
         ),
       );
       if (next == null) return dartz.Left(false);
@@ -70,7 +68,6 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         position: next,
         devices: params.devices,
         personnels: params.personnels,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -90,7 +87,17 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
   }
 }
 
-class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> implements BlocEventHandler<IncidentCreated> {
+/// Create unit with tracking of given devices
+Future<dartz.Either<bool, List<Unit>>> createUnits({
+  UnitBloc bloc,
+  List<String> templates,
+}) =>
+    CreateUnits()(UnitParams(
+      bloc: bloc,
+      templates: templates,
+    ));
+
+class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> {
   @override
   Future<dartz.Either<bool, List<Unit>>> execute(UnitParams params) async {
     assert(params.templates?.isNotEmpty == true, "templates must be supplied");
@@ -112,13 +119,6 @@ class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> implements BlocE
     });
     return dartz.right(units);
   }
-
-  @override
-  void handle(Bloc bloc, IncidentCreated event) {
-    if (event.units?.isNotEmpty == true) {
-      execute(UnitParams(templates: event.units));
-    }
-  }
 }
 
 /// Edit given unit
@@ -138,7 +138,6 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
       builder: (context) => UnitEditor(
         unit: params.data,
         devices: params.devices,
-        controller: params.controller,
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -181,7 +180,6 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
       builder: (context) => PositionEditor(
         params.position,
         title: "Sett siste kjente posisjon",
-        controller: params.controller,
       ),
     );
     if (position == null) return dartz.Left(false);

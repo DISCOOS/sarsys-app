@@ -171,7 +171,7 @@ class UserRolesDescription extends StatelessWidget {
                   text: "Aksjoner du selv har opprettet kan åpnes av deg uten kode. "
                       "Koden for hver aksjon finnes på ",
                   children: [
-                    !context.bloc<IncidentBloc>().isUnset
+                    context.bloc<IncidentBloc>().isSelected
                         ? TextSpan(text: 'aksjonens side.')
                         : TextSpan(
                             text: 'aksjonens side',

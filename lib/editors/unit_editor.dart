@@ -5,7 +5,6 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
@@ -29,13 +28,11 @@ class UnitEditor extends StatefulWidget {
   final Position position;
   final Iterable<Device> devices;
   final Iterable<Personnel> personnels;
-  final PermissionController controller;
 
   final UnitType type;
 
   const UnitEditor({
     Key key,
-    @required this.controller,
     this.unit,
     this.position,
     this.type = UnitType.Team,
@@ -564,7 +561,6 @@ class _UnitEditorState extends State<UnitEditor> {
       hintText: 'Velg posisjon',
       errorText: 'Posisjon må oppgis',
       helperText: _toTrackingHelperText(position),
-      controller: widget.controller,
       onChanged: (point) => setState(() {}),
     );
   }

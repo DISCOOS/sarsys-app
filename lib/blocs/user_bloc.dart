@@ -103,20 +103,23 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated && (_authorized.containsKey(data.uuid) || user.isAuthor(data));
+    return isAuthenticated &&
+        (_authorized.containsKey(data.uuid) || user.isAuthor(data));
   }
 
   /// Check if current user is authorized to access given [Incident]
   UserAuthorized getAuthorization(Incident data) {
     if (isAuthenticated) {
       if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
-      if (user?.userId == data.created.userId) return UserAuthorized(user, data, true, true);
+      if (user?.userId == data.created.userId)
+        return UserAuthorized(user, data, true, true);
     }
     return null;
   }
 
   /// Get trusted organization given in [AppConfig]
-  Future<Organization> getTrustedOrg() async => FleetMapService().fetchOrganization(
+  Future<Organization> getTrustedOrg() async =>
+      FleetMapService().fetchOrganization(
         config.orgId,
       );
 
@@ -146,7 +149,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   /// Authenticate user
-  Future<User> login({String userId, String username, String password, String idpHint}) {
+  Future<User> login(
+      {String userId, String username, String password, String idpHint}) {
     return dispatch<User>(LoginUser(
       userId: userId,
       username: username,
@@ -174,7 +178,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   Future<bool> authorize(Incident data, String passcode) {
-    return dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
+    return dispatch<bool>(
+        _assertAuthenticated<User>(AuthorizeUser(data, passcode)));
   }
 
   @override
@@ -297,14 +302,17 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   UserState _authorize(AuthorizeUser command) {
-    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
-    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
+    bool isCommander = user.isCommander &&
+        (command.data.passcodes.command == command.passcode);
+    bool isPersonnel = user.isPersonnel &&
+        (command.data.passcodes.personnel == command.passcode);
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.uuid, () => state);
       return toOK(command, state, result: true);
     }
-    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
+    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"),
+        result: false);
   }
 
   UserState _toEvent(UserCommand command, Object result) {
@@ -316,7 +324,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       );
     } else if (result is User) {
       if (kDebugMode) {
-        developer.log("User parsed from token: $user", level: Level.CONFIG.value);
+        developer.log("User parsed from token: $user",
+            level: Level.CONFIG.value);
       }
       return toOK(
         command,
@@ -376,7 +385,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   @override
-  UserBlocError createError(Object error, {StackTrace stackTrace}) => UserBlocError(
+  UserBlocError createError(Object error, {StackTrace stackTrace}) =>
+      UserBlocError(
         error,
         stackTrace: StackTrace.current,
       );
@@ -434,7 +444,7 @@ class LoginUser extends UserCommand<String, User> {
         ]);
 
   @override
-  String toString() => 'AuthenticateUser  {username: $data, password: $data}';
+  String toString() => 'LoginUser {username: $data, password: $data}';
 }
 
 class AuthorizeUser extends UserCommand<Incident, bool> {
@@ -469,18 +479,21 @@ abstract class UserState<T> extends BlocEvent<T> {
     props = const [],
   }) : super(data, props: props, stackTrace: stackTrace);
 
-  isUnset() => this is UserUnset;
-  isLocked() => this is UserLocked;
-  isUnlocked() => this is UserUnlocked;
-  isUnlocking() => this is UserUnlocking;
-  isAuthenticating() => this is UserAuthenticating;
-  isPending() => isUnlocking() || isAuthenticating();
-  isAuthenticated() => this is UserAuthenticated;
-  isAuthorized() => this is UserAuthorized;
-  isUnauthorized() => this is UserUnauthorized;
-  isForbidden() => this is UserForbidden;
-  isOffline() => this is UserBlocIsOffline;
-  isError() => this is UserBlocError;
+  bool isUnset() => this is UserUnset;
+  bool isLocked() => this is UserLocked;
+  bool isUnlocked() => this is UserUnlocked;
+  bool isUnlocking() => this is UserUnlocking;
+  bool isAuthenticating() => this is UserAuthenticating;
+  bool isPending() => isUnlocking() || isAuthenticating();
+  bool isAuthenticated() => this is UserAuthenticated;
+  bool isAuthorized() => this is UserAuthorized;
+  bool isUnauthorized() => this is UserUnauthorized;
+  bool isForbidden() => this is UserForbidden;
+  bool isOffline() => this is UserBlocIsOffline;
+  bool isError() => this is UserBlocError;
+
+  bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked();
+  bool shouldUnload() => !shouldLoad();
 }
 
 class UserUnset extends UserState<void> {
@@ -579,5 +592,6 @@ class UserBlocException implements Exception {
   final StackTrace stackTrace;
 
   @override
-  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
+  String toString() =>
+      '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
 }
