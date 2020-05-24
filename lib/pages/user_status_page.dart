@@ -1,8 +1,10 @@
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/personnel_widgets.dart';
@@ -27,12 +29,14 @@ class UserStatusPage extends StatefulWidget {
 }
 
 class UserStatusPageState extends State<UserStatusPage> {
+  User _user;
   Personnel _personnel;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _personnel = widget.personnel;
+    _user = context.bloc<UserBloc>().user;
   }
 
   @override
@@ -60,7 +64,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
       withName: true,
       withHeader: false,
-      withActions: false,
+      withActions: _user != null,
       onMessage: widget.onMessage,
       organization: FleetMapService().fetchOrganization(Defaults.orgId),
       onGoto: (point) => jumpToPoint(context, center: point),

@@ -8,8 +8,8 @@ import 'package:SarSys/pages/user_history_page.dart';
 import 'package:SarSys/pages/user_status_page.dart';
 import 'package:SarSys/pages/user_unit_page.dart';
 import 'package:SarSys/screens/screen.dart';
-import 'package:SarSys/usecase/incident_user_cases.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
+import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -143,9 +143,12 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
       case UserScreen.TAB_INCIDENT:
         return [
           if (context.bloc<UserBloc>()?.user?.isCommander == true)
-            IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: () => editIncident(context.bloc<IncidentBloc>().selected),
+            IncidentActionGroup(
+              onMessage: _showMessage,
+              type: ActionGroupType.popupMenuButton,
+              onDeleted: () => Navigator.pop(context),
+              incident: context.bloc<IncidentBloc>().selected,
+              onChanged: (incident) => setState(() {}),
             )
         ];
       case UserScreen.TAB_STATUS:

@@ -6,6 +6,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -85,6 +86,24 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.dispose();
   }
 
+  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+
+  @override
+  List<Widget> buildAppBarActions() {
+    return isCommander
+        ? [
+            PersonnelActionGroup(
+              personnel: _personnel,
+              onMessage: showMessage,
+              onDeleted: () => Navigator.pop(context),
+              type: ActionGroupType.popupMenuButton,
+              unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
+              onChanged: (personnel) => setState(() => _personnel = personnel),
+            )
+          ]
+        : [];
+  }
+
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
@@ -116,16 +135,16 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
   }
 
   PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
+        withHeader: false,
+        withActions: false,
         personnel: _personnel,
         unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
         tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
-        withHeader: false,
-        withActions: context.bloc<UserBloc>().user.isCommander,
         organization: FleetMapService().fetchOrganization(Defaults.orgId),
-        onMessage: showMessage,
-        onDelete: () => Navigator.pop(context),
         onGoto: (point) => jumpToPoint(context, center: point),
+        onMessage: showMessage,
+        onDeleted: () => Navigator.pop(context),
         onChanged: (personnel) => setState(() => _personnel = personnel),
       );
 

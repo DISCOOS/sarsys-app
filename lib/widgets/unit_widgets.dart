@@ -11,6 +11,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'action_group.dart';
+
 class UnitWidget extends StatelessWidget {
   final Unit unit;
   final Tracking tracking;
@@ -19,8 +21,8 @@ class UnitWidget extends StatelessWidget {
   final bool withActions;
   final ValueChanged<Point> onGoto;
   final ValueChanged<Unit> onChanged;
-  final ValueChanged<Unit> onComplete;
-  final VoidCallback onDelete;
+  final ValueChanged<Unit> onCompleted;
+  final VoidCallback onDeleted;
   final ActionCallback onMessage;
 
   const UnitWidget({
@@ -31,8 +33,8 @@ class UnitWidget extends StatelessWidget {
     @required this.onMessage,
     this.onGoto,
     this.onChanged,
-    this.onComplete,
-    this.onDelete,
+    this.onCompleted,
+    this.onDeleted,
     this.withHeader = true,
     this.withActions = true,
   }) : super(key: key);
@@ -56,7 +58,14 @@ class UnitWidget extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
               child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
             ),
-            _buildActions(context)
+            UnitActionGroup(
+              unit: unit,
+              type: ActionGroupType.buttonBar,
+              onDeleted: onDeleted,
+              onChanged: onChanged,
+              onMessage: onMessage,
+              onCompleted: onCompleted,
+            ),
           ] else
             SizedBox(height: 16.0)
         ],
@@ -346,26 +355,84 @@ class UnitWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildActions(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: ButtonBarTheme(
-          // make buttons use the appropriate styles for cards
-          child: ButtonBar(
-            alignment: MainAxisAlignment.end,
-            children: <Widget>[
-              _buildEditAction(context),
-              _buildTransitionAction(context),
-              if (context.bloc<UserBloc>().user.isAdmin) _buildDeleteAction(context),
-            ],
-          ),
-          data: ButtonBarThemeData(
-            layoutBehavior: ButtonBarLayoutBehavior.constrained,
-            buttonPadding: EdgeInsets.all(0.0),
-          ),
-        ),
-      );
+  void _onComplete([unit]) {
+    if (onCompleted != null) onCompleted(unit ?? this.unit);
+  }
+}
 
-  Widget _buildEditAction(BuildContext context) => Tooltip(
+class UnitActionGroup extends StatelessWidget {
+  UnitActionGroup({
+    @required this.unit,
+    @required this.type,
+    this.onDeleted,
+    this.onMessage,
+    this.onChanged,
+    this.onCompleted,
+  });
+  final Unit unit;
+  final VoidCallback onDeleted;
+  final ActionGroupType type;
+  final MessageCallback onMessage;
+  final ValueChanged<Unit> onChanged;
+  final ValueChanged<Unit> onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionGroupBuilder(
+      type: type,
+      builder: _buildActionItems,
+    );
+  }
+
+  List<ActionMenuItem> _buildActionItems(BuildContext context) {
+    return <ActionMenuItem>[
+      ActionMenuItem(
+        child: IgnorePointer(child: _buildEditButton(context)),
+        onPressed: _onEdit,
+      ),
+      _buildTransitionActionItem(context),
+      if (context.bloc<UserBloc>().user.isAdmin)
+        ActionMenuItem(
+          child: IgnorePointer(child: _buildDeleteAction(context)),
+          onPressed: _onDelete,
+        ),
+    ];
+  }
+
+  ActionMenuItem _buildTransitionActionItem(BuildContext context) {
+    switch (unit.status) {
+      case UnitStatus.Retired:
+        return ActionMenuItem(
+          child: IgnorePointer(
+            child: _buildMobilizeAction(context),
+          ),
+          onPressed: () => _onTransition(
+            UnitStatus.Mobilized,
+          ),
+        );
+      case UnitStatus.Mobilized:
+        return ActionMenuItem(
+          child: IgnorePointer(
+            child: _buildDeployedAction(context),
+          ),
+          onPressed: () => _onTransition(
+            UnitStatus.Deployed,
+          ),
+        );
+      case UnitStatus.Deployed:
+      default:
+        return ActionMenuItem(
+          child: IgnorePointer(
+            child: _buildRetireAction(context),
+          ),
+          onPressed: () => _onTransition(
+            UnitStatus.Retired,
+          ),
+        );
+    }
+  }
+
+  Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre enhet",
         child: FlatButton.icon(
           icon: Icon(Icons.edit),
@@ -373,29 +440,19 @@ class UnitWidget extends StatelessWidget {
             "ENDRE",
             textAlign: TextAlign.center,
           ),
-          onPressed: () async {
-            final result = await editUnit(unit);
-            if (result.isRight()) {
-              final actual = result.toIterable().first;
-              if (actual != unit) {
-                _onMessage("${actual.name} er oppdatert");
-                _onChanged(actual);
-              }
-              _onComplete();
-            }
-          },
+          onPressed: _onEdit,
         ),
       );
 
-  Widget _buildTransitionAction(BuildContext context) {
-    switch (unit.status) {
-      case UnitStatus.Retired:
-        return _buildMobilizeAction(context);
-      case UnitStatus.Mobilized:
-        return _buildDeployedAction(context);
-      case UnitStatus.Deployed:
-      default:
-        return _buildRetireAction(context);
+  void _onEdit() async {
+    final result = await editUnit(unit);
+    if (result.isRight()) {
+      final actual = result.toIterable().first;
+      if (actual != unit) {
+        _onMessage("${actual.name} er oppdatert");
+        _onChanged(actual);
+      }
+      _onCompleted();
     }
   }
 
@@ -416,15 +473,9 @@ class UnitWidget extends StatelessWidget {
             color: color,
           ),
         ),
-        onPressed: () async {
-          final result = await mobilizeUnit(unit);
-          if (result.isRight()) {
-            final actual = result.toIterable().first;
-            _onMessage("${actual.name} er registert mobilisert");
-            _onChanged(actual);
-            _onComplete();
-          }
-        },
+        onPressed: () => _onTransition(
+          UnitStatus.Mobilized,
+        ),
       ),
     );
   }
@@ -440,51 +491,69 @@ class UnitWidget extends StatelessWidget {
           color: color,
         ),
         label: Text(
-          "DEPLOYERT",
+          "Deployert",
           textAlign: TextAlign.center,
           style: button.copyWith(
             color: color,
           ),
         ),
-        onPressed: () async {
-          final result = await deployUnit(unit);
-          if (result.isRight()) {
-            final actual = result.toIterable().first;
-            _onMessage("${actual.name} er registert deployert");
-            _onChanged(actual);
-            _onComplete();
-          }
-        },
+        onPressed: () => _onTransition(
+          UnitStatus.Deployed,
+        ),
       ),
     );
   }
 
+  void _onTransition(UnitStatus status) async {
+    switch (status) {
+      case UnitStatus.Mobilized:
+        final result = await mobilizeUnit(unit);
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${actual.name} er registert mobilisert");
+          _onChanged(actual);
+          _onCompleted();
+        }
+        break;
+      case UnitStatus.Deployed:
+        final result = await deployUnit(unit);
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${actual.name} er registert ankommet");
+          _onChanged(actual);
+          _onCompleted();
+        }
+        break;
+      case UnitStatus.Retired:
+        final result = await retireUnit(unit);
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${actual.name} er dimmitert");
+          _onChanged(actual);
+          _onCompleted();
+        }
+        break;
+    }
+  }
+
   Widget _buildRetireAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toUnitStatusColor(UnitStatus.Mobilized);
+    final color = toUnitStatusColor(UnitStatus.Retired);
     return Tooltip(
-      message: "Oppløs enhet og avslutt sporing",
+      message: "Dimitter og avslutt sporing",
       child: FlatButton.icon(
         icon: Icon(
-          Icons.check,
+          Icons.archive,
           color: color,
         ),
         label: Text(
-          "OPPLØST",
+          "DIMITTERT",
           textAlign: TextAlign.center,
-          style: button.copyWith(
-            color: color,
-          ),
+          style: button.copyWith(color: color),
         ),
-        onPressed: () async {
-          final result = await retireUnit(unit);
-          if (result.isRight()) {
-            final actual = result.toIterable().first;
-            _onMessage("${unit.name} er oppløst");
-            _onChanged(actual);
-            _onComplete();
-          }
-        },
+        onPressed: () => _onTransition(
+          UnitStatus.Retired,
+        ),
       ),
     );
   }
@@ -492,41 +561,44 @@ class UnitWidget extends StatelessWidget {
   Widget _buildDeleteAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
-      message: "Slett enhet",
+      message: "Slett mannskap",
       child: FlatButton.icon(
-          icon: Icon(
-            Icons.delete,
-            color: Colors.red,
-          ),
-          label: Text(
-            'SLETT',
-            textAlign: TextAlign.center,
-            style: button.copyWith(color: Colors.red),
-          ),
-          onPressed: () async {
-            final result = await deleteUnit(unit);
-            if (result.isRight()) {
-              _onMessage("${unit.name} er slettet");
-              _onDelete();
-              _onComplete();
-            }
-          }),
+        icon: Icon(
+          Icons.delete,
+          color: Colors.red,
+        ),
+        label: Text(
+          'SLETT',
+          textAlign: TextAlign.center,
+          style: button.copyWith(color: Colors.red),
+        ),
+        onPressed: _onDelete,
+      ),
     );
+  }
+
+  void _onDelete() async {
+    final result = await deleteUnit(unit);
+    if (result.isRight()) {
+      _onMessage("${unit.name} er slettet");
+      _onDeleted();
+      _onCompleted();
+    }
   }
 
   void _onMessage(String message) {
     if (onMessage != null) onMessage(message);
   }
 
-  void _onChanged([unit]) {
-    if (onChanged != null) onChanged(unit);
+  void _onChanged([personnel]) {
+    if (onChanged != null) onChanged(personnel);
   }
 
-  void _onComplete([unit]) {
-    if (onComplete != null) onComplete(unit ?? this.unit);
+  void _onCompleted([personnel]) {
+    if (onCompleted != null) onCompleted(personnel ?? this.unit);
   }
 
-  void _onDelete() {
-    if (onDelete != null) onDelete();
+  void _onDeleted() {
+    if (onDeleted != null) onDeleted();
   }
 }

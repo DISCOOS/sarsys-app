@@ -29,6 +29,9 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
   });
 
   @protected
+  List<Widget> buildAppBarActions() => <Widget>[];
+
+  @protected
   Widget buildFAB(BuildContext context) => null;
 
   @protected
@@ -58,8 +61,6 @@ abstract class ScreenState<S extends StatefulWidget, T> extends RouteWriter<S, T
       },
     );
   }
-
-  List<Widget> buildAppBarActions() => <Widget>[];
 
   void showMessage(
     String message, {

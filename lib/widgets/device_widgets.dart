@@ -1,3 +1,4 @@
+import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Organization.dart';
@@ -15,6 +16,9 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'action_group.dart';
 
 class DeviceTile extends StatelessWidget {
   final Device device;
@@ -90,8 +94,8 @@ class DeviceWidget extends StatelessWidget {
   final ActionCallback onMessage;
   final ValueChanged<Point> onGoto;
   final ValueChanged<Device> onChanged;
-  final ValueChanged<Device> onComplete;
-  final VoidCallback onDelete;
+  final ValueChanged<Device> onCompleted;
+  final VoidCallback onDeleted;
   final Future<Organization> organization;
 
   const DeviceWidget({
@@ -103,8 +107,8 @@ class DeviceWidget extends StatelessWidget {
     @required this.onMessage,
     this.onGoto,
     this.onChanged,
-    this.onComplete,
-    this.onDelete,
+    this.onCompleted,
+    this.onDeleted,
     this.withHeader = true,
     this.withActions = true,
     this.organization,
@@ -129,7 +133,16 @@ class DeviceWidget extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
               child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
             ),
-            _buildActions(context)
+            DeviceActionGroup(
+              unit: unit,
+              device: device,
+              personnel: personnel,
+              type: ActionGroupType.buttonBar,
+              onDeleted: onDeleted,
+              onChanged: onChanged,
+              onMessage: onMessage,
+              onCompleted: onCompleted,
+            ),
           ] else
             SizedBox(height: 16.0)
         ],
@@ -434,91 +447,140 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: ButtonBarTheme(
-          // make buttons use the appropriate styles for cards
-          child: ButtonBar(
-            alignment: MainAxisAlignment.end,
-            children: <Widget>[
-              _buildEditAction(context),
-              if (unit != null)
-                _buildRemoveFromUnitAction(context)
-              else if (personnel != null)
-                _buildRemoveFromPersonnelAction(context)
-              else
-                _buildAddToUnitAction(context),
-              if (device.manual == true) _buildDeleteAction(context),
-            ],
-          ),
-          data: ButtonBarThemeData(
-            layoutBehavior: ButtonBarLayoutBehavior.constrained,
-            buttonPadding: EdgeInsets.all(0.0),
-          ),
-        ),
-      );
+  void _onComplete([device]) {
+    if (onCompleted != null) onCompleted(device ?? this.device);
+  }
+}
 
-  Widget _buildEditAction(BuildContext context) => Tooltip(
+class DeviceActionGroup extends StatelessWidget {
+  DeviceActionGroup({
+    @required this.type,
+    @required this.device,
+    this.unit,
+    this.personnel,
+    this.onDeleted,
+    this.onMessage,
+    this.onChanged,
+    this.onCompleted,
+  });
+  final Unit unit;
+  final Device device;
+  final Personnel personnel;
+  final VoidCallback onDeleted;
+  final ActionGroupType type;
+  final MessageCallback onMessage;
+  final ValueChanged<Device> onChanged;
+  final ValueChanged<Device> onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionGroupBuilder(
+      type: type,
+      builder: _buildActionItems,
+    );
+  }
+
+  List<ActionMenuItem> _buildActionItems(BuildContext context) {
+    return <ActionMenuItem>[
+      ActionMenuItem(
+        child: IgnorePointer(child: _buildEditButton(context)),
+        onPressed: _onEdit,
+      ),
+      if (unit != null)
+        ActionMenuItem(
+          child: IgnorePointer(child: _buildRemoveFromUnitAction(context)),
+          onPressed: _onRemoveFromUnit,
+        )
+      else if (personnel != null)
+        ActionMenuItem(
+          child: IgnorePointer(child: _buildRemoveFromPersonnelAction(context)),
+          onPressed: _onRemoveFromPersonnel,
+        )
+      else
+        ActionMenuItem(
+          child: IgnorePointer(child: _buildAddToUnitAction(context)),
+          onPressed: _onAddToUnit,
+        ),
+      if (device.manual == true && context.bloc<UserBloc>().user.isAdmin)
+        ActionMenuItem(
+          child: IgnorePointer(child: _buildDeleteAction(context)),
+          onPressed: _onDelete,
+        ),
+    ];
+  }
+
+  Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre apparat",
         child: FlatButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
-            'ENDRE',
+            "ENDRE",
             textAlign: TextAlign.center,
           ),
-          onPressed: () async {
-            final result = await editDevice(device);
-            if (result.isRight() && result.toIterable().first != device) {
-              var actual = result.toIterable().first;
-              _onMessage("${actual.name} er oppdatert");
-              _onChanged(actual);
-            }
-          },
+          onPressed: _onEdit,
         ),
       );
+
+  void _onEdit() async {
+    final result = await editDevice(device);
+    if (result.isRight()) {
+      final actual = result.toIterable().first;
+      if (actual != device) {
+        _onMessage("${actual.name} er oppdatert");
+        _onChanged(actual);
+      }
+      _onCompleted();
+    }
+  }
 
   Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
         message: "Knytt apparat til mannskap",
         child: FlatButton.icon(
-            icon: Icon(Icons.person),
-            label: Text(
-              'KNYTT',
-              textAlign: TextAlign.center,
-            ),
-            onPressed: () async {
-              final result = await addToPersonnel([device], personnel: personnel);
-              if (result.isRight()) {
-                var actual = result.toIterable().first;
-                _onMessage("${device.name} er tilknyttet ${actual.left.name}");
-                _onChanged(device);
-              }
-            }),
+          icon: Icon(Icons.person),
+          label: Text(
+            'KNYTT',
+            textAlign: TextAlign.center,
+          ),
+          onPressed: _onAddToUnit,
+        ),
       );
+
+  Future _onAddToUnit() async {
+    final result = await addToPersonnel([device], personnel: personnel);
+    if (result.isRight()) {
+      var actual = result.toIterable().first;
+      _onMessage("${device.name} er tilknyttet ${actual.left.name}");
+      _onChanged(device);
+    }
+  }
 
   Widget _buildRemoveFromUnitAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Fjern apparat fra unit",
       child: FlatButton.icon(
-          icon: Icon(
-            Icons.people,
+        icon: Icon(
+          Icons.people,
+          color: Colors.red,
+        ),
+        label: Text(
+          'FJERN',
+          textAlign: TextAlign.center,
+          style: button.copyWith(
             color: Colors.red,
           ),
-          label: Text(
-            'FJERN',
-            textAlign: TextAlign.center,
-            style: button.copyWith(
-              color: Colors.red,
-            ),
-          ),
-          onPressed: () async {
-            final result = await removeFromUnit(unit, devices: [device]);
-            if (result.isRight()) {
-              _onMessage("${device.name} er fjernet fra ${unit.name}");
-              _onChanged(device);
-            }
-          }),
+        ),
+        onPressed: _onRemoveFromUnit,
+      ),
     );
+  }
+
+  Future _onRemoveFromUnit() async {
+    final result = await removeFromUnit(unit, devices: [device]);
+    if (result.isRight()) {
+      _onMessage("${device.name} er fjernet fra ${unit.name}");
+      _onChanged(device);
+    }
   }
 
   Widget _buildRemoveFromPersonnelAction(BuildContext context) {
@@ -526,25 +588,28 @@ class DeviceWidget extends StatelessWidget {
     return Tooltip(
       message: "Fjern apparat fra mannskap",
       child: FlatButton.icon(
-          icon: Icon(
-            Icons.person,
+        icon: Icon(
+          Icons.person,
+          color: Colors.red,
+        ),
+        label: Text(
+          'FJERN',
+          textAlign: TextAlign.center,
+          style: button.copyWith(
             color: Colors.red,
           ),
-          label: Text(
-            'FJERN',
-            textAlign: TextAlign.center,
-            style: button.copyWith(
-              color: Colors.red,
-            ),
-          ),
-          onPressed: () async {
-            final result = await removeFromPersonnel(personnel, devices: [device]);
-            if (result.isRight()) {
-              _onMessage("${device.name} er fjernet fra ${unit.name}");
-              _onChanged(device);
-            }
-          }),
+        ),
+        onPressed: _onRemoveFromPersonnel,
+      ),
     );
+  }
+
+  Future _onRemoveFromPersonnel() async {
+    final result = await removeFromPersonnel(personnel, devices: [device]);
+    if (result.isRight()) {
+      _onMessage("${device.name} er fjernet fra ${unit.name}");
+      _onChanged(device);
+    }
   }
 
   Widget _buildDeleteAction(BuildContext context) {
@@ -559,7 +624,7 @@ class DeviceWidget extends StatelessWidget {
             style: button.copyWith(color: Colors.red),
           ),
           onPressed: () async {
-            final result = await deleteDevice(context, device);
+            final result = await deleteDevice(device);
             if (result.isRight()) {
               _onMessage("${device.name} er slettet");
               _onDelete();
@@ -568,19 +633,28 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
+  void _onDelete() async {
+    final result = await deleteDevice(device);
+    if (result.isRight()) {
+      _onMessage("${device.name} er slettet");
+      _onDeleted();
+      _onCompleted();
+    }
+  }
+
   void _onMessage(String message) {
     if (onMessage != null) onMessage(message);
   }
 
-  void _onChanged([device]) {
-    if (onChanged != null) onChanged(device);
+  void _onChanged([personnel]) {
+    if (onChanged != null) onChanged(personnel);
   }
 
-  void _onComplete([device]) {
-    if (onComplete != null) onComplete(device ?? this.device);
+  void _onCompleted([personnel]) {
+    if (onCompleted != null) onCompleted(personnel ?? this.device);
   }
 
-  void _onDelete() {
-    if (onDelete != null) onDelete();
+  void _onDeleted() {
+    if (onDeleted != null) onDeleted();
   }
 }

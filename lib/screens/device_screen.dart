@@ -6,6 +6,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -75,6 +76,25 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     super.dispose();
   }
 
+  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+
+  @override
+  List<Widget> buildAppBarActions() {
+    return isCommander
+        ? [
+            DeviceActionGroup(
+              device: _device,
+              onMessage: showMessage,
+              type: ActionGroupType.popupMenuButton,
+              onDeleted: () => Navigator.pop(context),
+              unit: context.bloc<TrackingBloc>().units.find(_device),
+              onChanged: (device) => setState(() => _device = device),
+              personnel: context.bloc<TrackingBloc>().personnels.find(_device),
+            )
+          ]
+        : [];
+  }
+
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
@@ -106,16 +126,16 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
 
   DeviceWidget _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
         unit: unit,
-        personnel: personnel,
         device: _device,
-        tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
-        organization: FleetMapService().fetchOrganization(Defaults.orgId),
         withHeader: false,
-        withActions: context.bloc<UserBloc>().user?.isCommander == true,
+        withActions: false,
+        personnel: personnel,
         onMessage: showMessage,
-        onChanged: (device) => setState(() => _device = device),
-        onDelete: () => Navigator.pop(context),
+        onDeleted: () => Navigator.pop(context),
         onGoto: (point) => jumpToPoint(context, center: point),
+        onChanged: (device) => setState(() => _device = device),
+        organization: FleetMapService().fetchOrganization(Defaults.orgId),
+        tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
       );
 
   Widget _buildMapTile(BuildContext context, Device device) {

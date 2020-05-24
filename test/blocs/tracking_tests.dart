@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';

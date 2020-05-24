@@ -129,7 +129,6 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
 
 /// Delete device
 Future<dartz.Either<bool, DeviceState>> deleteDevice(
-  BuildContext context,
   Device device,
 ) =>
     DeleteDevice()(DeviceParams(

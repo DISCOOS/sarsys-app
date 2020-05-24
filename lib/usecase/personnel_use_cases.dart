@@ -302,6 +302,8 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.Mobilized,
+      action: "Mobiliser ${params.data.name}",
+      message: "Dette endre status til mobilisert. Vil du fortsette?",
     );
   }
 }
@@ -319,6 +321,8 @@ class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.OnScene,
+      action: "Sjekk inn ${params.data.name}",
+      message: "Dette endre status til ankommet. Vil du fortsette?",
     );
   }
 }
@@ -337,7 +341,7 @@ class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.Retired,
-      action: "Dimittere ${params.data.name}",
+      action: "Dimitter ${params.data.name}",
       message: "Dette vil stoppe sporing og dimmitere mannskapet. Vil du fortsette?",
     );
   }

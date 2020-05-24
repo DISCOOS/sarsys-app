@@ -167,8 +167,6 @@ class BlocTestHarness implements BlocDelegate {
       return Future.value();
     });
 
-    var count = 0;
-
     tearDown(() async {
       if (_withConfigBloc) {
         await _configBloc?.close();

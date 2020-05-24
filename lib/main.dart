@@ -106,6 +106,7 @@ void runAppWithCatcher(Widget app, BlocController controller) {
     "Connection closed before full header was received",
     "SocketException: OS Error: Connection timed out",
     "SocketException: OS Error: Software caused connection abort",
+    "HandshakeException: Connection terminated during handshake",
   ];
 
   final Map<String, ReportMode> explicitReportModesMap = Map.fromIterable(

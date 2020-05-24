@@ -96,7 +96,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
               onMessage: onMessage,
               withActions: user?.isCommander == true,
               organization: FleetMapService().fetchOrganization(Defaults.orgId),
-              onComplete: (_) => Navigator.pop(context),
+              onCompleted: (_) => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),
             ),
           ),

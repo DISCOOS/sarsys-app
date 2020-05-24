@@ -5,8 +5,10 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/usecase/incident_user_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/widgets/action_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -109,7 +111,6 @@ class _IncidentPageState extends State<IncidentPage> {
         _buildReference(incident),
         SizedBox(height: IncidentPage.SPACING),
         _buildPasscodes(incident),
-        if (isCommander) ...[SizedBox(height: IncidentPage.SPACING), _buildActions(context)],
       ],
     );
   }
@@ -317,44 +318,6 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  Widget _buildActions(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Expanded(
-          child: SizedBox(
-            height: 56,
-            child: RaisedButton(
-              elevation: IncidentPage.ELEVATION,
-              child: Text(
-                "KANSELLER",
-                style: TextStyle(fontSize: 20),
-              ),
-              onPressed: () => _onCancel(context),
-              color: Colors.white,
-              textTheme: ButtonTextTheme.normal,
-            ),
-          ),
-        ),
-        SizedBox(width: IncidentPage.SPACING),
-        Expanded(
-          child: SizedBox(
-            height: 56,
-            child: RaisedButton(
-              elevation: IncidentPage.ELEVATION,
-              child: Text(
-                "FULLFØRT",
-                style: TextStyle(fontSize: 20),
-              ),
-              onPressed: () => _onFinish(context),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildValueTile(
     String value, {
     String label,
@@ -447,39 +410,6 @@ class _IncidentPageState extends State<IncidentPage> {
     );
   }
 
-  void _onCancel(BuildContext context) async {
-    var cancel = await prompt(
-      context,
-      "Bekreft kansellering",
-      "Dette vil stoppe alle sporinger og sette status til Kansellert",
-    );
-    if (cancel) {
-      _setIncidentStatus(context, IncidentStatus.Cancelled);
-      Navigator.pushReplacementNamed(context, "incident/list");
-    }
-  }
-
-  void _onFinish(BuildContext context) async {
-    var finish = await prompt(
-      context,
-      "Bekreft løsning",
-      "Dette vil stoppe alle sporinger og sette status til Løst",
-    );
-    if (finish) {
-      _setIncidentStatus(context, IncidentStatus.Resolved);
-      Navigator.pushReplacementNamed(context, "incident/list");
-    }
-  }
-
-  void _setIncidentStatus(BuildContext context, IncidentStatus status) {
-    var userId = context.bloc<UserBloc>().user?.userId;
-    var incident = context.bloc<IncidentBloc>().selected.withJson(
-      {"status": enumName(status)},
-      userId: userId,
-    );
-    context.bloc<IncidentBloc>().update(incident);
-  }
-
   void _testHint() {
     final extent = _controller.position.extentAfter;
     if (extent > IncidentPage.HEIGHT / 2 && _hidePending == null) {
@@ -504,5 +434,153 @@ class _IncidentPageState extends State<IncidentPage> {
       }
     });
     _hidePending.whenComplete(() => _hidePending = null);
+  }
+}
+
+class IncidentActionGroup extends StatelessWidget {
+  IncidentActionGroup({
+    @required this.incident,
+    @required this.type,
+    this.onDeleted,
+    this.onMessage,
+    this.onChanged,
+    this.onCompleted,
+  });
+  final Incident incident;
+  final VoidCallback onDeleted;
+  final ActionGroupType type;
+  final MessageCallback onMessage;
+  final ValueChanged<Incident> onChanged;
+  final ValueChanged<Incident> onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionGroupBuilder(
+      type: type,
+      builder: _buildActionItems,
+    );
+  }
+
+  List<ActionMenuItem> _buildActionItems(BuildContext context) {
+    return <ActionMenuItem>[
+      ActionMenuItem(
+        child: IgnorePointer(child: _buildEditButton(context)),
+        onPressed: _onEdit,
+      ),
+      ActionMenuItem(
+        child: IgnorePointer(child: _buildCompleteAction(context)),
+        onPressed: () => _onFinish(context),
+      ),
+      ActionMenuItem(
+        child: IgnorePointer(child: _buildCancelAction(context)),
+        onPressed: () => _onCancel(context),
+      ),
+    ];
+  }
+
+  Widget _buildEditButton(BuildContext context) => Tooltip(
+        message: "Endre aksjon",
+        child: FlatButton.icon(
+          icon: Icon(Icons.edit),
+          label: Text(
+            "ENDRE",
+            textAlign: TextAlign.center,
+          ),
+          onPressed: _onEdit,
+        ),
+      );
+
+  void _onEdit() async {
+    final result = await editIncident(incident);
+    if (result.isRight()) {
+      final actual = result.toIterable().first;
+      if (actual != incident) {
+        _onMessage("${actual.name} er oppdatert");
+        _onChanged(actual);
+      }
+      _onCompleted();
+    }
+  }
+
+  Widget _buildCompleteAction(BuildContext context) {
+    return FlatButton.icon(
+      icon: Icon(Icons.check_circle),
+      label: Text(
+        "FULLFØRT",
+        textAlign: TextAlign.center,
+      ),
+      onPressed: () => _onFinish(context),
+    );
+  }
+
+  void _onFinish(BuildContext context) async {
+    var finish = await prompt(
+      context,
+      "Bekreft løsning",
+      "Dette vil stoppe alle sporinger og sette status til Løst",
+    );
+    if (finish) {
+      _setIncidentStatus(context, IncidentStatus.Resolved);
+      Navigator.pushReplacementNamed(context, "incident/list");
+    }
+  }
+
+  Widget _buildCancelAction(BuildContext context) {
+    final button = Theme.of(context).textTheme.button;
+    return Tooltip(
+      message: "Kansellèr aksjon",
+      child: FlatButton.icon(
+        icon: Icon(
+          Icons.cancel,
+          color: Colors.red,
+        ),
+        label: Text(
+          "KANSELLERT",
+          textAlign: TextAlign.center,
+          style: button.copyWith(color: Colors.red),
+        ),
+        onPressed: () => _onCancel(context),
+      ),
+    );
+  }
+
+  void _onCancel(BuildContext context) async {
+    var cancel = await prompt(
+      context,
+      "Bekreft kansellering",
+      "Dette vil stoppe alle sporinger og sette status til Kansellert",
+    );
+    if (cancel) {
+      _setIncidentStatus(context, IncidentStatus.Cancelled);
+      Navigator.pushReplacementNamed(context, "incident/list");
+    }
+  }
+
+  void _setIncidentStatus(BuildContext context, IncidentStatus status) async {
+    var userId = context.bloc<UserBloc>().user?.userId;
+    var incident = context.bloc<IncidentBloc>().selected.withJson(
+      {"status": enumName(status)},
+      userId: userId,
+    );
+    await context.bloc<IncidentBloc>().update(incident);
+    _onMessage("${incident.name} er ${enumName(status)}");
+    _onDeleted();
+    _onCompleted();
+  }
+
+  void _onMessage(String message) {
+    if (onMessage != null) onMessage(message);
+  }
+
+  void _onChanged([incident]) {
+    if (onChanged != null) onChanged(incident);
+  }
+
+  void _onCompleted([incident]) {
+    if (onCompleted != null) onCompleted(incident ?? this.incident);
+  }
+
+  void _onDeleted() {
+    if (onDeleted != null) onDeleted();
   }
 }

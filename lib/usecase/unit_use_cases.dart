@@ -106,10 +106,12 @@ class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> {
     final config = params.context.bloc<AppConfigBloc>().config;
     final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
     final units = <Unit>[];
+    int count = 0;
     params.templates.forEach((template) async {
       final unit = params.bloc.fromTemplate(
         department,
         template,
+        count: ++count,
       );
       if (unit != null) {
         units.add(

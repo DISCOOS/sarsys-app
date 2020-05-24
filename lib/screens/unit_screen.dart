@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -74,6 +75,23 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     super.dispose();
   }
 
+  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+
+  @override
+  List<Widget> buildAppBarActions() {
+    return isCommander
+        ? [
+            UnitActionGroup(
+              unit: _unit,
+              onMessage: showMessage,
+              onDeleted: () => Navigator.pop(context),
+              type: ActionGroupType.popupMenuButton,
+              onChanged: (unit) => setState(() => _unit = unit),
+            )
+          ]
+        : [];
+  }
+
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
@@ -103,15 +121,15 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
 
   UnitWidget _buildInfoPanel(Tracking tracking, BuildContext context) => UnitWidget(
         unit: _unit,
+        withHeader: false,
+        withActions: false,
         tracking: tracking,
         devices: tracking?.sources
             ?.map((source) => context.bloc<TrackingBloc>().deviceBloc.devices[source.uuid])
             ?.where((unit) => unit != null),
-        withHeader: false,
-        withActions: context.bloc<UserBloc>().user?.isCommander,
         onMessage: showMessage,
         onChanged: (unit) => setState(() => _unit = unit),
-        onDelete: () => Navigator.pop(context),
+        onDeleted: () => Navigator.pop(context),
         onGoto: (point) => jumpToPoint(context, center: point),
       );
 

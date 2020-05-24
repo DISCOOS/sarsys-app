@@ -17,7 +17,18 @@ import 'package:simple_gravatar/simple_gravatar.dart';
 
 import 'descriptions.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
+  @override
+  _AppDrawerState createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    FocusScope.of(context).requestFocus(new FocusNode());
+  }
+
   @override
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
@@ -51,17 +62,6 @@ class AppDrawer extends StatelessWidget {
       ),
     );
   }
-
-//  ListTile _buildMissionsPageAction(bool isUnset, BuildContext context) {
-//    return ListTile(
-//      enabled: !isUnset,
-//      leading: const Icon(Icons.assignment),
-//      title: Text('Oppdrag', style: TextStyle(fontSize: 14)),
-//      onTap: () {
-//        Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_MISSION_LIST);
-//      },
-//    );
-//  }
 
   ListTile _buildLogoutAction(User user, BuildContext context, UserBloc userBloc) {
     return ListTile(

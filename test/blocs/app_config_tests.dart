@@ -10,8 +10,6 @@ void main() async {
     ..withConfigBloc()
     ..install();
 
-  var count = 0;
-
   test('AppConfig SHOULD be EMPTY initially', () async {
     // Assert
     expect(harness.configBloc.repo.config, isNull, reason: "AppConfigRepository SHOULD not contain AppConfig");
