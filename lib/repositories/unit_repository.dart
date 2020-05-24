@@ -58,11 +58,15 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
 
   /// Get [Unit] count
   int count({
+    UnitType type,
     List<UnitStatus> exclude: const [UnitStatus.Retired],
   }) =>
       exclude?.isNotEmpty == false
           ? length
           : values
+              .where(
+                (unit) => type == null || type == unit.type,
+              )
               .where(
                 (unit) => !exclude.contains(unit.status),
               )
@@ -121,12 +125,15 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
         );
 
   /// Get next available [Unit.number]
-  int nextAvailableNumber(bool reuse) {
+  int nextAvailableNumber(UnitType type, {bool reuse = true}) {
     if (reuse) {
       var prev = 0;
       final numbers = values
           .where(
             (unit) => UnitStatus.Retired != unit.status,
+          )
+          .where(
+            (unit) => type == unit.type,
           )
           .map((unit) => unit.number)
           .toList();
@@ -134,7 +141,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
       final candidates = numbers.takeWhile((next) => (next - prev++) == 1).toList();
       return (candidates.length == 0 ? numbers.length : candidates.last) + 1;
     }
-    return count(exclude: []) + 1;
+    return count(exclude: [], type: type) + 1;
   }
 
   /// GET ../units

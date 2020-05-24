@@ -155,10 +155,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       repo.find(personnel, exclude: exclude);
 
   /// Get next available number
-  int nextAvailableNumber(bool reuse) => repo.nextAvailableNumber(reuse);
+  int nextAvailableNumber(UnitType type, {bool reuse = true}) => repo.nextAvailableNumber(type, reuse: reuse);
 
   /// Creating a new 'Unit' instance from template string
-  Unit fromTemplate(String department, String template, {int offset = 20}) {
+  Unit fromTemplate(String department, String template, {int count}) {
     final type = UnitType.values.firstWhere(
       (type) {
         final name = translateUnitType(type).toLowerCase();
@@ -177,10 +177,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
       return Unit.fromJson({
         "uuid": Uuid().v4(),
-        "number": number,
+        "number": count ?? number,
         "type": enumName(type),
         "status": enumName(UnitStatus.Mobilized),
-        "callsign": toCallsign(department, offset + number),
+        "callsign": toCallsign(type, department, number),
       });
     }
     return null;

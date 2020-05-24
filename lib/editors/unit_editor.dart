@@ -103,7 +103,7 @@ class _UnitEditorState extends State<UnitEditor> {
     _setText(_numberController, _defaultNumber());
     _numberController.addListener(
       () => _onTypeOrNumberEdit(
-        translateUnitType(_actualType(widget.type)),
+        _actualType(widget.type),
         _numberController.text,
         true,
       ),
@@ -222,6 +222,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _validateNumber(number) {
+    final type = _actualType(widget.type);
     Unit unit = context
         .bloc<UnitBloc>()
         .units
@@ -230,14 +231,14 @@ class _UnitEditorState extends State<UnitEditor> {
           (unit) => widget.unit?.uuid != unit.uuid && UnitStatus.Retired != unit.status,
         )
         .firstWhere(
-          (Unit unit) => isSameNumber(unit, number),
+          (Unit unit) => isSameNumber(unit, type, number),
           orElse: () => null,
         );
     return unit != null ? "Lag $number finnes allerede" : null;
   }
 
-  bool isSameNumber(Unit unit, number) =>
-      number?.isNotEmpty == true && unit != widget.unit && unit.number == int.tryParse(number);
+  bool isSameNumber(Unit unit, UnitType type, String number) =>
+      unit != widget.unit && unit.type == type && unit.number == int.tryParse(number);
 
   FormBuilderTextField _buildCallsignField() {
     return FormBuilderTextField(
@@ -358,11 +359,11 @@ class _UnitEditorState extends State<UnitEditor> {
     _formKey?.currentState?.save();
   }
 
-  void _onTypeOrNumberEdit(String type, String number, bool update) {
+  void _onTypeOrNumberEdit(UnitType type, String number, bool update) {
     _formKey?.currentState?.save();
-    if (type.isEmpty) type = translateUnitType(widget.type);
-    if (number.isEmpty) number = "${_nextNumber()}";
-    _editedName = "$type $number";
+    final name = translateUnitType(type ?? widget.type);
+    if (number.isEmpty) number = "${_nextNumber(type ?? widget.type)}";
+    _editedName = "$name $number";
     if (update) setState(() {});
   }
 
@@ -380,10 +381,10 @@ class _UnitEditorState extends State<UnitEditor> {
         FormBuilderValidators.required(errorText: 'Type må velges'),
       ],
       onChanged: (value) => _onTypeOrNumberEdit(
-        translateUnitType(UnitType.values.firstWhere(
+        UnitType.values.firstWhere(
           (test) => enumName(test) == value,
           orElse: () => widget.type,
-        )),
+        ),
         _actualNumber(),
         true,
       ),
@@ -607,11 +608,12 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultNumber() {
-    return "${widget?.unit?.number ?? _nextNumber()}";
+    return "${widget?.unit?.number ?? _nextNumber(_actualType(widget.type))}";
   }
 
-  int _nextNumber() => context.bloc<UnitBloc>().nextAvailableNumber(
-        context.bloc<AppConfigBloc>().config.callsignReuse,
+  int _nextNumber(UnitType type) => context.bloc<UnitBloc>().nextAvailableNumber(
+        type,
+        reuse: context.bloc<AppConfigBloc>().config.callsignReuse,
       );
 
   String _actualNumber() {
@@ -635,16 +637,17 @@ class _UnitEditorState extends State<UnitEditor> {
   String _nextCallSign() {
     final String department = _departments[context.bloc<AppConfigBloc>().config.depId];
     int number = _ensureCallSignSuffix();
-    return toCallsign(department, number);
+    UnitType type = _actualType(widget.type);
+    return toCallsign(type, department, number);
   }
 
   int _ensureCallSignSuffix() {
-    final next = _nextNumber();
+    final next = _nextNumber(_actualType(widget.type));
     final values = _formKey?.currentState?.value;
     final number = values?.containsKey('number') == true
         ? values['number'] ?? widget?.unit?.number ?? next
         : widget?.unit?.number ?? next;
-    return 20 + number;
+    return number;
   }
 
   String _defaultPhone() {
