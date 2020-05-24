@@ -17,10 +17,8 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
   UnitRepository(
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   /// [UnitService] service
@@ -146,15 +144,17 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await evict();
-          await Future.wait(response.body.map(
+          evict(
+            retainKeys: response.body.map((unit) => unit.uuid),
+          );
+          response.body.forEach(
             (unit) => commit(
               StorageState.created(
                 unit,
                 remote: true,
               ),
             ),
-          ));
+          );
           return response.body;
         }
         throw UnitServiceException(

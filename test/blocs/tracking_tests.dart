@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
@@ -43,7 +44,7 @@ void main() async {
       expect(harness.trackingBloc.iuuid, isNull, reason: "SHOULD BE unset");
       expect(harness.trackingBloc.trackings.length, 0, reason: "SHOULD BE empty");
       expect(harness.trackingBloc.initialState, isA<TrackingsEmpty>(), reason: "Unexpected tracking state");
-      await expectExactlyLater(harness.trackingBloc, [isA<TrackingsEmpty>()]);
+      expect(harness.trackingBloc, emits(isA<TrackingsEmpty>()));
     },
   );
 
@@ -82,7 +83,6 @@ void main() async {
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
-      await Future.delayed(Duration(milliseconds: 1));
 
       final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
@@ -90,7 +90,6 @@ void main() async {
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
       final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
-      await Future.delayed(Duration(milliseconds: 1));
 
       // Assert personnel trackings
       final personnels = harness.trackingBloc.personnels;
@@ -120,7 +119,6 @@ void main() async {
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.Available));
-      await Future.delayed(Duration(milliseconds: 1));
 
       final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
       await _attachDeviceToTrackable(harness, p1, d1);
@@ -128,12 +126,10 @@ void main() async {
       await _attachDeviceToTrackable(harness, p2, d2);
       final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
       await _attachDeviceToTrackable(harness, p3, d3);
-      await Future.delayed(Duration(milliseconds: 1));
 
       final u1 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1]));
       final u2 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p2]));
       final u3 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p3]));
-      await Future.delayed(Duration(milliseconds: 1));
 
       final ut1 = await harness.trackingBloc.attach(u1.tracking.uuid, personnels: [p1]);
       final ut2 = await harness.trackingBloc.attach(u2.tracking.uuid, personnels: [p2]);

@@ -13,10 +13,8 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
   IncidentRepository(
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   /// Incident service
@@ -66,15 +64,17 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
       try {
         var response = await service.fetch();
         if (response.is200) {
-          await evict();
-          await Future.wait(response.body.map(
+          evict(
+            retainKeys: response.body.map((incident) => incident.uuid),
+          );
+          response.body.forEach(
             (incident) => commit(
               StorageState.created(
                 incident,
                 remote: true,
               ),
             ),
-          ));
+          );
           return response.body;
         }
         throw IncidentServiceException(

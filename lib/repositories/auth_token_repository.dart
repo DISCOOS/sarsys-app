@@ -6,8 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:SarSys/models/AuthToken.dart';
 
 class AuthTokenRepository {
-  AuthTokenRepository({this.compactWhen = 10});
-  final int compactWhen;
+  AuthTokenRepository();
 
   Box<AuthToken> _tokens;
   AuthToken operator [](String userId) => userId == null ? null : _tokens?.get(userId);
@@ -31,7 +30,6 @@ class AuthTokenRepository {
       _tokens = await Hive.openBox(
         '$AuthTokenRepository',
         encryptionKey: await Storage.hiveKey<AuthToken>(),
-        compactionStrategy: (_, deleted) => compactWhen < deleted,
       );
     }
     return _tokens;

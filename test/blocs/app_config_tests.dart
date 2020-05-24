@@ -10,6 +10,8 @@ void main() async {
     ..withConfigBloc()
     ..install();
 
+  var count = 0;
+
   test('AppConfig SHOULD be EMPTY initially', () async {
     // Assert
     expect(harness.configBloc.repo.config, isNull, reason: "AppConfigRepository SHOULD not contain AppConfig");
@@ -95,6 +97,7 @@ void main() async {
         // Arrange
         harness.connectivity.offline();
         await harness.configBloc.load();
+
         expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE local state");
         expect(harness.configBloc.repo.backlog.length, 1, reason: "SHOULD have a backlog");
 
@@ -106,6 +109,7 @@ void main() async {
           toStatusChanges(harness.configBloc.repo.changes),
           emits(StorageStatus.created),
         );
+
         // Assert
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
         expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");

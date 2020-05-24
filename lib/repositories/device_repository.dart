@@ -15,10 +15,8 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
   DeviceRepository(
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   /// [Device] service
@@ -62,15 +60,17 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await evict();
-          await Future.wait(response.body.map(
+          evict(
+            retainKeys: response.body.map((device) => device.uuid),
+          );
+          response.body.forEach(
             (incident) => commit(
               StorageState.created(
                 incident,
                 remote: true,
               ),
             ),
-          ));
+          );
           return response.body;
         }
         throw DeviceServiceException(

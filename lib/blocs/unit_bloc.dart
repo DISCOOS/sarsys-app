@@ -335,7 +335,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   Future<UnitState> _process(_InternalChange command) async {
     final previous = repo[command.data.uuid];
-    final state = await repo.replace(command.data.uuid, command.data);
+    final state = repo.replace(command.data.uuid, command.data);
     return toOK(
       command,
       UnitUpdated(state.value, previous),

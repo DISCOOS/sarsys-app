@@ -16,10 +16,8 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
   PersonnelRepository(
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   /// [Personnel] service
@@ -84,15 +82,18 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await evict();
-          await Future.wait(response.body.map(
+          evict(
+            retainKeys: response.body.map((personnel) => personnel.uuid),
+          );
+
+          response.body.forEach(
             (personnel) => commit(
               StorageState.created(
                 personnel,
                 remote: true,
               ),
             ),
-          ));
+          );
           return response.body;
         }
         throw PersonnelServiceException(

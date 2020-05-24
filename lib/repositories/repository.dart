@@ -21,9 +21,7 @@ import 'package:hive/hive.dart';
 abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   ConnectionAwareRepository({
     @required this.connectivity,
-    this.compactWhen = 10,
   });
-  final int compactWhen;
   final ConnectivityService connectivity;
   final StreamController<StorageState<T>> _controller = StreamController.broadcast();
 
@@ -149,7 +147,6 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       _states = await Hive.openBox(
         ['$runtimeType', postfix].where((part) => !isEmptyOrNull(part)).join('_'),
         encryptionKey: await Storage.hiveKey<T>(),
-        compactionStrategy: (_, deleted) => compactWhen < deleted,
       );
       // Add local states to backlog
       _backlog
@@ -168,9 +165,9 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   ) async {
     checkState();
     final next = validate(state);
-    final exists = await commit(next);
+    final exists = commit(next);
     if (exists) {
-      return await schedule(next);
+      return schedule(next);
     }
     return next.value;
   }
@@ -183,7 +180,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
           final value = await _push(
             next,
           );
-          await commit(
+          commit(
             next.remote(value),
           );
           return value;
@@ -232,7 +229,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
           final config = await _push(
             state,
           );
-          await commit(
+          commit(
             state.remote(config),
           );
         }
@@ -317,7 +314,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   }
 
   /// Commit [state] to repository
-  Future<bool> commit(StorageState<T> state) async {
+  bool commit(StorageState<T> state) {
     checkState();
     final key = toKey(state);
     final current = _states.get(key);
@@ -349,10 +346,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
           : false;
 
   /// Replace [state] in repository for given [key]-[value] pair
-  Future<StorageState<T>> replace(S key, T value, {bool remote}) async {
+  StorageState<T> replace(S key, T value, {bool remote}) {
     final current = _assertExist(key, value: value);
     final next = current.replace(value, remote: remote);
-    await commit(next);
+    commit(next);
     return next;
   }
 
@@ -367,43 +364,39 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   }
 
   /// Clear all states from local storage
-  Future<Iterable<T>> clear({bool compact = true}) async {
+  Iterable<T> clear() {
     final Iterable<T> elements = values.toList();
     if (_states?.isOpen == true) {
-      if (compact) {
-        await _states.compact();
-      }
-      await _states.clear();
+      _states.clear();
     }
     return List.unmodifiable(elements);
   }
 
   /// Evict states from local storage
-  Future<Iterable<T>> evict({
+  Iterable<T> evict({
     bool remote = true,
     bool local = false,
-    bool compact = true,
-  }) async {
+    Iterable<String> retainKeys = const [],
+  }) {
     if (remote && local) {
       return clear();
     }
-    final Iterable<T> elements = values.toList();
+    final List<T> evicted = [];
     if (_states?.isOpen == true) {
       final keys = [];
-      _states.keys.forEach((key) {
+      _states.keys.where((key) => !retainKeys.contains(key)).forEach((key) {
         final state = _states.get(key);
         if (remote && state.isRemote) {
           keys.add(key);
+          evicted.add(_states.get(key).value);
         } else if (local && state.isLocal) {
           keys.add(key);
+          evicted.add(_states.get(key).value);
         }
       });
-      await _states.deleteAll(keys);
-      if (compact) {
-        await _states.compact();
-      }
+      _states.deleteAll(keys);
     }
-    return List.unmodifiable(elements);
+    return List.unmodifiable(evicted);
   }
 
   /// Close repository.
@@ -433,7 +426,9 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     _pending?.cancel();
     _timer = null;
     _pending = null;
-    //_states?.close();
+    if (_states?.isOpen == true) {
+      return await _states.close();
+    }
     return Future.value();
   }
 }

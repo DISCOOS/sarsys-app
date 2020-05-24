@@ -7,7 +7,6 @@ import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/service.dart';

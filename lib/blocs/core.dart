@@ -15,7 +15,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     // Publish own events to bus?
     if (bus != null) {
       _subscriptions.add(listen(
-        (state) => scheduleMicrotask(() => bus.publish(this, state)),
+        (state) => bus.publish(this, state),
       ));
     }
   }

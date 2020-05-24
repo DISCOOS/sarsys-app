@@ -257,7 +257,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         if (repo.containsKey(event.data.uuid)) {
           final current = repo[event.data.uuid];
           final next = current.withJson(event.data.json);
-          await repo.replace(
+          repo.replace(
             event.data.uuid,
             next,
           );

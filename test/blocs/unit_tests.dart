@@ -25,7 +25,7 @@ void main() async {
       expect(harness.unitBloc.iuuid, isNull, reason: "SHOULD BE unset");
       expect(harness.unitBloc.units.length, 0, reason: "SHOULD BE empty");
       expect(harness.unitBloc.initialState, isA<UnitsEmpty>(), reason: "Unexpected unit state");
-      await expectExactlyLater(harness.unitBloc, [isA<UnitsEmpty>()]);
+      expect(harness.unitBloc, emits(isA<UnitsEmpty>()));
     },
   );
 
@@ -372,13 +372,15 @@ Future _testShouldDeleteCloneWhenPersonnelIsDeleted(BlocTestHarness harness) asy
 
   // Act
   final updated = await harness.personnelBloc.delete(p2.uuid);
-  await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitUpdated>()),
+    close: false,
+  );
 
   // Assert
   expect(
-    harness.unitBloc.repo.states[unit.uuid].value.personnels
-        .firstWhere((p) => p == updated, orElse: () => null)
-        ?.status,
+    harness.unitBloc.repo[unit.uuid].personnels.firstWhere((p) => p == updated, orElse: () => null)?.status,
     isNull,
     reason: "SHOULD NOT contain $p2",
   );
@@ -392,7 +394,11 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
 
   // Act
   final updated = await harness.personnelBloc.update(p1.cloneWith(status: PersonnelStatus.OnScene));
-  await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitUpdated>()),
+    close: false,
+  );
 
   // Assert
   expect(
@@ -401,9 +407,7 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
     reason: "SHOULD HAVE status OnScene",
   );
   expect(
-    harness.unitBloc.repo.states[unit.uuid].value.personnels
-        .firstWhere((p) => p == updated, orElse: () => null)
-        ?.status,
+    harness.unitBloc.repo[unit.uuid].personnels.firstWhere((p) => p == updated, orElse: () => null)?.status,
     equals(PersonnelStatus.OnScene),
     reason: "SHOULD HAVE status OnScene",
   );

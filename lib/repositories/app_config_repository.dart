@@ -21,10 +21,8 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     this.version,
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   final int version;
@@ -113,7 +111,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
       try {
         var response = await service.fetch(state.value.uuid);
         if (response.is200) {
-          await commit(
+          commit(
             StorageState.created(
               response.body,
               remote: true,

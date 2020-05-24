@@ -17,10 +17,8 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   TrackingRepository(
     this.service, {
     @required ConnectivityService connectivity,
-    int compactWhen = 10,
   }) : super(
           connectivity: connectivity,
-          compactWhen: compactWhen,
         );
 
   /// [TrackingService] service
@@ -118,15 +116,18 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
       try {
         var response = await service.fetch(iuuid);
         if (response.is200) {
-          await evict();
-          await Future.wait(response.body.map(
+          evict(
+            retainKeys: response.body.map((tracking) => tracking.uuid),
+          );
+
+          response.body.forEach(
             (unit) => commit(
               StorageState.created(
                 unit,
                 remote: true,
               ),
             ),
-          ));
+          );
           return response.body;
         }
         throw TrackingServiceException(
@@ -183,9 +184,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
 
   /// Commit [state] to repository
   @override
-  Future<bool> commit(StorageState<Tracking> state) async {
+  bool commit(StorageState<Tracking> state) {
     final tuuid = state.value.uuid;
-    final exists = await super.commit(state);
+    final exists = super.commit(state);
     if (exists) {
       _addToIndex(state.value, tuuid);
     } else {
@@ -204,7 +205,6 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
             if (track.status == TrackStatus.attached) {
               tuuids.add(tuuid);
             } else {
-              print('remove $tuuid');
               tuuids.remove(tuuid);
             }
             return tuuids;
@@ -235,9 +235,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
 
   /// Clear all states from local storage
   @override
-  Future<Iterable<Tracking>> clear({bool compact = true}) async {
+  Iterable<Tracking> clear() {
     _sources.clear();
-    return super.clear(compact: compact);
+    return super.clear();
   }
 
   @override

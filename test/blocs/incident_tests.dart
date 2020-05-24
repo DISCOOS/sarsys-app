@@ -21,9 +21,7 @@ void main() async {
       expect(harness.incidentBloc.isUnselected, isTrue, reason: "SHOULD BE unset");
       expect(harness.incidentBloc.repo.isEmpty, isTrue, reason: "SHOULD BE empty");
       expect(harness.incidentBloc.initialState, isA<IncidentsEmpty>(), reason: "Unexpected incident state");
-      await expectExactlyLater(harness.incidentBloc, [
-        isA<IncidentsEmpty>(),
-      ]);
+      expect(harness.incidentBloc, emits(isA<IncidentsEmpty>()));
     },
   );
 

@@ -33,7 +33,7 @@ void main() async {
 
       // Assert
       expect(harness.userBloc.user, isNull, reason: "SHOULD NOT have user");
-      expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
+      expect(harness.userBloc, emits(isA<UserUnset>()));
     });
 
     test('and UNSET, user SHOULD login', () async {

@@ -151,17 +151,17 @@ class Storage {
     throw 'Storage not initialized';
   }
 
-  static Future destroy({bool reinitialize = false}) async {
+  static Future destroy({bool reinitialize = false, bool keepFiles = false}) async {
     _initialized = false;
     try {
       // Deletes only open boxes
-      await Hive.deleteFromDisk();
+//      await Hive.deleteFromDisk();
     } on Exception catch (e) {
       // Don't fail on this
       print(e);
     }
 
-    if (!kIsWeb) {
+    if (!(keepFiles || kIsWeb)) {
       // Delete all remaining hive files
       var appDir = await getApplicationDocumentsDirectory();
       final hiveDir = Directory(

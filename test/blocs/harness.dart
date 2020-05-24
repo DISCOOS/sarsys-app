@@ -129,6 +129,17 @@ class BlocTestHarness implements BlocDelegate {
     });
 
     setUp(() async {
+      // Hive does not handle close
+      // with pending writes in a
+      // well-behaved manner. This
+      // is a workaround that allows
+      // writes to complete in previous
+      // zone before old files are
+      // deleted from the next zone
+      // before next test is run.
+      if (Storage.initialized) {
+        await Storage.destroy();
+      }
       await Storage.init();
       _buildConnectivity();
       if (_withConfigBloc) {
@@ -156,37 +167,39 @@ class BlocTestHarness implements BlocDelegate {
       return Future.value();
     });
 
+    var count = 0;
+
     tearDown(() async {
       if (_withConfigBloc) {
-        _configBloc?.close();
+        await _configBloc?.close();
       }
       if (_withUserBloc) {
-        _userBloc?.close();
+        await _userBloc?.close();
       }
       if (_withIncidentBloc) {
-        _incidentBloc?.close();
+        await _incidentBloc?.close();
       }
       if (_withDeviceBloc) {
-        _deviceBloc?.close();
+        await _deviceBloc?.close();
       }
       if (_withPersonnelBloc) {
-        _personnelBloc?.close();
+        await _personnelBloc?.close();
       }
       if (_withUnitBloc) {
-        _unitBloc?.close();
+        await _unitBloc?.close();
       }
       if (_withTrackingBloc) {
-        _trackingBloc?.close();
+        await _trackingBloc?.close();
         _trackingService.reset();
       }
       events.clear();
       errors.clear();
       bus.unsubscribeAll();
       _connectivity?.dispose();
+
       if (Storage.initialized) {
-        await Storage.destroy();
+        return await Storage.destroy();
       }
-      // Needed for await above to work
       return Future.value();
     });
 
@@ -532,7 +545,7 @@ Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
   Iterable expected, {
   Duration duration,
   int skip = 0,
-  bool close = true,
+  bool close = false,
 }) async {
   assert(bloc != null);
   final states = <State>[];
@@ -548,7 +561,7 @@ Future<void> expectExactlyLater<B extends Bloc<dynamic, State>, State>(
 void expectThrough<B extends Bloc<dynamic, State>, State>(
   B bloc,
   expected, {
-  bool close = true,
+  bool close = false,
 }) {
   assert(bloc != null);
   assert(expected != null);
@@ -561,7 +574,7 @@ void expectThrough<B extends Bloc<dynamic, State>, State>(
 void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
-  bool close = true,
+  bool close = false,
 }) {
   assert(bloc != null);
   assert(expected != null);
@@ -574,7 +587,7 @@ void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
 Future<void> expectThroughLater<B extends Bloc<dynamic, State>, State>(
   B bloc,
   expected, {
-  bool close = true,
+  bool close = false,
 }) async {
   assert(bloc != null);
   assert(expected != null);
@@ -587,13 +600,13 @@ Future<void> expectThroughLater<B extends Bloc<dynamic, State>, State>(
 Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
-  bool close = true,
+  bool close = false,
 }) async {
   assert(bloc != null);
   assert(expected != null);
   await expectLater(bloc, emitsThrough(emitsInOrder(expected)));
   if (close) {
-    bloc.close();
+    await bloc.close();
   }
 }
 
