@@ -7,6 +7,7 @@ import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/bloc_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/map/map_search.dart';
+import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Point.dart';
@@ -14,6 +15,7 @@ import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -123,17 +125,19 @@ class _IncidentEditorState extends State<IncidentEditor> {
     }
   }
 
+  bool _isDescriptionEmpty(Location location, TextEditingController controller) =>
+      emptyAsNull(controller.text ?? location?.description) == null;
+
   void _updateDescriptions() async {
-    if (_ipp?.description == null && _ipp?.point?.isNotEmpty == true) {
+    if (_isDescriptionEmpty(_ipp, _ippController) && _ipp?.point?.isNotEmpty == true) {
       _ipp = await _updateDescriptionFromPoint(
         _ipp,
         'ipp_description',
         _ippController,
         point: _ipp.point,
       );
-      setText(_ippController, _ipp.description);
     }
-    if (_meetup?.description == null && _meetup?.point?.isNotEmpty == true) {
+    if (_isDescriptionEmpty(_meetup, _meetupController) == null && _meetup?.point?.isNotEmpty == true) {
       _meetup = await _updateDescriptionFromPoint(
         _meetup,
         'meetup_description',
@@ -489,17 +493,24 @@ class _IncidentEditorState extends State<IncidentEditor> {
         optional: false,
         onChanged: (Position position) async {
           _ipp = _toLocation(_ipp, position.geometry);
-          _ipp = await _updateDescriptionFromPoint(
-            _ipp,
-            'ipp_description',
-            _ippController,
-            point: position.geometry,
-          );
-          setText(_ippController, _ipp.description);
-          _formKey.currentState.save();
-          setState(() {});
+          if (emptyAsNull(_ipp.description) == null) {
+            _ipp = await _updateDescriptionFromPoint(
+              _ipp,
+              'ipp_description',
+              _ippController,
+              point: position.geometry,
+            );
+          }
+          _saveAndSetState();
         },
       );
+
+  void _saveAndSetState() {
+    if (mounted) {
+      _formKey.currentState.save();
+      setState(() {});
+    }
+  }
 
   Widget _buildMeetupField() => PositionField(
         attribute: 'meetup',
@@ -519,9 +530,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
             _meetupController,
             point: position.geometry,
           );
-          setText(_meetupController, _meetup.description);
-          _formKey.currentState.save();
-          setState(() {});
+          _saveAndSetState();
         },
       );
 
@@ -533,20 +542,18 @@ class _IncidentEditorState extends State<IncidentEditor> {
           labelText: "Stedsnavn",
           filled: true,
           suffixIcon: GestureDetector(
-            child: Icon(Icons.refresh),
+            child: Icon(Icons.search),
             onTap: () async {
               if (_ipp.point is Point) {
-                _updateDescriptionFromPoint(
+                _ipp = await _updateDescriptionFromPoint(
                   _ipp,
                   'ipp_description',
                   _ippController,
+                  search: true,
                 );
-              } else if (_ipp?.description == null) {
-                _updateDescription(
-                  'ipp_description',
-                  _formKey.currentState.value['name'],
-                  _ippController,
-                );
+                if (mounted) {
+                  setState(() {});
+                }
               }
             },
           ),
@@ -564,14 +571,17 @@ class _IncidentEditorState extends State<IncidentEditor> {
             labelText: "Stedsnavn",
             filled: true,
             suffixIcon: GestureDetector(
-              child: Icon(Icons.refresh),
+              child: Icon(Icons.search),
               onTap: () async {
-                if (_meetup.point is Point) {
-                  _updateDescriptionFromPoint(
+                if (_meetup.point is Point && _isDescriptionEmpty(_meetup, _meetupController)) {
+                  _meetup = await _updateDescriptionFromPoint(
                     _meetup,
                     'meetup_description',
                     _meetupController,
                   );
+                }
+                if (mounted) {
+                  setState(() {});
                 }
               },
             )),
@@ -587,6 +597,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
             ? () {
                 _meetup = _ipp.cloneWith();
                 _updateField('meetup', toPosition(_meetup.point));
+                _updateDescription(
+                  'meetup_description',
+                  _meetup.description,
+                  _meetupController,
+                );
                 setState(() {});
               }
             : null,
@@ -599,6 +614,11 @@ class _IncidentEditorState extends State<IncidentEditor> {
             ? () {
                 _ipp = _meetup.cloneWith();
                 _updateField('ipp', toPosition(_ipp.point));
+                _updateDescription(
+                  'ipp_description',
+                  _ipp.description,
+                  _ippController,
+                );
                 setState(() {});
               }
             : null,
@@ -813,10 +833,17 @@ class _IncidentEditorState extends State<IncidentEditor> {
     String attribute,
     TextEditingController controller, {
     Point point,
+    bool search = false,
   }) async {
     try {
-      final description = await _lookup(point ?? location.point);
-      _updateDescription(attribute, description, controller);
+      final description = await _lookup(
+        point ?? location.point,
+        search: search,
+        query: emptyAsNull(controller.text) ?? toUTM(location.point, empty: null),
+      );
+      if (mounted) {
+        _updateDescription(attribute, description, controller);
+      }
       return location.cloneWith(
         description: description,
       );
@@ -844,11 +871,21 @@ class _IncidentEditorState extends State<IncidentEditor> {
   ) {
     _updateField(attribute, description);
     setText(controller, description);
-    setText(controller, description);
   }
 
-  Future<String> _lookup(Point point) async {
+  Future<String> _lookup(Point point, {bool search = false, String query}) async {
     if (point?.isNotEmpty == true) {
+      if (search) {
+        final result = await showSearch(
+            context: context,
+            query: emptyAsNull(query) == null ? toUTM(point, empty: null) : query,
+            delegate: MapSearchDelegate(
+              engine: _engine,
+              center: toLatLng(point),
+              controller: MapWidgetController(),
+            ));
+        return _toAddress(result);
+      }
       final results = await _engine.lookup(point);
       if (results.isNotEmpty) {
         var idx = 0;
@@ -868,15 +905,19 @@ class _IncidentEditorState extends State<IncidentEditor> {
           idx++;
         });
         final closest = results.elementAt(current);
-        return closest != null
-            ? '${[
-                closest.title,
-                closest.address,
-              ].join(', ')}'
-            : null;
+        return _toAddress(closest);
       }
     }
     return null;
+  }
+
+  String _toAddress(GeocodeResult closest) {
+    return closest != null
+        ? '${[
+            closest.title,
+            closest.address,
+          ].where((element) => element != null).join(', ')}'
+        : null;
   }
 
   Position toPosition(Point point, {Point defaultValue}) {

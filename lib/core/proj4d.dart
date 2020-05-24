@@ -284,6 +284,15 @@ class ProjCoordinate extends Equatable {
 
   static final empty = ProjCoordinate(double.nan, double.nan, double.nan);
 
+  bool get isValidLon => x != null && (x >= -180.0 && x <= 180.0);
+  bool get isValidLat => y != null && (y >= -85.05112878 && y <= 85.05112878);
+
+  /// Validate coordinates as lat and lon
+  ///
+  /// Exact limits, as specified by EPSG:900913 / EPSG:3785 / OSGEO:41001
+  ///
+  bool get isValidLatLng => isValidLon && isValidLat;
+
   ProjCoordinate(
     this.x,
     this.y,
