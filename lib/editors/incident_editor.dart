@@ -573,11 +573,12 @@ class _IncidentEditorState extends State<IncidentEditor> {
             suffixIcon: GestureDetector(
               child: Icon(Icons.search),
               onTap: () async {
-                if (_meetup.point is Point && _isDescriptionEmpty(_meetup, _meetupController)) {
+                if (_meetup.point is Point) {
                   _meetup = await _updateDescriptionFromPoint(
                     _meetup,
                     'meetup_description',
                     _meetupController,
+                    search: true,
                   );
                 }
                 if (mounted) {

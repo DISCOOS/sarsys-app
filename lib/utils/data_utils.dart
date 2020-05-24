@@ -163,9 +163,30 @@ List<String> asUnitTemplates(String prefix, int count) {
 
 final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
 
-String toCallsign(String prefix, int number) {
+String toCallsign(UnitType type, String prefix, int number) {
+  var base;
+  switch (type) {
+    case UnitType.K9:
+      base = 10;
+      break;
+    case UnitType.Team:
+      base = 20;
+      break;
+    case UnitType.Boat:
+    case UnitType.Vehicle:
+    case UnitType.Snowmobile:
+    case UnitType.ATV:
+      base = 50;
+      break;
+    case UnitType.CommandPost:
+      base = 90;
+      break;
+    case UnitType.Other:
+      break;
+  }
   // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
-  final suffix = "${_callsignFormat.format(number % 10 == 0 ? ++number : number)}";
+  final digits = base + (number % 10 == 0 ? ++number : number);
+  final suffix = "${_callsignFormat.format(digits)}";
   return "$prefix ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
 }
 

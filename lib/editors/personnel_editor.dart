@@ -402,7 +402,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       maxLength: 12,
       maxLengthEnforced: true,
       controller: _phoneController,
-      initialValue: _defaultPhone(),
       decoration: InputDecoration(
         filled: true,
         hintText: 'Skriv inn',

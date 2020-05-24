@@ -270,11 +270,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
           add(_toInternalChange(
             next,
           ));
-        } else if (!state.isRetired()) {
-          // Backend will perform this apriori
-          add(_toInternalCreate(
-            tracking,
-          ));
         }
       } else if (state.isDeleted()) {
         final personnel = (state as PersonnelDeleted).data;

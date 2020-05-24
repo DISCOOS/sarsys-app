@@ -233,7 +233,7 @@ class _IncidentsPageState extends State<IncidentsPage> {
                               onPressed: isAuthorized || hasRoles
                                   ? () async {
                                       if (isCurrent) {
-                                        await _leaveAndReroute();
+                                        await leaveIncident();
                                       } else if (isAuthorized) {
                                         await _joinAndReroute(incident);
                                       } else {
@@ -354,13 +354,6 @@ class _IncidentsPageState extends State<IncidentsPage> {
         onTap: () => _joinAndReroute(incident),
       ),
     );
-  }
-
-  Future _leaveAndReroute() async {
-    final result = await leaveIncident();
-    if (result.isRight()) {
-      jumpToMe(context);
-    }
   }
 
   Future _joinAndReroute(Incident incident) async {

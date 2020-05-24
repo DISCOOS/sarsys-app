@@ -95,7 +95,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
               devices: bloc.devices(unit.tracking.uuid),
               onMessage: onMessage,
               withActions: user?.isCommander == true,
-              onComplete: (_) => Navigator.pop(context),
+              onCompleted: (_) => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),
             ),
           ),

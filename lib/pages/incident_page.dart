@@ -366,21 +366,22 @@ class _IncidentPageState extends State<IncidentPage> {
     GestureTapCallback onValueLongPress,
   }) {
     Widget tile = Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
         if (label != null && label.isNotEmpty) Spacer(),
-        Wrap(children: [
-          Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
-          if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle),
-        ]),
+        Wrap(
+          children: [
+            Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
+            if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle, overflow: TextOverflow.ellipsis),
+          ],
+        ),
         if (emptyAsNull(subtitle) != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
-              subtitle,
-              style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
-            ),
+          Text(
+            subtitle,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
           )
       ],
     );
@@ -421,7 +422,7 @@ class _IncidentPageState extends State<IncidentPage> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          tile,
+          Expanded(child: tile),
           SizedBox(width: IncidentPage.SPACING),
           action,
         ],

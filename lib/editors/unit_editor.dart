@@ -228,7 +228,10 @@ class _UnitEditorState extends State<UnitEditor> {
         .units
         .values
         .where(
-          (unit) => widget.unit?.uuid != unit.uuid && UnitStatus.Retired != unit.status,
+          (unit) => widget.unit?.uuid != unit.uuid,
+        )
+        .where(
+          (unit) => UnitStatus.Retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => isSameNumber(unit, type, number),
