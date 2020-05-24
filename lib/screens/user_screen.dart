@@ -1,16 +1,19 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/models/User.dart';
 import 'package:SarSys/pages/incident_page.dart';
 import 'package:SarSys/pages/user_history_page.dart';
-import 'package:SarSys/pages/user_status_page.dart';
-import 'package:SarSys/pages/user_unit_page.dart';
+import 'package:SarSys/pages/user_pages.dart';
 import 'package:SarSys/screens/screen.dart';
-import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
+import 'package:SarSys/widgets/personnel_widgets.dart';
+import 'package:SarSys/widgets/unit_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -48,6 +51,8 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   final _statusKey = GlobalKey<UserStatusPageState>();
   final _historyKey = GlobalKey<UserHistoryPageState>();
 
+  User _user;
+  Unit _unit;
   Personnel _personnel;
 
   @override
@@ -60,7 +65,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _personnel = context.bloc<PersonnelBloc>().find(context.bloc<UserBloc>().user).firstOrNull;
+    _user = context.bloc<UserBloc>().user;
+    _personnel = context.bloc<PersonnelBloc>().find(_user).firstOrNull;
+    _unit = context.bloc<UnitBloc>().find(_personnel).firstOrNull;
   }
 
   @override
@@ -82,8 +89,15 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           final incident = (snapshot.hasData ? context.bloc<IncidentBloc>().selected : null);
           final tabs = [
-            IncidentPage(onMessage: _showMessage),
-            UserUnitPage(key: _unitKey),
+            IncidentPage(
+              onMessage: _showMessage,
+            ),
+            UserUnitPage(
+              key: _unitKey,
+              unit: _unit,
+              onMessage: _showMessage,
+              onChanged: (unit) => _unit = unit,
+            ),
             UserStatusPage(
               key: _statusKey,
               personnel: _personnel,
@@ -146,25 +160,30 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
             IncidentActionGroup(
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,
-              onDeleted: () => Navigator.pop(context),
-              incident: context.bloc<IncidentBloc>().selected,
               onChanged: (incident) => setState(() {}),
+              incident: context.bloc<IncidentBloc>().selected,
             )
         ];
       case UserScreen.TAB_STATUS:
         return [
           if (_personnel != null)
-            IconButton(
-              icon: Icon(Icons.more_vert),
-              onPressed: () async => await editPersonnel(_personnel),
+            PersonnelActionGroup(
+              personnel: _personnel,
+              onMessage: _showMessage,
+              type: ActionGroupType.popupMenuButton,
+              onChanged: (personnel) => setState(() => _personnel = personnel),
+              unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
             )
         ];
       case UserScreen.TAB_UNIT:
         return [
-          IconButton(
-            icon: Icon(Icons.more_vert),
-            onPressed: () {},
-          )
+          if (_unit != null)
+            UnitActionGroup(
+              unit: _unit,
+              onMessage: _showMessage,
+              type: ActionGroupType.popupMenuButton,
+              onChanged: (unit) => setState(() => _unit = unit),
+            )
         ];
       case UserScreen.TAB_HISTORY:
         return [
