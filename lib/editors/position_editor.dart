@@ -93,6 +93,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(widget.title),
         centerTitle: false,
