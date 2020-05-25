@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:flutter/material.dart';
 
@@ -103,7 +105,9 @@ class _MapControlsState extends State<MapControls> {
   }
 
   List<SizedBox> _buildList(BuildContext context, List<MapControl> controls, int count, bool reversed) {
-    return (reversed ? controls.skip(count).toList().reversed : controls.take(count))
+    return (reversed
+            ? controls.skip(min(count, controls.length)).toList().reversed
+            : controls.take(min(count, controls.length)))
         .expand((control) => [
               if (reversed && control != controls.last || control.children != null) SizedBox(width: SPACING),
               SizedBox(
