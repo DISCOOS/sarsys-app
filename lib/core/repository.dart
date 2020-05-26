@@ -16,7 +16,7 @@ import 'package:hive/hive.dart';
 ///
 /// Use this class to implement a repository that
 /// should cache all changes locally before
-/// attempting to push them to a backend API.
+/// attempting to [commit] them to a backend API.
 ///
 abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   ConnectionAwareRepository({
@@ -26,7 +26,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   final StreamController<StorageState<T>> _controller = StreamController.broadcast();
 
   /// Get stream of state changes
-  Stream<StorageState<T>> get changes => _controller.stream;
+  Stream<StorageState<T>> get onChanged => _controller.stream;
 
   /// Check if repository is empty
   ///
@@ -39,7 +39,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   bool get isEmpty => !isReady || _states.isEmpty;
 
   /// Check if repository is online
-  get isOnline => connectivity.isOnline;
+  get isOnline => _shouldSchedule();
 
   /// Check if repository is offline
   get isOffline => connectivity.isOffline;
@@ -49,6 +49,31 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
 
   /// Get number of states
   int get length => isReady ? _states.length : 0;
+
+  bool _inTransaction = false;
+  bool get inTransaction => _inTransaction;
+
+  /// When in transaction, all
+  /// changes are applied locally.
+  ///
+  /// Calling [commit] will schedule changes
+  void beginTransaction() => _inTransaction = true;
+
+  /// Commit local states to backend
+  ///
+  /// This will set [inTransaction] to false.
+  ///
+  /// Returns list of committed states.
+  ///
+  Future<List<S>> commit() async {
+    _inTransaction = false;
+    states.forEach((key, state) {
+      if (state.isLocal) {
+        _offline(state);
+      }
+    });
+    return _shouldSchedule() ? _online(connectivity.status) : <S>[];
+  }
 
   /// Get value from [key]
   T get(S key) => getState(key)?.value;
@@ -158,42 +183,71 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     return _states.values;
   }
 
-  /// Apply [next] and push to remote
+  /// Apply [next] and [commit] to remote
   @visibleForOverriding
-  FutureOr<T> apply(
-    StorageState<T> state,
-  ) async {
+  FutureOr<T> apply(StorageState<T> state) async {
     checkState();
     final next = validate(state);
-    final exists = commit(next);
+    final exists = put(next);
     if (exists) {
       return schedule(next);
     }
     return next.value;
   }
 
-  /// Schedule state change
+  /// Queue of [StorageState] processed in FIFO manner.
+  ///
+  /// This queue ensures that each [StorageState] is
+  /// processed in order waiting for it to complete of
+  /// fail. This prevents concurrent writes which will
+  /// result in an unexpected behaviour due to race
+  /// conditions.
+  final _pushQueue = ListQueue<StorageState<T>>();
+
+  /// Schedule push state to backend
+  ///
+  /// This method will return before any
+  /// result is received from the backend.
+  ///
+  /// Errors from backend are handled
+  /// automatically by appropriate actions.
   Future<T> schedule(StorageState<T> next) async {
     if (next.isLocal) {
-      if (connectivity.isOnline) {
-        try {
-          final value = await _push(
-            next,
-          );
-          commit(
-            next.remote(value),
-          );
-          return value;
-        } on SocketException {
-          // Timeout - try again later
-        } on Exception catch (error, stackTrace) {
-          onError(error, stackTrace);
+      if (_shouldSchedule()) {
+        if (_pushQueue.isEmpty) {
+          // Process LATER but BEFORE any asynchronous
+          // events like Future, Timer or DOM Event
+          scheduleMicrotask(_process);
         }
-      } // if offline or a SocketException was thrown
+        _pushQueue.add(next);
+        return next.value;
+      }
       return _offline(next);
     }
     return next.value;
   }
+
+  /// Process [StorageState] in FIFO-manner
+  /// until [_pushQueue] is empty.
+  Future _process() async {
+    while (_pushQueue.isNotEmpty) {
+      final next = _pushQueue.first;
+      try {
+        final result = await _push(
+          next,
+        );
+        put(result);
+      } on SocketException {
+        // Timeout - try again later
+        _offline(next);
+      } on Exception catch (error, stackTrace) {
+        onError(error, stackTrace);
+      }
+      _pushQueue.removeFirst();
+    }
+  }
+
+  bool _shouldSchedule() => connectivity.isOnline && !_inTransaction;
 
   /// Subscription for handling  offline -> online
   StreamSubscription<ConnectivityStatus> _pending;
@@ -218,21 +272,21 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   int get retries => _retries;
   int _retries;
 
-  Future _online(ConnectivityStatus status) async {
+  Future<List<S>> _online(ConnectivityStatus status) async {
     _pending?.cancel();
     _retries = 0;
+    final pushed = <S>[];
     while (_backlog.isNotEmpty) {
       final key = _backlog.first;
       try {
         if (containsKey(key)) {
           final state = getState(key);
-          final config = await _push(
+          final result = await _push(
             state,
           );
-          commit(
-            state.remote(config),
-          );
+          put(result);
         }
+        pushed.add(key);
         _backlog.remove(key);
       } on SocketException {
         _retryOnline(status);
@@ -243,15 +297,16 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     if (_backlog.isEmpty) {
       _timer?.cancel();
     }
+    return pushed;
   }
 
   void _retryOnline(ConnectivityStatus status) {
-    if (connectivity.isOnline) {
+    if (_shouldSchedule()) {
       _timer?.cancel();
       _timer = Timer(
         toNextTimeout(_retries, const Duration(seconds: 10)),
         () {
-          if (connectivity.isOnline) {
+          if (_shouldSchedule()) {
             _online(status);
           }
         },
@@ -269,19 +324,28 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   }
 
   /// Push state to remote
-  FutureOr<T> _push(StorageState<T> state) async {
+  FutureOr<StorageState<T>> _push(StorageState<T> state) async {
     if (state.isLocal) {
       switch (state.status) {
         case StorageStatus.created:
-          return await onCreate(state);
+          return StorageState.created(
+            await onCreate(state),
+            remote: true,
+          );
         case StorageStatus.updated:
-          return await onUpdate(state);
+          return StorageState.updated(
+            await onUpdate(state),
+            remote: true,
+          );
         case StorageStatus.deleted:
-          return await onDelete(state);
+          return StorageState.deleted(
+            await onDelete(state),
+            remote: true,
+          );
       }
       throw RepositoryException('Unable to process $state');
     }
-    return state.value;
+    return state;
   }
 
   @protected
@@ -290,8 +354,8 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     final previous = isReady ? _states.get(key) : null;
     switch (state.status) {
       case StorageStatus.created:
-        // Not allowed to create same value twice
-        if (previous == null || previous.isRemote) {
+        // Not allowed to create same value twice remotely
+        if (previous == null || previous.isLocal) {
           return state;
         }
         throw RepositoryStateExistsException(previous, state);
@@ -314,7 +378,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   }
 
   /// Commit [state] to repository
-  bool commit(StorageState<T> state) {
+  bool put(StorageState<T> state) {
     checkState();
     final key = toKey(state);
     final current = _states.get(key);
@@ -349,7 +413,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   StorageState<T> replace(S key, T value, {bool remote}) {
     final current = _assertExist(key, value: value);
     final next = current.replace(value, remote: remote);
-    commit(next);
+    put(next);
     return next;
   }
 

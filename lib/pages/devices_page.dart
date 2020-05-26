@@ -4,7 +4,7 @@ import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Division.dart';

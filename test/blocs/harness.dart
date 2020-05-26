@@ -3,15 +3,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/mock/app_config.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
@@ -20,7 +21,8 @@ import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/repositories/app_config_repository.dart';
+import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/core/storage.dart';
@@ -28,7 +30,7 @@ import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
-import 'package:SarSys/services/app_config_service.dart';
+import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:bloc/bloc.dart';
@@ -61,6 +63,7 @@ class BlocTestHarness implements BlocDelegate {
   String _username;
   String _password;
   bool _authenticated;
+
   UserServiceMock get userService => _userService;
   UserServiceMock _userService;
 
@@ -142,6 +145,7 @@ class BlocTestHarness implements BlocDelegate {
       }
       await Storage.init();
       _buildConnectivity();
+
       if (_withConfigBloc) {
         _buildAppConfigBloc();
       }
@@ -327,9 +331,10 @@ class BlocTestHarness implements BlocDelegate {
 
   void _buildAppConfigBloc() {
     final AppConfigService configService = AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', null);
-    final AppConfigRepository configRepo = AppConfigRepository(
+    final AppConfigRepository configRepo = AppConfigRepositoryImpl(
       APP_CONFIG_VERSION,
-      configService,
+      assets: assetConfig,
+      service: configService,
       connectivity: _connectivity,
     );
     _configBloc = AppConfigBloc(configRepo);
@@ -339,13 +344,13 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withConfigBloc, 'UserBloc requires AppConfigBloc');
     _userService = UserServiceMock.build(
       UserRole.commander,
-      _configBloc.repo,
       _username,
       _password,
     );
     _userBloc = UserBloc(
       UserRepository(
-        userService,
+        auth: AuthTokenRepository(),
+        service: userService,
         connectivity: connectivity,
       ),
       configBloc,

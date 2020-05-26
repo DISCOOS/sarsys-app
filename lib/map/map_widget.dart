@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/map/basemap_card.dart';

@@ -4,21 +4,21 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 
 class ServiceResponse<T> extends Equatable {
-  final int code;
-  final String message;
+  final int statusCode;
+  final String reasonPhrase;
   final T body;
   final Object error;
   final Conflict conflict;
   final StackTrace stackTrace;
 
-  ServiceResponse({this.code, this.message, this.body, this.conflict, this.error, this.stackTrace})
-      : super([code, message, body, conflict, error, stackTrace]);
+  ServiceResponse({this.statusCode, this.reasonPhrase, this.body, this.conflict, this.error, this.stackTrace})
+      : super([statusCode, reasonPhrase, body, conflict, error, stackTrace]);
 
   ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
     return ServiceResponse<T>(
       body: body ?? body,
-      code: code ?? code,
-      message: message ?? message,
+      statusCode: code ?? code,
+      reasonPhrase: message ?? message,
       stackTrace: stackTrace,
       conflict: conflict,
       error: error,
@@ -27,51 +27,51 @@ class ServiceResponse<T> extends Equatable {
 
   static ServiceResponse<T> ok<T>({T body}) {
     return ServiceResponse<T>(
-      code: 200,
-      message: 'OK',
+      statusCode: 200,
+      reasonPhrase: 'OK',
       body: body,
     );
   }
 
   static ServiceResponse<T> noContent<T>({String message = 'No content'}) {
     return ServiceResponse<T>(
-      code: 204,
-      message: message,
+      statusCode: 204,
+      reasonPhrase: message,
     );
   }
 
   static ServiceResponse<T> badRequest<T>({message: 'Bad request'}) {
     return ServiceResponse<T>(
-      code: 400,
-      message: message,
+      statusCode: 400,
+      reasonPhrase: message,
     );
   }
 
   static ServiceResponse<T> unauthorized<T>({message: 'Unauthorized'}) {
     return ServiceResponse<T>(
-      code: 401,
-      message: message,
+      statusCode: 401,
+      reasonPhrase: message,
     );
   }
 
   static ServiceResponse<T> forbidden<T>({message: 'Forbidden'}) {
     return ServiceResponse<T>(
-      code: 403,
-      message: message,
+      statusCode: 403,
+      reasonPhrase: message,
     );
   }
 
   static ServiceResponse<T> notFound<T>({message: 'Not found'}) {
     return ServiceResponse<T>(
-      code: 404,
-      message: message,
+      statusCode: 404,
+      reasonPhrase: message,
     );
   }
 
   static ServiceResponse<T> asConflict<T>({@required Conflict conflict, message: 'Conflict'}) {
     return ServiceResponse<T>(
-      code: 409,
-      message: message,
+      statusCode: 409,
+      reasonPhrase: message,
       conflict: conflict,
     );
   }
@@ -82,22 +82,23 @@ class ServiceResponse<T> extends Equatable {
     StackTrace stackTrace,
   }) {
     return ServiceResponse<T>(
-      code: 500,
-      message: message,
+      statusCode: 500,
+      reasonPhrase: message,
       error: error,
       stackTrace: stackTrace,
     );
   }
 
-  bool get is200 => code == HttpStatus.ok;
-  bool get is201 => code == HttpStatus.created;
-  bool get is202 => code == HttpStatus.accepted;
-  bool get is204 => code == HttpStatus.noContent;
-  bool get is400 => code == HttpStatus.badRequest;
-  bool get is401 => code == HttpStatus.unauthorized;
-  bool get is403 => code == HttpStatus.forbidden;
-  bool get is404 => code == HttpStatus.notFound;
-  bool get is500 => code == HttpStatus.internalServerError;
+  bool get is200 => statusCode == HttpStatus.ok;
+  bool get is201 => statusCode == HttpStatus.created;
+  bool get is202 => statusCode == HttpStatus.accepted;
+  bool get is204 => statusCode == HttpStatus.noContent;
+  bool get is400 => statusCode == HttpStatus.badRequest;
+  bool get is401 => statusCode == HttpStatus.unauthorized;
+  bool get is403 => statusCode == HttpStatus.forbidden;
+  bool get is404 => statusCode == HttpStatus.notFound;
+  bool get is409 => statusCode == HttpStatus.conflict;
+  bool get is500 => statusCode == HttpStatus.internalServerError;
 }
 
 class Conflict {

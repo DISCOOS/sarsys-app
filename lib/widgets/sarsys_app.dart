@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -26,7 +26,7 @@ import 'package:SarSys/screens/splash_screen.dart';
 import 'package:SarSys/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
-import 'package:SarSys/screens/config/settings_screen.dart';
+import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
 import 'package:SarSys/screens/unlock_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
 import 'package:SarSys/services/navigation_service.dart';
@@ -51,7 +51,7 @@ import 'package:provider/provider.dart';
 
 class SarSysApp extends StatefulWidget {
   final PageStorageBucket bucket;
-  final BlocController controller;
+  final AppController controller;
   final GlobalKey<NavigatorState> navigatorKey;
   const SarSysApp({
     Key key,

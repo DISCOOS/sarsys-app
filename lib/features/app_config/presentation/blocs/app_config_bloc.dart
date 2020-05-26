@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Security.dart';
-import 'package:SarSys/repositories/app_config_repository.dart';
-import 'package:SarSys/services/app_config_service.dart';
+import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 
-import 'core.dart';
-import 'mixins.dart';
+import '../../../../blocs/core.dart';
+import '../../../../blocs/mixins.dart';
 
 typedef void AppConfigCallback(VoidCallback fn);
 
@@ -30,7 +30,9 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
 
   /// Initialize config from [service]
   @override
-  Future<AppConfig> init() async => dispatch(InitAppConfig());
+  Future<AppConfig> init({bool local = false}) async => dispatch(InitAppConfig(
+        local: local,
+      ));
 
   /// Load config from [service]
   @override
@@ -115,10 +117,10 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   }
 
   Future<AppConfigState> _init(InitAppConfig event) async {
-    var config = await repo.init();
+    var config = await (event.local ? repo.local() : repo.init());
     return toOK(
       event,
-      AppConfigInitialized(config),
+      AppConfigInitialized(config, local: event.local),
       result: config,
     );
   }
@@ -171,10 +173,11 @@ abstract class AppConfigCommand<T> extends BlocCommand<T, T> {
 }
 
 class InitAppConfig extends AppConfigCommand<AppConfig> {
-  InitAppConfig() : super(null);
+  final bool local;
+  InitAppConfig({this.local = false}) : super(null);
 
   @override
-  String toString() => 'InitAppConfig {}';
+  String toString() => 'InitAppConfig {local: $local}';
 }
 
 class LoadAppConfig extends AppConfigCommand<AppConfig> {
@@ -224,10 +227,11 @@ class AppConfigEmpty extends AppConfigState<Null> {
 }
 
 class AppConfigInitialized extends AppConfigState<AppConfig> {
-  AppConfigInitialized(AppConfig config) : super(config);
+  final bool local;
+  AppConfigInitialized(AppConfig config, {this.local = false}) : super(config);
 
   @override
-  String toString() => 'AppConfigInitialized {config: $data}';
+  String toString() => 'AppConfigInitialized {config: $data, local: $local}';
 }
 
 class AppConfigLoaded extends AppConfigState<AppConfig> {

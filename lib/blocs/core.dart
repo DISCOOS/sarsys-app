@@ -52,7 +52,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
       // Dispatch next command and wait for result
       final command = _dispatchQueue.first;
       super.add(command);
-      //await command.callback.future;
       // Only remove after execution is completed
       _dispatchQueue.removeFirst();
     }

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/map/map_widget.dart';

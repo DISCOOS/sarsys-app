@@ -1,17 +1,13 @@
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-part 'AppConfig.g.dart';
-
-@JsonSerializable()
-class AppConfig extends Aggregate<Map<String, dynamic>> {
+abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   AppConfig({
     @required String uuid,
     @required this.udid,
@@ -97,12 +93,6 @@ class AppConfig extends Aggregate<Map<String, dynamic>> {
   final List<String> trustedDomains;
   final int securityLockAfter;
 
-  /// Factory constructor for creating a new `AppConfig` instance
-  factory AppConfig.fromJson(Map<String, dynamic> json) => _$AppConfigFromJson(json);
-
-  /// Declare support for serialization to JSON
-  Map<String, dynamic> toJson() => _$AppConfigToJson(this);
-
   AppConfig copyWith({
     String uuid,
     String udid,
@@ -131,37 +121,7 @@ class AppConfig extends Aggregate<Map<String, dynamic>> {
     SecurityMode securityMode,
     List<String> trustedDomains,
     int securityLockAfter,
-  }) {
-    return AppConfig(
-      uuid: uuid ?? this.uuid,
-      udid: udid ?? this.udid,
-      version: version ?? this.version,
-      sentryDns: sentry ?? this.sentryDns,
-      demo: demo ?? this.demo,
-      demoRole: demoRole ?? this.demoRole,
-      onboarded: onboarded ?? this.onboarded,
-      firstSetup: firstSetup ?? this.firstSetup,
-      orgId: orgId ?? this.orgId,
-      divId: divId ?? this.divId,
-      depId: depId ?? this.depId,
-      talkGroups: talkGroups ?? this.talkGroups,
-      talkGroupCatalog: talkGroupCatalog ?? this.talkGroupCatalog,
-      storage: storage ?? this.storage,
-      locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
-      mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
-      mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
-      locationAccuracy: locationAccuracy ?? this.locationAccuracy,
-      locationFastestInterval: locationFastestInterval ?? this.locationFastestInterval,
-      locationSmallestDisplacement: locationSmallestDisplacement ?? this.locationSmallestDisplacement,
-      keepScreenOn: keepScreenOn ?? this.keepScreenOn,
-      callsignReuse: callsignReuse ?? this.callsignReuse,
-      units: units ?? this.units,
-      securityType: securityType ?? this.securityType,
-      securityMode: securityMode ?? this.securityMode,
-      trustedDomains: trustedDomains ?? this.trustedDomains,
-      securityLockAfter: securityLockAfter ?? this.securityLockAfter,
-    );
-  }
+  });
 
   DemoParams toDemoParams() => DemoParams(demo, role: toRole());
 
@@ -187,4 +147,9 @@ class AppConfig extends Aggregate<Map<String, dynamic>> {
         heartbeat: DateTime.now(),
         trusted: this.orgId == orgId,
       );
+
+  @override
+  Map<String, dynamic> toJson() {
+    throw UnimplementedError();
+  }
 }

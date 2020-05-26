@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'AppConfig.dart';
+part of 'app_config_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-AppConfig _$AppConfigFromJson(Map json) {
-  return AppConfig(
+AppConfigModel _$AppConfigModelFromJson(Map json) {
+  return AppConfigModel(
     uuid: json['uuid'] as String,
     udid: json['udid'] as String,
     sentryDns: json['sentryDns'] as String,
@@ -41,7 +41,8 @@ AppConfig _$AppConfigFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$AppConfigToJson(AppConfig instance) => <String, dynamic>{
+Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) =>
+    <String, dynamic>{
       'uuid': instance.uuid,
       'udid': instance.udid,
       'version': instance.version,

@@ -1,4 +1,4 @@
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:flutter/material.dart';

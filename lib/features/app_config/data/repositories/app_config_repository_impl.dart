@@ -2,30 +2,33 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
+import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/services/app_config_service.dart';
-import 'package:SarSys/models/AppConfig.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
-class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
-  AppConfigRepository(
-    this.version,
-    this.service, {
+class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> implements AppConfigRepository {
+  AppConfigRepositoryImpl(
+    this.version, {
+    @required this.service,
+    @required this.assets,
     @required ConnectivityService connectivity,
-  }) : super(
-          connectivity: connectivity,
-        );
+  }) : super(connectivity: connectivity);
 
   final int version;
+  final String assets;
   final AppConfigService service;
 
   /// Get current [AppConfig] instance
@@ -34,12 +37,20 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
   /// Get current state
   StorageState<AppConfig> get state => getState(version);
 
-  /// POST ../configs
+  @override
+  Future<AppConfig> local() async {
+    beginTransaction();
+    return apply(
+      await _ensure(force: true),
+    );
+  }
+
+  @override
   Future<AppConfig> init() async => apply(
         await _ensure(force: true),
       );
 
-  /// GET ../configs
+  @override
   Future<AppConfig> load() async {
     final state = await _ensure();
     if (state.isLocal) {
@@ -48,7 +59,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     return _load();
   }
 
-  /// PATCH ../configs/{configId}
+  @override
   Future<AppConfig> update(AppConfig config) async {
     checkState();
     return apply(
@@ -56,7 +67,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     );
   }
 
-  /// PUT ../configs/{configId}
+  @override
   Future<AppConfig> delete() async {
     checkState();
     return apply(
@@ -71,35 +82,41 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     }
     var current = getState(version);
     if (force || current == null) {
-      current = await _local();
-    } else if (current.value.version < version) {
+      current = await _initFromAssets(current);
+    } else if ((current.value.version ?? 0) < version) {
       current = await _upgrade(current);
     }
     return current;
   }
 
-  /// Initialize from local asset
-  Future<StorageState<AppConfig>> _local() async {
-    var asset = await rootBundle.loadString(service.asset);
-    final newJson = jsonDecode(asset) as Map<String, dynamic>;
-    var init = AppConfig.fromJson(newJson);
-    final uuid = Uuid().v4();
+  /// Initialize from assets
+  Future<StorageState<AppConfig>> _initFromAssets(StorageState<AppConfig> current) async {
+    var assetData = await rootBundle.loadString(assets);
+    final newJson = jsonDecode(assetData) as Map<String, dynamic>;
+    var init = AppConfigModel.fromJson(newJson);
     final udid = await FlutterUdid.udid;
-    return StorageState.created(init.copyWith(
-      uuid: uuid,
+    final next = init.copyWith(
+      uuid: current?.value?.uuid ?? Uuid().v4(),
       udid: udid,
       version: version,
-    ));
+    );
+    return current?.isRemote == true
+        ? StorageState.updated(
+            next,
+          )
+        : StorageState.created(
+            next,
+          );
   }
 
   /// Upgrade current configuration
   Future<StorageState<AppConfig>> _upgrade(StorageState<AppConfig> state) async {
-    var asset = await rootBundle.loadString(service.asset);
-    final newJson = jsonDecode(asset) as Map<String, dynamic>;
+    var assetData = await rootBundle.loadString(assets);
+    final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     // Overwrite current configuration
     final next = state.value.toJson();
     next.addAll(newJson);
-    return state.replace(AppConfig.fromJson(next
+    return state.replace(AppConfigModel.fromJson(next
       ..addAll({
         'version': version,
       })));
@@ -111,7 +128,7 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
       try {
         var response = await service.fetch(state.value.uuid);
         if (response.is200) {
-          commit(
+          put(
             StorageState.created(
               response.body,
               remote: true,
@@ -135,9 +152,11 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
 
   @override
   Future<AppConfig> onCreate(StorageState<AppConfig> state) async {
-    var response = await service.create(state.value, version);
-    if (response.is200) {
+    var response = await service.create(state.value);
+    if (response.is201) {
       return response.body;
+    } else if (response.is409) {
+      return _reconcile(state, response.error as ConflictModel);
     }
     throw AppConfigServiceException(
       'Failed to create AppConfig ${state.value}',
@@ -149,6 +168,8 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
     var response = await service.update(state.value);
     if (response.is200) {
       return response.body;
+    } else if (response.is204) {
+      return state.value;
     }
     throw AppConfigServiceException(
       'Failed to update AppConfig ${state.value}',
@@ -166,18 +187,21 @@ class AppConfigRepository extends ConnectionAwareRepository<int, AppConfig> {
       response: response,
     );
   }
-}
 
-class AppConfigServiceException extends RepositoryException {
-  AppConfigServiceException(
-    Object error, {
-    this.response,
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'AppConfigServiceException { $message, response: $response, stackTrace: $stackTrace}';
+  Future<AppConfig> _reconcile(
+    StorageState<AppConfig> state,
+    ConflictModel conflict,
+  ) async {
+    switch (conflict.type) {
+      case ConflictType.exists:
+        return onUpdate(state);
+      case ConflictType.merge:
+        break;
+      case ConflictType.deleted:
+        break;
+    }
+    throw UnimplementedError(
+      "Reconciling conflict type '${enumName(conflict.type)}' not implemented",
+    );
   }
 }

@@ -6,7 +6,7 @@ import 'package:json_patch/json_patch.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
@@ -87,7 +87,7 @@ class PersonnelRepository extends ConnectionAwareRepository<String, Personnel> {
           );
 
           response.body.forEach(
-            (personnel) => commit(
+            (personnel) => put(
               StorageState.created(
                 personnel,
                 remote: true,

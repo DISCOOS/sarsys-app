@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:equatable/equatable.dart';
 
-import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/user_repository.dart';
@@ -16,9 +16,9 @@ import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/user_service.dart';
 
-import 'core.dart';
-import 'mixins.dart';
-import 'app_config_bloc.dart';
+import '../../../../blocs/core.dart';
+import '../../../../blocs/mixins.dart';
+import '../../../app_config/presentation/blocs/app_config_bloc.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
@@ -103,23 +103,20 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Check if current user is authorized to access given [Incident]
   bool isAuthorized(Incident data) {
-    return isAuthenticated &&
-        (_authorized.containsKey(data.uuid) || user.isAuthor(data));
+    return isAuthenticated && (_authorized.containsKey(data.uuid) || user.isAuthor(data));
   }
 
   /// Check if current user is authorized to access given [Incident]
   UserAuthorized getAuthorization(Incident data) {
     if (isAuthenticated) {
       if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
-      if (user?.userId == data.created.userId)
-        return UserAuthorized(user, data, true, true);
+      if (user?.userId == data.created.userId) return UserAuthorized(user, data, true, true);
     }
     return null;
   }
 
   /// Get trusted organization given in [AppConfig]
-  Future<Organization> getTrustedOrg() async =>
-      FleetMapService().fetchOrganization(
+  Future<Organization> getTrustedOrg() async => FleetMapService().fetchOrganization(
         config.orgId,
       );
 
@@ -149,8 +146,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   /// Authenticate user
-  Future<User> login(
-      {String userId, String username, String password, String idpHint}) {
+  Future<User> login({String userId, String username, String password, String idpHint}) {
     return dispatch<User>(LoginUser(
       userId: userId,
       username: username,
@@ -178,8 +174,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   Future<bool> authorize(Incident data, String passcode) {
-    return dispatch<bool>(
-        _assertAuthenticated<User>(AuthorizeUser(data, passcode)));
+    return dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
   }
 
   @override
@@ -302,21 +297,24 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   UserState _authorize(AuthorizeUser command) {
-    bool isCommander = user.isCommander &&
-        (command.data.passcodes.command == command.passcode);
-    bool isPersonnel = user.isPersonnel &&
-        (command.data.passcodes.personnel == command.passcode);
+    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
+    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
       _authorized.putIfAbsent(command.data.uuid, () => state);
       return toOK(command, state, result: true);
     }
-    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"),
-        result: false);
+    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
   }
 
   UserState _toEvent(UserCommand command, Object result) {
     if (result == null) {
+      if (kDebugMode) {
+        developer.log("No user found", level: Level.CONFIG.value);
+      }
+
+      _configure();
+
       return toOK(
         command,
         UserUnset(),
@@ -324,9 +322,11 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       );
     } else if (result is User) {
       if (kDebugMode) {
-        developer.log("User parsed from token: $user",
-            level: Level.CONFIG.value);
+        developer.log("User parsed from token: $user", level: Level.CONFIG.value);
       }
+
+      _configure();
+
       return toOK(
         command,
         UserAuthenticated(user),
@@ -368,6 +368,23 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     );
   }
 
+  /// Configure app config
+  ///
+  /// 1) A new app-config will be created after first install.
+  /// 2) If user is not authorized local AppConfig instance is created
+  /// 3) If user authorized local changes is pushed to server
+  Future _configure() async {
+    if (configBloc.repo.isEmpty) {
+      if (isAuthenticated) {
+        await configBloc.load();
+      } else {
+        await configBloc.init(local: true);
+      }
+    } else if (isAuthenticated) {
+      await configBloc.repo.commit();
+    }
+  }
+
   Object _toAuthResult(UserCommand command) {
     return command is LoadUser || command is LoginUser ? user : true;
   }
@@ -385,8 +402,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   @override
-  UserBlocError createError(Object error, {StackTrace stackTrace}) =>
-      UserBlocError(
+  UserBlocError createError(Object error, {StackTrace stackTrace}) => UserBlocError(
         error,
         stackTrace: StackTrace.current,
       );
@@ -592,6 +608,5 @@ class UserBlocException implements Exception {
   final StackTrace stackTrace;
 
   @override
-  String toString() =>
-      '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
 }

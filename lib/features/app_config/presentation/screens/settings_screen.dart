@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -246,7 +246,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         );
         if (reset) {
           Navigator.pop(context);
-          await Provider.of<BlocController>(context, listen: false).reset();
+          await Provider.of<AppController>(context, listen: false).reset();
         }
       },
     );

@@ -6,7 +6,7 @@ import 'package:json_patch/json_patch.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -64,7 +64,7 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
             retainKeys: response.body.map((device) => device.uuid),
           );
           response.body.forEach(
-            (incident) => commit(
+            (incident) => put(
               StorageState.created(
                 incident,
                 remote: true,

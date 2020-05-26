@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:SarSys/models/AppConfig.dart';
+import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/Device.dart';
@@ -22,6 +23,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'page_state.dart';
 
 class Storage {
+  static const CURRENT_USER_ID_KEY = 'current_user_id';
+
   static int _typeId = 0;
   static bool _initialized = false;
 
@@ -29,6 +32,15 @@ class Storage {
 
   static FlutterSecureStorage get secure => _storage;
   static FlutterSecureStorage _storage = FlutterSecureStorage();
+
+  static Future<String> readUserId() => secure.read(key: CURRENT_USER_ID_KEY);
+  static Future<void> writeUserId(String userId) => Storage.secure.write(
+        key: CURRENT_USER_ID_KEY,
+        value: userId,
+      );
+  static Future<void> deleteUserId() => Storage.secure.delete(
+        key: CURRENT_USER_ID_KEY,
+      );
 
   static String userKey(User user, String suffix) => '${user.userId}_$suffix';
 
@@ -74,7 +86,7 @@ class Storage {
     if (_typeId == 0) {
       // DO NOT RE-ORDER THESE, only append! Hive expects typeId to be stable
       _registerStorageStateJsonAdapter<AppConfig>(
-        fromJson: (data) => AppConfig.fromJson(data),
+        fromJson: (data) => AppConfigModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerTypeJsonAdapter<AuthToken>(
@@ -155,7 +167,7 @@ class Storage {
     _initialized = false;
     try {
       // Deletes only open boxes
-//      await Hive.deleteFromDisk();
+      await Hive.deleteFromDisk();
     } on Exception catch (e) {
       // Don't fail on this
       print(e);

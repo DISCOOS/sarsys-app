@@ -1,5 +1,5 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/widgets/affilliation.dart';

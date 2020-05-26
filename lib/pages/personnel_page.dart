@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';

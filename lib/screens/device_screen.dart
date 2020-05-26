@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';

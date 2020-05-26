@@ -1,5 +1,5 @@
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/navigation_service.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';
 import 'package:SarSys/widgets/network_sensitive.dart';
@@ -7,14 +7,14 @@ import 'package:SarSys/widgets/sarsys_app.dart';
 import 'package:SarSys/widgets/screen_report.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 
-import 'blocs/app_config_bloc.dart';
+import 'features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'core/page_state.dart';
 
 void main() async {
@@ -31,7 +31,7 @@ void main() async {
   BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
 
   // Build and initialize bloc provider
-  final controller = BlocController.build(client, demo: DemoParams(true));
+  final controller = AppController.build(client, demo: DemoParams(false));
 
   // SarSysApp widget will handle rebuilds
   controller.init().then((_) {
@@ -49,7 +49,7 @@ void main() async {
 
 // Convenience method for creating SarSysApp
 Widget _createApp(
-  BlocController controller,
+  AppController controller,
   PageStorageBucket bucket,
 ) {
   debugPrint("main:_createApp: ${controller.state}");
@@ -69,7 +69,7 @@ Widget _createApp(
 }
 
 // Convenience method for running apps with Catcher
-void runAppWithCatcher(Widget app, BlocController controller) {
+void runAppWithCatcher(Widget app, AppController controller) {
   final sentryDns = controller.bloc<AppConfigBloc>().config.sentryDns;
   final localizationOptions = LocalizationOptions(
     "nb",

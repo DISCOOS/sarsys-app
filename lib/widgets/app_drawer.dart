@@ -1,10 +1,10 @@
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/models/Incident.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/screens/command_screen.dart';
-import 'package:SarSys/screens/config/settings_screen.dart';
+import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
 import 'package:SarSys/screens/incidents_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/user_screen.dart';
@@ -132,7 +132,7 @@ class _AppDrawerState extends State<AppDrawer> {
     return ListTile(
       enabled: !isUnset,
       leading: const Icon(Icons.warning),
-      title: Text('Aksjon', style: TextStyle(fontSize: 14)),
+      title: Text('Min aksjon', style: TextStyle(fontSize: 14)),
       onTap: () {
         Navigator.pushReplacementNamed(context, UserScreen.ROUTE_INCIDENT);
       },

@@ -7,7 +7,7 @@ import 'package:SarSys/services/tracking_service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -121,7 +121,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
           );
 
           response.body.forEach(
-            (unit) => commit(
+            (unit) => put(
               StorageState.created(
                 unit,
                 remote: true,
@@ -184,9 +184,9 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
 
   /// Commit [state] to repository
   @override
-  bool commit(StorageState<Tracking> state) {
+  bool put(StorageState<Tracking> state) {
     final tuuid = state.value.uuid;
-    final exists = super.commit(state);
+    final exists = super.put(state);
     if (exists) {
       _addToIndex(state.value, tuuid);
     } else {

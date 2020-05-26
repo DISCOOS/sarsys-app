@@ -1,4 +1,7 @@
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/user_service.dart';
@@ -30,10 +33,12 @@ void main() async {
 
       // Act
       await harness.userBloc.load();
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigInitialized>()));
 
       // Assert
       expect(harness.userBloc.user, isNull, reason: "SHOULD NOT have user");
       expect(harness.userBloc, emits(isA<UserUnset>()));
+      expect(harness.configBloc.config, isA<AppConfig>(), reason: "SHOULD HAVE an AppConfig");
     });
 
     test('and UNSET, user SHOULD login', () async {
@@ -47,12 +52,17 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
+      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
+      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
     });
 
     test('SHOULD reload user', () async {
       // Arrange
       harness.connectivity.cellular();
       await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
 
       // Act
       await harness.userBloc.load();
@@ -61,6 +71,10 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
+      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
+      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
     });
 
     test('and USER token is INVALID, token SHOULD be refreshed', () async {
@@ -68,6 +82,7 @@ void main() async {
       harness.connectivity.cellular();
       harness.userService.setCredentials(maxAge: Duration.zero);
       await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
 
       // Act
       await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
@@ -76,6 +91,10 @@ void main() async {
       verify(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
+      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
+      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
     });
 
     test('User SHOULD BE secured using PIN', () async {
@@ -83,7 +102,7 @@ void main() async {
       await _testAnyAuthenticatedSecuredByPin(harness, false);
     });
 
-    test('and UN-TRUSTED User is AUTHENTICATED, securing SHOULD NOT yield trust', () async {
+    test('and UN-TRUSTED User is AUTHENTICATED, securing SHOULD NOT yield trust ewrwerwer', () async {
       await _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(harness, false);
     });
 
@@ -120,6 +139,10 @@ void main() async {
       // Arrange
       harness.connectivity.cellular();
       await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      final newOrgId = '123456';
+      await harness.configBloc.updateWith(orgId: newOrgId);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigUpdated>()));
 
       // Act
       harness.connectivity.offline();
@@ -129,6 +152,10 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
+      expect(harness.configBloc.repo.state.status, StorageStatus.updated, reason: "SHOULD HAVE updated status");
+      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
+      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
+      expect(harness.configBloc.config.orgId, newOrgId, reason: "SHOULD have unchanged config");
     });
 
     test('and User token is INVALID, token SHOULD not refresh', () async {
@@ -136,6 +163,7 @@ void main() async {
       harness.connectivity.cellular();
       harness.userService.setCredentials(maxAge: Duration.zero);
       await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
 
       // Act
       harness.connectivity.offline();
@@ -236,6 +264,7 @@ Future _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(BlocTestHarness
   // Arrange
   harness.connectivity.cellular();
   await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
   if (offline) {
     harness.connectivity.offline();
   }
@@ -256,6 +285,7 @@ Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHar
   // Arrange
   harness.connectivity.cellular();
   await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
+  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
   if (offline) {
     harness.connectivity.offline();
   }
@@ -268,6 +298,10 @@ Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHar
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
   expect(harness.userBloc.repo.get(UNTRUSTED), isNull, reason: "SHOULD DELETE User");
   expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
+  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+  expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
+  expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
+  expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
 }
 
 Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness harness, bool offline) async {

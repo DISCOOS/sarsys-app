@@ -250,8 +250,8 @@ class UserCredentialsService extends UserService {
         return ServiceResponse.forbidden();
       }
       return ServiceResponse(
-        code: response.statusCode,
-        message: response.reasonPhrase,
+        statusCode: response.statusCode,
+        reasonPhrase: response.reasonPhrase,
       );
     } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(

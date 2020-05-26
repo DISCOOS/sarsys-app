@@ -78,6 +78,7 @@ dependencies:
   cached_network_image: 2.2.0+1
   flutter_cache_manager: 1.2.2
   flutter_phoenix: ^0.1.0
+  chopper: ^3.0.2
 
   # Mocking support
   uuid: ^2.0.2
@@ -105,6 +106,7 @@ dependency_overrides:
     git:
       url: https://github.com/aagarwal1012/IntroViews-Flutter.git
       ref: master
+
   flutter_chips_input:
     path: ../flutter_chips_input
 #    git:
@@ -124,6 +126,7 @@ dev_dependencies:
   bloc_test: ^4.0.0
   build_runner: ^1.8.0
   json_serializable: ^3.2.5
+  chopper_generator: ^3.0.4
 
 flutter_icons:
   android: true #"launcher_icon"

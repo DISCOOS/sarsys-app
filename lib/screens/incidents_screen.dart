@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Incident.dart';

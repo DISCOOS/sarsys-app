@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/models/Organization.dart';

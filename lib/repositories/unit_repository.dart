@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:json_patch/json_patch.dart';
 
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -155,7 +155,7 @@ class UnitRepository extends ConnectionAwareRepository<String, Unit> {
             retainKeys: response.body.map((unit) => unit.uuid),
           );
           response.body.forEach(
-            (unit) => commit(
+            (unit) => put(
               StorageState.created(
                 unit,
                 remote: true,

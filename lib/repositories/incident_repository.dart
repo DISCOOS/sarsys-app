@@ -6,7 +6,7 @@ import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/incident_service.dart';
-import 'package:SarSys/repositories/repository.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/models/Incident.dart';
 
 class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
@@ -68,7 +68,7 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
             retainKeys: response.body.map((incident) => incident.uuid),
           );
           response.body.forEach(
-            (incident) => commit(
+            (incident) => put(
               StorageState.created(
                 incident,
                 remote: true,

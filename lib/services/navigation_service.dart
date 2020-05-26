@@ -1,4 +1,4 @@
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +14,7 @@ class NavigationService {
   OverlayState get overlay => navigatorKey.currentState.overlay;
   BuildContext get context => navigatorKey.currentContext;
 
-  BlocController get controller => Provider.of<BlocController>(context);
+  AppController get controller => Provider.of<AppController>(context);
 
   Future<T> pushReplacementNamed<T extends Object>(
     String path, {

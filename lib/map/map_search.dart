@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Point.dart';
@@ -88,7 +88,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     super.didChangeDependencies();
     engine = MapSearchEngine(
       Provider.of<Client>(context),
-      Provider.of<BlocController>(context),
+      Provider.of<AppController>(context),
       withRetired: widget.withRetired,
     );
   }
@@ -454,7 +454,7 @@ class MapSearchEngine {
 
   MapSearchEngine(
     this.client,
-    BlocController controller, {
+    AppController controller, {
     bool withRetired,
   })  : this._placeGeocoderService = PlaceGeocoderService(client),
         this._addressGeocoderService = AddressGeocoderService(client),

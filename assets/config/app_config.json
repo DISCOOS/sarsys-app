@@ -1,6 +1,6 @@
 {
-  "demo": true,
-  "demoRole": "Commander",
+  "demo": false,
+  "demoRole": "commander",
   "onboarded": false,
   "firstSetup": false,
   "orgId": "61",

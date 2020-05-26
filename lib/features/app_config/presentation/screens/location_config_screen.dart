@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -21,16 +21,15 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   final _displacement = TextEditingController();
   final _interval = TextEditingController();
 
-  AppConfigBloc _bloc;
   LocationService _locationService;
+  AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bloc = context.bloc<AppConfigBloc>();
-    _interval.text = "${_bloc.config.locationFastestInterval ~/ 1000}";
-    _displacement.text = "${_bloc.config.locationSmallestDisplacement}";
-    _locationService = LocationService(_bloc);
+    _interval.text = "${bloc.config.locationFastestInterval ~/ 1000}";
+    _displacement.text = "${bloc.config.locationSmallestDisplacement}";
+    _locationService = LocationService(bloc);
   }
 
   @override
@@ -87,7 +86,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                         "Dette vil konfigurere posisjonstjenesten på nytt, vil du forsette?",
                       );
                       if (answer) {
-                        await LocationService(_bloc).configure(force: true);
+                        await LocationService(bloc).configure(force: true);
                         setState(() {});
                       }
                     },
@@ -97,7 +96,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                     tooltip: "Be om min posisjon",
                     padding: EdgeInsets.zero,
                     onPressed: () async {
-                      await LocationService(_bloc).update();
+                      await LocationService(bloc).update();
                     },
                   ),
                   IconButton(
@@ -173,8 +172,13 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                         child: Text("${LocationService.toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
-              onChanged: (value) => setState(() => _bloc.updateWith(locationAccuracy: enumName(value))),
-              value: _bloc.config?.toLocationAccuracy(),
+              onChanged: (value) async {
+                await bloc.updateWith(
+                  locationAccuracy: enumName(value),
+                );
+                setState(() {});
+              },
+              value: bloc.config?.toLocationAccuracy(),
             ),
           ),
         ],
@@ -208,7 +212,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.updateWith(locationSmallestDisplacement: int.parse(value ?? 0));
+                bloc.updateWith(locationSmallestDisplacement: int.parse(value ?? 0));
               },
             ),
           ),
@@ -243,7 +247,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                _bloc.updateWith(locationFastestInterval: int.parse(value ?? 0) * 1000);
+                bloc.updateWith(locationFastestInterval: int.parse(value ?? 0) * 1000);
               },
             ),
           ),

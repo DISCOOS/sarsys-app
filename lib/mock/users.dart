@@ -1,6 +1,6 @@
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/repositories/app_config_repository.dart';
+import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -45,7 +45,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   AuthToken get token => _token;
   static AuthToken _token;
 
-  static UserServiceMock build(UserRole role, AppConfigRepository configRepo, String username, String password) {
+  static UserServiceMock build(UserRole role, String username, String password) {
     final UserServiceMock mock = UserServiceMock();
     UserServiceMock._username = username;
     UserServiceMock._password = password;
@@ -61,11 +61,10 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       if (userId != null && userId == _token?.userId && _token.isValid) {
         return ServiceResponse.ok(body: _token);
       } else if (_credentialsMatch(_)) {
-        UserRole actual = toRole(configRepo, role);
         final domain = UserService.toDomain(UserServiceMock.username);
         _token = createToken(
           UserServiceMock.username,
-          actual,
+          role,
           maxAge: _maxAge,
           email: domain != null ? UserServiceMock.username : domain,
         );

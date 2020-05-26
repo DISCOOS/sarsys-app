@@ -4,7 +4,7 @@ import 'package:latlong/latlong.dart';
 
 class Defaults {
   static const String baseWsUrl = 'wss://sarsys.app';
-  static const String baseRestUrl = 'https://sarsys.app';
+  static const String baseRestUrl = 'https://sarsys.app/api';
   static const double zoom = 16.0;
   static const double minZoom = 3.0;
   static const double maxZoom = 20.0;

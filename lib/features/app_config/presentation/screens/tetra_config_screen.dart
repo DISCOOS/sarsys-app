@@ -1,4 +1,4 @@
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/TalkGroup.dart';

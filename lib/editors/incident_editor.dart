@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
-import 'package:SarSys/controllers/bloc_controller.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/map_widget.dart';
@@ -86,7 +86,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     _incidentBloc = context.bloc<IncidentBloc>();
     _engine = MapSearchEngine(
       Provider.of<Client>(context),
-      Provider.of<BlocController>(context),
+      Provider.of<AppController>(context),
     );
     _initLocation();
     _updateDescriptions();

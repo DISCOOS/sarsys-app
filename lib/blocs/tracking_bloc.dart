@@ -645,7 +645,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         if (current == null) {
           // Not found
           next = Tracking.fromJson(event.data.json);
-          repo.commit(
+          repo.put(
             StorageState.created(next, remote: remote),
           );
         } else {
@@ -655,7 +655,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             repo.replace(event.data.uuid, next, remote: remote);
           } else {
             // Commit remote state
-            repo.commit(StorageState.created(next, remote: remote));
+            repo.put(StorageState.created(next, remote: remote));
           }
         }
         yield TrackingCreated(next);
@@ -669,7 +669,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             repo.replace(event.data.uuid, next, remote: !event.internal);
           } else {
             // Commit remote state
-            repo.commit(StorageState.updated(next, remote: remote));
+            repo.put(StorageState.updated(next, remote: remote));
           }
           yield TrackingUpdated(next);
         }
@@ -678,7 +678,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final tracking = repo[event.data.uuid];
         if (tracking != null) {
           final next = TrackingUtils.close(tracking);
-          repo.commit(
+          repo.put(
             StorageState.deleted(next, remote: remote),
           );
           yield TrackingDeleted(next);

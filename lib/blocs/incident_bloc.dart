@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 
 import 'core.dart';
 import 'mixins.dart';
-import 'user_bloc.dart';
+import '../features/user/presentation/blocs/user_bloc.dart';
 
 class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBlocError>
     with

@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/streams.dart';
+import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
+import 'package:SarSys/core/api.dart';
+import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -10,7 +14,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
@@ -26,23 +29,23 @@ import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/services/app_config_service.dart';
+import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:SarSys/services/incident_service.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/services/user_service.dart';
-import 'package:SarSys/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 
-import '../models/AppConfig.dart';
+import '../features/app_config/domain/entities/AppConfig.dart';
 
-class BlocController {
-  BlocController._internal(
+class AppController {
+  AppController._(
     this.client,
     DemoParams demo,
   ) : _demo = demo ?? DemoParams.NONE;
@@ -52,8 +55,11 @@ class BlocController {
 
   BlocEventBus get bus => delegate.bus;
 
-  DemoParams _demo;
+  Api get api => _api;
+  Api _api;
+
   DemoParams get demo => _demo;
+  DemoParams _demo;
 
   T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
   final _blocs = <Type, Bloc>{};
@@ -100,41 +106,57 @@ class BlocController {
       ];
 
   /// Create providers for mocking
-  factory BlocController.build(
+  factory AppController.build(
     Client client, {
     DemoParams demo = DemoParams.NONE,
   }) {
-    return _build(BlocController._internal(client, demo), demo, client);
+    return _build(AppController._(client, demo), demo, client);
   }
 
-  static BlocController _build(BlocController controller, DemoParams demo, Client client) {
+  static AppController _build(AppController controller, DemoParams demo, Client client) {
     final baseWsUrl = Defaults.baseWsUrl;
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
 
+    // --------------
+    // Build services
+    // --------------
     final connectivityService = ConnectivityService();
 
     final AppConfigService configService = !demo.active
-        ? AppConfigService(client: client, asset: assetConfig, baseUrl: '$baseRestUrl/api/app-config')
+        ? AppConfigService(client: client, baseUrl: '$baseRestUrl/api/app-config')
         : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
-    // ignore: close_sinks
-    final AppConfigBloc configBloc = AppConfigBloc(AppConfigRepository(
-      APP_CONFIG_VERSION,
-      configService,
-      connectivity: connectivityService,
-    ));
 
-    // Configure user service and repo
     final userService = UserIdentityService(client);
+
+    // ------------------
+    // Build repositories
+    // ------------------
+    final authRepo = AuthTokenRepository();
     final userRepo = UserRepository(
-      userService,
+      service: userService,
+      auth: authRepo,
       connectivity: connectivityService,
     );
+    final configRepo = AppConfigRepositoryImpl(
+      APP_CONFIG_VERSION,
+      assets: assetConfig,
+      service: configService,
+      connectivity: connectivityService,
+    );
+
+    // -----------
+    // Build blocs
+    // -----------
+
+    // ignore: close_sinks
+    final AppConfigBloc configBloc = AppConfigBloc(configRepo);
+
     // ignore: close_sinks
     final UserBloc userBloc = UserBloc(userRepo, configBloc);
 
     // Configure Incident service
-    final IncidentService incidentService = !demo.active
+    final IncidentService incidentService = !(demo.active || true)
         ? IncidentService('$baseRestUrl/api/incidents', client)
         : IncidentServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
     final IncidentBloc incidentBloc = IncidentBloc(
@@ -146,7 +168,7 @@ class BlocController {
         userBloc);
 
     // Configure Personnel service
-    final PersonnelService personnelService = !demo.active
+    final PersonnelService personnelService = !(demo.active || true)
         ? PersonnelService('$baseRestUrl/api/personnel', '$baseWsUrl/api/incidents', client)
         : PersonnelServiceMock.build(
             demo.personnelCount,
@@ -162,7 +184,7 @@ class BlocController {
         incidentBloc);
 
     // Configure Unit service
-    final UnitService unitService = !demo.active
+    final UnitService unitService = !(demo.active || true)
         ? UnitService('$baseRestUrl/api/incidents', client)
         : UnitServiceMock.build(
             demo.unitCount,
@@ -179,7 +201,7 @@ class BlocController {
         personnelBloc);
 
     // Configure Device service
-    final DeviceService deviceService = !demo.active
+    final DeviceService deviceService = !(demo.active || true)
         ? DeviceService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : DeviceServiceMock.build(
             incidentBloc,
@@ -199,7 +221,7 @@ class BlocController {
     );
 
     // Configure Tracking service
-    final TrackingService trackingService = !demo.active
+    final TrackingService trackingService = !(demo.active || true)
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : TrackingServiceMock.build(
             deviceService,
@@ -221,7 +243,23 @@ class BlocController {
       personnelBloc: personnelBloc,
     );
 
+    final api = Api(
+      httpClient: client,
+      baseRestUrl: baseRestUrl,
+      users: userRepo,
+      services: [
+//        unitService.delegate,
+        if (configService.delegate != null)
+          configService.delegate,
+//        deviceService.delegate,
+//        incidentService.delegate,
+//        trackingService.delegate,
+//        personnelService.delegate,
+      ],
+    );
+
     return controller._set(
+      api: api,
       demo: demo,
       configBloc: configBloc,
       userBloc: userBloc,
@@ -248,7 +286,7 @@ class BlocController {
   }
 
   /// Initialize application state
-  Future<BlocController> init() async {
+  Future<AppController> init() async {
     if (BlocControllerState.Built == _state) {
       await _init();
     }
@@ -256,11 +294,6 @@ class BlocController {
   }
 
   Future _init() async {
-    // Load current app-config.
-    // A new app-config will be
-    // created after first install.
-    await bloc<AppConfigBloc>().load();
-
     // If 'current_user_id' in
     // secure storage exists in bloc
     // and access token is valid, this
@@ -271,8 +304,17 @@ class BlocController {
     // incident.
     await bloc<UserBloc>().load();
 
+    // Wait for config to become available
+    final config = await waitThroughStateWithData<AppConfigState, AppConfig>(
+      bloc<AppConfigBloc>(),
+      map: (state) => state.data,
+      test: (state) => state.data is AppConfig,
+      timeout: Duration(hours: 1),
+      fail: true,
+    );
+
     // Override demo parameter from persisted config
-    _demo = bloc<AppConfigBloc>().config.toDemoParams();
+    _demo = config.toDemoParams();
 
     // Allow _onUserChange to transition to next legal state
     _controller.add(_state = BlocControllerState.Initialized);
@@ -299,7 +341,8 @@ class BlocController {
     _rebuild(demo: _demo, force: true);
   }
 
-  BlocController _set({
+  AppController _set({
+    @required Api api,
     @required DemoParams demo,
     @required AppConfigBloc configBloc,
     @required UserBloc userBloc,
