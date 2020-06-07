@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
@@ -12,12 +12,12 @@ import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -463,7 +463,7 @@ void main() async {
         ),
         act: (unit) async {
           await harness.unitBloc.update(
-            unit.cloneWith(status: UnitStatus.Retired),
+            unit.copyWith(status: UnitStatus.Retired),
           );
           await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
         },
@@ -480,7 +480,7 @@ void main() async {
         arrange: (iuuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
         act: (personnel) async {
           await harness.personnelBloc.update(
-            personnel.cloneWith(status: PersonnelStatus.Retired),
+            personnel.copyWith(status: PersonnelStatus.Retired),
           );
           await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelUpdated>()));
         },
@@ -973,7 +973,7 @@ void main() async {
         arrange: (iuuid) async => await harness.unitBloc.create(UnitBuilder.create()),
         act: (unit) async {
           await harness.unitBloc.update(
-            unit.cloneWith(status: UnitStatus.Retired),
+            unit.copyWith(status: UnitStatus.Retired),
           );
           await expectThroughLater(harness.unitBloc, emits(isA<UnitUpdated>()));
         },
@@ -990,7 +990,7 @@ void main() async {
         arrange: (iuuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
         act: (personnel) async {
           await harness.personnelBloc.update(
-            personnel.cloneWith(status: PersonnelStatus.Retired),
+            personnel.copyWith(status: PersonnelStatus.Retired),
           );
           await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelUpdated>()));
         },
@@ -1706,7 +1706,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
     ),
     act: (personnel) async {
       await harness.personnelBloc.update(
-        personnel.cloneWith(status: PersonnelStatus.Retired),
+        personnel.copyWith(status: PersonnelStatus.Retired),
       );
       await expectThroughLater(
         harness.personnelBloc,
@@ -1722,7 +1722,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
     status: TrackingStatus.created,
     act: () async {
       final next = await harness.personnelBloc.update(
-        personnel.cloneWith(status: status),
+        personnel.copyWith(status: status),
       );
       await expectThroughLater(
         harness.personnelBloc,
@@ -1744,7 +1744,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
     arrange: (iuuid) async => await harness.unitBloc.create(UnitBuilder.create()),
     act: (personnel) async {
       await harness.unitBloc.update(
-        personnel.cloneWith(status: UnitStatus.Retired),
+        personnel.copyWith(status: UnitStatus.Retired),
       );
       await expectThroughLater(
         harness.unitBloc,
@@ -1760,7 +1760,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
     status: TrackingStatus.created,
     act: () async {
       final next = await harness.unitBloc.update(
-        unit.cloneWith(status: status),
+        unit.copyWith(status: status),
       );
       await expectThroughLater(
         harness.unitBloc,

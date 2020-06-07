@@ -1,9 +1,9 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/editors/device_editor.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/device/presentation/editors/device_editor.dart';
 import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/widgets.dart';

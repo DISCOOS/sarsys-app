@@ -11,7 +11,7 @@ import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
 class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   TrackingRepository(

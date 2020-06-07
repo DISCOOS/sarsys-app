@@ -8,8 +8,7 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   DeviceService get service;
 
   /// Get [Incident.uuid]
-  String get iuuid => _iuuid;
-  String _iuuid;
+  String get iuuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with

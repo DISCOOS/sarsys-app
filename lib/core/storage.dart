@@ -5,13 +5,15 @@ import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/incident/data/models/incident_model.dart';
+import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
 
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -104,11 +106,11 @@ class Storage {
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Unit>(
-        fromJson: (data) => Unit.fromJson(data),
+        fromJson: (data) => UnitModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Personnel>(
-        fromJson: (data) => Personnel.fromJson(data),
+        fromJson: (data) => PersonnelModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Device>(

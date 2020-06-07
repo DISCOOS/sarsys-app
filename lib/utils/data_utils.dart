@@ -4,7 +4,7 @@ import 'dart:collection';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';
 

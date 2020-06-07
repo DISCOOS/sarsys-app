@@ -6,15 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/position_editor.dart';
-import 'package:SarSys/editors/unit_editor.dart';
+import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/pages/units_page.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 
@@ -229,7 +229,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     // Add personnel to Unit?
     if (params.personnels?.isNotEmpty == true) {
       params.bloc.update(
-        unit.cloneWith(
+        unit.copyWith(
           personnels: List.from(unit.personnels ?? [])..addAll(params.personnels),
         ),
       );
@@ -324,7 +324,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     // Remove personnel from Unit?
     if (params.personnels?.isNotEmpty == true) {
       params.bloc.update(
-        unit.cloneWith(
+        unit.copyWith(
           personnels: keepPersonnel,
         ),
       );
@@ -425,7 +425,7 @@ Future<dartz.Either<bool, Unit>> _transitionUnit(UnitParams params, UnitStatus s
     var response = await prompt(params.overlay.context, action, message);
     if (!response) return dartz.Left(false);
   }
-  final unit = await params.bloc.update(params.data.cloneWith(status: status));
+  final unit = await params.bloc.update(params.data.copyWith(status: status));
   return dartz.Right(unit);
 }
 

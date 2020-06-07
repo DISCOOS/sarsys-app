@@ -7,7 +7,7 @@ import 'AggregateRef.dart';
 import 'Coordinates.dart';
 import '../features/incident/domain/entities/Incident.dart';
 import 'Tracking.dart';
-import 'Unit.dart';
+import '../features/unit/domain/entities/Unit.dart';
 
 class LatLngConverter implements JsonConverter<LatLng, Map<String, dynamic>> {
   const LatLngConverter();

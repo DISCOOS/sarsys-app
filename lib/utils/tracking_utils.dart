@@ -3,13 +3,13 @@ import 'dart:math';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Source.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -88,19 +88,17 @@ class TrackingUtils {
   /// If [source] is not a supported
   /// type an [ArgumentError] is thrown
   static bool isSourceActive(Aggregate source) {
-    final type = source.runtimeType;
-    switch (type) {
-      case Device:
-        return DeviceStatus.Available == (source as Device).status;
-      case Unit:
-        return UnitStatus.Retired != (source as Unit).status;
-      case Personnel:
-        return PersonnelStatus.Retired != (source as Personnel).status;
-      case Tracking:
-        return TrackingStatus.closed != (source as Tracking).status;
+    if (source is Device) {
+      return DeviceStatus.Available == source.status;
+    } else if (source is Unit) {
+      return UnitStatus.Retired != source.status;
+    } else if (source is Personnel) {
+      return PersonnelStatus.Retired != source.status;
+    } else if (source is Tracking) {
+      return TrackingStatus.closed != source.status;
     }
     throw ArgumentError(
-      "Aggregate $type not supported as tracking Source",
+      "Aggregate ${source.runtimeType} not supported as tracking Source",
     );
   }
 

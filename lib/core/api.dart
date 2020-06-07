@@ -6,6 +6,8 @@ import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/incident/data/models/incident_model.dart';
+import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:chopper/chopper.dart';
@@ -15,9 +17,9 @@ import 'package:http/http.dart' as http;
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 
 class Api {
@@ -30,13 +32,15 @@ class Api {
           services: services,
           baseUrl: baseRestUrl,
           converter: JsonSerializableConverter({
+            typeOf<List<Unit>>(): _toUnitList,
+            typeOf<List<Device>>(): _toDeviceList,
             typeOf<List<Incident>>(): _toIncidentList,
-            typeOf<List<Device>>(): (json) => _toDeviceList,
-            Unit: (json) => json['data'] == null ? null : Unit.fromJson(json['data']),
+            typeOf<List<Personnel>>(): _toPersonnelList,
+            Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
             Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
             Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
             Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
-            Personnel: (json) => json['data'] == null ? null : Personnel.fromJson(json['data']),
+            Personnel: (json) => json['data'] == null ? null : PersonnelModel.fromJson(json['data']),
             AppConfig: (json) => json['data'] == null ? null : AppConfigModel.fromJson(json['data']),
           }),
           interceptors: [
@@ -45,25 +49,18 @@ class Api {
           ],
         );
 
-  static List<Device> _toDeviceList(Map<String, dynamic> json) {
-    return json['entries'] == null
-        ? <Device>[]
-        : List.from(json['entries'])
-            .map(
-              (json) => DeviceModel.fromJson(json['data']),
-            )
-            .toList();
-  }
+  static List<Unit> _toUnitList(Map<String, dynamic> json) => _toList<Unit>(json);
+  static List<Device> _toDeviceList(Map<String, dynamic> json) => _toList<Device>(json);
+  static List<Incident> _toIncidentList(Map<String, dynamic> json) => _toList<Incident>(json);
+  static List<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toList<Personnel>(json);
 
-  static List<Incident> _toIncidentList(Map<String, dynamic> json) {
-    return json['entries'] == null
-        ? <Incident>[]
-        : List.from(json['entries'])
-            .map(
-              (json) => IncidentModel.fromJson(json['data']),
-            )
-            .toList();
-  }
+  static List<T> _toList<T>(Map<String, dynamic> json) => json['entries'] == null
+      ? <T>[]
+      : List.from(json['entries'])
+          .map(
+            (json) => DeviceModel.fromJson(json['data']),
+          )
+          .toList();
 
   final String baseRestUrl;
   final UserRepository users;

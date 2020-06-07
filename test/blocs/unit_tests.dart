@@ -1,11 +1,11 @@
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -86,7 +86,7 @@ void main() async {
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
-      await harness.unitBloc.update(unit.cloneWith(status: UnitStatus.Deployed));
+      await harness.unitBloc.update(unit.copyWith(status: UnitStatus.Deployed));
 
       // Assert
       verify(harness.unitService.update(any)).called(1);
@@ -250,7 +250,7 @@ void main() async {
       expect(harness.unitBloc.repo.length, 2, reason: "SHOULD contain two unit");
 
       // Act
-      await harness.unitBloc.update(unit2.cloneWith(status: UnitStatus.Deployed));
+      await harness.unitBloc.update(unit2.copyWith(status: UnitStatus.Deployed));
 
       // Assert
       expect(
@@ -393,7 +393,7 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
   final unit = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1, p2]));
 
   // Act
-  final updated = await harness.personnelBloc.update(p1.cloneWith(status: PersonnelStatus.OnScene));
+  final updated = await harness.personnelBloc.update(p1.copyWith(status: PersonnelStatus.OnScene));
   await expectThroughLater(
     harness.unitBloc,
     emits(isA<UnitUpdated>()),

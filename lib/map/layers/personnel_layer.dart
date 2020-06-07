@@ -4,7 +4,7 @@ import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/proj4d.dart';

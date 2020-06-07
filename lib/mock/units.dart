@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/services/unit_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
+
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/services/service.dart';
+import 'package:SarSys/features/unit/data/services/unit_service.dart';
+import 'package:SarSys/utils/data_utils.dart';
 
 class UnitBuilder {
   static Unit create({
@@ -18,7 +20,7 @@ class UnitBuilder {
     UnitType type = UnitType.Team,
     UnitStatus status = UnitStatus.Mobilized,
   }) {
-    return Unit.fromJson(
+    return UnitModel.fromJson(
       createAsJson(
         uuid: uuid ?? Uuid().v4(),
         type: type ?? UnitType.Team,
@@ -98,7 +100,7 @@ class UnitServiceMock extends Mock implements UnitService {
           for (var i = 1; i <= count; i++)
             MapEntry(
               "$iuuid:u:$i",
-              Unit.fromJson(
+              UnitModel.fromJson(
                 UnitBuilder.createAsJson(
                   uuid: "$iuuid:u:$i",
                   type: UnitType.Team,
@@ -126,9 +128,8 @@ class UnitServiceMock extends Mock implements UnitService {
       final iuuid = _.positionalArguments[0];
       final Unit unit = _.positionalArguments[1];
       final units = unitsRepo.putIfAbsent(iuuid, () => {});
-      return ServiceResponse.ok(
-        body: units.putIfAbsent(unit.uuid, () => unit),
-      );
+      units.putIfAbsent(unit.uuid, () => unit);
+      return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
       final Unit unit = _.positionalArguments[0];
@@ -144,14 +145,17 @@ class UnitServiceMock extends Mock implements UnitService {
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      final Unit unit = _.positionalArguments[0];
-      var iuuid = unitsRepo.entries.firstWhere((entry) => entry.value.containsKey(unit.uuid), orElse: () => null);
+      final uuuid = _.positionalArguments[0] as String;
+      var iuuid = unitsRepo.entries.firstWhere(
+        (entry) => entry.value.containsKey(uuuid),
+        orElse: () => null,
+      );
       if (iuuid != null) {
-        iuuid.value.remove(unit.uuid);
+        iuuid.value.remove(uuuid);
         return ServiceResponse.noContent();
       }
       return ServiceResponse.notFound(
-        message: "Unit not found: ${unit.uuid}",
+        message: "Unit not found: $uuuid",
       );
     });
     return mock;

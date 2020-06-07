@@ -3,14 +3,24 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
+import 'package:bloc/bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/personnel/data/repositories/personnel_repository_impl.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/incident/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -26,20 +36,11 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
-import 'package:SarSys/repositories/unit_repository.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:bloc/bloc.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 const MethodChannel udidChannel = MethodChannel('flutter_udid');
 const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
@@ -427,7 +428,7 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withIncidentBloc, 'PersonnelBloc requires IncidentBloc');
     _personnelService = PersonnelServiceMock.build(count);
     _personnelBloc = PersonnelBloc(
-      PersonnelRepository(
+      PersonnelRepositoryImpl(
         _personnelService,
         connectivity: _connectivity,
       ),
@@ -443,7 +444,7 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     _unitService = UnitServiceMock.build(count);
     _unitBloc = UnitBloc(
-      UnitRepository(
+      UnitRepositoryImpl(
         _unitService,
         connectivity: _connectivity,
       ),

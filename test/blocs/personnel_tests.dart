@@ -1,9 +1,9 @@
-import 'package:SarSys/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/models/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -84,7 +84,7 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
       // Act
-      await harness.personnelBloc.update(personnel.cloneWith(status: PersonnelStatus.OnScene));
+      await harness.personnelBloc.update(personnel.copyWith(status: PersonnelStatus.OnScene));
 
       // Assert
       verify(harness.personnelService.update(any)).called(1);
@@ -238,7 +238,7 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnel");
 
       // Act
-      await harness.personnelBloc.update(personnel2.cloneWith(status: PersonnelStatus.OnScene));
+      await harness.personnelBloc.update(personnel2.copyWith(status: PersonnelStatus.OnScene));
 
       // Assert
       expect(

@@ -233,8 +233,8 @@ Future _testAppConfigShouldUpdateValues(BlocTestHarness harness, bool offline) a
     await expectLater(
       harness.configBloc.repo.onChanged,
       emitsThrough(
-        isA<StorageState<AppConfig>>().having(
-          (source) => source.isRemote,
+        isA<StorageTransition<AppConfig>>().having(
+          (source) => source.to.isRemote,
           "Should push to remote",
           isTrue,
         ),

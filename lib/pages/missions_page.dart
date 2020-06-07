@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/screens/unit_screen.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
 import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';

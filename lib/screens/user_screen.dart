@@ -1,10 +1,10 @@
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/features/incident/presentation/pages/incident_page.dart';
 import 'package:SarSys/pages/user_history_page.dart';
@@ -12,8 +12,8 @@ import 'package:SarSys/pages/user_pages.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
-import 'package:SarSys/widgets/personnel_widgets.dart';
-import 'package:SarSys/widgets/unit_widgets.dart';
+import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
+import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

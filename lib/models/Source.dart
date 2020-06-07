@@ -1,5 +1,5 @@
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/models/Unit.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:json_annotation/json_annotation.dart';

@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/models/Affiliation.dart';
-import 'package:SarSys/models/Personnel.dart';
-import 'package:SarSys/services/personnel_service.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -19,7 +20,7 @@ class PersonnelBuilder {
     String tuuid,
     PersonnelStatus status = PersonnelStatus.Mobilized,
   }) {
-    return Personnel.fromJson(
+    return PersonnelModel.fromJson(
       createAsJson(
         uuid: uuid ?? Uuid().v4(),
         userId: userId,
@@ -100,7 +101,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
           for (var i = 1; i <= count; i++)
             MapEntry(
               "$iuuid:p:$i",
-              Personnel.fromJson(
+              PersonnelModel.fromJson(
                 PersonnelBuilder.createAsJson(
                   uuid: "$iuuid:p:$i",
                   userId: "p:$i",
@@ -134,9 +135,8 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
       final Personnel personnel = _.positionalArguments[1];
       final personnels = personnelsRepo.putIfAbsent(iuuid, () => {});
       final String puuid = personnel.uuid;
-      return ServiceResponse.ok(
-        body: personnels.putIfAbsent(puuid, () => personnel.cloneWith(uuid: puuid)),
-      );
+      personnels.putIfAbsent(puuid, () => personnel.copyWith(uuid: puuid));
+      return ServiceResponse.created();
     });
 
     when(mock.update(any)).thenAnswer((_) async {
@@ -156,17 +156,17 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     });
 
     when(mock.delete(any)).thenAnswer((_) async {
-      final Personnel personnel = _.positionalArguments[0];
+      final puuid = _.positionalArguments[0] as String;
       var incident = personnelsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(personnel.uuid),
+        (entry) => entry.value.containsKey(puuid),
         orElse: () => null,
       );
       if (incident != null) {
-        incident.value.remove(personnel.uuid);
+        incident.value.remove(puuid);
         return ServiceResponse.noContent();
       }
       return ServiceResponse.notFound(
-        message: "Personnel not found: ${personnel.uuid}",
+        message: "Personnel not found: $puuid",
       );
     });
 
