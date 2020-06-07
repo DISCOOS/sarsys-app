@@ -224,7 +224,14 @@ class PermissionController {
       var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.group}") ?? 0;
       // Only supported on Android, iOS always return false
       if (deniedBefore > 0 || await handler.shouldShowRequestPermissionRationale(request.group)) {
-        prompt = onPrompt == null ? true : await onPrompt(request.title, _toRationale(request, deniedBefore > 0));
+        prompt = onPrompt == null
+            ? true
+            : await onPrompt(
+                request.title,
+                _toRationale(
+                  request,
+                  deniedBefore > 0,
+                ));
       }
       if (prompt) {
         if (deniedBefore < 2) {

@@ -188,11 +188,22 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   FutureOr<T> apply(StorageState<T> state) async {
     checkState();
     final next = validate(state);
+    final isChanged = !isValueEqual(next);
     final exists = put(next);
-    if (exists) {
+    if (exists && isChanged) {
       return schedule(next);
     }
     return next.value;
+  }
+
+  /// Check if [StorageState.value] of given [state]
+  /// is equal to value in current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isValueEqual(StorageState<T> state) {
+    final current = get(toKey(state));
+    return current != null && current == state.value;
   }
 
   /// Queue of [StorageState] processed in FIFO manner.

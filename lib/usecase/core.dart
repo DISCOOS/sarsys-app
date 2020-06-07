@@ -25,7 +25,7 @@ abstract class UseCase<E, T, P> {
   static Map<Type, int> _pending = {};
   bool _push() {
     final pending = _pending.update(runtimeType, (pending) => ++pending, ifAbsent: () => 1);
-    print('push: $_pending');
+    debugPrint('UseCase:push: $_pending');
     return pending == 1;
   }
 
@@ -34,7 +34,7 @@ abstract class UseCase<E, T, P> {
     if (pending <= 0) {
       _pending.remove(runtimeType);
     }
-    print('pop: $_pending');
+    debugPrint('UseCase:pop: $_pending');
   }
 
   /// Execute use case checked.
