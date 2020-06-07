@@ -1,6 +1,7 @@
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/features/device/data/models/device_model.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -349,21 +350,21 @@ class _DeviceEditorState extends State<DeviceEditor> {
   DeviceType _getActualType(DeviceType defaultValue) {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('type') == true
-        ? Device.fromJson(values).type ?? defaultValue
+        ? DeviceModel.fromJson(values).type ?? defaultValue
         : widget?.device?.type ?? defaultValue;
   }
 
   String _getActualAlias() {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('alias') == true
-        ? Device.fromJson(values).alias ?? widget?.device?.alias
+        ? DeviceModel.fromJson(values).alias ?? widget?.device?.alias
         : widget?.device?.alias;
   }
 
   String _getActualNumber() {
     final values = _formKey?.currentState?.value;
     return values?.containsKey('number') == true
-        ? Device.fromJson(values).number ?? widget?.device?.number
+        ? DeviceModel.fromJson(values).number ?? widget?.device?.number
         : widget?.device?.number;
   }
 
@@ -380,11 +381,11 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   Device _createDevice() {
-    return Device.fromJson(_formKey.currentState.value).cloneWith(
+    return DeviceModel.fromJson(_formKey.currentState.value).copyWith(
       uuid: Uuid().v4(),
       status: DeviceStatus.Available,
     );
   }
 
-  Device _updateDevice() => widget.device.withJson(_formKey.currentState.value);
+  Device _updateDevice() => widget.device.mergeWith(_formKey.currentState.value);
 }

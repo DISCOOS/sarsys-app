@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/incident/data/models/incident_model.dart';
 
 import 'package:SarSys/models/AuthToken.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
@@ -54,17 +55,17 @@ class Storage {
 
   static Future<void> writeUserValue(
     User user, {
-    String key,
+    String suffix,
     String value,
   }) =>
-      _storage.write(key: '${user.userId}_$key', value: value);
+      _storage.write(key: userKey(user, suffix), value: value);
 
   static Future<void> deleteUserValue(
     User user, {
-    String key,
+    String suffix,
     String defaultValue,
   }) =>
-      _storage.delete(key: '${user.userId}_$key');
+      _storage.delete(key: userKey(user, suffix));
 
   static Future init() async {
     if (!_initialized) {
@@ -111,7 +112,7 @@ class Storage {
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Device>(
-        fromJson: (data) => Device.fromJson(data),
+        fromJson: (data) => DeviceModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Tracking>(
@@ -260,6 +261,12 @@ class StorageState<T> {
   }
 
   String _toValueAsString() => '${value?.runtimeType} ${value is Aggregate ? '{${(value as Aggregate).uuid}}' : ''}';
+}
+
+class StorageTransition<T> {
+  StorageTransition({this.from, this.to});
+  final StorageState<T> from;
+  final StorageState<T> to;
 }
 
 class TypeJsonAdapter<T> extends TypeAdapter<T> {

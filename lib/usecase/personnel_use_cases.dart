@@ -6,7 +6,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/editors/personnel_editor.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Personnel.dart';

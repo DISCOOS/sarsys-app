@@ -11,7 +11,7 @@ import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/mock/trackings.dart';
 import 'package:SarSys/mock/units.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Track.dart';
@@ -1980,7 +1980,7 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Resolved),
+    incident.copyWith(status: IncidentStatus.Resolved),
   );
   await expectThroughLater(
     harness.personnelBloc,
@@ -2010,7 +2010,7 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Cancelled),
+    incident.copyWith(status: IncidentStatus.Cancelled),
   );
   await expectThroughLater(
     harness.personnelBloc,

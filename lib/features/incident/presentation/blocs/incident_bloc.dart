@@ -318,7 +318,12 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
       yield toError(
         command,
         IncidentBlocError(
-          'Incident ${command.data} not found locally',
+          IncidentNotFoundBlocException(
+            command.data,
+            state,
+            command: command,
+            stackTrace: command.stackTrace,
+          ),
           stackTrace: command.stackTrace,
         ),
       );
@@ -330,7 +335,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
     if (_iuuid != null) {
       await Storage.writeUserValue(
         userBloc.user,
-        key: SELECTED_IUUID_KEY_SUFFIX,
+        suffix: SELECTED_IUUID_KEY_SUFFIX,
         value: _iuuid,
       );
       return IncidentSelected(data);
@@ -594,4 +599,13 @@ class IncidentBlocException implements Exception {
 
   @override
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
+}
+
+class IncidentNotFoundBlocException extends IncidentBlocException {
+  IncidentNotFoundBlocException(
+    String iuuid,
+    IncidentState state, {
+    IncidentCommand command,
+    StackTrace stackTrace,
+  }) : super('Incident $iuuid not found locally', state, command: command, stackTrace: stackTrace);
 }

@@ -64,16 +64,16 @@ void main() {
   final d1p1 = DeviceBuilder.create(position: p1);
 
   // Device 1 with second position
-  final d1p2 = d1p1.cloneWith(position: p2);
+  final d1p2 = d1p1.copyWith(position: p2);
 
   // Device 1 with third position
-  final d1p3 = d1p1.cloneWith(position: p3);
+  final d1p3 = d1p1.copyWith(position: p3);
 
   // Device 2 with second position
   final d2p2 = DeviceBuilder.create(position: p2);
 
   // Device 2 with third position
-  final d2p3 = d2p2.cloneWith(position: p3);
+  final d2p3 = d2p2.copyWith(position: p3);
 
   // Source 1 with first position
   final s1p1 = PositionableSource.from(d1p1);

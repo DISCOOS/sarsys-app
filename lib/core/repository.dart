@@ -25,10 +25,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     @required this.connectivity,
   });
   final ConnectivityService connectivity;
-  final StreamController<StorageState<T>> _controller = StreamController.broadcast();
+  final StreamController<StorageTransition<T>> _controller = StreamController.broadcast();
 
   /// Get stream of state changes
-  Stream<StorageState<T>> get onChanged => _controller.stream;
+  Stream<StorageTransition<T>> get onChanged => _controller.stream;
 
   /// Check if repository is empty
   ///
@@ -154,6 +154,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   Future<T> onDelete(StorageState<T> state);
 
   /// Should handle errors
+  @mustCallSuper
   @visibleForOverriding
   void onError(Object error, StackTrace stackTrace) {
     RepositorySupervisor.delegate.onError(this, error, stackTrace);
@@ -414,7 +415,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       _states.put(key, state);
     }
     if (!_disposed) {
-      _controller.add(state);
+      _controller.add(StorageTransition<T>(
+        from: current,
+        to: state,
+      ));
     }
     return containsKey(key);
   }
@@ -517,8 +521,19 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     if (_states?.isOpen == true) {
       return await _states.close();
     }
+    _subscriptions.forEach(
+      (subscription) => subscription.cancel(),
+    );
+    _subscriptions.clear();
     return Future.value();
   }
+
+  /// Subscriptions released on [close]
+  final List<StreamSubscription> _subscriptions = [];
+  bool get hasSubscriptions => _subscriptions.isNotEmpty;
+  void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
+        subscription,
+      );
 }
 
 class RepositoryDelegate {

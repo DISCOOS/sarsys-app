@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';

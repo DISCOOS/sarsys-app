@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/services/device_service.dart';
+import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -21,7 +22,7 @@ class DeviceBuilder {
     DeviceStatus status = DeviceStatus.Unavailable,
     bool randomize = false,
   }) {
-    return Device.fromJson(
+    return DeviceModel.fromJson(
       createDeviceAsJson(
         uuid ?? Uuid().v4(),
         type ?? DeviceType.App,
@@ -179,7 +180,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
       Position center = _toCenter(bloc);
       if (simulate) {
         device = _simulate(
-          Device(
+          DeviceModel(
             uuid: duuid,
             type: device.type,
             status: device.status,
@@ -196,10 +197,8 @@ class DeviceServiceMock extends Mock implements DeviceService {
           simulations,
         );
       }
-      final d = devices.putIfAbsent(device.uuid, () => device);
-      return ServiceResponse.ok(
-        body: d,
-      );
+      devices.putIfAbsent(device.uuid, () => device);
+      return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
       var device = _.positionalArguments[0] as Device;
@@ -215,16 +214,16 @@ class DeviceServiceMock extends Mock implements DeviceService {
       return ServiceResponse.ok(body: device);
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      var device = _.positionalArguments[0] as Device;
+      var duuid = _.positionalArguments[0] as String;
       var incident = devicesRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(device.uuid),
+        (entry) => entry.value.containsKey(duuid),
         orElse: null,
       );
       if (incident == null)
         ServiceResponse.notFound(
-          message: "Device ${device.uuid} not found",
+          message: "Device $duuid not found",
         );
-      incident.value.remove(device.uuid);
+      incident.value.remove(duuid);
       return ServiceResponse.noContent();
     });
     return mock;
@@ -253,7 +252,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     return devices.addAll({
       for (var i = 1; i <= count; i++)
         "$iuuid:d:$prefix:$i": _simulate(
-          Device.fromJson(
+          DeviceModel.fromJson(
             DeviceBuilder.createDeviceAsJson(
               "$iuuid:d:$prefix:$i",
               type,
@@ -300,7 +299,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         if (simulations.containsKey(device.uuid)) {
           var simulation = simulations[device.uuid];
           var position = simulation.progress(rnd.nextDouble() * 20.0);
-          device = device.cloneWith(
+          device = device.copyWith(
             position: position,
           );
           devicesMap[iuuid].update(

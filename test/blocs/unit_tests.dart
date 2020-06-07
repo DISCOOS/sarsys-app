@@ -446,7 +446,7 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Resolved),
+    incident.copyWith(status: IncidentStatus.Resolved),
   );
 
   // Assert
@@ -472,7 +472,7 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Cancelled),
+    incident.copyWith(status: IncidentStatus.Cancelled),
   );
 
   // Assert

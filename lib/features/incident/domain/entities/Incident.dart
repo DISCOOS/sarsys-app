@@ -3,16 +3,9 @@ import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/TalkGroup.dart';
 import 'package:SarSys/models/core.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-part 'Incident.g.dart';
-
-@JsonSerializable(
-  explicitToJson: true,
-  anyMap: true,
-)
-class Incident extends Aggregate<Map<String, dynamic>> {
+abstract class Incident extends Aggregate<Map<String, dynamic>> {
   Incident({
     @required String uuid,
     @required this.name,
@@ -71,59 +64,14 @@ class Incident extends Aggregate<Map<String, dynamic>> {
         "oppmøte: $meetup"
       ].join(' ');
 
-  /// Factory constructor for creating a new `Incident`  instance
-  factory Incident.fromJson(Map<String, dynamic> json) => _$IncidentFromJson(json);
-
-  /// Declare support for serialization to JSON
-  Map<String, dynamic> toJson() => _$IncidentToJson(this);
-
   /// Clone with json
-  Incident withJson(Map<String, dynamic> json, {String userId}) {
-    var clone = Incident.fromJson(json);
-    var now = DateTime.now();
-    return Incident(
-      uuid: clone.uuid ?? this.uuid,
-      name: clone.name ?? this.name,
-      type: clone.type ?? this.type,
-      status: clone.status ?? this.status,
-      changed: userId != null
-          ? Author(userId: userId, timestamp: now)
-          : clone.changed ?? Author.fromJson(this.changed?.toJson()),
-      created: clone.created ?? Author.fromJson(this.created?.toJson()),
-      occurred: clone.occurred ?? this.occurred,
-      justification: clone.justification ?? this.justification,
-      exercise: clone.exercise ?? this.exercise,
-      reference: clone.reference ?? this.reference,
-      passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
-      ipp: clone.ipp ?? Location.fromJson(this.ipp.toJson()),
-      meetup: clone.meetup ?? Location.fromJson(this.meetup.toJson()),
-      talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg?.toJson())).toList(),
-    );
-  }
+  Incident mergeWith(Map<String, dynamic> json, {String userId});
 
   /// Clone with author
-  Incident withAuthor(String userId) {
-    var now = DateTime.now();
-    return Incident(
-      uuid: this.uuid,
-      name: this.name,
-      type: this.type,
-      status: this.status,
-      changed: Author(userId: userId, timestamp: now),
-      created: this.created ?? Author(userId: userId, timestamp: now),
-      occurred: this.occurred,
-      justification: this.justification,
-      reference: this.reference,
-      passcodes: this.passcodes,
-      exercise: this.exercise,
-      ipp: this.ipp,
-      meetup: this.meetup,
-      talkgroups: this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
-    );
-  }
+  Incident withAuthor(String userId);
 
   /// Clone with author
-  Incident cloneWith({
+  Incident copyWith({
     String name,
     IncidentType type,
     IncidentStatus status,
@@ -137,24 +85,7 @@ class Incident extends Aggregate<Map<String, dynamic>> {
     Location meetup,
     bool exercise,
     List<TalkGroup> talkGroups,
-  }) {
-    return Incident(
-      uuid: this.uuid,
-      name: name ?? this.name,
-      type: type ?? this.type,
-      status: status ?? this.status,
-      created: created ?? this.created,
-      changed: changed ?? this.changed,
-      occurred: occurred ?? this.occurred,
-      justification: justification ?? this.justification,
-      reference: reference ?? this.reference,
-      exercise: exercise ?? this.exercise,
-      passcodes: passcodes ?? Passcodes.fromJson(this.passcodes.toJson()),
-      ipp: ipp ?? Location.fromJson(this.ipp.toJson()),
-      meetup: meetup ?? Location.fromJson(this.meetup.toJson()),
-      talkgroups: talkGroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
-    );
-  }
+  });
 }
 
 enum IncidentType { Lost, Distress, Other }

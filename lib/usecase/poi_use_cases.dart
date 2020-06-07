@@ -44,7 +44,7 @@ class EditPoi extends UseCase<bool, Point, PoiParams> {
     if (result == null) return dartz.Left(false);
     final point = result.geometry;
     await params.bloc.update(
-      params.incident.cloneWith(
+      params.incident.copyWith(
         ipp: params.incident.ipp.cloneWith(
           point: point,
         ),
@@ -83,7 +83,7 @@ class EditMeetup extends UseCase<bool, Point, PoiParams> {
     if (result == null) return dartz.Left(false);
     final point = result.geometry;
     await params.bloc.update(
-      params.incident.cloneWith(
+      params.incident.copyWith(
         meetup: params.incident.meetup.cloneWith(
           point: point,
         ),

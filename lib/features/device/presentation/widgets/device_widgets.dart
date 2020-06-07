@@ -1,13 +1,13 @@
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/usecase/device_use_cases.dart';
+import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -18,7 +18,7 @@ import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'action_group.dart';
+import '../../../../widgets/action_group.dart';
 
 class DeviceTile extends StatelessWidget {
   final Device device;

@@ -150,7 +150,7 @@ void main() async {
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
 
       // Act
-      final changed = await harness.incidentBloc.update(incident.cloneWith(name: "Changed"));
+      final changed = await harness.incidentBloc.update(incident.copyWith(name: "Changed"));
 
       // Assert
       verify(harness.incidentService.update(any)).called(1);

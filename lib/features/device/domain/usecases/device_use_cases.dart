@@ -1,7 +1,7 @@
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/editors/device_editor.dart';
 import 'package:SarSys/editors/position_editor.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/usecase/core.dart';
@@ -98,7 +98,7 @@ class EditDeviceLocation extends UseCase<bool, Device, DeviceParams> {
       ),
     );
     if (result == null) return dartz.Left(false);
-    final device = await params.bloc.update(params.data.cloneWith(position: result));
+    final device = await params.bloc.update(params.data.copyWith(position: result));
     return dartz.Right(device);
   }
 }
@@ -122,7 +122,7 @@ class DetachDevice extends UseCase<bool, DeviceState, DeviceParams> {
       "Dette vil fjerne apparatet fra sporing og aksjonen. Vil du fortsette?",
     );
     if (!response) return dartz.Left(false);
-    await params.bloc.update(params.data.cloneWith(status: DeviceStatus.Available));
+    await params.bloc.update(params.data.copyWith(status: DeviceStatus.Available));
     return dartz.Right(params.bloc.state);
   }
 }

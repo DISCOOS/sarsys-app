@@ -82,8 +82,16 @@ class SelectIncident extends UseCase<bool, Incident, IncidentParams> {
         );
 
     assert(iuuid != null, "Incident uuid must be given");
-    final incident = await params.bloc.select(iuuid);
-    return dartz.Right(incident);
+    try {
+      final incident = await params.bloc.select(iuuid);
+      return dartz.Right(incident);
+    } on IncidentNotFoundBlocException {
+      await Storage.deleteUserValue(
+        user,
+        suffix: IncidentBloc.SELECTED_IUUID_KEY_SUFFIX,
+      );
+    }
+    return dartz.left(false);
   }
 }
 

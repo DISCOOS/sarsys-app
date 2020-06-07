@@ -1,23 +1,33 @@
 import 'dart:io';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/device/data/models/device_model.dart';
+import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_patch/json_patch.dart';
 
-import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/services/device_service.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 
-class DeviceRepository extends ConnectionAwareRepository<String, Device> {
-  DeviceRepository(
+class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> implements DeviceRepository {
+  DeviceRepositoryImpl(
     this.service, {
     @required ConnectivityService connectivity,
   }) : super(
           connectivity: connectivity,
-        );
+        ) {
+    //
+    // Handle messages pushed from backend.
+    //
+    registerStreamSubscription(service.messages.listen(
+      _processDeviceMessage,
+    ));
+  }
 
   /// [Device] service
   final DeviceService service;
@@ -104,13 +114,8 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
   /// PUT ../devices/{deviceId}
   Future<Device> patch(Device device) async {
     checkState();
-    final old = this[device.uuid];
-    final oldJson = old?.toJson() ?? {};
-    final patches = JsonPatch.diff(oldJson, device.toJson());
-    final newJson = JsonPatch.apply(old, patches, strict: false);
-    return update(
-      Device.fromJson(newJson..addAll({'uuid': device.uuid})),
-    );
+    DeviceModel next = _patch(device);
+    return update(next);
   }
 
   /// Delete [Device] with given [uuid]
@@ -130,8 +135,13 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
   @override
   Future<Device> onCreate(StorageState<Device> state) async {
     var response = await service.create(_iuuid, state.value);
-    if (response.is200) {
-      return response.body;
+    if (response.is201) {
+      return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw DeviceServiceException(
       'Failed to create Device ${state.value}',
@@ -145,6 +155,13 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
     var response = await service.update(state.value);
     if (response.is200) {
       return response.body;
+    } else if (response.is204) {
+      return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw DeviceServiceException(
       'Failed to update Device ${state.value}',
@@ -155,15 +172,57 @@ class DeviceRepository extends ConnectionAwareRepository<String, Device> {
 
   @override
   Future<Device> onDelete(StorageState<Device> state) async {
-    var response = await service.delete(state.value);
+    var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw DeviceServiceException(
       'Failed to delete Device ${state.value}',
       response: response,
       stackTrace: StackTrace.current,
     );
+  }
+
+  DeviceModel _patch(Device device) {
+    final old = this[device.uuid];
+    final oldJson = old?.toJson() ?? {};
+    final patches = JsonPatch.diff(oldJson, device.toJson());
+    final newJson = JsonPatch.apply(old, patches, strict: false);
+    final updated = DeviceModel.fromJson(
+      newJson..addAll({'uuid': device.uuid}),
+    );
+    return updated;
+  }
+
+  ///
+  /// Handles messages pushed from server
+  ///
+  void _processDeviceMessage(DeviceMessage message) {
+    if (hasSubscriptions) {
+      try {
+        switch (message.type) {
+          case DeviceMessageType.LocationChanged:
+            if (containsKey(message.duuid)) {
+              final previous = getState(message.duuid);
+              // Merge with local changes
+              final next = _patch(
+                DeviceModel.fromJson(message.json),
+              );
+              put(
+                previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next),
+              );
+            }
+            break;
+        }
+      } on Exception catch (error, stackTrace) {
+        onError(error, stackTrace);
+      }
+    }
   }
 }
 

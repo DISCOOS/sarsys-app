@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Device.dart';
+part of 'device_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Device _$DeviceFromJson(Map json) {
-  return Device(
+DeviceModel _$DeviceModelFromJson(Map json) {
+  return DeviceModel(
     uuid: json['uuid'] as String,
     type: _$enumDecodeNullable(_$DeviceTypeEnumMap, json['type']),
     alias: json['alias'] as String,
@@ -25,7 +25,7 @@ Device _$DeviceFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$DeviceToJson(Device instance) {
+Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
   final val = <String, dynamic>{
     'uuid': instance.uuid,
     'position': instance.position?.toJson(),

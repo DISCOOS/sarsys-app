@@ -1,15 +1,16 @@
 import 'dart:async';
 
-import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/repositories/device_repository.dart';
-import 'package:SarSys/services/device_service.dart';
-import 'package:catcher/core/catcher.dart';
+import 'package:SarSys/core/storage.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
-import 'core.dart';
-import 'mixins.dart';
-import '../features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/device/data/services/device_service.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 
@@ -33,9 +34,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       _processIncidentState,
     ));
 
-    registerStreamSubscription(service.messages.listen(
-      // Update from messages pushed from backend
-      _processDeviceMessage,
+    registerStreamSubscription(repo.onChanged.listen(
+      // Notify when repository state has changed
+      _processRepoState,
     ));
   }
 
@@ -49,22 +50,22 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         }
       }
     } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(
-        error,
-        stackTrace,
-      );
+      BlocSupervisor.delegate.onError(this, error, stackTrace);
+      onError(error, stackTrace);
     }
   }
 
-  void _processDeviceMessage(event) {
-    if (hasSubscriptions) {
-      try {
-        dispatch(_HandleMessage(event));
-      } on Exception catch (error, stackTrace) {
-        Catcher.reportCheckedError(
-          error,
-          stackTrace,
-        );
+  void _processRepoState(StorageTransition<Device> transition) {
+    if (hasSubscriptions && transition.to.isRemote) {
+      switch (transition.to.status) {
+        case StorageStatus.created:
+          break;
+        case StorageStatus.updated:
+          // TODO: Handle this case.
+          break;
+        case StorageStatus.deleted:
+          // TODO: Handle this case.
+          break;
       }
     }
   }
@@ -136,7 +137,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> attach(Device device) {
     _assertState();
     return update(
-      device.cloneWith(status: DeviceStatus.Available),
+      device.copyWith(status: DeviceStatus.Available),
     );
   }
 
@@ -144,7 +145,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> detach(Device device) {
     _assertState();
     return update(
-      device.cloneWith(status: DeviceStatus.Unavailable),
+      device.copyWith(status: DeviceStatus.Unavailable),
     );
   }
 
@@ -185,8 +186,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       yield await _update(command);
     } else if (command is DeleteDevice) {
       yield await _delete(command);
-    } else if (command is _HandleMessage) {
-      yield await _process(command.data);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
     } else {
@@ -243,26 +242,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     );
   }
 
-  Future<DeviceState> _process(DeviceMessage event) async {
-    switch (event.type) {
-      case DeviceMessageType.LocationChanged:
-        if (repo.containsKey(event.duuid)) {
-          final previous = repo[event.duuid];
-          return DeviceUpdated(
-            await repo.patch(Device.fromJson(event.json)),
-            previous,
-          );
-        }
-        break;
-    }
-    throw DeviceBlocException(
-      "Device message not recognized",
-      state,
-      command: event,
-      stackTrace: StackTrace.current,
-    );
-  }
-
   @override
   DeviceBlocError createError(Object error, {StackTrace stackTrace}) => DeviceBlocError(
         error,
@@ -310,13 +289,6 @@ class DeleteDevice extends DeviceCommand<Device, Device> {
 
   @override
   String toString() => 'DetachDevice {device: $data}';
-}
-
-class _HandleMessage extends DeviceCommand<DeviceMessage, DeviceMessage> {
-  _HandleMessage(DeviceMessage data) : super(data);
-
-  @override
-  String toString() => 'HandleMessage {message: $data}';
 }
 
 class UnloadDevices extends DeviceCommand<String, Iterable<Device>> {

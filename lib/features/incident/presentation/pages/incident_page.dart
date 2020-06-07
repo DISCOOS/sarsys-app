@@ -558,7 +558,7 @@ class IncidentActionGroup extends StatelessWidget {
 
   void _setIncidentStatus(BuildContext context, IncidentStatus status) async {
     var userId = context.bloc<UserBloc>().user?.userId;
-    var incident = context.bloc<IncidentBloc>().selected.withJson(
+    var incident = context.bloc<IncidentBloc>().selected.mergeWith(
       {"status": enumName(status)},
       userId: userId,
     );

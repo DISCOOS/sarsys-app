@@ -1,9 +1,9 @@
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -83,7 +83,7 @@ void main() async {
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
-      await harness.deviceBloc.update(device.cloneWith(type: DeviceType.Tetra));
+      await harness.deviceBloc.update(device.copyWith(type: DeviceType.Tetra));
 
       // Assert
       verify(harness.deviceService.update(any)).called(1);
@@ -235,7 +235,7 @@ void main() async {
       expect(harness.deviceBloc.repo.length, 2, reason: "SHOULD contain two devices");
 
       // Act
-      await harness.deviceBloc.update(device2.cloneWith(type: DeviceType.Tetra));
+      await harness.deviceBloc.update(device2.copyWith(type: DeviceType.Tetra));
 
       // Assert
       expectStorageStatus(
@@ -362,7 +362,7 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Resolved),
+    incident.copyWith(status: IncidentStatus.Resolved),
   );
 
   // Assert
@@ -388,7 +388,7 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
 
   // Act
   await harness.incidentBloc.update(
-    incident.cloneWith(status: IncidentStatus.Cancelled),
+    incident.copyWith(status: IncidentStatus.Cancelled),
   );
 
   // Assert

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/incident/data/models/incident_model.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/app_controller.dart';
@@ -984,7 +985,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
           Pair<Incident, List<String>>.of(_create(userId), units),
         );
       } else {
-        incident = widget.incident.withJson(_toJson(), userId: userId);
+        incident = widget.incident.mergeWith(_toJson(), userId: userId);
         if (!closed.contains(current) && IncidentStatus.Cancelled == incident.status) {
           prompt(
             context,
@@ -1011,7 +1012,7 @@ class _IncidentEditorState extends State<IncidentEditor> {
     }
   }
 
-  Incident _create(String userId) => Incident.fromJson(
+  Incident _create(String userId) => IncidentModel.fromJson(
         _toJson(uuid: Uuid().v4()),
       ).withAuthor(userId);
 

@@ -5,7 +5,8 @@ import 'dart:typed_data';
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
@@ -24,7 +25,6 @@ import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/auth_token_repository.dart';
-import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
@@ -413,7 +413,7 @@ class BlocTestHarness implements BlocDelegate {
       simulate: simulate,
     );
     _deviceBloc = DeviceBloc(
-      DeviceRepository(
+      DeviceRepositoryImpl(
         _deviceService,
         connectivity: _connectivity,
       ),
@@ -613,8 +613,8 @@ Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
   }
 }
 
-Stream<StorageStatus> toStatusChanges(Stream<StorageState> changes) =>
-    changes.where((state) => state.isRemote).map((state) => state.status);
+Stream<StorageStatus> toStatusChanges(Stream<StorageTransition> changes) =>
+    changes.where((state) => state.to.isRemote).map((state) => state.to.status);
 
 void expectStorageStatus(
   StorageState actual,

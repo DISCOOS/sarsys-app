@@ -154,7 +154,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
       }
       final Incident incident = _.positionalArguments[0];
       final author = Author.now(authorized.userId);
-      final created = Incident(
+      final created = IncidentModel(
         uuid: incident.uuid,
         type: incident.type,
         status: incident.status,

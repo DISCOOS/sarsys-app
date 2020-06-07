@@ -14,6 +14,13 @@ class IncidentService {
 
   IncidentService() : delegate = IncidentServiceImpl.newInstance();
 
+  /// GET ../incidents
+  Future<ServiceResponse<List<Incident>>> fetch() async {
+    return Api.from<List<Incident>, List<Incident>>(
+      await delegate.fetch(),
+    );
+  }
+
   /// POST ../incidents
   Future<ServiceResponse<Incident>> create(Incident incident) async {
     return Api.from<String, Incident>(
@@ -22,13 +29,6 @@ class IncidentService {
       ),
       // Created 201 returns uri to created incident in body
       body: incident,
-    );
-  }
-
-  /// GET ../incidents
-  Future<ServiceResponse<List<Incident>>> fetch() async {
-    return Api.from<List<Incident>, List<Incident>>(
-      await delegate.fetch(),
     );
   }
 

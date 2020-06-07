@@ -1,20 +1,20 @@
 import 'dart:convert';
 
-import 'package:SarSys/blocs/device_bloc.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/screens/device_screen.dart';
+import 'package:SarSys/features/device/presentation/screens/device_screen.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/usecase/device_use_cases.dart';
+import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';

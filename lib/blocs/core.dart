@@ -138,7 +138,9 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   @override
   @mustCallSuper
   Future<void> close() {
-    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.forEach(
+      (subscription) => subscription.cancel(),
+    );
     _subscriptions.clear();
     return super.close();
   }

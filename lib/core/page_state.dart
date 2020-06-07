@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
-import 'package:SarSys/pages/devices_page.dart';
+import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/pages/units_page.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:path_provider/path_provider.dart';

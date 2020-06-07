@@ -5,7 +5,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-import 'Device.dart';
+import '../features/device/domain/entities/Device.dart';
 import 'Tracking.dart';
 
 part 'Source.g.dart';

@@ -1,14 +1,14 @@
 import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/pages/devices_page.dart';
+import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/pages/missions_page.dart';
 import 'package:SarSys/pages/personnel_page.dart';
 import 'package:SarSys/pages/units_page.dart';
-import 'package:SarSys/usecase/device_use_cases.dart';
+import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/usecase/unit_use_cases.dart';
 import 'package:SarSys/screens/screen.dart';

@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:SarSys/models/Device.dart';
+import 'package:SarSys/features/device/data/models/device_model.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Source.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/services/device_service.dart';
+import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -439,7 +440,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     Map<String, _TrackSimulation> simulations,
     StreamController<TrackingMessage> controller,
   ) {
-    final device = Device.fromJson(message.json);
+    final device = DeviceModel.fromJson(message.json);
     if (s2t.containsKey(device.uuid)) {
       final tuuid = s2t[device.uuid];
       // Assumes that a device is attached to a single incident only
