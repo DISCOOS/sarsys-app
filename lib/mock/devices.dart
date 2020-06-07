@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/models/Device.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/device_service.dart';

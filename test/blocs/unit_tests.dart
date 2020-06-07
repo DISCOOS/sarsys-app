@@ -1,12 +1,12 @@
 import 'package:SarSys/blocs/unit_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Unit.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 

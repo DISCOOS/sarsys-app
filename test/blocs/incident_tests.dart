@@ -1,7 +1,7 @@
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -150,10 +150,11 @@ void main() async {
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
 
       // Act
-      await harness.incidentBloc.update(incident);
+      final changed = await harness.incidentBloc.update(incident.cloneWith(name: "Changed"));
 
       // Assert
       verify(harness.incidentService.update(any)).called(1);
+      expect(changed.name, "Changed", reason: "SHOULD changed name");
       expect(harness.incidentBloc.repo.length, 1, reason: "SHOULD contain one incident");
       expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.incidentBloc.selected.uuid, equals(incident.uuid), reason: "SHOULD select created");

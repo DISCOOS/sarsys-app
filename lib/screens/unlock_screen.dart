@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
-import 'incidents_screen.dart';
+import '../features/incident/presentation/screens/incidents_screen.dart';
 
 class UnlockScreen extends StatefulWidget {
   static const ROUTE = 'change/pin';

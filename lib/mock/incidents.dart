@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:SarSys/features/incident/data/models/incident_model.dart';
 import 'package:SarSys/mock/users.dart';
 import 'package:SarSys/models/Author.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Passcodes.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/user_repository.dart';
-import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/features/incident/data/services/incident_service.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
@@ -23,7 +24,7 @@ class IncidentBuilder {
     String uuid,
     String passcode = PASSCODE,
   }) {
-    return Incident.fromJson(
+    return IncidentModel.fromJson(
       createIncidentAsJson(
         uuid ?? Uuid().v4(),
         since,
@@ -113,7 +114,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
   ) =>
       MapEntry(
         uuid,
-        Incident.fromJson(
+        IncidentModel.fromJson(
           IncidentBuilder.createIncidentAsJson(
             uuid,
             since,
@@ -172,7 +173,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         reference: incident.reference,
       );
       _incidents.putIfAbsent(created.uuid, () => created);
-      return ServiceResponse.ok(body: created);
+      return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
       var incident = _.positionalArguments[0];

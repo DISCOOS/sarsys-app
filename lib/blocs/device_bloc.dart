@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/repositories/device_repository.dart';
 import 'package:SarSys/services/device_service.dart';
 import 'package:catcher/core/catcher.dart';
@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'core.dart';
 import 'mixins.dart';
-import 'incident_bloc.dart';
+import '../features/incident/presentation/blocs/incident_bloc.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 

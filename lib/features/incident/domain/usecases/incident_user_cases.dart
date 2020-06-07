@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/incident_editor.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/User.dart';
-import 'package:SarSys/screens/incidents_screen.dart';
+import 'package:SarSys/features/incident/presentation/screens/incidents_screen.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';

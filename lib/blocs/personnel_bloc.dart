@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'core.dart';
 import 'mixins.dart';
-import 'incident_bloc.dart';
+import '../features/incident/presentation/blocs/incident_bloc.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 

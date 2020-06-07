@@ -1,10 +1,10 @@
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/mock/devices.dart';
 import 'package:SarSys/mock/incidents.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 

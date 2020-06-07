@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/extensions.dart';
 
-import 'Incident.dart';
+import '../features/incident/domain/entities/Incident.dart';
 import 'Security.dart';
 
 part 'User.g.dart';

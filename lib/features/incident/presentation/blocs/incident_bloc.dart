@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/models/Incident.dart';
-import 'package:SarSys/repositories/incident_repository.dart';
-import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/incident/domain/repositories/incident_repository.dart';
+import 'package:SarSys/features/incident/data/services/incident_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 
-import 'core.dart';
-import 'mixins.dart';
-import '../features/user/presentation/blocs/user_bloc.dart';
+import '../../../../blocs/core.dart';
+import '../../../../blocs/mixins.dart';
+import '../../../user/presentation/blocs/user_bloc.dart';
 
 class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBlocError>
     with
@@ -380,7 +380,7 @@ class IncidentBloc extends BaseBloc<IncidentCommand, IncidentState, IncidentBloc
   @override
   IncidentBlocError createError(Object error, {StackTrace stackTrace}) => IncidentBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 }
 

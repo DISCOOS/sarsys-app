@@ -6,10 +6,11 @@ import 'dart:typed_data';
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
+import 'package:SarSys/features/incident/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
@@ -24,7 +25,6 @@ import 'package:SarSys/models/User.dart';
 import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/repositories/device_repository.dart';
-import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
@@ -380,7 +380,7 @@ class BlocTestHarness implements BlocDelegate {
       passcode: passcode,
     );
     _incidentBloc = IncidentBloc(
-      IncidentRepository(
+      IncidentRepositoryImpl(
         _incidentService,
         connectivity: _connectivity,
       ),

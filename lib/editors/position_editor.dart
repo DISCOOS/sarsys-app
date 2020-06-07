@@ -4,7 +4,7 @@ import 'dart:ui';
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/models/Position.dart';

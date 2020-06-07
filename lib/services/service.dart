@@ -33,6 +33,13 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  static ServiceResponse<T> created<T>() {
+    return ServiceResponse<T>(
+      statusCode: 201,
+      reasonPhrase: 'Created',
+    );
+  }
+
   static ServiceResponse<T> noContent<T>({String message = 'No content'}) {
     return ServiceResponse<T>(
       statusCode: 204,

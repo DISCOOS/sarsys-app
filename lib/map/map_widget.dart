@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
@@ -27,7 +27,7 @@ import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/BaseMap.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/base_map_service.dart';

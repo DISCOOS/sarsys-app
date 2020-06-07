@@ -5,6 +5,7 @@ import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/features/incident/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/repositories/auth_token_repository.dart';
 import 'package:SarSys/usecase/personnel_use_cases.dart';
 import 'package:flutter/foundation.dart';
@@ -15,7 +16,6 @@ import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/mock/personnels.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/repositories/device_repository.dart';
-import 'package:SarSys/repositories/incident_repository.dart';
 import 'package:SarSys/repositories/personnel_repository.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/repositories/unit_repository.dart';
@@ -31,13 +31,13 @@ import 'package:SarSys/mock/units.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/services/device_service.dart';
-import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/features/incident/data/services/incident_service.dart';
 import 'package:SarSys/services/tracking_service.dart';
 import 'package:SarSys/services/unit_service.dart';
 import 'package:SarSys/services/user_service.dart';
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/device_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/tracking_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -123,9 +123,8 @@ class AppController {
     // --------------
     final connectivityService = ConnectivityService();
 
-    final AppConfigService configService = !demo.active
-        ? AppConfigService(client: client, baseUrl: '$baseRestUrl/api/app-config')
-        : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
+    final AppConfigService configService =
+        !demo.active ? AppConfigService() : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
 
     final userService = UserIdentityService(client);
 
@@ -156,11 +155,11 @@ class AppController {
     final UserBloc userBloc = UserBloc(userRepo, configBloc);
 
     // Configure Incident service
-    final IncidentService incidentService = !(demo.active || true)
-        ? IncidentService('$baseRestUrl/api/incidents', client)
+    final IncidentService incidentService = !demo.active
+        ? IncidentService()
         : IncidentServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
     final IncidentBloc incidentBloc = IncidentBloc(
-        IncidentRepository(
+        IncidentRepositoryImpl(
           incidentService,
           connectivity: connectivityService,
         ),
@@ -248,13 +247,14 @@ class AppController {
       baseRestUrl: baseRestUrl,
       users: userRepo,
       services: [
-//        unitService.delegate,
-        if (configService.delegate != null)
-          configService.delegate,
 //        deviceService.delegate,
-//        incidentService.delegate,
+//        unitService.delegate,
 //        trackingService.delegate,
 //        personnelService.delegate,
+        if (configService.delegate != null)
+          configService.delegate,
+        if (incidentService.delegate != null)
+          incidentService.delegate,
       ],
     );
 

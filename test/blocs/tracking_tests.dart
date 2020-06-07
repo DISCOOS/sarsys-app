@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/blocs/tracking_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/blocs/personnel_bloc.dart';
 import 'package:SarSys/blocs/unit_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -16,7 +16,7 @@ import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Unit.dart';
 import 'package:SarSys/repositories/tracking_repository.dart';
 import 'package:SarSys/services/tracking_service.dart';

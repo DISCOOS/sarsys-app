@@ -11,6 +11,8 @@ import 'package:SarSys/services/connectivity_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
+import 'data/models/conflict_model.dart';
+
 /// Base class for implementing a stateful
 /// repository that is aware of connection status.
 ///
@@ -188,9 +190,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   FutureOr<T> apply(StorageState<T> state) async {
     checkState();
     final next = validate(state);
-    final isChanged = !isValueEqual(next);
+    final hasValueChanged = !isValueEqual(next);
+    final hasStatusChanged = !isStatusEqual(next);
     final exists = put(next);
-    if (exists && isChanged) {
+    if (exists && (hasValueChanged || hasStatusChanged)) {
       return schedule(next);
     }
     return next.value;
@@ -204,6 +207,16 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   bool isValueEqual(StorageState<T> state) {
     final current = get(toKey(state));
     return current != null && current == state.value;
+  }
+
+  /// Check if [StorageState.status] of given [state]
+  /// is equal to value in current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isStatusEqual(StorageState<T> state) {
+    final current = getState(toKey(state));
+    return current != null && current.status == state.status;
   }
 
   /// Queue of [StorageState] processed in FIFO manner.
@@ -533,6 +546,34 @@ class RepositorySupervisor {
   /// [RepositoryDelegate] setter which sets the singleton [RepositorySupervisor] instance's [RepositoryDelegate].
   static set delegate(RepositoryDelegate d) {
     _instance._delegate = d ?? RepositoryDelegate();
+  }
+}
+
+class MergeStrategy<S, T extends Aggregate> {
+  MergeStrategy(this.repository);
+  final ConnectionAwareRepository<S, T> repository;
+
+  Future<T> call(
+    StorageState<T> state,
+    ConflictModel conflict,
+  ) =>
+      reconcile(state, conflict);
+
+  Future<T> reconcile(
+    StorageState<T> state,
+    ConflictModel conflict,
+  ) async {
+    switch (conflict.type) {
+      case ConflictType.exists:
+        return repository.onUpdate(state);
+      case ConflictType.merge:
+        break;
+      case ConflictType.deleted:
+        break;
+    }
+    throw UnimplementedError(
+      "Reconciling conflict type '${enumName(conflict.type)}' not implemented",
+    );
   }
 }
 

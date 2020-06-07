@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';

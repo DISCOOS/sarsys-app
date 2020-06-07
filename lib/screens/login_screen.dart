@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/screens/screen.dart';
 
-import 'incidents_screen.dart';
+import '../features/incident/presentation/screens/incidents_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   static const ROUTE = 'login';

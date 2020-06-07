@@ -1,4 +1,4 @@
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

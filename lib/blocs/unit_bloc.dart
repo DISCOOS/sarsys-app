@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -18,7 +18,7 @@ import 'package:uuid/uuid.dart';
 
 import 'core.dart';
 import 'mixins.dart';
-import 'incident_bloc.dart';
+import '../features/incident/presentation/blocs/incident_bloc.dart';
 import 'personnel_bloc.dart';
 
 typedef void UnitCallback(VoidCallback fn);

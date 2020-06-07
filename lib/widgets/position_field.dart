@@ -1,5 +1,5 @@
 import 'package:SarSys/editors/position_editor.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_udid/flutter_udid.dart';
@@ -154,9 +153,12 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> 
   Future<AppConfig> onCreate(StorageState<AppConfig> state) async {
     var response = await service.create(state.value);
     if (response.is201) {
-      return response.body;
+      return state.value;
     } else if (response.is409) {
-      return _reconcile(state, response.error as ConflictModel);
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw AppConfigServiceException(
       'Failed to create AppConfig ${state.value}',
@@ -170,6 +172,11 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> 
       return response.body;
     } else if (response.is204) {
       return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw AppConfigServiceException(
       'Failed to update AppConfig ${state.value}',
@@ -181,27 +188,15 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> 
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw AppConfigServiceException(
       'Failed to delete AppConfig ${state.value}',
       response: response,
-    );
-  }
-
-  Future<AppConfig> _reconcile(
-    StorageState<AppConfig> state,
-    ConflictModel conflict,
-  ) async {
-    switch (conflict.type) {
-      case ConflictType.exists:
-        return onUpdate(state);
-      case ConflictType.merge:
-        break;
-      case ConflictType.deleted:
-        break;
-    }
-    throw UnimplementedError(
-      "Reconciling conflict type '${enumName(conflict.type)}' not implemented",
     );
   }
 }

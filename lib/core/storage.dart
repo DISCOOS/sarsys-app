@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/incident/data/models/incident_model.dart';
 
 import 'package:SarSys/models/AuthToken.dart';
 import 'package:SarSys/models/Device.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/Unit.dart';
@@ -98,7 +99,7 @@ class Storage {
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Incident>(
-        fromJson: (data) => Incident.fromJson(data),
+        fromJson: (data) => IncidentModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Unit>(

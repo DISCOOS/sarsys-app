@@ -12,7 +12,7 @@ import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Security.dart';
 import 'package:SarSys/repositories/user_repository.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/models/User.dart';
 import 'package:SarSys/services/user_service.dart';
 

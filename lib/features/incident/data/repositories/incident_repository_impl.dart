@@ -1,16 +1,18 @@
 import 'dart:io';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/incident/domain/repositories/incident_repository.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/storage.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/services/incident_service.dart';
+import 'package:SarSys/features/incident/data/services/incident_service.dart';
 import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/models/Incident.dart';
+import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 
-class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
-  IncidentRepository(
+class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident> implements IncidentRepository {
+  IncidentRepositoryImpl(
     this.service, {
     @required ConnectivityService connectivity,
   }) : super(
@@ -92,8 +94,13 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
   @override
   Future<Incident> onCreate(StorageState<Incident> state) async {
     var response = await service.create(state.value);
-    if (response.is200) {
-      return response.body;
+    if (response.is201) {
+      return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw IncidentServiceException(
       'Failed to create Incident ${state.value}',
@@ -106,6 +113,13 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     var response = await service.update(state.value);
     if (response.is200) {
       return response.body;
+    } else if (response.is204) {
+      return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw IncidentServiceException(
       'Failed to update Incident ${state.value}',
@@ -118,6 +132,11 @@ class IncidentRepository extends ConnectionAwareRepository<String, Incident> {
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
+    } else if (response.is409) {
+      return MergeStrategy(this)(
+        state,
+        response.error as ConflictModel,
+      );
     }
     throw IncidentServiceException(
       'Failed to delete Incident ${state.value}',

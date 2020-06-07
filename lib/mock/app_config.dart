@@ -11,8 +11,6 @@ import 'package:SarSys/services/service.dart';
 class AppConfigServiceMock extends Mock implements AppConfigService {
   static AppConfigService build(String asset, String baseUrl, Client client) {
     final AppConfigServiceMock mock = AppConfigServiceMock();
-    when(mock.baseUrl).thenAnswer((_) => baseUrl);
-    when(mock.client).thenAnswer((_) => client);
     when(mock.create(any)).thenAnswer((_) async {
       final config = _.positionalArguments[0];
       final json = jsonEncode(config.toJson());
@@ -20,7 +18,7 @@ class AppConfigServiceMock extends Mock implements AppConfigService {
         key: 'app_config_${config.uuid}',
         value: json,
       );
-      return ServiceResponse.ok(body: config);
+      return ServiceResponse.created();
     });
     when(mock.fetch(any)).thenAnswer((_) async {
       final uuid = _.positionalArguments[0];

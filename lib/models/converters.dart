@@ -5,7 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';
 import 'Coordinates.dart';
-import 'Incident.dart';
+import '../features/incident/domain/entities/Incident.dart';
 import 'Tracking.dart';
 import 'Unit.dart';
 

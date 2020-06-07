@@ -1,4 +1,4 @@
-import 'package:SarSys/blocs/incident_bloc.dart';
+import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';

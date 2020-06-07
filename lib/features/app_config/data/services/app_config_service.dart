@@ -1,8 +1,6 @@
 import 'dart:async' show Future;
 
 import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' show Client;
 
 import 'package:SarSys/core/api.dart';
 import 'package:SarSys/services/service.dart';
@@ -14,14 +12,9 @@ part 'app_config_service.chopper.dart';
 ///
 /// Delegates to a ChopperService implementation
 class AppConfigService {
-  final Client client;
-  final String baseUrl;
   final AppConfigServiceImpl delegate;
 
-  AppConfigService({
-    @required this.client,
-    @required this.baseUrl,
-  }) : delegate = AppConfigServiceImpl.newInstance();
+  AppConfigService() : delegate = AppConfigServiceImpl.newInstance();
 
   /// Initializes configuration to default values for given version.
   ///
@@ -56,7 +49,9 @@ class AppConfigService {
 
   /// DELETE ../app-config/{uuid}
   Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<AppConfig, AppConfig>(await delegate.delete(uuid));
+    return Api.from<AppConfig, AppConfig>(await delegate.delete(
+      uuid,
+    ));
   }
 }
 
@@ -66,26 +61,26 @@ abstract class AppConfigServiceImpl extends ChopperService {
 
   /// Initializes configuration to default values for given version.
   ///
-  /// POST /app-config/{version}
+  /// POST /app-configs/{version}
   @Post()
   Future<Response<String>> create(
     @Body() AppConfig config,
   );
 
-  /// GET /app-config/{uuid}
+  /// GET /app-configs/{uuid}
   @Get(path: "{uuid}")
   Future<Response<AppConfig>> fetch(
     @Path('uuid') String uuid,
   );
 
-  /// PATCH ../app-config/{uuid}
+  /// PATCH ../app-configs/{uuid}
   @Patch(path: "{uuid}")
   Future<Response<AppConfig>> update(
     @Path('uuid') String uuid,
     @Body() AppConfig config,
   );
 
-  /// DELETE ../app-config/{uuid}
+  /// DELETE ../app-configs/{uuid}
   @Delete(path: "{uuid}")
   Future<Response<void>> delete(
     @Path('uuid') String uuid,

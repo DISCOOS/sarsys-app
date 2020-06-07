@@ -29,20 +29,10 @@ abstract class AppConfigRepository implements ConnectionAwareRepository<int, App
   Future<AppConfig> load();
 
   /// Push [config] to [service]
-  Future<AppConfig> update(AppConfig config) async {
-    checkState();
-    return apply(
-      StorageState.updated(config),
-    );
-  }
+  Future<AppConfig> update(AppConfig config);
 
   /// Delete [config] from [service]
-  Future<AppConfig> delete() async {
-    checkState();
-    return apply(
-      StorageState.deleted(config),
-    );
-  }
+  Future<AppConfig> delete();
 }
 
 class AppConfigServiceException extends RepositoryException {
