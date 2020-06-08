@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
-import 'package:SarSys/usecase/unit_use_cases.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
-
-import '../../../../blocs/core.dart';
-import '../../../../blocs/mixins.dart';
-import '../../../incident/presentation/blocs/incident_bloc.dart';
-import '../../../personnel/presentation/blocs/personnel_bloc.dart';
 
 typedef void UnitCallback(VoidCallback fn);
 
@@ -47,8 +47,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
     registerStreamSubscription(incidentBloc.listen(
       // 1) Load and unloads units as needed
-      // 2) Creates units from templates if
-      //    give in IncidentCreated
+      // 2) Creates units from templates if give in IncidentCreated
       _processIncidentState,
     ));
 
@@ -59,18 +58,21 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     ));
   }
 
-  void _processIncidentState(IncidentState state) async {
+  void _processIncidentState(OperationState state) async {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(iuuid)) {
-          await dispatch(LoadUnits((state.data as Incident).uuid));
-          if (state is IncidentCreated) {
+        if (state.shouldLoad(ouuid)) {
+          await dispatch(LoadUnits((state.data as Operation).uuid));
+          if (state is OperationCreated) {
             if (state.units.isNotEmpty) {
-              createUnits(bloc: this, templates: state.units);
+              createUnits(
+                bloc: this,
+                templates: state.units,
+              );
             }
           }
-        } else if (state.shouldUnload(iuuid) && repo.isReady) {
-          dispatch(UnloadUnits(iuuid));
+        } else if (state.shouldUnload(ouuid) && repo.isReady) {
+          dispatch(UnloadUnits(ouuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -108,8 +110,8 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     }
   }
 
-  /// Get [IncidentBloc]
-  final IncidentBloc incidentBloc;
+  /// Get [OperationBloc]
+  final OperationBloc incidentBloc;
 
   /// Get [PersonnelBloc]
   final PersonnelBloc personnelBloc;
@@ -124,13 +126,13 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   UnitService get service => repo.service;
 
   /// [Incident] that manages given [units]
-  String get iuuid => repo.iuuid;
+  String get ouuid => repo.ouuid;
 
   /// Check if [Incident.uuid] is set
-  bool get isSet => repo.iuuid != null;
+  bool get isSet => repo.ouuid != null;
 
   /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.iuuid == null;
+  bool get isUnset => repo.ouuid == null;
 
   /// Get units
   Map<String, Unit> get units => repo.map;
@@ -209,7 +211,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   Future<List<Unit>> load() async {
     _assertState();
     return dispatch<List<Unit>>(
-      LoadUnits(iuuid ?? incidentBloc.selected.uuid),
+      LoadUnits(ouuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -222,7 +224,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     _assertState();
     return dispatch<Unit>(
       CreateUnit(
-        iuuid ?? incidentBloc.selected.uuid,
+        ouuid ?? incidentBloc.selected.uuid,
         unit.copyWith(
           // Units should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -258,7 +260,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   Future<List<Unit>> unload() {
     _assertState();
     return dispatch<List<Unit>>(
-      UnloadUnits(iuuid),
+      UnloadUnits(ouuid),
     );
   }
 
@@ -292,7 +294,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   Future<UnitState> _create(CreateUnit command) async {
     _assertData(command.data);
-    var unit = await repo.create(command.iuuid, command.data);
+    var unit = await repo.create(command.ouuid, command.data);
     return toOK(
       command,
       UnitCreated(
@@ -358,22 +360,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 }
 
 /// ---------------------
-/// Event handlers
-/// ---------------------
-
-class IncidentCreatedHandler implements BlocEventHandler<IncidentCreated> {
-  IncidentCreatedHandler(this.bloc);
-  final UnitBloc bloc;
-
-  @override
-  void handle(_, IncidentCreated event) {
-    if (event.units?.isNotEmpty == true) {
-      createUnits(templates: event.units, bloc: bloc);
-    }
-  }
-}
-
-/// ---------------------
 /// Commands
 /// ---------------------
 abstract class UnitCommand<S, T> extends BlocCommand<S, T> {
@@ -381,26 +367,26 @@ abstract class UnitCommand<S, T> extends BlocCommand<S, T> {
 }
 
 class LoadUnits extends UnitCommand<String, List<Unit>> {
-  LoadUnits(String iuuid) : super(iuuid);
+  LoadUnits(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadUnits {iuuid: $data}';
+  String toString() => 'LoadUnits {ouuid: $data}';
 }
 
 class CreateUnit extends UnitCommand<Unit, Unit> {
-  final String iuuid;
+  final String ouuid;
   final Position position;
   final List<Device> devices;
 
   CreateUnit(
-    this.iuuid,
+    this.ouuid,
     Unit data, {
     this.position,
     this.devices,
-  }) : super(data, [iuuid, position, devices]);
+  }) : super(data, [ouuid, position, devices]);
 
   @override
-  String toString() => 'CreateUnit {iuuid: $iuuid, unit: $data, '
+  String toString() => 'CreateUnit {ouuid: $ouuid, unit: $data, '
       'position: $position, devices: $devices}';
 }
 
@@ -419,10 +405,10 @@ class DeleteUnit extends UnitCommand<Unit, Unit> {
 }
 
 class UnloadUnits extends UnitCommand<String, List<Unit>> {
-  UnloadUnits(String iuuid) : super(iuuid);
+  UnloadUnits(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'UnloadUnits {iuuid: $data}';
+  String toString() => 'UnloadUnits {ouuid: $data}';
 }
 
 class _InternalChange extends UnitCommand<Unit, Unit> {

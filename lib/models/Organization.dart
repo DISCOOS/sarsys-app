@@ -1,13 +1,13 @@
 import 'package:SarSys/models/Affiliation.dart';
 import 'package:SarSys/models/Division.dart';
-import 'package:SarSys/models/TalkGroup.dart';
+import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-import 'User.dart';
+import '../features/user/domain/entities/User.dart';
 
 part 'Organization.g.dart';
 

@@ -11,7 +11,7 @@ import 'package:SarSys/models/Track.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/core.dart';
-import 'package:SarSys/repositories/tracking_repository.dart';
+import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';

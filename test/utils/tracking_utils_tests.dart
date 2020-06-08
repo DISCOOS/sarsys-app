@@ -1,8 +1,8 @@
 import 'package:SarSys/core/proj4d.dart';
-import 'package:SarSys/mock/devices.dart';
-import 'package:SarSys/mock/personnels.dart';
-import 'package:SarSys/mock/trackings.dart';
-import 'package:SarSys/mock/units.dart';
+import 'package:SarSys/mock/device_service_mock.dart';
+import 'package:SarSys/mock/personnel_service_mock.dart';
+import 'package:SarSys/mock/tracking_service_mock.dart';
+import 'package:SarSys/mock/unit_service_mock.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Track.dart';

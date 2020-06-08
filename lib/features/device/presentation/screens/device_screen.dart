@@ -9,7 +9,7 @@ import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';

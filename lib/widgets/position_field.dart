@@ -1,5 +1,5 @@
 import 'package:SarSys/editors/position_editor.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ class PositionField extends StatelessWidget {
   final String errorText;
   final String helperText;
   final Position initialValue;
-  final Incident incident;
+  final Operation operation;
   final bool optional;
   final bool enabled;
   final ValueChanged<Position> onChanged;
@@ -23,7 +23,7 @@ class PositionField extends StatelessWidget {
     @required this.labelText,
     @required this.hintText,
     @required this.errorText,
-    this.incident,
+    this.operation,
     this.initialValue,
     this.onChanged,
     this.helperText,
@@ -76,7 +76,7 @@ class PositionField extends StatelessWidget {
       builder: (context) => PositionEditor(
         field.value,
         title: hintText,
-        incident: incident,
+        operation: operation,
       ),
     );
     if (selected != field.value) {

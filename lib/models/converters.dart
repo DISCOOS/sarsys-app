@@ -1,11 +1,11 @@
-import 'package:SarSys/models/TalkGroup.dart';
+import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';
 import 'Coordinates.dart';
-import '../features/incident/domain/entities/Incident.dart';
+import '../features/operation/domain/entities/Incident.dart';
 import 'Tracking.dart';
 import '../features/unit/domain/entities/Unit.dart';
 

@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
@@ -25,7 +25,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   final PersonnelService service;
 
   /// Get [Incident.uuid]
-  String get iuuid => _iuuid;
+  String get ouuid => _iuuid;
   String _iuuid;
 
   /// Check if repository is operational.
@@ -42,16 +42,16 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   }
 
   /// Ensure that box for given [Incident.uuid] is open
-  Future<void> _ensure(String iuuid) async {
-    if (isEmptyOrNull(iuuid)) {
+  Future<void> _ensure(String ouuid) async {
+    if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
-    if (_iuuid != iuuid) {
+    if (_iuuid != ouuid) {
       await prepare(
         force: true,
-        postfix: iuuid,
+        postfix: ouuid,
       );
-      _iuuid = iuuid;
+      _iuuid = ouuid;
     }
   }
 
@@ -77,11 +77,11 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
           .where((personnel) => personnel.userId == user.userId);
 
   /// GET ../personnels
-  Future<List<Personnel>> load(String iuuid) async {
-    await _ensure(iuuid);
+  Future<List<Personnel>> load(String ouuid) async {
+    await _ensure(ouuid);
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch(iuuid);
+        var response = await service.fetch(ouuid);
         if (response.is200) {
           evict(
             retainKeys: response.body.map((personnel) => personnel.uuid),
@@ -98,7 +98,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
           return response.body;
         }
         throw PersonnelServiceException(
-          'Failed to fetch personnel for incident $iuuid',
+          'Failed to fetch personnel for incident $ouuid',
           response: response,
           stackTrace: StackTrace.current,
         );
@@ -110,8 +110,8 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   }
 
   /// Create [personnel]
-  Future<Personnel> create(String iuuid, Personnel personnel) async {
-    await _ensure(iuuid);
+  Future<Personnel> create(String ouuid, Personnel personnel) async {
+    await _ensure(ouuid);
     return apply(
       StorageState.created(personnel),
     );
@@ -145,7 +145,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     );
   }
 
-  /// Unload all devices for given [iuuid]
+  /// Unload all devices for given [ouuid]
   Future<List<Personnel>> close() async {
     _iuuid = null;
     return super.close();

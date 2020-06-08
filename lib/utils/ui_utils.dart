@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
@@ -288,27 +288,30 @@ Color toPositionStatusColor(Position position) {
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }
 
-void jumpToPoint(BuildContext context, {Point center, Incident incident}) {
-  jumpToLatLng(context, center: toLatLng(center), incident: incident);
+void jumpToPoint(BuildContext context, {Point center, Operation operation}) {
+  jumpToLatLng(context, center: toLatLng(center), operation: operation);
 }
 
-void jumpToLatLng(BuildContext context, {LatLng center, Incident incident}) {
+void jumpToLatLng(BuildContext context, {LatLng center, Operation operation}) {
   if (center != null) {
     _stopFollowMe(context);
-    Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {"center": center, "incident": incident});
+    Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {
+      "center": center,
+      "operation": operation,
+    });
   }
 }
 
 void jumpToLatLngBounds(
   BuildContext context, {
-  Incident incident,
+  Operation operation,
   LatLngBounds fitBounds,
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
   if (fitBounds != null && fitBounds.isValid) {
     _stopFollowMe(context);
     Navigator.pushReplacementNamed(context, MapScreen.ROUTE, arguments: {
-      "incident": incident,
+      "operation": operation,
       "fitBounds": fitBounds,
       "fitBoundOptions": fitBoundOptions,
     });
@@ -347,18 +350,26 @@ void jumpToMe(
   }
 }
 
-void jumpToIncident(
+void jumpToOperation(
   BuildContext context,
-  Incident incident, {
+  Operation operation, {
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) {
-  final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
-  final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
+  final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
+  final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
   final fitBounds = LatLngBounds(ipp, meetup);
   if (ipp == null || meetup == null || fitBounds.isValid == false)
-    jumpToLatLng(context, center: meetup ?? ipp, incident: incident);
+    jumpToLatLng(
+      context,
+      center: meetup ?? ipp,
+      operation: operation,
+    );
   else
-    jumpToLatLngBounds(context, fitBounds: fitBounds, fitBoundOptions: fitBoundOptions);
+    jumpToLatLngBounds(
+      context,
+      fitBounds: fitBounds,
+      fitBoundOptions: fitBoundOptions,
+    );
 }
 
 Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {

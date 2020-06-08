@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -10,15 +11,14 @@ import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/models/User.dart';
-import 'package:SarSys/screens/change_pin_screen.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
 import 'package:SarSys/features/device/presentation/screens/device_screen.dart';
 import 'package:SarSys/screens/first_setup_screen.dart';
 import 'package:SarSys/features/personnel/presentation/screens/personnel_screen.dart';
@@ -27,16 +27,16 @@ import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
 import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
-import 'package:SarSys/screens/unlock_screen.dart';
-import 'package:SarSys/screens/user_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/services/navigation_service.dart';
-import 'package:SarSys/features/incident/domain/usecases/incident_user_cases.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/access_checker.dart';
 import 'package:SarSys/screens/command_screen.dart';
-import 'package:SarSys/features/incident/presentation/screens/incidents_screen.dart';
-import 'package:SarSys/screens/login_screen.dart';
+import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/cupertino.dart';
@@ -71,7 +71,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   UserBloc get userBloc => widget.controller.bloc<UserBloc>();
   AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
-  IncidentBloc get incidentBloc => widget.controller.bloc<IncidentBloc>();
+  OperationBloc get incidentBloc => widget.controller.bloc<OperationBloc>();
   PersonnelBloc get personnelBloc => widget.controller.bloc<PersonnelBloc>();
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
@@ -131,10 +131,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     ));
   }
 
-  /// Reselect incident if previous selected on first [IncidentsLoaded]
+  /// Reselect incident if previous selected on first [OperationLoaded]
   void _listenForIncidentsLoaded() {
     final subscription = widget.controller
-        .bloc<IncidentBloc>()
+        .bloc<OperationBloc>()
         .firstWhere((state) => state.isLoaded())
         .asStream()
         // User is authenticated (not null)
@@ -147,17 +147,17 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   }
 
   void _selectOnLoad(User user) async {
-    final iuuid = await Storage.readUserValue(
+    final ouuid = await Storage.readUserValue(
       user,
-      suffix: IncidentBloc.SELECTED_IUUID_KEY_SUFFIX,
+      suffix: OperationBloc.SELECTED_KEY_SUFFIX,
     );
-    if (iuuid != null) {
+    if (ouuid != null) {
       var route = getPageState<Map>(
         context,
         RouteWriter.STATE,
         defaultValue: {},
       );
-      final result = await selectIncident(iuuid);
+      final result = await selectOperation(ouuid);
       if (result.isRight()) {
         route['incident'] = result.toIterable().firstOrNull;
         NavigationService().pushReplacementNamed(
@@ -306,7 +306,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case MapScreen.ROUTE:
         child = _toMapScreen(
           settings: settings,
-          incident: widget.controller.bloc<IncidentBloc>().selected,
+          operation: widget.controller.bloc<OperationBloc>().selected,
         );
         break;
       case LoginScreen.ROUTE:
@@ -321,8 +321,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           ),
         );
         break;
-      case UserScreen.ROUTE_INCIDENT:
-        child = UserScreen(tabIndex: UserScreen.TAB_INCIDENT);
+      case UserScreen.ROUTE_OPERATION:
+        child = UserScreen(tabIndex: UserScreen.TAB_OPERATION);
         break;
       case UnitScreen.ROUTE:
         child = _toUnitScreen(settings, persisted);
@@ -363,9 +363,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case FirstSetupScreen.ROUTE:
         child = FirstSetupScreen();
         break;
-      case IncidentsScreen.ROUTE:
+      case OperationsScreen.ROUTE:
       default:
-        child = IncidentsScreen();
+        child = OperationsScreen();
         break;
     }
     return child;
@@ -399,27 +399,27 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         child: child);
   }
 
-  Widget _toMapScreen({RouteSettings settings, Incident incident}) {
+  Widget _toMapScreen({RouteSettings settings, Operation operation}) {
     final arguments = settings?.arguments;
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],
-        incident: arguments["incident"] ?? incident,
+        operation: arguments["incident"] ?? operation,
         fitBounds: arguments["fitBounds"],
         fitBoundOptions: arguments["fitBoundOptions"],
       );
     }
-    if (incident != null) {
+    if (operation != null) {
       var model = getPageState<MapWidgetStateModel>(
         widget.navigatorKey.currentState.context,
         MapWidgetState.STATE,
       );
-      if (model?.incident != incident.uuid) {
-        final ipp = incident.ipp != null ? toLatLng(incident.ipp.point) : null;
-        final meetup = incident.meetup != null ? toLatLng(incident.meetup.point) : null;
+      if (model?.incident != operation.uuid) {
+        final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
+        final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
         final fitBounds = LatLngBounds(ipp, meetup);
         return MapScreen(
-          incident: incident,
+          operation: operation,
           fitBounds: fitBounds,
         );
       }
@@ -492,7 +492,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else if (userBloc.isReady) {
       child = _toPreviousRoute(
           orElse: _toMapScreen(
-        incident: incidentBloc.selected,
+        operation: incidentBloc.selected,
       ));
     } else {
       throw StateError("Unexpected state");

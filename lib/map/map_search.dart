@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:SarSys/controllers/app_controller.dart';
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/services/geocode_services.dart';

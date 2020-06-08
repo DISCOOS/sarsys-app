@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
@@ -40,13 +40,13 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     ));
   }
 
-  void _processIncidentState(IncidentState state) {
+  void _processIncidentState(OperationState state) {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(iuuid)) {
+        if (state.shouldLoad(ouuid)) {
           dispatch(LoadDevices(state.data.uuid));
-        } else if (state.shouldUnload(iuuid) && repo.isReady) {
-          dispatch(UnloadDevices(repo.iuuid));
+        } else if (state.shouldUnload(ouuid) && repo.isReady) {
+          dispatch(UnloadDevices(repo.ouuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -70,8 +70,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     }
   }
 
-  /// Get [IncidentBloc]
-  final IncidentBloc incidentBloc;
+  /// Get [OperationBloc]
+  final OperationBloc incidentBloc;
 
   /// Get [DeviceRepository]
   final DeviceRepository repo;
@@ -80,10 +80,10 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   DeviceService get service => repo.service;
 
   /// [Incident] that manages given [devices]
-  String get iuuid => repo.iuuid;
+  String get ouuid => repo.ouuid;
 
   /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.iuuid == null;
+  bool get isUnset => repo.ouuid == null;
 
   /// Get devices
   Map<String, Device> get devices => repo.map;
@@ -120,7 +120,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Iterable<Device>> load() async {
     _assertState();
     return dispatch<Iterable<Device>>(
-      LoadDevices(iuuid ?? incidentBloc.selected.uuid),
+      LoadDevices(ouuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -129,11 +129,11 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> create(Device device) {
     _assertState();
     return dispatch<Device>(
-      CreateDevice(iuuid ?? incidentBloc.selected.uuid, device),
+      CreateDevice(ouuid ?? incidentBloc.selected.uuid, device),
     );
   }
 
-  /// Attach given [device] to [iuuid]
+  /// Attach given [device] to [ouuid]
   Future<Device> attach(Device device) {
     _assertState();
     return update(
@@ -172,7 +172,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Iterable<Device>> unload() {
     _assertState();
     return dispatch<Iterable<Device>>(
-      UnloadDevices(iuuid),
+      UnloadDevices(ouuid),
     );
   }
 
@@ -204,7 +204,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _create(CreateDevice command) async {
     _assertData(command.data);
-    var device = await repo.create(command.iuuid, command.data);
+    var device = await repo.create(command.ouuid, command.data);
     return toOK(
       command,
       DeviceCreated(device),
@@ -263,18 +263,18 @@ abstract class DeviceCommand<S, T> extends BlocCommand<S, T> {
 }
 
 class LoadDevices extends DeviceCommand<String, Iterable<Device>> {
-  LoadDevices(String iuuid) : super(iuuid);
+  LoadDevices(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadDevices {iuuid: $data}';
+  String toString() => 'LoadDevices {ouuid: $data}';
 }
 
 class CreateDevice extends DeviceCommand<Device, Device> {
-  final String iuuid;
-  CreateDevice(this.iuuid, Device data) : super(data, [iuuid]);
+  final String ouuid;
+  CreateDevice(this.ouuid, Device data) : super(data, [ouuid]);
 
   @override
-  String toString() => 'CreateDevice {iuuid: $iuuid, device: $data}';
+  String toString() => 'CreateDevice {ouuid: $ouuid, device: $data}';
 }
 
 class UpdateDevice extends DeviceCommand<Device, Device> {
@@ -292,10 +292,10 @@ class DeleteDevice extends DeviceCommand<Device, Device> {
 }
 
 class UnloadDevices extends DeviceCommand<String, Iterable<Device>> {
-  UnloadDevices(String iuuid) : super(iuuid);
+  UnloadDevices(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'UnloadDevices {iuuid: $data}';
+  String toString() => 'UnloadDevices {ouuid: $data}';
 }
 
 /// ---------------------

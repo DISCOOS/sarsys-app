@@ -1,45 +1,48 @@
 import 'dart:async';
 
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
-import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/core/streams.dart';
-import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/streams.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/mock/personnel_service_mock.dart';
+import 'package:SarSys/mock/operation_service_mock.dart';
+import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
+import 'package:SarSys/features/operation/data/services/operation_service.dart';
+import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
+import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
-import 'package:SarSys/features/incident/data/repositories/incident_repository_impl.dart';
+import 'package:SarSys/features/operation/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/personnel/data/repositories/personnel_repository_impl.dart';
-import 'package:SarSys/repositories/auth_token_repository.dart';
+import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/mock/personnels.dart';
-import 'package:SarSys/models/User.dart';
-import 'package:SarSys/repositories/tracking_repository.dart';
-import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/mock/app_config.dart';
-import 'package:SarSys/mock/devices.dart';
-import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/mock/trackings.dart';
-import 'package:SarSys/mock/units.dart';
+import 'package:SarSys/mock/app_config_service_mock.dart';
+import 'package:SarSys/mock/device_service_mock.dart';
+import 'package:SarSys/mock/incident_service_mock.dart';
+import 'package:SarSys/mock/tracking_service_mock.dart';
+import 'package:SarSys/mock/unit_service_mock.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
-import 'package:SarSys/features/incident/data/services/incident_service.dart';
-import 'package:SarSys/services/tracking_service.dart';
+import 'package:SarSys/features/operation/data/services/incident_service.dart';
+import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
-import 'package:SarSys/services/user_service.dart';
+import 'package:SarSys/features/user/data/services/user_service.dart';
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 
@@ -97,7 +100,7 @@ class AppController {
   List<BlocProvider> get all => [
         toProvider<AppConfigBloc>(),
         toProvider<UserBloc>(),
-        toProvider<IncidentBloc>(),
+        toProvider<OperationBloc>(),
         toProvider<UnitBloc>(),
         toProvider<PersonnelBloc>(),
         toProvider<DeviceBloc>(),
@@ -157,7 +160,16 @@ class AppController {
     final IncidentService incidentService = !demo.active
         ? IncidentService()
         : IncidentServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
-    final IncidentBloc incidentBloc = IncidentBloc(
+
+    // Configure Operation service
+    final OperationService operationService = !demo.active
+        ? OperationService()
+        : OperationServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
+    final OperationBloc operationBloc = OperationBloc(
+        OperationRepositoryImpl(
+          operationService,
+          connectivity: connectivityService,
+        ),
         IncidentRepositoryImpl(
           incidentService,
           connectivity: connectivityService,
@@ -170,7 +182,7 @@ class AppController {
         ? PersonnelService()
         : PersonnelServiceMock.build(
             demo.personnelCount,
-            iuuids: incidentBloc.repo.keys,
+            iuuids: operationBloc.repo.keys,
           );
     // ignore: close_sinks
     final PersonnelBloc personnelBloc = PersonnelBloc(
@@ -179,14 +191,14 @@ class AppController {
           connectivity: connectivityService,
         ),
         controller.bus,
-        incidentBloc);
+        operationBloc);
 
     // Configure Unit service
     final UnitService unitService = !(demo.active || true)
         ? UnitService()
         : UnitServiceMock.build(
             demo.unitCount,
-            iuuids: incidentBloc.repo.keys,
+            iuuids: operationBloc.repo.keys,
           );
     // ignore: close_sinks
     final UnitBloc unitBloc = UnitBloc(
@@ -195,18 +207,18 @@ class AppController {
           connectivity: connectivityService,
         ),
         controller.bus,
-        incidentBloc,
+        operationBloc,
         personnelBloc);
 
     // Configure Device service
     final DeviceService deviceService = !(demo.active || true)
         ? DeviceService()
         : DeviceServiceMock.build(
-            incidentBloc,
+            operationBloc,
             tetraCount: demo.tetraCount,
             appCount: demo.appCount,
             simulate: true,
-            iuuids: incidentBloc.repo.keys,
+            iuuids: operationBloc.repo.keys,
           );
 
     // ignore: close_sinks
@@ -215,7 +227,7 @@ class AppController {
         deviceService,
         connectivity: connectivityService,
       ),
-      incidentBloc,
+      operationBloc,
     );
 
     // Configure Tracking service
@@ -225,7 +237,7 @@ class AppController {
             deviceService,
             personnelCount: demo.personnelCount,
             unitCount: demo.unitCount,
-            iuuids: incidentBloc.repo.keys,
+            iuuids: operationBloc.repo.keys,
             simulate: demo.simulate,
           );
 
@@ -237,7 +249,7 @@ class AppController {
       ),
       unitBloc: unitBloc,
       deviceBloc: deviceBloc,
-      incidentBloc: incidentBloc,
+      incidentBloc: operationBloc,
       personnelBloc: personnelBloc,
     );
 
@@ -256,6 +268,8 @@ class AppController {
           configService.delegate,
         if (incidentService.delegate != null)
           incidentService.delegate,
+        if (operationService.delegate != null)
+          operationService.delegate,
       ],
     );
 
@@ -264,7 +278,7 @@ class AppController {
       demo: demo,
       configBloc: configBloc,
       userBloc: userBloc,
-      incidentBloc: incidentBloc,
+      incidentBloc: operationBloc,
       unitBloc: unitBloc,
       personnelBloc: personnelBloc,
       deviceBloc: deviceBloc,
@@ -347,7 +361,7 @@ class AppController {
     @required DemoParams demo,
     @required AppConfigBloc configBloc,
     @required UserBloc userBloc,
-    @required IncidentBloc incidentBloc,
+    @required OperationBloc incidentBloc,
     @required UnitBloc unitBloc,
     @required PersonnelBloc personnelBloc,
     @required DeviceBloc deviceBloc,

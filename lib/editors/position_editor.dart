@@ -2,28 +2,29 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:latlong/latlong.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/widgets/coordinate_input.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PositionEditor extends StatefulWidget {
   final Position position;
   final String title;
-  final Incident incident;
+  final Operation operation;
   const PositionEditor(
     this.position, {
     Key key,
-    this.incident,
+    this.operation,
     @required this.title,
   }) : super(key: key);
 
@@ -181,7 +182,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
 
   Widget _buildMap() {
     return MapWidget(
-      incident: widget.incident,
+      operation: widget.operation,
       center: _mapController.ready ? _mapController.center : LatLng(_current.lat, _current.lon),
       mapController: _mapController,
       withRead: true,

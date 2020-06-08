@@ -1,5 +1,5 @@
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -171,7 +171,7 @@ class UserRolesDescription extends StatelessWidget {
                   text: "Aksjoner du selv har opprettet kan åpnes av deg uten kode. "
                       "Koden for hver aksjon finnes på ",
                   children: [
-                    context.bloc<IncidentBloc>().isSelected
+                    context.bloc<OperationBloc>().isSelected
                         ? TextSpan(text: 'aksjonens side.')
                         : TextSpan(
                             text: 'aksjonens side',

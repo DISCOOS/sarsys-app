@@ -1,11 +1,11 @@
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/map/layers/poi_layer.dart';
 import 'package:SarSys/map/tools/map_tools.dart';
 import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/usecase/poi_use_cases.dart';
+import 'package:SarSys/features/operation/domain/usecases/poi_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/poi_widget.dart';
+import 'package:SarSys/features/operation/presentation/widgets/poi_widget.dart';
 import 'package:SarSys/widgets/selector_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 class POITool extends MapTool with MapSelectable<POI> {
-  final IncidentBloc bloc;
+  final OperationBloc bloc;
   final bool includeRetired;
   final MapController controller;
   final ActionCallback onMessage;

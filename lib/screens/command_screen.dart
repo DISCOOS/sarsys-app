@@ -1,7 +1,7 @@
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
@@ -10,7 +10,7 @@ import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
 import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
-import 'package:SarSys/usecase/unit_use_cases.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
@@ -71,11 +71,11 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: context.bloc<IncidentBloc>().onChanged(),
-      initialData: context.bloc<IncidentBloc>().selected,
+      stream: context.bloc<OperationBloc>().onChanged(),
+      initialData: context.bloc<OperationBloc>().selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final incident = (snapshot.hasData ? context.bloc<IncidentBloc>().selected : null);
-        final title = _toTitle(incident);
+        final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
+        final title = _toTitle(operation);
         final tabs = [
           UnitsPage(key: _unitsKey),
           PersonnelPage(key: _personnelKey),
@@ -86,7 +86,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           key: _scaffoldKey,
           drawer: AppDrawer(),
           appBar: AppBar(
-            actions: _buildActions(incident),
+            actions: _buildActions(operation),
             title: Text(title),
           ),
           body: tabs[routeData],
@@ -129,7 +129,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
 
   bool isCommander(BuildContext context) => context.bloc<UserBloc>()?.user?.isCommander == true;
 
-  _toTitle(Incident incident, {ifEmpty: "Aksjon"}) {
+  _toTitle(Operation operation, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
       case CommandScreen.TAB_MISSIONS:
         return "Oppdrag";
@@ -142,7 +142,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     }
   }
 
-  List<Widget> _buildActions(incident) {
+  List<Widget> _buildActions(operation) {
     switch (routeData) {
       case CommandScreen.TAB_MISSIONS:
         return _buildListActions<Unit>(

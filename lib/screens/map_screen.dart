@@ -1,18 +1,19 @@
 import 'dart:async';
 
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/features/incident/domain/usecases/incident_user_cases.dart';
-import 'package:SarSys/usecase/unit_use_cases.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:latlong/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
+import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 
 import 'package:SarSys/widgets/app_drawer.dart';
@@ -21,7 +22,7 @@ class MapScreen extends StatefulWidget {
   static const ROUTE = 'map';
 
   final LatLng center;
-  final Incident incident;
+  final Operation operation;
   final LatLngBounds fitBounds;
   final FitBoundsOptions fitBoundOptions;
 
@@ -30,7 +31,7 @@ class MapScreen extends StatefulWidget {
     this.center,
     this.fitBounds,
     this.fitBoundOptions,
-    this.incident,
+    this.operation,
   }) : super(key: key);
 
   @override
@@ -44,8 +45,8 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   bool _showFAB = true;
 
   bool _unloaded = false;
-  StreamSubscription<IncidentState> _subscription;
-  Incident get incident => _unloaded ? null : widget.incident;
+  StreamSubscription<OperationState> _subscription;
+  Operation get operation => _unloaded ? null : widget.operation;
 
   @override
   void didChangeDependencies() {
@@ -56,9 +57,9 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   /// Initialize blocs and restart app after blocs are rebuilt
   void _listenForIncidentStates() {
     _subscription?.cancel();
-    _subscription = context.bloc<IncidentBloc>().listen((state) {
+    _subscription = context.bloc<OperationBloc>().listen((state) {
       setState(() {
-        _unloaded = state.shouldUnload(widget.incident?.uuid);
+        _unloaded = state.shouldUnload(widget.operation?.uuid);
       });
     });
   }
@@ -83,7 +84,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
   }
 
   Widget _buildMap() => MapWidget(
-        incident: incident,
+        operation: operation,
         center: widget.center,
         fitBounds: widget.fitBounds,
         fitBoundOptions: widget.fitBoundOptions,
@@ -111,7 +112,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
 
   void _showCreateItemSheet(BuildContext context) {
     final style = Theme.of(context).textTheme.headline6;
-    final isSelected = context.bloc<IncidentBloc>().isSelected;
+    final isSelected = context.bloc<OperationBloc>().isSelected;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -144,10 +145,10 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
                         leading: Icon(Icons.warning),
                         title: Text('Aksjon', style: style),
                         onTap: () async {
-                          final result = await createIncident(
+                          final result = await createOperation(
                             ipp: toPoint(_mapController.center),
                           );
-                          result.fold((_) => null, (incident) => jumpToIncident(context, incident));
+                          result.fold((_) => null, (incident) => jumpToOperation(context, incident));
                           Navigator.pop(context);
                         },
                       ),

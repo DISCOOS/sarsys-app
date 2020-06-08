@@ -3,8 +3,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
@@ -27,7 +28,6 @@ import 'package:SarSys/map/tools/poi_tool.dart';
 import 'package:SarSys/map/tools/unit_tool.dart';
 import 'package:SarSys/map/layers/unit_layer.dart';
 import 'package:SarSys/models/BaseMap.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/image_cache_service.dart';
 import 'package:SarSys/services/base_map_service.dart';
@@ -80,8 +80,8 @@ class MapWidget extends StatefulWidget {
 
   final String writeKeySuffix;
 
-  final Incident incident;
   final TapCallback onTap;
+  final Operation operation;
   final ActionCallback onMessage;
   final ToolCallback onToolChange;
   final PositionCallback onPositionChanged;
@@ -117,7 +117,7 @@ class MapWidget extends StatefulWidget {
     Key key,
     this.zoom,
     this.center,
-    this.incident,
+    this.operation,
     this.fitBounds,
     this.sharedKey,
     this.fitBoundOptions = FIT_BOUNDS_OPTIONS,
@@ -298,7 +298,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           oldMap.readZoom == newMap.readZoom &&
           oldMap.readCenter == newMap.readCenter &&
           oldMap.readLayers == newMap.readLayers &&
-          oldMap.incident == newMap.incident &&
+          oldMap.operation == newMap.operation &&
           oldMap.onTap == newMap.onTap &&
           oldMap.onMessage == newMap.onMessage &&
           oldMap.onToolChange == newMap.onToolChange &&
@@ -416,7 +416,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         tools: [
           MeasureTool(),
           POITool(
-            context.bloc<IncidentBloc>(),
+            context.bloc<OperationBloc>(),
             controller: _mapController,
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_POI),
@@ -506,8 +506,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   LatLng _centerFromIncident(Position current) {
     final candidate = widget.center ??
-        (context.bloc<IncidentBloc>()?.selected?.meetup != null
-            ? toLatLng(context.bloc<IncidentBloc>()?.selected?.meetup?.point)
+        (context.bloc<OperationBloc>()?.selected?.meetup != null
+            ? toLatLng(context.bloc<OperationBloc>()?.selected?.meetup?.point)
             : null) ??
         (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
     return candidate;
@@ -574,7 +574,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   /// in the widget tree FlutterMap
   /// state will be reused.
   ///
-  /// If [widget.incident] is given,
+  /// If [widget.operation] is given,
   /// an ObjectKey based on it is
   /// returned.
   ///
@@ -587,7 +587,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   ///
   /// Else a [GlobalKey] will be used.
   ///
-  Key get _mapKey => widget.incident == null ? widget.sharedKey ?? _uniqueMapKey : ObjectKey(widget.incident);
+  Key get _mapKey => widget.operation == null ? widget.sharedKey ?? _uniqueMapKey : ObjectKey(widget.operation);
 
   bool get isFollowing => _isLocating.value.locked || _readState(STATE_FOLLOWING, defaultValue: false);
 
@@ -620,7 +620,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
         if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
         if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
-        if (_useLayers.contains(LAYER_POI) && widget.incident != null) _buildPoiOptions(),
+        if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
         if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
@@ -785,18 +785,18 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   double _maxZoom() => _currentBaseMap?.maxZoom ?? Defaults.maxZoom;
 
   POILayerOptions _buildPoiOptions() {
-    return widget.incident == null
+    return widget.operation == null
         ? null
         : POILayerOptions(
-            context.bloc<IncidentBloc>(),
-            iuuid: widget.incident.uuid,
+            context.bloc<OperationBloc>(),
+            ouuid: widget.operation.uuid,
             align: AnchorAlign.top,
             icon: Icon(
               Icons.location_on,
               size: 30,
               color: Colors.red,
             ),
-            rebuild: context.bloc<IncidentBloc>().map((_) => null),
+            rebuild: context.bloc<OperationBloc>().map((_) => null),
           );
   }
 
@@ -1032,31 +1032,31 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         case STATE_CENTER:
           model = model.cloneWith(
             center: value as LatLng,
-            incident: widget.incident?.uuid,
+            incident: widget.operation?.uuid,
           );
           break;
         case STATE_ZOOM:
           model = model.cloneWith(
             zoom: value as double,
-            incident: widget.incident?.uuid,
+            incident: widget.operation?.uuid,
           );
           break;
         case STATE_BASE_MAP:
           model = model.cloneWith(
             baseMap: value as BaseMap,
-            incident: widget.incident?.uuid,
+            incident: widget.operation?.uuid,
           );
           break;
         case STATE_FOLLOWING:
           model = model.cloneWith(
             following: value as bool,
-            incident: widget.incident?.uuid,
+            incident: widget.operation?.uuid,
           );
           break;
         case STATE_FILTERS:
           model = model.cloneWith(
             filters: value as List<String>,
-            incident: widget.incident?.uuid,
+            incident: widget.operation?.uuid,
           );
           break;
         default:
@@ -1071,7 +1071,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return MapWidgetStateModel(
       zoom: _zoom,
       center: _center,
-      incident: widget.incident?.uuid,
+      incident: widget.operation?.uuid,
       baseMap: _currentBaseMap,
       filters: _readLayers().toList(),
       following: _isLocating.value.locked,

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/cupertino.dart';

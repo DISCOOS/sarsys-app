@@ -1,5 +1,5 @@
 import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';

@@ -1,10 +1,5 @@
 import 'dart:ui';
 
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:badges/badges.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +7,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart' hide Path;
+
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/map/painters.dart';
+import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/utils/data_utils.dart';
 
 typedef IconBuilder = Icon Function(BuildContext context, int index);
 
@@ -30,8 +31,8 @@ class POI extends Equatable {
 enum POIType { IPP, Meetup, Any }
 
 class POILayerOptions extends LayerOptions {
-  IncidentBloc bloc;
-  String iuuid;
+  OperationBloc bloc;
+  String ouuid;
   double bearing;
   double opacity;
   Icon icon;
@@ -43,7 +44,7 @@ class POILayerOptions extends LayerOptions {
 
   POILayerOptions(
     this.bloc, {
-    this.iuuid,
+    this.ouuid,
     this.icon,
     this.builder,
     this.bearing,
@@ -77,7 +78,7 @@ class POILayer implements MapPlugin {
 
   Widget _buildLayer(BuildContext context, POILayerOptions params, MapState map) {
     int index = 0;
-    List<Widget> icons = toItems(params.bloc.get(params.iuuid) ?? params.bloc.selected)
+    List<Widget> icons = toItems(params.bloc.get(params.ouuid) ?? params.bloc.selected)
         .where((poi) => map.bounds.contains(toLatLng(poi.point)))
         .map((poi) => _buildIcon(context, map, params, toLatLng(poi.point), poi.name, index++))
         .toList();
@@ -88,28 +89,28 @@ class POILayer implements MapPlugin {
           );
   }
 
-  static POI toItem(Incident incident, POIType type) {
+  static POI toItem(Operation operation, POIType type) {
     switch (type) {
       case POIType.Meetup:
         return POI(
           name: "Oppmøte",
-          point: incident?.meetup?.point,
+          point: operation?.meetup?.point,
           type: POIType.Meetup,
         );
       case POIType.IPP:
       default:
         return POI(
           name: "IPP",
-          point: incident?.ipp?.point,
+          point: operation?.ipp?.point,
           type: POIType.IPP,
         );
     }
   }
 
-  static List<POI> toItems(Incident incident) {
+  static List<POI> toItems(Operation operation) {
     return [
-      toItem(incident, POIType.IPP),
-      toItem(incident, POIType.Meetup),
+      toItem(operation, POIType.IPP),
+      toItem(operation, POIType.Meetup),
     ];
   }
 

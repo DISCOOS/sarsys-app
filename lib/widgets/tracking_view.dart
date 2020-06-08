@@ -1,4 +1,4 @@
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/utils/data_utils.dart';

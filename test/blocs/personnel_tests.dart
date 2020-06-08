@@ -1,10 +1,11 @@
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/mock/personnels.dart';
-import 'package:SarSys/mock/incidents.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/mock/incident_service_mock.dart';
+import 'package:SarSys/mock/personnel_service_mock.dart';
+import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -12,14 +13,14 @@ import 'harness.dart';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withIncidentBloc()
+    ..withOperationBloc()
     ..withPersonnelBloc()
     ..install();
 
   test(
     'Personnel bloc should be EMPTY and UNSET',
     () async {
-      expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD BE unset");
+      expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD BE unset");
       expect(harness.personnelBloc.personnels.length, 0, reason: "SHOULD BE empty");
       expect(harness.personnelBloc.initialState, isA<PersonnelsEmpty>(), reason: "Unexpected personnel state");
       expect(harness.personnelBloc, emits(isA<PersonnelsEmpty>()));
@@ -30,9 +31,9 @@ void main() async {
     test('SHOULD load personnel', () async {
       // Arrange
       harness.connectivity.cellular();
-      Incident incident = await _prepare(harness);
-      final personnel1 = harness.personnelService.add(incident.uuid);
-      final personnel2 = harness.personnelService.add(incident.uuid);
+      Operation operation = await _prepare(harness);
+      final personnel1 = harness.personnelService.add(operation.uuid);
+      final personnel2 = harness.personnelService.add(operation.uuid);
 
       // Act
       List<Personnel> personnel = await harness.personnelBloc.load();
@@ -55,7 +56,7 @@ void main() async {
     test('SHOULD create personnel and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
+      final operation = await _prepare(harness);
       final personnel = PersonnelBuilder.create();
 
       // Act
@@ -69,17 +70,17 @@ void main() async {
         remote: true,
       );
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
-      expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
           reason: "SHOULD contain personnel ${personnel.uuid}");
       expectThrough(harness.personnelBloc, isA<PersonnelCreated>());
     });
 
-    test('SHOULD update incident and push to backend', () async {
+    test('SHOULD update operation and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final personnel = harness.personnelService.add(incident.uuid);
+      final operation = await _prepare(harness);
+      final personnel = harness.personnelService.add(operation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -94,7 +95,7 @@ void main() async {
         remote: true,
       );
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
-      expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
           reason: "SHOULD contain personnel ${personnel.uuid}");
       expectThrough(harness.personnelBloc, isA<PersonnelUpdated>());
@@ -103,8 +104,8 @@ void main() async {
     test('SHOULD delete personnel and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final personnel = harness.personnelService.add(incident.uuid);
+      final operation = await _prepare(harness);
+      final personnel = harness.personnelService.add(operation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -120,15 +121,15 @@ void main() async {
       );
       expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
-      expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expectThrough(harness.personnelBloc, isA<PersonnelDeleted>());
     });
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      harness.personnelService.add(incident.uuid);
+      final operation = await _prepare(harness);
+      harness.personnelService.add(operation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -144,8 +145,8 @@ void main() async {
     test('SHOULD reload one personnel after unload', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final personnel = harness.personnelService.add(incident.uuid);
+      final operation = await _prepare(harness);
+      final personnel = harness.personnelService.add(operation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -161,34 +162,34 @@ void main() async {
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
     });
 
-    test('SHOULD reload when incident is switched', () async {
+    test('SHOULD reload when operation is switched', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldReloadWhenIncidentIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness);
     });
 
-    test('SHOULD unload when incident is deleted', () async {
+    test('SHOULD unload when operation is deleted', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness);
     });
 
-    test('SHOULD unload when incident is cancelled', () async {
+    test('SHOULD unload when operation is cancelled', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness);
     });
 
-    test('SHOULD unload when incident is resolved', () async {
+    test('SHOULD unload when operation is resolved', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness);
     });
 
-    test('SHOULD unload when incidents are unloaded', () async {
+    test('SHOULD unload when operations are unloaded', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
   });
 
@@ -308,47 +309,47 @@ void main() async {
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
     });
 
-    test('SHOULD reload when incident is switched', () async {
+    test('SHOULD reload when operation is switched', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldReloadWhenIncidentIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness);
     });
 
-    test('SHOULD unload when incident is deleted', () async {
+    test('SHOULD unload when operation is deleted', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness);
     });
 
-    test('SHOULD unload when incident is cancelled', () async {
+    test('SHOULD unload when operation is cancelled', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness);
     });
 
-    test('SHOULD unload when incident is resolved', () async {
+    test('SHOULD unload when operation is resolved', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness);
     });
 
-    test('SHOULD unload when incidents are unloaded', () async {
+    test('SHOULD unload when operations are unloaded', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
   });
 }
 
-Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
+Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
   await _prepare(harness);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
-  expect(harness.personnelBloc.iuuid, isNotNull, reason: "SHOULD NOT be null");
+  expect(harness.personnelBloc.ouuid, isNotNull, reason: "SHOULD NOT be null");
 
   // Act
-  await harness.incidentBloc.unload();
+  await harness.operationsBloc.unload();
 
   // Assert
   await expectThroughLater(
@@ -356,7 +357,7 @@ Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
     emits(isA<PersonnelsUnloaded>()),
     close: false,
   );
-  expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.personnelBloc.repo.containsKey(personnel.uuid),
@@ -365,15 +366,15 @@ Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
   // Act
-  await harness.incidentBloc.update(
-    incident.copyWith(status: IncidentStatus.Resolved),
+  await harness.operationsBloc.update(
+    operation.copyWith(status: OperationStatus.completed),
   );
 
   // Assert
@@ -382,7 +383,7 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
     emits(isA<PersonnelsUnloaded>()),
     close: false,
   );
-  expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.personnelBloc.repo.containsKey(personnel.uuid),
@@ -391,15 +392,18 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
   // Act
-  await harness.incidentBloc.update(
-    incident.copyWith(status: IncidentStatus.Cancelled),
+  await harness.operationsBloc.update(
+    operation.copyWith(
+      status: OperationStatus.completed,
+      resolution: OperationResolution.cancelled,
+    ),
   );
 
   // Assert
@@ -408,7 +412,7 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
     emits(isA<PersonnelsUnloaded>()),
     close: false,
   );
-  expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.personnelBloc.repo.containsKey(personnel.uuid),
@@ -417,14 +421,14 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
   // Act
-  await harness.incidentBloc.delete(incident.uuid);
+  await harness.operationsBloc.delete(operation.uuid);
 
   // Assert
   await expectThroughLater(
@@ -432,7 +436,7 @@ Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
     emits(isA<PersonnelsUnloaded>()),
     close: false,
   );
-  expect(harness.personnelBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.personnelBloc.repo.containsKey(personnel.uuid),
@@ -441,22 +445,25 @@ Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldReloadWhenIncidentIsSwitched(BlocTestHarness harness) async {
+Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   await _prepare(harness);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
   // Act
-  var incident2 = IncidentBuilder.create(harness.userBloc.userId);
-  incident2 = await harness.incidentBloc.create(incident2, selected: true);
+  final incident = IncidentBuilder.create();
+  final operation2 = await harness.operationsBloc.create(
+    OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
+    incident: incident,
+  );
 
   // Assert
   await expectThroughInOrderLater(
     harness.personnelBloc,
     [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()],
   );
-  expect(harness.personnelBloc.iuuid, incident2.uuid, reason: "SHOULD change to ${incident2.uuid}");
+  expect(harness.personnelBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.personnelBloc.repo.containsKey(personnel.uuid),
@@ -466,22 +473,25 @@ Future _testShouldReloadWhenIncidentIsSwitched(BlocTestHarness harness) async {
 }
 
 /// Prepare blocs for testing
-Future<Incident> _prepare(BlocTestHarness harness) async {
+Future<Operation> _prepare(BlocTestHarness harness) async {
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
-  // Create incident
-  var incident = IncidentBuilder.create(harness.userBloc.userId);
-  incident = await harness.incidentBloc.create(incident);
+  // Create operation
+  final incident = IncidentBuilder.create();
+  final operation = await harness.operationsBloc.create(
+    OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
+    incident: incident,
+  );
 
-  // Prepare IncidentBloc
-  await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
+  // Prepare OperationBloc
+  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()), close: false);
+  expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare PersonnelBloc
   await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()), close: false);
   expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
-  expect(harness.personnelBloc.iuuid, incident.uuid, reason: "SHOULD depend on incident ${incident.uuid}");
+  expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
 
-  return incident;
+  return operation;
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
-import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;

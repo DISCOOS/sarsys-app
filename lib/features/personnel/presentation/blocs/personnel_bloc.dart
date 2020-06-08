@@ -1,17 +1,16 @@
 import 'dart:async';
 
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
-
-import '../../../../blocs/core.dart';
-import '../../../../blocs/mixins.dart';
-import '../../../incident/presentation/blocs/incident_bloc.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 
@@ -41,13 +40,13 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     ));
   }
 
-  void _processIncidentState(IncidentState state) {
+  void _processIncidentState(OperationState state) {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(iuuid)) {
+        if (state.shouldLoad(ouuid)) {
           dispatch(LoadPersonnels(state.data.uuid));
-        } else if (state.shouldUnload(iuuid) && repo.isReady) {
-          dispatch(UnloadPersonnels(repo.iuuid));
+        } else if (state.shouldUnload(ouuid) && repo.isReady) {
+          dispatch(UnloadPersonnels(repo.ouuid));
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -69,8 +68,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  /// Get [IncidentBloc]
-  final IncidentBloc incidentBloc;
+  /// Get [OperationBloc]
+  final OperationBloc incidentBloc;
 
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
@@ -82,10 +81,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   PersonnelService get service => repo.service;
 
   /// [Incident] that manages given [devices]
-  String get iuuid => repo.iuuid;
+  String get ouuid => repo.ouuid;
 
   /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.iuuid == null;
+  bool get isUnset => repo.ouuid == null;
 
   @override
   PersonnelState get initialState => PersonnelsEmpty();
@@ -136,7 +135,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Future<List<Personnel>> load() async {
     _assertState();
     return dispatch<List<Personnel>>(
-      LoadPersonnels(iuuid ?? incidentBloc.selected.uuid),
+      LoadPersonnels(ouuid ?? incidentBloc.selected.uuid),
     );
   }
 
@@ -145,7 +144,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     _assertState();
     return dispatch<Personnel>(
       CreatePersonnel(
-        iuuid ?? incidentBloc.selected.uuid,
+        ouuid ?? incidentBloc.selected.uuid,
         personnel.copyWith(
           // Personnels should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -179,7 +178,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Future<List<Personnel>> unload() {
     _assertState();
     return dispatch<List<Personnel>>(
-      UnloadPersonnels(iuuid),
+      UnloadPersonnels(ouuid),
     );
   }
 
@@ -213,7 +212,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   Future<PersonnelState> _create(CreatePersonnel command) async {
     _assertData(command.data);
-    var personnel = await repo.create(command.iuuid, command.data);
+    var personnel = await repo.create(command.ouuid, command.data);
     return toOK(
       command,
       PersonnelCreated(personnel),
@@ -289,18 +288,18 @@ abstract class PersonnelCommand<S, T> extends BlocCommand<S, T> {
 }
 
 class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  LoadPersonnels(String iuuid) : super(iuuid);
+  LoadPersonnels(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadPersonnels {iuuid: $data}';
+  String toString() => 'LoadPersonnels {ouuid: $data}';
 }
 
 class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
-  final String iuuid;
-  CreatePersonnel(this.iuuid, Personnel data) : super(data);
+  final String ouuid;
+  CreatePersonnel(this.ouuid, Personnel data) : super(data);
 
   @override
-  String toString() => 'CreatePersonnel {iuuid: $iuuid, personnel: $data}';
+  String toString() => 'CreatePersonnel {ouuid: $ouuid, personnel: $data}';
 }
 
 class UpdatePersonnel extends PersonnelCommand<Personnel, Personnel> {
@@ -325,10 +324,10 @@ class _InternalMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessa
 }
 
 class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
-  UnloadPersonnels(String iuuid) : super(iuuid);
+  UnloadPersonnels(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'UnloadPersonnels {iuuid: $data}';
+  String toString() => 'UnloadPersonnels {ouuid: $data}';
 }
 
 /// ---------------------

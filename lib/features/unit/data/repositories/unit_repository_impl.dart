@@ -7,7 +7,7 @@ import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_patch/json_patch.dart';
 
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -28,7 +28,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   final UnitService service;
 
   /// Get [Incident.uuid]
-  String get iuuid => _iuuid;
+  String get ouuid => _iuuid;
   String _iuuid;
 
   /// Check if repository is operational.
@@ -45,15 +45,15 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   }
 
   /// Ensure that box for given [Incident.uuid] is open
-  Future<Iterable<StorageState<Unit>>> _ensure(String iuuid) async {
-    if (isEmptyOrNull(iuuid)) {
+  Future<Iterable<StorageState<Unit>>> _ensure(String ouuid) async {
+    if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
-    if (_iuuid != iuuid) {
-      _iuuid = iuuid;
+    if (_iuuid != ouuid) {
+      _iuuid = ouuid;
       await prepare(
         force: true,
-        postfix: iuuid,
+        postfix: ouuid,
       );
     }
     return Future.value(states.values);
@@ -148,11 +148,11 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   }
 
   /// GET ../units
-  Future<List<Unit>> load(String iuuid) async {
-    await _ensure(iuuid);
+  Future<List<Unit>> load(String ouuid) async {
+    await _ensure(ouuid);
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch(iuuid);
+        var response = await service.fetch(ouuid);
         if (response.is200) {
           evict(
             retainKeys: response.body.map((unit) => unit.uuid),
@@ -168,7 +168,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
           return response.body;
         }
         throw UnitServiceException(
-          'Failed to fetch personnel for incident $iuuid',
+          'Failed to fetch personnel for incident $ouuid',
           response: response,
           stackTrace: StackTrace.current,
         );
@@ -180,8 +180,8 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   }
 
   /// Create [unit]
-  Future<Unit> create(String iuuid, Unit unit) async {
-    await _ensure(iuuid);
+  Future<Unit> create(String ouuid, Unit unit) async {
+    await _ensure(ouuid);
     return apply(
       StorageState.created(unit),
     );
@@ -215,7 +215,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
     );
   }
 
-  /// Unload all devices for given [iuuid]
+  /// Unload all devices for given [ouuid]
   Future<List<Unit>> close() async {
     _iuuid = null;
     return super.close();

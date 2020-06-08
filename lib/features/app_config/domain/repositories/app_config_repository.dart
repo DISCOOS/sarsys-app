@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';

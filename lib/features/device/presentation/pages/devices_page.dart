@@ -1,11 +1,16 @@
 import 'dart:convert';
 
+import 'package:async/async.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -16,14 +21,10 @@ import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
-import 'package:SarSys/usecase/unit_use_cases.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
-import 'package:async/async.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 
 class DevicesPage extends StatefulWidget {
   final String query;

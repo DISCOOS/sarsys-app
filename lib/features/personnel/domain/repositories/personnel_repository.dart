@@ -1,5 +1,5 @@
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
@@ -9,7 +9,7 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   PersonnelService get service;
 
   /// Get [Incident.uuid]
-  String get iuuid;
+  String get ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -30,10 +30,10 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   });
 
   /// GET ../personnels
-  Future<List<Personnel>> load(String iuuid);
+  Future<List<Personnel>> load(String ouuid);
 
   /// Create [personnel]
-  Future<Personnel> create(String iuuid, Personnel personnel);
+  Future<Personnel> create(String ouuid, Personnel personnel);
 
   /// Update [personnel]
   Future<Personnel> update(Personnel personnel);

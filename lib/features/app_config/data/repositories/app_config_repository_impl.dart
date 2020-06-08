@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_udid/flutter_udid.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';

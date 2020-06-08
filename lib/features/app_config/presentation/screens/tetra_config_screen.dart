@@ -1,7 +1,7 @@
 import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/models/TalkGroup.dart';
+import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';

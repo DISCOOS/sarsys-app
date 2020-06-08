@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -331,7 +331,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPOI(RegExp match, String query) {
     final results = <AddressLookup>[];
-    final incident = controller.bloc<IncidentBloc>().selected;
+    final incident = controller.bloc<OperationBloc>().selected;
     if (incident != null) {
       // Search for matches in incident
       if (_prepare(incident.searchable).contains(match)) {

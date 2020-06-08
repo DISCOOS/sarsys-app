@@ -7,7 +7,7 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
-import 'package:SarSys/usecase/unit_use_cases.dart';
+import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/widgets/affilliation.dart';
@@ -18,8 +18,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../../../widgets/action_group.dart';
 
 class PersonnelWidget extends StatelessWidget {
   final bool withName;

@@ -1,4 +1,4 @@
-import 'package:SarSys/core/storage.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/navigation_service.dart';
 import 'package:SarSys/widgets/fatal_error_app.dart';

@@ -1,6 +1,6 @@
 import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -11,7 +11,7 @@ import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
@@ -28,7 +28,7 @@ import 'package:uuid/uuid.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
   final List<Device> devices;
-  IncidentBloc get incidentBloc => bloc.incidentBloc;
+  OperationBloc get incidentBloc => bloc.incidentBloc;
   User get user => incidentBloc.userBloc.user;
   PersonnelParams({
     Personnel personnel,

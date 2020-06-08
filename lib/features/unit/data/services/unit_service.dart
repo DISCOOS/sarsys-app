@@ -15,14 +15,14 @@ class UnitService {
   UnitService() : delegate = UnitServiceImpl.newInstance();
 
   /// GET ../units
-  Future<ServiceResponse<List<Unit>>> fetch(String iuuid) async {
+  Future<ServiceResponse<List<Unit>>> fetch(String ouuid) async {
     return Api.from<List<Unit>, List<Unit>>(
       await delegate.fetch(),
     );
   }
 
   /// POST ../units
-  Future<ServiceResponse<Unit>> create(String iuuid, Unit unit) async {
+  Future<ServiceResponse<Unit>> create(String ouuid, Unit unit) async {
     return Api.from<String, Unit>(
       await delegate.create(
         unit,

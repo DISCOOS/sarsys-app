@@ -5,7 +5,7 @@ import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-import 'package:SarSys/models/TalkGroup.dart';
+import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
 
 class FleetMapService {
   static const ASSET = "assets/config/fleet_map.json";

@@ -1,5 +1,5 @@
-import 'package:SarSys/models/Security.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/controllers/app_controller.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';

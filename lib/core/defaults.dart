@@ -1,5 +1,5 @@
 import 'package:SarSys/models/BaseMap.dart';
-import 'package:SarSys/models/Security.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:latlong/latlong.dart';
 
 class Defaults {

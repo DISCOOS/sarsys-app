@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
+import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -16,28 +18,28 @@ import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.da
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/data/repositories/personnel_repository_impl.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/features/incident/data/repositories/incident_repository_impl.dart';
+import 'package:SarSys/features/operation/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
-import 'package:SarSys/mock/app_config.dart';
-import 'package:SarSys/mock/devices.dart';
-import 'package:SarSys/mock/incidents.dart';
-import 'package:SarSys/mock/personnels.dart';
-import 'package:SarSys/mock/trackings.dart';
-import 'package:SarSys/mock/units.dart';
-import 'package:SarSys/mock/users.dart';
-import 'package:SarSys/models/User.dart';
+import 'package:SarSys/mock/app_config_service_mock.dart';
+import 'package:SarSys/mock/device_service_mock.dart';
+import 'package:SarSys/mock/incident_service_mock.dart';
+import 'package:SarSys/mock/personnel_service_mock.dart';
+import 'package:SarSys/mock/tracking_service_mock.dart';
+import 'package:SarSys/mock/unit_service_mock.dart';
+import 'package:SarSys/mock/user_service_mock.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
-import 'package:SarSys/repositories/auth_token_repository.dart';
-import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/repositories/tracking_repository.dart';
-import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -79,9 +81,12 @@ class BlocTestHarness implements BlocDelegate {
   IncidentServiceMock get incidentService => _incidentService;
   IncidentServiceMock _incidentService;
 
-  IncidentBloc _incidentBloc;
-  IncidentBloc get incidentBloc => _incidentBloc;
-  bool _withIncidentBloc = false;
+  OperationServiceMock get operationService => _operationService;
+  OperationServiceMock _operationService;
+
+  OperationBloc _operationsBloc;
+  OperationBloc get operationsBloc => _operationsBloc;
+  bool _withOperationBloc = false;
 
   DeviceServiceMock get deviceService => _deviceService;
   DeviceServiceMock _deviceService;
@@ -153,8 +158,8 @@ class BlocTestHarness implements BlocDelegate {
       if (_withUserBloc) {
         await _buildUserBloc();
       }
-      if (_withIncidentBloc) {
-        await _buildIncidentBloc();
+      if (_withOperationBloc) {
+        await _buildOperationBloc();
       }
       if (_withDeviceBloc) {
         _buildDeviceBloc();
@@ -179,8 +184,8 @@ class BlocTestHarness implements BlocDelegate {
       if (_withUserBloc) {
         await _userBloc?.close();
       }
-      if (_withIncidentBloc) {
-        await _incidentBloc?.close();
+      if (_withOperationBloc) {
+        await _operationsBloc?.close();
       }
       if (_withDeviceBloc) {
         await _deviceBloc?.close();
@@ -231,7 +236,7 @@ class BlocTestHarness implements BlocDelegate {
     _authenticated = authenticated;
   }
 
-  void withIncidentBloc({
+  void withOperationBloc({
     String username = 'username',
     String password = 'password',
     bool authenticated = true,
@@ -241,7 +246,7 @@ class BlocTestHarness implements BlocDelegate {
       password: password,
       authenticated: authenticated,
     );
-    _withIncidentBloc = true;
+    _withOperationBloc = true;
   }
 
   void withDeviceBloc() {
@@ -370,7 +375,7 @@ class BlocTestHarness implements BlocDelegate {
     }
   }
 
-  Future _buildIncidentBloc({
+  Future _buildOperationBloc({
     UserRole role = UserRole.commander,
     String passcode = 'T123',
   }) async {
@@ -380,7 +385,16 @@ class BlocTestHarness implements BlocDelegate {
       role: role,
       passcode: passcode,
     );
-    _incidentBloc = IncidentBloc(
+    _operationService = OperationServiceMock.build(
+      _userBloc.repo,
+      role: role,
+      passcode: passcode,
+    );
+    _operationsBloc = OperationBloc(
+      OperationRepositoryImpl(
+        _operationService,
+        connectivity: _connectivity,
+      ),
       IncidentRepositoryImpl(
         _incidentService,
         connectivity: _connectivity,
@@ -394,8 +408,8 @@ class BlocTestHarness implements BlocDelegate {
     if (_authenticated && _waitForIncidentsLoaded) {
       // Consume IncidentsLoaded fired by UserAuthenticated
       await expectThroughInOrderLater(
-        _incidentBloc,
-        [isA<IncidentsLoaded>()],
+        _operationsBloc,
+        [isA<OperationLoaded>()],
         close: false,
       );
     }
@@ -406,9 +420,9 @@ class BlocTestHarness implements BlocDelegate {
     int appCount = 0,
     bool simulate = false,
   }) {
-    assert(_withIncidentBloc, 'DeviceBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'DeviceBloc requires IncidentBloc');
     _deviceService = DeviceServiceMock.build(
-      _incidentBloc,
+      _operationsBloc,
       tetraCount: tetraCount,
       appCount: appCount,
       simulate: simulate,
@@ -418,14 +432,14 @@ class BlocTestHarness implements BlocDelegate {
         _deviceService,
         connectivity: _connectivity,
       ),
-      _incidentBloc,
+      _operationsBloc,
     );
   }
 
   void _buildPersonnelBloc({
     int count = 0,
   }) {
-    assert(_withIncidentBloc, 'PersonnelBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'PersonnelBloc requires IncidentBloc');
     _personnelService = PersonnelServiceMock.build(count);
     _personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
@@ -433,14 +447,14 @@ class BlocTestHarness implements BlocDelegate {
         connectivity: _connectivity,
       ),
       bus,
-      _incidentBloc,
+      _operationsBloc,
     );
   }
 
   void _buildUnitBloc({
     int count = 0,
   }) {
-    assert(_withIncidentBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'UnitBloc requires IncidentBloc');
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     _unitService = UnitServiceMock.build(count);
     _unitBloc = UnitBloc(
@@ -449,7 +463,7 @@ class BlocTestHarness implements BlocDelegate {
         connectivity: _connectivity,
       ),
       bus,
-      _incidentBloc,
+      _operationsBloc,
       _personnelBloc,
     );
 
@@ -467,7 +481,7 @@ class BlocTestHarness implements BlocDelegate {
     int personnelCount = 0,
     int unitCount = 0,
   }) {
-    assert(_withIncidentBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'UnitBloc requires IncidentBloc');
     assert(_withDeviceBloc, 'UnitBloc requires DeviceBloc');
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     assert(_withUnitBloc, 'UnitBloc requires UnitBloc');
@@ -481,7 +495,7 @@ class BlocTestHarness implements BlocDelegate {
         _trackingService,
         connectivity: _connectivity,
       ),
-      incidentBloc: _incidentBloc,
+      incidentBloc: _operationsBloc,
       deviceBloc: _deviceBloc,
       personnelBloc: _personnelBloc,
       unitBloc: _unitBloc,

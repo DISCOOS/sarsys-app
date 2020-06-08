@@ -1,19 +1,20 @@
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/Security.dart';
-import 'package:SarSys/models/User.dart';
-import 'package:SarSys/screens/command_screen.dart';
-import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
-import 'package:SarSys/features/incident/presentation/screens/incidents_screen.dart';
-import 'package:SarSys/screens/map_screen.dart';
-import 'package:SarSys/screens/user_screen.dart';
-import 'package:SarSys/features/incident/domain/usecases/incident_user_cases.dart';
-import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_gravatar/simple_gravatar.dart';
+
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/screens/command_screen.dart';
+import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
+import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
+import 'package:SarSys/screens/map_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 
 import 'descriptions.dart';
 
@@ -33,19 +34,19 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
     final User user = userBloc.user;
-    final isUnset = context.bloc<IncidentBloc>().isUnselected;
+    final isUnset = context.bloc<OperationBloc>().isUnselected;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,
         children: <Widget>[
           _buildHeader(context, userBloc),
-          _buildIncidentListAction(context),
+          _buildOperationListAction(context),
           Divider(),
           _buildMapAction(context),
           Divider(),
-          _buildIncidentHeader(isUnset, context),
-          _buildMyIncidentPageAction(isUnset, context),
+          _buildOperationHeader(isUnset, context),
+          _buildMyOperationPageAction(isUnset, context),
           _buildMyUnitPageAction(isUnset, context),
           _buildMyPageAction(context),
           _buildMyHistoryAction(isUnset, context),
@@ -128,13 +129,13 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildMyIncidentPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildMyOperationPageAction(bool isUnset, BuildContext context) {
     return ListTile(
       enabled: !isUnset,
       leading: const Icon(Icons.warning),
       title: Text('Min aksjon', style: TextStyle(fontSize: 14)),
       onTap: () {
-        Navigator.pushReplacementNamed(context, UserScreen.ROUTE_INCIDENT);
+        Navigator.pushReplacementNamed(context, UserScreen.ROUTE_OPERATION);
       },
     );
   }
@@ -172,12 +173,12 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildIncidentHeader(bool isUnset, BuildContext context) {
-    final selected = context.bloc<IncidentBloc>().selected;
+  ListTile _buildOperationHeader(bool isUnset, BuildContext context) {
+    final selected = context.bloc<OperationBloc>().selected;
     final labels = selected == null
         ? ['Velg en aksjon']
         : [
-            '${selected.name ?? translateIncidentType(selected.type)}',
+            '${selected.name ?? translateOperationType(selected.type)}',
             '${selected.reference ?? '<ingen referanse>'}',
           ];
 
@@ -198,7 +199,7 @@ class _AppDrawerState extends State<AppDrawer> {
               label: Text("Forlat"),
               onPressed: () {
                 Navigator.pop(context);
-                leaveIncident();
+                leaveOperation();
               },
             ),
     );
@@ -230,12 +231,12 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildIncidentListAction(BuildContext context) {
+  ListTile _buildOperationListAction(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.format_list_bulleted),
       title: Text('Aksjoner', style: TextStyle(fontSize: 14)),
       onTap: () {
-        Navigator.pushReplacementNamed(context, IncidentsScreen.ROUTE);
+        Navigator.pushReplacementNamed(context, OperationsScreen.ROUTE);
       },
     );
   }

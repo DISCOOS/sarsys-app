@@ -4,9 +4,9 @@ class FilterSheet<T> extends StatefulWidget {
   final String title;
   final bool allowNone;
   final Iterable<T> initial;
-  final void Function(Set<T> selected) onChanged;
   final T Function(dynamic value) onRead;
   final dynamic Function(T value) onWrite;
+  final void Function(Set<T> selected) onChanged;
   final Iterable<FilterData<T>> Function() onBuild;
 
   final String identifier;

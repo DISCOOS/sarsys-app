@@ -1,10 +1,11 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/features/incident/presentation/blocs/incident_bloc.dart';
-import 'package:SarSys/core/storage.dart';
-import 'package:SarSys/mock/devices.dart';
-import 'package:SarSys/mock/incidents.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/mock/device_service_mock.dart';
+import 'package:SarSys/mock/incident_service_mock.dart';
+import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -12,14 +13,14 @@ import 'harness.dart';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withIncidentBloc()
+    ..withOperationBloc()
     ..withDeviceBloc()
     ..install();
 
   test(
     'Device bloc should be EMPTY and UNSET',
     () async {
-      expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD BE unset");
+      expect(harness.deviceBloc.ouuid, isNull, reason: "SHOULD BE unset");
       expect(harness.deviceBloc.devices.length, 0, reason: "SHOULD BE empty");
       expect(harness.deviceBloc.initialState, isA<DevicesEmpty>(), reason: "Unexpected device state");
       expect(harness.deviceBloc, emits(isA<DevicesEmpty>()));
@@ -30,9 +31,9 @@ void main() async {
     test('SHOULD load devices', () async {
       // Arrange
       harness.connectivity.cellular();
-      Incident incident = await _prepare(harness);
-      final device1 = harness.deviceService.add(incident.uuid);
-      final device2 = harness.deviceService.add(incident.uuid);
+      Operation operation = await _prepare(harness);
+      final device1 = harness.deviceService.add(operation.uuid);
+      final device2 = harness.deviceService.add(operation.uuid);
 
       // Act
       List<Device> devices = await harness.deviceBloc.load();
@@ -55,7 +56,7 @@ void main() async {
     test('SHOULD create device and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
+      final operation = await _prepare(harness);
       final device = DeviceBuilder.create();
 
       // Act
@@ -69,16 +70,16 @@ void main() async {
         remote: true,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
-      expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.deviceBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.deviceBloc.repo.containsKey(device.uuid), isTrue, reason: "SHOULD contain device ${device.uuid}");
       expectThrough(harness.deviceBloc, isA<DeviceCreated>());
     });
 
-    test('SHOULD update incident and push to backend', () async {
+    test('SHOULD update operation and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final device = harness.deviceService.add(incident.uuid, type: DeviceType.App);
+      final operation = await _prepare(harness);
+      final device = harness.deviceService.add(operation.uuid, type: DeviceType.App);
       await harness.deviceBloc.load();
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
@@ -93,7 +94,7 @@ void main() async {
         remote: true,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
-      expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.deviceBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.deviceBloc.repo.containsKey(device.uuid), isTrue, reason: "SHOULD contain device ${device.uuid}");
       expectThrough(harness.deviceBloc, isA<DeviceUpdated>());
     });
@@ -101,8 +102,8 @@ void main() async {
     test('SHOULD delete device and push to backend', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final device = harness.deviceService.add(incident.uuid, type: DeviceType.App);
+      final operation = await _prepare(harness);
+      final device = harness.deviceService.add(operation.uuid, type: DeviceType.App);
       await harness.deviceBloc.load();
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
@@ -118,15 +119,15 @@ void main() async {
       );
       expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.deviceBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
-      expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on ${incident.uuid}");
+      expect(harness.deviceBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expectThrough(harness.deviceBloc, isA<DeviceDeleted>());
     });
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      harness.deviceService.add(incident.uuid, type: DeviceType.App);
+      final operation = await _prepare(harness);
+      harness.deviceService.add(operation.uuid, type: DeviceType.App);
       await harness.deviceBloc.load();
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
@@ -142,8 +143,8 @@ void main() async {
     test('SHOULD reload one device after unload', () async {
       // Arrange
       harness.connectivity.cellular();
-      final incident = await _prepare(harness);
-      final device = harness.deviceService.add(incident.uuid, type: DeviceType.App);
+      final operation = await _prepare(harness);
+      final device = harness.deviceService.add(operation.uuid, type: DeviceType.App);
       await harness.deviceBloc.load();
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
@@ -158,34 +159,34 @@ void main() async {
       expectThroughInOrder(harness.deviceBloc, [isA<DevicesUnloaded>(), isA<DevicesLoaded>()]);
     });
 
-    test('SHOULD reload when incident is switched', () async {
+    test('SHOULD reload when operation is switched', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldReloadWhenIncidentIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness);
     });
 
-    test('SHOULD unload when incident is deleted', () async {
+    test('SHOULD unload when operation is deleted', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness);
     });
 
-    test('SHOULD unload when incident is cancelled', () async {
+    test('SHOULD unload when operation is cancelled', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness);
     });
 
-    test('SHOULD unload when incident is resolved', () async {
+    test('SHOULD unload when operation is resolved', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness);
     });
 
-    test('SHOULD unload when incidents are unloaded', () async {
+    test('SHOULD unload when operations are unloaded', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenIncidentIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
   });
 
@@ -220,7 +221,7 @@ void main() async {
         StorageStatus.created,
         remote: false,
       );
-      expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one incident");
+      expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expectThrough(harness.deviceBloc, isA<DeviceCreated>());
     });
 
@@ -297,47 +298,47 @@ void main() async {
       expectThroughInOrder(harness.deviceBloc, [isA<DevicesUnloaded>(), isA<DevicesLoaded>()]);
     });
 
-    test('SHOULD reload when incident is switched', () async {
+    test('SHOULD reload when operation is switched', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldReloadWhenIncidentIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness);
     });
 
-    test('SHOULD unload when incident is deleted', () async {
+    test('SHOULD unload when operation is deleted', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness);
     });
 
-    test('SHOULD unload when incident is cancelled', () async {
+    test('SHOULD unload when operation is cancelled', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness);
     });
 
-    test('SHOULD unload when incident is resolved', () async {
+    test('SHOULD unload when operation is resolved', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness);
     });
 
-    test('SHOULD unload when incidents are unloaded', () async {
+    test('SHOULD unload when operations are unloaded', () async {
       // Arrange
       harness.connectivity.offline();
-      await _testShouldUnloadWhenIncidentIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness);
     });
   });
 }
 
-Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
+Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
   await _prepare(harness);
   final device = DeviceBuilder.create(type: DeviceType.App);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
-  expect(harness.deviceBloc.iuuid, isNotNull, reason: "SHOULD NOT be null");
+  expect(harness.deviceBloc.ouuid, isNotNull, reason: "SHOULD NOT be null");
 
   // Act
-  await harness.incidentBloc.unload();
+  await harness.operationsBloc.unload();
 
   // Assert
   await expectThroughLater(
@@ -345,7 +346,7 @@ Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
     emits(isA<DevicesUnloaded>()),
     close: false,
   );
-  expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.deviceBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.deviceBloc.repo.containsKey(device.uuid),
@@ -354,15 +355,15 @@ Future _testShouldUnloadWhenIncidentIsUnloaded(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final device = DeviceBuilder.create(type: DeviceType.App);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
   // Act
-  await harness.incidentBloc.update(
-    incident.copyWith(status: IncidentStatus.Resolved),
+  await harness.operationsBloc.update(
+    operation.copyWith(status: OperationStatus.completed),
   );
 
   // Assert
@@ -371,7 +372,7 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
     emits(isA<DevicesUnloaded>()),
     close: false,
   );
-  expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.deviceBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.deviceBloc.repo.containsKey(device.uuid),
@@ -380,15 +381,18 @@ Future _testShouldUnloadWhenIncidentIsResolved(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final device = DeviceBuilder.create(type: DeviceType.App);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
   // Act
-  await harness.incidentBloc.update(
-    incident.copyWith(status: IncidentStatus.Cancelled),
+  await harness.operationsBloc.update(
+    operation.copyWith(
+      status: OperationStatus.completed,
+      resolution: OperationResolution.cancelled,
+    ),
   );
 
   // Assert
@@ -397,7 +401,7 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
     emits(isA<DevicesUnloaded>()),
     close: false,
   );
-  expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.deviceBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.deviceBloc.repo.containsKey(device.uuid),
@@ -406,14 +410,14 @@ Future _testShouldUnloadWhenIncidentIsCancelled(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
-  final incident = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
+  final operation = await _prepare(harness);
   final device = DeviceBuilder.create(type: DeviceType.App);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
   // Act
-  await harness.incidentBloc.delete(incident.uuid);
+  await harness.operationsBloc.delete(operation.uuid);
 
   // Assert
   await expectThroughLater(
@@ -421,7 +425,7 @@ Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
     emits(isA<DevicesUnloaded>()),
     close: false,
   );
-  expect(harness.deviceBloc.iuuid, isNull, reason: "SHOULD change to null");
+  expect(harness.deviceBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.deviceBloc.repo.containsKey(device.uuid),
@@ -430,22 +434,25 @@ Future _testShouldUnloadWhenIncidentIsDeleted(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldReloadWhenIncidentIsSwitched(BlocTestHarness harness) async {
+Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   await _prepare(harness);
   final device = DeviceBuilder.create(type: DeviceType.App);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
   // Act
-  var incident2 = IncidentBuilder.create(harness.userBloc.userId);
-  incident2 = await harness.incidentBloc.create(incident2, selected: true);
+  final incident = IncidentBuilder.create();
+  final operation2 = await harness.operationsBloc.create(
+    OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
+    incident: incident,
+  );
 
   // Assert
   await expectThroughInOrderLater(
     harness.deviceBloc,
     [isA<DevicesUnloaded>(), isA<DevicesLoaded>()],
   );
-  expect(harness.deviceBloc.iuuid, incident2.uuid, reason: "SHOULD change to ${incident2.uuid}");
+  expect(harness.deviceBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
     harness.deviceBloc.repo.containsKey(device.uuid),
@@ -455,22 +462,25 @@ Future _testShouldReloadWhenIncidentIsSwitched(BlocTestHarness harness) async {
 }
 
 /// Prepare blocs for testing
-Future<Incident> _prepare(BlocTestHarness harness) async {
+Future<Operation> _prepare(BlocTestHarness harness) async {
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
-  // Create incident
-  var incident = IncidentBuilder.create(harness.userBloc.userId);
-  incident = await harness.incidentBloc.create(incident);
+  // Create operation
+  final incident = IncidentBuilder.create();
+  final operation = await harness.operationsBloc.create(
+    OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
+    incident: incident,
+  );
 
-  // Prepare IncidentBloc
-  await expectThroughLater(harness.incidentBloc, emits(isA<IncidentSelected>()), close: false);
-  expect(harness.incidentBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
+  // Prepare OperationBloc
+  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()), close: false);
+  expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Prepare DeviceBloc
   await expectThroughLater(harness.deviceBloc, emits(isA<DevicesLoaded>()), close: false);
   expect(harness.deviceBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
-  expect(harness.deviceBloc.iuuid, incident.uuid, reason: "SHOULD depend on incident ${incident.uuid}");
+  expect(harness.deviceBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
 
-  return incident;
+  return operation;
 }

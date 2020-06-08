@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
 
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
@@ -9,16 +13,12 @@ import 'package:equatable/equatable.dart';
 
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/models/Security.dart';
-import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
-import 'package:SarSys/models/User.dart';
-import 'package:SarSys/services/user_service.dart';
-
-import '../../../../blocs/core.dart';
-import '../../../../blocs/mixins.dart';
-import '../../../app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/features/user/data/services/user_service.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
@@ -99,18 +99,18 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   bool get isPending => state.isPending();
 
   /// Check if user has roles
-  bool isAuthor(Incident incident) => user?.isAuthor(incident) == true;
+  bool isAuthor(Operation data) => user?.isAuthor(data) == true;
 
   /// Check if current user is authorized to access given [Incident]
-  bool isAuthorized(Incident data) {
+  bool isAuthorized(Operation data) {
     return isAuthenticated && (_authorized.containsKey(data.uuid) || user.isAuthor(data));
   }
 
-  /// Check if current user is authorized to access given [Incident]
-  UserAuthorized getAuthorization(Incident data) {
+  /// Check if current user is authorized to access given [Operation]
+  UserAuthorized getAuthorization(Operation data) {
     if (isAuthenticated) {
       if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
-      if (user?.userId == data.created.userId) return UserAuthorized(user, data, true, true);
+      if (user?.userId == data.author.userId) return UserAuthorized(user, data, true, true);
     }
     return null;
   }
@@ -122,7 +122,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Stream of authorization state changes
   Stream<bool> authorized(Incident incident) => map(
-        (state) => state is UserAuthorized && state.incident == incident,
+        (state) => state is UserAuthorized && state.operation == incident,
       );
 
   /// Secure user access with given settings
@@ -173,7 +173,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     );
   }
 
-  Future<bool> authorize(Incident data, String passcode) {
+  Future<bool> authorize(Operation data, String passcode) {
     return dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
   }
 
@@ -463,9 +463,9 @@ class LoginUser extends UserCommand<String, User> {
   String toString() => 'LoginUser {username: $data, password: $data}';
 }
 
-class AuthorizeUser extends UserCommand<Incident, bool> {
+class AuthorizeUser extends UserCommand<Operation, bool> {
   final String passcode;
-  AuthorizeUser(incident, this.passcode) : super(incident, [passcode]);
+  AuthorizeUser(Operation data, this.passcode) : super(data, [passcode]);
 
   @override
   String toString() => 'AuthorizeUser';
@@ -549,15 +549,15 @@ class UserAuthenticated extends UserState<User> {
 }
 
 class UserAuthorized extends UserState<User> {
-  final Incident incident;
+  final Operation operation;
   final bool command;
   final bool personnel;
   UserAuthorized(
     User user,
-    this.incident,
+    this.operation,
     this.command,
     this.personnel,
-  ) : super(user, props: [incident]);
+  ) : super(user, props: [operation, command, personnel]);
   @override
   String toString() => 'UserAuthorized';
 }

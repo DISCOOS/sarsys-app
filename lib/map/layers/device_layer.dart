@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:SarSys/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/map/painters.dart';
 import 'package:SarSys/models/Position.dart';

@@ -8,7 +8,7 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   DeviceService get service;
 
   /// Get [Incident.uuid]
-  String get iuuid;
+  String get ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -18,10 +18,10 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   bool get isReady;
 
   /// Load all devices for given [Incident.uuid]
-  Future<List<Device>> load(String iuuid);
+  Future<List<Device>> load(String ouuid);
 
   /// Create [device]
-  Future<Device> create(String iuuid, Device device);
+  Future<Device> create(String ouuid, Device device);
 
   /// Update [device]
   Future<Device> update(Device device);

@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
-import 'package:SarSys/features/incident/data/models/incident_model.dart';
+import 'package:SarSys/features/operation/data/models/incident_model.dart';
+import 'package:SarSys/features/operation/data/models/operation_model.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/services/service.dart';
@@ -16,11 +18,11 @@ import 'package:http/http.dart' as http;
 
 import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/incident/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/repositories/user_repository.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 
 class Api {
   Api({
@@ -35,11 +37,13 @@ class Api {
             typeOf<List<Unit>>(): _toUnitList,
             typeOf<List<Device>>(): _toDeviceList,
             typeOf<List<Incident>>(): _toIncidentList,
+            typeOf<List<Operation>>(): _toOperationList,
             typeOf<List<Personnel>>(): _toPersonnelList,
             Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
             Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
             Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
             Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
+            Operation: (json) => json['data'] == null ? null : OperationModel.fromJson(json['data']),
             Personnel: (json) => json['data'] == null ? null : PersonnelModel.fromJson(json['data']),
             AppConfig: (json) => json['data'] == null ? null : AppConfigModel.fromJson(json['data']),
           }),
@@ -49,16 +53,36 @@ class Api {
           ],
         );
 
-  static List<Unit> _toUnitList(Map<String, dynamic> json) => _toList<Unit>(json);
-  static List<Device> _toDeviceList(Map<String, dynamic> json) => _toList<Device>(json);
-  static List<Incident> _toIncidentList(Map<String, dynamic> json) => _toList<Incident>(json);
-  static List<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toList<Personnel>(json);
+  static List<Unit> _toUnitList(Map<String, dynamic> json) => _toList<Unit>(
+        json,
+        (entity) => UnitModel.fromJson(entity['data']),
+      );
 
-  static List<T> _toList<T>(Map<String, dynamic> json) => json['entries'] == null
+  static List<Device> _toDeviceList(Map<String, dynamic> json) => _toList<Device>(
+        json,
+        (entity) => DeviceModel.fromJson(entity['data']),
+      );
+
+  static List<Incident> _toIncidentList(Map<String, dynamic> json) => _toList<Incident>(
+        json,
+        (entity) => IncidentModel.fromJson(entity['data']),
+      );
+
+  static List<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toList<Personnel>(
+        json,
+        (entity) => PersonnelModel.fromJson(entity['data']),
+      );
+
+  static List<Operation> _toOperationList(Map<String, dynamic> json) => _toList<Operation>(
+        json,
+        (entity) => OperationModel.fromJson(entity['data']),
+      );
+
+  static List<T> _toList<T>(Map<String, dynamic> json, JsonFactory<T> factory) => json['entries'] == null
       ? <T>[]
       : List.from(json['entries'])
           .map(
-            (json) => DeviceModel.fromJson(json['data']),
+            (json) => factory(json),
           )
           .toList();
 

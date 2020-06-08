@@ -10,7 +10,7 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit>
   UnitService get service;
 
   /// Get [Incident.uuid]
-  String get iuuid;
+  String get ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
@@ -41,10 +41,10 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit>
   int nextAvailableNumber(UnitType type, {bool reuse = true});
 
   /// GET ../units
-  Future<List<Unit>> load(String iuuid);
+  Future<List<Unit>> load(String ouuid);
 
   /// Create [unit]
-  Future<Unit> create(String iuuid, Unit unit);
+  Future<Unit> create(String ouuid, Unit unit);
 
   /// Update [unit]
   Future<Unit> update(Unit unit);

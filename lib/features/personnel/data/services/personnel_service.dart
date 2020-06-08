@@ -20,14 +20,14 @@ class PersonnelService {
   Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
-  Future<ServiceResponse<List<Personnel>>> fetch(String iuuid) async {
+  Future<ServiceResponse<List<Personnel>>> fetch(String ouuid) async {
     return Api.from<List<Personnel>, List<Personnel>>(
       await delegate.fetch(),
     );
   }
 
   /// POST ../personnel
-  Future<ServiceResponse<Personnel>> create(String iuuid, Personnel personnel) async {
+  Future<ServiceResponse<Personnel>> create(String ouuid, Personnel personnel) async {
     return Api.from<String, Personnel>(
       await delegate.create(
         personnel,
