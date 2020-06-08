@@ -205,7 +205,7 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 6,
           child: _buildValueTile(
-            translateIncidentType(incident.type),
+            incident == null ? '-' : translateIncidentType(incident?.type),
             label: "Type",
           ),
         ),
@@ -216,7 +216,7 @@ class _OperationPageState extends State<OperationPage> {
               stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
               builder: (context, snapshot) {
                 return _buildValueTile(
-                  "${snapshot.hasData ? formatSince(incident.occurred) : "-"}",
+                  "${snapshot.hasData ? formatSince(incident?.occurred) : "-"}",
                   label: "Innsats",
                 );
               }),

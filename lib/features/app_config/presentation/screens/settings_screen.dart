@@ -10,7 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
-import 'incident_config_screen.dart';
+import 'operation_config_screen.dart';
 import 'location_config_screen.dart';
 import 'map_config_screen.dart';
 import 'affiliation_config_screen.dart';
@@ -92,7 +92,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       _buildGotoAffiliationConfig(),
-      _buildGotoIncidentConfig(),
+      _buildGotoOperationsConfig(),
       _buildGotoMapConfig(),
       _buildGotoLocationConfig(),
       _buildGotoTetraConfig(),
@@ -144,14 +144,14 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  ListTile _buildGotoIncidentConfig() {
+  ListTile _buildGotoOperationsConfig() {
     return ListTile(
       title: Text("Aksjon"),
       subtitle: Text('Endre innstillinger for aksjon'),
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-          return IncidentConfigScreen();
+          return OperationConfigScreen();
         }));
       },
     );

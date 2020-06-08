@@ -306,7 +306,7 @@ class _OperationsPageState extends State<OperationsPage> {
   Padding _buildCardStatus(Operation operation, TextStyle caption) {
     final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
     return Padding(
-      padding: EdgeInsets.only(top: 8.0, right: (incident.exercise ? 24.0 : 0.0)),
+      padding: EdgeInsets.only(top: 8.0, right: (incident?.exercise == true ? 24.0 : 0.0)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -315,7 +315,7 @@ class _OperationsPageState extends State<OperationsPage> {
             style: caption,
           ),
           Text(
-            "${formatSince(incident.occurred)}",
+            "${formatSince(incident?.occurred)}",
             style: caption,
           ),
         ],

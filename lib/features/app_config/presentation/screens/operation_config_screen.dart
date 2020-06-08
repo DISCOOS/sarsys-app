@@ -6,12 +6,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
-class IncidentConfigScreen extends StatefulWidget {
+class OperationConfigScreen extends StatefulWidget {
   @override
-  _IncidentConfigScreenState createState() => _IncidentConfigScreenState();
+  _OperationConfigScreenState createState() => _OperationConfigScreenState();
 }
 
-class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
+class _OperationConfigScreenState extends State<OperationConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   AppConfigBloc _bloc;
@@ -33,7 +33,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
       backgroundColor: Colors.white,
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Hendelsesoppsett"),
+        title: Text("Aksjonsoppsett"),
         automaticallyImplyLeading: true,
         centerTitle: false,
         leading: IconButton(
@@ -64,7 +64,7 @@ class _IncidentConfigScreenState extends State<IncidentConfigScreen> {
             style: Theme.of(context).textTheme.bodyText2,
           ),
           subtitle: Text(
-            "Nye hendelser får disse lagt til automatisk",
+            "Nye aksjoner får disse lagt til automatisk",
           ),
         ),
         Padding(

@@ -205,7 +205,8 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     // Get currently selected uuid
     final ouuid = _ouuid;
 
-    // Execute command
+    // Execute commands
+    await incidents.load();
     final operations = await repo.load();
 
     // Unselect and reselect
@@ -314,7 +315,8 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   Stream<OperationState> _unload(UnloadOperations command) async* {
     final selected = this.selected;
-    // Execute command
+    // Execute commands
+    await incidents.close();
     List<Operation> operations = await repo.close();
     // Complete request
     final unselected = await _unset(
