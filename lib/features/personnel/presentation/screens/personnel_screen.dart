@@ -173,7 +173,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               withControlsLayer: true,
               withControlsBaseMap: true,
               withControlsOffset: 16.0,
-              showRetired: PersonnelStatus.Retired == personnel.status,
+              showRetired: PersonnelStatus.retired == personnel.status,
               showLayers: [
                 MapWidgetState.LAYER_POI,
                 MapWidgetState.LAYER_PERSONNEL,

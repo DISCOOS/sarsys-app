@@ -29,20 +29,20 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   TrackingBloc(
     this.repo, {
-    @required this.incidentBloc,
+    @required this.operationBloc,
     @required this.deviceBloc,
     @required this.unitBloc,
     @required this.personnelBloc,
   }) {
     assert(service != null, "service can not be null");
-    assert(incidentBloc != null, "incidentBloc can not be null");
+    assert(operationBloc != null, "operationBloc can not be null");
     assert(unitBloc != null, "unitBloc can not be null");
     assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
 
     registerStreamSubscription(
       // Load and unload trackings as needed
-      incidentBloc.listen(_processIncidentState),
+      operationBloc.listen(_processIncidentState),
     );
     registerStreamSubscription(
       // Updates tracking for unit
@@ -66,7 +66,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   /// Get [OperationBloc]
-  final OperationBloc incidentBloc;
+  final OperationBloc operationBloc;
 
   /// Get [UnitBloc]
   final UnitBloc unitBloc;
@@ -175,7 +175,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   /// Event [UnitUpdated] will change
   /// [Tracking] status to [TrackingStatus.closed]
-  /// if [Unit.status] has changed to [UnitStatus.Retired],
+  /// if [Unit.status] has changed to [UnitStatus.retired],
   /// or change to a status deferred from [Unit.status].
   ///
   /// Event [UnitDeleted] will delete associated [Tracking].
@@ -242,7 +242,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   /// Event [PersonnelUpdated] will change
   /// [Tracking] status to [TrackingStatus.closed]
-  /// if [Personnel.status] has changed to [PersonnelStatus.Retired],
+  /// if [Personnel.status] has changed to [PersonnelStatus.retired],
   /// or change to a status deferred from [Personnel.status].
   ///
   /// Event [PersonnelDeleted] will delete associated [Tracking].
@@ -387,7 +387,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   void _assertState() {
-    if (incidentBloc.isUnselected) {
+    if (operationBloc.isUnselected) {
       throw TrackingBlocException(
         "No incident selected. Ensure that "
         "'IncidentBloc.select(String uuid)' is called before 'TrackingBloc.load()'",
@@ -397,7 +397,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   /// Use current ouuid if exists or selected ouuid from IncidentBloc if exists
-  String _ensureIuuid() => ouuid ?? incidentBloc.selected?.uuid;
+  String _ensureIuuid() => ouuid ?? operationBloc.selected?.uuid;
 
   /// Load [trackings] from [service]
   Future<List<Tracking>> load() async {

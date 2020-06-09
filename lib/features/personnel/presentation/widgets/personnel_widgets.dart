@@ -10,7 +10,7 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/action_group.dart';
-import 'package:SarSys/widgets/affilliation.dart';
+import 'package:SarSys/widgets/affiliation.dart';
 import 'package:SarSys/widgets/coordinate_view.dart';
 import 'package:SarSys/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
@@ -261,32 +261,32 @@ class PersonnelActionGroup extends StatelessWidget {
 
   ActionMenuItem _buildTransitionActionItem(BuildContext context) {
     switch (personnel.status) {
-      case PersonnelStatus.Retired:
+      case PersonnelStatus.retired:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildMobilizeAction(context),
           ),
           onPressed: () => _onTransition(
-            PersonnelStatus.Mobilized,
+            PersonnelStatus.mobilized,
           ),
         );
-      case PersonnelStatus.Mobilized:
+      case PersonnelStatus.mobilized:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildOnSceneAction(context),
           ),
           onPressed: () => _onTransition(
-            PersonnelStatus.OnScene,
+            PersonnelStatus.onscene,
           ),
         );
-      case PersonnelStatus.OnScene:
+      case PersonnelStatus.onscene:
       default:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildRetireAction(context),
           ),
           onPressed: () => _onTransition(
-            PersonnelStatus.Retired,
+            PersonnelStatus.retired,
           ),
         );
     }
@@ -359,7 +359,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildMobilizeAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toPersonnelStatusColor(PersonnelStatus.Mobilized);
+    final color = toPersonnelStatusColor(PersonnelStatus.mobilized);
     return Tooltip(
       message: "Registrer som mobilisert",
       child: FlatButton.icon(
@@ -375,7 +375,7 @@ class PersonnelActionGroup extends StatelessWidget {
           ),
         ),
         onPressed: () => _onTransition(
-          PersonnelStatus.Mobilized,
+          PersonnelStatus.mobilized,
         ),
       ),
     );
@@ -383,7 +383,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildOnSceneAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toPersonnelStatusColor(PersonnelStatus.OnScene);
+    final color = toPersonnelStatusColor(PersonnelStatus.onscene);
     return Tooltip(
       message: "Registrer som ankommet",
       child: FlatButton.icon(
@@ -399,7 +399,7 @@ class PersonnelActionGroup extends StatelessWidget {
           ),
         ),
         onPressed: () => _onTransition(
-          PersonnelStatus.OnScene,
+          PersonnelStatus.onscene,
         ),
       ),
     );
@@ -407,7 +407,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   void _onTransition(PersonnelStatus status) async {
     switch (status) {
-      case PersonnelStatus.Mobilized:
+      case PersonnelStatus.mobilized:
         final result = await mobilizePersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -416,7 +416,7 @@ class PersonnelActionGroup extends StatelessWidget {
           _onCompleted();
         }
         break;
-      case PersonnelStatus.OnScene:
+      case PersonnelStatus.onscene:
         final result = await checkInPersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -425,7 +425,7 @@ class PersonnelActionGroup extends StatelessWidget {
           _onCompleted();
         }
         break;
-      case PersonnelStatus.Retired:
+      case PersonnelStatus.retired:
         final result = await retirePersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -439,7 +439,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildRetireAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toPersonnelStatusColor(PersonnelStatus.Retired);
+    final color = toPersonnelStatusColor(PersonnelStatus.retired);
     return Tooltip(
       message: "Dimitter og avslutt sporing",
       child: FlatButton.icon(
@@ -453,7 +453,7 @@ class PersonnelActionGroup extends StatelessWidget {
           style: button.copyWith(color: color),
         ),
         onPressed: () => _onTransition(
-          PersonnelStatus.Retired,
+          PersonnelStatus.retired,
         ),
       ),
     );

@@ -190,9 +190,9 @@ class DeviceWidget extends StatelessWidget {
 
   List<Widget> _buildData(BuildContext context, TextTheme theme) => [
         _buildTypeAndStatusInfo(context),
-        if (organization != null && DeviceType.Tetra == device.type) _buildTetraInfo(context),
+        if (organization != null && DeviceType.tetra == device.type) _buildTetraInfo(context),
         _buildDivider(Orientation.portrait),
-        if (organization != null && DeviceType.Tetra == device.type) ...[
+        if (organization != null && DeviceType.tetra == device.type) ...[
           _buildAffiliationInfo(context),
           _buildDivider(Orientation.portrait),
         ],

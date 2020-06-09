@@ -158,7 +158,7 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
               withControlsLayer: true,
               withControlsBaseMap: true,
               withControlsOffset: 16.0,
-              showRetired: UnitStatus.Retired == unit.status,
+              showRetired: UnitStatus.retired == unit.status,
               showLayers: [
                 MapWidgetState.LAYER_POI,
                 MapWidgetState.LAYER_PERSONNEL,

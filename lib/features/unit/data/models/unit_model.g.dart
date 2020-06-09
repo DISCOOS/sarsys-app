@@ -79,18 +79,18 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$UnitTypeEnumMap = {
-  UnitType.Team: 'Team',
-  UnitType.K9: 'K9',
-  UnitType.Boat: 'Boat',
-  UnitType.Vehicle: 'Vehicle',
-  UnitType.Snowmobile: 'Snowmobile',
-  UnitType.ATV: 'ATV',
-  UnitType.CommandPost: 'CommandPost',
-  UnitType.Other: 'Other',
+  UnitType.team: 'team',
+  UnitType.k9: 'k9',
+  UnitType.boat: 'boat',
+  UnitType.vehicle: 'vehicle',
+  UnitType.snowmobile: 'snowmobile',
+  UnitType.atv: 'atv',
+  UnitType.commandpost: 'commandpost',
+  UnitType.other: 'other',
 };
 
 const _$UnitStatusEnumMap = {
-  UnitStatus.Mobilized: 'Mobilized',
-  UnitStatus.Deployed: 'Deployed',
-  UnitStatus.Retired: 'Retired',
+  UnitStatus.mobilized: 'mobilized',
+  UnitStatus.deployed: 'deployed',
+  UnitStatus.retired: 'retired',
 };

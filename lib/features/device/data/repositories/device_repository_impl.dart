@@ -12,7 +12,6 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/services/service.dart';
-import 'package:SarSys/utils/data_utils.dart';
 
 class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> implements DeviceRepository {
   DeviceRepositoryImpl(
@@ -32,43 +31,18 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
   /// [Device] service
   final DeviceService service;
 
-  /// Get [Incident.uuid]
-  String get ouuid => _iuuid;
-  String _iuuid;
-
-  /// Check if repository is operational.
-  /// Is true if and only if loaded with
-  /// [load] or at least one [Device] is
-  /// created with [create].
-  @override
-  bool get isReady => super.isReady && _iuuid != null;
-
   /// Get [Device.uuid] from [state]
   @override
   String toKey(StorageState<Device> state) {
     return state.value.uuid;
   }
 
-  /// Ensure that box for given ouuid is open
-  Future<void> _ensure(String ouuid) async {
-    if (isEmptyOrNull(ouuid)) {
-      throw ArgumentError('Incident uuid can not be empty or null');
-    }
-    if (_iuuid != ouuid) {
-      await prepare(
-        force: true,
-        postfix: ouuid,
-      );
-      _iuuid = ouuid;
-    }
-  }
-
   /// Load all devices for given [Incident.uuid]
-  Future<List<Device>> load(String ouuid) async {
-    await _ensure(ouuid);
+  Future<List<Device>> load() async {
+    await prepare();
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch(ouuid);
+        var response = await service.fetch();
         if (response.is200) {
           evict(
             retainKeys: response.body.map((device) => device.uuid),
@@ -84,7 +58,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
           return response.body;
         }
         throw DeviceServiceException(
-          'Failed to fetch devices for incident $ouuid',
+          'Failed to fetch devices',
           response: response,
           stackTrace: StackTrace.current,
         );
@@ -96,8 +70,8 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
   }
 
   /// Create [device]
-  Future<Device> create(String ouuid, Device device) async {
-    await _ensure(ouuid);
+  Future<Device> create(Device device) async {
+    await prepare();
     return apply(
       StorageState.created(device),
     );
@@ -126,15 +100,9 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
     );
   }
 
-  /// Unload all devices for given [ouuid]
-  Future<List<Device>> close() async {
-    _iuuid = null;
-    return super.close();
-  }
-
   @override
   Future<Device> onCreate(StorageState<Device> state) async {
-    var response = await service.create(_iuuid, state.value);
+    var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
     } else if (response.is409) {

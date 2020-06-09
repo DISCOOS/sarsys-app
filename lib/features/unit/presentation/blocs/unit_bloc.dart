@@ -37,15 +37,15 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   UnitBloc(
     this.repo,
     BlocEventBus bus,
-    this.incidentBloc,
+    this.operationBloc,
     this.personnelBloc,
   ) : super(bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
-    assert(incidentBloc != null, "incidentBloc can not be null");
+    assert(operationBloc != null, "operationBloc can not be null");
     assert(personnelBloc != null, "personnelBloc can not be null");
 
-    registerStreamSubscription(incidentBloc.listen(
+    registerStreamSubscription(operationBloc.listen(
       // 1) Load and unloads units as needed
       // 2) Creates units from templates if give in IncidentCreated
       _processIncidentState,
@@ -111,7 +111,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   /// Get [OperationBloc]
-  final OperationBloc incidentBloc;
+  final OperationBloc operationBloc;
 
   /// Get [PersonnelBloc]
   final PersonnelBloc personnelBloc;
@@ -148,12 +148,12 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       ).map((state) => state is UnitsLoaded ? repo[unit.uuid] : state.data);
 
   /// Get count
-  int count({List<UnitStatus> exclude: const [UnitStatus.Retired]}) => repo.count(exclude: exclude);
+  int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);
 
   /// Find unit from personnel
   Iterable<Unit> find(
     Personnel personnel, {
-    List<UnitStatus> exclude: const [UnitStatus.Retired],
+    List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
       repo.find(personnel, exclude: exclude);
 
@@ -182,7 +182,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         "uuid": Uuid().v4(),
         "number": count ?? number,
         "type": enumName(type),
-        "status": enumName(UnitStatus.Mobilized),
+        "status": enumName(UnitStatus.mobilized),
         "callsign": toCallsign(type, department, number),
       });
     }
@@ -190,7 +190,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   void _assertState() {
-    if (incidentBloc.isUnselected) {
+    if (operationBloc.isUnselected) {
       throw UnitBlocError(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'UnitBloc.load()'",
@@ -211,7 +211,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   Future<List<Unit>> load() async {
     _assertState();
     return dispatch<List<Unit>>(
-      LoadUnits(ouuid ?? incidentBloc.selected.uuid),
+      LoadUnits(ouuid ?? operationBloc.selected.uuid),
     );
   }
 
@@ -224,7 +224,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     _assertState();
     return dispatch<Unit>(
       CreateUnit(
-        ouuid ?? incidentBloc.selected.uuid,
+        ouuid ?? operationBloc.selected.uuid,
         unit.copyWith(
           // Units should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -439,7 +439,7 @@ abstract class UnitState<T> extends BlocEvent<T> {
 
   bool isStatusChanged() => false;
   bool isTracked() => (data is Unit) ? (data as Unit).tracking?.uuid != null : false;
-  bool isRetired() => (data is Unit) ? (data as Unit).status == UnitStatus.Retired : false;
+  bool isRetired() => (data is Unit) ? (data as Unit).status == UnitStatus.retired : false;
 }
 
 class UnitsEmpty extends UnitState<Null> {

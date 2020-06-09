@@ -69,7 +69,7 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
   }
 
   static TalkGroup to(String name) {
-    return TalkGroup(name: name, type: TalkGroupType.Tetra);
+    return TalkGroup(name: name, type: TalkGroupType.tetra);
   }
 
   static List<TalkGroup> toList(List<String> names) {

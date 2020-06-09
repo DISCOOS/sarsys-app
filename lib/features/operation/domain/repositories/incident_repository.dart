@@ -8,7 +8,7 @@ abstract class IncidentRepository implements ConnectionAwareRepository<String, I
   /// Incident service
   IncidentService get service;
 
-  /// Get [Incident.uuid] from [state]
+  /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Incident> state) {
     return state?.value?.uuid;

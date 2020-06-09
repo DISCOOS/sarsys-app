@@ -89,11 +89,11 @@ class TrackingUtils {
   /// type an [ArgumentError] is thrown
   static bool isSourceActive(Aggregate source) {
     if (source is Device) {
-      return DeviceStatus.Available == source.status;
+      return DeviceStatus.available == source.status;
     } else if (source is Unit) {
-      return UnitStatus.Retired != source.status;
+      return UnitStatus.retired != source.status;
     } else if (source is Personnel) {
-      return PersonnelStatus.Retired != source.status;
+      return PersonnelStatus.retired != source.status;
     } else if (source is Tracking) {
       return TrackingStatus.closed != source.status;
     }

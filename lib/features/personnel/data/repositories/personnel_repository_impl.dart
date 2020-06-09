@@ -24,16 +24,16 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   /// [Personnel] service
   final PersonnelService service;
 
-  /// Get [Incident.uuid]
-  String get ouuid => _iuuid;
-  String _iuuid;
+  /// Get [Operation.uuid]
+  String get ouuid => _ouuid;
+  String _ouuid;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with
   /// [load] or at least one [Personnel] is
   /// created with [create].
   @override
-  bool get isReady => super.isReady && _iuuid != null;
+  bool get isReady => super.isReady && _ouuid != null;
 
   /// Get [Personnel.uuid] from [state]
   @override
@@ -46,18 +46,18 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Incident uuid can not be empty or null');
     }
-    if (_iuuid != ouuid) {
+    if (_ouuid != ouuid) {
       await prepare(
         force: true,
         postfix: ouuid,
       );
-      _iuuid = ouuid;
+      _ouuid = ouuid;
     }
   }
 
   /// Get [Personnel] count
   int count({
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       exclude?.isNotEmpty == false
           ? length
@@ -70,7 +70,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   /// Find personnel from user
   Iterable<Personnel> find(
     User user, {
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       values
           .where((personnel) => !exclude.contains(personnel.status))
@@ -147,13 +147,13 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
 
   /// Unload all devices for given [ouuid]
   Future<List<Personnel>> close() async {
-    _iuuid = null;
+    _ouuid = null;
     return super.close();
   }
 
   @override
   Future<Personnel> onCreate(StorageState<Personnel> state) async {
-    var response = await service.create(_iuuid, state.value);
+    var response = await service.create(_ouuid, state.value);
     if (response.is201) {
       return state.value;
     } else if (response.is409) {

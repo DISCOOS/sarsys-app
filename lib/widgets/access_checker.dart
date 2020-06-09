@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/controllers/permission_controller.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';

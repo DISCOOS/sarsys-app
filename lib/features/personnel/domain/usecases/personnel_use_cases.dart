@@ -28,8 +28,8 @@ import 'package:uuid/uuid.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
   final List<Device> devices;
-  OperationBloc get incidentBloc => bloc.incidentBloc;
-  User get user => incidentBloc.userBloc.user;
+  OperationBloc get operationBloc => bloc.operationBloc;
+  User get user => operationBloc.userBloc.user;
   PersonnelParams({
     Personnel personnel,
     this.position,
@@ -104,7 +104,7 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     final personnel = await params.bloc.update(result.data);
 
     // Only update tracking if not retired
-    if (PersonnelStatus.Retired != personnel.status) {
+    if (PersonnelStatus.retired != personnel.status) {
       await params.context.bloc<TrackingBloc>().replace(
             personnel.tracking.uuid,
             devices: result.devices,
@@ -244,7 +244,7 @@ Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(Personnel
 class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements BlocEventHandler<PersonnelsLoaded> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
-    if (params.incidentBloc.isUnselected) {
+    if (params.operationBloc.isUnselected) {
       return dartz.left(false);
     }
 
@@ -260,14 +260,14 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements 
           fname: user.fname,
           lname: user.lname,
           phone: user.phone,
-          status: PersonnelStatus.Mobilized,
+          status: PersonnelStatus.mobilized,
           affiliation: org.toAffiliationFromUser(user),
         ));
         return dartz.right(personnel);
-      } else if (personnel.status != PersonnelStatus.Mobilized) {
+      } else if (personnel.status != PersonnelStatus.mobilized) {
         return _transitionPersonnel(
           PersonnelParams(personnel: personnel),
-          PersonnelStatus.Mobilized,
+          PersonnelStatus.mobilized,
         );
       }
       // Already mobilized
@@ -302,7 +302,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
-      PersonnelStatus.Mobilized,
+      PersonnelStatus.mobilized,
       action: "Mobiliser ${params.data.name}",
       message: "Dette endre status til mobilisert. Vil du fortsette?",
     );
@@ -321,7 +321,7 @@ class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
-      PersonnelStatus.OnScene,
+      PersonnelStatus.onscene,
       action: "Sjekk inn ${params.data.name}",
       message: "Dette endre status til ankommet. Vil du fortsette?",
     );
@@ -341,7 +341,7 @@ class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
-      PersonnelStatus.Retired,
+      PersonnelStatus.retired,
       action: "Dimitter ${params.data.name}",
       message: "Dette vil stoppe sporing og dimmitere mannskapet. Vil du fortsette?",
     );

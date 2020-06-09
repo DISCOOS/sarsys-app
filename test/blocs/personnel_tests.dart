@@ -85,7 +85,7 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
       // Act
-      await harness.personnelBloc.update(personnel.copyWith(status: PersonnelStatus.OnScene));
+      await harness.personnelBloc.update(personnel.copyWith(status: PersonnelStatus.onscene));
 
       // Assert
       verify(harness.personnelService.update(any)).called(1);
@@ -232,14 +232,14 @@ void main() async {
       // Arrange
       harness.connectivity.offline();
       await _prepare(harness);
-      final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.Mobilized);
-      final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.Mobilized);
+      final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.mobilized);
+      final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.mobilized);
       await harness.personnelBloc.create(personnel1);
       await harness.personnelBloc.create(personnel2);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnel");
 
       // Act
-      await harness.personnelBloc.update(personnel2.copyWith(status: PersonnelStatus.OnScene));
+      await harness.personnelBloc.update(personnel2.copyWith(status: PersonnelStatus.onscene));
 
       // Assert
       expect(
@@ -249,13 +249,13 @@ void main() async {
       );
       expect(
         harness.personnelBloc.repo[personnel1.uuid].status,
-        equals(PersonnelStatus.Mobilized),
-        reason: "SHOULD be status Mobilized",
+        equals(PersonnelStatus.mobilized),
+        reason: "SHOULD be status mobilized",
       );
       expect(
         harness.personnelBloc.repo[personnel2.uuid].status,
-        equals(PersonnelStatus.OnScene),
-        reason: "SHOULD be status OnScene",
+        equals(PersonnelStatus.onscene),
+        reason: "SHOULD be status onscene",
       );
       expectThrough(harness.personnelBloc, isA<PersonnelUpdated>());
     });

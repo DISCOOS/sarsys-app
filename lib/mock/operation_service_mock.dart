@@ -59,7 +59,7 @@ class OperationBuilder {
       '"ipp": ${createLocationAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
       '"meetup": ${createLocationAsJson(59.5 + rnd.nextDouble() * 0.01, 10.09 + rnd.nextDouble() * 0.01)},'
       '"talkgroups": ['
-      '{"name": "RK-RIKS-1", "type": "Tetra"}'
+      '{"name": "RK-RIKS-1", "type": "tetra"}'
       '],'
       '"passcodes": ${createPasscodesAsJson(passcode)},'
       '"author": ${createAuthor(userId)}'

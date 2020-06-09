@@ -54,38 +54,38 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
   });
 }
 
-enum UnitStatus { Mobilized, Deployed, Retired }
+enum UnitStatus { mobilized, deployed, retired }
 
 String translateUnitStatus(UnitStatus status) {
   switch (status) {
-    case UnitStatus.Mobilized:
+    case UnitStatus.mobilized:
       return "Mobilisert";
-    case UnitStatus.Deployed:
+    case UnitStatus.deployed:
       return "Deployert";
-    case UnitStatus.Retired:
+    case UnitStatus.retired:
       return "Oppløst";
     default:
       return enumName(status);
   }
 }
 
-enum UnitType { Team, K9, Boat, Vehicle, Snowmobile, ATV, CommandPost, Other }
+enum UnitType { team, k9, boat, vehicle, snowmobile, atv, commandpost, other }
 
 String translateUnitType(UnitType type) {
   switch (type) {
-    case UnitType.Team:
+    case UnitType.team:
       return "Lag";
-    case UnitType.K9:
+    case UnitType.k9:
       return "Hund";
-    case UnitType.Vehicle:
+    case UnitType.vehicle:
       return "Kjøretøy";
-    case UnitType.Boat:
+    case UnitType.boat:
       return "Båt";
-    case UnitType.Snowmobile:
+    case UnitType.snowmobile:
       return "Snøskuter";
-    case UnitType.Other:
+    case UnitType.other:
       return "Annet";
-    case UnitType.CommandPost:
+    case UnitType.commandpost:
       return "KO";
     default:
       return enumName(type);

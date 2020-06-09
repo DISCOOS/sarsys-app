@@ -18,17 +18,17 @@ class DeviceBuilder {
     String uuid,
     Position position,
     String number,
-    DeviceType type = DeviceType.App,
-    DeviceStatus status = DeviceStatus.Unavailable,
+    DeviceType type = DeviceType.app,
+    DeviceStatus status = DeviceStatus.unavailable,
     bool randomize = false,
   }) {
     return DeviceModel.fromJson(
       createDeviceAsJson(
         uuid ?? Uuid().v4(),
-        type ?? DeviceType.App,
+        type ?? DeviceType.app,
         number ?? '1',
         position ?? toPosition(Defaults.origo),
-        status ?? DeviceStatus.Unavailable,
+        status ?? DeviceStatus.unavailable,
         randomize,
       ),
     );
@@ -52,7 +52,7 @@ class DeviceBuilder {
     return json.decode('{'
         '"uuid": "$uuid",'
         '"type": "${enumName(type)}",'
-        '"status": "${enumName(status ?? DeviceStatus.Unavailable)}",'
+        '"status": "${enumName(status ?? DeviceStatus.unavailable)}",'
         '"number": "$number",'
         '"position": $actual,'
         '"manual": false'
@@ -74,15 +74,14 @@ class DeviceBuilder {
 
 class DeviceServiceMock extends Mock implements DeviceService {
   final Timer simulator;
-  final Map<String, Map<String, Device>> deviceRepo;
+  final Map<String, Device> devices;
 
-  Device add(
-    String ouuid, {
+  Device add({
     String uuid,
     Position position,
     String number = '1',
-    DeviceType type = DeviceType.App,
-    DeviceStatus status = DeviceStatus.Unavailable,
+    DeviceType type = DeviceType.app,
+    DeviceStatus status = DeviceStatus.unavailable,
   }) {
     final device = DeviceBuilder.create(
       uuid: uuid,
@@ -91,46 +90,34 @@ class DeviceServiceMock extends Mock implements DeviceService {
       status: status,
       position: position,
     );
-    put(ouuid, device);
+    put(device);
     return device;
   }
 
-  void put(String ouuid, Device device) {
-    if (deviceRepo.containsKey(ouuid)) {
-      deviceRepo[ouuid].putIfAbsent(device.uuid, () => device);
-    } else {
-      deviceRepo[ouuid] = {device.uuid: device};
-    }
+  void put(Device device) {
+    devices.update(device.uuid, (_) => device, ifAbsent: () => device);
   }
 
-  List<Device> remove(uuid) {
-    final iuuids = deviceRepo.entries.where(
-      (entry) => entry.value.containsKey(uuid),
-    );
-    return iuuids
-        .map((ouuid) => deviceRepo[ouuid].remove(uuid))
-        .where(
-          (device) => device != null,
-        )
-        .toList();
+  Device remove(uuid) {
+    return devices.remove(uuid);
   }
 
   DeviceServiceMock reset() {
-    deviceRepo.clear();
+    devices.clear();
     return this;
   }
 
-  DeviceServiceMock._internal(this.deviceRepo, this.simulator);
+  DeviceServiceMock._internal(this.devices, this.simulator);
 
   static DeviceService build(
     OperationBloc bloc, {
     int tetraCount = 0,
     int appCount = 0,
     bool simulate = false,
-    List<String> iuuids = const [],
+    List<String> ouuids = const [],
   }) {
     final rnd = math.Random();
-    final Map<String, Map<String, Device>> devicesRepo = {}; // ouuid -> devices
+    final Map<String, Device> devicesRepo = {}; // devices
     final Map<String, _DeviceSimulation> simulations = {}; // duuid -> simulation
     final StreamController<DeviceMessage> controller = StreamController.broadcast();
     devicesRepo.clear();
@@ -148,34 +135,23 @@ class DeviceServiceMock extends Mock implements DeviceService {
         : null;
     final DeviceServiceMock mock = DeviceServiceMock._internal(devicesRepo, simulator);
 
-    // Only generate devices for automatically generated iuuids
-    iuuids.forEach((ouuid) {
+    // Only generate devices for automatically generated ouuids
+    ouuids.forEach((ouuid) {
       if (ouuid.startsWith('a:')) {
-        final devices = devicesRepo.putIfAbsent(ouuid, () => {});
         Position center = _toCenter(bloc);
-        _createDevices(DeviceType.Tetra, devices, tetraCount, ouuid, 6114000, center, rnd, simulations);
-        _createDevices(DeviceType.App, devices, appCount, ouuid, 91500000, center, rnd, simulations);
+        _createDevices(DeviceType.tetra, devicesRepo, tetraCount, ouuid, 6114000, center, rnd, simulations);
+        _createDevices(DeviceType.app, devicesRepo, appCount, ouuid, 91500000, center, rnd, simulations);
       }
     });
 
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
     // Mock all service methods
-    when(mock.fetch(any)).thenAnswer((_) async {
-      final String ouuid = _.positionalArguments[0];
-      var devices = devicesRepo[ouuid];
-      if (devices == null) {
-        devices = devicesRepo.putIfAbsent(ouuid, () => {});
-      }
-      return ServiceResponse.ok(body: devices.values.toList());
+    when(mock.fetch()).thenAnswer((_) async {
+      return ServiceResponse.ok(body: devicesRepo.values.toList());
     });
-    when(mock.create(any, any)).thenAnswer((_) async {
-      var ouuid = _.positionalArguments[0] as String;
-      var devices = devicesRepo[ouuid];
-      if (devices == null) {
-        devices = devicesRepo.putIfAbsent(ouuid, () => {});
-      }
-      var device = _.positionalArguments[1] as Device;
+    when(mock.create(any)).thenAnswer((_) async {
+      var device = _.positionalArguments[0] as Device;
       final duuid = device.uuid;
       Position center = _toCenter(bloc);
       if (simulate) {
@@ -197,33 +173,25 @@ class DeviceServiceMock extends Mock implements DeviceService {
           simulations,
         );
       }
-      devices.putIfAbsent(device.uuid, () => device);
+      devicesRepo.update(device.uuid, (_) => device, ifAbsent: () => device);
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
       var device = _.positionalArguments[0] as Device;
-      var incident = devicesRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(device.uuid),
-        orElse: null,
-      );
-      if (incident == null)
+      if (!devicesRepo.containsKey(device.uuid))
         ServiceResponse.notFound(
           message: "Device ${device.uuid} not found",
         );
-      incident.value.update(device.uuid, (_) => device);
+      devicesRepo.update(device.uuid, (_) => device);
       return ServiceResponse.ok(body: device);
     });
     when(mock.delete(any)).thenAnswer((_) async {
       var duuid = _.positionalArguments[0] as String;
-      var incident = devicesRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(duuid),
-        orElse: null,
-      );
-      if (incident == null)
+      if (!devicesRepo.containsKey(duuid))
         ServiceResponse.notFound(
           message: "Device $duuid not found",
         );
-      incident.value.remove(duuid);
+      devicesRepo.remove(duuid);
       return ServiceResponse.noContent();
     });
     return mock;
@@ -258,7 +226,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
               type,
               "${++number % 10 == 0 ? ++number : number}",
               center,
-              DeviceStatus.Unavailable,
+              DeviceStatus.unavailable,
               true,
             ),
           ),
@@ -286,37 +254,34 @@ class DeviceServiceMock extends Mock implements DeviceService {
   static void _progress(
     math.Random rnd,
     OperationBloc bloc,
-    Map<String, Map<String, Device>> devicesMap,
+    Map<String, Device> devicesMap,
     Map<String, _DeviceSimulation> simulations,
     StreamController<DeviceMessage> controller,
   ) {
-    final ouuid = bloc.selected?.uuid;
-    if (ouuid != null && devicesMap.containsKey(ouuid)) {
-      final devices = devicesMap[ouuid].values.toList()..shuffle();
-      // only update 10% each iteration
-      final min = math.min(math.max((devices.length * 0.2).toInt(), 1), 3);
-      devices.take(min).forEach((device) {
-        if (simulations.containsKey(device.uuid)) {
-          var simulation = simulations[device.uuid];
-          var position = simulation.progress(rnd.nextDouble() * 20.0);
-          device = device.copyWith(
-            position: position,
-          );
-          devicesMap[ouuid].update(
-            device.uuid,
-            (_) => device,
-            ifAbsent: () => device,
-          );
-          controller.add(
-            DeviceMessage(
-              duuid: device.uuid,
-              type: DeviceMessageType.LocationChanged,
-              json: device.toJson(),
-            ),
-          );
-        }
-      });
-    }
+    final devices = devicesMap.values.toList()..shuffle();
+    // only update 10% each iteration
+    final min = math.min(math.max((devices.length * 0.2).toInt(), 1), 3);
+    devices.take(min).forEach((device) {
+      if (simulations.containsKey(device.uuid)) {
+        var simulation = simulations[device.uuid];
+        var position = simulation.progress(rnd.nextDouble() * 20.0);
+        device = device.copyWith(
+          position: position,
+        );
+        devicesMap.update(
+          device.uuid,
+          (_) => device,
+          ifAbsent: () => device,
+        );
+        controller.add(
+          DeviceMessage(
+            duuid: device.uuid,
+            type: DeviceMessageType.LocationChanged,
+            json: device.toJson(),
+          ),
+        );
+      }
+    });
   }
 }
 

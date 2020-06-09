@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/models/Affiliation.dart';
@@ -17,7 +17,7 @@ import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/affilliation.dart';
+import 'package:SarSys/widgets/affiliation.dart';
 import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/widgets/position_field.dart';
@@ -33,7 +33,7 @@ class PersonnelEditor extends StatefulWidget {
     Key key,
     this.personnel,
     this.devices = const [],
-    this.status = PersonnelStatus.Mobilized,
+    this.status = PersonnelStatus.mobilized,
   }) : super(key: key);
 
   final Personnel personnel;
@@ -334,7 +334,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         .personnels
         .values
         .where(
-          (personnel) => PersonnelStatus.Retired != personnel.status,
+          (personnel) => PersonnelStatus.retired != personnel.status,
         )
         .firstWhere(
           (Personnel personnel) => _isSameName(personnel, _defaultName()),
@@ -370,7 +370,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      initialValue: enumName(widget?.personnel?.status ?? PersonnelStatus.Mobilized),
+      initialValue: enumName(widget?.personnel?.status ?? PersonnelStatus.mobilized),
       items: PersonnelStatus.values
           .map((status) => [enumName(status), translatePersonnelStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
@@ -441,7 +441,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         .personnels
         .values
         .where(
-          (unit) => PersonnelStatus.Retired != unit.status,
+          (unit) => PersonnelStatus.retired != unit.status,
         )
         .firstWhere(
           (Personnel personnel) => _isSamePhone(personnel, phone),
@@ -576,7 +576,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       var personnel = create ? _createPersonnel() : _updatePersonnel();
 
       var response = true;
-      if (PersonnelStatus.Retired == personnel.status && personnel.status != widget?.personnel?.status) {
+      if (PersonnelStatus.retired == personnel.status && personnel.status != widget?.personnel?.status) {
         response = await prompt(
           context,
           "Dimittere ${personnel.name}",

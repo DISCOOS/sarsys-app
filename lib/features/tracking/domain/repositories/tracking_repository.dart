@@ -24,7 +24,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
   /// [TrackingService] service
   final TrackingService service;
 
-  /// Get [Incident.uuid]
+  /// Get [Operation.uuid]
   String get ouuid => _ouuid;
   String _ouuid;
 

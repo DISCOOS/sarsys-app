@@ -28,15 +28,15 @@ class TalkGroup extends Equatable {
   Map<String, dynamic> toJson() => _$TalkGroupToJson(this);
 }
 
-enum TalkGroupType { Tetra, Marine, Analog }
+enum TalkGroupType { tetra, marine, analog }
 
 String translateTalkGroupType(TalkGroupType type) {
   switch (type) {
-    case TalkGroupType.Tetra:
+    case TalkGroupType.tetra:
       return "Nødnett";
-    case TalkGroupType.Marine:
+    case TalkGroupType.marine:
       return "Maritim";
-    case TalkGroupType.Analog:
+    case TalkGroupType.analog:
       return "Analog";
     default:
       return enumName(type);

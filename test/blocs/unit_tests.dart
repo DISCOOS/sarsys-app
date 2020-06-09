@@ -87,7 +87,7 @@ void main() async {
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
-      await harness.unitBloc.update(unit.copyWith(status: UnitStatus.Deployed));
+      await harness.unitBloc.update(unit.copyWith(status: UnitStatus.deployed));
 
       // Assert
       verify(harness.unitService.update(any)).called(1);
@@ -244,14 +244,14 @@ void main() async {
       // Arrange
       harness.connectivity.offline();
       await _prepare(harness);
-      final unit1 = UnitBuilder.create(status: UnitStatus.Mobilized);
-      final unit2 = UnitBuilder.create(status: UnitStatus.Mobilized);
+      final unit1 = UnitBuilder.create(status: UnitStatus.mobilized);
+      final unit2 = UnitBuilder.create(status: UnitStatus.mobilized);
       await harness.unitBloc.create(unit1);
       await harness.unitBloc.create(unit2);
       expect(harness.unitBloc.repo.length, 2, reason: "SHOULD contain two unit");
 
       // Act
-      await harness.unitBloc.update(unit2.copyWith(status: UnitStatus.Deployed));
+      await harness.unitBloc.update(unit2.copyWith(status: UnitStatus.deployed));
 
       // Assert
       expect(
@@ -261,13 +261,13 @@ void main() async {
       );
       expect(
         harness.unitBloc.repo[unit1.uuid].status,
-        equals(UnitStatus.Mobilized),
-        reason: "SHOULD be status Mobilized",
+        equals(UnitStatus.mobilized),
+        reason: "SHOULD be status mobilized",
       );
       expect(
         harness.unitBloc.repo[unit2.uuid].status,
-        equals(UnitStatus.Deployed),
-        reason: "SHOULD be status Deployed",
+        equals(UnitStatus.deployed),
+        reason: "SHOULD be status deployed",
       );
       expectThrough(harness.unitBloc, isA<UnitUpdated>());
     });
@@ -394,7 +394,7 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
   final unit = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1, p2]));
 
   // Act
-  final updated = await harness.personnelBloc.update(p1.copyWith(status: PersonnelStatus.OnScene));
+  final updated = await harness.personnelBloc.update(p1.copyWith(status: PersonnelStatus.onscene));
   await expectThroughLater(
     harness.unitBloc,
     emits(isA<UnitUpdated>()),
@@ -404,13 +404,13 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
   // Assert
   expect(
     updated.status,
-    equals(PersonnelStatus.OnScene),
-    reason: "SHOULD HAVE status OnScene",
+    equals(PersonnelStatus.onscene),
+    reason: "SHOULD HAVE status onscene",
   );
   expect(
     harness.unitBloc.repo[unit.uuid].personnels.firstWhere((p) => p == updated, orElse: () => null)?.status,
-    equals(PersonnelStatus.OnScene),
-    reason: "SHOULD HAVE status OnScene",
+    equals(PersonnelStatus.onscene),
+    reason: "SHOULD HAVE status onscene",
   );
 }
 

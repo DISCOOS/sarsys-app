@@ -51,7 +51,7 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$TalkGroupTypeEnumMap = {
-  TalkGroupType.Tetra: 'Tetra',
-  TalkGroupType.Marine: 'Marine',
-  TalkGroupType.Analog: 'Analog',
+  TalkGroupType.tetra: 'tetra',
+  TalkGroupType.marine: 'marine',
+  TalkGroupType.analog: 'analog',
 };

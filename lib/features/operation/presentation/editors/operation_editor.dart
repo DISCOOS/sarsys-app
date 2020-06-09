@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';

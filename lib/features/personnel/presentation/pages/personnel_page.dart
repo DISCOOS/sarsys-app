@@ -12,7 +12,7 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/affilliation.dart';
+import 'package:SarSys/widgets/affiliation.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +49,7 @@ class PersonnelPageState extends State<PersonnelPage> {
     _filter = FilterSheet.read(
       context,
       FILTER,
-      defaultValue: PersonnelStatus.values.toSet()..remove(PersonnelStatus.Retired),
+      defaultValue: PersonnelStatus.values.toSet()..remove(PersonnelStatus.retired),
       onRead: _onRead,
     );
   }
@@ -271,25 +271,25 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   IconSlideAction _buildTransitionAction(BuildContext context, Personnel personnel) {
     switch (personnel.status) {
-      case PersonnelStatus.Retired:
+      case PersonnelStatus.retired:
         return IconSlideAction(
           caption: 'MOBILISERT',
-          color: toPersonnelStatusColor(PersonnelStatus.Mobilized),
+          color: toPersonnelStatusColor(PersonnelStatus.mobilized),
           icon: Icons.check_circle,
           onTap: () async => await checkInPersonnel(personnel),
         );
-      case PersonnelStatus.Mobilized:
+      case PersonnelStatus.mobilized:
         return IconSlideAction(
           caption: 'ANKOMMET',
-          color: toPersonnelStatusColor(PersonnelStatus.OnScene),
+          color: toPersonnelStatusColor(PersonnelStatus.onscene),
           icon: Icons.check_circle,
           onTap: () async => await checkInPersonnel(personnel),
         );
-      case PersonnelStatus.OnScene:
+      case PersonnelStatus.onscene:
       default:
         return IconSlideAction(
           caption: 'DIMMITERT',
-          color: toPersonnelStatusColor(PersonnelStatus.Retired),
+          color: toPersonnelStatusColor(PersonnelStatus.retired),
           icon: Icons.archive,
           onTap: () async => await retirePersonnel(personnel),
         );
@@ -317,7 +317,7 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   PersonnelStatus _onRead(value) => PersonnelStatus.values.firstWhere(
         (e) => value == enumName(e),
-        orElse: () => PersonnelStatus.Mobilized,
+        orElse: () => PersonnelStatus.mobilized,
       );
 }
 
@@ -376,9 +376,9 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
     final List recent = stored != null
         ? json.decode(stored)
         : [
-            translatePersonnelStatus(PersonnelStatus.Mobilized),
-            translatePersonnelStatus(PersonnelStatus.OnScene),
-            translatePersonnelStatus(PersonnelStatus.Retired)
+            translatePersonnelStatus(PersonnelStatus.mobilized),
+            translatePersonnelStatus(PersonnelStatus.onscene),
+            translatePersonnelStatus(PersonnelStatus.retired)
           ];
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }

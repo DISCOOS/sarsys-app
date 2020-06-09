@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -212,11 +212,11 @@ IconData toTrackingIconData(TrackingStatus status) {
 
 Color toUnitStatusColor(UnitStatus status) {
   switch (status) {
-    case UnitStatus.Deployed:
+    case UnitStatus.deployed:
       return Colors.green;
-    case UnitStatus.Retired:
+    case UnitStatus.retired:
       return Colors.brown;
-    case UnitStatus.Mobilized:
+    case UnitStatus.mobilized:
     default:
       return Colors.orange;
   }
@@ -224,18 +224,18 @@ Color toUnitStatusColor(UnitStatus status) {
 
 IconData toUnitIconData(UnitType type) {
   switch (type) {
-    case UnitType.ATV:
-    case UnitType.Snowmobile:
-    case UnitType.Vehicle:
+    case UnitType.atv:
+    case UnitType.snowmobile:
+    case UnitType.vehicle:
       return MdiIcons.carEstate;
-    case UnitType.Boat:
+    case UnitType.boat:
       return Icons.directions_boat;
-    case UnitType.K9:
+    case UnitType.k9:
       return FontAwesomeIcons.dog;
-    case UnitType.CommandPost:
+    case UnitType.commandpost:
       return FontAwesomeIcons.shieldAlt;
-    case UnitType.Team:
-    case UnitType.Other:
+    case UnitType.team:
+    case UnitType.other:
     default:
       return Icons.people;
   }
@@ -243,13 +243,13 @@ IconData toUnitIconData(UnitType type) {
 
 IconData toDeviceIconData(DeviceType type) {
   switch (type) {
-    case DeviceType.App:
+    case DeviceType.app:
       return Icons.phone_android;
-    case DeviceType.AIS:
+    case DeviceType.ais:
       return MdiIcons.ferry;
-    case DeviceType.APRS:
+    case DeviceType.aprs:
       return MdiIcons.radioHandheld;
-    case DeviceType.Tetra:
+    case DeviceType.tetra:
     default:
       return MdiIcons.cellphoneBasic;
   }
@@ -257,11 +257,11 @@ IconData toDeviceIconData(DeviceType type) {
 
 IconData toDialerIconData(DeviceType type) {
   switch (type) {
-    case DeviceType.App:
+    case DeviceType.app:
       return Icons.phone;
-    case DeviceType.AIS:
-    case DeviceType.APRS:
-    case DeviceType.Tetra:
+    case DeviceType.ais:
+    case DeviceType.aprs:
+    case DeviceType.tetra:
     default:
       return Icons.headset_mic;
   }
@@ -269,11 +269,11 @@ IconData toDialerIconData(DeviceType type) {
 
 Color toPersonnelStatusColor(PersonnelStatus status) {
   switch (status) {
-    case PersonnelStatus.OnScene:
+    case PersonnelStatus.onscene:
       return Colors.green;
-    case PersonnelStatus.Retired:
+    case PersonnelStatus.retired:
       return Colors.brown;
-    case PersonnelStatus.Mobilized:
+    case PersonnelStatus.mobilized:
     default:
       return Colors.orange;
   }

@@ -400,32 +400,32 @@ class UnitActionGroup extends StatelessWidget {
 
   ActionMenuItem _buildTransitionActionItem(BuildContext context) {
     switch (unit.status) {
-      case UnitStatus.Retired:
+      case UnitStatus.retired:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildMobilizeAction(context),
           ),
           onPressed: () => _onTransition(
-            UnitStatus.Mobilized,
+            UnitStatus.mobilized,
           ),
         );
-      case UnitStatus.Mobilized:
+      case UnitStatus.mobilized:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildDeployedAction(context),
           ),
           onPressed: () => _onTransition(
-            UnitStatus.Deployed,
+            UnitStatus.deployed,
           ),
         );
-      case UnitStatus.Deployed:
+      case UnitStatus.deployed:
       default:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildRetireAction(context),
           ),
           onPressed: () => _onTransition(
-            UnitStatus.Retired,
+            UnitStatus.retired,
           ),
         );
     }
@@ -457,7 +457,7 @@ class UnitActionGroup extends StatelessWidget {
 
   Widget _buildMobilizeAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toUnitStatusColor(UnitStatus.Mobilized);
+    final color = toUnitStatusColor(UnitStatus.mobilized);
     return Tooltip(
       message: "Registrer som mobilisert",
       child: FlatButton.icon(
@@ -473,7 +473,7 @@ class UnitActionGroup extends StatelessWidget {
           ),
         ),
         onPressed: () => _onTransition(
-          UnitStatus.Mobilized,
+          UnitStatus.mobilized,
         ),
       ),
     );
@@ -481,7 +481,7 @@ class UnitActionGroup extends StatelessWidget {
 
   Widget _buildDeployedAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toUnitStatusColor(UnitStatus.Deployed);
+    final color = toUnitStatusColor(UnitStatus.deployed);
     return Tooltip(
       message: "Registrer som deployert",
       child: FlatButton.icon(
@@ -497,7 +497,7 @@ class UnitActionGroup extends StatelessWidget {
           ),
         ),
         onPressed: () => _onTransition(
-          UnitStatus.Deployed,
+          UnitStatus.deployed,
         ),
       ),
     );
@@ -505,7 +505,7 @@ class UnitActionGroup extends StatelessWidget {
 
   void _onTransition(UnitStatus status) async {
     switch (status) {
-      case UnitStatus.Mobilized:
+      case UnitStatus.mobilized:
         final result = await mobilizeUnit(unit);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -514,7 +514,7 @@ class UnitActionGroup extends StatelessWidget {
           _onCompleted();
         }
         break;
-      case UnitStatus.Deployed:
+      case UnitStatus.deployed:
         final result = await deployUnit(unit);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -523,7 +523,7 @@ class UnitActionGroup extends StatelessWidget {
           _onCompleted();
         }
         break;
-      case UnitStatus.Retired:
+      case UnitStatus.retired:
         final result = await retireUnit(unit);
         if (result.isRight()) {
           final actual = result.toIterable().first;
@@ -537,7 +537,7 @@ class UnitActionGroup extends StatelessWidget {
 
   Widget _buildRetireAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toUnitStatusColor(UnitStatus.Retired);
+    final color = toUnitStatusColor(UnitStatus.retired);
     return Tooltip(
       message: "Dimitter og avslutt sporing",
       child: FlatButton.icon(
@@ -551,7 +551,7 @@ class UnitActionGroup extends StatelessWidget {
           style: button.copyWith(color: color),
         ),
         onPressed: () => _onTransition(
-          UnitStatus.Retired,
+          UnitStatus.retired,
         ),
       ),
     );

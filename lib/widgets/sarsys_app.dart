@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -26,7 +26,7 @@ import 'package:SarSys/screens/splash_screen.dart';
 import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/screens/onboarding_screen.dart';
-import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/settings_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/services/navigation_service.dart';
@@ -71,7 +71,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   UserBloc get userBloc => widget.controller.bloc<UserBloc>();
   AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
-  OperationBloc get incidentBloc => widget.controller.bloc<OperationBloc>();
+  OperationBloc get operationBloc => widget.controller.bloc<OperationBloc>();
   PersonnelBloc get personnelBloc => widget.controller.bloc<PersonnelBloc>();
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
@@ -492,7 +492,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     } else if (userBloc.isReady) {
       child = _toPreviousRoute(
           orElse: _toMapScreen(
-        operation: incidentBloc.selected,
+        operation: operationBloc.selected,
       ));
     } else {
       throw StateError("Unexpected state");
@@ -507,7 +507,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
-      bool isUnset = incidentBloc.isUnselected;
+      bool isUnset = operationBloc.isUnselected;
       child = _toScreen(
         RouteSettings(
           name: isUnset ? 'incidents' : state[RouteWriter.FIELD_NAME],

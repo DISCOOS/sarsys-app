@@ -22,7 +22,7 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
     String networkId,
     this.allocatedTo,
     Position position,
-    DeviceStatus status = DeviceStatus.Unavailable,
+    DeviceStatus status = DeviceStatus.unavailable,
   }) : super(
           uuid: uuid,
           position: position,

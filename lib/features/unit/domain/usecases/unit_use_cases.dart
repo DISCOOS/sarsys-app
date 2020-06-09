@@ -1,4 +1,4 @@
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:dartz/dartz.dart' as dartz;
@@ -148,7 +148,7 @@ class EditUnit extends UseCase<bool, Unit, UnitParams> {
     final unit = await params.bloc.update(result.data);
 
     // Only update tracking if not retired
-    if (UnitStatus.Retired != unit.status) {
+    if (UnitStatus.retired != unit.status) {
       await params.context.bloc<TrackingBloc>().replace(
             unit.tracking.uuid,
             devices: result.devices,
@@ -375,7 +375,7 @@ class MobilizeUnit extends UseCase<bool, Unit, UnitParams> {
   Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
-      UnitStatus.Mobilized,
+      UnitStatus.mobilized,
     );
   }
 }
@@ -393,12 +393,12 @@ class DeployUnit extends UseCase<bool, Unit, UnitParams> {
   Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
-      UnitStatus.Deployed,
+      UnitStatus.deployed,
     );
   }
 }
 
-/// Transition unit to state Retired
+/// Transition unit to state retired
 Future<dartz.Either<bool, Unit>> retireUnit(
   Unit unit,
 ) =>
@@ -411,7 +411,7 @@ class RetireUnit extends UseCase<bool, Unit, UnitParams> {
   Future<dartz.Either<bool, Unit>> execute(params) async {
     return await _transitionUnit(
       params,
-      UnitStatus.Retired,
+      UnitStatus.retired,
       action: "Oppløs ${params.data.name}",
       message: "Dette vil stoppe sporing og oppløse enheten. Vil du fortsette?",
     );

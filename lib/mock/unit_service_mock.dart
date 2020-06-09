@@ -17,15 +17,15 @@ class UnitBuilder {
     String tuuid,
     int number = 1,
     List<Personnel> personnels,
-    UnitType type = UnitType.Team,
-    UnitStatus status = UnitStatus.Mobilized,
+    UnitType type = UnitType.team,
+    UnitStatus status = UnitStatus.mobilized,
   }) {
     return UnitModel.fromJson(
       createAsJson(
         uuid: uuid ?? Uuid().v4(),
-        type: type ?? UnitType.Team,
+        type: type ?? UnitType.team,
         number: number ?? 1,
-        status: status ?? UnitStatus.Mobilized,
+        status: status ?? UnitStatus.mobilized,
         tuuid: tuuid,
         personnels: (personnels ?? []).map((p) => jsonEncode(p.toJson())).toList(),
       ),
@@ -59,8 +59,8 @@ class UnitServiceMock extends Mock implements UnitService {
     String ouuid, {
     String uuid,
     String tracking,
-    UnitType type = UnitType.Team,
-    UnitStatus status = UnitStatus.Mobilized,
+    UnitType type = UnitType.team,
+    UnitStatus status = UnitStatus.mobilized,
   }) {
     final unit = UnitBuilder.create(
       uuid: uuid,
@@ -77,10 +77,10 @@ class UnitServiceMock extends Mock implements UnitService {
   }
 
   List<Unit> remove(String uuid) {
-    final iuuids = unitsRepo.entries.where(
+    final ouuids = unitsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
-    return iuuids
+    return ouuids
         .map((ouuid) => unitsRepo[ouuid].remove(uuid))
         .where(
           (unit) => unit != null,
@@ -88,12 +88,12 @@ class UnitServiceMock extends Mock implements UnitService {
         .toList();
   }
 
-  static UnitService build(final int count, {List<String> iuuids = const []}) {
+  static UnitService build(final int count, {List<String> ouuids = const []}) {
     final UnitServiceMock mock = UnitServiceMock();
     final unitsRepo = mock.unitsRepo;
 
-    // Only generate units for automatically generated iuuids
-    iuuids.forEach((ouuid) {
+    // Only generate units for automatically generated ouuids
+    ouuids.forEach((ouuid) {
       if (ouuid.startsWith('a:')) {
         final units = unitsRepo.putIfAbsent(ouuid, () => {});
         units.addEntries([
@@ -103,9 +103,9 @@ class UnitServiceMock extends Mock implements UnitService {
               UnitModel.fromJson(
                 UnitBuilder.createAsJson(
                   uuid: "$ouuid:u:$i",
-                  type: UnitType.Team,
+                  type: UnitType.team,
                   number: i,
-                  status: UnitStatus.Mobilized,
+                  status: UnitStatus.mobilized,
                   tuuid: "$ouuid:t:u:$i",
                 ),
               ),

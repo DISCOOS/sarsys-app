@@ -502,6 +502,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     if (_states?.isOpen == true) {
       await _states.close();
     }
+    _states = null;
     return List.unmodifiable(elements);
   }
 

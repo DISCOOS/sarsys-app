@@ -19,15 +19,15 @@ class DeviceService {
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;
 
-  /// GET ../devices for given [Incident.uuid]
-  Future<ServiceResponse<List<Device>>> fetch(String ouuid) async {
+  /// GET ../devices
+  Future<ServiceResponse<List<Device>>> fetch() async {
     return Api.from<List<Device>, List<Device>>(
       await delegate.fetch(),
     );
   }
 
   /// POST ../devices
-  Future<ServiceResponse<Device>> create(String ouuid, Device device) async {
+  Future<ServiceResponse<Device>> create(Device device) async {
     return Api.from<String, Device>(
       await delegate.create(
         device,

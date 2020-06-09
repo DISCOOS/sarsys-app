@@ -4,14 +4,14 @@ import 'dart:developer' as developer;
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:equatable/equatable.dart';
 
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';

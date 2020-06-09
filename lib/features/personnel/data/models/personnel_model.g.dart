@@ -82,9 +82,9 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$PersonnelStatusEnumMap = {
-  PersonnelStatus.Mobilized: 'Mobilized',
-  PersonnelStatus.OnScene: 'OnScene',
-  PersonnelStatus.Retired: 'Retired',
+  PersonnelStatus.mobilized: 'mobilized',
+  PersonnelStatus.onscene: 'onscene',
+  PersonnelStatus.retired: 'retired',
 };
 
 const _$OperationalFunctionEnumMap = {

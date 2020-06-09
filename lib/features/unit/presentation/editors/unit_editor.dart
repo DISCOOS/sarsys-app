@@ -10,7 +10,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
@@ -36,7 +36,7 @@ class UnitEditor extends StatefulWidget {
     Key key,
     this.unit,
     this.position,
-    this.type = UnitType.Team,
+    this.type = UnitType.team,
     this.devices = const [],
     this.personnels = const [],
   }) : super(key: key);
@@ -232,7 +232,7 @@ class _UnitEditorState extends State<UnitEditor> {
           (unit) => widget.unit?.uuid != unit.uuid,
         )
         .where(
-          (unit) => UnitStatus.Retired != unit.status,
+          (unit) => UnitStatus.retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => isSameNumber(unit, type, number),
@@ -281,7 +281,7 @@ class _UnitEditorState extends State<UnitEditor> {
         .units
         .values
         .where(
-          (unit) => UnitStatus.Retired != unit.status,
+          (unit) => UnitStatus.retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => _isSameCallsign(unit, callsign),
@@ -342,7 +342,7 @@ class _UnitEditorState extends State<UnitEditor> {
         .units
         .values
         .where(
-          (unit) => UnitStatus.Retired != unit.status,
+          (unit) => UnitStatus.retired != unit.status,
         )
         .firstWhere(
           (Unit unit) => _isSamePhone(unit, phone),
@@ -399,7 +399,7 @@ class _UnitEditorState extends State<UnitEditor> {
     return buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      initialValue: enumName(widget?.unit?.status ?? UnitStatus.Mobilized),
+      initialValue: enumName(widget?.unit?.status ?? UnitStatus.mobilized),
       items: UnitStatus.values
           .map((status) => [enumName(status), translateUnitStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
@@ -688,7 +688,7 @@ class _UnitEditorState extends State<UnitEditor> {
     }
   }
 
-  bool _changedToRetired(Unit unit) => UnitStatus.Retired == unit.status && unit.status != widget?.unit?.status;
+  bool _changedToRetired(Unit unit) => UnitStatus.retired == unit.status && unit.status != widget?.unit?.status;
 
   Unit _createdUnit() => UnitModel.fromJson(_formKey.currentState.value).copyWith(
         uuid: Uuid().v4(),

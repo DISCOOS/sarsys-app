@@ -213,7 +213,7 @@ Future<Personnel> _retire(OperationParams params, User user) async {
   if (personnel != null) {
     personnel = await params.context.bloc<PersonnelBloc>().update(
           personnel.copyWith(
-            status: PersonnelStatus.Retired,
+            status: PersonnelStatus.retired,
           ),
         );
   }

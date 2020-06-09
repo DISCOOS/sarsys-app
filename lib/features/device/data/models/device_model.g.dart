@@ -81,15 +81,15 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$DeviceTypeEnumMap = {
-  DeviceType.Tetra: 'Tetra',
-  DeviceType.App: 'App',
-  DeviceType.APRS: 'APRS',
-  DeviceType.AIS: 'AIS',
-  DeviceType.Spot: 'Spot',
-  DeviceType.InReach: 'InReach',
+  DeviceType.tetra: 'tetra',
+  DeviceType.app: 'app',
+  DeviceType.aprs: 'aprs',
+  DeviceType.ais: 'ais',
+  DeviceType.spot: 'spot',
+  DeviceType.inreach: 'inreach',
 };
 
 const _$DeviceStatusEnumMap = {
-  DeviceStatus.Unavailable: 'Unavailable',
-  DeviceStatus.Available: 'Available',
+  DeviceStatus.unavailable: 'unavailable',
+  DeviceStatus.available: 'available',
 };

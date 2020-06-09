@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
+import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
@@ -16,7 +16,7 @@ import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';

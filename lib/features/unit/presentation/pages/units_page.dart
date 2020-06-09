@@ -48,7 +48,7 @@ class UnitsPageState extends State<UnitsPage> {
     _filter = FilterSheet.read(
       context,
       STATE,
-      defaultValue: UnitStatus.values.toSet()..remove(UnitStatus.Retired),
+      defaultValue: UnitStatus.values.toSet()..remove(UnitStatus.retired),
       onRead: _onRead,
     );
   }
@@ -222,25 +222,25 @@ class UnitsPageState extends State<UnitsPage> {
 
   IconSlideAction _buildTransitionAction(BuildContext context, Unit unit) {
     switch (unit.status) {
-      case UnitStatus.Retired:
+      case UnitStatus.retired:
         return IconSlideAction(
           caption: 'MOBILISERT',
-          color: toUnitStatusColor(UnitStatus.Mobilized),
+          color: toUnitStatusColor(UnitStatus.mobilized),
           icon: Icons.send,
           onTap: () async => await mobilizeUnit(unit),
         );
-      case UnitStatus.Mobilized:
+      case UnitStatus.mobilized:
         return IconSlideAction(
           caption: 'DEPLOYERT',
           color: Colors.green,
           icon: Icons.send,
           onTap: () async => await deployUnit(unit),
         );
-      case UnitStatus.Deployed:
+      case UnitStatus.deployed:
       default:
         return IconSlideAction(
           caption: 'OPPLØST',
-          color: toUnitStatusColor(UnitStatus.Retired),
+          color: toUnitStatusColor(UnitStatus.retired),
           icon: Icons.delete,
           onTap: () async => await retireUnit(unit),
         );
@@ -270,7 +270,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   UnitStatus _onRead(value) => UnitStatus.values.firstWhere(
         (e) => value == enumName(e),
-        orElse: () => UnitStatus.Mobilized,
+        orElse: () => UnitStatus.mobilized,
       );
 }
 
@@ -328,9 +328,9 @@ class UnitSearch extends SearchDelegate<Unit> {
     final List recent = stored != null
         ? json.decode(stored)
         : [
-            translateUnitType(UnitType.Team),
-            translateUnitType(UnitType.Vehicle),
-            translateUnitStatus(UnitStatus.Mobilized)
+            translateUnitType(UnitType.team),
+            translateUnitType(UnitType.vehicle),
+            translateUnitStatus(UnitStatus.mobilized)
           ];
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }

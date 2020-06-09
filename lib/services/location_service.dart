@@ -1,6 +1,6 @@
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/data_utils.dart' as utils;
 import 'package:catcher/catcher_plugin.dart';

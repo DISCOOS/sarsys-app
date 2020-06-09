@@ -66,7 +66,7 @@ class UnitLayer extends MapPlugin {
             (s1, s2) => s1.index - s2.index)
         .values
         .where((unit) => tracking[unit.tracking.uuid]?.position?.isNotEmpty == true)
-        .where((unit) => options.showRetired || unit.status != UnitStatus.Retired)
+        .where((unit) => options.showRetired || unit.status != UnitStatus.retired)
         .where((unit) => bounds.contains(toLatLng(tracking[unit.tracking.uuid]?.position?.geometry)));
     return tracking.isEmpty
         ? Container()

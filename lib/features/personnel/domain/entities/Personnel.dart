@@ -65,15 +65,15 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> {
   });
 }
 
-enum PersonnelStatus { Mobilized, OnScene, Retired }
+enum PersonnelStatus { mobilized, onscene, retired }
 
 String translatePersonnelStatus(PersonnelStatus status) {
   switch (status) {
-    case PersonnelStatus.Mobilized:
+    case PersonnelStatus.mobilized:
       return "Mobilisert";
-    case PersonnelStatus.OnScene:
+    case PersonnelStatus.onscene:
       return "Ankommet";
-    case PersonnelStatus.Retired:
+    case PersonnelStatus.retired:
       return "Dimittert";
     default:
       return enumName(status);
@@ -89,7 +89,8 @@ String translateOperationalFunction(OperationalFunction function) {
     case OperationalFunction.UnitLeader:
       return "Lagleder";
     case OperationalFunction.Personnel:
-    default:
       return "Mannskap";
+    default:
+      return enumName(function);
   }
 }

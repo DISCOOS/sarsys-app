@@ -9,7 +9,7 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/screens/command_screen.dart';
-import 'package:SarSys/features/app_config/presentation/screens/settings_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/settings_screen.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';

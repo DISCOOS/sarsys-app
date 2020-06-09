@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
@@ -14,7 +15,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -26,7 +27,7 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/operation/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
+import 'package:SarSys/features/settings/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/mock/app_config_service_mock.dart';
 import 'package:SarSys/mock/device_service_mock.dart';
 import 'package:SarSys/mock/incident_service_mock.dart';
@@ -35,12 +36,12 @@ import 'package:SarSys/mock/tracking_service_mock.dart';
 import 'package:SarSys/mock/unit_service_mock.dart';
 import 'package:SarSys/mock/user_service_mock.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
+import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 
@@ -49,6 +50,10 @@ const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provide
 const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
 class BlocTestHarness implements BlocDelegate {
+  static const TRUSTED = 'username@some.domain';
+  static const UNTRUSTED = 'username';
+  static const PASSWORD = 'password';
+
   final baseRestUrl = Defaults.baseRestUrl;
   final assetConfig = 'assets/config/app_config.json';
 
@@ -90,6 +95,9 @@ class BlocTestHarness implements BlocDelegate {
 
   DeviceServiceMock get deviceService => _deviceService;
   DeviceServiceMock _deviceService;
+
+  DeviceRepository get deviceRepo => _deviceRepo;
+  DeviceRepository _deviceRepo;
 
   DeviceBloc _deviceBloc;
   DeviceBloc get deviceBloc => _deviceBloc;
@@ -225,8 +233,8 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withUserBloc({
-    String username = 'username',
-    String password = 'password',
+    String username = UNTRUSTED,
+    String password = PASSWORD,
     bool authenticated = false,
   }) {
     withConfigBloc();
@@ -237,8 +245,8 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withOperationBloc({
-    String username = 'username',
-    String password = 'password',
+    String username = UNTRUSTED,
+    String password = PASSWORD,
     bool authenticated = true,
   }) {
     withUserBloc(
@@ -427,12 +435,13 @@ class BlocTestHarness implements BlocDelegate {
       appCount: appCount,
       simulate: simulate,
     );
+    _deviceRepo = DeviceRepositoryImpl(
+      _deviceService,
+      connectivity: _connectivity,
+    );
     _deviceBloc = DeviceBloc(
-      DeviceRepositoryImpl(
-        _deviceService,
-        connectivity: _connectivity,
-      ),
-      _operationsBloc,
+      _deviceRepo,
+      _userBloc,
     );
   }
 
@@ -486,7 +495,7 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     assert(_withUnitBloc, 'UnitBloc requires UnitBloc');
     _trackingService = TrackingServiceMock.build(
-      _deviceService,
+      _deviceRepo,
       personnelCount: personnelCount,
       unitCount: unitCount,
     );
@@ -495,7 +504,7 @@ class BlocTestHarness implements BlocDelegate {
         _trackingService,
         connectivity: _connectivity,
       ),
-      incidentBloc: _operationsBloc,
+      operationBloc: _operationsBloc,
       deviceBloc: _deviceBloc,
       personnelBloc: _personnelBloc,
       unitBloc: _unitBloc,

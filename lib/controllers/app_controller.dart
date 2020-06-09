@@ -11,11 +11,11 @@ import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/mock/personnel_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
-import 'package:SarSys/features/app_config/data/repositories/app_config_repository_impl.dart';
+import 'package:SarSys/features/settings/data/repositories/app_config_repository_impl.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
 import 'package:SarSys/features/operation/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/personnel/data/repositories/personnel_repository_impl.dart';
@@ -33,13 +33,13 @@ import 'package:SarSys/mock/incident_service_mock.dart';
 import 'package:SarSys/mock/tracking_service_mock.dart';
 import 'package:SarSys/mock/unit_service_mock.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
+import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
@@ -178,11 +178,11 @@ class AppController {
         userBloc);
 
     // Configure Personnel service
-    final PersonnelService personnelService = !(demo.active || true)
+    final PersonnelService personnelService = !demo.active
         ? PersonnelService()
         : PersonnelServiceMock.build(
             demo.personnelCount,
-            iuuids: operationBloc.repo.keys,
+            ouuids: operationBloc.repo.keys,
           );
     // ignore: close_sinks
     final PersonnelBloc personnelBloc = PersonnelBloc(
@@ -194,11 +194,11 @@ class AppController {
         operationBloc);
 
     // Configure Unit service
-    final UnitService unitService = !(demo.active || true)
+    final UnitService unitService = !demo.active
         ? UnitService()
         : UnitServiceMock.build(
             demo.unitCount,
-            iuuids: operationBloc.repo.keys,
+            ouuids: operationBloc.repo.keys,
           );
     // ignore: close_sinks
     final UnitBloc unitBloc = UnitBloc(
@@ -211,14 +211,14 @@ class AppController {
         personnelBloc);
 
     // Configure Device service
-    final DeviceService deviceService = !(demo.active || true)
+    final DeviceService deviceService = !demo.active
         ? DeviceService()
         : DeviceServiceMock.build(
             operationBloc,
             tetraCount: demo.tetraCount,
             appCount: demo.appCount,
             simulate: true,
-            iuuids: operationBloc.repo.keys,
+            ouuids: operationBloc.repo.keys,
           );
 
     // ignore: close_sinks
@@ -227,17 +227,17 @@ class AppController {
         deviceService,
         connectivity: connectivityService,
       ),
-      operationBloc,
+      userBloc,
     );
 
     // Configure Tracking service
     final TrackingService trackingService = !(demo.active || true)
         ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
         : TrackingServiceMock.build(
-            deviceService,
+            deviceBloc.repo,
             personnelCount: demo.personnelCount,
             unitCount: demo.unitCount,
-            iuuids: operationBloc.repo.keys,
+            ouuids: operationBloc.repo.keys,
             simulate: demo.simulate,
           );
 
@@ -249,7 +249,7 @@ class AppController {
       ),
       unitBloc: unitBloc,
       deviceBloc: deviceBloc,
-      incidentBloc: operationBloc,
+      operationBloc: operationBloc,
       personnelBloc: personnelBloc,
     );
 
@@ -258,8 +258,9 @@ class AppController {
       baseRestUrl: baseRestUrl,
       users: userRepo,
       services: [
-//        unitService.delegate,
 //        trackingService.delegate,
+        if (unitService.delegate != null)
+          unitService.delegate,
         if (personnelService.delegate != null)
           personnelService.delegate,
         if (deviceService.delegate != null)
@@ -278,7 +279,7 @@ class AppController {
       demo: demo,
       configBloc: configBloc,
       userBloc: userBloc,
-      incidentBloc: operationBloc,
+      operationBloc: operationBloc,
       unitBloc: unitBloc,
       personnelBloc: personnelBloc,
       deviceBloc: deviceBloc,
@@ -314,7 +315,7 @@ class AppController {
     // and access token is valid, this
     // will load incidents for given
     // user. If any incident matches
-    // 'selected_iuuid' in secure storage
+    // 'selected_ouuid' in secure storage
     // it will be selected as current
     // incident.
     await bloc<UserBloc>().load();
@@ -361,7 +362,7 @@ class AppController {
     @required DemoParams demo,
     @required AppConfigBloc configBloc,
     @required UserBloc userBloc,
-    @required OperationBloc incidentBloc,
+    @required OperationBloc operationBloc,
     @required UnitBloc unitBloc,
     @required PersonnelBloc personnelBloc,
     @required DeviceBloc deviceBloc,
@@ -376,7 +377,7 @@ class AppController {
 
     _blocs[configBloc.runtimeType] = configBloc;
     _blocs[userBloc.runtimeType] = userBloc;
-    _blocs[incidentBloc.runtimeType] = incidentBloc;
+    _blocs[operationBloc.runtimeType] = operationBloc;
     _blocs[unitBloc.runtimeType] = unitBloc;
     _blocs[personnelBloc.runtimeType] = personnelBloc;
     _blocs[deviceBloc.runtimeType] = deviceBloc;

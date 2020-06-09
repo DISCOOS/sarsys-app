@@ -22,7 +22,7 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident>
   /// Incident service
   final IncidentService service;
 
-  /// Get [Incident.uuid] from [state]
+  /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Incident> state) {
     return state?.value?.uuid;

@@ -24,12 +24,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, BlocEventBus bus, this.incidentBloc) : super(bus: bus) {
+  PersonnelBloc(this.repo, BlocEventBus bus, this.operationBloc) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
-    assert(incidentBloc != null, "incidentBloc can not be null");
+    assert(operationBloc != null, "operationBloc can not be null");
 
-    registerStreamSubscription(incidentBloc.listen(
+    registerStreamSubscription(operationBloc.listen(
       // Load and unload personnels as needed
       _processIncidentState,
     ));
@@ -69,7 +69,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   /// Get [OperationBloc]
-  final OperationBloc incidentBloc;
+  final OperationBloc operationBloc;
 
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
@@ -95,7 +95,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Find [Personnel] from [user]
   Iterable<Personnel> find(
     User user, {
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       repo.find(user, exclude: exclude);
 
@@ -108,12 +108,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Get count
   int count({
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       repo.count(exclude: exclude);
 
   void _assertState() {
-    if (incidentBloc.isUnselected) {
+    if (operationBloc.isUnselected) {
       throw PersonnelBlocException(
         "No incident selected. "
         "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.load()'",
@@ -135,7 +135,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Future<List<Personnel>> load() async {
     _assertState();
     return dispatch<List<Personnel>>(
-      LoadPersonnels(ouuid ?? incidentBloc.selected.uuid),
+      LoadPersonnels(ouuid ?? operationBloc.selected.uuid),
     );
   }
 
@@ -144,7 +144,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     _assertState();
     return dispatch<Personnel>(
       CreatePersonnel(
-        ouuid ?? incidentBloc.selected.uuid,
+        ouuid ?? operationBloc.selected.uuid,
         personnel.copyWith(
           // Personnels should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -351,7 +351,7 @@ abstract class PersonnelState<T> extends BlocEvent<T> {
 
   bool isStatusChanged() => false;
   bool isTracked() => (data is Personnel) ? (data as Personnel).tracking?.uuid != null : false;
-  bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.Retired : false;
+  bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.retired : false;
 }
 
 class PersonnelsEmpty extends PersonnelState<Null> {

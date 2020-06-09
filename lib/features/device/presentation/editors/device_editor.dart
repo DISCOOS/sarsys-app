@@ -20,7 +20,7 @@ class DeviceEditor extends StatefulWidget {
   const DeviceEditor({
     Key key,
     this.device,
-    this.type = DeviceType.Tetra,
+    this.type = DeviceType.tetra,
   }) : super(key: key);
 
   @override
@@ -101,7 +101,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
                       buildTwoCellRow(_buildNameField(), _buildNumberField(), spacing: SPACING),
                       SizedBox(height: SPACING),
                       buildTwoCellRow(_buildTypeField(snapshot.data), _buildAliasField(), spacing: SPACING),
-                      if (DeviceType.Tetra == actualType) ...[
+                      if (DeviceType.tetra == actualType) ...[
                         SizedBox(height: SPACING),
                         buildTwoCellRow(
                           _buildOrgAliasField(snapshot.data),
@@ -383,7 +383,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   Device _createDevice() {
     return DeviceModel.fromJson(_formKey.currentState.value).copyWith(
       uuid: Uuid().v4(),
-      status: DeviceStatus.Available,
+      status: DeviceStatus.available,
     );
   }
 

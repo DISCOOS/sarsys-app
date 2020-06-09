@@ -18,13 +18,13 @@ class PersonnelBuilder {
     String uuid,
     String userId,
     String tuuid,
-    PersonnelStatus status = PersonnelStatus.Mobilized,
+    PersonnelStatus status = PersonnelStatus.mobilized,
   }) {
     return PersonnelModel.fromJson(
       createAsJson(
         uuid: uuid ?? Uuid().v4(),
         userId: userId,
-        status: status ?? PersonnelStatus.Mobilized,
+        status: status ?? PersonnelStatus.mobilized,
         tuuid: tuuid,
       ),
     );
@@ -62,7 +62,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     String ouuid, {
     String uuid,
     String tracking,
-    PersonnelStatus status = PersonnelStatus.Mobilized,
+    PersonnelStatus status = PersonnelStatus.mobilized,
   }) {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
@@ -89,12 +89,12 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         .toList();
   }
 
-  factory PersonnelServiceMock.build(final int count, {List<String> iuuids = const []}) {
+  factory PersonnelServiceMock.build(final int count, {List<String> ouuids = const []}) {
     final PersonnelServiceMock mock = PersonnelServiceMock();
     final personnelsRepo = mock.personnelsRepo;
 
-    // Only generate units for automatically generated iuuids
-    iuuids.forEach((ouuid) {
+    // Only generate units for automatically generated operations
+    ouuids.forEach((ouuid) {
       if (ouuid.startsWith('a:')) {
         final personnels = personnelsRepo.putIfAbsent(ouuid, () => {});
         personnels.addEntries([
@@ -105,7 +105,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
                 PersonnelBuilder.createAsJson(
                   uuid: "$ouuid:p:$i",
                   userId: "p:$i",
-                  status: PersonnelStatus.Mobilized,
+                  status: PersonnelStatus.mobilized,
                   tuuid: "$ouuid:t:p:$i",
                 ),
               ),

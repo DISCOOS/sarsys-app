@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
@@ -24,14 +24,14 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   ///
   /// Default constructor
   ///
-  DeviceBloc(this.repo, this.incidentBloc) {
+  DeviceBloc(this.repo, this.userBloc) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
-    assert(this.incidentBloc != null, "incidentBloc can not be null");
+    assert(this.userBloc != null, "userBloc can not be null");
 
-    registerStreamSubscription(incidentBloc.listen(
+    registerStreamSubscription(userBloc.listen(
       // Load and unload devices as needed
-      _processIncidentState,
+      _processUserState,
     ));
 
     registerStreamSubscription(repo.onChanged.listen(
@@ -40,13 +40,13 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     ));
   }
 
-  void _processIncidentState(OperationState state) {
+  void _processUserState(UserState state) {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(ouuid)) {
-          dispatch(LoadDevices(state.data.uuid));
-        } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          dispatch(UnloadDevices(repo.ouuid));
+        if (state.shouldLoad()) {
+          dispatch(LoadDevices());
+        } else if (state.shouldUnload() && repo.isReady) {
+          dispatch(UnloadDevices());
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -61,29 +61,21 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         case StorageStatus.created:
           break;
         case StorageStatus.updated:
-          // TODO: Handle this case.
           break;
         case StorageStatus.deleted:
-          // TODO: Handle this case.
           break;
       }
     }
   }
 
   /// Get [OperationBloc]
-  final OperationBloc incidentBloc;
+  final UserBloc userBloc;
 
   /// Get [DeviceRepository]
   final DeviceRepository repo;
 
   /// Get [DeviceService]
   DeviceService get service => repo.service;
-
-  /// [Incident] that manages given [devices]
-  String get ouuid => repo.ouuid;
-
-  /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.ouuid == null;
 
   /// Get devices
   Map<String, Device> get devices => repo.map;
@@ -99,10 +91,10 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
 
   void _assertState() {
-    if (incidentBloc.isUnselected) {
+    if (!userBloc.isAuthenticated) {
       throw DeviceBlocError(
-        "No incident selected. "
-        "Ensure that 'IncidentBloc.select(String uuid)' is called before 'DeviceBloc.load()'",
+        "User not authenticated. "
+        "Ensure that an User is authenticated before 'DeviceBloc.load()'",
       );
     }
   }
@@ -120,7 +112,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Iterable<Device>> load() async {
     _assertState();
     return dispatch<Iterable<Device>>(
-      LoadDevices(ouuid ?? incidentBloc.selected.uuid),
+      LoadDevices(),
     );
   }
 
@@ -129,7 +121,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> create(Device device) {
     _assertState();
     return dispatch<Device>(
-      CreateDevice(ouuid ?? incidentBloc.selected.uuid, device),
+      CreateDevice(device),
     );
   }
 
@@ -137,7 +129,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> attach(Device device) {
     _assertState();
     return update(
-      device.copyWith(status: DeviceStatus.Available),
+      device.copyWith(status: DeviceStatus.available),
     );
   }
 
@@ -145,7 +137,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Device> detach(Device device) {
     _assertState();
     return update(
-      device.copyWith(status: DeviceStatus.Unavailable),
+      device.copyWith(status: DeviceStatus.unavailable),
     );
   }
 
@@ -172,7 +164,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<Iterable<Device>> unload() {
     _assertState();
     return dispatch<Iterable<Device>>(
-      UnloadDevices(ouuid),
+      UnloadDevices(),
     );
   }
 
@@ -194,7 +186,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   }
 
   Future<DeviceState> _load(LoadDevices command) async {
-    var devices = await repo.load(command.data);
+    var devices = await repo.load();
     return toOK(
       command,
       DevicesLoaded(repo.keys),
@@ -204,7 +196,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _create(CreateDevice command) async {
     _assertData(command.data);
-    var device = await repo.create(command.ouuid, command.data);
+    var device = await repo.create(command.data);
     return toOK(
       command,
       DeviceCreated(device),
@@ -262,40 +254,39 @@ abstract class DeviceCommand<S, T> extends BlocCommand<S, T> {
   DeviceCommand(S data, [props = const []]) : super(data, props);
 }
 
-class LoadDevices extends DeviceCommand<String, Iterable<Device>> {
-  LoadDevices(String ouuid) : super(ouuid);
+class LoadDevices extends DeviceCommand<void, Iterable<Device>> {
+  LoadDevices() : super(null);
 
   @override
-  String toString() => 'LoadDevices {ouuid: $data}';
+  String toString() => '$runtimeType {}';
 }
 
 class CreateDevice extends DeviceCommand<Device, Device> {
-  final String ouuid;
-  CreateDevice(this.ouuid, Device data) : super(data, [ouuid]);
+  CreateDevice(Device data) : super(data);
 
   @override
-  String toString() => 'CreateDevice {ouuid: $ouuid, device: $data}';
+  String toString() => '$runtimeType {device: $data}';
 }
 
 class UpdateDevice extends DeviceCommand<Device, Device> {
   UpdateDevice(Device data) : super(data);
 
   @override
-  String toString() => 'UpdateDevice {device: $data}';
+  String toString() => '$runtimeType {device: $data}';
 }
 
 class DeleteDevice extends DeviceCommand<Device, Device> {
   DeleteDevice(Device data) : super(data);
 
   @override
-  String toString() => 'DetachDevice {device: $data}';
+  String toString() => '$runtimeType {device: $data}';
 }
 
-class UnloadDevices extends DeviceCommand<String, Iterable<Device>> {
-  UnloadDevices(String ouuid) : super(ouuid);
+class UnloadDevices extends DeviceCommand<void, Iterable<Device>> {
+  UnloadDevices() : super(null);
 
   @override
-  String toString() => 'UnloadDevices {ouuid: $data}';
+  String toString() => '$runtimeType {}';
 }
 
 /// ---------------------
@@ -316,8 +307,8 @@ abstract class DeviceState<T> extends BlocEvent<T> {
   bool isDeleted() => this is DeviceDeleted;
   bool isUnloaded() => this is DevicesUnloaded;
 
-  bool isAvailable() => (data is Device) ? (data as Device).status == DeviceStatus.Available : false;
-  bool isUnavailable() => (data is Device) ? (data as Device).status == DeviceStatus.Unavailable : false;
+  bool isAvailable() => (data is Device) ? (data as Device).status == DeviceStatus.available : false;
+  bool isUnavailable() => (data is Device) ? (data as Device).status == DeviceStatus.unavailable : false;
 
   bool isStatusChanged() => false;
   bool isLocationChanged() => false;

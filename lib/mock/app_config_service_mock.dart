@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
+import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:http/http.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
+import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/services/service.dart';
 
 class AppConfigServiceMock extends Mock implements AppConfigService {

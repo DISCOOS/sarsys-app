@@ -14,7 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 
-import 'features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'features/settings/presentation/blocs/app_config_bloc.dart';
 import 'core/page_state.dart';
 
 void main() async {

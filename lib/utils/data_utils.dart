@@ -166,22 +166,22 @@ final _callsignFormat = NumberFormat("00")..maximumFractionDigits = 0;
 String toCallsign(UnitType type, String prefix, int number) {
   var base;
   switch (type) {
-    case UnitType.K9:
+    case UnitType.k9:
       base = 10;
       break;
-    case UnitType.Team:
+    case UnitType.team:
       base = 20;
       break;
-    case UnitType.Boat:
-    case UnitType.Vehicle:
-    case UnitType.Snowmobile:
-    case UnitType.ATV:
+    case UnitType.boat:
+    case UnitType.vehicle:
+    case UnitType.snowmobile:
+    case UnitType.atv:
       base = 50;
       break;
-    case UnitType.CommandPost:
+    case UnitType.commandpost:
       base = 90;
       break;
-    case UnitType.Other:
+    case UnitType.other:
       break;
   }
   // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)

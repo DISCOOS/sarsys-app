@@ -66,7 +66,7 @@ class PersonnelLayer extends MapPlugin {
             (s1, s2) => s1.index - s2.index)
         .values
         .where((personnel) => trackings[personnel.tracking.uuid]?.position?.isNotEmpty == true)
-        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.Retired)
+        .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.retired)
         .where((personne) => bounds.contains(toLatLng(trackings[personne.tracking.uuid]?.position?.geometry)));
     return trackings.isEmpty
         ? Container()

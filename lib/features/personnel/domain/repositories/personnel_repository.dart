@@ -8,7 +8,7 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   /// [Personnel] service
   PersonnelService get service;
 
-  /// Get [Incident.uuid]
+  /// Get [Operation.uuid]
   String get ouuid;
 
   /// Check if repository is operational.
@@ -20,13 +20,13 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
 
   /// Get [Personnel] count
   int count({
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   });
 
   /// Find personnel from user
   Iterable<Personnel> find(
     User user, {
-    List<PersonnelStatus> exclude: const [PersonnelStatus.Retired],
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   });
 
   /// GET ../personnels

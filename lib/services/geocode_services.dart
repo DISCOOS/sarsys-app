@@ -370,7 +370,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
       .bloc<UnitBloc>()
       .units
       .values
-      .where((unit) => withRetired || unit.status != UnitStatus.Retired)
+      .where((unit) => withRetired || unit.status != UnitStatus.retired)
       .where((unit) =>
           // Search in unit
           _prepare(unit.searchable).contains(match) ||
@@ -393,7 +393,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
       .bloc<PersonnelBloc>()
       .personnels
       .values
-      .where((p) => withRetired || p.status != PersonnelStatus.Retired)
+      .where((p) => withRetired || p.status != PersonnelStatus.retired)
       .where((p) =>
           // Search in personnel
           _prepare(p.searchable).contains(match) ||

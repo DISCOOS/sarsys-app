@@ -9,7 +9,7 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit>
   /// [UnitService] service
   UnitService get service;
 
-  /// Get [Incident.uuid]
+  /// Get [Operation.uuid]
   String get ouuid;
 
   /// Check if repository is operational.
@@ -22,13 +22,13 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit>
   /// Get [Unit] count
   int count({
     UnitType type,
-    List<UnitStatus> exclude: const [UnitStatus.Retired],
+    List<UnitStatus> exclude: const [UnitStatus.retired],
   });
 
   /// Find unit from personnel
   Iterable<Unit> find(
     Personnel personnel, {
-    List<UnitStatus> exclude: const [UnitStatus.Retired],
+    List<UnitStatus> exclude: const [UnitStatus.retired],
   });
 
   /// Find and replace given [Personnel]

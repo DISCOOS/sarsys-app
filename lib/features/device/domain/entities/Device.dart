@@ -18,7 +18,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
     this.networkId,
     this.allocatedTo,
     Position position,
-    this.status = DeviceStatus.Unavailable,
+    this.status = DeviceStatus.unavailable,
   }) : super(uuid, position, fields: [
           type,
           alias,
@@ -65,30 +65,30 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
 }
 
 enum DeviceType {
-  Tetra,
-  App,
-  APRS,
-  AIS,
-  Spot,
-  InReach,
+  tetra,
+  app,
+  aprs,
+  ais,
+  spot,
+  inreach,
 }
 
 String translateDeviceType(DeviceType type) {
   switch (type) {
-    case DeviceType.Tetra:
+    case DeviceType.tetra:
       return "Nødnett";
     default:
       return enumName(type);
   }
 }
 
-enum DeviceStatus { Unavailable, Available }
+enum DeviceStatus { unavailable, available }
 
 String translateDeviceStatus(DeviceStatus status) {
   switch (status) {
-    case DeviceStatus.Unavailable:
+    case DeviceStatus.unavailable:
       return "Ikke tilgjengelig";
-    case DeviceStatus.Available:
+    case DeviceStatus.available:
       return "Tilgjengelig";
     default:
       return enumName(status);

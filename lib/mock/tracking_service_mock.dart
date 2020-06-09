@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Source.dart';
 import 'package:SarSys/models/Track.dart';
@@ -16,8 +17,6 @@ import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
-
-import 'device_service_mock.dart';
 
 class TrackingBuilder {
   static Tracking create({
@@ -97,10 +96,10 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   List<Tracking> remove(String uuid) {
-    final iuuids = trackingsRepo.entries.where(
+    final ouuids = trackingsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
-    return iuuids
+    return ouuids
         .map((ouuid) => trackingsRepo[ouuid].remove(uuid))
         .where(
           (unit) => unit != null,
@@ -121,16 +120,16 @@ class TrackingServiceMock extends Mock implements TrackingService {
   final StreamController<TrackingMessage> controller = StreamController.broadcast();
 
   factory TrackingServiceMock.build(
-    DeviceServiceMock deviceServiceMock, {
+    DeviceRepository devices, {
     int personnelCount,
     int unitCount,
     bool simulate = false,
-    List<String> iuuids = const [],
+    List<String> ouuids = const [],
   }) {
     final TrackingServiceMock mock = TrackingServiceMock(simulate: simulate);
 
     // Only generate tracking for automatically generated incidents
-    iuuids.forEach((ouuid) {
+    ouuids.forEach((ouuid) {
       if (ouuid.startsWith('a:')) {
         final trackings = mock.trackingsRepo.putIfAbsent(ouuid, () => {});
         // Create unit tracking
@@ -157,7 +156,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
             (uuid) => _simulate(
               uuid,
               trackings,
-              deviceServiceMock.deviceRepo[ouuid],
+              devices.map,
               mock.simulations,
             ),
           );
@@ -167,7 +166,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     });
 
     if (simulate) {
-      deviceServiceMock.messages.listen((message) => _handle(
+      devices.service.messages.listen((message) => _handle(
             message,
             mock.s2t,
             mock.trackingsRepo,
@@ -199,7 +198,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         tracking: tracking,
         simulations: mock.simulations,
         trackingRepo: mock.trackingsRepo,
-        deviceRepo: deviceServiceMock.deviceRepo,
+        devices: devices.map,
         simulate: simulate,
       );
     });
@@ -263,7 +262,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
           _simulate(
             tracking.uuid,
             trackingList,
-            deviceServiceMock.deviceRepo[incident.key],
+            devices.map,
             mock.simulations,
           );
         }
@@ -295,7 +294,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     String ouuid,
     Tracking tracking,
     Map<String, String> s2t,
-    Map<String, Map<String, Device>> deviceRepo,
+    Map<String, Device> devices,
     Map<String, Map<String, Tracking>> trackingRepo,
     Map<String, _TrackSimulation> simulations,
     bool simulate = false,
@@ -321,7 +320,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         ? _simulate(
             tuuid,
             trackingList,
-            deviceRepo[ouuid],
+            devices,
             simulations,
           )
         : tracking;
