@@ -172,7 +172,7 @@ class _OperationsPageState extends State<OperationsPage> {
     return context
         .bloc<OperationBloc>()
         .operations
-        .where((operation) => widget.filter.contains(operation.status))
+        .where((operation) => widget.filter.contains(operation?.status))
         .where((operation) => widget.query == null || _prepare(operation).contains(widget.query.toLowerCase()))
         .toList()
           ..sort(

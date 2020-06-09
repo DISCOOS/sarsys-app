@@ -47,7 +47,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   /// Ensure that box for given [Incident.uuid] is open
   Future<Iterable<StorageState<Unit>>> _ensure(String ouuid) async {
     if (isEmptyOrNull(ouuid)) {
-      throw ArgumentError('Incident uuid can not be empty or null');
+      throw ArgumentError('Operation uuid can not be empty or null');
     }
     if (_ouuid != ouuid) {
       _ouuid = ouuid;
@@ -220,6 +220,9 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
     _ouuid = null;
     return super.close();
   }
+
+  @override
+  Future<Iterable<Unit>> onReset() => _ouuid != null ? load(_ouuid) : values;
 
   @override
   Future<Unit> onCreate(StorageState<Unit> state) async {

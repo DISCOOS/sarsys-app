@@ -55,7 +55,7 @@ class _AppDrawerState extends State<AppDrawer> {
 //          _buildMissionsPageAction(isUnset, context),
           _buildUnitsPageAction(isUnset, context),
           _buildPersonnelsPageAction(isUnset, context),
-          _buildDevicesPageAction(isUnset, context),
+          _buildDevicesPageAction(context),
           Divider(),
           _buildSettingsAction(context),
           _buildLogoutAction(user, context, userBloc),
@@ -140,9 +140,8 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildDevicesPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildDevicesPageAction(BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
       leading: const Icon(MdiIcons.cellphoneBasic),
       title: Text('Apparater', style: TextStyle(fontSize: 14)),
       onTap: () {

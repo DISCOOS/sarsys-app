@@ -1,5 +1,5 @@
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:flutter/foundation.dart';

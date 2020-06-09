@@ -92,6 +92,9 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
   }
 
   @override
+  Future<Iterable<Operation>> onReset() async => await _load();
+
+  @override
   Future<Operation> onCreate(StorageState<Operation> state) async {
     var response = await service.create(state.value);
     if (response.is201) {

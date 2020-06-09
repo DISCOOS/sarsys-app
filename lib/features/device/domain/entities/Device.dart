@@ -77,6 +77,16 @@ String translateDeviceType(DeviceType type) {
   switch (type) {
     case DeviceType.tetra:
       return "Nødnett";
+    case DeviceType.app:
+      return "App";
+    case DeviceType.aprs:
+      return "APRS";
+    case DeviceType.ais:
+      return "AIS";
+    case DeviceType.spot:
+      return "Spot";
+    case DeviceType.inreach:
+      return "InReach";
     default:
       return enumName(type);
   }

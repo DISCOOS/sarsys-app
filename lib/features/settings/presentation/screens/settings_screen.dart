@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/controllers/app_controller.dart';
+import 'package:SarSys/features/settings/presentation/screens/debug_screen.dart';
 import 'package:SarSys/screens/about_screen.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:flutter/material.dart';
@@ -110,11 +111,13 @@ class SettingsScreenState extends State<SettingsScreen> {
           "Innstillinger for ${Platform.operatingSystem} app",
           style: Theme.of(context).textTheme.bodyText2,
         ),
+        subtitle: Text("Endre innstillinger i operativsystemet"),
         trailing: Icon(Icons.open_in_new),
         onTap: () async {
           await PermissionHandler().openAppSettings();
         },
       ),
+      _buildGotoDebugScreen(),
       _buildFactoryReset(),
       ListTile(
         title: Text(
@@ -217,6 +220,19 @@ class SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
           return TetraConfigScreen();
+        }));
+      },
+    );
+  }
+
+  ListTile _buildGotoDebugScreen() {
+    return ListTile(
+      title: Text("Feilsøking"),
+      subtitle: Text('Data, posisjon og sporing'),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return DebugScreen();
         }));
       },
     );

@@ -19,6 +19,7 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
@@ -218,9 +219,11 @@ class StorageState<T> {
     @required this.value,
     @required this.status,
     @required bool remote,
+    this.error,
   }) : _remote = remote;
   final T value;
   final bool _remote;
+  final Object error;
   final StorageStatus status;
 
   bool get isLocal => !_remote;
@@ -230,23 +233,40 @@ class StorageState<T> {
         value: value,
         status: StorageStatus.created,
         remote: remote,
+        error: null,
       );
   factory StorageState.updated(T value, {bool remote = false}) => StorageState<T>(
         value: value,
         status: StorageStatus.updated,
         remote: remote,
+        error: null,
       );
   factory StorageState.deleted(T value, {bool remote = false}) => StorageState<T>(
         value: value,
         status: StorageStatus.deleted,
         remote: remote,
+        error: null,
       );
+
+  bool get isError => error != null;
 
   bool get isCreated => StorageStatus.created == status;
   bool get isChanged => StorageStatus.updated == status;
   bool get isDeleted => StorageStatus.deleted == status;
 
-  StorageState<T> remote(T value) => StorageState<T>(value: value, status: status, remote: true);
+  StorageState<T> failed(Object error) => StorageState<T>(
+        value: value,
+        status: status,
+        remote: _remote,
+        error: error,
+      );
+
+  StorageState<T> remote(T value) => StorageState<T>(
+        value: value,
+        status: status,
+        remote: true,
+        error: null,
+      );
 
   StorageState<T> replace(T value, {bool remote}) {
     switch (status) {
@@ -317,11 +337,23 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
 
   @override
   StorageState<T> read(BinaryReader reader) {
+    var value;
+    var error;
     var json = reader.readMap();
+    try {
+      value = json['value'] != null ? fromJson(Map<String, dynamic>.from(json['value'])) : null;
+    } on ArgumentError catch (e, stackTrace) {
+      error = e;
+      Catcher.reportCheckedError(error, stackTrace);
+    } on Exception catch (e, stackTrace) {
+      error = e;
+      Catcher.reportCheckedError(error, stackTrace);
+    }
     return StorageState(
+      value: value,
       status: _toStatus(json['status'] as String),
+      error: error ?? (json['error'] != null ? json['error'] : null),
       remote: json['remote'] != null ? json['remote'] as bool : false,
-      value: json['value'] != null ? fromJson(Map<String, dynamic>.from(json['value'])) : null,
     );
   }
 
@@ -334,10 +366,19 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
 
   @override
   void write(BinaryWriter writer, StorageState<T> state) {
+    var value;
+    try {
+      value = state.value != null ? toJson(state.value) : null;
+    } on ArgumentError catch (error, stackTrace) {
+      Catcher.reportCheckedError(error, stackTrace);
+    } on Exception catch (error, stackTrace) {
+      Catcher.reportCheckedError(error, stackTrace);
+    }
     writer.writeMap({
+      'value': value,
       'state': enumName(state.status),
+      'error': state.isError ? state.error : null,
       'remote': state?._remote != null ? state._remote : null,
-      'value': state.value != null ? toJson(state.value) : null,
     });
   }
 }

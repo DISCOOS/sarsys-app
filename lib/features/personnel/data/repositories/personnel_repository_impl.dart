@@ -44,7 +44,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   /// Ensure that box for given [Incident.uuid] is open
   Future<void> _ensure(String ouuid) async {
     if (isEmptyOrNull(ouuid)) {
-      throw ArgumentError('Incident uuid can not be empty or null');
+      throw ArgumentError('Operation uuid can not be empty or null');
     }
     if (_ouuid != ouuid) {
       await prepare(
@@ -150,6 +150,9 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     _ouuid = null;
     return super.close();
   }
+
+  @override
+  Future<Iterable<Personnel>> onReset() => _ouuid != null ? load(_ouuid) : values;
 
   @override
   Future<Personnel> onCreate(StorageState<Personnel> state) async {

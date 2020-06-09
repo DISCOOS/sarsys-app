@@ -1,6 +1,6 @@
 import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:SarSys/features/app_config/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';

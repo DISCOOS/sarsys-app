@@ -9,10 +9,10 @@ import 'package:flutter_udid/flutter_udid.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/features/app_config/data/models/app_config_model.dart';
-import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
-import 'package:SarSys/features/app_config/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/features/settings/data/models/app_config_model.dart';
+import 'package:SarSys/features/settings/data/services/app_config_service.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 
@@ -148,6 +148,9 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> 
 
   @override
   int toKey(StorageState<AppConfig> state) => version;
+
+  @override
+  Future<Iterable<AppConfig>> onReset() async => [await _load()];
 
   @override
   Future<AppConfig> onCreate(StorageState<AppConfig> state) async {

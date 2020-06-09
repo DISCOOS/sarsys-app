@@ -88,6 +88,12 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   Iterable<S> get backlog => List.unmodifiable(_backlog);
   final _backlog = LinkedHashSet();
 
+  /// Get [StorageState] with errors
+  ///
+  /// removed on next successful
+  /// [commit] for given state.
+  Iterable<StorageState<T>> get errors => isReady ? _states.values.where((state) => state.isError) : [];
+
   /// Get all states as unmodifiable map
   Map<S, StorageState<T>> get states => Map.unmodifiable(isReady ? _states?.toMap() : {});
   Box<StorageState<T>> _states;
@@ -132,6 +138,12 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   /// Get key [S] from state [T]
   S toKey(StorageState<T> state);
 
+  /// Should reset to remote states in backend
+  ///
+  /// Any [Exception] will be forwarded to [onError]
+  @visibleForOverriding
+  Future<Iterable<T>> onReset();
+
   /// Should create state in backend
   ///
   /// [SocketException] will push the state to [backlog]
@@ -156,7 +168,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
   /// Should handle errors
   @mustCallSuper
   @visibleForOverriding
-  void onError(Object error, StackTrace stackTrace) {
+  void onError(
+    Object error,
+    StackTrace stackTrace,
+  ) {
     RepositorySupervisor.delegate.onError(this, error, stackTrace);
   }
 
@@ -266,6 +281,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
         // Timeout - try again later
         _offline(next);
       } on Exception catch (error, stackTrace) {
+        put(next.failed(error));
         onError(error, stackTrace);
       }
       _pushQueue.removeFirst();
@@ -303,19 +319,21 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
     final pushed = <S>[];
     while (_backlog.isNotEmpty) {
       final key = _backlog.first;
+      final state = getState(key);
       try {
-        if (containsKey(key)) {
-          final state = getState(key);
+        if (state != null) {
           final result = await _push(
             state,
           );
           put(result);
+          pushed.add(key);
         }
-        pushed.add(key);
         _backlog.remove(key);
       } on SocketException {
         _retryOnline(status);
       } on Exception catch (error, stackTrace) {
+        _backlog.remove(key);
+        put(state.failed(error));
         onError(error, stackTrace);
       }
     }
@@ -453,6 +471,12 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate> {
       );
     }
     return state;
+  }
+
+  /// Reset all states to remote state
+  Future<Iterable<T>> reset() {
+    clear();
+    return onReset();
   }
 
   /// Clear all states from local storage

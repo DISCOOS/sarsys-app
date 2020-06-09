@@ -4,7 +4,7 @@ import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/api.dart';
 import 'package:SarSys/services/service.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 
 part 'app_config_service.chopper.dart';
 

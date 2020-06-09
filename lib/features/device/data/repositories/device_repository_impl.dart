@@ -101,6 +101,9 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
   }
 
   @override
+  Future<Iterable<Device>> onReset() async => await load();
+
+  @override
   Future<Device> onCreate(StorageState<Device> state) async {
     var response = await service.create(state.value);
     if (response.is201) {
@@ -172,6 +175,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
   ///
   void _processDeviceMessage(DeviceMessage message) {
     if (hasSubscriptions) {
+      var state;
       try {
         switch (message.type) {
           case DeviceMessageType.LocationChanged:
@@ -181,13 +185,15 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
               final next = _patch(
                 DeviceModel.fromJson(message.json),
               );
-              put(
-                previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next),
-              );
+              state = previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next);
+              put(state);
             }
             break;
         }
       } on Exception catch (error, stackTrace) {
+        if (state) {
+          put(state.failed(error));
+        }
         onError(error, stackTrace);
       }
     }

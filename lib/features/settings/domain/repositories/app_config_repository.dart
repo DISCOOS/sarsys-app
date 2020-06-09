@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/service.dart';
-import 'package:SarSys/features/app_config/data/services/app_config_service.dart';
-import 'package:SarSys/features/app_config/domain/entities/AppConfig.dart';
+import 'package:SarSys/features/settings/data/services/app_config_service.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 
 abstract class AppConfigRepository implements ConnectionAwareRepository<int, AppConfig> {
   int get version;

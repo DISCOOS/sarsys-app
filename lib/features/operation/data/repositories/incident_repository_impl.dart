@@ -92,6 +92,9 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident>
   }
 
   @override
+  Future<Iterable<Incident>> onReset() async => await _load();
+
+  @override
   Future<Incident> onCreate(StorageState<Incident> state) async {
     var response = await service.create(state.value);
     if (response.is201) {
