@@ -252,13 +252,15 @@ class DevicesPageState extends State<DevicesPage> {
               label: Text(_toUsage(units, personnel, device)),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.my_location,
-                size: 16.0,
-                color: toPositionStatusColor(device?.position),
-              ),
+              avatar: isSelected || isCommander
+                  ? Icon(
+                      Icons.my_location,
+                      size: 16.0,
+                      color: toPositionStatusColor(device?.position),
+                    )
+                  : null,
             ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            if (widget.withActions && isCommander)
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -272,6 +274,9 @@ class DevicesPageState extends State<DevicesPage> {
       ),
     );
   }
+
+  bool get isSelected => context.bloc<OperationBloc>().isSelected;
+  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
 
   String _toUsage(
     Map<String, Unit> units,

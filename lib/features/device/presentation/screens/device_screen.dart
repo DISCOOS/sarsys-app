@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -76,6 +77,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     super.dispose();
   }
 
+  bool get isSelected => context.bloc<OperationBloc>().isSelected;
   bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
 
   @override
@@ -104,7 +106,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
           padding: const EdgeInsets.all(DeviceScreen.SPACING),
           physics: AlwaysScrollableScrollPhysics(),
           children: [
-            _buildMapTile(context, _device),
+            if (isCommander || isSelected) _buildMapTile(context, _device),
             StreamBuilder<Device>(
               initialData: _device,
               stream: context.bloc<DeviceBloc>().onChanged(_device),
@@ -115,7 +117,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                 }
                 final unit = context.bloc<TrackingBloc>().units.find(_device);
                 final personnel = context.bloc<TrackingBloc>().personnels.find(_device);
-                return _buildInfoPanel(unit, personnel, context);
+                return _buildDeviceWidget(unit, personnel, context);
               },
             ),
           ],
@@ -124,7 +126,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
     );
   }
 
-  DeviceWidget _buildInfoPanel(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
+  DeviceWidget _buildDeviceWidget(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
         unit: unit,
         device: _device,
         withHeader: false,

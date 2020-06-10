@@ -1,3 +1,4 @@
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -133,10 +134,10 @@ class DeviceWidget extends StatelessWidget {
               child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
             ),
             DeviceActionGroup(
+              type: ActionGroupType.buttonBar,
               unit: unit,
               device: device,
               personnel: personnel,
-              type: ActionGroupType.buttonBar,
               onDeleted: onDeleted,
               onChanged: onChanged,
               onMessage: onMessage,
@@ -480,6 +481,8 @@ class DeviceActionGroup extends StatelessWidget {
   }
 
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
+    final isSelected = context.bloc<OperationBloc>().isSelected;
+
     return <ActionMenuItem>[
       ActionMenuItem(
         child: IgnorePointer(child: _buildEditButton(context)),
@@ -495,7 +498,7 @@ class DeviceActionGroup extends StatelessWidget {
           child: IgnorePointer(child: _buildRemoveFromPersonnelAction(context)),
           onPressed: _onRemoveFromPersonnel,
         )
-      else
+      else if (isSelected)
         ActionMenuItem(
           child: IgnorePointer(child: _buildAddToUnitAction(context)),
           onPressed: _onAddToUnit,
