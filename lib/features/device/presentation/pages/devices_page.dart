@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -144,16 +145,20 @@ class DevicesPageState extends State<DevicesPage> {
     }
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
-    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+
+    final isSelected = context.bloc<OperationBloc>().isSelected;
+    final isCommander = context.bloc<UserBloc>().user.isCommander;
+    final isThisApp = context.bloc<DeviceBloc>().isThisApp(device);
+    return widget.withActions && (isCommander || isThisApp)
         ? Slidable(
             actionPane: SlidableScrollActionPane(),
             actionExtentRatio: 0.2,
             child: _buildDeviceTile(device, status, units, personnel),
             secondaryActions: <Widget>[
               _buildEditAction(device),
-              if (status != TrackingStatus.none)
+              if (isSelected && status != TrackingStatus.none)
                 _buildRemoveAction(device, units, personnel)
-              else ...[
+              else if (isSelected) ...[
                 _buildAddToUnitAction(device),
                 _buildAddToPersonnelAction(device),
               ]

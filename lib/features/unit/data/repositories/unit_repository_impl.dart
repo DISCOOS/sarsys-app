@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:json_patch/json_patch.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
@@ -199,9 +199,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
   Future<Unit> patch(Unit unit) async {
     checkState();
     final old = this[unit.uuid];
-    final oldJson = old?.toJson() ?? {};
-    final patches = JsonPatch.diff(oldJson, unit.toJson());
-    final newJson = JsonPatch.apply(old, patches, strict: false);
+    final newJson = JsonUtils.patch(old, unit);
     return update(
       UnitModel.fromJson(newJson..addAll({'uuid': unit.uuid})),
     );

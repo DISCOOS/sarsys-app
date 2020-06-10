@@ -3,15 +3,14 @@ import 'dart:io';
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:json_patch/json_patch.dart';
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/services/service.dart';
 
 class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> implements DeviceRepository {
   DeviceRepositoryImpl(
@@ -161,9 +160,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
 
   DeviceModel _patch(Device device) {
     final old = this[device.uuid];
-    final oldJson = old?.toJson() ?? {};
-    final patches = JsonPatch.diff(oldJson, device.toJson());
-    final newJson = JsonPatch.apply(old, patches, strict: false);
+    final newJson = JsonUtils.patch(old, device);
     final updated = DeviceModel.fromJson(
       newJson..addAll({'uuid': device.uuid}),
     );
@@ -197,17 +194,5 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
         onError(error, stackTrace);
       }
     }
-  }
-}
-
-class DeviceServiceException implements Exception {
-  DeviceServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'DeviceServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

@@ -8,10 +8,10 @@ import 'package:SarSys/features/personnel/domain/repositories/personnel_reposito
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:json_patch/json_patch.dart';
 
 class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personnel> implements PersonnelRepository {
   PersonnelRepositoryImpl(
@@ -129,9 +129,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   Future<Personnel> patch(Personnel personnel) async {
     checkState();
     final old = this[personnel.uuid];
-    final oldJson = old?.toJson() ?? {};
-    final patches = JsonPatch.diff(oldJson, personnel.toJson());
-    final newJson = JsonPatch.apply(old, patches, strict: false);
+    final newJson = JsonUtils.patch(old, personnel);
     return update(
       PersonnelModel.fromJson(newJson..addAll({'uuid': personnel.uuid})),
     );

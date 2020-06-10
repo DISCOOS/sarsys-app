@@ -66,14 +66,14 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
   /// Clone device and set given location
   Device copyWith({
     String uuid,
-    DeviceType type,
-    DeviceStatus status,
-    String alias,
     bool manual,
-    String network,
-    String networkId,
+    String alias,
     String number,
+    String network,
+    DeviceType type,
+    String networkId,
     Position position,
+    DeviceStatus status,
     AggregateRef<Incident> allocatedTo,
   }) {
     return DeviceModel(

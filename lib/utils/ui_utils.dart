@@ -113,6 +113,7 @@ Widget buildDropDownField<T>({
           helperText: helperText,
           items: items,
           isDense: isDense,
+          enabled: enabled,
           initialValue: initialValue,
           contentPadding: contentPadding,
           onChanged: (T newValue) {
@@ -133,6 +134,7 @@ Widget buildDropdown<T>({
   EdgeInsetsGeometry contentPadding,
   T initialValue,
   bool isDense = true,
+  bool enabled = true,
   bool hasError = false,
   String errorText,
 }) {
@@ -142,22 +144,28 @@ Widget buildDropdown<T>({
       errorText: hasError ? errorText : null,
       filled: true,
       isDense: false,
+      enabled: enabled,
       labelText: label,
       helperText: helperText,
       contentPadding: contentPadding,
       floatingLabelBehavior: FloatingLabelBehavior.auto,
     ),
-    child: DropdownButtonHideUnderline(
-      child: ButtonTheme(
-        alignedDropdown: false,
-        child: DropdownButton<T>(
-          value: selected,
-          isDense: isDense,
-          onChanged: onChanged,
-          items: items,
-        ),
-      ),
-    ),
+    child: enabled
+        ? DropdownButtonHideUnderline(
+            child: ButtonTheme(
+              alignedDropdown: false,
+              child: DropdownButton<T>(
+                value: selected,
+                isDense: isDense,
+                onChanged: onChanged,
+                items: items,
+              ),
+            ),
+          )
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.0),
+            child: items.firstWhere((item) => item.value == selected, orElse: () => null)?.child,
+          ),
   );
 }
 

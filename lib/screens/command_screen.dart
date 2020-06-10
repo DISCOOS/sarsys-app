@@ -8,7 +8,6 @@ import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/pages/missions_page.dart';
 import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart';
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
-import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/screens/screen.dart';
@@ -90,40 +89,44 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             title: Text(title),
           ),
           body: tabs[routeData],
-          bottomNavigationBar: BottomAppBar(
-            shape: isCommander(context) ? CircularNotchedRectangle() : null,
-            notchMargin: 8.0,
-            elevation: 16.0,
-            child: FractionallySizedBox(
-              widthFactor: isCommander(context) ? 0.80 : 1.0,
-              alignment: Alignment.bottomLeft,
-              child: BottomNavigationBar(
-                currentIndex: routeData,
-                elevation: 0.0,
-                backgroundColor: Colors.transparent,
-                selectedItemColor: Theme.of(context).colorScheme.primary,
-                type: BottomNavigationBarType.fixed,
-                showUnselectedLabels: true,
-                items: [
-//                  BottomNavigationBarItem(title: Text("Oppdrag"), icon: Icon(Icons.assessment)),
-                  BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
-                  BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
-                  BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
-                ],
-                onTap: (index) => setState(() {
-                  writeRoute(
-                    data: index,
-                    name: CommandScreen.ROUTES[index],
-                  );
-                }),
-              ),
-            ),
-          ),
-          floatingActionButton: _buildFAB(),
+          bottomNavigationBar: operation == null ? null : _buildBottomAppBar(context),
+          floatingActionButton: operation == null ? null : _buildFAB(),
           floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
           floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         );
       },
+    );
+  }
+
+  BottomAppBar _buildBottomAppBar(BuildContext context) {
+    return BottomAppBar(
+      shape: isCommander(context) ? CircularNotchedRectangle() : null,
+      notchMargin: 8.0,
+      elevation: 16.0,
+      child: FractionallySizedBox(
+        widthFactor: isCommander(context) ? 0.80 : 1.0,
+        alignment: Alignment.bottomLeft,
+        child: BottomNavigationBar(
+          currentIndex: routeData,
+          elevation: 0.0,
+          backgroundColor: Colors.transparent,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          type: BottomNavigationBarType.fixed,
+          showUnselectedLabels: true,
+          items: [
+//                  BottomNavigationBarItem(title: Text("Oppdrag"), icon: Icon(Icons.assessment)),
+            BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
+            BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
+            BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
+          ],
+          onTap: (index) => setState(() {
+            writeRoute(
+              data: index,
+              name: CommandScreen.ROUTES[index],
+            );
+          }),
+        ),
+      ),
     );
   }
 

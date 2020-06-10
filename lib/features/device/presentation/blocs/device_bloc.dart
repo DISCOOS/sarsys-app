@@ -55,10 +55,17 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     }
   }
 
-  void _processRepoState(StorageTransition<Device> transition) {
+  void _processRepoState(StorageTransition<Device> transition) async {
     if (hasSubscriptions && transition.to.isRemote) {
       switch (transition.to.status) {
         case StorageStatus.created:
+          final device = transition.to.value;
+          if (_shouldSetName(device)) {
+            dispatch(UpdateDevice(device.copyWith(
+              number: userBloc.user.phone,
+              alias: userBloc.user.shortName,
+            )));
+          }
           break;
         case StorageStatus.updated:
           break;
@@ -67,6 +74,10 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       }
     }
   }
+
+  /// Check if device is this application
+  bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
+  bool _shouldSetName(Device device) => device.name == null && isThisApp(device);
 
   /// Get [OperationBloc]
   final UserBloc userBloc;

@@ -98,9 +98,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      buildTwoCellRow(_buildNameField(), _buildNumberField(), spacing: SPACING),
+                      buildTwoCellRow(_buildNameField(), _buildTypeField(snapshot.data), spacing: SPACING),
                       SizedBox(height: SPACING),
-                      buildTwoCellRow(_buildTypeField(snapshot.data), _buildAliasField(), spacing: SPACING),
+                      buildTwoCellRow(_buildNumberField(), _buildAliasField(), spacing: SPACING),
                       if (DeviceType.tetra == actualType) ...[
                         SizedBox(height: SPACING),
                         buildTwoCellRow(
@@ -143,7 +143,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   String _defaultName() => widget?.device?.name ?? "";
 
   Widget _buildNumberField() {
-    var originalNumber = widget.device?.number;
+    final originalNumber = widget.device?.number;
     return FormBuilderTextField(
       maxLines: 1,
       attribute: 'number',
@@ -158,7 +158,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         hintText: 'Skriv inn',
         filled: true,
         enabled: true,
-        labelText: 'Nummer',
+        labelText: _toNumberFieldLabelText(),
         suffix: GestureDetector(
           child: Icon(
             Icons.clear,
@@ -190,6 +190,25 @@ class _DeviceEditorState extends State<DeviceEditor> {
         },
       ],
     );
+  }
+
+  String _toNumberFieldLabelText() {
+    final currentType = _getActualType(widget.type);
+    switch (currentType) {
+      case DeviceType.tetra:
+        return 'ISSI nummer';
+      case DeviceType.app:
+        return 'Mobilnummer';
+      case DeviceType.aprs:
+        return 'APRS SSID';
+      case DeviceType.ais:
+        return 'AIS MMSI';
+      case DeviceType.spot:
+        return 'SPOT ID';
+      case DeviceType.inreach:
+        return 'inReach IMEI';
+    }
+    return 'Nummer';
   }
 
   bool isSameNumber(Device device, String number) =>
@@ -319,6 +338,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     return buildDropDownField(
       attribute: 'type',
       label: 'Type enhet',
+      enabled: false,
       initialValue: enumName(actualValue),
       items: DeviceType.values
           .map((type) => [enumName(type), translateDeviceType(type)])
@@ -342,9 +362,9 @@ class _DeviceEditorState extends State<DeviceEditor> {
         attribute: 'point',
         initialValue: widget?.device?.position,
         labelText: "Siste posisjon",
-        hintText: 'Velg posisjon',
+        hintText: 'Ingen posisjon',
         errorText: 'Posisjon må oppgis',
-        onChanged: (point) => setState(() {}),
+        enabled: false,
       );
 
   DeviceType _getActualType(DeviceType defaultValue) {

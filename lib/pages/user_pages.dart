@@ -50,14 +50,15 @@ class UserStatusPageState extends State<UserStatusPage> {
             if (state.isUpdated() && state.data.uuid == _personnel.uuid) {
               _personnel = state.data;
             }
-            return _personnel == null ? Center(child: Text('Deltar ikke på aksjon')) : _buildInfoPanel(context);
+            return _personnel == null ? Container() : _buildPersonnelWidget(context);
           }
           return Container();
         });
   }
 
-  PersonnelWidget _buildInfoPanel(BuildContext context) {
-    final tracking = context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid];
+  PersonnelWidget _buildPersonnelWidget(BuildContext context) {
+    final tuuid = _personnel.tracking.uuid;
+    final tracking = context.bloc<TrackingBloc>().trackings[tuuid];
     return PersonnelWidget(
       withName: true,
       withHeader: false,
@@ -68,7 +69,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       onGoto: (point) => jumpToPoint(context, center: point),
       unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
       organization: FleetMapService().fetchOrganization(Defaults.orgId),
-      devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
+      devices: context.bloc<TrackingBloc>().devices(tuuid),
     );
   }
 }
