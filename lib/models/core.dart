@@ -25,18 +25,32 @@ class JsonUtils {
     return JsonPatch.diff(o1.toJson(), o2.toJson());
   }
 
+  static Map<String, dynamic> toJson<T extends JsonObject>(
+    T value, {
+    List<String> include = const [],
+    List<String> exclude = const [],
+  }) {
+    final json = value.toJson();
+    if (include?.isNotEmpty == true || exclude?.isNotEmpty == true)
+      json.removeWhere(
+        (key, _) => (include.isEmpty || include.contains(key)) && !exclude.contains(key),
+      );
+    return json;
+  }
+
   /// Append-only operations allowed
   static const appendOnly = ['add', 'replace', 'move'];
 
   static Map<String, dynamic> patch(
     JsonObject oldJson,
     JsonObject newJson, {
+    bool strict = false,
     List<String> ops = appendOnly,
   }) {
-    final patches = JsonPatch.diff(oldJson.toJson(), newJson.toJson())
-      ..removeWhere(
-        (diff) => !ops.contains(diff['op']),
-      );
-    return JsonPatch.apply(oldJson, patches, strict: false);
+    final patches = JsonPatch.diff(
+      oldJson?.toJson() ?? {},
+      newJson?.toJson() ?? {},
+    )..removeWhere((diff) => !ops.contains(diff['op']));
+    return JsonPatch.apply(oldJson, patches, strict: strict);
   }
 }

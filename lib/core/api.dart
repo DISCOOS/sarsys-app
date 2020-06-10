@@ -10,6 +10,7 @@ import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:chopper/chopper.dart';
@@ -33,20 +34,36 @@ class Api {
   }) : chopperClient = ChopperClient(
           services: services,
           baseUrl: baseRestUrl,
-          converter: JsonSerializableConverter({
-            typeOf<List<Unit>>(): _toUnitList,
-            typeOf<List<Device>>(): _toDeviceList,
-            typeOf<List<Incident>>(): _toIncidentList,
-            typeOf<List<Operation>>(): _toOperationList,
-            typeOf<List<Personnel>>(): _toPersonnelList,
-            Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
-            Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
-            Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
-            Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
-            Operation: (json) => json['data'] == null ? null : OperationModel.fromJson(json['data']),
-            Personnel: (json) => json['data'] == null ? null : PersonnelModel.fromJson(json['data']),
-            AppConfig: (json) => json['data'] == null ? null : AppConfigModel.fromJson(json['data']),
-          }),
+          converter: JsonSerializableConverter(
+            reducers: {
+              Tracking: (value) => JsonUtils.toJson<Tracking>(value),
+              UnitModel: (value) => JsonUtils.toJson<Unit>(value),
+              IncidentModel: (value) => JsonUtils.toJson<Incident>(value),
+              OperationModel: (value) => JsonUtils.toJson<Operation>(value),
+              PersonnelModel: (value) => JsonUtils.toJson<Personnel>(value),
+              AppConfigModel: (value) => JsonUtils.toJson<AppConfig>(value),
+              DeviceModel: (value) => JsonUtils.toJson<Device>(value, exclude: const [
+                    'uuid',
+                    'alias',
+                    'number',
+                    'allocatedTo',
+                  ]),
+            },
+            decoders: {
+              typeOf<List<Unit>>(): _toUnitList,
+              typeOf<List<Device>>(): _toDeviceList,
+              typeOf<List<Incident>>(): _toIncidentList,
+              typeOf<List<Operation>>(): _toOperationList,
+              typeOf<List<Personnel>>(): _toPersonnelList,
+              Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
+              Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
+              Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
+              Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
+              Operation: (json) => json['data'] == null ? null : OperationModel.fromJson(json['data']),
+              Personnel: (json) => json['data'] == null ? null : PersonnelModel.fromJson(json['data']),
+              AppConfig: (json) => json['data'] == null ? null : AppConfigModel.fromJson(json['data']),
+            },
+          ),
           interceptors: [
             BearerTokenInterceptor(users),
             if (kDebugMode) HttpLoggingInterceptor(),
@@ -78,7 +95,7 @@ class Api {
         (entity) => OperationModel.fromJson(entity['data']),
       );
 
-  static List<T> _toList<T>(Map<String, dynamic> json, JsonFactory<T> factory) => json['entries'] == null
+  static List<T> _toList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) => json['entries'] == null
       ? <T>[]
       : List.from(json['entries'])
           .map(
@@ -110,40 +127,37 @@ class Api {
   }
 }
 
-typedef T JsonFactory<T>(Map<String, dynamic> json);
+typedef T JsonDecoder<T>(Map<String, dynamic> json);
+typedef Map<String, dynamic> JsonReducer<T>(T value);
 
 class JsonSerializableConverter extends JsonConverter {
-  final Map<Type, JsonFactory> factories;
+  final Map<Type, JsonDecoder> decoders;
+  final Map<Type, JsonReducer> reducers;
 
-  JsonSerializableConverter(this.factories);
+  JsonSerializableConverter({this.decoders, this.reducers});
 
-  T _decodeMap<T>(Map<String, dynamic> values) {
-    /// Get jsonFactory using Type parameters
-    /// if not found or invalid, throw error or return null
-    final jsonFactory = factories[T];
-    if (jsonFactory == null || jsonFactory is! JsonFactory<T>) {
-      /// throw serializer not found error;
-      return null;
+  @override
+  Request encodeJson(Request request) {
+    var contentType = request.headers[contentTypeKey];
+    if (contentType != null && contentType.contains(jsonHeaders)) {
+      return _reduce(request);
     }
-
-    return jsonFactory(values);
+    return request;
   }
 
-  List<T> _decodeList<T>(List values) => values.where((v) => v != null).map<T>((v) => _decode<T>(v)).toList();
+  Request _reduce(Request request) {
+    final value = request.body;
 
-  dynamic _decode<T>(entity) {
-    if (entity is Iterable) {
-      return _decodeList<T>(entity);
-    } else if (entity is Map) {
-      return _decodeMap<T>(entity);
+    /// Get reducer factory from runtime type
+    final encoder = reducers[value.runtimeType];
+    if (encoder == null || encoder is! JsonReducer) {
+      return request.copyWith(body: json.encode(value));
     }
-
-    return entity;
+    return request.copyWith(body: json.encode(encoder(value)));
   }
 
   @override
   Response<ResultType> convertResponse<ResultType, Model>(Response response) {
-    // Use [JsonConverter] to decode json?
     if (emptyAsNull(response.body) != null) {
       final jsonRes = super.convertResponse(response);
       final jsonBody = emptyAsNull(jsonRes.body) ?? <String, dynamic>{};
@@ -160,7 +174,30 @@ class JsonSerializableConverter extends JsonConverter {
     );
   }
 
-  // TODO: Implement common api error object
+  T _decodeMap<T>(Map<String, dynamic> values) {
+    /// Get json decoder factory using Type parameters
+    /// if not found or invalid, throw error or return null
+    final decoder = decoders[T];
+    if (decoder == null || decoder is! JsonDecoder<T>) {
+      /// throw serializer not found error
+      throw StateError('JsonDecoder factory not found for type $T');
+    }
+
+    return decoder(values);
+  }
+
+  List<T> _decodeList<T>(List values) => values.where((v) => v != null).map<T>((v) => _decode<T>(v)).toList();
+
+  dynamic _decode<T>(entity) {
+    if (entity is Iterable) {
+      return _decodeList<T>(entity);
+    } else if (entity is Map) {
+      return _decodeMap<T>(entity);
+    }
+    return entity;
+  }
+
+// TODO: Implement common api error object
 //  Response convertError<ResultType, Data>(Response response) {
 //    // Use [JsonConverter] to decode json
 //    final jsonRes = super.convertError(response);

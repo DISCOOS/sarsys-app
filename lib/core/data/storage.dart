@@ -229,23 +229,23 @@ class StorageState<T> {
   bool get isLocal => !_remote;
   bool get isRemote => _remote;
 
-  factory StorageState.created(T value, {bool remote = false}) => StorageState<T>(
+  factory StorageState.created(T value, {bool remote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.created,
         remote: remote,
-        error: null,
+        error: error,
       );
-  factory StorageState.updated(T value, {bool remote = false}) => StorageState<T>(
+  factory StorageState.updated(T value, {bool remote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.updated,
         remote: remote,
-        error: null,
+        error: error,
       );
-  factory StorageState.deleted(T value, {bool remote = false}) => StorageState<T>(
+  factory StorageState.deleted(T value, {bool remote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.deleted,
         remote: remote,
-        error: null,
+        error: error,
       );
 
   bool get isError => error != null;
@@ -271,11 +271,11 @@ class StorageState<T> {
   StorageState<T> replace(T value, {bool remote}) {
     switch (status) {
       case StorageStatus.created:
-        return StorageState.created(value, remote: remote ?? _remote);
+        return StorageState.created(value, remote: remote ?? _remote, error: error);
       case StorageStatus.updated:
-        return StorageState.updated(value, remote: remote ?? _remote);
+        return StorageState.updated(value, remote: remote ?? _remote, error: error);
       case StorageStatus.deleted:
-        return StorageState.deleted(value, remote: remote ?? _remote);
+        return StorageState.deleted(value, remote: remote ?? _remote, error: error);
       default:
         throw StorageStateException('Unknown state $status');
     }
@@ -377,7 +377,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     writer.writeMap({
       'value': value,
       'state': enumName(state.status),
-      'error': state.isError ? state.error : null,
+      'error': state.isError ? '${state.error}' : null,
       'remote': state?._remote != null ? state._remote : null,
     });
   }
