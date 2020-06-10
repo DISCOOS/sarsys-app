@@ -93,7 +93,7 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> 
     var assetData = await rootBundle.loadString(assets);
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     var init = AppConfigModel.fromJson(newJson);
-    final udid = await FlutterUdid.udid;
+    final udid = await FlutterUdid.consistentUdid;
     final next = init.copyWith(
       uuid: current?.value?.uuid ?? Uuid().v4(),
       udid: udid,
