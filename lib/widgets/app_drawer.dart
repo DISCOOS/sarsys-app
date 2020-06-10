@@ -46,10 +46,10 @@ class _AppDrawerState extends State<AppDrawer> {
           _buildMapAction(context),
           Divider(),
           _buildOperationHeader(isUnset, context),
-          _buildMyOperationPageAction(isUnset, context),
-          _buildMyUnitPageAction(isUnset, context),
-          _buildMyPageAction(context),
-          _buildMyHistoryAction(isUnset, context),
+          _buildUserProfilePageAction(context),
+          _buildUserUnitPageAction(isUnset, context),
+          _buildUserOperationPageAction(isUnset, context),
+          _buildUserHistoryAction(isUnset, context),
           Divider(),
           _buildCommandHeader(isUnset, context),
 //          _buildMissionsPageAction(isUnset, context),
@@ -97,7 +97,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildMyHistoryAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserHistoryAction(bool isUnset, BuildContext context) {
     return ListTile(
       enabled: !isUnset,
       leading: const Icon(Icons.history),
@@ -108,17 +108,17 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildMyPageAction(BuildContext context) {
+  ListTile _buildUserProfilePageAction(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.account_box),
       title: Text('Min side', style: TextStyle(fontSize: 14)),
       onTap: () {
-        Navigator.pushReplacementNamed(context, UserScreen.ROUTE_STATUS);
+        Navigator.pushReplacementNamed(context, UserScreen.ROUTE_PROFILE);
       },
     );
   }
 
-  ListTile _buildMyUnitPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserUnitPageAction(bool isUnset, BuildContext context) {
     return ListTile(
       enabled: !isUnset,
       leading: const Icon(Icons.supervised_user_circle),
@@ -129,7 +129,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildMyOperationPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserOperationPageAction(bool isUnset, BuildContext context) {
     return ListTile(
       enabled: !isUnset,
       leading: const Icon(Icons.warning),
@@ -175,7 +175,7 @@ class _AppDrawerState extends State<AppDrawer> {
   ListTile _buildOperationHeader(bool isUnset, BuildContext context) {
     final selected = context.bloc<OperationBloc>().selected;
     final labels = selected == null
-        ? ['Velg en aksjon']
+        ? ['Ingen aksjon valgt']
         : [
             '${selected.name ?? translateOperationType(selected.type)}',
             '${selected.reference ?? '<ingen referanse>'}',

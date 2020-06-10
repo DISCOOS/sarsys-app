@@ -345,8 +345,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       case CommandScreen.ROUTE_PERSONNEL_LIST:
         child = CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL);
         break;
-      case UserScreen.ROUTE_STATUS:
-        child = UserScreen(tabIndex: UserScreen.TAB_STATUS);
+      case UserScreen.ROUTE_PROFILE:
+        child = UserScreen(tabIndex: UserScreen.TAB_PROFILE);
         break;
       case UserScreen.ROUTE_UNIT:
         child = UserScreen(tabIndex: UserScreen.TAB_UNIT);

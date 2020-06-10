@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
@@ -14,28 +17,25 @@ import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/widgets/app_drawer.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:SarSys/core/extensions.dart';
 
 class UserScreen extends StatefulWidget {
   UserScreen({Key key, @required this.tabIndex}) : super(key: key);
 
-  static const TAB_OPERATION = 0;
+  static const TAB_PROFILE = 0;
   static const TAB_UNIT = 1;
-  static const TAB_STATUS = 2;
+  static const TAB_OPERATION = 2;
   static const TAB_HISTORY = 3;
 
-  static const ROUTE_OPERATION = 'user/operation';
+  static const ROUTE_PROFILE = 'user/profile';
   static const ROUTE_UNIT = 'user/unit';
-  static const ROUTE_STATUS = 'user/status';
+  static const ROUTE_OPERATION = 'user/operation';
   static const ROUTE_HISTORY = 'user/history';
 
   static const ROUTES = [
-    ROUTE_OPERATION,
+    ROUTE_PROFILE,
     ROUTE_UNIT,
-    ROUTE_STATUS,
+    ROUTE_OPERATION,
     ROUTE_HISTORY,
   ];
 
@@ -48,7 +48,7 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends RouteWriter<UserScreen, int> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _unitKey = GlobalKey<UserUnitPageState>();
-  final _statusKey = GlobalKey<UserStatusPageState>();
+  final _statusKey = GlobalKey<UserProfilePageState>();
   final _historyKey = GlobalKey<UserHistoryPageState>();
 
   User _user;
@@ -89,8 +89,12 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
           final tabs = [
-            OperationPage(
+            UserProfilePage(
+              key: _statusKey,
+              user: _user,
+              personnel: _personnel,
               onMessage: _showMessage,
+              onChanged: (personnel) => _personnel = personnel,
             ),
             UserUnitPage(
               key: _unitKey,
@@ -98,11 +102,8 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               onMessage: _showMessage,
               onChanged: (unit) => _unit = unit,
             ),
-            UserStatusPage(
-              key: _statusKey,
-              personnel: _personnel,
+            OperationPage(
               onMessage: _showMessage,
-              onChanged: (personnel) => _personnel = personnel,
             ),
             UserHistoryPage(key: _historyKey),
           ];
@@ -121,9 +122,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
                 selectedItemColor: Theme.of(context).colorScheme.primary,
                 type: BottomNavigationBarType.fixed,
                 items: [
-                  BottomNavigationBarItem(title: Text("Min aksjon"), icon: Icon(Icons.warning)),
-                  BottomNavigationBarItem(title: Text("Min enhet"), icon: Icon(Icons.supervised_user_circle)),
                   BottomNavigationBarItem(title: Text("Min side"), icon: Icon(Icons.account_box)),
+                  BottomNavigationBarItem(title: Text("Min enhet"), icon: Icon(Icons.supervised_user_circle)),
+                  BottomNavigationBarItem(title: Text("Min aksjon"), icon: Icon(Icons.warning)),
                   BottomNavigationBarItem(title: Text("Min historikk"), icon: Icon(Icons.history)),
                 ],
                 onTap: (index) => setState(() {
@@ -143,7 +144,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
       case UserScreen.TAB_OPERATION:
         String name = operation?.name ?? "Aksjon";
         return name == null || name.isEmpty ? ifEmpty : name;
-      case UserScreen.TAB_STATUS:
+      case UserScreen.TAB_PROFILE:
         return "Min side";
       case UserScreen.TAB_UNIT:
         return "Min enhet";
@@ -154,17 +155,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
 
   List<Widget> _buildActions() {
     switch (routeData) {
-      case UserScreen.TAB_OPERATION:
-        return [
-          if (context.bloc<UserBloc>()?.user?.isCommander == true)
-            OperationActionGroup(
-              onMessage: _showMessage,
-              type: ActionGroupType.popupMenuButton,
-              onChanged: (operation) => setState(() {}),
-              operation: context.bloc<OperationBloc>().selected,
-            )
-        ];
-      case UserScreen.TAB_STATUS:
+      case UserScreen.TAB_PROFILE:
         return [
           if (_personnel != null)
             PersonnelActionGroup(
@@ -183,6 +174,17 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,
               onChanged: (unit) => setState(() => _unit = unit),
+            )
+        ];
+      case UserScreen.TAB_OPERATION:
+        final selected = context.bloc<OperationBloc>().selected;
+        return [
+          if (selected != null && context.bloc<UserBloc>()?.user?.isCommander == true)
+            OperationActionGroup(
+              onMessage: _showMessage,
+              type: ActionGroupType.popupMenuButton,
+              onChanged: (operation) => setState(() {}),
+              operation: selected,
             )
         ];
       case UserScreen.TAB_HISTORY:

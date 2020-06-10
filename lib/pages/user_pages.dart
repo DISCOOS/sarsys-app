@@ -2,10 +2,12 @@ import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/features/user/presentation/widget/user_widgets.dart';
 import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
@@ -15,23 +17,27 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:async/async.dart';
 
-class UserStatusPage extends StatefulWidget {
-  const UserStatusPage({
+class UserProfilePage extends StatefulWidget {
+  UserProfilePage({
     Key key,
     @required this.onMessage,
+    @required this.user,
     this.personnel,
     this.onChanged,
-  }) : super(key: key);
+  }) : super(key: key) {
+    assert(user != null, "User is required");
+  }
 
+  final User user;
   final Personnel personnel;
   final ActionCallback onMessage;
   final ValueChanged<Personnel> onChanged;
 
   @override
-  UserStatusPageState createState() => UserStatusPageState();
+  UserProfilePageState createState() => UserProfilePageState();
 }
 
-class UserStatusPageState extends State<UserStatusPage> {
+class UserProfilePageState extends State<UserProfilePage> {
   Personnel _personnel;
 
   @override
@@ -50,10 +56,22 @@ class UserStatusPageState extends State<UserStatusPage> {
             if (state.isUpdated() && state.data.uuid == _personnel.uuid) {
               _personnel = state.data;
             }
-            return _personnel == null ? Container() : _buildPersonnelWidget(context);
+            return _personnel == null ? _buildUserWidget(context) : _buildPersonnelWidget(context);
           }
           return Container();
         });
+  }
+
+  UserWidget _buildUserWidget(BuildContext context) {
+    return UserWidget(
+      user: widget.user,
+      withName: true,
+      withHeader: false,
+      withActions: false,
+      onMessage: widget.onMessage,
+      onGoto: (point) => jumpToPoint(context, center: point),
+      organization: FleetMapService().fetchOrganization(Defaults.orgId),
+    );
   }
 
   PersonnelWidget _buildPersonnelWidget(BuildContext context) {

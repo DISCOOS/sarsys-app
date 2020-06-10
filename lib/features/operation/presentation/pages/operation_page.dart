@@ -38,24 +38,12 @@ class OperationPage extends StatefulWidget {
 class _OperationPageState extends State<OperationPage> {
   final _controller = ScrollController();
 
-  bool _showHint = true;
-
   TextStyle labelStyle;
   TextStyle valueStyle;
   TextStyle unitStyle;
 
-  Future<void> _hidePending;
-
-  @override
-  void initState() {
-    super.initState();
-    _showAndDelayHide();
-    _controller.addListener(_testHint);
-  }
-
   @override
   void dispose() {
-    _controller.removeListener(_testHint);
     _controller.dispose();
     super.dispose();
   }
@@ -69,32 +57,27 @@ class _OperationPageState extends State<OperationPage> {
       onRefresh: () async {
         context.bloc<OperationBloc>().load();
       },
-      child: Container(
-        color: Color.fromRGBO(168, 168, 168, 0.6),
-        child: Padding(
-          padding: const EdgeInsets.all(0),
-          child: Stack(
-            children: [
-              StreamBuilder<Operation>(
-                stream: context.bloc<OperationBloc>().onChanged(),
-                initialData: context.bloc<OperationBloc>().selected,
-                builder: (context, snapshot) {
-                  final operation = (snapshot.hasData ? snapshot.data : null);
-                  return operation == null
-                      ? Center(
-                          child: Text(snapshot.hasError ? "${snapshot.error}" : "Ingen data"),
-                        )
-                      : _buildDashboard(
-                          context,
-                          context.bloc<OperationBloc>().incidents.get(operation.incident.uuid),
-                          operation,
-                        );
-                },
-              ),
-              _buildBottomActions(),
-            ],
-          ),
-        ),
+      child: StreamBuilder<Operation>(
+        stream: context.bloc<OperationBloc>().onChanged(),
+        initialData: context.bloc<OperationBloc>().selected,
+        builder: (context, snapshot) {
+          final operation = (snapshot.hasData ? snapshot.data : null);
+          return Container(
+            color: operation == null ? null : Color.fromRGBO(168, 168, 168, 0.6),
+            child: Padding(
+              padding: const EdgeInsets.all(0),
+              child: operation == null
+                  ? Center(
+                      child: Text(snapshot.hasError ? "${snapshot.error}" : "Deltar ikke på aksjon"),
+                    )
+                  : _buildDashboard(
+                      context,
+                      context.bloc<OperationBloc>().incidents.get(operation.incident.uuid),
+                      operation,
+                    ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -123,39 +106,6 @@ class _OperationPageState extends State<OperationPage> {
   }
 
   bool get isCommander => context.bloc<UserBloc>()?.user?.isCommander == true;
-
-  SafeArea _buildBottomActions() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Align(
-            alignment: Alignment.bottomRight,
-            child: IgnorePointer(
-              ignoring: !_showHint,
-              child: AnimatedOpacity(
-                child: FloatingActionButton.extended(
-                  icon: Icon(Icons.arrow_downward),
-                  label: Text("Gå til bunn"),
-                  onPressed: () {
-                    setState(() {
-                      _showHint = false;
-                    });
-                    if (_controller.hasClients) {
-                      _controller.animateTo(
-                        _controller.position.maxScrollExtent,
-                        curve: Curves.easeOut,
-                        duration: const Duration(milliseconds: 250),
-                      );
-                    }
-                  },
-                ),
-                opacity: _showHint ? 1.0 : 0.0,
-                duration: _showHint ? Duration.zero : Duration(milliseconds: 800),
-              ),
-            )),
-      ),
-    );
-  }
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
     final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
@@ -438,32 +388,6 @@ class _OperationPageState extends State<OperationPage> {
       elevation: OperationPage.ELEVATION,
       borderRadius: BorderRadius.circular(OperationPage.CORNER),
     );
-  }
-
-  void _testHint() {
-    final extent = _controller.position.extentAfter;
-    if (extent > OperationPage.HEIGHT / 2 && _hidePending == null) {
-      _showAndDelayHide();
-    } else if (extent < OperationPage.HEIGHT / 2) {
-      setState(() {
-        _showHint = false;
-      });
-    }
-  }
-
-  void _showAndDelayHide() {
-    if (mounted) {
-      setState(() {
-        _showHint = true;
-      });
-    }
-    _hidePending = Future.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) {
-        _showHint = false;
-        setState(() {});
-      }
-    });
-    _hidePending.whenComplete(() => _hidePending = null);
   }
 }
 

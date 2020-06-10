@@ -37,7 +37,7 @@ class UserHistoryPageState extends State<UserHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('Min historikk'),
+      child: Text('Ingen historikk'),
     );
   }
 }
