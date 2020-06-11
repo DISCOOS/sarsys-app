@@ -30,19 +30,29 @@ User _$UserFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
-      'userId': instance.userId,
-      'fname': instance.fname,
-      'lname': instance.lname,
-      'uname': instance.uname,
-      'email': instance.email,
-      'phone': instance.phone,
-      'division': instance.division,
-      'department': instance.department,
-      'security': instance.security?.toJson(),
-      'roles': instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList(),
-      'passcodes': instance.passcodes,
-    };
+Map<String, dynamic> _$UserToJson(User instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('userId', instance.userId);
+  writeNotNull('fname', instance.fname);
+  writeNotNull('lname', instance.lname);
+  writeNotNull('uname', instance.uname);
+  writeNotNull('email', instance.email);
+  writeNotNull('phone', instance.phone);
+  writeNotNull('division', instance.division);
+  writeNotNull('department', instance.department);
+  writeNotNull('security', instance.security?.toJson());
+  writeNotNull(
+      'roles', instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList());
+  writeNotNull('passcodes', instance.passcodes);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

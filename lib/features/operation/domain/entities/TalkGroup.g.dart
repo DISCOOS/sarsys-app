@@ -8,15 +8,26 @@ part of 'TalkGroup.dart';
 
 TalkGroup _$TalkGroupFromJson(Map json) {
   return TalkGroup(
+    id: json['id'] as String,
     name: json['name'] as String,
     type: _$enumDecodeNullable(_$TalkGroupTypeEnumMap, json['type']),
   );
 }
 
-Map<String, dynamic> _$TalkGroupToJson(TalkGroup instance) => <String, dynamic>{
-      'name': instance.name,
-      'type': _$TalkGroupTypeEnumMap[instance.type],
-    };
+Map<String, dynamic> _$TalkGroupToJson(TalkGroup instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('id', instance.id);
+  writeNotNull('name', instance.name);
+  writeNotNull('type', _$TalkGroupTypeEnumMap[instance.type]);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

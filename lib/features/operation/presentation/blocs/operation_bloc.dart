@@ -163,8 +163,16 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   /// Update given operation
-  Future<Operation> update(Operation operation, {bool selected = true}) {
-    return dispatch(UpdateOperation(operation, selected: selected));
+  Future<Operation> update(
+    Operation operation, {
+    bool selected = true,
+    Incident incident,
+  }) {
+    return dispatch(UpdateOperation(
+      operation,
+      selected: selected,
+      incident: incident,
+    ));
   }
 
   /// Delete given operation
@@ -264,15 +272,22 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Stream<OperationState> _update(UpdateOperation command) async* {
     _assertUuid(command.data);
     // Execute command
-    var operation = await repo.update(command.data);
-    var select = command.selected && command.data.uuid != _ouuid;
+    final operation = await repo.update(command.data);
+    if (command.incident != null) {
+      await incidents.update(command.incident);
+    }
+    final select = command.selected && command.data.uuid != _ouuid;
     final unselected = select ? await _unset(clear: true) : null;
     final selected = select ? await _set(operation) : null;
     final selectionChanged = unselected != selected;
     // Complete request
     final updated = toOK(
       command,
-      OperationUpdated(operation),
+      OperationUpdated(
+        operation,
+        incident: command.incident,
+        selected: command.selected,
+      ),
       result: operation,
     );
     // Notify listeners
@@ -588,10 +603,15 @@ class OperationCreated extends OperationState<Operation> {
 
 class OperationUpdated extends OperationState<Operation> {
   final bool selected;
-  OperationUpdated(Operation data, {this.selected = true}) : super(data, props: [selected]);
+  final Incident incident;
+  OperationUpdated(
+    Operation data, {
+    this.selected = true,
+    this.incident,
+  }) : super(data, props: [selected]);
 
   @override
-  String toString() => '$runtimeType {operation: $data, selected: $selected}';
+  String toString() => '$runtimeType {operation: $data, selected: $selected, incident: $incident}';
 }
 
 class OperationSelected extends OperationState<Operation> {

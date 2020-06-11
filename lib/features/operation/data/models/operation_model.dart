@@ -63,13 +63,13 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
       status: clone.status ?? this.status,
       reference: clone.reference ?? this.reference,
       resolution: clone.resolution ?? this.resolution,
-      ipp: clone.ipp ?? Location.fromJson(this.ipp.toJson()),
+      ipp: clone.ipp ?? this.ipp,
+      meetup: clone.meetup ?? this.meetup,
       justification: clone.justification ?? this.justification,
-      meetup: clone.meetup ?? Location.fromJson(this.meetup.toJson()),
-      passcodes: clone.passcodes ?? Passcodes.fromJson(this.passcodes?.toJson()),
-      incident: clone.incident ?? AggregateRef<Incident>.fromJson(this.incident.toJson()),
-      commander: clone.commander ?? AggregateRef<Personnel>.fromJson(this.commander.toJson()),
-      talkgroups: clone.talkgroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg?.toJson())).toList(),
+      passcodes: clone.passcodes ?? this.passcodes,
+      incident: clone.incident ?? this.incident,
+      commander: clone.commander ?? this.commander,
+      talkgroups: clone.talkgroups ?? this.talkgroups,
     );
   }
 

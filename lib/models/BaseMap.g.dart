@@ -23,16 +23,25 @@ BaseMap _$BaseMapFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$BaseMapToJson(BaseMap instance) => <String, dynamic>{
-      'name': instance.name,
-      'description': instance.description,
-      'url': instance.url,
-      'maxZoom': instance.maxZoom,
-      'minZoom': instance.minZoom,
-      'attribution': instance.attribution,
-      'offline': instance.offline,
-      'tms': instance.tms,
-      'previewFile': instance.previewFile,
-      'subdomains': instance.subdomains,
-      'bounds': const LatLngBoundsConverter().toJson(instance.bounds),
-    };
+Map<String, dynamic> _$BaseMapToJson(BaseMap instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('name', instance.name);
+  writeNotNull('description', instance.description);
+  writeNotNull('url', instance.url);
+  writeNotNull('maxZoom', instance.maxZoom);
+  writeNotNull('minZoom', instance.minZoom);
+  writeNotNull('attribution', instance.attribution);
+  writeNotNull('offline', instance.offline);
+  writeNotNull('tms', instance.tms);
+  writeNotNull('previewFile', instance.previewFile);
+  writeNotNull('subdomains', instance.subdomains);
+  writeNotNull('bounds', const LatLngBoundsConverter().toJson(instance.bounds));
+  return val;
+}

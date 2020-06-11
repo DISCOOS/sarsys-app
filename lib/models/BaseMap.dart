@@ -22,7 +22,6 @@ class BaseMap extends ValueObject<Map<String, dynamic>> {
   final List<String> subdomains;
 
   @LatLngBoundsConverter()
-  @JsonKey(nullable: true)
   final LatLngBounds bounds;
 
   BaseMap({

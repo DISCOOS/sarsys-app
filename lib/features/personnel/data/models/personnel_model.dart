@@ -37,11 +37,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
         );
 
   @override
-  @JsonKey(
-    fromJson: toUnitRef,
-    nullable: true,
-    includeIfNull: false,
-  )
+  @JsonKey(fromJson: toUnitRef)
   final AggregateRef<Unit> unit;
 
   String get name => "${fname ?? ''} ${lname ?? ''}";

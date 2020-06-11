@@ -30,15 +30,24 @@ Organization _$OrganizationFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$OrganizationToJson(Organization instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'alias': instance.alias,
-      'pattern': instance.pattern,
-      'idpHints': instance.idpHints,
-      'functions': instance.functions,
-      'divisions': instance.divisions?.map((k, e) => MapEntry(k, e?.toJson())),
-      'talk_groups':
-          const FleetMapTalkGroupConverter().toJson(instance.talkGroups),
-    };
+Map<String, dynamic> _$OrganizationToJson(Organization instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('id', instance.id);
+  writeNotNull('name', instance.name);
+  writeNotNull('alias', instance.alias);
+  writeNotNull('pattern', instance.pattern);
+  writeNotNull('idpHints', instance.idpHints);
+  writeNotNull('functions', instance.functions);
+  writeNotNull(
+      'divisions', instance.divisions?.map((k, e) => MapEntry(k, e?.toJson())));
+  writeNotNull('talk_groups',
+      const FleetMapTalkGroupConverter().toJson(instance.talkGroups));
+  return val;
+}

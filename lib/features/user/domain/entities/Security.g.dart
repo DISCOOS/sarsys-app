@@ -9,7 +9,7 @@ part of 'Security.dart';
 Security _$SecurityFromJson(Map json) {
   return Security(
     pin: json['pin'] as String,
-    type: _$enumDecode(_$SecurityTypeEnumMap, json['type']),
+    type: _$enumDecodeNullable(_$SecurityTypeEnumMap, json['type']),
     locked: json['locked'] as bool ?? true,
     trusted: json['trusted'] as bool,
     mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
@@ -19,14 +19,23 @@ Security _$SecurityFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$SecurityToJson(Security instance) => <String, dynamic>{
-      'pin': instance.pin,
-      'type': _$SecurityTypeEnumMap[instance.type],
-      'locked': instance.locked,
-      'trusted': instance.trusted,
-      'heartbeat': instance.heartbeat?.toIso8601String(),
-      'mode': _$SecurityModeEnumMap[instance.mode],
-    };
+Map<String, dynamic> _$SecurityToJson(Security instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('pin', instance.pin);
+  writeNotNull('type', _$SecurityTypeEnumMap[instance.type]);
+  writeNotNull('locked', instance.locked);
+  writeNotNull('trusted', instance.trusted);
+  writeNotNull('heartbeat', instance.heartbeat?.toIso8601String());
+  writeNotNull('mode', _$SecurityModeEnumMap[instance.mode]);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,
@@ -49,11 +58,6 @@ T _$enumDecode<T>(
   return value ?? unknownValue;
 }
 
-const _$SecurityTypeEnumMap = {
-  SecurityType.pin: 'pin',
-  SecurityType.fingerprint: 'fingerprint',
-};
-
 T _$enumDecodeNullable<T>(
   Map<T, dynamic> enumValues,
   dynamic source, {
@@ -64,6 +68,11 @@ T _$enumDecodeNullable<T>(
   }
   return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
 }
+
+const _$SecurityTypeEnumMap = {
+  SecurityType.pin: 'pin',
+  SecurityType.fingerprint: 'fingerprint',
+};
 
 const _$SecurityModeEnumMap = {
   SecurityMode.personal: 'personal',

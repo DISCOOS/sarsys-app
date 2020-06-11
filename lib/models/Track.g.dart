@@ -25,12 +25,22 @@ Track _$TrackFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$TrackToJson(Track instance) => <String, dynamic>{
-      'id': instance.id,
-      'source': instance.source?.toJson(),
-      'status': _$TrackStatusEnumMap[instance.status],
-      'positions': instance.positions?.map((e) => e?.toJson())?.toList(),
-    };
+Map<String, dynamic> _$TrackToJson(Track instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('id', instance.id);
+  writeNotNull('source', instance.source?.toJson());
+  writeNotNull('status', _$TrackStatusEnumMap[instance.status]);
+  writeNotNull(
+      'positions', instance.positions?.map((e) => e?.toJson())?.toList());
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

@@ -13,10 +13,19 @@ Source _$SourceFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$SourceToJson(Source instance) => <String, dynamic>{
-      'uuid': instance.uuid,
-      'type': _$SourceTypeEnumMap[instance.type],
-    };
+Map<String, dynamic> _$SourceToJson(Source instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('type', _$SourceTypeEnumMap[instance.type]);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

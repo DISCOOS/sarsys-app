@@ -21,19 +21,21 @@ abstract class ValueObject<T> extends JsonObject<T> {
 }
 
 class JsonUtils {
+  static toNull(value) => null;
+
   static List<Map<String, dynamic>> diff(JsonObject o1, JsonObject o2) {
     return JsonPatch.diff(o1.toJson(), o2.toJson());
   }
 
   static Map<String, dynamic> toJson<T extends JsonObject>(
     T value, {
-    List<String> include = const [],
-    List<String> exclude = const [],
+    List<String> retain = const [],
+    List<String> remove = const [],
   }) {
     final json = value.toJson();
-    if (include?.isNotEmpty == true || exclude?.isNotEmpty == true)
+    if (retain?.isNotEmpty == true || remove?.isNotEmpty == true)
       json.removeWhere(
-        (key, _) => (include.isEmpty || include.contains(key)) && !exclude.contains(key),
+        (key, _) => (!retain.contains(key)) && remove.contains(key),
       );
     return json;
   }

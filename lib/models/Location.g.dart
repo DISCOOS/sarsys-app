@@ -22,8 +22,17 @@ Location _$LocationFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
-      'point': instance.point?.toJson(),
-      'address': instance.address?.toJson(),
-      'description': instance.description,
-    };
+Map<String, dynamic> _$LocationToJson(Location instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('point', instance.point?.toJson());
+  writeNotNull('address', instance.address?.toJson());
+  writeNotNull('description', instance.description);
+  return val;
+}

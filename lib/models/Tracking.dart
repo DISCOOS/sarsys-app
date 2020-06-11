@@ -147,10 +147,6 @@ String translateTrackingStatus(TrackingStatus status) {
 /// instance should extend or implement this class
 abstract class Trackable<T> extends Aggregate<T> {
   Trackable(String uuid, this.tracking, {List fields = const []}) : super(uuid, fields: fields);
-  @JsonKey(
-    fromJson: toTrackingRef,
-    nullable: true,
-    includeIfNull: false,
-  )
+  @JsonKey(fromJson: toTrackingRef)
   final AggregateRef<Tracking> tracking;
 }

@@ -22,17 +22,25 @@ IncidentModel _$IncidentModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$IncidentModelToJson(IncidentModel instance) =>
-    <String, dynamic>{
-      'uuid': instance.uuid,
-      'name': instance.name,
-      'exercise': instance.exercise,
-      'summary': instance.summary,
-      'type': _$IncidentTypeEnumMap[instance.type],
-      'occurred': instance.occurred?.toIso8601String(),
-      'status': _$IncidentStatusEnumMap[instance.status],
-      'resolution': _$IncidentResolutionEnumMap[instance.resolution],
-    };
+Map<String, dynamic> _$IncidentModelToJson(IncidentModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('name', instance.name);
+  writeNotNull('exercise', instance.exercise);
+  writeNotNull('summary', instance.summary);
+  writeNotNull('type', _$IncidentTypeEnumMap[instance.type]);
+  writeNotNull('occurred', instance.occurred?.toIso8601String());
+  writeNotNull('status', _$IncidentStatusEnumMap[instance.status]);
+  writeNotNull('resolution', _$IncidentResolutionEnumMap[instance.resolution]);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

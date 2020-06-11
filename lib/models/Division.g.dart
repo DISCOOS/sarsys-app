@@ -15,7 +15,16 @@ Division _$DivisionFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$DivisionToJson(Division instance) => <String, dynamic>{
-      'name': instance.name,
-      'departments': instance.departments,
-    };
+Map<String, dynamic> _$DivisionToJson(Division instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('name', instance.name);
+  writeNotNull('departments', instance.departments);
+  return val;
+}

@@ -165,16 +165,20 @@ class EditOperation extends UseCase<bool, Operation, OperationParams> {
   Future<dartz.Either<bool, Operation>> execute(params) async {
     assert(params.data != null, "Operation is required");
 
-    var operation = await showDialog<Operation>(
+    var result = await showDialog<OperationEditorResult>(
       context: params.overlay.context,
       useRootNavigator: false,
       builder: (context) => OperationEditor(
-        operation: params.data,
         ipp: params.ipp,
+        operation: params.data,
+        incident: params.bloc.incidents[params.data.incident.uuid],
       ),
     );
-    if (operation == null) return dartz.Left(false);
-    operation = await params.bloc.update(operation);
+    if (result == null) return dartz.Left(false);
+    final operation = await params.bloc.update(
+      result.operation,
+      incident: result.incident,
+    );
     return dartz.Right(operation);
   }
 }

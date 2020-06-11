@@ -12,6 +12,15 @@ Point _$PointFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$PointToJson(Point instance) => <String, dynamic>{
-      'coordinates': coordsToJson(instance.coordinates),
-    };
+Map<String, dynamic> _$PointToJson(Point instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('coordinates', coordsToJson(instance.coordinates));
+  return val;
+}

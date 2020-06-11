@@ -54,10 +54,11 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
 
   @override
   Map<String, List<TalkGroup>> fromJson(Map<String, dynamic> json) {
+    var id = 0;
     Map<String, List<TalkGroup>> map = json.map(
       (key, list) => MapEntry(
         key,
-        (list as List<dynamic>).map((name) => to(name as String)).toList(),
+        (list as List<dynamic>).map((name) => to('${id++}', name as String)).toList(),
       ),
     );
     return map;
@@ -68,12 +69,17 @@ class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkG
     return items.map((key, list) => MapEntry(key, list.map((tg) => tg.name).toList()));
   }
 
-  static TalkGroup to(String name) {
-    return TalkGroup(name: name, type: TalkGroupType.tetra);
+  static TalkGroup to(String id, String name) {
+    return TalkGroup(
+      id: id,
+      name: name,
+      type: TalkGroupType.tetra,
+    );
   }
 
   static List<TalkGroup> toList(List<String> names) {
-    return names.map((name) => to(name)).toList();
+    var id = 0;
+    return names.map((name) => to('${id++}', name)).toList();
   }
 }
 

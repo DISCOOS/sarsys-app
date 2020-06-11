@@ -81,7 +81,7 @@ class OperationBuilder {
   }
 
   static createPasscodesAsJson(String passcode) {
-    return json.encode(Passcodes(command: passcode, personnel: passcode).toJson());
+    return json.encode(Passcodes(commander: passcode, personnel: passcode).toJson());
   }
 
   static createAuthor(String userId) => json.encode(Author.now(userId));
@@ -167,7 +167,7 @@ class OperationServiceMock extends Mock implements OperationService {
         name: operation.name,
         type: operation.type,
         passcodes: Passcodes(
-          command: passcode,
+          commander: passcode,
           personnel: passcode,
         ),
         ipp: operation.ipp,

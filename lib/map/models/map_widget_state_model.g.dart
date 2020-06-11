@@ -22,13 +22,20 @@ MapWidgetStateModel _$MapWidgetStateModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$MapWidgetStateModelToJson(
-        MapWidgetStateModel instance) =>
-    <String, dynamic>{
-      'zoom': instance.zoom,
-      'center': MapWidgetStateModel._toJson(instance.center),
-      'baseMap': instance.baseMap?.toJson(),
-      'filters': instance.filters,
-      'following': instance.following,
-      'incident': instance.incident,
-    };
+Map<String, dynamic> _$MapWidgetStateModelToJson(MapWidgetStateModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('zoom', instance.zoom);
+  writeNotNull('center', MapWidgetStateModel._toJson(instance.center));
+  writeNotNull('baseMap', instance.baseMap?.toJson());
+  writeNotNull('filters', instance.filters);
+  writeNotNull('following', instance.following);
+  writeNotNull('incident', instance.incident);
+  return val;
+}

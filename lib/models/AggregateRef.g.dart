@@ -13,7 +13,15 @@ AggregateRef<T> _$AggregateRefFromJson<T extends Aggregate<dynamic>>(Map json) {
 }
 
 Map<String, dynamic> _$AggregateRefToJson<T extends Aggregate<dynamic>>(
-        AggregateRef<T> instance) =>
-    <String, dynamic>{
-      'uuid': instance.uuid,
-    };
+    AggregateRef<T> instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  return val;
+}

@@ -7,10 +7,12 @@ part 'TalkGroup.g.dart';
 
 @JsonSerializable()
 class TalkGroup extends Equatable {
+  final String id;
   final String name;
   final TalkGroupType type;
 
   TalkGroup({
+    @required this.id,
     @required this.name,
     @required this.type,
   }) : super([

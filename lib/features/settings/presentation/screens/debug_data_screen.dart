@@ -127,23 +127,33 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
   }
 
   void _commitAll() {
-    context.bloc<AppConfigBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<OperationBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<OperationBloc>().incidents.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<UnitBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<PersonnelBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<DeviceBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
-    context.bloc<TrackingBloc>().repo.commit()..catchError(Catcher.reportCheckedError);
+    Future.wait(
+      [
+        context.bloc<AppConfigBloc>().repo.commit(),
+        context.bloc<OperationBloc>().incidents.commit(),
+        context.bloc<OperationBloc>().repo.commit(),
+        context.bloc<UnitBloc>().repo.commit(),
+        context.bloc<PersonnelBloc>().repo.commit(),
+        context.bloc<DeviceBloc>().repo.commit(),
+        context.bloc<TrackingBloc>().repo.commit(),
+      ],
+      cleanUp: (_) => setState(() {}),
+    ).catchError(Catcher.reportCheckedError);
   }
 
   void _resetAll() async {
     // DO NOT RESET AppConfig here! Should only be done from AppDrawer
-    await context.bloc<OperationBloc>().incidents.reset().catchError(Catcher.reportCheckedError);
-    await context.bloc<OperationBloc>().repo.reset().catchError(Catcher.reportCheckedError);
-    context.bloc<UnitBloc>().repo.reset()..catchError(Catcher.reportCheckedError);
-    context.bloc<PersonnelBloc>().repo.reset()..catchError(Catcher.reportCheckedError);
-    context.bloc<DeviceBloc>().repo.reset()..catchError(Catcher.reportCheckedError);
-    context.bloc<TrackingBloc>().repo.reset()..catchError(Catcher.reportCheckedError);
+    Future.wait(
+      [
+        context.bloc<OperationBloc>().incidents.reset(),
+        context.bloc<OperationBloc>().repo.reset(),
+        context.bloc<UnitBloc>().repo.reset(),
+        context.bloc<PersonnelBloc>().repo.reset(),
+        context.bloc<DeviceBloc>().repo.reset(),
+        context.bloc<TrackingBloc>().repo.reset(),
+      ],
+      cleanUp: (_) => setState(() {}),
+    ).catchError(Catcher.reportCheckedError);
   }
 }
 

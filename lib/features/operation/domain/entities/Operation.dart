@@ -1,3 +1,4 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -52,7 +53,14 @@ abstract class Operation extends Aggregate<Map<String, dynamic>> {
   final Passcodes passcodes;
   final String justification;
   final OperationStatus status;
+
+  @JsonKey(
+    // Workaround for missing readOnly: true
+    // Depends on include_if_null: false
+    toJson: JsonUtils.toNull,
+  )
   final List<TalkGroup> talkgroups;
+
   final OperationResolution resolution;
   final AggregateRef<Incident> incident;
   final AggregateRef<Personnel> commander;

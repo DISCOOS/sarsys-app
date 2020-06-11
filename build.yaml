@@ -4,5 +4,10 @@ targets:
       json_serializable:
         options:
           any_map: true
-          # Force generation of toJson methods on nested objects. Required for stable fromJson(toJson()) round-trip.
+          # Force generation of toJson methods on nested objects.
+          # Required for stable fromJson(toJson()) round-trip.
           explicit_to_json: true
+          # Do not include fields with null values unless
+          # explicitly specified. This is inline with default
+          # behavior of SARSys API
+          include_if_null: false

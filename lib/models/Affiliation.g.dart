@@ -14,9 +14,17 @@ Affiliation _$AffiliationFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$AffiliationToJson(Affiliation instance) =>
-    <String, dynamic>{
-      'orgId': instance.orgId,
-      'divId': instance.divId,
-      'depId': instance.depId,
-    };
+Map<String, dynamic> _$AffiliationToJson(Affiliation instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('orgId', instance.orgId);
+  writeNotNull('divId', instance.divId);
+  writeNotNull('depId', instance.depId);
+  return val;
+}

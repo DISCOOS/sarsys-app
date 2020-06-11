@@ -297,7 +297,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   UserState _authorize(AuthorizeUser command) {
-    bool isCommander = user.isCommander && (command.data.passcodes.command == command.passcode);
+    bool isCommander = user.isCommander && (command.data.passcodes.commander == command.passcode);
     bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
     if (isCommander || isPersonnel) {
       var state = UserAuthorized(user, command.data, isCommander, isPersonnel);

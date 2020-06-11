@@ -14,8 +14,17 @@ Address _$AddressFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$AddressToJson(Address instance) => <String, dynamic>{
-      'lines': instance.lines,
-      'postalCode': instance.postalCode,
-      'countryCode': instance.countryCode,
-    };
+Map<String, dynamic> _$AddressToJson(Address instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('lines', instance.lines);
+  writeNotNull('postalCode', instance.postalCode);
+  writeNotNull('countryCode', instance.countryCode);
+  return val;
+}

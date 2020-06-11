@@ -23,13 +23,21 @@ ConflictModel _$ConflictModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) =>
-    <String, dynamic>{
-      'type': _$ConflictTypeEnumMap[instance.type],
-      'error': instance.error,
-      'mine': instance.mine,
-      'yours': instance.yours,
-    };
+Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('type', _$ConflictTypeEnumMap[instance.type]);
+  writeNotNull('error', instance.error);
+  writeNotNull('mine', instance.mine);
+  writeNotNull('yours', instance.yours);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

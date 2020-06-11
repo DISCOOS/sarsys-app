@@ -44,17 +44,26 @@ Tracking _$TrackingFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$TrackingToJson(Tracking instance) => <String, dynamic>{
-      'uuid': instance.uuid,
-      'position': instance.position?.toJson(),
-      'status': _$TrackingStatusEnumMap[instance.status],
-      'speed': instance.speed,
-      'effort': instance.effort?.inMicroseconds,
-      'distance': instance.distance,
-      'sources': instance.sources?.map((e) => e?.toJson())?.toList(),
-      'history': instance.history?.map((e) => e?.toJson())?.toList(),
-      'tracks': instance.tracks?.map((e) => e?.toJson())?.toList(),
-    };
+Map<String, dynamic> _$TrackingToJson(Tracking instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('position', instance.position?.toJson());
+  writeNotNull('status', _$TrackingStatusEnumMap[instance.status]);
+  writeNotNull('speed', instance.speed);
+  writeNotNull('effort', instance.effort?.inMicroseconds);
+  writeNotNull('distance', instance.distance);
+  writeNotNull('sources', instance.sources?.map((e) => e?.toJson())?.toList());
+  writeNotNull('history', instance.history?.map((e) => e?.toJson())?.toList());
+  writeNotNull('tracks', instance.tracks?.map((e) => e?.toJson())?.toList());
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

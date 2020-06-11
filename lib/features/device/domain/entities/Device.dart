@@ -37,7 +37,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
   final String alias;
   final String network;
   final String networkId;
-  @JsonKey(fromJson: toIncidentRef, nullable: true, includeIfNull: false)
+  @JsonKey(fromJson: toIncidentRef)
   final AggregateRef<Incident> allocatedTo;
 
   /// Device name

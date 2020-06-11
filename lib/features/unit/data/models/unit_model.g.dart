@@ -26,9 +26,7 @@ UnitModel _$UnitModelFromJson(Map json) {
 }
 
 Map<String, dynamic> _$UnitModelToJson(UnitModel instance) {
-  final val = <String, dynamic>{
-    'uuid': instance.uuid,
-  };
+  final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -36,13 +34,15 @@ Map<String, dynamic> _$UnitModelToJson(UnitModel instance) {
     }
   }
 
+  writeNotNull('uuid', instance.uuid);
   writeNotNull('tracking', instance.tracking?.toJson());
-  val['number'] = instance.number;
-  val['type'] = _$UnitTypeEnumMap[instance.type];
-  val['status'] = _$UnitStatusEnumMap[instance.status];
-  val['phone'] = instance.phone;
-  val['callsign'] = instance.callsign;
-  val['personnels'] = instance.personnels?.map((e) => e?.toJson())?.toList();
+  writeNotNull('number', instance.number);
+  writeNotNull('type', _$UnitTypeEnumMap[instance.type]);
+  writeNotNull('status', _$UnitStatusEnumMap[instance.status]);
+  writeNotNull('phone', instance.phone);
+  writeNotNull('callsign', instance.callsign);
+  writeNotNull(
+      'personnels', instance.personnels?.map((e) => e?.toJson())?.toList());
   return val;
 }
 

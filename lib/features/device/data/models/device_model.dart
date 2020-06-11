@@ -37,7 +37,7 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
         );
 
   @override
-  @JsonKey(fromJson: toIncidentRef, nullable: true, includeIfNull: false)
+  @JsonKey(fromJson: toIncidentRef)
   final AggregateRef<Incident> allocatedTo;
 
   /// Factory constructor for creating a new `Device` instance

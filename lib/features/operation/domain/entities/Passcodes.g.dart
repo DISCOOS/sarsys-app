@@ -8,12 +8,21 @@ part of 'Passcodes.dart';
 
 Passcodes _$PasscodesFromJson(Map json) {
   return Passcodes(
-    command: json['command'] as String,
+    commander: json['commander'] as String,
     personnel: json['personnel'] as String,
   );
 }
 
-Map<String, dynamic> _$PasscodesToJson(Passcodes instance) => <String, dynamic>{
-      'command': instance.command,
-      'personnel': instance.personnel,
-    };
+Map<String, dynamic> _$PasscodesToJson(Passcodes instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('commander', instance.commander);
+  writeNotNull('personnel', instance.personnel);
+  return val;
+}

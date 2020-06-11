@@ -15,7 +15,16 @@ Author _$AuthorFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$AuthorToJson(Author instance) => <String, dynamic>{
-      'userId': instance.userId,
-      'timestamp': instance.timestamp?.toIso8601String(),
-    };
+Map<String, dynamic> _$AuthorToJson(Author instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('userId', instance.userId);
+  writeNotNull('timestamp', instance.timestamp?.toIso8601String());
+  return val;
+}

@@ -56,23 +56,31 @@ OperationModel _$OperationModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$OperationModelToJson(OperationModel instance) =>
-    <String, dynamic>{
-      'uuid': instance.uuid,
-      'name': instance.name,
-      'ipp': instance.ipp?.toJson(),
-      'author': instance.author?.toJson(),
-      'meetup': instance.meetup?.toJson(),
-      'reference': instance.reference,
-      'type': _$OperationTypeEnumMap[instance.type],
-      'passcodes': instance.passcodes?.toJson(),
-      'justification': instance.justification,
-      'status': _$OperationStatusEnumMap[instance.status],
-      'talkgroups': instance.talkgroups?.map((e) => e?.toJson())?.toList(),
-      'resolution': _$OperationResolutionEnumMap[instance.resolution],
-      'incident': instance.incident?.toJson(),
-      'commander': instance.commander?.toJson(),
-    };
+Map<String, dynamic> _$OperationModelToJson(OperationModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('name', instance.name);
+  writeNotNull('ipp', instance.ipp?.toJson());
+  writeNotNull('author', instance.author?.toJson());
+  writeNotNull('meetup', instance.meetup?.toJson());
+  writeNotNull('reference', instance.reference);
+  writeNotNull('type', _$OperationTypeEnumMap[instance.type]);
+  writeNotNull('passcodes', instance.passcodes?.toJson());
+  writeNotNull('justification', instance.justification);
+  writeNotNull('status', _$OperationStatusEnumMap[instance.status]);
+  writeNotNull('talkgroups', JsonUtils.toNull(instance.talkgroups));
+  writeNotNull('resolution', _$OperationResolutionEnumMap[instance.resolution]);
+  writeNotNull('incident', instance.incident?.toJson());
+  writeNotNull('commander', instance.commander?.toJson());
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

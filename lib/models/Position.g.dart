@@ -21,10 +21,19 @@ Position _$PositionFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$PositionToJson(Position instance) => <String, dynamic>{
-      'geometry': instance.geometry?.toJson(),
-      'properties': instance.properties?.toJson(),
-    };
+Map<String, dynamic> _$PositionToJson(Position instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('geometry', instance.geometry?.toJson());
+  writeNotNull('properties', instance.properties?.toJson());
+  return val;
+}
 
 PositionProperties _$PositionPropertiesFromJson(Map json) {
   return PositionProperties(
@@ -38,14 +47,22 @@ PositionProperties _$PositionPropertiesFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$PositionPropertiesToJson(PositionProperties instance) =>
-    <String, dynamic>{
-      'accuracy': instance.acc,
-      'speed': instance.speed,
-      'bearing': instance.bearing,
-      'timestamp': instance.timestamp?.toIso8601String(),
-      'source': _$PositionSourceEnumMap[instance.source],
-    };
+Map<String, dynamic> _$PositionPropertiesToJson(PositionProperties instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('accuracy', instance.acc);
+  writeNotNull('speed', instance.speed);
+  writeNotNull('bearing', instance.bearing);
+  writeNotNull('timestamp', instance.timestamp?.toIso8601String());
+  writeNotNull('source', _$PositionSourceEnumMap[instance.source]);
+  return val;
+}
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,

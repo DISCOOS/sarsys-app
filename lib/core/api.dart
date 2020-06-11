@@ -38,11 +38,25 @@ class Api {
             reducers: {
               Tracking: (value) => JsonUtils.toJson<Tracking>(value),
               UnitModel: (value) => JsonUtils.toJson<Unit>(value),
-              IncidentModel: (value) => JsonUtils.toJson<Incident>(value),
-              OperationModel: (value) => JsonUtils.toJson<Operation>(value),
               PersonnelModel: (value) => JsonUtils.toJson<Personnel>(value),
               AppConfigModel: (value) => JsonUtils.toJson<AppConfig>(value),
-              DeviceModel: (value) => JsonUtils.toJson<Device>(value, exclude: const [
+              IncidentModel: (value) => JsonUtils.toJson<Incident>(value, remove: const [
+                    'clues',
+                    'subjects',
+                    'messages',
+                    'operations',
+                    'transitions',
+                  ]),
+              OperationModel: (value) => JsonUtils.toJson<Operation>(value, remove: const [
+                    'units',
+                    'incident',
+                    'messages',
+                    'missions',
+                    'personnels',
+                    'objectives',
+                    "transitions",
+                  ]),
+              DeviceModel: (value) => JsonUtils.toJson<Device>(value, retain: const [
                     'uuid',
                     'alias',
                     'number',

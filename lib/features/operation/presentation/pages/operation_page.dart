@@ -287,7 +287,7 @@ class _OperationPageState extends State<OperationPage> {
       children: <Widget>[
         Expanded(
           flex: 2,
-          child: _buildValueTile("${operation.passcodes?.command}", label: "Kode for aksjonsledelse"),
+          child: _buildValueTile("${operation.passcodes?.commander}", label: "Kode for aksjonsledelse"),
         ),
         SizedBox(width: OperationPage.SPACING),
         Expanded(

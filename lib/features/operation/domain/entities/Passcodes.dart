@@ -8,21 +8,21 @@ part 'Passcodes.g.dart';
 
 @JsonSerializable()
 class Passcodes extends ValueObject<Map<String, dynamic>> {
-  final String command;
+  final String commander;
   final String personnel;
 
   Passcodes({
-    @required this.command,
+    @required this.commander,
     @required this.personnel,
   }) : super([
-          command,
+          commander,
           personnel,
         ]);
 
   /// Factory constructor for random generated alpha-numeric command and personnel passcodes
   factory Passcodes.random(int length) {
     return Passcodes(
-      command: randomAlphaNumeric(length),
+      commander: randomAlphaNumeric(length),
       personnel: randomAlphaNumeric(length),
     );
   }

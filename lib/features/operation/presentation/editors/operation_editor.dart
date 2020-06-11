@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:http/http.dart';
@@ -55,13 +56,14 @@ class _OperationEditorState extends State<OperationEditor> {
   final _tgCatalog = ValueNotifier(<String>[]);
 
   int _currentStep = 0;
+  bool _isExercise = false;
   bool _rememberUnits = true;
   bool _rememberTalkGroups = true;
-  bool _isExercise = false;
-  MapSearchEngine _engine;
 
   Location _ipp;
   Location _meetup;
+
+  MapSearchEngine _engine;
 
   TextEditingController _ippController;
   TextEditingController _meetupController;
@@ -429,7 +431,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return FormBuilderTextField(
       maxLines: 3,
       attribute: 'justification',
-      initialValue: widget?.incident?.summary,
+      initialValue: widget?.operation?.justification,
       decoration: new InputDecoration(
         labelText: 'Begrunnelse',
         hintText: 'Oppgi begrunnelse',
@@ -974,17 +976,37 @@ class _OperationEditorState extends State<OperationEditor> {
             fields.length;
   }
 
-  Map<String, dynamic> _toIncidentJson(Map<String, dynamic> json) {
+  Map<String, dynamic> _toIncidentJson(
+    Map<String, dynamic> json, {
+    Incident current,
+  }) {
     return {
       'type': json['incident_type'],
       'status': json['incident_status'],
+      'summary': json['justification'],
+      'resolution': enumName(current?.resolution ?? IncidentResolution.unresolved),
     }..addAll(json);
   }
 
-  Map<String, dynamic> _toOperationJson(Map<String, dynamic> json) {
+  Map<String, dynamic> _toOperationJson(
+    Map<String, dynamic> json, {
+    Operation current,
+  }) {
+    var id = 0;
+    // Ensure EntityObject contract is fulfilled
+    json.addAll({
+      'talkgroups': List.from(json['talkgroups'] ?? [])
+          .map(
+            (tg) => Map.from(tg)..addAll({'id': '${id++}'}),
+          )
+          .toList()
+    });
+
     return {
       'type': json['operation_type'],
       'status': json['operation_status'],
+      'resolution': enumName(current?.resolution ?? OperationResolution.unresolved),
+      'passcodes': Passcodes.random(5).toJson(),
     }..addAll(json);
   }
 
@@ -1048,8 +1070,14 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   Future _submitUpdate(BuildContext context) async {
-    final incident = widget.incident.mergeWith(_toIncidentJson(_toJson()));
-    final operation = widget.operation.mergeWith(_toOperationJson(_toJson()));
+    final incident = widget.incident.mergeWith(_toIncidentJson(
+      _toJson(),
+      current: widget.incident,
+    ));
+    final operation = widget.operation.mergeWith(_toOperationJson(
+      _toJson(),
+      current: widget.operation,
+    ));
     if (_shouldCancel(incident.resolution)) {
       await _prompt(
         context,

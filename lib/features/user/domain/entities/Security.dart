@@ -23,8 +23,8 @@ class Security extends Equatable {
         ]);
 
   final String pin;
-  @JsonKey(nullable: false)
   final SecurityType type;
+
   @JsonKey(defaultValue: true)
   final bool locked;
   final bool trusted;

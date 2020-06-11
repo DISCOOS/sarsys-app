@@ -26,17 +26,7 @@ DeviceModel _$DeviceModelFromJson(Map json) {
 }
 
 Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
-  final val = <String, dynamic>{
-    'uuid': instance.uuid,
-    'position': instance.position?.toJson(),
-    'manual': instance.manual,
-    'type': _$DeviceTypeEnumMap[instance.type],
-    'status': _$DeviceStatusEnumMap[instance.status],
-    'number': instance.number,
-    'alias': instance.alias,
-    'network': instance.network,
-    'networkId': instance.networkId,
-  };
+  final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -44,6 +34,15 @@ Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
     }
   }
 
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('position', instance.position?.toJson());
+  writeNotNull('manual', instance.manual);
+  writeNotNull('type', _$DeviceTypeEnumMap[instance.type]);
+  writeNotNull('status', _$DeviceStatusEnumMap[instance.status]);
+  writeNotNull('number', instance.number);
+  writeNotNull('alias', instance.alias);
+  writeNotNull('network', instance.network);
+  writeNotNull('networkId', instance.networkId);
   writeNotNull('allocatedTo', instance.allocatedTo?.toJson());
   return val;
 }
@@ -58,7 +57,9 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '

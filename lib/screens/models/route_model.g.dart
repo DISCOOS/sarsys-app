@@ -13,8 +13,16 @@ RouteModel _$RouteModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$RouteModelToJson(RouteModel instance) =>
-    <String, dynamic>{
-      'name': instance.name,
-      'data': instance.data,
-    };
+Map<String, dynamic> _$RouteModelToJson(RouteModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('name', instance.name);
+  writeNotNull('data', instance.data);
+  return val;
+}

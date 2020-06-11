@@ -27,9 +27,7 @@ PersonnelModel _$PersonnelModelFromJson(Map json) {
 }
 
 Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
-  final val = <String, dynamic>{
-    'uuid': instance.uuid,
-  };
+  final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
     if (value != null) {
@@ -37,14 +35,15 @@ Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
     }
   }
 
+  writeNotNull('uuid', instance.uuid);
   writeNotNull('tracking', instance.tracking?.toJson());
-  val['userId'] = instance.userId;
-  val['status'] = _$PersonnelStatusEnumMap[instance.status];
-  val['fname'] = instance.fname;
-  val['lname'] = instance.lname;
-  val['phone'] = instance.phone;
-  val['affiliation'] = instance.affiliation?.toJson();
-  val['function'] = _$OperationalFunctionEnumMap[instance.function];
+  writeNotNull('userId', instance.userId);
+  writeNotNull('status', _$PersonnelStatusEnumMap[instance.status]);
+  writeNotNull('fname', instance.fname);
+  writeNotNull('lname', instance.lname);
+  writeNotNull('phone', instance.phone);
+  writeNotNull('affiliation', instance.affiliation?.toJson());
+  writeNotNull('function', _$OperationalFunctionEnumMap[instance.function]);
   writeNotNull('unit', instance.unit?.toJson());
   return val;
 }
