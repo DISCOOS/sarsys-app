@@ -18,9 +18,6 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     firstSetup: json['firstSetup'] as bool,
     storage: json['storage'] as bool,
     locationWhenInUse: json['locationWhenInUse'] as bool,
-    orgId: json['orgId'] as String,
-    divId: json['divId'] as String,
-    depId: json['depId'] as String,
     talkGroups: (json['talkGroups'] as List)?.map((e) => e as String)?.toList(),
     talkGroupCatalog: json['talkGroupCatalog'] as String,
     mapCacheTTL: json['mapCacheTTL'] as int,
@@ -32,12 +29,9 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     idpHints: (json['idpHints'] as List)?.map((e) => e as String)?.toList(),
     keepScreenOn: json['keepScreenOn'] as bool,
     callsignReuse: json['callsignReuse'] as bool,
-    securityType:
-        _$enumDecodeNullable(_$SecurityTypeEnumMap, json['securityType']),
-    securityMode:
-        _$enumDecodeNullable(_$SecurityModeEnumMap, json['securityMode']),
-    trustedDomains:
-        (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
+    securityType: _$enumDecodeNullable(_$SecurityTypeEnumMap, json['securityType']),
+    securityMode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['securityMode']),
+    trustedDomains: (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
     securityLockAfter: json['securityLockAfter'] as int,
   );
 }
@@ -59,9 +53,6 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('sentryDns', instance.sentryDns);
   writeNotNull('onboarded', instance.onboarded);
   writeNotNull('firstSetup', instance.firstSetup);
-  writeNotNull('orgId', instance.orgId);
-  writeNotNull('divId', instance.divId);
-  writeNotNull('depId', instance.depId);
   writeNotNull('talkGroups', instance.talkGroups);
   writeNotNull('talkGroupCatalog', instance.talkGroupCatalog);
   writeNotNull('storage', instance.storage);
@@ -70,8 +61,7 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('mapCacheCapacity', instance.mapCacheCapacity);
   writeNotNull('locationAccuracy', instance.locationAccuracy);
   writeNotNull('locationFastestInterval', instance.locationFastestInterval);
-  writeNotNull(
-      'locationSmallestDisplacement', instance.locationSmallestDisplacement);
+  writeNotNull('locationSmallestDisplacement', instance.locationSmallestDisplacement);
   writeNotNull('keepScreenOn', instance.keepScreenOn);
   writeNotNull('callsignReuse', instance.callsignReuse);
   writeNotNull('units', instance.units);
@@ -93,9 +83,7 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
+  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '

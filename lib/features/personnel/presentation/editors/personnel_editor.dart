@@ -1,13 +1,9 @@
 import 'dart:async';
 
-import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -192,14 +188,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   Affiliation _ensureAffiliation() {
-    final config = context.bloc<AppConfigBloc>().config;
     return _affiliationKey?.currentState?.save() ??
         widget.personnel?.affiliation ??
-        Affiliation(
-          org: AggregateRef.fromType<Organisation>(Defaults.orgId),
-          div: AggregateRef.fromType<Division>(config.divId ?? Defaults.divId),
-          dep: AggregateRef.fromType<Department>(config.depId ?? Defaults.depId),
-        );
+        context.bloc<AffiliationBloc>().findUserAffiliation();
   }
 
   Widget _buildNameField() {

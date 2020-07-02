@@ -154,8 +154,8 @@ void main() async {
         password: BlocTestHarness.PASSWORD,
       );
       await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
-      final newOrgId = '123456';
-      await harness.configBloc.updateWith(orgId: newOrgId);
+      final newTalkGroupCatalog = '123456';
+      await harness.configBloc.updateWith(talkGroupCatalog: newTalkGroupCatalog);
       await expectThroughLater(harness.configBloc, emits(isA<AppConfigUpdated>()));
 
       // Act
@@ -169,7 +169,7 @@ void main() async {
       expect(harness.configBloc.repo.state.status, StorageStatus.updated, reason: "SHOULD HAVE updated status");
       expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
-      expect(harness.configBloc.config.orgId, newOrgId, reason: "SHOULD have unchanged config");
+      expect(harness.configBloc.config.talkGroupCatalog, newTalkGroupCatalog, reason: "SHOULD have unchanged config");
     });
 
     test('and User token is INVALID, token SHOULD not refresh', () async {

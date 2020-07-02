@@ -8,9 +8,6 @@ class Defaults {
   static const double zoom = 16.0;
   static const double minZoom = 3.0;
   static const double maxZoom = 20.0;
-  static const String orgId = "61"; // Røde Kors Hjelpekorps
-  static const String divId = "140"; // Oslo
-  static const String depId = "141"; // Oslo
   static const String talkGroupCatalog = "Nasjonal";
   static const int mapCacheTTL = 30;
   static const int mapCacheCapacity = 15000;

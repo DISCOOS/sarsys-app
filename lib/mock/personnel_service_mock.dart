@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
@@ -51,10 +50,15 @@ class PersonnelBuilder {
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 
-  static Map<String, dynamic> createAffiliation() => Affiliation(
-        org: AggregateRef.fromType<Organisation>(Defaults.orgId),
-        div: AggregateRef.fromType<Division>(Defaults.divId),
-        dep: AggregateRef.fromType<Department>(Defaults.depId),
+  static Map<String, dynamic> createAffiliation({
+    String orguuid,
+    String divuuid,
+    String depuuid,
+  }) =>
+      Affiliation(
+        org: AggregateRef.fromType<Organisation>(orguuid ?? Uuid().v4()),
+        div: AggregateRef.fromType<Division>(divuuid ?? Uuid().v4()),
+        dep: AggregateRef.fromType<Department>(depuuid ?? Uuid().v4()),
       ).toJson();
 }
 

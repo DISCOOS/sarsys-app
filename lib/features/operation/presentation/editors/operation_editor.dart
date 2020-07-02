@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -24,7 +25,6 @@ import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
 import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -662,7 +662,6 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Widget _buildTGField() {
     final style = Theme.of(context).textTheme.caption;
-    final service = FleetMapService();
     return Center(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
@@ -683,8 +682,12 @@ class _OperationEditorState extends State<OperationEditor> {
             findSuggestions: (String query) async {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
-                var talkGroup = _formKey.currentState.fields["tgCatalog"].currentState.value;
-                return (await service.fetchTalkGroups(Defaults.orgId, talkGroup))
+                final org = context.bloc<AffiliationBloc>().findUserOrganisation();
+                final tgCatalog = AffiliationUtils.findCatalog(
+                  org.fleetMap,
+                  _formKey.currentState.fields["tgCatalog"].currentState.value,
+                );
+                return (tgCatalog?.groups ?? [])
                     .where((tg) =>
                         tg.name.toLowerCase().contains(lowercaseQuery) ||
                         tg.type.toString().toLowerCase().contains(lowercaseQuery))

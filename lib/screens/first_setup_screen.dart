@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
@@ -40,7 +39,10 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
 
   SecurityMode _mode = SecurityMode.personal;
 
-  String _organisation = Defaults.orgId;
+  String _idpHint = 'rodekors';
+  final _idpHints = {
+    'rodekors': 'Røde Kors Hjelpekorps',
+  };
 
   bool get isComplete => isLocationGranted && (isStorageGranted || !Platform.isAndroid);
 
@@ -182,15 +184,15 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                     ),
                     Expanded(
                       child: buildDropdown<String>(
-                        value: _organisation,
+                        value: _idpHint,
                         isDense: false,
-                        items: [
-                          DropdownMenuItem(
-                            value: Defaults.orgId,
-                            child: Text('Røde Kors Hjelpekorps'),
-                          )
-                        ],
-                        onChanged: (value) => setState(() => _organisation = value),
+                        items: _idpHints.keys.map(
+                          (idpHint) => DropdownMenuItem(
+                            value: idpHint,
+                            child: Text(_idpHints[idpHint]),
+                          ),
+                        ),
+                        onChanged: (value) => setState(() => _idpHint = value),
                       ),
                     ),
                   ],

@@ -147,10 +147,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   }
 
   void _selectOnLoad(User user) async {
-    final ouuid = await Storage.readUserValue(
-      user,
-      suffix: OperationBloc.SELECTED_KEY_SUFFIX,
-    );
+    final ouuid = user != null
+        ? await Storage.readUserValue(
+            user,
+            suffix: OperationBloc.SELECTED_KEY_SUFFIX,
+          )
+        : null;
     if (ouuid != null) {
       var route = getPageState<Map>(
         context,

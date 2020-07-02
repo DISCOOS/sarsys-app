@@ -113,9 +113,9 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final div = findUserDivision(user: user);
     final dep = findUserDepartment(user: user);
     return Affiliation(
-      org: AggregateRef.fromType<Organisation>(org.uuid),
-      div: AggregateRef.fromType<Division>(div.uuid),
-      dep: AggregateRef.fromType<Department>(dep.uuid),
+      org: AggregateRef.fromType<Organisation>(org?.uuid),
+      div: AggregateRef.fromType<Division>(div?.uuid),
+      dep: AggregateRef.fromType<Department>(dep?.uuid),
     );
   }
 
@@ -129,22 +129,20 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   Division findUserDivision({User user}) {
     final name = (user ?? users.user).division?.toLowerCase();
     return divs.values
-            .where(
-              (division) => division.name.toLowerCase() == name,
-            )
-            ?.firstOrNull ??
-        divs[users.config.divId];
+        .where(
+          (division) => division.name.toLowerCase() == name,
+        )
+        ?.firstOrNull;
   }
 
   /// Get Department id from User
   Department findUserDepartment({User user}) {
     final name = (user ?? users.user).department?.toLowerCase();
     return deps.values
-            .where(
-              (department) => department.name.toLowerCase() == name,
-            )
-            ?.firstOrNull ??
-        deps[users.config.depId];
+        .where(
+          (department) => department.name.toLowerCase() == name,
+        )
+        ?.firstOrNull;
   }
 
   /// Get Organisation from [FleetMap] number

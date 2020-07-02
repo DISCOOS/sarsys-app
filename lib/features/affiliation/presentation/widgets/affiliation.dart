@@ -4,7 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -153,7 +152,8 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<String>(
       valueListenable: _org,
       builder: (context, ouuid, _) {
-        final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
+        final duuid = _ensureDiv(ouuid);
+//        final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
         return org != null && editable
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
@@ -185,7 +185,8 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<String>(
         valueListenable: _div,
         builder: (context, divuuid, _) {
-          final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
+          final depuuid = _ensureDep(divuuid);
+//          final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
           return editable
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,
@@ -225,7 +226,7 @@ class AffiliationFormState extends State<AffiliationForm> {
         initialValue: value,
         builder: (FormFieldState<String> field) => InputDecorator(
           decoration: InputDecoration(
-            labelText: title,
+            labelText: label,
             filled: true,
             enabled: false,
           ),
@@ -246,7 +247,9 @@ class AffiliationFormState extends State<AffiliationForm> {
   String _update(String attribute, String value) {
     if (_formKey.currentState != null) {
       _formKey.currentState.value[attribute] = value;
-      _formKey.currentState.fields[attribute].currentState.didChange(value);
+      if (_formKey.currentState.fields[attribute] != null) {
+        _formKey.currentState.fields[attribute].currentState.didChange(value);
+      }
       _formKey.currentState.save();
     }
     return value;
@@ -254,14 +257,14 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   String _ensureDiv(String ouuid) {
     final org = context.bloc<AffiliationBloc>().orgs[ouuid];
-    final divId = _formKey.currentState.value[DIV_FIELD] ?? widget.value?.div ?? Defaults.divId;
-    return org?.divisions?.contains(divId) == true ? divId : org.divisions.first;
+    final divId = _formKey.currentState.value[DIV_FIELD] ?? widget.value?.div;
+    return org?.divisions?.contains(divId) == true ? divId : org?.divisions?.first;
   }
 
   String _ensureDep(String divuuid) {
     final div = context.bloc<AffiliationBloc>().divs[divuuid];
-    final depuuid = _dep ?? widget.value?.dep ?? Defaults.depId;
-    return (div?.departments?.contains(depuuid) == true ? depuuid : div.departments.first);
+    final depuuid = _dep ?? widget.value?.dep;
+    return (div?.departments?.contains(depuuid) == true ? depuuid : div?.departments?.first);
   }
 
   List<DropdownMenuItem<String>> _buildDivisionItems(Organisation org) {

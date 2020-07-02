@@ -19,9 +19,6 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     this.firstSetup = false,
     this.storage = false,
     this.locationWhenInUse = false,
-    this.orgId = Defaults.orgId,
-    this.divId = Defaults.divId,
-    this.depId = Defaults.depId,
     List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
@@ -49,9 +46,6 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           firstSetup,
           storage,
           locationWhenInUse,
-          orgId,
-          divId,
-          depId,
           talkGroups ?? const <String>[],
           talkGroupCatalog,
           mapCacheTTL,
@@ -75,9 +69,6 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final String sentryDns;
   final bool onboarded;
   final bool firstSetup;
-  final String orgId;
-  final String divId;
-  final String depId;
   final List<String> talkGroups;
   final String talkGroupCatalog;
   final bool storage;
@@ -143,13 +134,6 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
       LocationAccuracy.values.firstWhere(
         (test) => enumName(test) == this.locationAccuracy,
         orElse: () => defaultValue,
-      );
-
-  Security toSecurity(String orgId) => Security(
-        type: securityType,
-        mode: securityMode,
-        heartbeat: DateTime.now(),
-        trusted: this.orgId == orgId,
       );
 
   @override
