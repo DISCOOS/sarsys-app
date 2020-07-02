@@ -97,7 +97,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
   }) {
     _incidents.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
-    when(mock.fetch()).thenAnswer((_) async {
+    when(mock.fetchAll()).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();
@@ -123,6 +123,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
         status: incident.status,
         summary: incident.summary,
         occurred: incident.occurred,
+        operations: incident.operations,
         resolution: incident.resolution,
       );
       _incidents.putIfAbsent(created.uuid, () => created);

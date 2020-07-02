@@ -3,10 +3,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/organisation_repository_impl.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
+import 'package:SarSys/mock/department_service_mock.dart';
+import 'package:SarSys/mock/division_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
+import 'package:SarSys/mock/organisation_service_mock.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -83,6 +90,19 @@ class BlocTestHarness implements BlocDelegate {
   AppConfigBloc get configBloc => _configBloc;
   bool _withConfigBloc = false;
 
+  AffiliationBloc _affiliationBloc;
+  AffiliationBloc get affiliationBloc => _affiliationBloc;
+  bool _withAffiliationBloc = false;
+
+  OrganisationServiceMock get organisationService => _organisationService;
+  OrganisationServiceMock _organisationService;
+
+  DivisionServiceMock get divisionService => _divisionService;
+  DivisionServiceMock _divisionService;
+
+  DepartmentServiceMock get departmentService => _departmentService;
+  DepartmentServiceMock _departmentService;
+
   IncidentServiceMock get incidentService => _incidentService;
   IncidentServiceMock _incidentService;
 
@@ -124,7 +144,7 @@ class BlocTestHarness implements BlocDelegate {
   TrackingBloc get trackingBloc => _trackingBloc;
   bool _withTrackingBloc = false;
 
-  bool _waitForIncidentsLoaded = false;
+  bool _waitForOperationsLoaded = false;
 
   void install() {
     BlocSupervisor.delegate = this;
@@ -166,6 +186,9 @@ class BlocTestHarness implements BlocDelegate {
       if (_withUserBloc) {
         await _buildUserBloc();
       }
+      if (_withAffiliationBloc) {
+        _buildAffiliationBloc();
+      }
       if (_withOperationBloc) {
         await _buildOperationBloc();
       }
@@ -191,6 +214,9 @@ class BlocTestHarness implements BlocDelegate {
       }
       if (_withUserBloc) {
         await _userBloc?.close();
+      }
+      if (_withAffiliationBloc) {
+        await _affiliationBloc?.close();
       }
       if (_withOperationBloc) {
         await _operationsBloc?.close();
@@ -244,7 +270,7 @@ class BlocTestHarness implements BlocDelegate {
     _authenticated = authenticated;
   }
 
-  void withOperationBloc({
+  void withAffiliationBloc({
     String username = UNTRUSTED,
     String password = PASSWORD,
     bool authenticated = true,
@@ -254,27 +280,40 @@ class BlocTestHarness implements BlocDelegate {
       password: password,
       authenticated: authenticated,
     );
+    _withAffiliationBloc = true;
+  }
+
+  void withOperationBloc({
+    String username = UNTRUSTED,
+    String password = PASSWORD,
+    bool authenticated = true,
+  }) {
+    withAffiliationBloc(
+      username: username,
+      password: password,
+      authenticated: authenticated,
+    );
     _withOperationBloc = true;
   }
 
   void withDeviceBloc() {
     _withDeviceBloc = true;
-    _waitForIncidentsLoaded = true;
+    _waitForOperationsLoaded = true;
   }
 
   void withPersonnelBloc() {
     _withPersonnelBloc = true;
-    _waitForIncidentsLoaded = true;
+    _waitForOperationsLoaded = true;
   }
 
   void withUnitBloc() {
     _withUnitBloc = true;
-    _waitForIncidentsLoaded = true;
+    _waitForOperationsLoaded = true;
   }
 
   void withTrackingBloc() {
     _withTrackingBloc = true;
-    _waitForIncidentsLoaded = true;
+    _waitForOperationsLoaded = true;
   }
 
   void _buildSecureStoragePlugin() {
@@ -383,11 +422,36 @@ class BlocTestHarness implements BlocDelegate {
     }
   }
 
+  void _buildAffiliationBloc() {
+    assert(_withUserBloc, 'IncidentBloc requires UserBloc');
+    _organisationService = OrganisationServiceMock.build();
+    _divisionService = DivisionServiceMock.build();
+    _departmentService = DepartmentServiceMock.build();
+    _affiliationBloc = AffiliationBloc(
+      OrganisationRepositoryImpl(
+        _organisationService,
+        connectivity: _connectivity,
+      ),
+      DivisionRepositoryImpl(
+        _divisionService,
+        connectivity: _connectivity,
+      ),
+      DepartmentRepositoryImpl(
+        _departmentService,
+        connectivity: _connectivity,
+      ),
+      _userBloc,
+      bus,
+    );
+  }
+
   Future _buildOperationBloc({
     UserRole role = UserRole.commander,
     String passcode = 'T123',
   }) async {
-    assert(_withUserBloc, 'IncidentBloc requires UserBloc');
+    assert(_withUserBloc, 'OperationBloc requires UserBloc');
+    assert(_withAffiliationBloc, 'OperationBloc requires AffiliationBloc');
+
     _incidentService = IncidentServiceMock.build(
       _userBloc.repo,
       role: role,
@@ -413,11 +477,11 @@ class BlocTestHarness implements BlocDelegate {
 
     await _configBloc.init();
 
-    if (_authenticated && _waitForIncidentsLoaded) {
+    if (_authenticated && _waitForOperationsLoaded) {
       // Consume IncidentsLoaded fired by UserAuthenticated
       await expectThroughInOrderLater(
         _operationsBloc,
-        [isA<OperationLoaded>()],
+        [isA<OperationsLoaded>()],
         close: false,
       );
     }

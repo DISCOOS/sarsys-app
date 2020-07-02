@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/screens/map_screen.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
@@ -141,7 +139,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
         tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
-        organization: FleetMapService().fetchOrganization(Defaults.orgId),
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
         onDeleted: () => Navigator.pop(context),

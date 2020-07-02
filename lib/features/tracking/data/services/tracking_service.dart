@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' show Client;
 
-class TrackingService {
+class TrackingService implements Service {
   final String wsUrl;
   final String restUrl;
   final Client client;

@@ -1,9 +1,9 @@
 import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/streams.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -13,7 +13,6 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -253,7 +252,6 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements 
     try {
       var personnel = _findUser(params, user);
       if (personnel == null) {
-        final org = await FleetMapService().fetchOrganization(Defaults.orgId);
         personnel = await params.bloc.create(PersonnelModel(
           uuid: Uuid().v4(),
           userId: user.userId,
@@ -261,7 +259,7 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements 
           lname: user.lname,
           phone: user.phone,
           status: PersonnelStatus.mobilized,
-          affiliation: org.toAffiliationFromUser(user),
+          affiliation: params.context.bloc<AffiliationBloc>().findUserAffiliation(),
         ));
         return dartz.right(personnel);
       } else if (personnel.status != PersonnelStatus.mobilized) {

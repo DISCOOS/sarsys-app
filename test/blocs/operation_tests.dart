@@ -43,13 +43,13 @@ void main() async {
     () async {
       // Arrange
       await _authenticate(harness);
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationLoaded>()), close: false);
+      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsLoaded>()), close: false);
 
       // Act
       await harness.userBloc.logout();
 
       // Assert
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationUnloaded>()));
+      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
     },
   );
 
@@ -59,13 +59,13 @@ void main() async {
       // Arrange
       await _authenticate(harness);
       await harness.userBloc.logout();
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationUnloaded>()), close: false);
+      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()), close: false);
 
       // Act
       await _authenticate(harness);
 
       // Assert
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationLoaded>()));
+      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsLoaded>()));
     },
   );
 
@@ -85,7 +85,7 @@ void main() async {
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
       await expectThroughLater(
         harness.operationsBloc,
-        emits(isA<OperationLoaded>()),
+        emits(isA<OperationsLoaded>()),
         close: false,
       );
     });
@@ -104,7 +104,7 @@ void main() async {
       // Assert
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operations.first.uuid), reason: "SHOULD select first");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationLoaded>(), isA<OperationSelected>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationsLoaded>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD selected last operation', () async {
@@ -121,7 +121,7 @@ void main() async {
       // Assert
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operations.last.uuid), reason: "SHOULD select last");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationLoaded>(), isA<OperationSelected>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationsLoaded>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD create operation and push to backend', () async {
@@ -207,7 +207,7 @@ void main() async {
       expect(harness.operationsBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationUnloaded>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationsUnloaded>()]);
     });
 
     test('SHOULD reload one operation after unload', () async {
@@ -227,7 +227,7 @@ void main() async {
       // Assert
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnloaded>(), isA<OperationLoaded>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationsUnloaded>(), isA<OperationsLoaded>()]);
     });
   });
 
@@ -248,7 +248,7 @@ void main() async {
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
       await expectThroughLater(
         harness.operationsBloc,
-        emits(isA<OperationLoaded>()),
+        emits(isA<OperationsLoaded>()),
       );
     });
 
@@ -398,7 +398,7 @@ void main() async {
       expect(harness.operationsBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationUnloaded>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationsUnloaded>()]);
     });
 
     test('SHOULD reload local values after unload', () async {
@@ -419,7 +419,7 @@ void main() async {
       verifyNoMoreInteractions(harness.operationService);
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
-      expect(harness.operationsBloc, emits(isA<OperationUnloaded>()));
+      expect(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
     });
   });
 }
@@ -436,7 +436,7 @@ Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
   // Wait until operations are loaded
   await expectThroughLater(
     harness.operationsBloc,
-    emits(isA<OperationLoaded>()),
+    emits(isA<OperationsLoaded>()),
     close: false,
   );
   if (reset) {

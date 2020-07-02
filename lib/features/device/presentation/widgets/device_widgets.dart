@@ -1,8 +1,9 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
@@ -96,7 +97,7 @@ class DeviceWidget extends StatelessWidget {
   final ValueChanged<Device> onChanged;
   final ValueChanged<Device> onCompleted;
   final VoidCallback onDeleted;
-  final Future<Organization> organization;
+  final Organisation organisation;
 
   const DeviceWidget({
     Key key,
@@ -111,7 +112,7 @@ class DeviceWidget extends StatelessWidget {
     this.onDeleted,
     this.withHeader = true,
     this.withActions = true,
-    this.organization,
+    this.organisation,
   }) : super(key: key);
 
   @override
@@ -191,9 +192,9 @@ class DeviceWidget extends StatelessWidget {
 
   List<Widget> _buildData(BuildContext context, TextTheme theme) => [
         _buildTypeAndStatusInfo(context),
-        if (organization != null && DeviceType.tetra == device.type) _buildTetraInfo(context),
+        if (organisation != null && DeviceType.tetra == device.type) _buildTetraInfo(context),
         _buildDivider(Orientation.portrait),
-        if (organization != null && DeviceType.tetra == device.type) ...[
+        if (organisation != null && DeviceType.tetra == device.type) ...[
           _buildAffiliationInfo(context),
           _buildDivider(Orientation.portrait),
         ],
@@ -324,60 +325,45 @@ class DeviceWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildTetraInfo(BuildContext context) => FutureBuilder<Organization>(
-      future: organization,
-      builder: (context, snapshot) {
-        return Row(
-          children: <Widget>[
-            Expanded(
-              child: buildCopyableText(
-                context: context,
-                label: "Number",
-                icon: Icon(Icons.looks_one),
-                value: device.number ?? 'Ingen',
-                onMessage: onMessage,
-                onComplete: _onComplete,
-              ),
+  Widget _buildTetraInfo(BuildContext context) => Row(
+        children: <Widget>[
+          Expanded(
+            child: buildCopyableText(
+              context: context,
+              label: "Number",
+              icon: Icon(Icons.looks_one),
+              value: device.number ?? 'Ingen',
+              onMessage: onMessage,
+              onComplete: _onComplete,
             ),
-            Expanded(
-              child: buildCopyableText(
-                context: context,
-                label: "Funksjon",
-                icon: Icon(Icons.functions),
-                value: snapshot.hasData ? snapshot.data.toFunctionFromNumber(device.number) : '-',
-                onMessage: onMessage,
-                onComplete: _onComplete,
-              ),
+          ),
+          Expanded(
+            child: buildCopyableText(
+              context: context,
+              label: "Funksjon",
+              icon: Icon(Icons.functions),
+              value: context.bloc<AffiliationBloc>().findFunction(device.number)?.name ?? 'Ingen',
+              onMessage: onMessage,
+              onComplete: _onComplete,
             ),
-          ],
-        );
-      });
+          ),
+        ],
+      );
 
-  Widget _buildAffiliationInfo(BuildContext context) => FutureBuilder<Organization>(
-      future: organization,
-      builder: (context, snapshot) {
-        return Row(
-          children: <Widget>[
-            Expanded(
-              child: buildCopyableText(
-                context: context,
-                label: "Tilhørighet",
-                icon: _ensureAffiliationIconData(snapshot),
-                value: _ensureAffiliationName(snapshot),
-                onMessage: onMessage,
-                onComplete: _onComplete,
-              ),
+  Widget _buildAffiliationInfo(BuildContext context) => Row(
+        children: <Widget>[
+          Expanded(
+            child: buildCopyableText(
+              context: context,
+              label: "Tilhørighet",
+              icon: SarSysIcons.of(organisation.prefix),
+              value: context.bloc<AffiliationBloc>().findName(device.number),
+              onMessage: onMessage,
+              onComplete: _onComplete,
             ),
-          ],
-        );
-      });
-
-  String _ensureAffiliationName(AsyncSnapshot<Organization> snapshot) =>
-      snapshot.hasData ? snapshot.data.toAffiliationNameFromNumber(device.number) : '-';
-
-  Icon _ensureAffiliationIconData(AsyncSnapshot<Organization> snapshot) => snapshot.hasData
-      ? SarSysIcons.of(snapshot.data.toAffiliationFromNumber(device.number)?.orgId)
-      : Icon(MdiIcons.graph);
+          ),
+        ],
+      );
 
   Row _buildTrackingInfo(BuildContext context) {
     final track = _toTrack(tracking);

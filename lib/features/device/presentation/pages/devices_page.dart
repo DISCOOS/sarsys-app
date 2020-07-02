@@ -1,11 +1,12 @@
 import 'dart:convert';
 
-import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
@@ -13,13 +14,10 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Division.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/device/presentation/screens/device_screen.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
@@ -43,14 +41,13 @@ class DevicesPageState extends State<DevicesPage> {
 
   StreamGroup<dynamic> _group;
 
-  Map<String, String> _functions;
-  Map<String, Division> _divisions;
+//  Map<String, String> _functions;
+//  Map<String, Division> _divisions;
 
   @override
   void initState() {
     super.initState();
     _filter = FilterSheet.read(context, STATE, defaultValue: DeviceType.values.toSet(), onRead: _onRead);
-    _init();
   }
 
   @override
@@ -63,12 +60,8 @@ class DevicesPageState extends State<DevicesPage> {
       ..add(context.bloc<PersonnelBloc>())
       ..add(context.bloc<DeviceBloc>())
       ..add(context.bloc<TrackingBloc>());
-  }
-
-  void _init() async {
-    _divisions = await FleetMapService().fetchDivisions(Defaults.orgId);
-    _functions = await FleetMapService().fetchFunctions(Defaults.orgId);
-    if (mounted) setState(() {});
+//    _divisions = context.bloc<AffiliationBloc>().repo[Defaults.orgId];
+//    _functions = await FleetMapService().fetchFunctions(Defaults.orgId);
   }
 
   @override
@@ -127,7 +120,7 @@ class DevicesPageState extends State<DevicesPage> {
         );
 
   String _prepare(Device device) => "${device.searchable} "
-          "${_toDistrict(device.number)} "
+          "${_toDivision(device.number)} "
           "${_toFunction(device.number)}"
       .toLowerCase();
 
@@ -297,25 +290,8 @@ class DevicesPageState extends State<DevicesPage> {
         TrackingStatus.none;
   }
 
-  String _toDistrict(String number) {
-    String id = number?.substring(2, 5);
-    return _divisions?.entries
-        ?.firstWhere(
-          (entry) => entry.key == id,
-          orElse: () => null,
-        )
-        ?.value
-        ?.name;
-  }
-
-  String _toFunction(String number) {
-    return _functions?.entries
-        ?.firstWhere(
-          (entry) => RegExp(entry.key).hasMatch(number),
-          orElse: () => null,
-        )
-        ?.value;
-  }
+  String _toDivision(String number) => context.bloc<AffiliationBloc>().findDivision(number)?.name;
+  String _toFunction(String number) => context.bloc<AffiliationBloc>().findFunction(number)?.name;
 
   void showFilterSheet() {
     showModalBottomSheet(

@@ -16,6 +16,7 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
     @required IncidentType type,
     @required DateTime occurred,
     @required IncidentStatus status,
+    @required List<String> operations,
     @required IncidentResolution resolution,
     bool exercise = false,
   }) : super(
@@ -23,10 +24,11 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
           name: name,
           type: type,
           status: status,
-          resolution: resolution,
-          occurred: occurred,
           summary: summary,
+          occurred: occurred,
           exercise: exercise,
+          operations: operations,
+          resolution: resolution,
         );
 
   /// Factory constructor for creating a new `IncidentModel` instance
@@ -46,6 +48,7 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
       summary: clone.summary ?? this.summary,
       occurred: clone.occurred ?? this.occurred,
       exercise: clone.exercise ?? this.exercise,
+      operations: clone.operations ?? this.operations,
       resolution: clone.resolution ?? this.resolution,
     );
   }
@@ -59,6 +62,7 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
     DateTime occurred,
     Passcodes passcodes,
     IncidentStatus status,
+    List<String> operations,
     IncidentResolution resolution,
   }) {
     return IncidentModel(
@@ -69,6 +73,7 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
       summary: summary ?? this.summary,
       occurred: occurred ?? this.occurred,
       exercise: exercise ?? this.exercise,
+      operations: operations ?? this.operations,
       resolution: resolution ?? this.resolution,
     );
   }

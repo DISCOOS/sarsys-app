@@ -1,5 +1,15 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/service.dart';
+import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/organisation_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/services/department_service.dart';
+import 'package:SarSys/features/affiliation/data/services/division_service.dart';
+import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -99,6 +109,7 @@ class AppController {
 
   List<BlocProvider> get all => [
         toProvider<AppConfigBloc>(),
+        toProvider<AffiliationBloc>(),
         toProvider<UserBloc>(),
         toProvider<OperationBloc>(),
         toProvider<UnitBloc>(),
@@ -151,10 +162,33 @@ class AppController {
     // -----------
 
     // ignore: close_sinks
-    final AppConfigBloc configBloc = AppConfigBloc(configRepo);
+    final configBloc = AppConfigBloc(configRepo);
 
     // ignore: close_sinks
     final UserBloc userBloc = UserBloc(userRepo, configBloc);
+
+    // Configure affiliation services
+    final orgService = OrganisationService();
+    final divService = DivisionService();
+    final depService = DepartmentService();
+
+    // ignore: close_sinks
+    final affiliationBloc = AffiliationBloc(
+      OrganisationRepositoryImpl(
+        orgService,
+        connectivity: connectivityService,
+      ),
+      DivisionRepositoryImpl(
+        divService,
+        connectivity: connectivityService,
+      ),
+      DepartmentRepositoryImpl(
+        depService,
+        connectivity: connectivityService,
+      ),
+      userBloc,
+      controller.bus,
+    );
 
     // Configure Incident service
     final IncidentService incidentService = !demo.active
@@ -253,37 +287,41 @@ class AppController {
       personnelBloc: personnelBloc,
     );
 
+    final blocs = <Bloc>[
+      configBloc,
+      userBloc,
+      affiliationBloc,
+      operationBloc,
+      unitBloc,
+      personnelBloc,
+      deviceBloc,
+      trackingBloc,
+    ];
+
+    // Get all chopper services
+    final services = blocs.whereType<ConnectionAwareBloc>().map((bloc) => bloc.repos).fold<Iterable<ChopperService>>(
+      <ChopperService>[],
+      (services, repos) => List.from(services)
+        ..addAll(
+          repos
+              .map((repo) => repo.service)
+              .whereType<ServiceDelegate>()
+              .map((service) => service.delegate)
+              .whereType<ChopperService>(),
+        ),
+    ).toList();
+
     final api = Api(
       httpClient: client,
       baseRestUrl: baseRestUrl,
       users: userRepo,
-      services: [
-//        trackingService.delegate,
-        if (unitService.delegate != null)
-          unitService.delegate,
-        if (personnelService.delegate != null)
-          personnelService.delegate,
-        if (deviceService.delegate != null)
-          deviceService.delegate,
-        if (configService.delegate != null)
-          configService.delegate,
-        if (incidentService.delegate != null)
-          incidentService.delegate,
-        if (operationService.delegate != null)
-          operationService.delegate,
-      ],
+      services: services,
     );
 
     return controller._set(
       api: api,
       demo: demo,
-      configBloc: configBloc,
-      userBloc: userBloc,
-      operationBloc: operationBloc,
-      unitBloc: unitBloc,
-      personnelBloc: personnelBloc,
-      deviceBloc: deviceBloc,
-      trackingBloc: trackingBloc,
+      blocs: blocs,
     );
   }
 
@@ -360,13 +398,7 @@ class AppController {
   AppController _set({
     @required Api api,
     @required DemoParams demo,
-    @required AppConfigBloc configBloc,
-    @required UserBloc userBloc,
-    @required OperationBloc operationBloc,
-    @required UnitBloc unitBloc,
-    @required PersonnelBloc personnelBloc,
-    @required DeviceBloc deviceBloc,
-    @required TrackingBloc trackingBloc,
+    @required Iterable<Bloc> blocs,
   }) {
     assert(
       _blocs.isEmpty,
@@ -375,19 +407,15 @@ class AppController {
 
     _demo = demo;
 
-    _blocs[configBloc.runtimeType] = configBloc;
-    _blocs[userBloc.runtimeType] = userBloc;
-    _blocs[operationBloc.runtimeType] = operationBloc;
-    _blocs[unitBloc.runtimeType] = unitBloc;
-    _blocs[personnelBloc.runtimeType] = personnelBloc;
-    _blocs[deviceBloc.runtimeType] = deviceBloc;
-    _blocs[trackingBloc.runtimeType] = trackingBloc;
+    blocs.forEach((bloc) {
+      _blocs[bloc.runtimeType] = bloc;
+    });
 
     // Rebuild providers when demo parameters changes
-    registerStreamSubscription(configBloc.listen(_onConfigState));
+    registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
 
     // Handle changes in user state
-    registerStreamSubscription(userBloc.listen(_onUserState));
+    registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
     // Ensure user is mobilized
     registerEventHandler<PersonnelsLoaded>(MobilizeUser());

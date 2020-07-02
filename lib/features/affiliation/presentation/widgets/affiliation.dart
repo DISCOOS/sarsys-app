@@ -1,18 +1,18 @@
-import 'dart:async';
-
-import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/icons.dart';
-import 'package:SarSys/models/Affiliation.dart';
-import 'package:SarSys/models/Division.dart';
-import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:SarSys/core/extensions.dart';
+
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/icons.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/ui_utils.dart';
 
 class AffiliationAvatar extends StatelessWidget {
   final Affiliation affiliation;
@@ -29,7 +29,10 @@ class AffiliationAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      child: SarSysIcons.of(affiliation.orgId, size: size),
+      child: SarSysIcons.of(
+        context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid]?.prefix,
+        size: size,
+      ),
       maxRadius: maxRadius,
       backgroundColor: Colors.white,
     );
@@ -38,7 +41,6 @@ class AffiliationAvatar extends StatelessWidget {
 
 class AffiliationView extends StatelessWidget {
   const AffiliationView({
-    @required this.future,
     @required this.affiliation,
     this.onMessage,
     this.onComplete,
@@ -48,40 +50,34 @@ class AffiliationView extends StatelessWidget {
   final Affiliation affiliation;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
-  final FutureOr<Organization> future;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Organization>(
-      future: future,
-      builder: (context, snapshot) {
-        return Row(
-          children: <Widget>[
-            Expanded(
-              child: buildCopyableText(
-                context: context,
-                label: "Tilhørighet",
-                icon: SarSysIcons.of(affiliation?.orgId),
-                value: snapshot.hasData ? snapshot.data.toFullName(affiliation) : '-',
-                onMessage: onMessage,
-                onComplete: onComplete,
-              ),
-            ),
-          ],
-        );
-      },
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Tilhørighet",
+            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid].prefix),
+            value: context.bloc<AffiliationBloc>().toName(affiliation),
+            onMessage: onMessage,
+            onComplete: onComplete,
+          ),
+        ),
+      ],
     );
   }
 }
 
 class AffiliationForm extends StatefulWidget {
   final User user;
-  final Affiliation initialValue;
+  final Affiliation value;
   final ValueChanged<Affiliation> onChanged;
 
   const AffiliationForm({
     Key key,
-    @required this.initialValue,
+    @required this.value,
     this.user,
     this.onChanged,
   }) : super(key: key);
@@ -92,56 +88,36 @@ class AffiliationForm extends StatefulWidget {
 
 class AffiliationFormState extends State<AffiliationForm> {
   static const SPACING = 16.0;
+  static const ORG_FIELD = 'orgId';
+  static const DIV_FIELD = 'divId';
+  static const DEP_FIELD = 'depId';
 
   final _formKey = GlobalKey<FormBuilderState>();
 
-  Future<Organization> _future;
-  ValueNotifier<Organization> _org = ValueNotifier(null);
-  ValueNotifier<Division> _division = ValueNotifier(null);
+  ValueNotifier<String> _org = ValueNotifier(null);
+  ValueNotifier<String> _div = ValueNotifier(null);
+  String _dep;
+  Affiliation _affiliation;
 
-  String _depId;
+  Department get dep => _dep == null ? null : toDep(_dep);
+  Division get div => _div.value == null ? null : toDiv(_div.value);
+  Organisation get org => _org.value == null ? null : toOrg(_org.value);
 
-  @override
-  void initState() {
-    super.initState();
-    _depId = widget.initialValue.depId;
-  }
-
-  @override
-  void didChangeDependencies() {
-    _future = FleetMapService().fetchOrganization(Defaults.orgId)..then(_resolve);
-    super.didChangeDependencies();
-  }
+  Organisation toOrg(String ouuid) => context.bloc<AffiliationBloc>().orgs[ouuid];
+  Division toDiv(String divuuid) => context.bloc<AffiliationBloc>().divs[divuuid];
+  Department toDep(String depuuid) => context.bloc<AffiliationBloc>().deps[depuuid];
 
   @override
   void didUpdateWidget(AffiliationForm oldWidget) {
     if (oldWidget.user != widget.user) {
-      _future = FleetMapService().fetchOrganization(Defaults.orgId)..then(_resolve);
+      _affiliation = context.bloc<AffiliationBloc>().findUserAffiliation(
+            user: widget.user,
+          );
+      _org.value = _affiliation.org.uuid;
+      _div.value = _affiliation.div.uuid;
+      _dep = _affiliation.dep.uuid;
     }
     super.didUpdateWidget(oldWidget);
-  }
-
-  void _resolve(Organization org) {
-    var division = org.divisions[widget.initialValue.divId];
-    if (widget.user != null) {
-      if (widget.user.division != null) {
-        division = org.divisions.values.firstWhere(
-          (match) => match.name == widget.user.division,
-          orElse: () => null,
-        );
-        if (division != null) {
-          if (widget.user.department != null) {
-            _depId = division.departments.values.firstWhere(
-              (match) => match == widget.user.department,
-              orElse: () => null,
-            );
-          }
-        }
-      }
-    }
-    _org.value = org;
-    _formKey.currentState.value['org'] = org.id;
-    _division.value = division;
   }
 
   @override
@@ -152,7 +128,7 @@ class AffiliationFormState extends State<AffiliationForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _buildOrganizationField(),
+          _buildOrganisationField(),
           SizedBox(height: SPACING),
           _buildDivisionField(),
           SizedBox(height: SPACING),
@@ -162,41 +138,31 @@ class AffiliationFormState extends State<AffiliationForm> {
     );
   }
 
-  Widget _buildOrganizationField() {
-    return FutureBuilder<Organization>(
-        future: _future,
-        builder: (context, snapshot) {
-          final org = snapshot.hasData ? snapshot.data : null;
-          _update(ORG_FIELD, org?.id);
-          return _buildReadOnly(
-            context,
-            ORG_FIELD,
-            'Organisasjon',
-            org?.name,
-            org?.id,
-          );
-        });
+  Widget _buildOrganisationField() {
+    _update(ORG_FIELD, org?.prefix);
+    return _buildReadOnly(
+      context,
+      ORG_FIELD,
+      'Organisasjon',
+      org?.name,
+      org?.prefix,
+    );
   }
 
-  static const ORG_FIELD = 'orgId';
-  static const DIV_FIELD = 'divId';
-  static const DEP_FIELD = 'depId';
-
   Widget _buildDivisionField() {
-    return ValueListenableBuilder<Organization>(
+    return ValueListenableBuilder<String>(
       valueListenable: _org,
-      builder: (context, org, _) {
-        final divId = _update(DIV_FIELD, _ensureDivId(org));
-        final division = org?.divisions?.elementAt(divId);
+      builder: (context, ouuid, _) {
+        final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
         return org != null && editable
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
                 label: 'Distrikt',
-                initialValue: divId,
-                items: _ensureDivisions(org),
-                onChanged: (selected) {
+                initialValue: duuid,
+                items: _buildDivisionItems(toOrg(ouuid)),
+                onChanged: (String selected) {
                   if (org != null) {
-                    _division.value = org.divisions[selected];
+                    _div.value = selected;
                     _onChanged();
                   }
                 },
@@ -208,27 +174,27 @@ class AffiliationFormState extends State<AffiliationForm> {
                 context,
                 DIV_FIELD,
                 'Distrikt',
-                division?.name,
-                divId,
+                toDiv(duuid)?.name,
+                duuid,
               );
       },
     );
   }
 
   Widget _buildDepartmentField() {
-    return ValueListenableBuilder<Division>(
-        valueListenable: _division,
-        builder: (context, division, _) {
-          final depId = _update(DEP_FIELD, _ensureDepId(division));
+    return ValueListenableBuilder<String>(
+        valueListenable: _div,
+        builder: (context, divuuid, _) {
+          final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
           return editable
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,
                   label: 'Avdeling',
-                  items: _ensureDepartments(division),
-                  initialValue: _depId,
+                  items: _buildDepartmentItems(toDiv(divuuid)),
+                  initialValue: _dep,
                   enabled: editable,
                   onChanged: (selected) {
-                    _depId = selected;
+                    _dep = selected;
                     _onChanged();
                   },
                   validators: [
@@ -239,13 +205,11 @@ class AffiliationFormState extends State<AffiliationForm> {
                   context,
                   DEP_FIELD,
                   'Avdeling',
-                  _toDepartment(division, depId),
-                  depId,
+                  toDep(depuuid)?.name,
+                  depuuid,
                 );
         });
   }
-
-  String _toDepartment(Division division, String depId) => division?.departments?.elementAt(depId) ?? '-';
 
   FormBuilderCustomField<String> _buildReadOnly(
     BuildContext context,
@@ -280,23 +244,30 @@ class AffiliationFormState extends State<AffiliationForm> {
   bool get editable => widget.user == null;
 
   String _update(String attribute, String value) {
-    _formKey.currentState.value[attribute] = value;
-    Future.microtask(() => _formKey.currentState.fields[attribute]?.currentState?.didChange(value));
+    if (_formKey.currentState != null) {
+      _formKey.currentState.value[attribute] = value;
+      _formKey.currentState.fields[attribute].currentState.didChange(value);
+      _formKey.currentState.save();
+    }
     return value;
   }
 
-  String _ensureDivId(Organization org) {
-    final divId = _formKey.currentState.value[DIV_FIELD] ?? widget.initialValue?.divId ?? Defaults.depId;
-    return org?.divisions?.containsKey(divId) == true ? divId : org?.divisions?.keys?.first;
+  String _ensureDiv(String ouuid) {
+    final org = context.bloc<AffiliationBloc>().orgs[ouuid];
+    final divId = _formKey.currentState.value[DIV_FIELD] ?? widget.value?.div ?? Defaults.divId;
+    return org?.divisions?.contains(divId) == true ? divId : org.divisions.first;
   }
 
-  String _ensureDepId(Division division) {
-    final depId = _depId ?? widget.initialValue?.depId ?? Defaults.depId;
-    return (division?.departments?.containsKey(depId) == true ? depId : division?.departments?.keys?.first);
+  String _ensureDep(String divuuid) {
+    final div = context.bloc<AffiliationBloc>().divs[divuuid];
+    final depuuid = _dep ?? widget.value?.dep ?? Defaults.depId;
+    return (div?.departments?.contains(depuuid) == true ? depuuid : div.departments.first);
   }
 
-  List<DropdownMenuItem<String>> _ensureDivisions(Organization org) {
-    return sortMapValues<String, Division, String>(org?.divisions ?? {}, (division) => division.name)
+  List<DropdownMenuItem<String>> _buildDivisionItems(Organisation org) {
+    final repo = context.bloc<AffiliationBloc>().divs;
+    final divisions = org.divisions.map((uuid) => repo[uuid]);
+    return sortMapValues<String, Division, String>(divisions ?? {}, (division) => division.name)
         .entries
         .map((division) => DropdownMenuItem<String>(
               value: "${division.key}",
@@ -305,7 +276,7 @@ class AffiliationFormState extends State<AffiliationForm> {
         .toList();
   }
 
-  List<DropdownMenuItem<String>> _ensureDepartments(Division division) {
+  List<DropdownMenuItem<String>> _buildDepartmentItems(Division division) {
     return sortMapValues<String, String, String>(division?.departments ?? {})
         .entries
         .map((department) => DropdownMenuItem<String>(

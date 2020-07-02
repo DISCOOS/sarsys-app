@@ -17,31 +17,33 @@ class _$UnitServiceImpl extends UnitServiceImpl {
   final definitionType = UnitServiceImpl;
 
   @override
-  Future<Response<String>> create(Unit unit) {
-    final $url = '/units';
-    final $body = unit;
+  Future<Response<String>> create(dynamic ouuid, Unit body) {
+    final $url = '/operations/{uuid}/units';
+    final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<List<Unit>>> fetch() {
-    final $url = '/units';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<List<Unit>, Unit>($request);
+  Future<Response<PagedList<Unit>>> fetch(
+      dynamic ouuid, int offset, int limit) {
+    final $url = '/operations/$ouuid/units';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<Unit>, Unit>($request);
   }
 
   @override
-  Future<Response<Unit>> update(String uuid, Unit config) {
-    final $url = '/units/$uuid';
-    final $body = config;
+  Future<Response<Unit>> update(String uuid, Unit unit) {
+    final $url = 'units/$uuid';
+    final $body = unit;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
     return client.send<Unit, Unit>($request);
   }
 
   @override
   Future<Response<void>> delete(String uuid) {
-    final $url = '/units/$uuid';
+    final $url = 'units/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
   }

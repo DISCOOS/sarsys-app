@@ -1,12 +1,14 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/action_group.dart';
-import 'package:SarSys/widgets/affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 
 class UserWidget extends StatelessWidget {
   final bool withName;
@@ -14,11 +16,11 @@ class UserWidget extends StatelessWidget {
   final bool withActions;
   final User user;
   final VoidCallback onDeleted;
+  final Organisation organisation;
   final MessageCallback onMessage;
   final ValueChanged<Point> onGoto;
   final ValueChanged<User> onChanged;
   final ValueChanged<User> onCompleted;
-  final Future<Organization> organization;
 
   const UserWidget({
     Key key,
@@ -31,7 +33,7 @@ class UserWidget extends StatelessWidget {
     this.withName = false,
     this.withHeader = true,
     this.withActions = true,
-    this.organization,
+    this.organisation,
   }) : super(key: key);
 
   @override
@@ -44,7 +46,7 @@ class UserWidget extends StatelessWidget {
       children: <Widget>[
         if (withHeader) _buildHeader(context, user, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
-        if (Orientation.portrait == orientation) _buildPortrait() else _buildLandscape(),
+        if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
           Divider(),
           Padding(
@@ -65,7 +67,7 @@ class UserWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPortrait() => Padding(
+  Widget _buildPortrait(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -74,12 +76,12 @@ class UserWidget extends StatelessWidget {
           children: [
             _buildNameView(),
             _buildContactView(),
-            _buildAffiliationView(),
+            _buildAffiliationView(context),
           ],
         ),
       );
 
-  Widget _buildLandscape() => Padding(
+  Widget _buildLandscape(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -103,7 +105,7 @@ class UserWidget extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  _buildAffiliationView(),
+                  _buildAffiliationView(context),
                 ],
               ),
             ),
@@ -143,17 +145,14 @@ class UserWidget extends StatelessWidget {
         onComplete: () => _onComplete(user),
       );
 
-  Widget _buildAffiliationView() => FutureBuilder<Organization>(
-      future: organization,
-      builder: (context, snapshot) {
-        final affiliation = snapshot.hasData ? snapshot.data.toAffiliationFromUser(user) : null;
-        return AffiliationView(
-          future: organization,
-          onMessage: onMessage,
-          affiliation: affiliation,
-          onComplete: () => _onComplete(user),
-        );
-      });
+  Widget _buildAffiliationView(BuildContext context) {
+    final affiliation = context.bloc<AffiliationBloc>().findUserAffiliation();
+    return AffiliationView(
+      onMessage: onMessage,
+      affiliation: affiliation,
+      onComplete: () => _onComplete(user),
+    );
+  }
 
   void _onComplete([user]) {
     if (onCompleted != null) onCompleted(user ?? this.user);
@@ -249,21 +248,21 @@ class UserActionGroup extends StatelessWidget {
 //    }
   }
 
-  void _onMessage(String message) {
-    if (onMessage != null) onMessage(message);
-  }
-
-  void _onChanged([user]) {
-    if (onChanged != null) onChanged(user);
-  }
-
-  void _onCompleted([user]) {
-    if (onCompleted != null) onCompleted(user ?? this.user);
-  }
-
-  void _onDeleted() {
-    if (onDeleted != null) onDeleted();
-  }
+//  void _onMessage(String message) {
+//    if (onMessage != null) onMessage(message);
+//  }
+//
+//  void _onChanged([user]) {
+//    if (onChanged != null) onChanged(user);
+//  }
+//
+//  void _onCompleted([user]) {
+//    if (onCompleted != null) onCompleted(user ?? this.user);
+//  }
+//
+//  void _onDeleted() {
+//    if (onDeleted != null) onDeleted();
+//  }
 }
 
 class UserNameView extends StatelessWidget {

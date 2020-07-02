@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -18,7 +19,8 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
         CreatableBloc<Operation>,
         UpdatableBloc<Operation>,
         DeletableBloc<Operation>,
-        UnloadableBloc<List<Operation>> {
+        UnloadableBloc<List<Operation>>,
+        ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
@@ -50,6 +52,9 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   /// Get [OperationRepository]
   final OperationRepository repo;
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [incidents, repo];
 
   /// Get [OperationService]
   OperationService get service => repo.service;
@@ -229,7 +234,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     // Complete request
     final loaded = toOK(
       command,
-      OperationLoaded(operations),
+      OperationsLoaded(operations),
       result: operations,
     );
     // Notify listeners
@@ -340,7 +345,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     );
     final unloaded = toOK(
       command,
-      OperationUnloaded(operations),
+      OperationsUnloaded(operations),
     );
     // Notify listeners
     if (unselected != null) {
@@ -429,6 +434,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   @override
   Future<void> close() async {
     await repo.dispose();
+    await incidents.dispose();
     return super.close();
   }
 
@@ -523,7 +529,7 @@ abstract class OperationState<T> extends BlocEvent<T> {
   }) : super(data, props: props, stackTrace: stackTrace);
 
   bool isEmpty() => this is OperationsEmpty;
-  bool isLoaded() => this is OperationLoaded;
+  bool isLoaded() => this is OperationsLoaded;
   bool isCreated() => this is OperationCreated;
   bool isUpdated() => this is OperationUpdated;
   bool isDeleted() => this is OperationDeleted;
@@ -579,8 +585,8 @@ class OperationUnselected extends OperationState<Operation> {
   String toString() => '$runtimeType {operation: $data}';
 }
 
-class OperationLoaded extends OperationState<Iterable<Operation>> {
-  OperationLoaded(Iterable<Operation> data) : super(data);
+class OperationsLoaded extends OperationState<Iterable<Operation>> {
+  OperationsLoaded(Iterable<Operation> data) : super(data);
 
   @override
   String toString() => '$runtimeType {operations: $data}';
@@ -628,8 +634,8 @@ class OperationDeleted extends OperationState<Operation> {
   String toString() => '$runtimeType {operation: $data}';
 }
 
-class OperationUnloaded extends OperationState<Iterable<Operation>> {
-  OperationUnloaded(Iterable<Operation> operations) : super(operations);
+class OperationsUnloaded extends OperationState<Iterable<Operation>> {
+  OperationsUnloaded(Iterable<Operation> operations) : super(operations);
 
   @override
   String toString() => '$runtimeType {operations: $data}';

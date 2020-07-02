@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
@@ -13,9 +14,12 @@ import '../../../../blocs/mixins.dart';
 typedef void AppConfigCallback(VoidCallback fn);
 
 class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfigBlocError>
-    with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
+    with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig>, ConnectionAwareBloc {
   AppConfigBloc(this.repo);
   final AppConfigRepository repo;
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [repo];
 
   AppConfigService get service => repo.service;
 

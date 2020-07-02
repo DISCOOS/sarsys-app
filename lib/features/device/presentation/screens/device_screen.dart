@@ -2,11 +2,9 @@ import 'dart:async';
 
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:async/async.dart';
 
@@ -136,7 +134,6 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
         onDeleted: () => Navigator.pop(context),
         onGoto: (point) => jumpToPoint(context, center: point),
         onChanged: (device) => setState(() => _device = device),
-        organization: FleetMapService().fetchOrganization(Defaults.orgId),
         tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
       );
 

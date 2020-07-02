@@ -1,6 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
@@ -102,6 +109,22 @@ class Storage {
       );
       _registerTypeJsonAdapter<User>(
         fromJson: (data) => User.fromJson(data),
+        toJson: (data) => data.toJson(),
+      );
+      _registerStorageStateJsonAdapter<Affiliation>(
+        fromJson: (data) => Affiliation.fromJson(data),
+        toJson: (data) => data.toJson(),
+      );
+      _registerStorageStateJsonAdapter<Organisation>(
+        fromJson: (data) => OrganisationModel.fromJson(data),
+        toJson: (data) => data.toJson(),
+      );
+      _registerStorageStateJsonAdapter<Division>(
+        fromJson: (data) => DivisionModel.fromJson(data),
+        toJson: (data) => data.toJson(),
+      );
+      _registerStorageStateJsonAdapter<Department>(
+        fromJson: (data) => DepartmentModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Incident>(

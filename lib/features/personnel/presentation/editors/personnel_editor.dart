@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
-import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/Organization.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -13,11 +15,10 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/widgets/position_field.dart';
@@ -59,8 +60,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   ValueNotifier<String> _editedName = ValueNotifier(null);
   List<Device> _devices;
 
-  Future<Organization> _future;
-
   bool get managed => widget.personnel?.userId != null;
 
   void _explainManaged() => alert(
@@ -89,9 +88,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _devices ??= _getActualDevices();
-    if (managed) {
-      _future = FleetMapService().fetchOrganization(widget.personnel.affiliation.orgId);
-    }
   }
 
   void _initFNameController() {
@@ -167,19 +163,14 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 ],
                 managed
                     ? GestureDetector(
-                        child: FutureBuilder<Organization>(
-                            future: _future,
-                            builder: (context, snapshot) {
-                              return AffiliationView(
-                                future: _future,
-                                affiliation: widget.personnel.affiliation,
-                              );
-                            }),
+                        child: AffiliationView(
+                          affiliation: widget.personnel.affiliation,
+                        ),
                         onTap: _explainManaged,
                       )
                     : AffiliationForm(
                         key: _affiliationKey,
-                        initialValue: _ensureAffiliation(),
+                        value: _ensureAffiliation(),
                       ),
                 SizedBox(height: SPACING),
                 Divider(),
@@ -205,9 +196,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return _affiliationKey?.currentState?.save() ??
         widget.personnel?.affiliation ??
         Affiliation(
-          orgId: Defaults.orgId,
-          divId: config.divId,
-          depId: config.depId,
+          org: AggregateRef.fromType<Organisation>(Defaults.orgId),
+          div: AggregateRef.fromType<Division>(config.divId ?? Defaults.divId),
+          dep: AggregateRef.fromType<Department>(config.depId ?? Defaults.depId),
         );
   }
 

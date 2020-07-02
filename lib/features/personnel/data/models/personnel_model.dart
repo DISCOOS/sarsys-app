@@ -1,5 +1,5 @@
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';

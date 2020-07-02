@@ -4,10 +4,7 @@ import 'package:SarSys/features/operation/data/services/incident_service.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
-abstract class IncidentRepository implements ConnectionAwareRepository<String, Incident> {
-  /// Incident service
-  IncidentService get service;
-
+abstract class IncidentRepository implements ConnectionAwareRepository<String, Incident, IncidentService> {
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Incident> state) {
@@ -25,6 +22,9 @@ abstract class IncidentRepository implements ConnectionAwareRepository<String, I
 
   /// Delete [Incident] with given [uuid]
   Future<Incident> delete(String uuid);
+
+  /// Find incident for given operation
+  Incident find(String ouuid);
 }
 
 class IncidentServiceException implements Exception {

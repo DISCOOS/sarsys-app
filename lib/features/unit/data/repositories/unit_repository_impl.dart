@@ -16,16 +16,14 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 import 'package:SarSys/core/extensions.dart';
 
-class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> implements UnitRepository {
+class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitService> implements UnitRepository {
   UnitRepositoryImpl(
-    this.service, {
+    UnitService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         );
-
-  /// [UnitService] service
-  final UnitService service;
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;
@@ -152,7 +150,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit> impleme
     await _ensure(ouuid);
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch(ouuid);
+        var response = await service.fetchAll(ouuid);
         if (response.is200) {
           evict(
             retainKeys: response.body.map((unit) => unit.uuid),

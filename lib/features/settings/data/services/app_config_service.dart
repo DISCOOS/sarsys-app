@@ -1,5 +1,6 @@
 import 'dart:async' show Future;
 
+import 'package:SarSys/core/service.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/api.dart';
@@ -11,7 +12,7 @@ part 'app_config_service.chopper.dart';
 /// Service for consuming the app-config endpoint
 ///
 /// Delegates to a ChopperService implementation
-class AppConfigService {
+class AppConfigService implements ServiceDelegate<AppConfigServiceImpl> {
   final AppConfigServiceImpl delegate;
 
   AppConfigService() : delegate = AppConfigServiceImpl.newInstance();

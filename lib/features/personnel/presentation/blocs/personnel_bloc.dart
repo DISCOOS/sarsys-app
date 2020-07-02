@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -20,7 +21,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         CreatableBloc<Personnel>,
         UpdatableBloc<Personnel>,
         DeletableBloc<Personnel>,
-        UnloadableBloc<List<Personnel>> {
+        UnloadableBloc<List<Personnel>>,
+        ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
@@ -73,6 +75,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [repo];
 
   /// Get [Personnel] from [uuid]
   Personnel operator [](String uuid) => repo[uuid];

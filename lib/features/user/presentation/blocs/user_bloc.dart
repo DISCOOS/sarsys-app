@@ -12,10 +12,8 @@ import 'package:logging/logging.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
-import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
@@ -114,11 +112,6 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     }
     return null;
   }
-
-  /// Get trusted organization given in [AppConfig]
-  Future<Organization> getTrustedOrg() async => FleetMapService().fetchOrganization(
-        config.orgId,
-      );
 
   /// Stream of authorization state changes
   Stream<bool> authorized(Incident incident) => map(

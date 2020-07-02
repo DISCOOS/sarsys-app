@@ -1,6 +1,4 @@
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -102,14 +100,12 @@ class CreateUnits extends UseCase<bool, List<Unit>, UnitParams> {
   Future<dartz.Either<bool, List<Unit>>> execute(UnitParams params) async {
     assert(params.templates?.isNotEmpty == true, "templates must be supplied");
 
-    final org = await FleetMapService().fetchOrganization(Defaults.orgId);
-    final config = params.context.bloc<AppConfigBloc>().config;
-    final department = org.divisions[config.divId]?.departments[config.depId] ?? '';
+    final department = params.context.bloc<AffiliationBloc>().findUserDepartment();
     final units = <Unit>[];
     int count = 0;
     params.templates.forEach((template) async {
       final unit = params.bloc.fromTemplate(
-        department,
+        department.name,
         template,
         count: ++count,
       );

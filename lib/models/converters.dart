@@ -1,4 +1,4 @@
-import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -49,24 +49,21 @@ class LatLngBoundsConverter implements JsonConverter<LatLngBounds, Map<String, d
   }
 }
 
-class FleetMapTalkGroupConverter implements JsonConverter<Map<String, List<TalkGroup>>, Map<String, dynamic>> {
+class FleetMapTalkGroupConverter implements JsonConverter<List<TalkGroup>, List<dynamic>> {
   const FleetMapTalkGroupConverter();
 
   @override
-  Map<String, List<TalkGroup>> fromJson(Map<String, dynamic> json) {
+  List<TalkGroup> fromJson(List<dynamic> list) {
     var id = 0;
-    Map<String, List<TalkGroup>> map = json.map(
-      (key, list) => MapEntry(
-        key,
-        (list as List<dynamic>).map((name) => to('${id++}', name as String)).toList(),
-      ),
+    final map = list.map(
+      (name) => to('${id++}', name as String),
     );
-    return map;
+    return map.toList();
   }
 
   @override
-  Map<String, dynamic> toJson(Map<String, List<TalkGroup>> items) {
-    return items.map((key, list) => MapEntry(key, list.map((tg) => tg.name).toList()));
+  List<dynamic> toJson(List<TalkGroup> items) {
+    return items.map((tg) => tg.name).toList();
   }
 
   static TalkGroup to(String id, String name) {

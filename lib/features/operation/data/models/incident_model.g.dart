@@ -16,6 +16,7 @@ IncidentModel _$IncidentModelFromJson(Map json) {
         ? null
         : DateTime.parse(json['occurred'] as String),
     status: _$enumDecodeNullable(_$IncidentStatusEnumMap, json['status']),
+    operations: (json['operations'] as List)?.map((e) => e as String)?.toList(),
     resolution:
         _$enumDecodeNullable(_$IncidentResolutionEnumMap, json['resolution']),
     exercise: json['exercise'] as bool,
@@ -38,6 +39,7 @@ Map<String, dynamic> _$IncidentModelToJson(IncidentModel instance) {
   writeNotNull('type', _$IncidentTypeEnumMap[instance.type]);
   writeNotNull('occurred', instance.occurred?.toIso8601String());
   writeNotNull('status', _$IncidentStatusEnumMap[instance.status]);
+  writeNotNull('operations', instance.operations);
   writeNotNull('resolution', _$IncidentResolutionEnumMap[instance.resolution]);
   return val;
 }

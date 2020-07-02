@@ -1,5 +1,6 @@
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -172,7 +173,7 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   });
   final String title;
   final String Function(StorageState<T> state) subtitle;
-  final ConnectionAwareRepository<dynamic, T> repo;
+  final ConnectionAwareRepository<dynamic, T, Service> repo;
 
   @override
   Widget build(BuildContext context) {

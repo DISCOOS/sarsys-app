@@ -19,6 +19,7 @@ class Defaults {
   static const int locationSmallestDisplacement = 3;
   static const bool keepScreenOn = false;
   static const bool callsignReuse = true;
+  static const List<String> idpHints = const ['rodekors'];
   static final BaseMap baseMap = BaseMap(
     name: "topo4",
     minZoom: 3.0,

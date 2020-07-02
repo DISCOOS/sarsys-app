@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -10,7 +11,6 @@ import 'package:SarSys/features/operation/presentation/screens/operations_screen
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/icons.dart';
-import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
@@ -367,72 +367,72 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         ],
       );
 
-  Widget _buildAuthenticate(UserBloc bloc) => FutureBuilder<Organization>(
-      future: bloc.getTrustedOrg(),
-      builder: (context, snapshot) {
-        final org = snapshot.data;
-        return snapshot.hasData
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Logg på med ${newUser ? 'ny' : 'din'} organisasjonskonto',
-                    style: _toStyle(context, 18, FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        if (bloc.isPersonal || org.idpHints.contains('rodekors'))
-                          _buildAction(
-                            'MED RØDE KORS',
-                            () => _authenticate(
-                              bloc,
-                              idpHint: 'rodekors',
-                            ),
-                            color: Colors.red[900],
-                            icon: _toIcon(
-                              SarSysIcons.rkh,
-                              Colors.red[900],
-                            ),
-                            validate: false,
-                          ),
-                        if (bloc.isPersonal)
-                          _buildAction(
-                            'MED GOOGLE',
-                            () => _authenticate(
-                              bloc,
-                              idpHint: 'google',
-                            ),
-                            icon: Padding(
-                              padding: const EdgeInsets.only(right: 18.0),
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                color: Colors.white,
-                                child: Image.asset(
-                                  'assets/images/google.png',
-                                ),
-                              ),
-                            ),
-                            type: OutlineButton,
-                            validate: false,
-                          ),
-                        _buildDivider(),
-                      ],
-                    ),
-                  ),
-                  _buildUserInput(bloc),
-                  Flexible(
-                    child: _buildAuthenticateAction(bloc),
-                  ),
-                ],
-              )
-            : Container();
-      });
+  Widget _buildAuthenticate(UserBloc bloc) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Logg på med ${newUser ? 'ny' : 'din'} organisasjonskonto',
+            style: _toStyle(context, 18, FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (bloc.isPersonal || context.bloc<AppConfigBloc>().config.idpHints.contains('rodekors'))
+                  _buildOrgLoginAction(bloc),
+                if (bloc.isPersonal) _buildGoogleLoginAction(bloc),
+                _buildDivider(),
+              ],
+            ),
+          ),
+          _buildUserInput(bloc),
+          Flexible(
+            child: _buildAuthenticateAction(bloc),
+          ),
+        ],
+      );
+
+  Widget _buildGoogleLoginAction(UserBloc bloc) {
+    return _buildAction(
+      'MED GOOGLE',
+      () => _authenticate(
+        bloc,
+        idpHint: 'google',
+      ),
+      icon: Padding(
+        padding: const EdgeInsets.only(right: 18.0),
+        child: Container(
+          padding: EdgeInsets.all(8),
+          color: Colors.white,
+          child: Image.asset(
+            'assets/images/google.png',
+          ),
+        ),
+      ),
+      type: OutlineButton,
+      validate: false,
+    );
+  }
+
+  Widget _buildOrgLoginAction(UserBloc bloc) {
+    return _buildAction(
+      'MED RØDE KORS',
+      () => _authenticate(
+        bloc,
+        idpHint: 'rodekors',
+      ),
+      color: Colors.red[900],
+      icon: _toIcon(
+        SarSysIcons.rkh,
+        Colors.red[900],
+      ),
+      validate: false,
+    );
+  }
 
   Padding _toIcon(IconData icon, Color color) => Padding(
         padding: const EdgeInsets.only(left: 8.0, right: 24.0),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,7 +10,7 @@ part 'personnel_service.chopper.dart';
 /// Service for consuming the personnels endpoint
 ///
 /// Delegates to a ChopperService implementation
-class PersonnelService {
+class PersonnelService with ServiceFetchDescendants<Personnel> implements ServiceDelegate<PersonnelServiceImpl> {
   final PersonnelServiceImpl delegate;
 
   PersonnelService() : delegate = PersonnelServiceImpl.newInstance();
@@ -20,9 +21,13 @@ class PersonnelService {
   Stream<PersonnelMessage> get messages => _controller.stream;
 
   /// GET ../personnel
-  Future<ServiceResponse<List<Personnel>>> fetch(String ouuid) async {
-    return Api.from<List<Personnel>, List<Personnel>>(
-      await delegate.fetch(),
+  Future<ServiceResponse<List<Personnel>>> fetch(String ouuid, int offset, int limit) async {
+    return Api.from<PagedList<Personnel>, List<Personnel>>(
+      await delegate.fetch(
+        ouuid,
+        offset,
+        limit,
+      ),
     );
   }
 
@@ -30,6 +35,7 @@ class PersonnelService {
   Future<ServiceResponse<Personnel>> create(String ouuid, Personnel personnel) async {
     return Api.from<String, Personnel>(
       await delegate.create(
+        ouuid,
         personnel,
       ),
       // Created 201 returns uri to created personnel in body
@@ -69,31 +75,30 @@ class PersonnelMessage {
   PersonnelMessage(this.uuid, this.type, this.json);
 }
 
-@ChopperApi(baseUrl: '/personnels')
+@ChopperApi()
 abstract class PersonnelServiceImpl extends ChopperService {
   static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /personnels/{version}
-  @Post()
+  @Post(path: '/operations/{uuid}/personnels')
   Future<Response<String>> create(
-    @Body() Personnel config,
+    @Path() ouuid,
+    @Body() Personnel body,
   );
 
-  /// GET /personnels
-  @Get()
-  Future<Response<List<Personnel>>> fetch();
+  @Get(path: '/operations/{ouuid}/personnels')
+  Future<Response<PagedList<Personnel>>> fetch(
+    @Path() ouuid,
+    @Query('offset') int offset,
+    @Query('limit') int limit,
+  );
 
-  /// PATCH ../personnels/{uuid}
-  @Patch(path: "{uuid}")
+  @Patch(path: 'personnels/{uuid}')
   Future<Response<Personnel>> update(
     @Path('uuid') String uuid,
     @Body() Personnel personnel,
   );
 
-  /// DELETE ../personnels/{uuid}
-  @Delete(path: "{uuid}")
+  @Delete(path: 'personnels/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
   );

@@ -1,8 +1,12 @@
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/models/Affiliation.dart';
-import 'package:SarSys/widgets/affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,10 +42,10 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
             AffiliationForm(
               key: _affiliationKey,
               user: context.bloc<UserBloc>().user,
-              initialValue: _ensureAffiliation(),
+              value: _ensureAffiliation(),
               onChanged: (affiliation) => context.bloc<AppConfigBloc>().updateWith(
-                    divId: affiliation.divId,
-                    depId: affiliation.depId,
+                    divId: affiliation.div.uuid,
+                    depId: affiliation.dep.uuid,
                   ),
             ),
             if (context.bloc<UserBloc>().user.isAffiliated)
@@ -72,8 +76,8 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
   }
 
   Affiliation _ensureAffiliation() => Affiliation(
-        orgId: Defaults.orgId,
-        divId: context.bloc<AppConfigBloc>().config.divId ?? Defaults.divId,
-        depId: context.bloc<AppConfigBloc>().config.depId ?? Defaults.depId,
+        org: AggregateRef.fromType<Organisation>(Defaults.orgId),
+        div: AggregateRef.fromType<Division>(context.bloc<AppConfigBloc>().config.divId ?? Defaults.divId),
+        dep: AggregateRef.fromType<Department>(context.bloc<AppConfigBloc>().config.depId ?? Defaults.depId),
       );
 }

@@ -1,9 +1,10 @@
+import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,12 +21,11 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   AppConfigBloc _bloc;
-  Future<Organization> _organization;
+  Organisation get organisation => context.bloc<AffiliationBloc>().findUserOrganisation();
 
   @override
   void initState() {
     super.initState();
-    _organization = FleetMapService().fetchOrganization(Defaults.orgId);
   }
 
   @override
@@ -70,28 +70,22 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Expanded(flex: 1, child: Text("Nødnettskatalog")),
-          FutureBuilder<Organization>(
-            future: _organization,
-            builder: (context, snapshot) {
-              return Expanded(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  disabledHint: Text("Laster..."),
-                  items: snapshot.hasData
-                      ? sortList(snapshot.data.talkGroups.keys.toList())
-                          .map((name) => DropdownMenuItem<String>(
-                                value: "$name",
-                                child: Text("$name"),
-                              ))
-                          .toList()
-                      : null,
-                  onChanged: (value) => setState(() {
-                    _bloc.updateWith(talkGroupCatalog: value);
-                  }),
-                  value: _bloc.config?.talkGroupCatalog ?? Defaults.talkGroupCatalog,
-                ),
-              );
-            },
+          Expanded(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              disabledHint: Text("Laster..."),
+              items: sortList(organisation.fleetMap.catalogs
+                  .map((catalog) => catalog.name)
+                  .map((name) => DropdownMenuItem<String>(
+                        value: "$name",
+                        child: Text("$name"),
+                      ))
+                  .toList()),
+              onChanged: (value) => setState(() {
+                _bloc.updateWith(talkGroupCatalog: value);
+              }),
+              value: _bloc.config?.talkGroupCatalog ?? Defaults.talkGroupCatalog,
+            ),
           ),
         ],
       ),
@@ -114,65 +108,58 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
         ),
         Padding(
           padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-          child: FutureBuilder<Organization>(
-              future: _organization,
-              builder: (context, snapshot) {
-                return FormBuilderChipsInput(
-                  attribute: 'talkgroups',
-                  maxChips: 5,
-                  initialValue: FleetMapTalkGroupConverter.toList(_bloc.config.talkGroups),
-                  decoration: InputDecoration(
-                    labelText: "Lytt til",
-                    hintText: "Søk etter talegrupper",
-                    hintStyle: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey),
-                    filled: true,
-                    contentPadding: const EdgeInsets.all(8.0).copyWith(bottom: 10.0),
-                  ),
-                  findSuggestions: (String query) async {
-                    if (query.length != 0) {
-                      var lowercaseQuery = query.toLowerCase();
-                      var catalog = _bloc.config.talkGroupCatalog;
-                      return snapshot.data.talkGroups[catalog]
-                          .where((tg) =>
-                              tg.name.toLowerCase().contains(lowercaseQuery) ||
-                              tg.type.toString().toLowerCase().contains(lowercaseQuery))
-                          .take(5)
-                          .toList(growable: false);
-                    } else {
-                      return const <TalkGroup>[];
-                    }
-                  },
-                  chipBuilder: (context, state, tg) {
-                    return InputChip(
-                      key: ObjectKey(tg),
-                      label: Text(tg.name, style: style),
-                      onDeleted: () => state.deleteChip(tg),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    );
-                  },
-                  suggestionBuilder: (context, state, tg) {
-                    return ListTile(
-                      key: ObjectKey(tg),
-                      leading: CircleAvatar(
-                        child: Text(enumName(tg.type).substring(0, 1)),
-                      ),
-                      title: Text(tg.name),
-                      onTap: () => state.selectSuggestion(tg),
-                    );
-                  },
-                  onChanged: (value) => setState(() {
-                    final items = value.map((tg) => tg.name).toList();
-                    _bloc.updateWith(talkGroups: List<String>.from(items));
-                  }),
-                  // BUG: These are required, no default values are given.
-                  obscureText: false,
-                  autocorrect: false,
-                  inputType: TextInputType.text,
-                  keyboardAppearance: Brightness.dark,
-                  inputAction: TextInputAction.done,
-                  textCapitalization: TextCapitalization.none,
+          child: FormBuilderChipsInput(
+            attribute: 'talkgroups',
+            maxChips: 5,
+            initialValue: FleetMapTalkGroupConverter.toList(_bloc.config.talkGroups),
+            decoration: InputDecoration(
+              labelText: "Lytt til",
+              hintText: "Søk etter talegrupper",
+              hintStyle: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey),
+              filled: true,
+              contentPadding: const EdgeInsets.all(8.0).copyWith(bottom: 10.0),
+            ),
+            findSuggestions: (String query) async {
+              if (query.length != 0) {
+                var catalog = _bloc.config.talkGroupCatalog;
+                return AffiliationUtils.findTalkGroups(
+                  AffiliationUtils.findCatalog(organisation.fleetMap, catalog),
+                  query,
                 );
-              }),
+              } else {
+                return const <TalkGroup>[];
+              }
+            },
+            chipBuilder: (context, state, tg) {
+              return InputChip(
+                key: ObjectKey(tg),
+                label: Text(tg.name, style: style),
+                onDeleted: () => state.deleteChip(tg),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            },
+            suggestionBuilder: (context, state, tg) {
+              return ListTile(
+                key: ObjectKey(tg),
+                leading: CircleAvatar(
+                  child: Text(enumName(tg.type).substring(0, 1)),
+                ),
+                title: Text(tg.name),
+                onTap: () => state.selectSuggestion(tg),
+              );
+            },
+            onChanged: (value) => setState(() {
+              final items = value.map((tg) => tg.name).toList();
+              _bloc.updateWith(talkGroups: List<String>.from(items));
+            }),
+            // BUG: These are required, no default values are given.
+            obscureText: false,
+            autocorrect: false,
+            inputType: TextInputType.text,
+            keyboardAppearance: Brightness.dark,
+            inputAction: TextInputAction.done,
+            textCapitalization: TextCapitalization.none,
+          ),
         ),
       ],
     );

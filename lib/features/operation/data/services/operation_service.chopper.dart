@@ -17,24 +17,26 @@ class _$OperationServiceImpl extends OperationServiceImpl {
   final definitionType = OperationServiceImpl;
 
   @override
-  Future<Response<String>> create(Operation config) {
-    final $url = '/operations';
-    final $body = config;
+  Future<Response<String>> create(dynamic iuuid, Operation body) {
+    final $url = '/incidents/$iuuid/operations';
+    final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<List<Operation>>> fetch() {
+  Future<Response<PagedList<Operation>>> fetch(
+      {int offset = 0, int limit = 20}) {
     final $url = '/operations';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<List<Operation>, Operation>($request);
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<Operation>, Operation>($request);
   }
 
   @override
-  Future<Response<Operation>> update(String uuid, Operation config) {
+  Future<Response<Operation>> update(String uuid, Operation body) {
     final $url = '/operations/$uuid';
-    final $body = config;
+    final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
     return client.send<Operation, Operation>($request);
   }

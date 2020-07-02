@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
-import 'package:SarSys/models/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -48,9 +52,9 @@ class PersonnelBuilder {
           '}');
 
   static Map<String, dynamic> createAffiliation() => Affiliation(
-        orgId: Defaults.orgId,
-        divId: Defaults.divId,
-        depId: Defaults.depId,
+        org: AggregateRef.fromType<Organisation>(Defaults.orgId),
+        div: AggregateRef.fromType<Division>(Defaults.divId),
+        dep: AggregateRef.fromType<Department>(Defaults.depId),
       ).toJson();
 }
 
@@ -119,7 +123,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.fetch(any)).thenAnswer((_) async {
+    when(mock.fetchAll(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var personnel = personnelsRepo[ouuid];
       if (personnel == null) {

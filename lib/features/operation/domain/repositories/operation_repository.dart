@@ -4,7 +4,7 @@ import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/services/service.dart';
 
-abstract class OperationRepository implements ConnectionAwareRepository<String, Operation> {
+abstract class OperationRepository implements ConnectionAwareRepository<String, Operation, OperationService> {
   /// Operation service
   OperationService get service;
 
@@ -17,11 +17,11 @@ abstract class OperationRepository implements ConnectionAwareRepository<String, 
   /// Load incidents
   Future<List<Operation>> load({bool force = true});
 
-  /// Update [incident]
-  Future<Operation> create(Operation incident);
+  /// Update [operation]
+  Future<Operation> create(Operation operation);
 
-  /// Update [incident]
-  Future<Operation> update(Operation incident);
+  /// Update [operation]
+  Future<Operation> update(Operation operation);
 
   /// Delete [Operation] with given [uuid]
   Future<Operation> delete(String uuid);

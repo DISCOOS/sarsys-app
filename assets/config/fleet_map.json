@@ -1,1437 +1,2518 @@
 {
-  "sectors": {
-    "1\\d{6}": "Brann",
-    "2\\d{6}": "Politi",
-    "3\\d{6}": "Helse",
-    "4\\d{6}": "DBS nødnett",
-    "5[0-8]\\d{5}": "Statlig",
-    "59\\d{5}": "Forsvaret",
-    "6[0-4]\\d{5}": "FORF",
-    "6[5-9]\\d{5}": "Frivillige/beredskapsorg.",
-    "7\\d{6}": "Andre virksomheter",
-    "8\\d{6}": "Fylke/kommune",
-    "9\\d{6}": "Reserve"
-  },
-  "organizations": {
-    "1": {
-      "id": "1",
+  "sectors": [
+    {
+      "pattern": "1\\d{6}",
+      "name": "Brann"
+    },
+    {
+      "pattern": "2\\d{6}",
+      "name": "Politi"
+    },
+    {
+      "pattern": "3\\d{6}",
+      "name": "Helse"
+    },
+    {
+      "pattern": "4\\d{6}",
+      "name": "DBS nødnett"
+    },
+    {
+      "pattern": "5[0-8]\\d{5}",
+      "name": "Statlig"
+    },
+    {
+      "pattern": "59\\d{5}",
+      "name": "Forsvaret"
+    },
+    {
+      "pattern": "602\\d{4}",
+      "name": "Forsvarets redningshelikopter"
+    },
+    {
+      "pattern": "6[1-4]\\d{5}",
+      "name": "FORF"
+    },
+    {
+      "pattern": "6[5-9]\\d{5}",
+      "name": "Frivillige/beredskapsorg."
+    },
+    {
+      "pattern": "7\\d{6}",
+      "name": "Andre virksomheter"
+    },
+    {
+      "pattern": "8\\d{6}",
+      "name": "Fylke/kommune"
+    },
+    {
+      "pattern": "9\\d{6}",
+      "name": "Reserve"
+    }
+  ],
+  "organisations": [
+    {
+      "prefix": "1",
       "name": "Brann",
       "alias": "BR",
-      "pattern": "1\\d{6}",
-      "idpHints": ["google"]
+      "pattern": "1\\d{6}"
     },
-    "2": {
-      "id": "2",
+    {
+      "prefix": "2",
       "name": "Politi",
       "alias": "PO",
-      "pattern": "2\\d{6}",
-      "idpHints": ["google"]
+      "pattern": "2\\d{6}"
     },
-    "3": {
-      "id": "3",
+    {
+      "prefix": "3",
       "name": "Helse",
       "alias": "HE",
-      "pattern": "3\\d{6}",
-      "idpHints": ["google"]
+      "pattern": "3\\d{6}"
     },
-    "59": {
-      "id": "59",
+    {
+      "prefix": "59",
       "name": "Forsvaret",
       "alias": "FO",
-      "pattern": "59\\d{5}",
-      "idpHints": ["google"]
+      "pattern": "59\\d{5}"
     },
-    "60": {
-      "id": "60",
+    {
+      "prefix": "60",
       "name": "Redningsselskapet",
       "alias": "RS",
-      "pattern": "60\\d{5}",
-      "idpHints": ["google"]
+      "pattern": "60\\d{5}"
     },
-    "61": {
-      "id": "61",
+    {
+      "prefix": "61",
       "name": "Røde Kors Hjelpekorps",
       "alias": "RK",
       "pattern": "61\\d{5}",
-      "idpHints": ["rodekors"],
-      "levels": {
-        "\\d{2}00\\d{3}": "Nasjonalt",
-        "\\d{3}00\\d{2}": "Region",
-        "\\d{4}0\\d{2}": "Distrikt",
-        "\\d{2}[1-9]{3}\\d{2}": "Avdeling"
-      },
-      "divisions": {
-        "110": {
-          "name": "Østfold",
-          "departments": {
-            "111": "Halden",
-            "112": "Fredrikstad",
-            "113": "Sarpsborg",
-            "114": "Moss",
-            "115": "Mysen Og Omegn"
-          }
+      "levels": [
+        {
+          "pattern": "\\d{2}00\\d{3}",
+          "name": "Nasjonalt"
         },
-        "140": {
-          "name": "Oslo",
-          "departments": {
-            "141": "Oslo"
-          }
+        {
+          "pattern": "\\d{3}00\\d{2}",
+          "name": "Region"
         },
-        "170": {
-          "name": "Akershus",
-          "departments": {
-            "171": "Nesodden",
-            "172": "Oppegård",
-            "173": "Ski",
-            "174": "Vestby Og Ås",
-            "175": "Asker",
-            "176": "Bærum",
-            "177": "Eidsvoll & Hurdal",
-            "178": "Nannestad og Gjerdrum",
-            "179": "Nittedal",
-            "181": "Skedsmo",
-            "182": "Ullensaker",
-            "183": "Sørum",
-            "184": "Aurskog-Høland",
-            "185": "Enebakk"
-          }
+        {
+          "pattern": "\\d{4}0\\d{2}",
+          "name": "Distrikt"
         },
-        "210": {
-          "name": "Hedmark",
-          "departments": {
-            "211": "Brumunddal",
-            "212": "Brøttum",
-            "213": "Eidskog",
-            "214": "Elverum",
-            "215": "Folldal",
-            "216": "Hamar",
-            "217": "Kongsvinger",
-            "218": "Løten",
-            "219": "Nes",
-            "221": "Os",
-            "222": "Rendalen",
-            "223": "Sollia",
-            "224": "Stor-Elvdal",
-            "225": "Trysil",
-            "226": "Tynset",
-            "227": "Tolga",
-            "228": "Åmot",
-            "229": "Nes"
-          }
-        },
-        "240": {
-          "name": "Oppland",
-          "departments": {
-            "241": "Bagn",
-            "242": "Brandbu",
-            "243": "Gjøvik",
-            "244": "Gran",
-            "245": "Hedalen",
-            "246": "Jevnaker",
-            "247": "Lunner",
-            "248": "Redalen",
-            "249": "Østre Toten",
-            "251": "Brennhaug",
-            "252": "Dombås",
-            "253": "Etnedal",
-            "254": "Fåvang",
-            "255": "Gausdal",
-            "256": "Grindaheim",
-            "257": "Høre",
-            "258": "Lesja",
-            "259": "Lillehammer",
-            "261": "Lom og Bøverdal",
-            "262": "Nord-Aurdal",
-            "263": "Nord-Fron",
-            "264": "Nordre Land",
-            "265": "Otta",
-            "266": "Skjåk",
-            "267": "Skåbu/Espedalen",
-            "268": "Sør Fron",
-            "269": "Venabygd",
-            "271": "Vågå",
-            "272": "Øyer og Tretten",
-            "273": "Øystre Slidre",
-            "274": "Søndre Land"
-          }
-        },
-        "310": {
-          "name": "Buskerud",
-          "departments": {
-            "311": "Drammen",
-            "312": "Flesberg",
-            "313": "Flå",
-            "314": "Geilo",
-            "315": "Gol og Hemsedal",
-            "316": "Hovet Og Hol",
-            "317": "Hurum",
-            "318": "Kongsberg",
-            "319": "Krødsherad",
-            "321": "Lier",
-            "322": "Modum",
-            "323": "Nedre Eiker",
-            "324": "Nesbyen",
-            "325": "Nore Og Uvdal",
-            "326": "Ringerike og Hole",
-            "327": "Sigdal",
-            "328": "Vats",
-            "329": "Øvre Eiker",
-            "331": "Ål"
-          }
-        },
-        "340": {
-          "name": "Vestfold",
-          "departments": {
-            "341": "Holmestrand",
-            "342": "Horten",
-            "343": "Lardal",
-            "344": "Larvik",
-            "345": "Sandefjord",
-            "346": "Svelvik",
-            "347": "Tjøme og Hvasser",
-            "348": "Tønsberg"
-          }
-        },
-        "370": {
-          "name": "Telemark",
-          "departments": {
-            "371": "Bamble",
-            "372": "Drangedal",
-            "373": "Fyresdal",
-            "374": "Gvarv",
-            "375": "Vinje og Haukeli",
-            "376": "Hjartdal",
-            "377": "Kragerø",
-            "378": "Nissedal",
-            "379": "Nome Røde Kors avd.redning/bered",
-            "381": "Notodden",
-            "382": "Porsgrunn",
-            "383": "Rjukan Og Tinn",
-            "384": "Seljord",
-            "385": "Skien",
-            "386": "Tokke"
-          }
-        },
-        "410": {
-          "name": "Aust-Agder",
-          "departments": {
-            "411": "Arendal",
-            "412": "Froland",
-            "413": "Grimstad",
-            "414": "Lillesand",
-            "415": "Nedre Setesdal",
-            "416": "Risør",
-            "417": "Tvedestrand"
-          }
-        },
-        "440": {
-          "name": "Vest-Agder",
-          "departments": {
-            "441": "Kristiansand",
-            "442": "Kvinesdal",
-            "443": "Lista",
-            "444": "Lyngdal",
-            "445": "Mandal",
-            "446": "Songdalen",
-            "447": "Søgne",
-            "448": "Vennesla"
-          }
-        },
-        "470": {
-          "name": "Rogaland",
-          "departments": {
-            "471": "Bokn",
-            "472": "Bryne",
-            "473": "Egersund",
-            "474": "Flekkefjord",
-            "475": "Gyland",
-            "476": "Haugesund",
-            "477": "Hjelmeland",
-            "478": "Karmøy",
-            "479": "Kverneland",
-            "481": "Nærbø",
-            "482": "Sandnes",
-            "483": "Sauda",
-            "484": "Sola",
-            "485": "Stavanger",
-            "486": "Suldal",
-            "487": "Tysvær",
-            "488": "Vindafjord"
-          }
-        },
-        "510": {
-          "name": "Hordaland",
-          "departments": {
-            "511": "Arna og Åsane",
-            "512": "Askøy",
-            "513": "Austevoll",
-            "514": "Bergen",
-            "515": "Bømlo",
-            "516": "Dale",
-            "517": "Eidfjord",
-            "518": "Etne",
-            "519": "Fana",
-            "521": "Finse",
-            "522": "Fusa",
-            "523": "Jondal",
-            "524": "Kinsarvik",
-            "525": "Kvinnherad",
-            "526": "Laksevåg",
-            "527": "Nordhordland",
-            "528": "Norheimsund",
-            "529": "Odda",
-            "531": "Os",
-            "532": "Osterøy",
-            "533": "Røldal",
-            "534": "Samnanger",
-            "535": "Sotra",
-            "536": "Stord Og Fitjar",
-            "537": "Sveio",
-            "538": "Tysnes",
-            "539": "Tyssedal",
-            "541": "Ulvik",
-            "542": "Vaksdal",
-            "543": "Voss",
-            "544": "Vossestrand",
-            "545": "Øygarden",
-            "546": "Øystese",
-            "547": "Ålvik"
-          }
-        },
-        "610": {
-          "name": "Sogn og Fjordane",
-          "departments": {
-            "611": "Askvoll",
-            "612": "Aurland",
-            "613": "Balestrand",
-            "614": "Eid",
-            "615": "Fjaler",
-            "616": "Fjærland",
-            "617": "Flora",
-            "618": "Førde",
-            "619": "Gaular",
-            "621": "Gloppen",
-            "622": "Gulen",
-            "623": "Hafslo",
-            "624": "Hornindal",
-            "625": "Hyen",
-            "626": "Hyllestad",
-            "627": "Høyanger",
-            "628": "Jølster",
-            "629": "Lavik",
-            "631": "Leikanger",
-            "632": "Luster",
-            "633": "Lærdal",
-            "634": "Naustdal",
-            "635": "Olden",
-            "636": "Selje",
-            "637": "Sogndal",
-            "638": "Stryn",
-            "639": "Svelgen Bremanger",
-            "641": "Vadheim",
-            "642": "Vik",
-            "643": "Vikane",
-            "644": "Vågsøy"
-          }
-        },
-        "671": {
-          "name": "Møre og Romsdal",
-          "departments": {
-            "671": "Brattvåg",
-            "672": "Eidsdal-Norddal",
-            "673": "Kristiansund og Omegn",
-            "674": "Langevåg",
-            "675": "Molde",
-            "676": "Rauma",
-            "677": "Spjelkavik",
-            "678": "Stranda",
-            "679": "Sunndal",
-            "681": "Sykkylven",
-            "682": "Sørøyane",
-            "683": "Tingvoll",
-            "684": "Tresfjord",
-            "685": "Vanylven",
-            "686": "Vatne og Tennfjord",
-            "687": "Volda",
-            "688": "Ørsta",
-            "689": "Aalesund"
-          }
-        },
-        "710": {
-          "name": "Sør-Trøndelag",
-          "departments": {
-            "711": "Agdenes",
-            "712": "Bjugn",
-            "713": "Budal",
-            "714": "Hemne",
-            "715": "Hitra/Frøya",
-            "716": "Malvik",
-            "717": "Meldal",
-            "718": "Melhus",
-            "719": "Oppdal",
-            "721": "Orkdal",
-            "722": "Osen",
-            "723": "Rennebu",
-            "724": "Rindal",
-            "725": "Rissa",
-            "726": "Røros",
-            "727": "Selbu",
-            "728": "Singsås",
-            "729": "Soknedal",
-            "731": "Surnadal",
-            "732": "Trondheim",
-            "733": "Ørland",
-            "734": "Åfjord",
-            "735": "Ålen"
-          }
-        },
-        "750": {
-          "name": "Nord-Trøndelag",
-          "departments": {
-            "751": "Grong",
-            "752": "Inderøy",
-            "753": "Kolvereid",
-            "754": "Leksvik",
-            "755": "Levanger",
-            "756": "Lierne",
-            "757": "Malm",
-            "758": "Namdalseid",
-            "759": "Namsos",
-            "761": "Namsskogan",
-            "762": "Overhalla",
-            "763": "Røyrvik",
-            "764": "Skorovas",
-            "765": "Snåsa",
-            "766": "Steinkjer",
-            "767": "Stjørdal",
-            "768": "Verdal",
-            "769": "Vikna",
-            "771": "Flatanger"
-          }
-        },
-        "810": {
-          "name": "Nordland",
-          "departments": {
-            "811": "Ankenes",
-            "812": "Ballangen",
-            "813": "Beiarn",
-            "814": "Bodø",
-            "815": "Brønnøysund",
-            "816": "Fauske",
-            "817": "Gildeskål",
-            "818": "Glomfjord",
-            "819": "Hadsel",
-            "821": "Hattfjelldal",
-            "822": "Lødingen",
-            "823": "Narvik",
-            "824": "Rana",
-            "825": "Saltdal",
-            "826": "Sandnessjøen",
-            "827": "Sortland",
-            "828": "Steigen",
-            "829": "Sulitjelma",
-            "831": "Svo",
-            "832": "Tjeldsund",
-            "833": "Vefsn",
-            "834": "Vestvågøy",
-            "835": "Øksnes"
-          }
-        },
-        "840": {
-          "name": "Troms",
-          "departments": {
-            "841": "Balsfjord",
-            "842": "Bardu",
-            "843": "Berg",
-            "844": "Birtavarre",
-            "845": "Finnsnes",
-            "846": "Harstad",
-            "847": "Kvæfjord",
-            "848": "Longyearbyen",
-            "849": "Lyngen",
-            "851": "Skånland",
-            "852": "Tromsø"
-          }
-        },
-        "870": {
-          "name": "Finnmark",
-          "departments": {
-            "871": "Alta",
-            "872": "Hammerfest",
-            "873": "Havøysund",
-            "874": "Kara",
-            "875": "Kautokeino",
-            "876": "Kjøllefjord",
-            "877": "Lakselv",
-            "878": "Nesseby",
-            "879": "Nordkapp",
-            "881": "Sør-Varanger",
-            "882": "Vadsø",
-            "883": "Vardø"
-          }
+        {
+          "pattern": "\\d{2}[1-9]{3}\\d{2}",
+          "name": "Avdeling"
         }
-      },
-      "talk_groups": {
-        "Nasjonal": [
-          "RK-RIKS-A1",
-          "RK-RIKS-A2",
-          "RK-RIKS-A3",
-          "RK-RIKS-A4",
-          "RK-RIKS-A5",
-          "FORF-RIKS",
-          "FORF-RIKS-2",
-          "FORF-RIKS-3",
-          "BEREDSKAP 1",
-          "BEREDSKAP 2",
-          "BEREDSKAP 3",
-          "BEREDSKAP 4",
-          "BEREDSKAP 5",
-          "FELLES-1",
-          "FELLES-2",
-          "FELLES-3",
-          "FELLES-4",
-          "FELLES-5",
-          "ØV-FELLES-1",
-          "ØV-FELLES-2",
-          "ØV-FELLES-3",
-          "ØV-FELLES-4",
-          "ØV-FELLES-5",
-          "ØV-SAMV-1",
-          "ØV-SAMV-2",
-          "ØV-SAMV-3",
-          "ØV-SAMV-4",
-          "ØV-SAMV-5",
-          "ØV-SAMV-A1",
-          "ØV-SAMV-A2"
-        ],
-        "Østfold": [
-          "RK-ØSTF-1",
-          "RK-ØSTF-2",
-          "RK-ØSTF-3",
-          "RK-ØSTF-4",
-          "RK-ØSTF-5",
-          "RK-ØSTF-6",
-          "RK-ØSTF-ØV1",
-          "RK-ØSTF-ØV2",
-          "RK-ØSTF-ØV3",
-          "RK-ØSTF-ØV4",
-          "RK-ØSTF-ØV5",
-          "RK-ØSTF-ØV6",
-          "RK-ØSTF-A1",
-          "RK-ØSTF-A2",
-          "02-SAMVUP-11",
-          "02-SAMVUP-12",
-          "02-SAMVUP-13",
-          "02-SAMVUP-14",
-          "02-SAMVUP-15",
-          "02-SAMVUP-16",
-          "02-SAMVUP-17",
-          "02-SAMVUP-18",
-          "02-SAMVUP-19",
-          "02-SAMV-1",
-          "02-SAMV-2",
-          "02-SAMV-3",
-          "02-SAMV-4",
-          "02-SAMV-5",
-          "02-SAMV-A1",
-          "02-SAMV-A2",
-          "FORF-ØSTFOLD",
-          "FORF-ØSTFO-2",
-          "FORF-ØSTFO-3",
-          "FY-OSTF-A1",
-          "FY-OSTF-A2",
-          "FY-OSTF-A3",
-          "02-SAR-1",
-          "02-SAR-2",
-          "02-SAR-3",
-          "02-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Akershus": [
-          "RK-AKER-1",
-          "RK-AKER-2",
-          "RK-AKER-3",
-          "RK-AKER-4",
-          "RK-AKER-5",
-          "RK-AKER-6",
-          "RK-AKER-ØV1",
-          "RK-AKER-ØV2",
-          "RK-AKER-ØV3",
-          "RK-AKER-ØV4",
-          "RK-AKER-ØV5",
-          "RK-AKER-ØV6",
-          "RK-AKER-A1",
-          "RK-AKER-A2",
-          "01-SAMVUP-11",
-          "01-SAMVUP-12",
-          "01-SAMVUP-13",
-          "01-SAMVUP-14",
-          "01-SAMVUP-15",
-          "01-SAMVUP-16",
-          "01-SAMVUP-17",
-          "01-SAMVUP-18",
-          "01-SAMVUP-19",
-          "02-SAMVUP-11",
-          "02-SAMVUP-12",
-          "02-SAMVUP-13",
-          "02-SAMVUP-14",
-          "02-SAMVUP-15",
-          "02-SAMVUP-16",
-          "02-SAMVUP-17",
-          "02-SAMVUP-18",
-          "02-SAMVUP-19",
-          "01-SAMV-1",
-          "01-SAMV-2",
-          "01-SAMV-3",
-          "01-SAMV-4",
-          "01-SAMV-5",
-          "01-SAMV-A1",
-          "01-SAMV-A2",
-          "02-SAMV-1",
-          "02-SAMV-2",
-          "02-SAMV-3",
-          "02-SAMV-4",
-          "02-SAMV-5",
-          "02-SAMV-A1",
-          "02-SAMV-A2",
-          "FORF-AKERSHU",
-          "FORF-AKERS-2",
-          "FORF-AKERS-3",
-          "FY-OA-A1",
-          "FY-OA-A2",
-          "FY-OA-A3",
-          "01-SAR-1",
-          "01-SAR-2",
-          "01-SAR-3",
-          "01-SAR-4",
-          "02-SAR-1",
-          "02-SAR-2",
-          "02-SAR-3",
-          "02-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Oslo": [
-          "RK-OSLO-1",
-          "RK-OSLO-2",
-          "RK-OSLO-3",
-          "RK-OSLO-4",
-          "RK-OSLO-5",
-          "RK-OSLO-6",
-          "RK-OSLO-ØV1",
-          "RK-OSLO-ØV2",
-          "RK-OSLO-ØV3",
-          "RK-OSLO-ØV4",
-          "RK-OSLO-ØV5",
-          "RK-OSLO-ØV6",
-          "RK-OSLO-A1",
-          "RK-OSLO-A2",
-          "01-SAMVUP-11",
-          "01-SAMVUP-12",
-          "01-SAMVUP-13",
-          "01-SAMVUP-14",
-          "01-SAMVUP-15",
-          "01-SAMVUP-16",
-          "01-SAMVUP-17",
-          "01-SAMVUP-18",
-          "01-SAMVUP-19",
-          "01-SAMV-1",
-          "01-SAMV-2",
-          "01-SAMV-3",
-          "01-SAMV-4",
-          "01-SAMV-5",
-          "01-SAMV-A1",
-          "01-SAMV-A2",
-          "FORF-OSLO",
-          "FORF-OSLO-2",
-          "FORF-OSLO-3",
-          "FY-OA-A1",
-          "FY-OA-A2",
-          "FY-OA-A3",
-          "01-SAR-1",
-          "01-SAR-2",
-          "01-SAR-3",
-          "01-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Buskerud": [
-          "RK-BUSK-1",
-          "RK-BUSK-2",
-          "RK-BUSK-3",
-          "RK-BUSK-4",
-          "RK-BUSK-5",
-          "RK-BUSK-6",
-          "RK-BUSK-ØV1",
-          "RK-BUSK-ØV2",
-          "RK-BUSK-ØV3",
-          "RK-BUSK-ØV4",
-          "RK-BUSK-ØV5",
-          "RK-BUSK-ØV6",
-          "RK-BUSK-A1",
-          "RK-BUSK-A2",
-          "04-SAMVUP-11",
-          "04-SAMVUP-12",
-          "04-SAMVUP-13",
-          "04-SAMVUP-14",
-          "04-SAMVUP-15",
-          "04-SAMVUP-16",
-          "04-SAMVUP-17",
-          "04-SAMVUP-18",
-          "04-SAMVUP-19",
-          "04-SAMV-1",
-          "04-SAMV-2",
-          "04-SAMV-3",
-          "04-SAMV-4",
-          "04-SAMV-5",
-          "04-SAMV-A1",
-          "04-SAMV-A2",
-          "FORF-BUSKERU",
-          "FORF-BUSKE-2",
-          "FORF-BUSKE-3",
-          "FY-BUSK-A1",
-          "FY-BUSK-A2",
-          "FY-BUSK-A3",
-          "04-SAR-1",
-          "04-SAR-2",
-          "04-SAR-3",
-          "04-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Vestfold": [
-          "RK-VFOLD-1",
-          "RK-VFOLD-2",
-          "RK-VFOLD-3",
-          "RK-VFOLD-4",
-          "RK-VFOLD-5",
-          "RK-VFOLD-6",
-          "RK-VFOLD-ØV1",
-          "RK-VFOLD-ØV2",
-          "RK-VFOLD-ØV3",
-          "RK-VFOLD-ØV4",
-          "RK-VFOLD-ØV5",
-          "RK-VFOLD-ØV6",
-          "RK-VFOLD-A1",
-          "RK-VFOLD-A2",
-          "04-SAMVUP-11",
-          "04-SAMVUP-12",
-          "04-SAMVUP-13",
-          "04-SAMVUP-14",
-          "04-SAMVUP-15",
-          "04-SAMVUP-16",
-          "04-SAMVUP-17",
-          "04-SAMVUP-18",
-          "04-SAMVUP-19",
-          "04-SAMV-1",
-          "04-SAMV-2",
-          "04-SAMV-3",
-          "04-SAMV-4",
-          "04-SAMV-5",
-          "04-SAMV-A1",
-          "04-SAMV-A2",
-          "FORF-VESTF",
-          "FORF-VESTF-2",
-          "FORF-VESTF-3",
-          "FY-VFOLD-A1",
-          "FY-VFOLD-A2",
-          "FY-VFOLD-A3",
-          "04-SAR-1",
-          "04-SAR-2",
-          "04-SAR-3",
-          "04-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Telemark": [
-          "RK-TELEM-1",
-          "RK-TELEM-2",
-          "RK-TELEM-3",
-          "RK-TELEM-4",
-          "RK-TELEM-5",
-          "RK-TELEM-6",
-          "RK-TELEM-ØV1",
-          "RK-TELEM-ØV2",
-          "RK-TELEM-ØV3",
-          "RK-TELEM-ØV4",
-          "RK-TELEM-ØV5",
-          "RK-TELEM-ØV6",
-          "RK-TELEM-A1",
-          "RK-TELEM-A2",
-          "04-SAMVUP-11",
-          "04-SAMVUP-12",
-          "04-SAMVUP-13",
-          "04-SAMVUP-14",
-          "04-SAMVUP-15",
-          "04-SAMVUP-16",
-          "04-SAMVUP-17",
-          "04-SAMVUP-18",
-          "04-SAMVUP-19",
-          "04-SAMV-1",
-          "04-SAMV-2",
-          "04-SAMV-3",
-          "04-SAMV-4",
-          "04-SAMV-5",
-          "04-SAMV-A1",
-          "04-SAMV-A2",
-          "FORF-TELEM",
-          "FORF-TELEM-2",
-          "FORF-TELEM-3",
-          "FY-TELEM-A1",
-          "FY-TELEM-A2",
-          "FY-TELEM-A3",
-          "04-SAR-1",
-          "04-SAR-2",
-          "04-SAR-3",
-          "04-SAR-4",
-          "SAR-SJØ-1",
-          "SAR-SJØ-2"
-        ],
-        "Hedmark": [
-          "RK-HEDM-1",
-          "RK-HEDM-2",
-          "RK-HEDM-3",
-          "RK-HEDM-4",
-          "RK-HEDM-5",
-          "RK-HEDM-6",
-          "RK-HEDM-ØV1",
-          "RK-HEDM-ØV2",
-          "RK-HEDM-ØV3",
-          "RK-HEDM-ØV4",
-          "RK-HEDM-ØV5",
-          "RK-HEDM-ØV6",
-          "RK-HEDM-A1",
-          "RK-HEDM-A2",
-          "03-SAMVUP-11",
-          "03-SAMVUP-12",
-          "03-SAMVUP-13",
-          "03-SAMVUP-14",
-          "03-SAMVUP-15",
-          "03-SAMVUP-16",
-          "03-SAMVUP-17",
-          "03-SAMVUP-18",
-          "03-SAMVUP-19",
-          "03-SAMV-1",
-          "03-SAMV-2",
-          "03-SAMV-3",
-          "03-SAMV-4",
-          "03-SAMV-5",
-          "03-SAMV-A1",
-          "03-SAMV-A2",
-          "FORF-HEDMARK",
-          "FORF-HEDMA-2",
-          "FORF-HEDMA-3",
-          "FY-HEDM-A1",
-          "FY-HEDM-A2",
-          "FY-HEDM-A3",
-          "03-SAR-1",
-          "03-SAR-2",
-          "03-SAR-3",
-          "03-SAR-4"
-        ],
-        "Oppland": [
-          "RK-OPPL-1",
-          "RK-OPPL-2",
-          "RK-OPPL-3",
-          "RK-OPPL-4",
-          "RK-OPPL-5",
-          "RK-OPPL-6",
-          "RK-OPPL-ØV1",
-          "RK-OPPL-ØV2",
-          "RK-OPPL-ØV3",
-          "RK-OPPL-ØV4",
-          "RK-OPPL-ØV5",
-          "RK-OPPL-ØV6",
-          "RK-OPPL-A1",
-          "RK-OPPL-A2",
-          "03-SAMVUP-11",
-          "03-SAMVUP-12",
-          "03-SAMVUP-13",
-          "03-SAMVUP-14",
-          "03-SAMVUP-15",
-          "03-SAMVUP-16",
-          "03-SAMVUP-17",
-          "03-SAMVUP-18",
-          "03-SAMVUP-19",
-          "04-SAMVUP-11",
-          "04-SAMVUP-12",
-          "04-SAMVUP-13",
-          "04-SAMVUP-14",
-          "04-SAMVUP-15",
-          "04-SAMVUP-16",
-          "04-SAMVUP-17",
-          "04-SAMVUP-18",
-          "04-SAMVUP-19",
-          "03-SAMV-1",
-          "03-SAMV-2",
-          "03-SAMV-3",
-          "03-SAMV-4",
-          "03-SAMV-5",
-          "03-SAMV-A1",
-          "03-SAMV-A2",
-          "04-SAMV-1",
-          "04-SAMV-2",
-          "04-SAMV-3",
-          "04-SAMV-4",
-          "04-SAMV-5",
-          "04-SAMV-A1",
-          "04-SAMV-A2",
-          "FORF-OPPLAND",
-          "FORF-OPPLA-2",
-          "FORF-OPPLA-3",
-          "FY-OPPL-A1",
-          "FY-OPPL-A2",
-          "FY-OPPL-A3",
-          "03-SAR-1",
-          "03-SAR-2",
-          "03-SAR-3",
-          "03-SAR-4",
-          "04-SAR-1",
-          "04-SAR-2",
-          "04-SAR-3",
-          "04-SAR-4"
-        ],
-        "Agder": [
-          "RK-AGDER-1",
-          "RK-AGDER-2",
-          "RK-AGDER-3",
-          "RK-AGDER-4",
-          "RK-AGDER-5",
-          "RK-AGDER-6",
-          "RK-AGDER-ØV1",
-          "RK-AGDER-ØV2",
-          "RK-AGDER-ØV3",
-          "RK-AGDER-ØV4",
-          "RK-AGDER-ØV5",
-          "RK-AGDER-ØV6",
-          "RK-AGDER-A1",
-          "RK-AGDER-A2",
-          "05-SAMVUP-11",
-          "05-SAMVUP-12",
-          "05-SAMVUP-13",
-          "05-SAMVUP-14",
-          "05-SAMVUP-15",
-          "05-SAMVUP-16",
-          "05-SAMVUP-17",
-          "05-SAMVUP-18",
-          "05-SAMVUP-19",
-          "05-SAMV-1",
-          "05-SAMV-2",
-          "05-SAMV-3",
-          "05-SAMV-4",
-          "05-SAMV-5",
-          "05-SAMV-A1",
-          "05-SAMV-A2",
-          "FORF-AGDER",
-          "FORF-AGDER-2",
-          "FORF-AGDER-3",
-          "FY-AGDER-A1",
-          "FY-AGDER-A2",
-          "FY-AGDER-A3",
-          "05-SAR-1",
-          "05-SAR-2",
-          "05-SAR-3",
-          "05-SAR-4"
-        ],
-        "Rogaland": [
-          "RK-ROGA-1",
-          "RK-ROGA-2",
-          "RK-ROGA-3",
-          "RK-ROGA-4",
-          "RK-ROGA-5",
-          "RK-ROGA-6",
-          "RK-ROGA-ØV1",
-          "RK-ROGA-ØV2",
-          "RK-ROGA-ØV3",
-          "RK-ROGA-ØV4",
-          "RK-ROGA-ØV5",
-          "RK-ROGA-ØV6",
-          "RK-ROGA-A1",
-          "RK-ROGA-A2",
-          "06-SAMVUP-11",
-          "06-SAMVUP-12",
-          "06-SAMVUP-13",
-          "06-SAMVUP-14",
-          "06-SAMVUP-15",
-          "06-SAMVUP-16",
-          "06-SAMVUP-17",
-          "06-SAMVUP-18",
-          "06-SAMVUP-19",
-          "06-SAMV-1",
-          "06-SAMV-2",
-          "06-SAMV-3",
-          "06-SAMV-4",
-          "06-SAMV-5",
-          "06-SAMV-A1",
-          "06-SAMV-A2",
-          "FORF-ROGA",
-          "FORF-ROGA-2",
-          "FORF-ROGA-3",
-          "FY-ROGL-A1",
-          "FY-ROGL-A2",
-          "FY-ROGL-A3",
-          "06-SAR-1",
-          "06-SAR-2",
-          "06-SAR-3",
-          "06-SAR-4"
-        ],
-        "Hordaland": [
-          "RK-HORDA-1",
-          "RK-HORDA-2",
-          "RK-HORDA-3",
-          "RK-HORDA-4",
-          "RK-HORDA-5",
-          "RK-HORDA-6",
-          "RK-HORDA-ØV1",
-          "RK-HORDA-ØV2",
-          "RK-HORDA-ØV3",
-          "RK-HORDA-ØV4",
-          "RK-HORDA-ØV5",
-          "RK-HORDA-ØV6",
-          "RK-HORDA-A1",
-          "RK-HORDA-A2",
-          "06-SAMVUP-11",
-          "06-SAMVUP-12",
-          "06-SAMVUP-13",
-          "06-SAMVUP-14",
-          "06-SAMVUP-15",
-          "06-SAMVUP-16",
-          "06-SAMVUP-17",
-          "06-SAMVUP-18",
-          "06-SAMVUP-19",
-          "07-SAMVUP-11",
-          "07-SAMVUP-12",
-          "07-SAMVUP-13",
-          "07-SAMVUP-14",
-          "07-SAMVUP-15",
-          "07-SAMVUP-16",
-          "07-SAMVUP-17",
-          "07-SAMVUP-18",
-          "07-SAMVUP-19",
-          "06-SAMV-1",
-          "06-SAMV-2",
-          "06-SAMV-3",
-          "06-SAMV-4",
-          "06-SAMV-5",
-          "06-SAMV-A1",
-          "06-SAMV-A2",
-          "07-SAMV-1",
-          "07-SAMV-2",
-          "07-SAMV-3",
-          "07-SAMV-4",
-          "07-SAMV-5",
-          "07-SAMV-A1",
-          "07-SAMV-A2",
-          "FORF-HORDA",
-          "FORF-HORDA-2",
-          "FORF-HORDA-3",
-          "FY-HORD-A1",
-          "FY-HORD-A2",
-          "FY-HORD-A3",
-          "06-SAR-1",
-          "06-SAR-2",
-          "06-SAR-3",
-          "06-SAR-4",
-          "07-SAR-1",
-          "07-SAR-2",
-          "07-SAR-3",
-          "07-SAR-4"
-        ],
-        "Sogn & Fjordane": [
-          "RK-SO-FJ-1",
-          "RK-SO-FJ-2",
-          "RK-SO-FJ-3",
-          "RK-SO-FJ-4",
-          "RK-SO-FJ-5",
-          "RK-SO-FJ-6",
-          "RK-SO-FJ-ØV1",
-          "RK-SO-FJ-ØV2",
-          "RK-SO-FJ-ØV3",
-          "RK-SO-FJ-ØV4",
-          "RK-SO-FJ-ØV5",
-          "RK-SO-FJ-ØV6",
-          "RK-SO-FJ-A1",
-          "RK-SO-FJ-A2",
-          "07-SAMVUP-11",
-          "07-SAMVUP-12",
-          "07-SAMVUP-13",
-          "07-SAMVUP-14",
-          "07-SAMVUP-15",
-          "07-SAMVUP-16",
-          "07-SAMVUP-17",
-          "07-SAMVUP-18",
-          "07-SAMVUP-19",
-          "07-SAMV-1",
-          "07-SAMV-2",
-          "07-SAMV-3",
-          "07-SAMV-4",
-          "07-SAMV-5",
-          "07-SAMV-A1",
-          "07-SAMV-A2",
-          "FORF-SO-FJ",
-          "FORF-SO-FJ-2",
-          "FORF-SO-FJ-3",
-          "FY-SOFJO-A1",
-          "FY-SOFJO-A2",
-          "FY-SOFJO-A3",
-          "07-SAR-1",
-          "07-SAR-2",
-          "07-SAR-3",
-          "07-SAR-4"
-        ],
-        "Møre & Romsdal": [
-          "RK-MØ-RO-1",
-          "RK-MØ-RO-2",
-          "RK-MØ-RO-3",
-          "RK-MØ-RO-4",
-          "RK-MØ-RO-5",
-          "RK-MØ-RO-6",
-          "RK-MØ-RO-ØV1",
-          "RK-MØ-RO-ØV2",
-          "RK-MØ-RO-ØV3",
-          "RK-MØ-RO-ØV4",
-          "RK-MØ-RO-ØV5",
-          "RK-MØ-RO-ØV6",
-          "RK-MØ-RO-A1",
-          "RK-MØ-RO-A2",
-          "08-SAMVUP-11",
-          "08-SAMVUP-12",
-          "08-SAMVUP-13",
-          "08-SAMVUP-14",
-          "08-SAMVUP-15",
-          "08-SAMVUP-16",
-          "08-SAMVUP-17",
-          "08-SAMVUP-18",
-          "08-SAMVUP-19",
-          "08-SAMV-1",
-          "08-SAMV-2",
-          "08-SAMV-3",
-          "08-SAMV-4",
-          "08-SAMV-5",
-          "08-SAMV-A1",
-          "08-SAMV-A2",
-          "FORF-MØRO",
-          "FORF-MØRO-2",
-          "FORF-MØRO-3",
-          "FY-MØRO-A1",
-          "FY-MØRO-A2",
-          "FY-MØRO-A3",
-          "08-SAR-1",
-          "08-SAR-2",
-          "08-SAR-3",
-          "08-SAR-4"
-        ],
-        "Sør-Trøndelag": [
-          "RK-S-TRL-1",
-          "RK-S-TRL-2",
-          "RK-S-TRL-3",
-          "RK-S-TRL-4",
-          "RK-S-TRL-5",
-          "RK-S-TRL-6",
-          "RK-S-TRL-ØV1",
-          "RK-S-TRL-ØV2",
-          "RK-S-TRL-ØV3",
-          "RK-S-TRL-ØV4",
-          "RK-S-TRL-ØV5",
-          "RK-S-TRL-ØV6",
-          "RK-S-TRL-A1",
-          "RK-S-TRL-A2",
-          "09-SAMVUP-11",
-          "09-SAMVUP-12",
-          "09-SAMVUP-13",
-          "09-SAMVUP-14",
-          "09-SAMVUP-15",
-          "09-SAMVUP-16",
-          "09-SAMVUP-17",
-          "09-SAMVUP-18",
-          "09-SAMVUP-19",
-          "09-SAMV-1",
-          "09-SAMV-2",
-          "09-SAMV-3",
-          "09-SAMV-4",
-          "09-SAMV-5",
-          "09-SAMV-A1",
-          "09-SAMV-A2",
-          "FORF-S-TRL",
-          "FORF-S-TRL-2",
-          "FORF-S-TRL-3",
-          "FY-TRL-A1",
-          "FY-TRL-A2",
-          "FY-TRL-A3",
-          "09-SAR-1",
-          "09-SAR-2",
-          "09-SAR-3",
-          "09-SAR-4"
-        ],
-        "Nord-Trøndelag": [
-          "RK-N-TRL-1",
-          "RK-N-TRL-2",
-          "RK-N-TRL-3",
-          "RK-N-TRL-4",
-          "RK-N-TRL-5",
-          "RK-N-TRL-6",
-          "RK-N-TRL-ØV1",
-          "RK-N-TRL-ØV2",
-          "RK-N-TRL-ØV3",
-          "RK-N-TRL-ØV4",
-          "RK-N-TRL-ØV5",
-          "RK-N-TRL-ØV6",
-          "RK-N-TRL-A1",
-          "RK-N-TRL-A2",
-          "09-SAMVUP-11",
-          "09-SAMVUP-12",
-          "09-SAMVUP-13",
-          "09-SAMVUP-14",
-          "09-SAMVUP-15",
-          "09-SAMVUP-16",
-          "09-SAMVUP-17",
-          "09-SAMVUP-18",
-          "09-SAMVUP-19",
-          "09-SAMV-1",
-          "09-SAMV-2",
-          "09-SAMV-3",
-          "09-SAMV-4",
-          "09-SAMV-5",
-          "09-SAMV-A1",
-          "09-SAMV-A2",
-          "FORF-N-TRL",
-          "FORF-N-TRL-2",
-          "FORF-N-TRL-3",
-          "FY-TRL-A1",
-          "FY-TRL-A2",
-          "FY-TRL-A3",
-          "09-SAR-1",
-          "09-SAR-2",
-          "09-SAR-3",
-          "09-SAR-4"
-        ],
-        "Nordland": [
-          "RK-NORDL-1",
-          "RK-NORDL-2",
-          "RK-NORDL-3",
-          "RK-NORDL-4",
-          "RK-NORDL-5",
-          "RK-NORDL-6",
-          "RK-NORDL-ØV1",
-          "RK-NORDL-ØV2",
-          "RK-NORDL-ØV3",
-          "RK-NORDL-ØV4",
-          "RK-NORDL-ØV5",
-          "RK-NORDL-ØV6",
-          "RK-NORDL-A1",
-          "RK-NORDL-A2",
-          "10-SAMVUP-11",
-          "10-SAMVUP-12",
-          "10-SAMVUP-13",
-          "10-SAMVUP-14",
-          "10-SAMVUP-15",
-          "10-SAMVUP-16",
-          "10-SAMVUP-17",
-          "10-SAMVUP-18",
-          "10-SAMVUP-19",
-          "10-SAMV-1",
-          "10-SAMV-2",
-          "10-SAMV-3",
-          "10-SAMV-4",
-          "10-SAMV-5",
-          "10-SAMV-A1",
-          "10-SAMV-A2",
-          "FORF-NORDL",
-          "FORF-NORDL-2",
-          "FORF-NORDL-3",
-          "FY-NORDL-A1",
-          "FY-NORDL-A2",
-          "FY-NORDL-A3",
-          "10-SAR-1",
-          "10-SAR-2",
-          "10-SAR-3",
-          "10-SAR-4"
-        ],
-        "Troms": [
-          "RK-TROMS-1",
-          "RK-TROMS-2",
-          "RK-TROMS-3",
-          "RK-TROMS-4",
-          "RK-TROMS-5",
-          "RK-TROMS-6",
-          "RK-TROMS-ØV1",
-          "RK-TROMS-ØV2",
-          "RK-TROMS-ØV3",
-          "RK-TROMS-ØV4",
-          "RK-TROMS-ØV5",
-          "RK-TROMS-ØV6",
-          "RK-TROMS-A1",
-          "RK-TROMS-A2",
-          "11-SAMVUP-11",
-          "11-SAMVUP-12",
-          "11-SAMVUP-13",
-          "11-SAMVUP-14",
-          "11-SAMVUP-15",
-          "11-SAMVUP-16",
-          "11-SAMVUP-17",
-          "11-SAMVUP-18",
-          "11-SAMVUP-19",
-          "11-SAMV-1",
-          "11-SAMV-2",
-          "11-SAMV-3",
-          "11-SAMV-4",
-          "11-SAMV-5",
-          "11-SAMV-A1",
-          "11-SAMV-A2",
-          "FORF-TROMS",
-          "FORF-TROMS-2",
-          "FORF-TROMS-3",
-          "FY-TROMS-A1",
-          "FY-TROMS-A2",
-          "FY-TROMS-A3",
-          "11-SAR-1",
-          "11-SAR-2",
-          "11-SAR-3",
-          "11-SAR-4"
-        ],
-        "Finnmark": [
-          "RK-FINNM-1",
-          "RK-FINNM-2",
-          "RK-FINNM-3",
-          "RK-FINNM-4",
-          "RK-FINNM-5",
-          "RK-FINNM-6",
-          "RK-FINNM-ØV1",
-          "RK-FINNM-ØV2",
-          "RK-FINNM-ØV3",
-          "RK-FINNM-ØV4",
-          "RK-FINNM-ØV5",
-          "RK-FINNM-ØV6",
-          "RK-FINNM-A1",
-          "RK-FINNM-A2",
-          "12-SAMVUP-11",
-          "12-SAMVUP-12",
-          "12-SAMVUP-13",
-          "12-SAMVUP-14",
-          "12-SAMVUP-15",
-          "12-SAMVUP-16",
-          "12-SAMVUP-17",
-          "12-SAMVUP-18",
-          "12-SAMVUP-19",
-          "12-SAMV-1",
-          "12-SAMV-2",
-          "12-SAMV-3",
-          "12-SAMV-4",
-          "12-SAMV-5",
-          "12-SAMV-A1",
-          "12-SAMV-A2",
-          "FORF-FINNM",
-          "FORF-FINNM-2",
-          "FORF-FINNM-3",
-          "FY-FINNM-A1",
-          "FY-FINNM-A2",
-          "FY-FINNM-A3",
-          "12-SAR-1",
-          "12-SAR-2",
-          "12-SAR-3",
-          "12-SAR-4"
-        ],
-        "NOSE": [
-          "NOSE-CO-1",
-          "NOSE-CO-2",
-          "NOSE-CO-3",
-          "NOSE-CO-4",
-          "NOSE-CO-5",
-          "NOSE-CO-6",
-          "NOSE-CO-7",
-          "NOSE-CO-8",
-          "NOSE-SAR-11",
-          "NOSE-SAR-12",
-          "NOSE-SAR-13",
-          "NOSE-SAR-14",
-          "NOSE-SAR-21",
-          "NOSE-SAR-22",
-          "NOSE-SAR-23",
-          "NOSE-SAR-24",
-          "NOSE-SAR-31",
-          "NOSE-SAR-32",
-          "NOSE-SAR-33",
-          "NOSE-SAR-34",
-          "NOR-SWE-1",
-          "NOR-SWE-2",
-          "NOR-SWE-3",
-          "NOR-SWE-4"
-        ]
-      },
-      "functions": {
-        "\\d{5}01": "Vaktleder",
-        "\\d{5}0[2-9]": "Ledelse",
-        "\\d{5}11": "Korpsleder",
-        "\\d{5}12": "Nestleder",
-        "\\d{5}13": "Operativ leder",
-        "\\d{5}14": "NK Operativ leder",
-        "\\d{5}15": "Transportleder",
-        "\\d{5}16": "Sambandsleder",
-        "\\d{5}17": "Depotleder",
-        "\\d{5}18": "Leder ambulanse",
-        "\\d{5}19": "Ledelse",
-        "\\d{5}[2-4][1-9]": "Lag",
-        "\\d{5}5[1-5]": "Bil",
-        "\\d{5}5[6-8]": "Ambulanse",
-        "\\d{5}59": "Transport",
-        "\\d{5}6[1-5]": "Terrengkjøretøy",
-        "\\d{5}6[6-9]": "Sjøfartøy",
-        "\\d{5}7[1-9]": "Spesiallag",
-        "\\d{5}8[1-9]": "Mobil gateway",
-        "\\d{5}9[1-9]": "Kommandoplass",
-        "\\d{5}9[4-7]": "Installasjon",
-        "\\d{5}99": "Hytte"
-      }
+      ],
+      "numbers": [
+        {
+          "suffix": "110",
+          "name": "Østfold"
+        },
+        {
+          "suffix": "111",
+          "name": "Halden"
+        },
+        {
+          "suffix": "112",
+          "name": "Fredrikstad"
+        },
+        {
+          "suffix": "113",
+          "name": "Sarpsborg"
+        },
+        {
+          "suffix": "114",
+          "name": "Moss"
+        },
+        {
+          "suffix": "115",
+          "name": "Mysen Og Omegn"
+        },
+        {
+          "suffix": "140",
+          "name": "Oslo"
+        },
+        {
+          "suffix": "170",
+          "name": "Akershus"
+        },
+        {
+          "suffix": "171",
+          "name": "Nesodden"
+        },
+        {
+          "suffix": "172",
+          "name": "Oppegård"
+        },
+        {
+          "suffix": "173",
+          "name": "Ski"
+        },
+        {
+          "suffix": "174",
+          "name": "Vestby Og Ås"
+        },
+        {
+          "suffix": "175",
+          "name": "Asker"
+        },
+        {
+          "suffix": "176",
+          "name": "Bærum"
+        },
+        {
+          "suffix": "177",
+          "name": "Eidsvoll & Hurdal"
+        },
+        {
+          "suffix": "178",
+          "name": "Nannestad og Gjerdrum"
+        },
+        {
+          "suffix": "179",
+          "name": "Nittedal"
+        },
+        {
+          "suffix": "181",
+          "name": "Skedsmo"
+        },
+        {
+          "suffix": "182",
+          "name": "Ullensaker"
+        },
+        {
+          "suffix": "183",
+          "name": "Sørum"
+        },
+        {
+          "suffix": "184",
+          "name": "Aurskog-Høland"
+        },
+        {
+          "suffix": "185",
+          "name": "Enebakk"
+        },
+        {
+          "suffix": "210",
+          "name": "Hedmark"
+        },
+        {
+          "suffix": "211",
+          "name": "Brumunddal"
+        },
+        {
+          "suffix": "212",
+          "name": "Brøttum"
+        },
+        {
+          "suffix": "213",
+          "name": "Eidskog"
+        },
+        {
+          "suffix": "214",
+          "name": "Elverum"
+        },
+        {
+          "suffix": "215",
+          "name": "Folldal"
+        },
+        {
+          "suffix": "216",
+          "name": "Hamar"
+        },
+        {
+          "suffix": "217",
+          "name": "Kongsvinger"
+        },
+        {
+          "suffix": "218",
+          "name": "Løten"
+        },
+        {
+          "suffix": "219",
+          "name": "Nes"
+        },
+        {
+          "suffix": "221",
+          "name": "Os"
+        },
+        {
+          "suffix": "222",
+          "name": "Rendalen"
+        },
+        {
+          "suffix": "223",
+          "name": "Sollia"
+        },
+        {
+          "suffix": "224",
+          "name": "Stor-Elvdal"
+        },
+        {
+          "suffix": "225",
+          "name": "Trysil"
+        },
+        {
+          "suffix": "226",
+          "name": "Tynset"
+        },
+        {
+          "suffix": "227",
+          "name": "Tolga"
+        },
+        {
+          "suffix": "228",
+          "name": "Åmot"
+        },
+        {
+          "suffix": "229",
+          "name": "Nes"
+        },
+        {
+          "suffix": "240",
+          "name": "Oppland"
+        },
+        {
+          "suffix": "241",
+          "name": "Bagn"
+        },
+        {
+          "suffix": "242",
+          "name": "Brandbu"
+        },
+        {
+          "suffix": "243",
+          "name": "Gjøvik"
+        },
+        {
+          "suffix": "244",
+          "name": "Gran"
+        },
+        {
+          "suffix": "245",
+          "name": "Hedalen"
+        },
+        {
+          "suffix": "246",
+          "name": "Jevnaker"
+        },
+        {
+          "suffix": "247",
+          "name": "Lunner"
+        },
+        {
+          "suffix": "248",
+          "name": "Redalen"
+        },
+        {
+          "suffix": "249",
+          "name": "Østre Toten"
+        },
+        {
+          "suffix": "251",
+          "name": "Brennhaug"
+        },
+        {
+          "suffix": "252",
+          "name": "Dombås"
+        },
+        {
+          "suffix": "253",
+          "name": "Etnedal"
+        },
+        {
+          "suffix": "254",
+          "name": "Fåvang"
+        },
+        {
+          "suffix": "255",
+          "name": "Gausdal"
+        },
+        {
+          "suffix": "256",
+          "name": "Grindaheim"
+        },
+        {
+          "suffix": "257",
+          "name": "Høre"
+        },
+        {
+          "suffix": "258",
+          "name": "Lesja"
+        },
+        {
+          "suffix": "259",
+          "name": "Lillehammer"
+        },
+        {
+          "suffix": "261",
+          "name": "Lom og Bøverdal"
+        },
+        {
+          "suffix": "262",
+          "name": "Nord-Aurdal"
+        },
+        {
+          "suffix": "263",
+          "name": "Nord-Fron"
+        },
+        {
+          "suffix": "264",
+          "name": "Nordre Land"
+        },
+        {
+          "suffix": "265",
+          "name": "Otta"
+        },
+        {
+          "suffix": "266",
+          "name": "Skjåk"
+        },
+        {
+          "suffix": "267",
+          "name": "Skåbu/Espedalen"
+        },
+        {
+          "suffix": "268",
+          "name": "Sør Fron"
+        },
+        {
+          "suffix": "269",
+          "name": "Venabygd"
+        },
+        {
+          "suffix": "271",
+          "name": "Vågå"
+        },
+        {
+          "suffix": "272",
+          "name": "Øyer og Tretten"
+        },
+        {
+          "suffix": "273",
+          "name": "Øystre Slidre"
+        },
+        {
+          "suffix": "274",
+          "name": "Søndre Land"
+        },
+        {
+          "suffix": "310",
+          "name": "Buskerud"
+        },
+        {
+          "suffix": "311",
+          "name": "Drammen"
+        },
+        {
+          "suffix": "312",
+          "name": "Flesberg"
+        },
+        {
+          "suffix": "313",
+          "name": "Flå"
+        },
+        {
+          "suffix": "314",
+          "name": "Geilo"
+        },
+        {
+          "suffix": "315",
+          "name": "Gol og Hemsedal"
+        },
+        {
+          "suffix": "316",
+          "name": "Hovet Og Hol"
+        },
+        {
+          "suffix": "317",
+          "name": "Hurum"
+        },
+        {
+          "suffix": "318",
+          "name": "Kongsberg"
+        },
+        {
+          "suffix": "319",
+          "name": "Krødsherad"
+        },
+        {
+          "suffix": "321",
+          "name": "Lier"
+        },
+        {
+          "suffix": "322",
+          "name": "Modum"
+        },
+        {
+          "suffix": "323",
+          "name": "Nedre Eiker"
+        },
+        {
+          "suffix": "324",
+          "name": "Nesbyen"
+        },
+        {
+          "suffix": "325",
+          "name": "Nore Og Uvdal"
+        },
+        {
+          "suffix": "326",
+          "name": "Ringerike og Hole"
+        },
+        {
+          "suffix": "327",
+          "name": "Sigdal"
+        },
+        {
+          "suffix": "328",
+          "name": "Vats"
+        },
+        {
+          "suffix": "329",
+          "name": "Øvre Eiker"
+        },
+        {
+          "suffix": "331",
+          "name": "Ål"
+        },
+        {
+          "suffix": "340",
+          "name": "Vestfold"
+        },
+        {
+          "suffix": "341",
+          "name": "Holmestrand"
+        },
+        {
+          "suffix": "342",
+          "name": "Horten"
+        },
+        {
+          "suffix": "343",
+          "name": "Lardal"
+        },
+        {
+          "suffix": "344",
+          "name": "Larvik"
+        },
+        {
+          "suffix": "345",
+          "name": "Sandefjord"
+        },
+        {
+          "suffix": "346",
+          "name": "Svelvik"
+        },
+        {
+          "suffix": "347",
+          "name": "Tjøme og Hvasser"
+        },
+        {
+          "suffix": "348",
+          "name": "Tønsberg"
+        },
+        {
+          "suffix": "370",
+          "name": "Telemark"
+        },
+        {
+          "suffix": "371",
+          "name": "Bamble"
+        },
+        {
+          "suffix": "372",
+          "name": "Drangedal"
+        },
+        {
+          "suffix": "373",
+          "name": "Fyresdal"
+        },
+        {
+          "suffix": "374",
+          "name": "Gvarv"
+        },
+        {
+          "suffix": "375",
+          "name": "Vinje og Haukeli"
+        },
+        {
+          "suffix": "376",
+          "name": "Hjartdal"
+        },
+        {
+          "suffix": "377",
+          "name": "Kragerø"
+        },
+        {
+          "suffix": "378",
+          "name": "Nissedal"
+        },
+        {
+          "suffix": "379",
+          "name": "Nome Røde Kors avd.redning/bered"
+        },
+        {
+          "suffix": "381",
+          "name": "Notodden"
+        },
+        {
+          "suffix": "382",
+          "name": "Porsgrunn"
+        },
+        {
+          "suffix": "383",
+          "name": "Rjukan Og Tinn"
+        },
+        {
+          "suffix": "384",
+          "name": "Seljord"
+        },
+        {
+          "suffix": "385",
+          "name": "Skien"
+        },
+        {
+          "suffix": "386",
+          "name": "Tokke"
+        },
+        {
+          "suffix": "410",
+          "name": "Aust-Agder"
+        },
+        {
+          "suffix": "411",
+          "name": "Arendal"
+        },
+        {
+          "suffix": "412",
+          "name": "Froland"
+        },
+        {
+          "suffix": "413",
+          "name": "Grimstad"
+        },
+        {
+          "suffix": "414",
+          "name": "Lillesand"
+        },
+        {
+          "suffix": "415",
+          "name": "Nedre Setesdal"
+        },
+        {
+          "suffix": "416",
+          "name": "Risør"
+        },
+        {
+          "suffix": "417",
+          "name": "Tvedestrand"
+        },
+        {
+          "suffix": "440",
+          "name": "Vest-Agder"
+        },
+        {
+          "suffix": "441",
+          "name": "Kristiansand"
+        },
+        {
+          "suffix": "442",
+          "name": "Kvinesdal"
+        },
+        {
+          "suffix": "443",
+          "name": "Lista"
+        },
+        {
+          "suffix": "444",
+          "name": "Lyngdal"
+        },
+        {
+          "suffix": "445",
+          "name": "Mandal"
+        },
+        {
+          "suffix": "446",
+          "name": "Songdalen"
+        },
+        {
+          "suffix": "447",
+          "name": "Søgne"
+        },
+        {
+          "suffix": "448",
+          "name": "Vennesla"
+        },
+        {
+          "suffix": "470",
+          "name": "Rogaland"
+        },
+        {
+          "suffix": "471",
+          "name": "Bokn"
+        },
+        {
+          "suffix": "472",
+          "name": "Bryne"
+        },
+        {
+          "suffix": "473",
+          "name": "Egersund"
+        },
+        {
+          "suffix": "474",
+          "name": "Flekkefjord"
+        },
+        {
+          "suffix": "475",
+          "name": "Gyland"
+        },
+        {
+          "suffix": "476",
+          "name": "Haugesund"
+        },
+        {
+          "suffix": "477",
+          "name": "Hjelmeland"
+        },
+        {
+          "suffix": "478",
+          "name": "Karmøy"
+        },
+        {
+          "suffix": "479",
+          "name": "Kverneland"
+        },
+        {
+          "suffix": "481",
+          "name": "Nærbø"
+        },
+        {
+          "suffix": "482",
+          "name": "Sandnes"
+        },
+        {
+          "suffix": "483",
+          "name": "Sauda"
+        },
+        {
+          "suffix": "484",
+          "name": "Sola"
+        },
+        {
+          "suffix": "485",
+          "name": "Stavanger"
+        },
+        {
+          "suffix": "486",
+          "name": "Suldal"
+        },
+        {
+          "suffix": "487",
+          "name": "Tysvær"
+        },
+        {
+          "suffix": "488",
+          "name": "Vindafjord"
+        },
+        {
+          "suffix": "510",
+          "name": "Hordaland"
+        },
+        {
+          "suffix": "511",
+          "name": "Arna og Åsane"
+        },
+        {
+          "suffix": "512",
+          "name": "Askøy"
+        },
+        {
+          "suffix": "513",
+          "name": "Austevoll"
+        },
+        {
+          "suffix": "514",
+          "name": "Bergen"
+        },
+        {
+          "suffix": "515",
+          "name": "Bømlo"
+        },
+        {
+          "suffix": "516",
+          "name": "Dale"
+        },
+        {
+          "suffix": "517",
+          "name": "Eidfjord"
+        },
+        {
+          "suffix": "518",
+          "name": "Etne"
+        },
+        {
+          "suffix": "519",
+          "name": "Fana"
+        },
+        {
+          "suffix": "521",
+          "name": "Finse"
+        },
+        {
+          "suffix": "522",
+          "name": "Fusa"
+        },
+        {
+          "suffix": "523",
+          "name": "Jondal"
+        },
+        {
+          "suffix": "524",
+          "name": "Kinsarvik"
+        },
+        {
+          "suffix": "525",
+          "name": "Kvinnherad"
+        },
+        {
+          "suffix": "526",
+          "name": "Laksevåg"
+        },
+        {
+          "suffix": "527",
+          "name": "Nordhordland"
+        },
+        {
+          "suffix": "528",
+          "name": "Norheimsund"
+        },
+        {
+          "suffix": "529",
+          "name": "Odda"
+        },
+        {
+          "suffix": "531",
+          "name": "Os"
+        },
+        {
+          "suffix": "532",
+          "name": "Osterøy"
+        },
+        {
+          "suffix": "533",
+          "name": "Røldal"
+        },
+        {
+          "suffix": "534",
+          "name": "Samnanger"
+        },
+        {
+          "suffix": "535",
+          "name": "Sotra"
+        },
+        {
+          "suffix": "536",
+          "name": "Stord Og Fitjar"
+        },
+        {
+          "suffix": "537",
+          "name": "Sveio"
+        },
+        {
+          "suffix": "538",
+          "name": "Tysnes"
+        },
+        {
+          "suffix": "539",
+          "name": "Tyssedal"
+        },
+        {
+          "suffix": "541",
+          "name": "Ulvik"
+        },
+        {
+          "suffix": "542",
+          "name": "Vaksdal"
+        },
+        {
+          "suffix": "543",
+          "name": "Voss"
+        },
+        {
+          "suffix": "544",
+          "name": "Vossestrand"
+        },
+        {
+          "suffix": "545",
+          "name": "Øygarden"
+        },
+        {
+          "suffix": "546",
+          "name": "Øystese"
+        },
+        {
+          "suffix": "547",
+          "name": "Ålvik"
+        },
+        {
+          "suffix": "610",
+          "name": "Sogn og Fjordane"
+        },
+        {
+          "suffix": "611",
+          "name": "Askvoll"
+        },
+        {
+          "suffix": "612",
+          "name": "Aurland"
+        },
+        {
+          "suffix": "613",
+          "name": "Balestrand"
+        },
+        {
+          "suffix": "614",
+          "name": "Eid"
+        },
+        {
+          "suffix": "615",
+          "name": "Fjaler"
+        },
+        {
+          "suffix": "616",
+          "name": "Fjærland"
+        },
+        {
+          "suffix": "617",
+          "name": "Flora"
+        },
+        {
+          "suffix": "618",
+          "name": "Førde"
+        },
+        {
+          "suffix": "619",
+          "name": "Gaular"
+        },
+        {
+          "suffix": "621",
+          "name": "Gloppen"
+        },
+        {
+          "suffix": "622",
+          "name": "Gulen"
+        },
+        {
+          "suffix": "623",
+          "name": "Hafslo"
+        },
+        {
+          "suffix": "624",
+          "name": "Hornindal"
+        },
+        {
+          "suffix": "625",
+          "name": "Hyen"
+        },
+        {
+          "suffix": "626",
+          "name": "Hyllestad"
+        },
+        {
+          "suffix": "627",
+          "name": "Høyanger"
+        },
+        {
+          "suffix": "628",
+          "name": "Jølster"
+        },
+        {
+          "suffix": "629",
+          "name": "Lavik"
+        },
+        {
+          "suffix": "631",
+          "name": "Leikanger"
+        },
+        {
+          "suffix": "632",
+          "name": "Luster"
+        },
+        {
+          "suffix": "633",
+          "name": "Lærdal"
+        },
+        {
+          "suffix": "634",
+          "name": "Naustdal"
+        },
+        {
+          "suffix": "635",
+          "name": "Olden"
+        },
+        {
+          "suffix": "636",
+          "name": "Selje"
+        },
+        {
+          "suffix": "637",
+          "name": "Sogndal"
+        },
+        {
+          "suffix": "638",
+          "name": "Stryn"
+        },
+        {
+          "suffix": "639",
+          "name": "Svelgen Bremanger"
+        },
+        {
+          "suffix": "641",
+          "name": "Vadheim"
+        },
+        {
+          "suffix": "642",
+          "name": "Vik"
+        },
+        {
+          "suffix": "643",
+          "name": "Vikane"
+        },
+        {
+          "suffix": "644",
+          "name": "Vågsøy"
+        },
+        {
+          "suffix": "671",
+          "name": "Møre og Romsdal"
+        },
+        {
+          "suffix": "671",
+          "name": "Brattvåg"
+        },
+        {
+          "suffix": "672",
+          "name": "Eidsdal-Norddal"
+        },
+        {
+          "suffix": "673",
+          "name": "Kristiansund og Omegn"
+        },
+        {
+          "suffix": "674",
+          "name": "Langevåg"
+        },
+        {
+          "suffix": "675",
+          "name": "Molde"
+        },
+        {
+          "suffix": "676",
+          "name": "Rauma"
+        },
+        {
+          "suffix": "677",
+          "name": "Spjelkavik"
+        },
+        {
+          "suffix": "678",
+          "name": "Stranda"
+        },
+        {
+          "suffix": "679",
+          "name": "Sunndal"
+        },
+        {
+          "suffix": "681",
+          "name": "Sykkylven"
+        },
+        {
+          "suffix": "682",
+          "name": "Sørøyane"
+        },
+        {
+          "suffix": "683",
+          "name": "Tingvoll"
+        },
+        {
+          "suffix": "684",
+          "name": "Tresfjord"
+        },
+        {
+          "suffix": "685",
+          "name": "Vanylven"
+        },
+        {
+          "suffix": "686",
+          "name": "Vatne og Tennfjord"
+        },
+        {
+          "suffix": "687",
+          "name": "Volda"
+        },
+        {
+          "suffix": "688",
+          "name": "Ørsta"
+        },
+        {
+          "suffix": "689",
+          "name": "Aalesund"
+        },
+        {
+          "suffix": "710",
+          "name": "Sør-Trøndelag"
+        },
+        {
+          "suffix": "711",
+          "name": "Agdenes"
+        },
+        {
+          "suffix": "712",
+          "name": "Bjugn"
+        },
+        {
+          "suffix": "713",
+          "name": "Budal"
+        },
+        {
+          "suffix": "714",
+          "name": "Hemne"
+        },
+        {
+          "suffix": "715",
+          "name": "Hitra/Frøya"
+        },
+        {
+          "suffix": "716",
+          "name": "Malvik"
+        },
+        {
+          "suffix": "717",
+          "name": "Meldal"
+        },
+        {
+          "suffix": "718",
+          "name": "Melhus"
+        },
+        {
+          "suffix": "719",
+          "name": "Oppdal"
+        },
+        {
+          "suffix": "721",
+          "name": "Orkdal"
+        },
+        {
+          "suffix": "722",
+          "name": "Osen"
+        },
+        {
+          "suffix": "723",
+          "name": "Rennebu"
+        },
+        {
+          "suffix": "724",
+          "name": "Rindal"
+        },
+        {
+          "suffix": "725",
+          "name": "Rissa"
+        },
+        {
+          "suffix": "726",
+          "name": "Røros"
+        },
+        {
+          "suffix": "727",
+          "name": "Selbu"
+        },
+        {
+          "suffix": "728",
+          "name": "Singsås"
+        },
+        {
+          "suffix": "729",
+          "name": "Soknedal"
+        },
+        {
+          "suffix": "731",
+          "name": "Surnadal"
+        },
+        {
+          "suffix": "732",
+          "name": "Trondheim"
+        },
+        {
+          "suffix": "733",
+          "name": "Ørland"
+        },
+        {
+          "suffix": "734",
+          "name": "Åfjord"
+        },
+        {
+          "suffix": "735",
+          "name": "Ålen"
+        },
+        {
+          "suffix": "750",
+          "name": "Nord-Trøndelag"
+        },
+        {
+          "suffix": "751",
+          "name": "Grong"
+        },
+        {
+          "suffix": "752",
+          "name": "Inderøy"
+        },
+        {
+          "suffix": "753",
+          "name": "Kolvereid"
+        },
+        {
+          "suffix": "754",
+          "name": "Leksvik"
+        },
+        {
+          "suffix": "755",
+          "name": "Levanger"
+        },
+        {
+          "suffix": "756",
+          "name": "Lierne"
+        },
+        {
+          "suffix": "757",
+          "name": "Malm"
+        },
+        {
+          "suffix": "758",
+          "name": "Namdalseid"
+        },
+        {
+          "suffix": "759",
+          "name": "Namsos"
+        },
+        {
+          "suffix": "761",
+          "name": "Namsskogan"
+        },
+        {
+          "suffix": "762",
+          "name": "Overhalla"
+        },
+        {
+          "suffix": "763",
+          "name": "Røyrvik"
+        },
+        {
+          "suffix": "764",
+          "name": "Skorovas"
+        },
+        {
+          "suffix": "765",
+          "name": "Snåsa"
+        },
+        {
+          "suffix": "766",
+          "name": "Steinkjer"
+        },
+        {
+          "suffix": "767",
+          "name": "Stjørdal"
+        },
+        {
+          "suffix": "768",
+          "name": "Verdal"
+        },
+        {
+          "suffix": "769",
+          "name": "Vikna"
+        },
+        {
+          "suffix": "771",
+          "name": "Flatanger"
+        },
+        {
+          "suffix": "810",
+          "name": "Nordland"
+        },
+        {
+          "suffix": "811",
+          "name": "Ankenes"
+        },
+        {
+          "suffix": "812",
+          "name": "Ballangen"
+        },
+        {
+          "suffix": "813",
+          "name": "Beiarn"
+        },
+        {
+          "suffix": "814",
+          "name": "Bodø"
+        },
+        {
+          "suffix": "815",
+          "name": "Brønnøysund"
+        },
+        {
+          "suffix": "816",
+          "name": "Fauske"
+        },
+        {
+          "suffix": "817",
+          "name": "Gildeskål"
+        },
+        {
+          "suffix": "818",
+          "name": "Glomfjord"
+        },
+        {
+          "suffix": "819",
+          "name": "Hadsel"
+        },
+        {
+          "suffix": "821",
+          "name": "Hattfjelldal"
+        },
+        {
+          "suffix": "822",
+          "name": "Lødingen"
+        },
+        {
+          "suffix": "823",
+          "name": "Narvik"
+        },
+        {
+          "suffix": "824",
+          "name": "Rana"
+        },
+        {
+          "suffix": "825",
+          "name": "Saltdal"
+        },
+        {
+          "suffix": "826",
+          "name": "Sandnessjøen"
+        },
+        {
+          "suffix": "827",
+          "name": "Sortland"
+        },
+        {
+          "suffix": "828",
+          "name": "Steigen"
+        },
+        {
+          "suffix": "829",
+          "name": "Sulitjelma"
+        },
+        {
+          "suffix": "831",
+          "name": "Svo"
+        },
+        {
+          "suffix": "832",
+          "name": "Tjeldsund"
+        },
+        {
+          "suffix": "833",
+          "name": "Vefsn"
+        },
+        {
+          "suffix": "834",
+          "name": "Vestvågøy"
+        },
+        {
+          "suffix": "835",
+          "name": "Øksnes"
+        },
+        {
+          "suffix": "840",
+          "name": "Troms"
+        },
+        {
+          "suffix": "841",
+          "name": "Balsfjord"
+        },
+        {
+          "suffix": "842",
+          "name": "Bardu"
+        },
+        {
+          "suffix": "843",
+          "name": "Berg"
+        },
+        {
+          "suffix": "844",
+          "name": "Birtavarre"
+        },
+        {
+          "suffix": "845",
+          "name": "Finnsnes"
+        },
+        {
+          "suffix": "846",
+          "name": "Harstad"
+        },
+        {
+          "suffix": "847",
+          "name": "Kvæfjord"
+        },
+        {
+          "suffix": "848",
+          "name": "Longyearbyen"
+        },
+        {
+          "suffix": "849",
+          "name": "Lyngen"
+        },
+        {
+          "suffix": "851",
+          "name": "Skånland"
+        },
+        {
+          "suffix": "852",
+          "name": "Tromsø"
+        },
+        {
+          "suffix": "870",
+          "name": "Finnmark"
+        },
+        {
+          "suffix": "871",
+          "name": "Alta"
+        },
+        {
+          "suffix": "872",
+          "name": "Hammerfest"
+        },
+        {
+          "suffix": "873",
+          "name": "Havøysund"
+        },
+        {
+          "suffix": "874",
+          "name": "Kara"
+        },
+        {
+          "suffix": "875",
+          "name": "Kautokeino"
+        },
+        {
+          "suffix": "876",
+          "name": "Kjøllefjord"
+        },
+        {
+          "suffix": "877",
+          "name": "Lakselv"
+        },
+        {
+          "suffix": "878",
+          "name": "Nesseby"
+        },
+        {
+          "suffix": "879",
+          "name": "Nordkapp"
+        },
+        {
+          "suffix": "881",
+          "name": "Sør-Varanger"
+        },
+        {
+          "suffix": "882",
+          "name": "Vadsø"
+        },
+        {
+          "suffix": "883",
+          "name": "Vardø"
+        }
+      ],
+      "catalogs": [
+        {
+          "name": "Nasjonal",
+          "groups": [
+            "RK-RIKS-A1",
+            "RK-RIKS-A2",
+            "RK-RIKS-A3",
+            "RK-RIKS-A4",
+            "RK-RIKS-A5",
+            "FORF-RIKS",
+            "FORF-RIKS-2",
+            "FORF-RIKS-3",
+            "BEREDSKAP 1",
+            "BEREDSKAP 2",
+            "BEREDSKAP 3",
+            "BEREDSKAP 4",
+            "BEREDSKAP 5",
+            "FELLES-1",
+            "FELLES-2",
+            "FELLES-3",
+            "FELLES-4",
+            "FELLES-5",
+            "ØV-FELLES-1",
+            "ØV-FELLES-2",
+            "ØV-FELLES-3",
+            "ØV-FELLES-4",
+            "ØV-FELLES-5",
+            "ØV-SAMV-1",
+            "ØV-SAMV-2",
+            "ØV-SAMV-3",
+            "ØV-SAMV-4",
+            "ØV-SAMV-5",
+            "ØV-SAMV-A1",
+            "ØV-SAMV-A2"
+          ]
+        },
+        {
+          "name": "Østfold",
+          "groups": [
+            "RK-ØSTF-1",
+            "RK-ØSTF-2",
+            "RK-ØSTF-3",
+            "RK-ØSTF-4",
+            "RK-ØSTF-5",
+            "RK-ØSTF-6",
+            "RK-ØSTF-ØV1",
+            "RK-ØSTF-ØV2",
+            "RK-ØSTF-ØV3",
+            "RK-ØSTF-ØV4",
+            "RK-ØSTF-ØV5",
+            "RK-ØSTF-ØV6",
+            "RK-ØSTF-A1",
+            "RK-ØSTF-A2",
+            "02-SAMVUP-11",
+            "02-SAMVUP-12",
+            "02-SAMVUP-13",
+            "02-SAMVUP-14",
+            "02-SAMVUP-15",
+            "02-SAMVUP-16",
+            "02-SAMVUP-17",
+            "02-SAMVUP-18",
+            "02-SAMVUP-19",
+            "02-SAMV-1",
+            "02-SAMV-2",
+            "02-SAMV-3",
+            "02-SAMV-4",
+            "02-SAMV-5",
+            "02-SAMV-A1",
+            "02-SAMV-A2",
+            "FORF-ØSTFOLD",
+            "FORF-ØSTFO-2",
+            "FORF-ØSTFO-3",
+            "FY-OSTF-A1",
+            "FY-OSTF-A2",
+            "FY-OSTF-A3",
+            "02-SAR-1",
+            "02-SAR-2",
+            "02-SAR-3",
+            "02-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Akershus",
+          "groups": [
+            "RK-AKER-1",
+            "RK-AKER-2",
+            "RK-AKER-3",
+            "RK-AKER-4",
+            "RK-AKER-5",
+            "RK-AKER-6",
+            "RK-AKER-ØV1",
+            "RK-AKER-ØV2",
+            "RK-AKER-ØV3",
+            "RK-AKER-ØV4",
+            "RK-AKER-ØV5",
+            "RK-AKER-ØV6",
+            "RK-AKER-A1",
+            "RK-AKER-A2",
+            "01-SAMVUP-11",
+            "01-SAMVUP-12",
+            "01-SAMVUP-13",
+            "01-SAMVUP-14",
+            "01-SAMVUP-15",
+            "01-SAMVUP-16",
+            "01-SAMVUP-17",
+            "01-SAMVUP-18",
+            "01-SAMVUP-19",
+            "02-SAMVUP-11",
+            "02-SAMVUP-12",
+            "02-SAMVUP-13",
+            "02-SAMVUP-14",
+            "02-SAMVUP-15",
+            "02-SAMVUP-16",
+            "02-SAMVUP-17",
+            "02-SAMVUP-18",
+            "02-SAMVUP-19",
+            "01-SAMV-1",
+            "01-SAMV-2",
+            "01-SAMV-3",
+            "01-SAMV-4",
+            "01-SAMV-5",
+            "01-SAMV-A1",
+            "01-SAMV-A2",
+            "02-SAMV-1",
+            "02-SAMV-2",
+            "02-SAMV-3",
+            "02-SAMV-4",
+            "02-SAMV-5",
+            "02-SAMV-A1",
+            "02-SAMV-A2",
+            "FORF-AKERSHU",
+            "FORF-AKERS-2",
+            "FORF-AKERS-3",
+            "FY-OA-A1",
+            "FY-OA-A2",
+            "FY-OA-A3",
+            "01-SAR-1",
+            "01-SAR-2",
+            "01-SAR-3",
+            "01-SAR-4",
+            "02-SAR-1",
+            "02-SAR-2",
+            "02-SAR-3",
+            "02-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Oslo",
+          "groups": [
+            "RK-OSLO-1",
+            "RK-OSLO-2",
+            "RK-OSLO-3",
+            "RK-OSLO-4",
+            "RK-OSLO-5",
+            "RK-OSLO-6",
+            "RK-OSLO-ØV1",
+            "RK-OSLO-ØV2",
+            "RK-OSLO-ØV3",
+            "RK-OSLO-ØV4",
+            "RK-OSLO-ØV5",
+            "RK-OSLO-ØV6",
+            "RK-OSLO-A1",
+            "RK-OSLO-A2",
+            "01-SAMVUP-11",
+            "01-SAMVUP-12",
+            "01-SAMVUP-13",
+            "01-SAMVUP-14",
+            "01-SAMVUP-15",
+            "01-SAMVUP-16",
+            "01-SAMVUP-17",
+            "01-SAMVUP-18",
+            "01-SAMVUP-19",
+            "01-SAMV-1",
+            "01-SAMV-2",
+            "01-SAMV-3",
+            "01-SAMV-4",
+            "01-SAMV-5",
+            "01-SAMV-A1",
+            "01-SAMV-A2",
+            "FORF-OSLO",
+            "FORF-OSLO-2",
+            "FORF-OSLO-3",
+            "FY-OA-A1",
+            "FY-OA-A2",
+            "FY-OA-A3",
+            "01-SAR-1",
+            "01-SAR-2",
+            "01-SAR-3",
+            "01-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Buskerud",
+          "groups": [
+            "RK-BUSK-1",
+            "RK-BUSK-2",
+            "RK-BUSK-3",
+            "RK-BUSK-4",
+            "RK-BUSK-5",
+            "RK-BUSK-6",
+            "RK-BUSK-ØV1",
+            "RK-BUSK-ØV2",
+            "RK-BUSK-ØV3",
+            "RK-BUSK-ØV4",
+            "RK-BUSK-ØV5",
+            "RK-BUSK-ØV6",
+            "RK-BUSK-A1",
+            "RK-BUSK-A2",
+            "04-SAMVUP-11",
+            "04-SAMVUP-12",
+            "04-SAMVUP-13",
+            "04-SAMVUP-14",
+            "04-SAMVUP-15",
+            "04-SAMVUP-16",
+            "04-SAMVUP-17",
+            "04-SAMVUP-18",
+            "04-SAMVUP-19",
+            "04-SAMV-1",
+            "04-SAMV-2",
+            "04-SAMV-3",
+            "04-SAMV-4",
+            "04-SAMV-5",
+            "04-SAMV-A1",
+            "04-SAMV-A2",
+            "FORF-BUSKERU",
+            "FORF-BUSKE-2",
+            "FORF-BUSKE-3",
+            "FY-BUSK-A1",
+            "FY-BUSK-A2",
+            "FY-BUSK-A3",
+            "04-SAR-1",
+            "04-SAR-2",
+            "04-SAR-3",
+            "04-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Vestfold",
+          "groups": [
+            "RK-VFOLD-1",
+            "RK-VFOLD-2",
+            "RK-VFOLD-3",
+            "RK-VFOLD-4",
+            "RK-VFOLD-5",
+            "RK-VFOLD-6",
+            "RK-VFOLD-ØV1",
+            "RK-VFOLD-ØV2",
+            "RK-VFOLD-ØV3",
+            "RK-VFOLD-ØV4",
+            "RK-VFOLD-ØV5",
+            "RK-VFOLD-ØV6",
+            "RK-VFOLD-A1",
+            "RK-VFOLD-A2",
+            "04-SAMVUP-11",
+            "04-SAMVUP-12",
+            "04-SAMVUP-13",
+            "04-SAMVUP-14",
+            "04-SAMVUP-15",
+            "04-SAMVUP-16",
+            "04-SAMVUP-17",
+            "04-SAMVUP-18",
+            "04-SAMVUP-19",
+            "04-SAMV-1",
+            "04-SAMV-2",
+            "04-SAMV-3",
+            "04-SAMV-4",
+            "04-SAMV-5",
+            "04-SAMV-A1",
+            "04-SAMV-A2",
+            "FORF-VESTF",
+            "FORF-VESTF-2",
+            "FORF-VESTF-3",
+            "FY-VFOLD-A1",
+            "FY-VFOLD-A2",
+            "FY-VFOLD-A3",
+            "04-SAR-1",
+            "04-SAR-2",
+            "04-SAR-3",
+            "04-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Telemark",
+          "groups": [
+            "RK-TELEM-1",
+            "RK-TELEM-2",
+            "RK-TELEM-3",
+            "RK-TELEM-4",
+            "RK-TELEM-5",
+            "RK-TELEM-6",
+            "RK-TELEM-ØV1",
+            "RK-TELEM-ØV2",
+            "RK-TELEM-ØV3",
+            "RK-TELEM-ØV4",
+            "RK-TELEM-ØV5",
+            "RK-TELEM-ØV6",
+            "RK-TELEM-A1",
+            "RK-TELEM-A2",
+            "04-SAMVUP-11",
+            "04-SAMVUP-12",
+            "04-SAMVUP-13",
+            "04-SAMVUP-14",
+            "04-SAMVUP-15",
+            "04-SAMVUP-16",
+            "04-SAMVUP-17",
+            "04-SAMVUP-18",
+            "04-SAMVUP-19",
+            "04-SAMV-1",
+            "04-SAMV-2",
+            "04-SAMV-3",
+            "04-SAMV-4",
+            "04-SAMV-5",
+            "04-SAMV-A1",
+            "04-SAMV-A2",
+            "FORF-TELEM",
+            "FORF-TELEM-2",
+            "FORF-TELEM-3",
+            "FY-TELEM-A1",
+            "FY-TELEM-A2",
+            "FY-TELEM-A3",
+            "04-SAR-1",
+            "04-SAR-2",
+            "04-SAR-3",
+            "04-SAR-4",
+            "SAR-SJØ-1",
+            "SAR-SJØ-2"
+          ]
+        },
+        {
+          "name": "Hedmark",
+          "groups": [
+            "RK-HEDM-1",
+            "RK-HEDM-2",
+            "RK-HEDM-3",
+            "RK-HEDM-4",
+            "RK-HEDM-5",
+            "RK-HEDM-6",
+            "RK-HEDM-ØV1",
+            "RK-HEDM-ØV2",
+            "RK-HEDM-ØV3",
+            "RK-HEDM-ØV4",
+            "RK-HEDM-ØV5",
+            "RK-HEDM-ØV6",
+            "RK-HEDM-A1",
+            "RK-HEDM-A2",
+            "03-SAMVUP-11",
+            "03-SAMVUP-12",
+            "03-SAMVUP-13",
+            "03-SAMVUP-14",
+            "03-SAMVUP-15",
+            "03-SAMVUP-16",
+            "03-SAMVUP-17",
+            "03-SAMVUP-18",
+            "03-SAMVUP-19",
+            "03-SAMV-1",
+            "03-SAMV-2",
+            "03-SAMV-3",
+            "03-SAMV-4",
+            "03-SAMV-5",
+            "03-SAMV-A1",
+            "03-SAMV-A2",
+            "FORF-HEDMARK",
+            "FORF-HEDMA-2",
+            "FORF-HEDMA-3",
+            "FY-HEDM-A1",
+            "FY-HEDM-A2",
+            "FY-HEDM-A3",
+            "03-SAR-1",
+            "03-SAR-2",
+            "03-SAR-3",
+            "03-SAR-4"
+          ]
+        },
+        {
+          "name": "Oppland",
+          "groups": [
+            "RK-OPPL-1",
+            "RK-OPPL-2",
+            "RK-OPPL-3",
+            "RK-OPPL-4",
+            "RK-OPPL-5",
+            "RK-OPPL-6",
+            "RK-OPPL-ØV1",
+            "RK-OPPL-ØV2",
+            "RK-OPPL-ØV3",
+            "RK-OPPL-ØV4",
+            "RK-OPPL-ØV5",
+            "RK-OPPL-ØV6",
+            "RK-OPPL-A1",
+            "RK-OPPL-A2",
+            "03-SAMVUP-11",
+            "03-SAMVUP-12",
+            "03-SAMVUP-13",
+            "03-SAMVUP-14",
+            "03-SAMVUP-15",
+            "03-SAMVUP-16",
+            "03-SAMVUP-17",
+            "03-SAMVUP-18",
+            "03-SAMVUP-19",
+            "04-SAMVUP-11",
+            "04-SAMVUP-12",
+            "04-SAMVUP-13",
+            "04-SAMVUP-14",
+            "04-SAMVUP-15",
+            "04-SAMVUP-16",
+            "04-SAMVUP-17",
+            "04-SAMVUP-18",
+            "04-SAMVUP-19",
+            "03-SAMV-1",
+            "03-SAMV-2",
+            "03-SAMV-3",
+            "03-SAMV-4",
+            "03-SAMV-5",
+            "03-SAMV-A1",
+            "03-SAMV-A2",
+            "04-SAMV-1",
+            "04-SAMV-2",
+            "04-SAMV-3",
+            "04-SAMV-4",
+            "04-SAMV-5",
+            "04-SAMV-A1",
+            "04-SAMV-A2",
+            "FORF-OPPLAND",
+            "FORF-OPPLA-2",
+            "FORF-OPPLA-3",
+            "FY-OPPL-A1",
+            "FY-OPPL-A2",
+            "FY-OPPL-A3",
+            "03-SAR-1",
+            "03-SAR-2",
+            "03-SAR-3",
+            "03-SAR-4",
+            "04-SAR-1",
+            "04-SAR-2",
+            "04-SAR-3",
+            "04-SAR-4"
+          ]
+        },
+        {
+          "name": "Agder",
+          "groups": [
+            "RK-AGDER-1",
+            "RK-AGDER-2",
+            "RK-AGDER-3",
+            "RK-AGDER-4",
+            "RK-AGDER-5",
+            "RK-AGDER-6",
+            "RK-AGDER-ØV1",
+            "RK-AGDER-ØV2",
+            "RK-AGDER-ØV3",
+            "RK-AGDER-ØV4",
+            "RK-AGDER-ØV5",
+            "RK-AGDER-ØV6",
+            "RK-AGDER-A1",
+            "RK-AGDER-A2",
+            "05-SAMVUP-11",
+            "05-SAMVUP-12",
+            "05-SAMVUP-13",
+            "05-SAMVUP-14",
+            "05-SAMVUP-15",
+            "05-SAMVUP-16",
+            "05-SAMVUP-17",
+            "05-SAMVUP-18",
+            "05-SAMVUP-19",
+            "05-SAMV-1",
+            "05-SAMV-2",
+            "05-SAMV-3",
+            "05-SAMV-4",
+            "05-SAMV-5",
+            "05-SAMV-A1",
+            "05-SAMV-A2",
+            "FORF-AGDER",
+            "FORF-AGDER-2",
+            "FORF-AGDER-3",
+            "FY-AGDER-A1",
+            "FY-AGDER-A2",
+            "FY-AGDER-A3",
+            "05-SAR-1",
+            "05-SAR-2",
+            "05-SAR-3",
+            "05-SAR-4"
+          ]
+        },
+        {
+          "name": "Rogaland",
+          "groups": [
+            "RK-ROGA-1",
+            "RK-ROGA-2",
+            "RK-ROGA-3",
+            "RK-ROGA-4",
+            "RK-ROGA-5",
+            "RK-ROGA-6",
+            "RK-ROGA-ØV1",
+            "RK-ROGA-ØV2",
+            "RK-ROGA-ØV3",
+            "RK-ROGA-ØV4",
+            "RK-ROGA-ØV5",
+            "RK-ROGA-ØV6",
+            "RK-ROGA-A1",
+            "RK-ROGA-A2",
+            "06-SAMVUP-11",
+            "06-SAMVUP-12",
+            "06-SAMVUP-13",
+            "06-SAMVUP-14",
+            "06-SAMVUP-15",
+            "06-SAMVUP-16",
+            "06-SAMVUP-17",
+            "06-SAMVUP-18",
+            "06-SAMVUP-19",
+            "06-SAMV-1",
+            "06-SAMV-2",
+            "06-SAMV-3",
+            "06-SAMV-4",
+            "06-SAMV-5",
+            "06-SAMV-A1",
+            "06-SAMV-A2",
+            "FORF-ROGA",
+            "FORF-ROGA-2",
+            "FORF-ROGA-3",
+            "FY-ROGL-A1",
+            "FY-ROGL-A2",
+            "FY-ROGL-A3",
+            "06-SAR-1",
+            "06-SAR-2",
+            "06-SAR-3",
+            "06-SAR-4"
+          ]
+        },
+        {
+          "name": "Hordaland",
+          "groups": [
+            "RK-HORDA-1",
+            "RK-HORDA-2",
+            "RK-HORDA-3",
+            "RK-HORDA-4",
+            "RK-HORDA-5",
+            "RK-HORDA-6",
+            "RK-HORDA-ØV1",
+            "RK-HORDA-ØV2",
+            "RK-HORDA-ØV3",
+            "RK-HORDA-ØV4",
+            "RK-HORDA-ØV5",
+            "RK-HORDA-ØV6",
+            "RK-HORDA-A1",
+            "RK-HORDA-A2",
+            "06-SAMVUP-11",
+            "06-SAMVUP-12",
+            "06-SAMVUP-13",
+            "06-SAMVUP-14",
+            "06-SAMVUP-15",
+            "06-SAMVUP-16",
+            "06-SAMVUP-17",
+            "06-SAMVUP-18",
+            "06-SAMVUP-19",
+            "07-SAMVUP-11",
+            "07-SAMVUP-12",
+            "07-SAMVUP-13",
+            "07-SAMVUP-14",
+            "07-SAMVUP-15",
+            "07-SAMVUP-16",
+            "07-SAMVUP-17",
+            "07-SAMVUP-18",
+            "07-SAMVUP-19",
+            "06-SAMV-1",
+            "06-SAMV-2",
+            "06-SAMV-3",
+            "06-SAMV-4",
+            "06-SAMV-5",
+            "06-SAMV-A1",
+            "06-SAMV-A2",
+            "07-SAMV-1",
+            "07-SAMV-2",
+            "07-SAMV-3",
+            "07-SAMV-4",
+            "07-SAMV-5",
+            "07-SAMV-A1",
+            "07-SAMV-A2",
+            "FORF-HORDA",
+            "FORF-HORDA-2",
+            "FORF-HORDA-3",
+            "FY-HORD-A1",
+            "FY-HORD-A2",
+            "FY-HORD-A3",
+            "06-SAR-1",
+            "06-SAR-2",
+            "06-SAR-3",
+            "06-SAR-4",
+            "07-SAR-1",
+            "07-SAR-2",
+            "07-SAR-3",
+            "07-SAR-4"
+          ]
+        },
+        {
+          "name": "Sogn & Fjordane",
+          "groups": [
+            "RK-SO-FJ-1",
+            "RK-SO-FJ-2",
+            "RK-SO-FJ-3",
+            "RK-SO-FJ-4",
+            "RK-SO-FJ-5",
+            "RK-SO-FJ-6",
+            "RK-SO-FJ-ØV1",
+            "RK-SO-FJ-ØV2",
+            "RK-SO-FJ-ØV3",
+            "RK-SO-FJ-ØV4",
+            "RK-SO-FJ-ØV5",
+            "RK-SO-FJ-ØV6",
+            "RK-SO-FJ-A1",
+            "RK-SO-FJ-A2",
+            "07-SAMVUP-11",
+            "07-SAMVUP-12",
+            "07-SAMVUP-13",
+            "07-SAMVUP-14",
+            "07-SAMVUP-15",
+            "07-SAMVUP-16",
+            "07-SAMVUP-17",
+            "07-SAMVUP-18",
+            "07-SAMVUP-19",
+            "07-SAMV-1",
+            "07-SAMV-2",
+            "07-SAMV-3",
+            "07-SAMV-4",
+            "07-SAMV-5",
+            "07-SAMV-A1",
+            "07-SAMV-A2",
+            "FORF-SO-FJ",
+            "FORF-SO-FJ-2",
+            "FORF-SO-FJ-3",
+            "FY-SOFJO-A1",
+            "FY-SOFJO-A2",
+            "FY-SOFJO-A3",
+            "07-SAR-1",
+            "07-SAR-2",
+            "07-SAR-3",
+            "07-SAR-4"
+          ]
+        },
+        {
+          "name": "Møre & Romsdal",
+          "groups": [
+            "RK-MØ-RO-1",
+            "RK-MØ-RO-2",
+            "RK-MØ-RO-3",
+            "RK-MØ-RO-4",
+            "RK-MØ-RO-5",
+            "RK-MØ-RO-6",
+            "RK-MØ-RO-ØV1",
+            "RK-MØ-RO-ØV2",
+            "RK-MØ-RO-ØV3",
+            "RK-MØ-RO-ØV4",
+            "RK-MØ-RO-ØV5",
+            "RK-MØ-RO-ØV6",
+            "RK-MØ-RO-A1",
+            "RK-MØ-RO-A2",
+            "08-SAMVUP-11",
+            "08-SAMVUP-12",
+            "08-SAMVUP-13",
+            "08-SAMVUP-14",
+            "08-SAMVUP-15",
+            "08-SAMVUP-16",
+            "08-SAMVUP-17",
+            "08-SAMVUP-18",
+            "08-SAMVUP-19",
+            "08-SAMV-1",
+            "08-SAMV-2",
+            "08-SAMV-3",
+            "08-SAMV-4",
+            "08-SAMV-5",
+            "08-SAMV-A1",
+            "08-SAMV-A2",
+            "FORF-MØRO",
+            "FORF-MØRO-2",
+            "FORF-MØRO-3",
+            "FY-MØRO-A1",
+            "FY-MØRO-A2",
+            "FY-MØRO-A3",
+            "08-SAR-1",
+            "08-SAR-2",
+            "08-SAR-3",
+            "08-SAR-4"
+          ]
+        },
+        {
+          "name": "Sør-Trøndelag",
+          "groups": [
+            "RK-S-TRL-1",
+            "RK-S-TRL-2",
+            "RK-S-TRL-3",
+            "RK-S-TRL-4",
+            "RK-S-TRL-5",
+            "RK-S-TRL-6",
+            "RK-S-TRL-ØV1",
+            "RK-S-TRL-ØV2",
+            "RK-S-TRL-ØV3",
+            "RK-S-TRL-ØV4",
+            "RK-S-TRL-ØV5",
+            "RK-S-TRL-ØV6",
+            "RK-S-TRL-A1",
+            "RK-S-TRL-A2",
+            "09-SAMVUP-11",
+            "09-SAMVUP-12",
+            "09-SAMVUP-13",
+            "09-SAMVUP-14",
+            "09-SAMVUP-15",
+            "09-SAMVUP-16",
+            "09-SAMVUP-17",
+            "09-SAMVUP-18",
+            "09-SAMVUP-19",
+            "09-SAMV-1",
+            "09-SAMV-2",
+            "09-SAMV-3",
+            "09-SAMV-4",
+            "09-SAMV-5",
+            "09-SAMV-A1",
+            "09-SAMV-A2",
+            "FORF-S-TRL",
+            "FORF-S-TRL-2",
+            "FORF-S-TRL-3",
+            "FY-TRL-A1",
+            "FY-TRL-A2",
+            "FY-TRL-A3",
+            "09-SAR-1",
+            "09-SAR-2",
+            "09-SAR-3",
+            "09-SAR-4"
+          ]
+        },
+        {
+          "name": "Nord-Trøndelag",
+          "groups": [
+            "RK-N-TRL-1",
+            "RK-N-TRL-2",
+            "RK-N-TRL-3",
+            "RK-N-TRL-4",
+            "RK-N-TRL-5",
+            "RK-N-TRL-6",
+            "RK-N-TRL-ØV1",
+            "RK-N-TRL-ØV2",
+            "RK-N-TRL-ØV3",
+            "RK-N-TRL-ØV4",
+            "RK-N-TRL-ØV5",
+            "RK-N-TRL-ØV6",
+            "RK-N-TRL-A1",
+            "RK-N-TRL-A2",
+            "09-SAMVUP-11",
+            "09-SAMVUP-12",
+            "09-SAMVUP-13",
+            "09-SAMVUP-14",
+            "09-SAMVUP-15",
+            "09-SAMVUP-16",
+            "09-SAMVUP-17",
+            "09-SAMVUP-18",
+            "09-SAMVUP-19",
+            "09-SAMV-1",
+            "09-SAMV-2",
+            "09-SAMV-3",
+            "09-SAMV-4",
+            "09-SAMV-5",
+            "09-SAMV-A1",
+            "09-SAMV-A2",
+            "FORF-N-TRL",
+            "FORF-N-TRL-2",
+            "FORF-N-TRL-3",
+            "FY-TRL-A1",
+            "FY-TRL-A2",
+            "FY-TRL-A3",
+            "09-SAR-1",
+            "09-SAR-2",
+            "09-SAR-3",
+            "09-SAR-4"
+          ]
+        },
+        {
+          "name": "Nordland",
+          "groups": [
+            "RK-NORDL-1",
+            "RK-NORDL-2",
+            "RK-NORDL-3",
+            "RK-NORDL-4",
+            "RK-NORDL-5",
+            "RK-NORDL-6",
+            "RK-NORDL-ØV1",
+            "RK-NORDL-ØV2",
+            "RK-NORDL-ØV3",
+            "RK-NORDL-ØV4",
+            "RK-NORDL-ØV5",
+            "RK-NORDL-ØV6",
+            "RK-NORDL-A1",
+            "RK-NORDL-A2",
+            "10-SAMVUP-11",
+            "10-SAMVUP-12",
+            "10-SAMVUP-13",
+            "10-SAMVUP-14",
+            "10-SAMVUP-15",
+            "10-SAMVUP-16",
+            "10-SAMVUP-17",
+            "10-SAMVUP-18",
+            "10-SAMVUP-19",
+            "10-SAMV-1",
+            "10-SAMV-2",
+            "10-SAMV-3",
+            "10-SAMV-4",
+            "10-SAMV-5",
+            "10-SAMV-A1",
+            "10-SAMV-A2",
+            "FORF-NORDL",
+            "FORF-NORDL-2",
+            "FORF-NORDL-3",
+            "FY-NORDL-A1",
+            "FY-NORDL-A2",
+            "FY-NORDL-A3",
+            "10-SAR-1",
+            "10-SAR-2",
+            "10-SAR-3",
+            "10-SAR-4"
+          ]
+        },
+        {
+          "name": "Troms",
+          "groups": [
+            "RK-TROMS-1",
+            "RK-TROMS-2",
+            "RK-TROMS-3",
+            "RK-TROMS-4",
+            "RK-TROMS-5",
+            "RK-TROMS-6",
+            "RK-TROMS-ØV1",
+            "RK-TROMS-ØV2",
+            "RK-TROMS-ØV3",
+            "RK-TROMS-ØV4",
+            "RK-TROMS-ØV5",
+            "RK-TROMS-ØV6",
+            "RK-TROMS-A1",
+            "RK-TROMS-A2",
+            "11-SAMVUP-11",
+            "11-SAMVUP-12",
+            "11-SAMVUP-13",
+            "11-SAMVUP-14",
+            "11-SAMVUP-15",
+            "11-SAMVUP-16",
+            "11-SAMVUP-17",
+            "11-SAMVUP-18",
+            "11-SAMVUP-19",
+            "11-SAMV-1",
+            "11-SAMV-2",
+            "11-SAMV-3",
+            "11-SAMV-4",
+            "11-SAMV-5",
+            "11-SAMV-A1",
+            "11-SAMV-A2",
+            "FORF-TROMS",
+            "FORF-TROMS-2",
+            "FORF-TROMS-3",
+            "FY-TROMS-A1",
+            "FY-TROMS-A2",
+            "FY-TROMS-A3",
+            "11-SAR-1",
+            "11-SAR-2",
+            "11-SAR-3",
+            "11-SAR-4"
+          ]
+        },
+        {
+          "name": "Finnmark",
+          "groups": [
+            "RK-FINNM-1",
+            "RK-FINNM-2",
+            "RK-FINNM-3",
+            "RK-FINNM-4",
+            "RK-FINNM-5",
+            "RK-FINNM-6",
+            "RK-FINNM-ØV1",
+            "RK-FINNM-ØV2",
+            "RK-FINNM-ØV3",
+            "RK-FINNM-ØV4",
+            "RK-FINNM-ØV5",
+            "RK-FINNM-ØV6",
+            "RK-FINNM-A1",
+            "RK-FINNM-A2",
+            "12-SAMVUP-11",
+            "12-SAMVUP-12",
+            "12-SAMVUP-13",
+            "12-SAMVUP-14",
+            "12-SAMVUP-15",
+            "12-SAMVUP-16",
+            "12-SAMVUP-17",
+            "12-SAMVUP-18",
+            "12-SAMVUP-19",
+            "12-SAMV-1",
+            "12-SAMV-2",
+            "12-SAMV-3",
+            "12-SAMV-4",
+            "12-SAMV-5",
+            "12-SAMV-A1",
+            "12-SAMV-A2",
+            "FORF-FINNM",
+            "FORF-FINNM-2",
+            "FORF-FINNM-3",
+            "FY-FINNM-A1",
+            "FY-FINNM-A2",
+            "FY-FINNM-A3",
+            "12-SAR-1",
+            "12-SAR-2",
+            "12-SAR-3",
+            "12-SAR-4"
+          ]
+        },
+        {
+          "name": "NOSE",
+          "groups": [
+            "NOSE-CO-1",
+            "NOSE-CO-2",
+            "NOSE-CO-3",
+            "NOSE-CO-4",
+            "NOSE-CO-5",
+            "NOSE-CO-6",
+            "NOSE-CO-7",
+            "NOSE-CO-8",
+            "NOSE-SAR-11",
+            "NOSE-SAR-12",
+            "NOSE-SAR-13",
+            "NOSE-SAR-14",
+            "NOSE-SAR-21",
+            "NOSE-SAR-22",
+            "NOSE-SAR-23",
+            "NOSE-SAR-24",
+            "NOSE-SAR-31",
+            "NOSE-SAR-32",
+            "NOSE-SAR-33",
+            "NOSE-SAR-34",
+            "NOR-SWE-1",
+            "NOR-SWE-2",
+            "NOR-SWE-3",
+            "NOR-SWE-4"
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "pattern": "\\d{5}01",
+          "name": "Vaktleder"
+        },
+        {
+          "pattern": "\\d{5}0[2-9]",
+          "name": "Ledelse"
+        },
+        {
+          "pattern": "\\d{5}11",
+          "name": "Korpsleder"
+        },
+        {
+          "pattern": "\\d{5}12",
+          "name": "Nestleder"
+        },
+        {
+          "pattern": "\\d{5}13",
+          "name": "Operativ leder"
+        },
+        {
+          "pattern": "\\d{5}14",
+          "name": "NK Operativ leder"
+        },
+        {
+          "pattern": "\\d{5}15",
+          "name": "Transportleder"
+        },
+        {
+          "pattern": "\\d{5}16",
+          "name": "Sambandsleder"
+        },
+        {
+          "pattern": "\\d{5}17",
+          "name": "Depotleder"
+        },
+        {
+          "pattern": "\\d{5}18",
+          "name": "Leder ambulanse"
+        },
+        {
+          "pattern": "\\d{5}19",
+          "name": "Ledelse"
+        },
+        {
+          "pattern": "\\d{5}[2-4][1-9]",
+          "name": "Lag"
+        },
+        {
+          "pattern": "\\d{5}5[1-5]",
+          "name": "Bil"
+        },
+        {
+          "pattern": "\\d{5}5[6-8]",
+          "name": "Ambulanse"
+        },
+        {
+          "pattern": "\\d{5}59",
+          "name": "Transport"
+        },
+        {
+          "pattern": "\\d{5}6[1-5]",
+          "name": "Terrengkjøretøy"
+        },
+        {
+          "pattern": "\\d{5}6[6-9]",
+          "name": "Sjøfartøy"
+        },
+        {
+          "pattern": "\\d{5}7[1-9]",
+          "name": "Spesiallag"
+        },
+        {
+          "pattern": "\\d{5}8[1-9]",
+          "name": "Mobil gateway"
+        },
+        {
+          "pattern": "\\d{5}9[1-9]",
+          "name": "Kommandoplass"
+        },
+        {
+          "pattern": "\\d{5}9[4-7]",
+          "name": "Installasjon"
+        },
+        {
+          "pattern": "\\d{5}99",
+          "name": "Hytte"
+        }
+      ]
     },
-    "62": {
-      "id": "62",
+    {
+      "prefix": "62",
       "name": "Norsk Folkehjelp Sanitet",
       "alias": "NF",
-      "pattern": "62\\d{5}",
-      "idpHints": ["google"]
+      "pattern": "62\\d{5}"
     },
-    "63": {
-      "id": "63",
+    {
+      "prefix": "63",
       "name": "Norske Redningshunder",
       "alias": "RH",
-      "pattern": "63\\d{5}",
-      "idpHints": ["google"]
+      "pattern": "63\\d{5}"
     },
-    "645": {
-      "id": "645",
+    {
+      "prefix": "645",
       "name": "NAKs Flytjeneste",
       "alias": "NA",
-      "pattern": "645\\d{4}",
-      "idpHints": ["google"]
+      "pattern": "645\\d{4}"
     },
-    "646": {
-      "id": "646",
+    {
+      "prefix": "646",
       "name": "NARG",
       "alias": "AR",
-      "pattern": "646\\d{4}",
-      "idpHints": ["google"]
+      "pattern": "646\\d{4}"
     },
-    "647": {
-      "id": "647",
+    {
+      "prefix": "647",
       "name": "Speidernes beredskapsgruppe",
       "alias": "SB",
-      "pattern": "647\\d{4}",
-      "idpHints": ["google"]
+      "pattern": "647\\d{4}"
     },
-    "648": {
-      "id": "648",
+    {
+      "prefix": "648",
       "name": "Norsk Grotteforbund",
       "alias": "NG",
-      "pattern": "648\\d{4}",
-      "idpHints": ["google"]
+      "pattern": "648\\d{4}"
     },
-    "649": {
-      "id": "649",
+    {
+      "prefix": "649",
       "name": "Norsk Radio Ræle Liga",
       "alias": "NR",
-      "pattern": "649\\d{4}",
-      "idpHints": ["google"]
+      "pattern": "649\\d{4}"
     }
-  }
+  ]
 }

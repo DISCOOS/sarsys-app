@@ -4,10 +4,7 @@ import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
 
-abstract class PersonnelRepository implements ConnectionAwareRepository<String, Personnel> {
-  /// [Personnel] service
-  PersonnelService get service;
-
+abstract class PersonnelRepository implements ConnectionAwareRepository<String, Personnel, PersonnelService> {
   /// Get [Operation.uuid]
   String get ouuid;
 

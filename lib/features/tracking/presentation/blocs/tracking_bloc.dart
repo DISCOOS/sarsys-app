@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -23,7 +24,7 @@ import 'package:flutter/foundation.dart';
 typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBlocError>
-    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>> {
+    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>>, ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
@@ -64,6 +65,9 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       service.messages.listen(_processMessage),
     );
   }
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [repo];
 
   /// Get [OperationBloc]
   final OperationBloc operationBloc;

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,15 +10,19 @@ part 'unit_service.chopper.dart';
 /// Service for consuming the units endpoint
 ///
 /// Delegates to a ChopperService implementation
-class UnitService {
+class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<UnitServiceImpl> {
   final UnitServiceImpl delegate;
 
   UnitService() : delegate = UnitServiceImpl.newInstance();
 
   /// GET ../units
-  Future<ServiceResponse<List<Unit>>> fetch(String ouuid) async {
-    return Api.from<List<Unit>, List<Unit>>(
-      await delegate.fetch(),
+  Future<ServiceResponse<List<Unit>>> fetch(String ouuid, int offset, int limit) async {
+    return Api.from<PagedList<Unit>, List<Unit>>(
+      await delegate.fetch(
+        ouuid,
+        offset,
+        limit,
+      ),
     );
   }
 
@@ -25,6 +30,7 @@ class UnitService {
   Future<ServiceResponse<Unit>> create(String ouuid, Unit unit) async {
     return Api.from<String, Unit>(
       await delegate.create(
+        ouuid,
         unit,
       ),
       // Created 201 returns uri to created personnel in body
@@ -51,31 +57,30 @@ class UnitService {
   }
 }
 
-@ChopperApi(baseUrl: '/units')
+@ChopperApi()
 abstract class UnitServiceImpl extends ChopperService {
   static UnitServiceImpl newInstance([ChopperClient client]) => _$UnitServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /units/{version}
-  @Post()
+  @Post(path: '/operations/{uuid}/units')
   Future<Response<String>> create(
+    @Path() ouuid,
+    @Body() Unit body,
+  );
+
+  @Get(path: '/operations/{ouuid}/units')
+  Future<Response<PagedList<Unit>>> fetch(
+    @Path() ouuid,
+    @Query('offset') int offset,
+    @Query('limit') int limit,
+  );
+
+  @Patch(path: 'units/{uuid}')
+  Future<Response<Unit>> update(
+    @Path('uuid') String uuid,
     @Body() Unit unit,
   );
 
-  /// GET /units
-  @Get()
-  Future<Response<List<Unit>>> fetch();
-
-  /// PATCH ../units/{uuid}
-  @Patch(path: "{uuid}")
-  Future<Response<Unit>> update(
-    @Path('uuid') String uuid,
-    @Body() Unit config,
-  );
-
-  /// DELETE ../units/{uuid}
-  @Delete(path: "{uuid}")
+  @Delete(path: 'units/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
   );

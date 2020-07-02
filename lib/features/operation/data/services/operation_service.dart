@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,15 +10,17 @@ part 'operation_service.chopper.dart';
 /// Service for consuming the operations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class OperationService {
+class OperationService with ServiceFetchAll<Operation> implements ServiceDelegate<OperationServiceImpl> {
   final OperationServiceImpl delegate;
 
   OperationService() : delegate = OperationServiceImpl.newInstance();
 
-  /// GET ../operations
-  Future<ServiceResponse<List<Operation>>> fetch() async {
-    return Api.from<List<Operation>, List<Operation>>(
-      await delegate.fetch(),
+  Future<ServiceResponse<List<Operation>>> fetch(int offset, int limit) async {
+    return Api.from<PagedList<Operation>, List<Operation>>(
+      await delegate.fetch(
+        offset: offset,
+        limit: limit,
+      ),
     );
   }
 
@@ -25,6 +28,7 @@ class OperationService {
   Future<ServiceResponse<Operation>> create(Operation operation) async {
     return Api.from<String, Operation>(
       await delegate.create(
+        operation.uuid,
         operation,
       ),
       // Created 201 returns uri to created operation in body
@@ -52,31 +56,29 @@ class OperationService {
   }
 }
 
-@ChopperApi(baseUrl: '/operations')
+@ChopperApi()
 abstract class OperationServiceImpl extends ChopperService {
   static OperationServiceImpl newInstance([ChopperClient client]) => _$OperationServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /operations/{version}
-  @Post()
+  @Post(path: '/incidents/{iuuid}/operations')
   Future<Response<String>> create(
-    @Body() Operation config,
+    @Path() iuuid,
+    @Body() Operation body,
   );
 
-  /// GET /operations
-  @Get()
-  Future<Response<List<Operation>>> fetch();
+  @Get(path: '/operations')
+  Future<Response<PagedList<Operation>>> fetch({
+    @Query('offset') int offset = 0,
+    @Query('limit') int limit = 20,
+  });
 
-  /// PATCH ../operations/{uuid}
-  @Patch(path: "{uuid}")
+  @Patch(path: '/operations/{uuid}')
   Future<Response<Operation>> update(
     @Path('uuid') String uuid,
-    @Body() Operation config,
+    @Body() Operation body,
   );
 
-  /// DELETE ../operations/{uuid}
-  @Delete(path: "{uuid}")
+  @Delete(path: '/operations/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
   );

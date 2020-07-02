@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
@@ -20,7 +21,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         CreatableBloc<Device>,
         UpdatableBloc<Device>,
         DeletableBloc<Device>,
-        UnloadableBloc<Iterable<Device>> {
+        UnloadableBloc<Iterable<Device>>,
+        ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
@@ -74,6 +76,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       }
     }
   }
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [repo];
 
   /// Check if device is this application
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;

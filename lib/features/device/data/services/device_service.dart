@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,7 +10,7 @@ part 'device_service.chopper.dart';
 /// Service for consuming the devices endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DeviceService {
+class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<DeviceServiceImpl> {
   final DeviceServiceImpl delegate;
 
   DeviceService() : delegate = DeviceServiceImpl.newInstance();
@@ -19,14 +20,12 @@ class DeviceService {
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;
 
-  /// GET ../devices
-  Future<ServiceResponse<List<Device>>> fetch() async {
-    return Api.from<List<Device>, List<Device>>(
+  Future<ServiceResponse<List<Device>>> fetch(int offset, int limit) async {
+    return Api.from<PagedList<Device>, List<Device>>(
       await delegate.fetch(),
     );
   }
 
-  /// POST ../devices
   Future<ServiceResponse<Device>> create(Device device) async {
     return Api.from<String, Device>(
       await delegate.create(
@@ -37,7 +36,6 @@ class DeviceService {
     );
   }
 
-  /// PUT ../devices/{deviceId}
   Future<ServiceResponse<Device>> update(Device device) async {
     return Api.from<Device, Device>(
       await delegate.update(
@@ -49,7 +47,6 @@ class DeviceService {
     );
   }
 
-  /// DELETE ../devices/{deviceId}
   Future<ServiceResponse<void>> delete(String uuid) async {
     return Api.from<Device, Device>(await delegate.delete(
       uuid,
@@ -74,26 +71,20 @@ class DeviceMessage {
 abstract class DeviceServiceImpl extends ChopperService {
   static DeviceServiceImpl newInstance([ChopperClient client]) => _$DeviceServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /devices/{version}
-  @Post()
+  @Post(path: '/devices')
   Future<Response<String>> create(
-    @Body() Device config,
+    @Body() Device body,
   );
 
-  /// GET /devices
   @Get()
-  Future<Response<List<Device>>> fetch();
+  Future<Response<PagedList<Device>>> fetch();
 
-  /// PATCH ../devices/{uuid}
   @Patch(path: "{uuid}")
   Future<Response<Device>> update(
     @Path('uuid') String uuid,
-    @Body() Device config,
+    @Body() Device body,
   );
 
-  /// DELETE ../devices/{uuid}
   @Delete(path: "{uuid}")
   Future<Response<void>> delete(
     @Path('uuid') String uuid,

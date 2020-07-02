@@ -137,12 +137,25 @@ class OperationServiceMock extends Mock implements OperationService {
     UserRepository users, {
     @required final UserRole role,
     @required final String passcode,
+    List<String> iuuids = const [],
     final int count = 0,
   }) {
     _operations.clear();
+    final user = users.user;
     final OperationServiceMock mock = OperationServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized", role).toUser();
-    when(mock.fetch()).thenAnswer((_) async {
+
+    // Only generate operations for automatically generated incidents
+    iuuids.forEach((iuuid) {
+      if (iuuid.startsWith('a:')) {
+        _operations.addEntries([
+          for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
+          for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
+        ]);
+      }
+    });
+
+    when(mock.fetchAll()).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();

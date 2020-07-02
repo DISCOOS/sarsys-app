@@ -11,22 +11,24 @@ import 'package:SarSys/features/operation/data/services/incident_service.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
-class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident> implements IncidentRepository {
+class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident, IncidentService>
+    implements IncidentRepository {
   IncidentRepositoryImpl(
-    this.service, {
+    IncidentService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         );
-
-  /// Incident service
-  final IncidentService service;
 
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Incident> state) {
     return state?.value?.uuid;
   }
+
+  @override
+  Incident find(String ouuid) => values.firstWhere((incident) => incident.operations.contains(ouuid));
 
   /// Load incidents
   Future<List<Incident>> load({bool force = true}) async {
@@ -64,7 +66,7 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident>
   Future<List<Incident>> _load() async {
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch();
+        var response = await service.fetchAll();
         if (response.is200) {
           evict(
             retainKeys: response.body.map((incident) => incident.uuid),

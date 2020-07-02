@@ -18,17 +18,20 @@ import 'package:SarSys/services/connectivity_service.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
-class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig> implements AppConfigRepository {
+class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, AppConfigService>
+    implements AppConfigRepository {
   AppConfigRepositoryImpl(
     this.version, {
-    @required this.service,
+    @required AppConfigService service,
     @required this.assets,
     @required ConnectivityService connectivity,
-  }) : super(connectivity: connectivity);
+  }) : super(
+          service: service,
+          connectivity: connectivity,
+        );
 
   final int version;
   final String assets;
-  final AppConfigService service;
 
   /// Get current [AppConfig] instance
   AppConfig get config => this[version];

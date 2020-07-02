@@ -1,21 +1,19 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Division.dart';
+part of 'OperationalFunction.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Division _$DivisionFromJson(Map json) {
-  return Division(
+OperationalFunction _$OperationalFunctionFromJson(Map json) {
+  return OperationalFunction(
     name: json['name'] as String,
-    departments: (json['departments'] as Map)?.map(
-      (k, e) => MapEntry(k as String, e as String),
-    ),
+    pattern: json['pattern'] as String,
   );
 }
 
-Map<String, dynamic> _$DivisionToJson(Division instance) {
+Map<String, dynamic> _$OperationalFunctionToJson(OperationalFunction instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
@@ -25,6 +23,6 @@ Map<String, dynamic> _$DivisionToJson(Division instance) {
   }
 
   writeNotNull('name', instance.name);
-  writeNotNull('departments', instance.departments);
+  writeNotNull('pattern', instance.pattern);
   return val;
 }

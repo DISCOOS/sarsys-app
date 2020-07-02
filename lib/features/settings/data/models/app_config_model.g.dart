@@ -29,6 +29,7 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     locationFastestInterval: json['locationFastestInterval'] as int,
     locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
     units: (json['units'] as List)?.map((e) => e as String)?.toList(),
+    idpHints: (json['idpHints'] as List)?.map((e) => e as String)?.toList(),
     keepScreenOn: json['keepScreenOn'] as bool,
     callsignReuse: json['callsignReuse'] as bool,
     securityType:
@@ -74,6 +75,7 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('keepScreenOn', instance.keepScreenOn);
   writeNotNull('callsignReuse', instance.callsignReuse);
   writeNotNull('units', instance.units);
+  writeNotNull('idpHints', instance.idpHints);
   writeNotNull('securityType', _$SecurityTypeEnumMap[instance.securityType]);
   writeNotNull('securityMode', _$SecurityModeEnumMap[instance.securityMode]);
   writeNotNull('trustedDomains', instance.trustedDomains);

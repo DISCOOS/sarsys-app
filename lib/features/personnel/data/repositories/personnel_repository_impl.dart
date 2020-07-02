@@ -13,16 +13,15 @@ import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 
-class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personnel> implements PersonnelRepository {
+class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personnel, PersonnelService>
+    implements PersonnelRepository {
   PersonnelRepositoryImpl(
-    this.service, {
+    PersonnelService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         );
-
-  /// [Personnel] service
-  final PersonnelService service;
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;
@@ -81,7 +80,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     await _ensure(ouuid);
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch(ouuid);
+        var response = await service.fetchAll(ouuid);
         if (response.is200) {
           evict(
             retainKeys: response.body.map((personnel) => personnel.uuid),

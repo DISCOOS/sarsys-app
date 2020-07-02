@@ -20,7 +20,7 @@ class AggregateRef<T extends Aggregate> extends Equatable {
   factory AggregateRef.fromJson(Map<String, dynamic> json) => _$AggregateRefFromJson<T>(json);
 
   /// Get [AggregateRef] from given type
-  static AggregateRef fromType<T extends Aggregate>(String uuid) => AggregateRef<T>(uuid: uuid);
+  static AggregateRef<T> fromType<T extends Aggregate>(String uuid) => AggregateRef<T>(uuid: uuid);
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$AggregateRefToJson(this);

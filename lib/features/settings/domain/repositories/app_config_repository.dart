@@ -6,7 +6,7 @@ import 'package:SarSys/services/service.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 
-abstract class AppConfigRepository implements ConnectionAwareRepository<int, AppConfig> {
+abstract class AppConfigRepository implements ConnectionAwareRepository<int, AppConfig, AppConfigService> {
   int get version;
   String get assets;
   AppConfigService get service;

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:meta/meta.dart';
@@ -20,10 +21,12 @@ import 'data/models/conflict_model.dart';
 /// should cache all changes locally before
 /// attempting to [commit] them to a backend API.
 ///
-abstract class ConnectionAwareRepository<S, T extends Aggregate> {
+abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Service> {
   ConnectionAwareRepository({
+    @required this.service,
     @required this.connectivity,
   });
+  final U service;
   final ConnectivityService connectivity;
   final StreamController<StorageTransition<T>> _controller = StreamController.broadcast();
 
@@ -589,9 +592,9 @@ class RepositorySupervisor {
   }
 }
 
-class MergeStrategy<S, T extends Aggregate> {
+class MergeStrategy<S, T extends Aggregate, U extends Service> {
   MergeStrategy(this.repository);
-  final ConnectionAwareRepository<S, T> repository;
+  final ConnectionAwareRepository<S, T, U> repository;
 
   Future<T> call(
     StorageState<T> state,

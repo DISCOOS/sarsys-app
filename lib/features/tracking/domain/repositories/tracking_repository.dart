@@ -13,16 +13,14 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
-class TrackingRepository extends ConnectionAwareRepository<String, Tracking> {
+class TrackingRepository extends ConnectionAwareRepository<String, Tracking, TrackingService> {
   TrackingRepository(
-    this.service, {
+    TrackingService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         );
-
-  /// [TrackingService] service
-  final TrackingService service;
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;

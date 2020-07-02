@@ -1,9 +1,8 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Organization.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/position_field.dart';
@@ -40,12 +39,12 @@ class _DeviceEditorState extends State<DeviceEditor> {
   String _editedOrgAlias;
   String _editedAffiliation;
   String _editedFunction;
-  Future<Organization> _organization;
+
+  Organisation get organisation => context.bloc<AffiliationBloc>().findUserOrganisation();
 
   @override
   void initState() {
     super.initState();
-    _organization = FleetMapService().fetchOrganization(Defaults.orgId);
     _initAliasController();
     _initNumberController();
   }
@@ -88,37 +87,33 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ],
       ),
       body: SingleChildScrollView(
-        child: FutureBuilder<Organization>(
-            future: _organization,
-            builder: (context, snapshot) {
-              return Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: FormBuilder(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      buildTwoCellRow(_buildNameField(), _buildTypeField(snapshot.data), spacing: SPACING),
-                      SizedBox(height: SPACING),
-                      buildTwoCellRow(_buildNumberField(), _buildAliasField(), spacing: SPACING),
-                      if (DeviceType.tetra == actualType) ...[
-                        SizedBox(height: SPACING),
-                        buildTwoCellRow(
-                          _buildOrgAliasField(snapshot.data),
-                          _buildFunctionField(snapshot.data),
-                          spacing: SPACING,
-                        ),
-                        SizedBox(height: SPACING),
-                        _buildAffiliationInfo(snapshot.data),
-                      ],
-                      SizedBox(height: SPACING),
-                      _buildPointField(),
-                      SizedBox(height: MediaQuery.of(context).size.height / 2),
-                    ],
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: FormBuilder(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                buildTwoCellRow(_buildNameField(), _buildTypeField(), spacing: SPACING),
+                SizedBox(height: SPACING),
+                buildTwoCellRow(_buildNumberField(), _buildAliasField(), spacing: SPACING),
+                if (DeviceType.tetra == actualType) ...[
+                  SizedBox(height: SPACING),
+                  buildTwoCellRow(
+                    _buildOrgAliasField(),
+                    _buildFunctionField(),
+                    spacing: SPACING,
                   ),
-                ),
-              );
-            }),
+                  SizedBox(height: SPACING),
+                  _buildAffiliationInfo(),
+                ],
+                SizedBox(height: SPACING),
+                _buildPointField(),
+                SizedBox(height: MediaQuery.of(context).size.height / 2),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -214,7 +209,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   bool isSameNumber(Device device, String number) =>
       number?.isNotEmpty == true && device?.uuid != widget?.device?.uuid && device.number?.toString() == number;
 
-  Widget _buildAffiliationInfo(Organization org) => InputDecorator(
+  Widget _buildAffiliationInfo() => InputDecorator(
         decoration: InputDecoration(
           labelText: "Tilhørighet",
           filled: true,
@@ -223,15 +218,15 @@ class _DeviceEditorState extends State<DeviceEditor> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
-            _editedAffiliation ?? _defaultAffiliation(org),
+            _editedAffiliation ?? _defaultAffiliation(),
             style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
 
-  String _defaultAffiliation(Organization org) => org?.toAffiliationNameFromNumber(widget?.device?.number) ?? '-';
+  String _defaultAffiliation() => context.bloc<AffiliationBloc>().findName(widget?.device?.number);
 
-  InputDecorator _buildOrgAliasField(Organization org) => InputDecorator(
+  InputDecorator _buildOrgAliasField() => InputDecorator(
         decoration: InputDecoration(
           labelText: "Kortnavn org.",
           filled: true,
@@ -240,15 +235,15 @@ class _DeviceEditorState extends State<DeviceEditor> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
-            _editedOrgAlias ?? _defaultOrgAlias(org),
+            _editedOrgAlias ?? _defaultOrgAlias(),
             style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
 
-  String _defaultOrgAlias(Organization org) => org?.alias ?? '-';
+  String _defaultOrgAlias() => organisation?.fleetMap?.alias ?? '-';
 
-  InputDecorator _buildFunctionField(Organization org) => InputDecorator(
+  InputDecorator _buildFunctionField() => InputDecorator(
         decoration: InputDecoration(
           labelText: "Kortnavn",
           filled: true,
@@ -257,13 +252,13 @@ class _DeviceEditorState extends State<DeviceEditor> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
-            _editedFunction ?? _defaultFunction(org),
+            _editedFunction ?? _defaultFunction(),
             style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       );
 
-  String _defaultFunction(Organization org) => org?.toFunctionFromNumber(widget?.device?.number) ?? '-';
+  String _defaultFunction() => context.bloc<AffiliationBloc>().findFunction(widget?.device?.number)?.name;
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -315,24 +310,19 @@ class _DeviceEditorState extends State<DeviceEditor> {
     String alias,
     String number, {
     bool update = true,
-    Organization org,
   }) {
-    if (org == null)
-      _organization.then(
-        (org) => _onNumberOrAliasEdit(alias, number, update: update, org: org),
-      );
-    else {
-      alias = emptyAsNull(alias);
-      number = emptyAsNull(number);
-      _editedName = alias ?? number ?? _defaultName();
-      _editedAffiliation = org?.toAffiliationNameFromNumber(number, empty: '-') ?? _editedAffiliation;
-      _editedOrgAlias = org?.alias ?? _editedOrgAlias;
-      _editedFunction = org?.toFunctionFromNumber(number) ?? _editedFunction;
-      if (update) setState(() {});
-    }
+    alias = emptyAsNull(alias);
+    number = emptyAsNull(number);
+    _editedName = alias ?? number ?? _defaultName();
+    _editedAffiliation = affiliations.findName(number, empty: '-') ?? _editedAffiliation;
+    _editedOrgAlias = affiliations.findOrganisation(number).fleetMap?.alias ?? _editedOrgAlias;
+    _editedFunction = affiliations.findFunction(number) ?? _editedFunction;
+    if (update) setState(() {});
   }
 
-  Widget _buildTypeField(Organization org) {
+  AffiliationBloc get affiliations => context.bloc<AffiliationBloc>();
+
+  Widget _buildTypeField() {
     final defaultValue = widget.type;
     final actualValue = _getActualType(defaultValue);
     return buildDropDownField(
@@ -351,7 +341,6 @@ class _DeviceEditorState extends State<DeviceEditor> {
         _onNumberOrAliasEdit(
           _getActualAlias(),
           _getActualNumber(),
-          org: org,
         );
         _formKey.currentState.save();
       },

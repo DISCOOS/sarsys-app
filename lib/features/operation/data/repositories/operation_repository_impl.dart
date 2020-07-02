@@ -11,16 +11,15 @@ import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 
-class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operation> implements OperationRepository {
+class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operation, OperationService>
+    implements OperationRepository {
   OperationRepositoryImpl(
-    this.service, {
+    OperationService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         );
-
-  /// Operation service
-  final OperationService service;
 
   /// Get [Operation.uuid] from [state]
   @override
@@ -64,7 +63,7 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
   Future<List<Operation>> _load() async {
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch();
+        var response = await service.fetchAll();
         if (response.is200) {
           evict(
             retainKeys: response.body.map((operation) => operation.uuid),

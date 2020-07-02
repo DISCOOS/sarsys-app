@@ -1,20 +1,19 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Affiliation.dart';
+part of 'FleetMapNumber.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Affiliation _$AffiliationFromJson(Map json) {
-  return Affiliation(
-    orgId: json['orgId'] as String,
-    divId: json['divId'] as String,
-    depId: json['depId'] as String,
+FleetMapNumber _$FleetMapNumberFromJson(Map json) {
+  return FleetMapNumber(
+    name: json['name'] as String,
+    suffix: json['suffix'] as String,
   );
 }
 
-Map<String, dynamic> _$AffiliationToJson(Affiliation instance) {
+Map<String, dynamic> _$FleetMapNumberToJson(FleetMapNumber instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
@@ -23,8 +22,7 @@ Map<String, dynamic> _$AffiliationToJson(Affiliation instance) {
     }
   }
 
-  writeNotNull('orgId', instance.orgId);
-  writeNotNull('divId', instance.divId);
-  writeNotNull('depId', instance.depId);
+  writeNotNull('name', instance.name);
+  writeNotNull('suffix', instance.suffix);
   return val;
 }

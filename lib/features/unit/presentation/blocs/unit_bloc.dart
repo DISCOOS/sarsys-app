@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -30,7 +31,8 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         CreatableBloc<Unit>,
         UpdatableBloc<Unit>,
         DeletableBloc<Unit>,
-        UnloadableBloc<List<Unit>> {
+        UnloadableBloc<List<Unit>>,
+        ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
@@ -57,6 +59,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       _processPersonnelState,
     ));
   }
+
+  /// All repositories
+  Iterable<ConnectionAwareRepository> get repos => [repo];
 
   void _processIncidentState(OperationState state) async {
     try {

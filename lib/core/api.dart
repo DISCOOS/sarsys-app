@@ -3,6 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
@@ -40,6 +46,13 @@ class Api {
               UnitModel: (value) => JsonUtils.toJson<Unit>(value),
               PersonnelModel: (value) => JsonUtils.toJson<Personnel>(value),
               AppConfigModel: (value) => JsonUtils.toJson<AppConfig>(value),
+              OrganisationModel: (value) => JsonUtils.toJson<Organisation>(value),
+              DivisionModel: (value) => JsonUtils.toJson<Division>(value, remove: const [
+                    'organisation',
+                  ]),
+              DepartmentModel: (value) => JsonUtils.toJson<Department>(value, remove: const [
+                    'division',
+                  ]),
               IncidentModel: (value) => JsonUtils.toJson<Incident>(value, remove: const [
                     'clues',
                     'subjects',
@@ -64,18 +77,24 @@ class Api {
                   ]),
             },
             decoders: {
-              typeOf<List<Unit>>(): _toUnitList,
-              typeOf<List<Device>>(): _toDeviceList,
-              typeOf<List<Incident>>(): _toIncidentList,
-              typeOf<List<Operation>>(): _toOperationList,
-              typeOf<List<Personnel>>(): _toPersonnelList,
+              typeOf<PagedList<Unit>>(): _toUnitList,
+              typeOf<PagedList<Device>>(): _toDeviceList,
+              typeOf<PagedList<Incident>>(): _toIncidentList,
+              typeOf<PagedList<Division>>(): _toDivisionList,
+              typeOf<PagedList<Operation>>(): _toOperationList,
+              typeOf<PagedList<Personnel>>(): _toPersonnelList,
+              typeOf<PagedList<Department>>(): _toDepartmentList,
+              typeOf<PagedList<Organisation>>(): _toOrganisationList,
               Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
+              Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
               Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
               Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
-              Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
+              Division: (json) => json['data'] == null ? null : DivisionModel.fromJson(json['data']),
               Operation: (json) => json['data'] == null ? null : OperationModel.fromJson(json['data']),
               Personnel: (json) => json['data'] == null ? null : PersonnelModel.fromJson(json['data']),
               AppConfig: (json) => json['data'] == null ? null : AppConfigModel.fromJson(json['data']),
+              Department: (json) => json['data'] == null ? null : DepartmentModel.fromJson(json['data']),
+              Organisation: (json) => json['data'] == null ? null : OrganisationModel.fromJson(json['data']),
             },
           ),
           interceptors: [
@@ -89,24 +108,37 @@ class Api {
         (entity) => UnitModel.fromJson(entity['data']),
       );
 
-  static List<Device> _toDeviceList(Map<String, dynamic> json) => _toList<Device>(
+  static PagedList<Device> _toDeviceList(Map<String, dynamic> json) => _toPagedList<Device>(
         json,
         (entity) => DeviceModel.fromJson(entity['data']),
       );
 
-  static List<Incident> _toIncidentList(Map<String, dynamic> json) => _toList<Incident>(
+  static PagedList<Incident> _toIncidentList(Map<String, dynamic> json) => _toPagedList<Incident>(
         json,
         (entity) => IncidentModel.fromJson(entity['data']),
       );
 
-  static List<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toList<Personnel>(
+  static PagedList<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toPagedList<Personnel>(
         json,
         (entity) => PersonnelModel.fromJson(entity['data']),
       );
 
-  static List<Operation> _toOperationList(Map<String, dynamic> json) => _toList<Operation>(
+  static PagedList<Operation> _toOperationList(Map<String, dynamic> json) => _toPagedList<Operation>(
         json,
         (entity) => OperationModel.fromJson(entity['data']),
+      );
+
+  static PagedList<Organisation> _toOrganisationList(Map<String, dynamic> json) => _toPagedList<Organisation>(
+        json,
+        (entity) => OrganisationModel.fromJson(entity['data']),
+      );
+  static PagedList<Division> _toDivisionList(Map<String, dynamic> json) => _toPagedList<Division>(
+        json,
+        (entity) => DivisionModel.fromJson(entity['data']),
+      );
+  static PagedList<Department> _toDepartmentList(Map<String, dynamic> json) => _toPagedList<Department>(
+        json,
+        (entity) => DepartmentModel.fromJson(entity['data']),
       );
 
   static List<T> _toList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) => json['entries'] == null
@@ -116,6 +148,11 @@ class Api {
             (json) => factory(json),
           )
           .toList();
+
+  static PagedList<T> _toPagedList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) => PagedList<T>(
+        _toList(json, factory),
+        PageResult.from(json),
+      );
 
   final String baseRestUrl;
   final UserRepository users;
@@ -128,15 +165,17 @@ class Api {
     Conflict conflict,
     StackTrace stackTrace,
   }) {
+    final resolved = body ?? response.body;
     return ServiceResponse<T>(
+      conflict: conflict,
+      stackTrace: stackTrace,
+      body: resolved is PagedList ? resolved.items : resolved,
+      page: resolved is PagedList ? resolved.page : null,
       statusCode: response.statusCode,
       reasonPhrase: '${response.base.reasonPhrase}',
-      body: body ?? response.body,
       error: response.statusCode == HttpStatus.conflict
           ? ConflictModel.fromJson(jsonDecode(response.error))
           : response.error,
-      stackTrace: stackTrace,
-      conflict: conflict,
     );
   }
 }

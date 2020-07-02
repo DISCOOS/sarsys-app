@@ -17,24 +17,24 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   final definitionType = DeviceServiceImpl;
 
   @override
-  Future<Response<String>> create(Device config) {
-    final $url = '/devices';
-    final $body = config;
+  Future<Response<String>> create(Device body) {
+    final $url = '/devices/devices';
+    final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<List<Device>>> fetch() {
+  Future<Response<PagedList<Device>>> fetch() {
     final $url = '/devices';
     final $request = Request('GET', $url, client.baseUrl);
-    return client.send<List<Device>, Device>($request);
+    return client.send<PagedList<Device>, Device>($request);
   }
 
   @override
-  Future<Response<Device>> update(String uuid, Device config) {
+  Future<Response<Device>> update(String uuid, Device body) {
     final $url = '/devices/$uuid';
-    final $body = config;
+    final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
     return client.send<Device, Device>($request);
   }

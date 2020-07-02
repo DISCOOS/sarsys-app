@@ -34,11 +34,11 @@ class SarSysIcons {
   static const IconData google = const IconData(0xe807, fontFamily: _kFontFam);
 
   static Icon of(
-    String id, {
+    String prefix, {
     double size = 8.0,
     bool withColor = true,
   }) {
-    switch (id) {
+    switch (prefix) {
       case "61":
         return Icon(
           rkh,

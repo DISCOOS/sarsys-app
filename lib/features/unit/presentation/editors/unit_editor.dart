@@ -1,15 +1,14 @@
-import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
@@ -19,10 +18,11 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
 import 'package:SarSys/widgets/position_field.dart';
-import 'package:uuid/uuid.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;
@@ -48,7 +48,7 @@ class UnitEditor extends StatefulWidget {
 class _UnitEditorState extends State<UnitEditor> {
   static const SPACING = 16.0;
 
-  final Map<String, String> _departments = {};
+//  final Map<String, String> _departments = {};
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
@@ -89,7 +89,6 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   void _init() async {
-    _departments.addAll(await FleetMapService().fetchAllDepartments(Defaults.orgId));
     _initPhoneController();
     _initNumberController();
     _initCallsignController();
@@ -639,10 +638,10 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _nextCallSign() {
-    final String department = _departments[context.bloc<AppConfigBloc>().config.depId];
     int number = _ensureCallSignSuffix();
     UnitType type = _actualType(widget.type);
-    return toCallsign(type, department, number);
+    Department dep = context.bloc<AffiliationBloc>().findUserDepartment();
+    return toCallsign(type, dep?.name, number);
   }
 
   int _ensureCallSignSuffix() {

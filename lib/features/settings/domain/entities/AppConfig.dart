@@ -32,6 +32,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     List<String> units = const <String>[],
     this.keepScreenOn = Defaults.keepScreenOn,
     this.callsignReuse = Defaults.callsignReuse,
+    this.idpHints = Defaults.idpHints,
     this.securityType = Defaults.securityType,
     this.securityMode = Defaults.securityMode,
     this.trustedDomains = Defaults.trustedDomains,
@@ -61,6 +62,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           units ?? const <String>[],
           keepScreenOn,
           callsignReuse,
+          idpHints,
           securityType,
           securityMode,
           trustedDomains,
@@ -88,6 +90,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final bool keepScreenOn;
   final bool callsignReuse;
   final List<String> units;
+  final List<String> idpHints;
   final SecurityType securityType;
   final SecurityMode securityMode;
   final List<String> trustedDomains;
@@ -117,6 +120,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     bool keepScreenOn,
     bool callsignReuse,
     List<String> units,
+    List<String> idpHints,
     SecurityType securityType,
     SecurityMode securityMode,
     List<String> trustedDomains,

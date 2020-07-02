@@ -1,3 +1,10 @@
+import 'package:SarSys/core/repository.dart';
+
+/// ConnectionAwareRepo
+mixin ConnectionAwareBloc {
+  Iterable<ConnectionAwareRepository> get repos;
+}
+
 /// Initialize data source
 mixin InitableBloc<Type> {
   Future<Type> init();

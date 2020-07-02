@@ -17,24 +17,24 @@ class _$IncidentServiceImpl extends IncidentServiceImpl {
   final definitionType = IncidentServiceImpl;
 
   @override
-  Future<Response<String>> create(Incident config) {
+  Future<Response<String>> create(Incident body) {
     final $url = '/incidents';
-    final $body = config;
+    final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<List<Incident>>> fetch() {
+  Future<Response<PagedList<Incident>>> fetch() {
     final $url = '/incidents';
     final $request = Request('GET', $url, client.baseUrl);
-    return client.send<List<Incident>, Incident>($request);
+    return client.send<PagedList<Incident>, Incident>($request);
   }
 
   @override
-  Future<Response<Incident>> update(String uuid, Incident config) {
+  Future<Response<Incident>> update(String uuid, Incident body) {
     final $url = '/incidents/$uuid';
-    final $body = config;
+    final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
     return client.send<Incident, Incident>($request);
   }

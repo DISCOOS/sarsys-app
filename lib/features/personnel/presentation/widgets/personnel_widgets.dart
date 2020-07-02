@@ -1,7 +1,6 @@
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Organization.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -10,7 +9,7 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/action_group.dart';
-import 'package:SarSys/widgets/affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/widgets/coordinate_view.dart';
 import 'package:SarSys/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +30,6 @@ class PersonnelWidget extends StatelessWidget {
   final MessageCallback onMessage;
   final ValueChanged<Point> onGoto;
   final ValueChanged<Personnel> onChanged;
-  final Future<Organization> organization;
   final ValueChanged<Personnel> onCompleted;
 
   const PersonnelWidget({
@@ -48,7 +46,6 @@ class PersonnelWidget extends StatelessWidget {
     this.withName = false,
     this.withHeader = true,
     this.withActions = true,
-    this.organization,
   }) : super(key: key);
 
   @override
@@ -94,7 +91,7 @@ class PersonnelWidget extends StatelessWidget {
             _buildContactView(),
             _buildOperationalView(),
             _buildDivider(Orientation.portrait),
-            if (organization != null) ...[
+            if (isAffiliated) ...[
               _buildAffiliationView(),
               _buildDivider(Orientation.portrait),
             ],
@@ -104,6 +101,8 @@ class PersonnelWidget extends StatelessWidget {
           ],
         ),
       );
+
+  bool get isAffiliated => personnel.affiliation?.org?.uuid != null;
 
   Widget _buildLandscape() => Padding(
         padding: const EdgeInsets.only(left: 8.0),
@@ -120,7 +119,7 @@ class PersonnelWidget extends StatelessWidget {
                 children: <Widget>[
                   if (withName) _buildNameView(),
                   _buildContactView(),
-                  if (!withName && organization != null) _buildAffiliationView(),
+                  if (!withName && isAffiliated) _buildAffiliationView(),
                   _buildLocationView(),
                 ],
               ),
@@ -133,7 +132,7 @@ class PersonnelWidget extends StatelessWidget {
                 children: <Widget>[
                   _buildOperationalView(),
                   _buildTrackingView(),
-                  if (withName && organization != null) _buildAffiliationView(),
+                  if (withName && isAffiliated) _buildAffiliationView(),
                 ],
               ),
             ),
@@ -187,7 +186,6 @@ class PersonnelWidget extends StatelessWidget {
       );
 
   Widget _buildAffiliationView() => AffiliationView(
-        future: organization,
         onMessage: onMessage,
         affiliation: personnel.affiliation,
         onComplete: () => _onComplete(personnel),

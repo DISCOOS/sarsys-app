@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/models/AggregateRef.dart';
@@ -21,9 +22,9 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/models/Location.dart';
 import 'package:SarSys/models/Point.dart';
 import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
+import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
 import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/services/location_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -75,14 +76,6 @@ class _OperationEditorState extends State<OperationEditor> {
     super.initState();
     _ippController = TextEditingController(text: _ipp?.description ?? '');
     _meetupController = TextEditingController(text: _meetup?.description ?? '');
-    _init();
-  }
-
-  void _init() async {
-    var catalogs = await FleetMapService().fetchTalkGroupCatalogs(Defaults.orgId)
-      ..sort();
-    _tgCatalog.value = catalogs;
-    _isExercise = widget.incident?.exercise ?? false;
   }
 
   @override
@@ -94,6 +87,11 @@ class _OperationEditorState extends State<OperationEditor> {
     );
     _initLocation();
     _updateDescriptions();
+    _isExercise = widget.incident?.exercise ?? false;
+
+    var catalogs = context.bloc<AffiliationBloc>().findUserOrganisation().fleetMap.catalogs.map((e) => e.name).toList()
+      ..sort();
+    _tgCatalog.value = catalogs;
   }
 
   void _initLocation() {

@@ -12,7 +12,7 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';

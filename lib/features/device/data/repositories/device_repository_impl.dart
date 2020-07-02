@@ -12,11 +12,13 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 
-class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> implements DeviceRepository {
+class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, DeviceService>
+    implements DeviceRepository {
   DeviceRepositoryImpl(
-    this.service, {
+    DeviceService service, {
     @required ConnectivityService connectivity,
   }) : super(
+          service: service,
           connectivity: connectivity,
         ) {
     //
@@ -26,9 +28,6 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
       _processDeviceMessage,
     ));
   }
-
-  /// [Device] service
-  final DeviceService service;
 
   /// Get [Device.uuid] from [state]
   @override
@@ -41,7 +40,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device> imp
     await prepare();
     if (connectivity.isOnline) {
       try {
-        var response = await service.fetch();
+        var response = await service.fetchAll();
         if (response.is200) {
           evict(
             retainKeys: response.body.map((device) => device.uuid),

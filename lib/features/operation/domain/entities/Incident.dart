@@ -1,4 +1,4 @@
-import 'package:SarSys/features/operation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:meta/meta.dart';
@@ -12,6 +12,7 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
     @required this.summary,
     @required this.occurred,
     @required this.resolution,
+    @required this.operations,
     this.exercise = false,
   }) : super(uuid, fields: [
           name,
@@ -29,6 +30,7 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
   final IncidentType type;
   final DateTime occurred;
   final IncidentStatus status;
+  final List<String> operations;
   final IncidentResolution resolution;
 
   /// Get searchable string
@@ -54,6 +56,7 @@ abstract class Incident extends Aggregate<Map<String, dynamic>> {
     IncidentType type,
     DateTime occurred,
     IncidentStatus status,
+    List<String> operations,
     IncidentResolution resolution,
   });
 }

@@ -4,24 +4,40 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 
 class ServiceResponse<T> extends Equatable {
-  final int statusCode;
-  final String reasonPhrase;
   final T body;
   final Object error;
+  final int statusCode;
+  final PageResult page;
   final Conflict conflict;
+  final String reasonPhrase;
   final StackTrace stackTrace;
 
-  ServiceResponse({this.statusCode, this.reasonPhrase, this.body, this.conflict, this.error, this.stackTrace})
-      : super([statusCode, reasonPhrase, body, conflict, error, stackTrace]);
+  ServiceResponse({
+    this.body,
+    this.page,
+    this.error,
+    this.conflict,
+    this.stackTrace,
+    this.statusCode,
+    this.reasonPhrase,
+  }) : super([
+          statusCode,
+          reasonPhrase,
+          body,
+          conflict,
+          error,
+          stackTrace,
+        ]);
 
   ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
     return ServiceResponse<T>(
+      page: page,
+      error: error,
       body: body ?? body,
+      conflict: conflict,
+      stackTrace: stackTrace,
       statusCode: code ?? code,
       reasonPhrase: message ?? message,
-      stackTrace: stackTrace,
-      conflict: conflict,
-      error: error,
     );
   }
 
@@ -106,6 +122,34 @@ class ServiceResponse<T> extends Equatable {
   bool get is404 => statusCode == HttpStatus.notFound;
   bool get is409 => statusCode == HttpStatus.conflict;
   bool get is500 => statusCode == HttpStatus.internalServerError;
+}
+
+class PagedList<T> {
+  PagedList(this.items, this.page);
+  final List<T> items;
+  final PageResult page;
+}
+
+class PageResult {
+  PageResult({
+    this.next,
+    this.total,
+    this.limit,
+    this.offset,
+  });
+  final int next;
+  final int total;
+  final int limit;
+  final int offset;
+
+  bool get hasNext => next != null && next < total ?? 0;
+
+  factory PageResult.from(Map<String, dynamic> body) => PageResult(
+        next: body['next'],
+        total: body['total'],
+        limit: body['limit'],
+        offset: body['offset'],
+      );
 }
 
 class Conflict {

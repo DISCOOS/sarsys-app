@@ -131,7 +131,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     ));
   }
 
-  /// Reselect incident if previous selected on first [OperationLoaded]
+  /// Reselect incident if previous selected on first [OperationsLoaded]
   void _listenForIncidentsLoaded() {
     final subscription = widget.controller
         .bloc<OperationBloc>()

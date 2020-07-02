@@ -4,11 +4,9 @@ import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/presentation/widget/user_widgets.dart';
-import 'package:SarSys/services/fleet_map_service.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
@@ -70,7 +68,6 @@ class UserProfilePageState extends State<UserProfilePage> {
       withActions: false,
       onMessage: widget.onMessage,
       onGoto: (point) => jumpToPoint(context, center: point),
-      organization: FleetMapService().fetchOrganization(Defaults.orgId),
     );
   }
 
@@ -86,7 +83,6 @@ class UserProfilePageState extends State<UserProfilePage> {
       onMessage: widget.onMessage,
       onGoto: (point) => jumpToPoint(context, center: point),
       unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
-      organization: FleetMapService().fetchOrganization(Defaults.orgId),
       devices: context.bloc<TrackingBloc>().devices(tuuid),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:SarSys/core/api.dart';
+import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,19 +10,17 @@ part 'incident_service.chopper.dart';
 /// Service for consuming the incidents endpoint
 ///
 /// Delegates to a ChopperService implementation
-class IncidentService {
+class IncidentService with ServiceFetchAll<Incident> implements ServiceDelegate<IncidentServiceImpl> {
   final IncidentServiceImpl delegate;
 
   IncidentService() : delegate = IncidentServiceImpl.newInstance();
 
-  /// GET ../incidents
-  Future<ServiceResponse<List<Incident>>> fetch() async {
-    return Api.from<List<Incident>, List<Incident>>(
+  Future<ServiceResponse<List<Incident>>> fetch(int offset, int limit) async {
+    return Api.from<PagedList<Incident>, List<Incident>>(
       await delegate.fetch(),
     );
   }
 
-  /// POST ../incidents
   Future<ServiceResponse<Incident>> create(Incident incident) async {
     return Api.from<String, Incident>(
       await delegate.create(
@@ -32,7 +31,6 @@ class IncidentService {
     );
   }
 
-  /// PUT ../incidents/{ouuid}
   Future<ServiceResponse<Incident>> update(Incident incident) async {
     return Api.from<Incident, Incident>(
       await delegate.update(
@@ -44,7 +42,6 @@ class IncidentService {
     );
   }
 
-  /// DELETE ../incidents/{ouuid}
   Future<ServiceResponse<void>> delete(String uuid) async {
     return Api.from<Incident, Incident>(await delegate.delete(
       uuid,
@@ -56,27 +53,21 @@ class IncidentService {
 abstract class IncidentServiceImpl extends ChopperService {
   static IncidentServiceImpl newInstance([ChopperClient client]) => _$IncidentServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /incidents/{version}
   @Post()
   Future<Response<String>> create(
-    @Body() Incident config,
+    @Body() Incident body,
   );
 
-  /// GET /incidents
   @Get()
-  Future<Response<List<Incident>>> fetch();
+  Future<Response<PagedList<Incident>>> fetch();
 
-  /// PATCH ../incidents/{uuid}
-  @Patch(path: "{uuid}")
+  @Patch(path: '{uuid}')
   Future<Response<Incident>> update(
     @Path('uuid') String uuid,
-    @Body() Incident config,
+    @Body() Incident body,
   );
 
-  /// DELETE ../incidents/{uuid}
-  @Delete(path: "{uuid}")
+  @Delete(path: '{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
   );
