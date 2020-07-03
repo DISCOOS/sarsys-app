@@ -107,16 +107,26 @@ class AffiliationFormState extends State<AffiliationForm> {
   Department toDep(String depuuid) => context.bloc<AffiliationBloc>().deps[depuuid];
 
   @override
+  void initState() {
+    super.initState();
+    _apply(widget.value);
+  }
+
+  @override
   void didUpdateWidget(AffiliationForm oldWidget) {
     if (oldWidget.user != widget.user) {
-      _affiliation = context.bloc<AffiliationBloc>().findUserAffiliation(
+      _apply(context.bloc<AffiliationBloc>().findUserAffiliation(
             user: widget.user,
-          );
-      _org.value = _affiliation.org.uuid;
-      _div.value = _affiliation.div.uuid;
-      _dep = _affiliation.dep.uuid;
+          ));
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  void _apply(Affiliation affiliation) {
+    _affiliation = affiliation;
+    _org.value = _affiliation.org.uuid;
+    _div.value = _affiliation.div.uuid;
+    _dep = _affiliation.dep.uuid;
   }
 
   @override
@@ -257,8 +267,8 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   String _ensureDiv(String ouuid) {
     final org = context.bloc<AffiliationBloc>().orgs[ouuid];
-    final divId = _formKey.currentState.value[DIV_FIELD] ?? widget.value?.div;
-    return org?.divisions?.contains(divId) == true ? divId : org?.divisions?.first;
+    final duuid = _formKey.currentState.value[DIV_FIELD] ?? _div.value ?? widget.value?.div;
+    return org?.divisions?.contains(duuid) == true ? duuid : org?.divisions?.first;
   }
 
   String _ensureDep(String divuuid) {

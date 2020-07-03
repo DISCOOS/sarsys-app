@@ -1,6 +1,10 @@
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/core/service.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -71,6 +75,9 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
               _buildUnitsTile(context),
               _buildPersonnelsTile(context),
               _buildDevicesTile(context),
+              _buildOrgsTile(context),
+              _buildDivsTile(context),
+              _buildDepsTile(context),
             ],
           ),
         ),
@@ -124,6 +131,30 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Apparater",
       repo: context.bloc<DeviceBloc>().repo,
       subtitle: (StorageState<Device> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildOrgsTile(BuildContext context) {
+    return RepositoryTile<Organisation>(
+      title: "Organisasjoner",
+      repo: context.bloc<AffiliationBloc>().orgs,
+      subtitle: (StorageState<Organisation> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildDivsTile(BuildContext context) {
+    return RepositoryTile<Division>(
+      title: "Distrikter",
+      repo: context.bloc<AffiliationBloc>().divs,
+      subtitle: (StorageState<Division> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildDepsTile(BuildContext context) {
+    return RepositoryTile<Department>(
+      title: "Avdelinger",
+      repo: context.bloc<AffiliationBloc>().deps,
+      subtitle: (StorageState<Department> state) => '${state?.value?.name}',
     );
   }
 

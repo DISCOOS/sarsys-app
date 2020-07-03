@@ -20,5 +20,5 @@
   "securityType": "pin",
   "securityMode": "personal",
   "securityLockAfter": 2700,
-  "trustedDomains": ["rodekors.org"]
+  "trustedDomains": ["discoos.org", "rodekors.org"]
 }

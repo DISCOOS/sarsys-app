@@ -86,10 +86,6 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     _bloc = context.bloc<UserBloc>();
     _verifyPin = _bloc.isSecured;
     _newPin = !_verifyPin;
-//    _pin = null;
-//    _wrongPin = false;
-//    _changePin = false;
-//    _confirmPin = false;
     super.didChangeDependencies();
   }
 
@@ -147,7 +143,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
   }
 
   Widget _buildBody(BuildContext context) {
-    _requesFocus();
+    _requestFocus();
 
     return Container(
       padding: EdgeInsets.all(24.0),
@@ -175,7 +171,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
     );
   }
 
-  void _requesFocus() {
+  void _requestFocus() {
     if (!(_pinComplete || _isPopped || _isSecuring)) {
       _focusNode.requestFocus();
     }
