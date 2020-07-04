@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -10,7 +11,6 @@ import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 
 class AffiliationAvatar extends StatelessWidget {
@@ -29,7 +29,7 @@ class AffiliationAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       child: SarSysIcons.of(
-        context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid]?.prefix,
+        context.bloc<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix,
         size: size,
       ),
       maxRadius: maxRadius,
@@ -116,7 +116,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   void didUpdateWidget(AffiliationForm oldWidget) {
     if (oldWidget.user != widget.user) {
       _apply(context.bloc<AffiliationBloc>().findUserAffiliation(
-            user: widget.user,
+            userId: widget.user.userId,
           ));
     }
     super.didUpdateWidget(oldWidget);
@@ -278,23 +278,21 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   List<DropdownMenuItem<String>> _buildDivisionItems(Organisation org) {
-    final repo = context.bloc<AffiliationBloc>().divs;
-    final divisions = org.divisions.map((uuid) => repo[uuid]);
-    return sortMapValues<String, Division, String>(divisions ?? {}, (division) => division.name)
-        .entries
+    final divisions = context.bloc<AffiliationBloc>().getDivisions(org.uuid);
+    return divisions
         .map((division) => DropdownMenuItem<String>(
-              value: "${division.key}",
-              child: Text("${division.value.name}"),
+              value: "${division.uuid}",
+              child: Text("${division.name}"),
             ))
         .toList();
   }
 
-  List<DropdownMenuItem<String>> _buildDepartmentItems(Division division) {
-    return sortMapValues<String, String, String>(division?.departments ?? {})
-        .entries
+  List<DropdownMenuItem<String>> _buildDepartmentItems(Division div) {
+    final departments = context.bloc<AffiliationBloc>().getDepartments(div.uuid);
+    return departments
         .map((department) => DropdownMenuItem<String>(
-              value: "${department.key}",
-              child: Text("${department.value}"),
+              value: "${department.uuid}",
+              child: Text("${department.name}"),
             ))
         .toList();
   }
@@ -302,7 +300,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   Affiliation save() {
     _formKey?.currentState?.save();
     final json = _formKey.currentState.value;
-    final affiliation = Affiliation.fromJson(json);
+    final affiliation = AffiliationModel.fromJson(json);
     return affiliation;
   }
 

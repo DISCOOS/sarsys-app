@@ -2,53 +2,103 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/OperationalFunction.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/division_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/organisation_repository.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/core.dart';
+import 'package:SarSys/utils/data_utils.dart';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
+/// Business Logic Component for Affiliation
+///
+/// The main purpose of this BLoC it to minimize
+/// the amount of personal identifiable information
+/// (PII) fetched and stored to local storage.
+///
+/// Fetching all affiliations is not possible
+/// by design. It would potentially violate
+/// Article 5 (Chapter II) in the European
+/// general data protection law, which mandates
+/// data minimization.
+///
+/// Instead, PII is only fetched in context of
+/// an operation using the 'expand' query parameter
+/// supported by 'GET /api/operations/{uuid}/personnels'.
+///
+/// New users are onboarded based on claims in
+/// access-tokens. Users without any
+/// affiliation with an organisations are
+/// onboarded as temporary Persons. If the same
+/// physical person signs in with multiple
+/// accounts, an new Person will be onboarded
+/// for each account, leading to Person duplicates
+///
 class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, AffiliationBlocError>
-    with LoadableBloc<List<Organisation>>, UnloadableBloc<List<Organisation>>, ConnectionAwareBloc {
+    with LoadableBloc<List<Affiliation>>, UnloadableBloc<List<Affiliation>>, ConnectionAwareBloc {
   ///
   /// Default constructor
   ///
-  AffiliationBloc(
-    this.orgs,
-    this.divs,
-    this.deps,
-    this.users,
-    BlocEventBus bus,
-  ) : super(bus: bus) {
-    assert(this.users != null, "userBloc can not be null");
+  AffiliationBloc({
+    @required this.orgs,
+    @required this.divs,
+    @required this.deps,
+    @required this.users,
+    @required this.persons,
+    @required this.repo,
+    @required BlocEventBus bus,
+  }) : super(bus: bus) {
     assert(this.orgs != null, "organisations repository can not be null");
     assert(this.divs != null, "divisions repository can not be null");
     assert(this.deps != null, "departments repository can not be null");
+    assert(this.users != null, "userBloc can not be null");
+    assert(this.persons != null, "persons repository can not be null");
+    assert(this.repo != null, "affiliations repository can not be null");
     assert(this.orgs.service != null, "organisations service can not be null");
     assert(this.divs.service != null, "divisions service can not be null");
     assert(this.deps.service != null, "departments service can not be null");
+    assert(this.persons.service != null, "departments service can not be null");
+    assert(this.repo.service != null, "departments service can not be null");
 
     registerStreamSubscription(users.listen(
-      // Load and unload organisations as needed
+      // Load and unload repos as needed
       _processUserState,
+    ));
+
+    registerStreamSubscription(persons.onChanged.listen(
+      // Handle
+      _processPersonConflicts,
     ));
   }
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [orgs, divs, deps];
+  Iterable<ConnectionAwareRepository> get repos => [
+        orgs,
+        divs,
+        deps,
+        repo,
+        persons,
+      ];
 
   /// Get [OrganisationRepository]
   final OrganisationRepository orgs;
@@ -59,36 +109,66 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get [DepartmentRepository]
   final DepartmentRepository deps;
 
+  /// Get [PersonRepository]
+  final PersonRepository persons;
+
+  /// Get [AffiliationRepository]
+  final AffiliationRepository repo;
+
   /// Get [UserBloc]
   final UserBloc users;
 
-  void _processUserState(UserState state) {
+  void _processUserState(UserState state) async {
     if (hasSubscriptions) {
-      if (state.shouldLoad()) {
-        dispatch(LoadAffiliations());
-      } else if (state.shouldUnload() && orgs.isReady) {
+      if (state.shouldLoad() && !repo.isReady) {
+        // Wait for load before onboarding user
+        await dispatch(LoadAffiliations());
+        onboard();
+      } else if (state.shouldUnload() && repo.isReady) {
         dispatch(UnloadAffiliations());
       }
     }
   }
 
+  void _processPersonConflicts(StorageTransition<Person> event) {
+    if (PersonRepository.isDuplicateUser(event)) {
+      // Find current person usages and replace then with existing user
+      final duplicate = event.from.value.uuid;
+      final existing = event.conflict.base.elementAt<String>('uuid');
+      find(
+        where: (affiliation) => affiliation.person.uuid == duplicate,
+      ).map((affiliation) => affiliation.copyWith(person: affiliation.person.cast(uuid: existing))).forEach(update);
+      // Remove duplicate person
+      persons.delete(duplicate);
+    }
+  }
+
+  /// Check if bloc is ready
+  bool get isReady => repo.isReady;
+
   @override
   AffiliationsEmpty get initialState => AffiliationsEmpty();
 
-  /// Get Affiliation from device number
-  Affiliation find(String number) {
+  /// Find [Affiliation]s matching given  query
+  Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => repo.find(where: where);
+
+  /// Find [Affiliation]s matching given  query
+  Iterable<Affiliation> findPerson(String puuid) => repo.findPerson(puuid);
+
+  /// Get entity as [Affiliation] from device number
+  Affiliation findEntity(String number) {
     final org = findOrganisation(number);
     final div = findDivision(number);
     final dep = findDepartment(number);
-    return Affiliation(
-      org: AggregateRef.fromType<Organisation>(org.uuid),
+    return AffiliationModel(
+      org: org != null ? AggregateRef.fromType<Organisation>(org.uuid) : null,
       div: div != null ? AggregateRef.fromType<Division>(div.uuid) : null,
       dep: dep != null ? AggregateRef.fromType<Department>(dep.uuid) : null,
     );
   }
 
   /// Get full affiliation name as comma-separated list of organisation, division and department names
-  String findName(String number, {String empty = 'Ingen'}) {
+  String findEntityName(String number, {String empty = 'Ingen'}) {
     final names = [
       findOrganisation(number)?.name,
       findDivision(number)?.name,
@@ -107,26 +187,45 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     return names.isEmpty ? empty : names.join(', ');
   }
 
+  /// Get [Person] from User
+  Person findUserPerson({String userId}) => persons.findUser(userId ?? users.user.userId);
+
   /// Get Affiliation from User
-  Affiliation findUserAffiliation({User user}) {
-    final org = findUserOrganisation(user: user);
-    final div = findUserDivision(user: user);
-    final dep = findUserDepartment(user: user);
-    return Affiliation(
-      org: AggregateRef.fromType<Organisation>(org?.uuid),
-      div: AggregateRef.fromType<Division>(div?.uuid),
-      dep: AggregateRef.fromType<Department>(dep?.uuid),
+  Affiliation findUserAffiliation({String userId}) {
+    final _userId = userId ?? users.userId;
+    final person = findUserPerson(userId: _userId);
+    if (person != null) {
+      final affiliation = repo.findPerson(person.uuid).firstOrNull;
+      if (affiliation != null) {
+        return affiliation;
+      }
+    }
+    final org = findUserOrganisation(userId: userId);
+    final div = findUserDivision(userId: userId);
+    final dep = findUserDepartment(userId: userId);
+    return AffiliationModel(
+      div: div?.uuid != null ? AggregateRef.fromType<Division>(div?.uuid) : null,
+      dep: dep?.uuid != null ? AggregateRef.fromType<Department>(dep?.uuid) : null,
+      org: org?.uuid != null ? AggregateRef.fromType<Organisation>(org.uuid) : null,
+      person: person?.uuid != null ? AggregateRef.fromType<Person>(person.uuid) : null,
     );
   }
 
+  /// Get [Affiliation] from [Personnel]
+  Affiliation findPersonnelAffiliation(Personnel personnel) =>
+      repo[personnel?.affiliation?.uuid] ?? personnel.userId != null
+          ? findUserAffiliation(userId: personnel.userId)
+          : null;
+
   /// Get [Organisation] from User
-  Organisation findUserOrganisation({User user}) {
-    final div = findUserDivision(user: user);
+  Organisation findUserOrganisation({String userId}) {
+    final div = findUserDivision(userId: userId);
     return orgs[div?.organisation?.uuid];
   }
 
   /// Get Division from User
-  Division findUserDivision({User user}) {
+  Division findUserDivision({String userId}) {
+    final user = users.repo[userId] ?? users.user;
     final name = (user ?? users.user).division?.toLowerCase();
     return divs.values
         .where(
@@ -136,7 +235,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   /// Get Department id from User
-  Department findUserDepartment({User user}) {
+  Department findUserDepartment({String userId}) {
+    final user = users.repo[userId] ?? users.user;
     final name = (user ?? users.user).department?.toLowerCase();
     return deps.values
         .where(
@@ -191,23 +291,103 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   /// Get [AffiliationQuery] object from current state
-  AffiliationQuery get query => AffiliationQuery(
+  AffiliationQuery query() => AffiliationQuery(
         this,
         aggregates: AffiliationQuery.toAggregates(this),
       );
 
-  /// Get all [Affiliation]s from current state
-  Iterable<Affiliation> get affiliations => query.find();
+  /// Get all affiliated [Person]s as [Affiliation]
+  Iterable<Affiliation> get affiliates => query().affiliates;
 
-  /// Fetch organisations from [orgs]
-  Future<List<Organisation>> load() async {
+  /// Get all entities as [Affiliation]s from current state
+  Iterable<Affiliation> get entities => query().find(
+        types: [OrganisationModel, DivisionModel, DepartmentModel],
+      );
+
+  /// Get divisions in given [Organisation] sorted on [Division.name]
+  Iterable<Division> getDivisions(String orguuid) {
+    final org = orgs[orguuid];
+    final divisions = Map.fromEntries(org.divisions.map((uuid) => MapEntry(uuid, divs[uuid])));
+    return sortMapValues<String, Division, String>(
+      divisions ?? <String, Division>{},
+      (division) => division.name,
+    ).values;
+  }
+
+  /// Get departments in given [Division] sorted on [Department.name]
+  Iterable<Department> getDepartments(String divuuid) {
+    final div = divs[divuuid];
+    final departments = Map.fromEntries(div.departments.map((uuid) => MapEntry(uuid, deps[uuid])));
+    return sortMapValues<String, Department, String>(
+      departments ?? {},
+      (department) => department.name,
+    ).values;
+  }
+
+  /// Fetch organisations from [repo]
+  Future<List<Affiliation>> load() async {
     return dispatch(
       LoadAffiliations(),
     );
   }
 
+  /// Onboard current user. If already onboarded
+  /// existing [affiliation] is returned.
+  Future<Affiliation> onboard({
+    String userId,
+    AffiliationType type = AffiliationType.member,
+    AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
+  }) async {
+    _assertState('onboard');
+    final affiliation = findUserAffiliation(userId: userId);
+    if (affiliation.uuid == null) {
+      return dispatch(
+        OnboardUser(
+          userId ?? users.user.userId,
+          affiliation.copyWith(
+            status: status,
+            uuid: Uuid().v4(),
+            type: affiliation.isTemporary ? AffiliationType.volunteer : type,
+          ),
+        ),
+      );
+    }
+    return affiliation;
+  }
+
+  /// Create affiliation for temporary
+  /// personnel. A temporary [Person] will
+  /// only be created from [Personnel] if
+  /// given [personnel] have no affiliation
+  /// already. Otherwise, existing affiliation
+  /// is returned.
+  Future<Affiliation> temporary(
+    Personnel personnel,
+    Affiliation affiliation,
+  ) async {
+    _assertState('temporary');
+    final current = findPersonnelAffiliation(personnel);
+    if (current == null) {
+      AffiliationUtils.assertRef(personnel);
+      return dispatch(
+        CreateTemporaryAffiliation(
+          personnel,
+          affiliation,
+        ),
+      );
+    }
+    return current;
+  }
+
+  Future<Affiliation> update(Affiliation affiliation) {
+    _assertState('update');
+    return dispatch(
+      UpdateAffiliation(affiliation),
+    );
+  }
+
   /// Clear all organisations
-  Future<List<Organisation>> unload() {
+  Future<List<Affiliation>> unload() {
     return dispatch(UnloadAffiliations());
   }
 
@@ -215,6 +395,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   Stream<AffiliationState> execute(AffiliationCommand command) async* {
     if (command is LoadAffiliations) {
       yield* _load(command);
+    } else if (command is OnboardUser) {
+      yield* _onboard(command);
+    } else if (command is CreateTemporaryAffiliation) {
+      yield* _temporary(command);
+    } else if (command is UpdateAffiliation) {
+      yield* _update(command);
     } else if (command is UnloadAffiliations) {
       yield* _unload(command);
     } else {
@@ -223,37 +409,146 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   Stream<AffiliationState> _load(LoadAffiliations command) async* {
-    // Execute commands
+    // Load from backend
+    await orgs.load();
     await divs.load();
     await deps.load();
-    final organisations = await orgs.load();
 
-    // Complete request
+    // Load from local storage.
+    //
+    // Affiliations and Persons
+    // are populated through
+    // Personnels and during
+    // onboarding of Users
+    await repo.init();
+    try {
+      await persons.load(
+        uuids: repo.values.map((e) => e.person.uuid),
+      );
+    } on PersonServiceException catch (e) {
+      if (!(e.response.is404 || e.response.is406)) {
+        rethrow;
+      }
+      // Remove affiliations with persons not found
+      repo.values
+          .where((affiliation) => !persons.containsKey(affiliation.person.uuid))
+          .forEach((affiliation) => repo.delete(affiliation.uuid));
+    }
+
     final loaded = toOK(
       command,
-      AffiliationsLoaded(organisations),
-      result: organisations,
+      AffiliationsLoaded(
+        orgs: orgs.keys,
+        divs: orgs.keys,
+        deps: orgs.keys,
+        persons: persons.keys,
+        affiliations: repo.keys,
+      ),
+      result: repo.values,
     );
     yield loaded;
   }
 
+//  void _initPersonsFromAffiliates() =>
+//      repo.values.where((affiliation) => affiliation.isAffiliate).forEach((affiliation) {
+//        // Assumes affiliations was fetched with
+//        // query parameter 'expand=person'
+//        final person = PersonModel.fromJson(
+//          affiliation.toJson()..addAll({"uuid": affiliation.person.uuid}),
+//        );
+//        persons.put(StorageState.created(person, remote: true));
+//      });
+
+  Stream<AffiliationState> _onboard(OnboardUser command) async* {
+    _assertOnboarding(command);
+    var person = persons.findUser(command.data);
+    if (person == null) {
+      person = await persons.create(PersonModel.fromUser(
+        users.repo[command.data],
+        temporary: command.affiliation.isTemporary,
+      ));
+    }
+    final affiliation = await repo.create(command.affiliation.copyWith(
+      person: AggregateRef.fromType<Person>(person.uuid),
+    ));
+
+    final loaded = toOK(
+      command,
+      UserOnboarded(
+        person: person,
+        userId: command.data,
+        affiliation: affiliation,
+      ),
+      result: affiliation,
+    );
+    yield loaded;
+  }
+
+  Stream<AffiliationState> _temporary(CreateTemporaryAffiliation command) async* {
+    _assertTemporary(command);
+    var person = persons.findUser(command.data.userId);
+    if (person == null) {
+      person = await persons.create(PersonModel.fromPersonnel(
+        command.data,
+        temporary: true,
+      ));
+    }
+    final affiliation = await repo.create(command.affiliation.copyWith(
+      person: AggregateRef.fromType<Person>(person.uuid),
+      type: command.affiliation.type ?? AffiliationType.volunteer,
+      status: command.affiliation.status ?? AffiliationStandbyStatus.available,
+    ));
+    final loaded = toOK(
+      command,
+      PersonnelAffiliated(
+        personnel: command.data,
+        affiliation: affiliation,
+      ),
+      result: affiliation,
+    );
+    yield loaded;
+  }
+
+  Stream<AffiliationState> _update(UpdateAffiliation command) async* {
+    final affiliation = await repo.update(command.data);
+    final updated = toOK(
+      command,
+      AffiliationUpdated(affiliation),
+      result: affiliation,
+    );
+    yield updated;
+  }
+
   Stream<AffiliationState> _unload(UnloadAffiliations command) async* {
     // Execute commands
-    await divs.close();
-    await deps.close();
-    List<Organisation> organisations = await orgs.close();
+    final _deps = await deps.close();
+    final _divs = await divs.close();
+    final _orgs = await orgs.close();
+    final _persons = await persons.close();
+    final _affiliations = await repo.close();
+
     final unloaded = toOK(
       command,
-      AffiliationsUnloaded(organisations),
+      AffiliationsUnloaded(
+        orgs: _orgs.map((e) => e.uuid),
+        divs: _divs.map((e) => e.uuid),
+        deps: _deps.map((e) => e.uuid),
+        persons: _persons.map((e) => e.uuid),
+        affiliations: _affiliations.map((e) => e.uuid),
+      ),
+      result: _affiliations,
     );
     yield unloaded;
   }
 
   @override
   Future<void> close() async {
+    super.close();
+    await deps.dispose();
+    await divs.dispose();
     await orgs.dispose();
-    await orgs.dispose();
-    return super.close();
+    await persons.dispose();
+    return repo.dispose();
   }
 
   @override
@@ -261,6 +556,35 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
+
+  void _assertOnboarding(OnboardUser command) {
+    final current = findUserAffiliation(userId: command.data);
+    if (current.uuid != null) {
+      throw ArgumentError("User ${command.data} already onboarded");
+    } else if (command.affiliation.uuid == null) {
+      throw ArgumentError("Affiliation has no uuid");
+    }
+  }
+
+  void _assertTemporary(CreateTemporaryAffiliation command) {
+    if (command.affiliation.isEmpty) {
+      throw ArgumentError("Affiliation is empty");
+    } else if (command.affiliation.uuid == null) {
+      throw ArgumentError("Temporary affiliation has no uuid");
+    } else if (command.data.affiliation?.uuid != command.affiliation.uuid) {
+      throw ArgumentError("Temporary affiliation uuids does not match");
+    }
+    AffiliationUtils.assertRef(command.data);
+  }
+
+  void _assertState(String action) {
+    if (!repo.isReady) {
+      throw AffiliationBlocError(
+        "Bloc not ready. "
+        "Ensure 'AffiliationBloc.load()' before '$action'",
+      );
+    }
+  }
 }
 
 /// ---------------------
@@ -273,14 +597,41 @@ abstract class AffiliationCommand<S, T> extends BlocCommand<S, T> {
   }) : super(data, props);
 }
 
-class LoadAffiliations extends AffiliationCommand<void, List<Organisation>> {
+class LoadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
   LoadAffiliations() : super(null);
 
   @override
   String toString() => '$runtimeType {}';
 }
 
-class UnloadAffiliations extends AffiliationCommand<void, List<Organisation>> {
+class OnboardUser extends AffiliationCommand<String, Affiliation> {
+  final Affiliation affiliation;
+  OnboardUser(String userId, this.affiliation) : super(userId, props: [affiliation]);
+
+  @override
+  String toString() => '$runtimeType {userId: $data, affiliation: $affiliation}';
+}
+
+class CreateTemporaryAffiliation extends AffiliationCommand<Personnel, Affiliation> {
+  final Affiliation affiliation;
+  CreateTemporaryAffiliation(Personnel personnel, this.affiliation)
+      : super(
+          personnel,
+          props: [affiliation],
+        );
+
+  @override
+  String toString() => '$runtimeType {personnel: $data, affiliation: $affiliation}';
+}
+
+class UpdateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
+  UpdateAffiliation(Affiliation affiliation) : super(affiliation);
+
+  @override
+  String toString() => '$runtimeType {affiliation: $data}';
+}
+
+class UnloadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
   UnloadAffiliations() : super(null);
 
   @override
@@ -310,18 +661,92 @@ class AffiliationsEmpty extends AffiliationState<void> {
   String toString() => '$runtimeType';
 }
 
-class AffiliationsLoaded extends AffiliationState<Iterable<Organisation>> {
-  AffiliationsLoaded(Iterable<Organisation> data) : super(data);
+class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
+  AffiliationsLoaded({
+    this.orgs,
+    this.deps,
+    this.divs,
+    this.persons,
+    Iterable<String> affiliations,
+  }) : super(affiliations);
+
+  final Iterable<String> orgs;
+  final Iterable<String> deps;
+  final Iterable<String> divs;
+  final Iterable<String> persons;
 
   @override
-  String toString() => '$runtimeType {organisations: $data}';
+  String toString() => '$runtimeType {'
+      'orgs: $orgs, '
+      'divs: $divs, '
+      'deps: $deps, '
+      'persons: $persons, '
+      'affiliations: $data'
+      '}';
 }
 
-class AffiliationsUnloaded extends AffiliationState<Iterable<Organisation>> {
-  AffiliationsUnloaded(Iterable<Organisation> organisations) : super(organisations);
+class UserOnboarded extends AffiliationState<Affiliation> {
+  UserOnboarded({
+    this.userId,
+    this.person,
+    Affiliation affiliation,
+  }) : super(affiliation);
+
+  final String userId;
+  final Person person;
 
   @override
-  String toString() => '$runtimeType {organisations: $data}';
+  String toString() => '$runtimeType {'
+      'userId: $userId, '
+      'person: $person, '
+      'affiliation: $data'
+      '}';
+}
+
+class PersonnelAffiliated extends AffiliationState<Affiliation> {
+  PersonnelAffiliated({
+    this.personnel,
+    Affiliation affiliation,
+  }) : super(affiliation);
+
+  final Personnel personnel;
+
+  @override
+  String toString() => '$runtimeType {'
+      'personnel: $personnel, '
+      'affiliation: $data'
+      '}';
+}
+
+class AffiliationUpdated extends AffiliationState<Affiliation> {
+  AffiliationUpdated(Affiliation affiliation) : super(affiliation);
+
+  @override
+  String toString() => '$runtimeType {affiliation: $data}';
+}
+
+class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {
+  AffiliationsUnloaded({
+    this.orgs,
+    this.deps,
+    this.divs,
+    this.persons,
+    Iterable<String> affiliations,
+  }) : super(affiliations);
+
+  final Iterable<String> orgs;
+  final Iterable<String> deps;
+  final Iterable<String> divs;
+  final Iterable<String> persons;
+
+  @override
+  String toString() => '$runtimeType {'
+      'orgs: $orgs, '
+      'divs: $divs, '
+      'deps: $deps, '
+      'persons: $persons, '
+      'affiliations: $data'
+      '}';
 }
 
 /// ---------------------
@@ -352,9 +777,10 @@ class AffiliationBlocException implements Exception {
   String toString() => '$runtimeType {state: $state, command: $command, stackTrace: $stackTrace}';
 }
 
-/// -------------------------------------------------
-/// Helper class for querying [Affiliation] aggregates
-/// -------------------------------------------------
+/// --------------------------------------------
+/// Helper class for querying for [Affiliation]s
+/// --------------------------------------------
+///
 class AffiliationQuery {
   final AffiliationBloc bloc;
   final Map<String, Aggregate> _aggregates;
@@ -374,16 +800,31 @@ class AffiliationQuery {
       Map<String, Aggregate>.from(bloc.orgs.map)
         ..addAll(bloc.divs.map.cast())
         ..addAll(bloc.deps.map.cast())
+        ..addAll(bloc.repo.map.cast())
+        ..addAll(bloc.persons.map.cast())
         ..removeWhere((_, aggregate) => !(where == null || where(aggregate)));
 
   /// Get all divisions regardless of organisation
-  Iterable<Organisation> get organisations => _aggregates.values.whereType<Organisation>();
+  Iterable<Organisation> get organisations => _aggregates.values.whereType<OrganisationModel>();
 
   /// Get all divisions regardless of organisation
-  Iterable<Division> get divisions => _aggregates.values.whereType<Division>();
+  Iterable<Division> get divisions => _aggregates.values.whereType<DivisionModel>();
 
   /// Get all departments regardless of organisation
-  Iterable<Department> get departments => _aggregates.values.whereType<Department>();
+  Iterable<Department> get departments => _aggregates.values.whereType<DepartmentModel>();
+
+  /// Get all organisational entities
+  Iterable<Affiliation> get entities => find(types: [OrganisationModel, DivisionModel, DepartmentModel]);
+
+  /// Get all affiliated persons as [Affiliations]s
+  Iterable<Affiliation> get affiliates => _aggregates.values.whereType<AffiliationModel>().where(
+        (test) => test.isAffiliate,
+      );
+
+  /// Get all [person]s with an affiliation
+  Iterable<Person> get persons => affiliates.where((a) => _aggregates.containsKey(a.person?.uuid)).map(
+        (a) => _aggregates[a.person.uuid],
+      );
 
   /// Test if given [uuid] is contained in any [Affiliation] in this [AffiliationQuery]
   bool contains(String uuid) => _aggregates.containsKey(uuid);
@@ -400,70 +841,101 @@ class AffiliationQuery {
     final child = _aggregates[uuid];
     switch (child.runtimeType) {
       case OrganisationModel:
-        return Affiliation(
+        return AffiliationModel(
           org: AggregateRef.fromType<Organisation>(uuid),
         );
       case DivisionModel:
-        return Affiliation(
+        return AffiliationModel(
           org: AggregateRef.fromType<Organisation>((child as Division).organisation.uuid),
           div: AggregateRef.fromType<Division>(uuid),
         );
       case DepartmentModel:
-        return Affiliation(
+        return AffiliationModel(
           org: AggregateRef.fromType<Organisation>(
             (_aggregates[(child as Department).division.uuid] as Division).organisation.uuid,
           ),
           div: AggregateRef.fromType<Division>((child as Department).division.uuid),
           dep: AggregateRef.fromType<Department>(uuid),
         );
+      case PersonModel:
+        return _aggregates.values.whereType<Affiliation>().firstWhere(
+              (element) => element.person.uuid == child.uuid,
+              orElse: () => null,
+            );
+      case AffiliationModel:
+        return child;
     }
     throw UnimplementedError(
       "Unexpected affiliation type: ${child.runtimeType}",
     );
   }
 
-  /// Find all [Affiliation] with child [Aggregate]
+  /// Find all [Affiliation] of type [T]
   /// at any position in the affiliation tree
   ///
   Iterable<Affiliation> find<T extends Aggregate>({
     String uuid,
+    List<Type> types,
     bool Function(Aggregate aggregate) where,
   }) {
-    switch (T) {
+    switch (_toModelType(T)) {
+      // Search for parent types
       case OrganisationModel:
         if (uuid == null) {
-          return _findTyped<Organisation>(where);
+          return _findTyped<OrganisationModel>(where);
         }
         // Get affiliations for all divisions
         // and departments in organisation
-        final child = (_aggregates[uuid] as Organisation);
-        final divisions = _findChildren(child.divisions, where);
-        return [
-          if (_accept(uuid, where)) elementAt(uuid),
-          ...divisions.map((div) => elementAt(div.uuid)),
-          ...divisions.fold(<Affiliation>[], (found, div) => _findLeafs<Department>(div.departments, where))
-        ];
+        if (_accept<T>(uuid, where)) {
+          final child = (_aggregates[uuid] as Organisation);
+          final divisions = _findChildren(child.divisions, where);
+          return [
+            elementAt(uuid),
+            ...divisions.map((div) => elementAt(div.uuid)),
+            ...divisions.fold(<Affiliation>[], (found, div) => _findLeafs<Department>(div.departments, where))
+          ];
+        }
+        return [];
       case DivisionModel:
         if (uuid == null) {
-          return _findTyped<Division>(where);
+          return _findTyped<DivisionModel>(where);
         }
         // Get affiliations for all
         // departments in division
-        final child = (_aggregates[uuid] as Division);
-        final departments = _findLeafs<Department>(child.departments, where);
-        return [
-          if (_accept(uuid, where)) elementAt(uuid),
-          ...departments,
-        ];
+        if (_accept<T>(uuid, where)) {
+          final child = (_aggregates[uuid] as Division);
+          final departments = _findLeafs<Department>(child.departments, where);
+          return [
+            elementAt(uuid),
+            ...departments,
+          ];
+        }
+        return [];
+      // Search for leaf types
       case DepartmentModel:
         return uuid == null
-            ? // Match against all departments
-            _findTyped<Department>(where)
-            : // Department is always a leaf
-            _accept(uuid, where) ? [elementAt(uuid)] : [];
+            ? // Match against all instances of given type
+            _findTyped<DepartmentModel>(where)
+            : // Match against given uuid
+            _accept<DepartmentModel>(uuid, where) ? [elementAt(uuid)] : [];
+      case AffiliationModel:
+        return uuid == null
+            ? // Match against all instances of given type
+            _findTyped<AffiliationModel>(where)
+            : // Match against given uuid
+            _accept<AffiliationModel>(uuid, where) ? [elementAt(uuid)] : [];
+      case PersonModel:
+        return uuid == null
+            ? // Match against all instances of given type
+            _findTyped<PersonModel>(where)
+            : // Match against given uuid
+            _accept<PersonModel>(uuid, where) ? [elementAt(uuid)] : [];
       default:
-        // Match against all aggregates
-        return _findAny(where);
+        return uuid == null
+            ? // Match against all instances of given type(s)
+            types?.isNotEmpty == true ? _findTypes(_toModelTypes(types), where) : _findAny(where)
+            : // Match against given uuid
+            _accept<T>(uuid, where, types: _toModelTypes(types)) ? [elementAt(uuid)] : [];
     }
   }
 
@@ -473,12 +945,43 @@ class AffiliationQuery {
 
   Iterable<Affiliation> _findLeafs<T extends Aggregate>(
     List<String> uuids,
-    bool where(Aggregate aggregate),
-  ) =>
+    bool where(Aggregate aggregate), {
+    List<Type> types = const [],
+  }) =>
       uuids
-          .map((uuid) => _aggregates[uuid] as T)
-          .where((dep) => where == null || where(dep))
-          .map((dep) => elementAt(dep.uuid));
+          .where((uuid) => _aggregates.containsKey(uuid))
+          .map((uuid) => _aggregates[uuid])
+          .where((aggregate) => aggregate is T || isType(aggregate, types))
+          .where((aggregate) => where == null || where(aggregate))
+          .map((aggregate) => elementAt(aggregate.uuid));
+
+  List<Type> _toModelTypes(List<Type> types) => (types ?? []).map(_toModelType).toList();
+
+  Type _toModelType(Type type) {
+    switch (type) {
+      case Organisation:
+      case OrganisationModel:
+        return OrganisationModel;
+      case Division:
+      case DivisionModel:
+        return DivisionModel;
+      case Department:
+      case DepartmentModel:
+        return DepartmentModel;
+      case Affiliation:
+      case AffiliationModel:
+        return AffiliationModel;
+      case Person:
+      case PersonModel:
+        return PersonModel;
+      case Aggregate:
+        return type;
+      default:
+        throw ArgumentError('Type $type is not supported');
+    }
+  }
+
+  bool isType(Aggregate aggregate, List<Type> types) => types.contains(aggregate.runtimeType);
 
   Iterable<Affiliation> _findAny(
     bool where(Aggregate aggregate),
@@ -490,6 +993,8 @@ class AffiliationQuery {
             case OrganisationModel:
             case DivisionModel:
             case DepartmentModel:
+            case AffiliationModel:
+            case PersonModel:
               return List.from(found)
                 ..add(elementAt(
                   next.uuid,
@@ -514,11 +1019,32 @@ class AffiliationQuery {
           )),
       );
 
-  bool _accept(
-    String uuid,
+  Iterable<Affiliation> _findTypes(
+    List<Type> types,
     bool where(Aggregate aggregate),
   ) =>
-      where == null || where(_aggregates[uuid]);
+      _aggregates.values.where((aggregate) => isType(aggregate, types)).fold(
+        <Affiliation>[],
+        (found, next) => List.from(found)
+          ..addAll(find(
+            uuid: next.uuid,
+            where: where,
+            types: types,
+          )),
+      );
+
+  bool _accept<T>(
+    String uuid,
+    bool where(Aggregate aggregate), {
+    List<Type> types = const [],
+  }) {
+    final aggregate = _aggregates[uuid];
+    if (aggregate != null) {
+      final type = aggregate.runtimeType;
+      return (typeOf<T>() == type || types.contains(type)) && (where == null || where(_aggregates[uuid]));
+    }
+    return false;
+  }
 
   /// Get filtered map of [Affiliation.uuid] to [Device] or
   /// [Affiliation] tracked by aggregate of type [T]

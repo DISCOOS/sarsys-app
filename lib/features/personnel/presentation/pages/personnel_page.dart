@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -173,7 +174,7 @@ class PersonnelPageState extends State<PersonnelPage> {
               avatar: new AffiliationAvatar(
                 size: 6.0,
                 maxRadius: 10.0,
-                affiliation: personnel?.affiliation,
+                affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
               ),
             ),
             Spacer(),
@@ -274,11 +275,11 @@ class PersonnelPageState extends State<PersonnelPage> {
       case PersonnelStatus.retired:
         return IconSlideAction(
           caption: 'MOBILISERT',
-          color: toPersonnelStatusColor(PersonnelStatus.mobilized),
+          color: toPersonnelStatusColor(PersonnelStatus.alerted),
           icon: Icons.check_circle,
           onTap: () async => await checkInPersonnel(personnel),
         );
-      case PersonnelStatus.mobilized:
+      case PersonnelStatus.alerted:
         return IconSlideAction(
           caption: 'ANKOMMET',
           color: toPersonnelStatusColor(PersonnelStatus.onscene),
@@ -317,7 +318,7 @@ class PersonnelPageState extends State<PersonnelPage> {
 
   PersonnelStatus _onRead(value) => PersonnelStatus.values.firstWhere(
         (e) => value == enumName(e),
-        orElse: () => PersonnelStatus.mobilized,
+        orElse: () => PersonnelStatus.alerted,
       );
 }
 
@@ -376,7 +377,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
     final List recent = stored != null
         ? json.decode(stored)
         : [
-            translatePersonnelStatus(PersonnelStatus.mobilized),
+            translatePersonnelStatus(PersonnelStatus.alerted),
             translatePersonnelStatus(PersonnelStatus.onscene),
             translatePersonnelStatus(PersonnelStatus.retired)
           ];

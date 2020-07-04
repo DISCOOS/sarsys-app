@@ -224,7 +224,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultAffiliation() => context.bloc<AffiliationBloc>().findName(widget?.device?.number);
+  String _defaultAffiliation() => context.bloc<AffiliationBloc>().findEntityName(widget?.device?.number);
 
   InputDecorator _buildOrgAliasField() => InputDecorator(
         decoration: InputDecoration(
@@ -314,7 +314,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     alias = emptyAsNull(alias);
     number = emptyAsNull(number);
     _editedName = alias ?? number ?? _defaultName();
-    _editedAffiliation = affiliations.findName(number, empty: '-') ?? _editedAffiliation;
+    _editedAffiliation = affiliations.findEntityName(number, empty: '-') ?? _editedAffiliation;
     _editedOrgAlias = affiliations.findOrganisation(number).fleetMap?.alias ?? _editedOrgAlias;
     _editedFunction = affiliations.findFunction(number) ?? _editedFunction;
     if (update) setState(() {});

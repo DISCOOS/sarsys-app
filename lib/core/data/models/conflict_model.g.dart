@@ -9,7 +9,10 @@ part of 'conflict_model.dart';
 ConflictModel _$ConflictModelFromJson(Map json) {
   return ConflictModel(
     type: _$enumDecodeNullable(_$ConflictTypeEnumMap, json['type']),
-    error: json['error'] as String,
+    code: json['code'] as String,
+    base: (json['base'] as Map)?.map(
+      (k, e) => MapEntry(k as String, e),
+    ),
     mine: (json['mine'] as List)
         ?.map((e) => (e as Map)?.map(
               (k, e) => MapEntry(k as String, e),
@@ -20,6 +23,7 @@ ConflictModel _$ConflictModelFromJson(Map json) {
               (k, e) => MapEntry(k as String, e),
             ))
         ?.toList(),
+    error: json['error'] as String,
   );
 }
 
@@ -32,8 +36,10 @@ Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) {
     }
   }
 
-  writeNotNull('type', _$ConflictTypeEnumMap[instance.type]);
+  writeNotNull('code', instance.code);
   writeNotNull('error', instance.error);
+  writeNotNull('type', _$ConflictTypeEnumMap[instance.type]);
+  writeNotNull('base', instance.base);
   writeNotNull('mine', instance.mine);
   writeNotNull('yours', instance.yours);
   return val;

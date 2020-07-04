@@ -64,7 +64,7 @@ class ScreenReportState extends State<ScreenReport> {
               final delete = await prompt(
                 NavigationService().overlay.context,
                 "Slette alle data?",
-                "Dette vil slette alle data SarSys har lagret. Vil du fortsette?",
+                "Dette vil slette alle data SarSys har lagret på telefonen unntatt kart. Vil du fortsette?",
               );
               if (delete) {
                 Navigator.pop(NavigationService().overlay.context);

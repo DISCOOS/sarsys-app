@@ -232,8 +232,8 @@ void main() async {
       // Arrange
       harness.connectivity.offline();
       await _prepare(harness);
-      final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.mobilized);
-      final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.mobilized);
+      final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
+      final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
       await harness.personnelBloc.create(personnel1);
       await harness.personnelBloc.create(personnel2);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnel");
@@ -249,7 +249,7 @@ void main() async {
       );
       expect(
         harness.personnelBloc.repo[personnel1.uuid].status,
-        equals(PersonnelStatus.mobilized),
+        equals(PersonnelStatus.alerted),
         reason: "SHOULD be status mobilized",
       );
       expect(

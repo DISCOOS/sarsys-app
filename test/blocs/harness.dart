@@ -3,17 +3,21 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/organisation_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/person_repository_impl.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
+import 'package:SarSys/mock/affiliation_service_mock.dart';
 import 'package:SarSys/mock/department_service_mock.dart';
 import 'package:SarSys/mock/division_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/mock/organisation_service_mock.dart';
+import 'package:SarSys/mock/person_service_mock.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -60,6 +64,8 @@ class BlocTestHarness implements BlocDelegate {
   static const TRUSTED = 'username@some.domain';
   static const UNTRUSTED = 'username';
   static const PASSWORD = 'password';
+  static const DIVISION = 'division';
+  static const DEPARTMENT = 'department';
 
   final baseRestUrl = Defaults.baseRestUrl;
   final assetConfig = 'assets/config/app_config.json';
@@ -75,9 +81,23 @@ class BlocTestHarness implements BlocDelegate {
   BlocEventBus get bus => _bus;
   BlocEventBus _bus = BlocEventBus();
 
+  String _userId;
+  String get userId => _userId;
+
   String _username;
+  String get username => _username;
+
   String _password;
+  String get password => _password;
+
+  String _division;
+  String get division => _division;
+
+  String _department;
+  String get department => _department;
+
   bool _authenticated;
+  bool get isAuthenticated => _authenticated;
 
   UserServiceMock get userService => _userService;
   UserServiceMock _userService;
@@ -102,6 +122,12 @@ class BlocTestHarness implements BlocDelegate {
 
   DepartmentServiceMock get departmentService => _departmentService;
   DepartmentServiceMock _departmentService;
+
+  PersonServiceMock get personService => _personService;
+  PersonServiceMock _personService;
+
+  AffiliationServiceMock get affiliationService => _affiliationService;
+  AffiliationServiceMock _affiliationService;
 
   IncidentServiceMock get incidentService => _incidentService;
   IncidentServiceMock _incidentService;
@@ -187,7 +213,7 @@ class BlocTestHarness implements BlocDelegate {
         await _buildUserBloc();
       }
       if (_withAffiliationBloc) {
-        _buildAffiliationBloc();
+        await _buildAffiliationBloc();
       }
       if (_withOperationBloc) {
         await _buildOperationBloc();
@@ -259,20 +285,29 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withUserBloc({
+    String userId,
     String username = UNTRUSTED,
     String password = PASSWORD,
+    String division = DIVISION,
+    String department = DEPARTMENT,
     bool authenticated = false,
   }) {
     withConfigBloc();
+    _userId = userId ?? Uuid().v4();
     _username = username;
     _password = password;
+    _department = department;
+    _division = division;
     _withUserBloc = true;
     _authenticated = authenticated;
   }
 
   void withAffiliationBloc({
+    String userId,
     String username = UNTRUSTED,
     String password = PASSWORD,
+    String division = DIVISION,
+    String department = DEPARTMENT,
     bool authenticated = true,
   }) {
     withUserBloc(
@@ -288,7 +323,7 @@ class BlocTestHarness implements BlocDelegate {
     String password = PASSWORD,
     bool authenticated = true,
   }) {
-    withAffiliationBloc(
+    withUserBloc(
       username: username,
       password: password,
       authenticated: authenticated,
@@ -396,9 +431,12 @@ class BlocTestHarness implements BlocDelegate {
   Future _buildUserBloc() async {
     assert(_withConfigBloc, 'UserBloc requires AppConfigBloc');
     _userService = UserServiceMock.build(
-      UserRole.commander,
-      _username,
-      _password,
+      role: UserRole.commander,
+      userId: _userId,
+      username: _username,
+      password: _password,
+      division: _division,
+      department: _department,
     );
     _userBloc = UserBloc(
       UserRepository(
@@ -422,27 +460,38 @@ class BlocTestHarness implements BlocDelegate {
     }
   }
 
-  void _buildAffiliationBloc() {
-    assert(_withUserBloc, 'IncidentBloc requires UserBloc');
+  Future _buildAffiliationBloc() async {
+    assert(_withUserBloc, 'OperationBloc requires UserBloc');
     _organisationService = OrganisationServiceMock.build();
     _divisionService = DivisionServiceMock.build();
     _departmentService = DepartmentServiceMock.build();
+    _personService = PersonServiceMock.build();
+    _affiliationService = await AffiliationServiceMock.build();
     _affiliationBloc = AffiliationBloc(
-      OrganisationRepositoryImpl(
+      orgs: OrganisationRepositoryImpl(
         _organisationService,
         connectivity: _connectivity,
       ),
-      DivisionRepositoryImpl(
+      divs: DivisionRepositoryImpl(
         _divisionService,
         connectivity: _connectivity,
       ),
-      DepartmentRepositoryImpl(
+      deps: DepartmentRepositoryImpl(
         _departmentService,
         connectivity: _connectivity,
       ),
-      _userBloc,
-      bus,
+      persons: PersonRepositoryImpl(
+        personService,
+        connectivity: _connectivity,
+      ),
+      repo: AffiliationRepositoryImpl(
+        affiliationService,
+        connectivity: _connectivity,
+      ),
+      users: _userBloc,
+      bus: bus,
     );
+    return Future.value();
   }
 
   Future _buildOperationBloc({
@@ -450,7 +499,6 @@ class BlocTestHarness implements BlocDelegate {
     String passcode = 'T123',
   }) async {
     assert(_withUserBloc, 'OperationBloc requires UserBloc');
-    assert(_withAffiliationBloc, 'OperationBloc requires AffiliationBloc');
 
     _incidentService = IncidentServiceMock.build(
       _userBloc.repo,
@@ -492,7 +540,7 @@ class BlocTestHarness implements BlocDelegate {
     int appCount = 0,
     bool simulate = false,
   }) {
-    assert(_withOperationBloc, 'DeviceBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'DeviceBloc requires OperationBloc');
     _deviceService = DeviceServiceMock.build(
       _operationsBloc,
       tetraCount: tetraCount,
@@ -512,7 +560,8 @@ class BlocTestHarness implements BlocDelegate {
   void _buildPersonnelBloc({
     int count = 0,
   }) {
-    assert(_withOperationBloc, 'PersonnelBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'PersonnelBloc requires OperationBloc');
+    assert(_withAffiliationBloc, 'PersonnelBloc requires AffiliationBloc');
     _personnelService = PersonnelServiceMock.build(count);
     _personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
@@ -520,6 +569,7 @@ class BlocTestHarness implements BlocDelegate {
         connectivity: _connectivity,
       ),
       bus,
+      _affiliationBloc,
       _operationsBloc,
     );
   }
@@ -527,7 +577,7 @@ class BlocTestHarness implements BlocDelegate {
   void _buildUnitBloc({
     int count = 0,
   }) {
-    assert(_withOperationBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'UnitBloc requires OperationBloc');
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     _unitService = UnitServiceMock.build(count);
     _unitBloc = UnitBloc(
@@ -554,7 +604,7 @@ class BlocTestHarness implements BlocDelegate {
     int personnelCount = 0,
     int unitCount = 0,
   }) {
-    assert(_withOperationBloc, 'UnitBloc requires IncidentBloc');
+    assert(_withOperationBloc, 'UnitBloc requires OperationBloc');
     assert(_withDeviceBloc, 'UnitBloc requires DeviceBloc');
     assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
     assert(_withUnitBloc, 'UnitBloc requires UnitBloc');

@@ -100,7 +100,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
 
   BottomAppBar _buildBottomAppBar(BuildContext context) {
     return BottomAppBar(
-      shape: isCommander(context) ? CircularNotchedRectangle() : null,
+      shape: CircularNotchedRectangle(),
       notchMargin: 8.0,
       elevation: 16.0,
       child: FractionallySizedBox(
@@ -213,8 +213,19 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             child: Icon(Icons.add),
             onPressed: () async => await createPersonnel(),
           );
+        case CommandScreen.TAB_PERSONNEL:
+          return FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: null,
+            backgroundColor: Colors.grey,
+          );
       }
     }
-    return Container();
+    return FloatingActionButton(
+      child: Icon(Icons.add),
+      onPressed: null,
+      disabledElevation: 0,
+      backgroundColor: Colors.grey,
+    );
   }
 }

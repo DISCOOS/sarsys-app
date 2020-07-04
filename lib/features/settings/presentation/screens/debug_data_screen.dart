@@ -1,9 +1,11 @@
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/core/service.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -73,6 +75,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
               _buildIncidentsTile(context),
               _buildOperationsTile(context),
               _buildUnitsTile(context),
+              _buildPersonsTile(context),
+              _buildAffiliationsTile(context),
               _buildPersonnelsTile(context),
               _buildDevicesTile(context),
               _buildOrgsTile(context),
@@ -115,6 +119,22 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Enheter",
       repo: context.bloc<UnitBloc>().repo,
       subtitle: (StorageState<Unit> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildPersonsTile(BuildContext context) {
+    return RepositoryTile<Person>(
+      title: "Personer",
+      repo: context.bloc<AffiliationBloc>().persons,
+      subtitle: (StorageState<Person> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildAffiliationsTile(BuildContext context) {
+    return RepositoryTile<Affiliation>(
+      title: "Tilhørigheter",
+      repo: context.bloc<AffiliationBloc>().repo,
+      subtitle: (StorageState<Affiliation> state) => '${state?.value}',
     );
   }
 
@@ -162,6 +182,11 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     Future.wait(
       [
         context.bloc<AppConfigBloc>().repo.commit(),
+        context.bloc<AffiliationBloc>().repo.commit(),
+        context.bloc<AffiliationBloc>().orgs.commit(),
+        context.bloc<AffiliationBloc>().divs.commit(),
+        context.bloc<AffiliationBloc>().deps.commit(),
+        context.bloc<AffiliationBloc>().persons.commit(),
         context.bloc<OperationBloc>().incidents.commit(),
         context.bloc<OperationBloc>().repo.commit(),
         context.bloc<UnitBloc>().repo.commit(),
@@ -178,6 +203,11 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     Future.wait(
       [
         context.bloc<OperationBloc>().incidents.reset(),
+        context.bloc<AffiliationBloc>().repo.reset(),
+        context.bloc<AffiliationBloc>().orgs.reset(),
+        context.bloc<AffiliationBloc>().divs.reset(),
+        context.bloc<AffiliationBloc>().deps.reset(),
+        context.bloc<AffiliationBloc>().persons.reset(),
         context.bloc<OperationBloc>().repo.reset(),
         context.bloc<UnitBloc>().repo.reset(),
         context.bloc<PersonnelBloc>().repo.reset(),

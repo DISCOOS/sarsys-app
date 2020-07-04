@@ -45,7 +45,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   void _processUserState(UserState state) {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad()) {
+        if (state.shouldLoad() && !repo.isReady) {
           dispatch(LoadDevices());
         } else if (state.shouldUnload() && repo.isReady) {
           dispatch(UnloadDevices());
@@ -253,7 +253,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   @override
   DeviceBlocError createError(Object error, {StackTrace stackTrace}) => DeviceBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 
   @override

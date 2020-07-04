@@ -70,7 +70,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking, Tra
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      find(suuid, tracks: tracks, exclude: exclude).isNotEmpty;
+      findTracingFrom(suuid, tracks: tracks, exclude: exclude).isNotEmpty;
 
   /// Find tracking from given source [suuid].
   ///
@@ -87,7 +87,7 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking, Tra
   /// Returns empty list if [source.uuid] is not found
   /// for given set of excluded [TrackingStatus.values].
   ///
-  Iterable<Tracking> find(
+  Iterable<Tracking> findTracingFrom(
     String suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
@@ -256,13 +256,13 @@ class TrackingRepository extends ConnectionAwareRepository<String, Tracking, Tra
   Iterable<String> _duplicates(StorageState<Tracking> state) => state.value.sources
       .where(
         // Search for active trackings not equal to tracking in given state
-        (source) => find(source.uuid).any((tracking) => tracking.uuid != state.value.uuid),
+        (source) => findTracingFrom(source.uuid).any((tracking) => tracking.uuid != state.value.uuid),
       )
       .map((source) => source.uuid)
       .toList();
 
   @override
-  Future<Iterable<Tracking>> onReset() => _ouuid != null ? load(_ouuid) : values;
+  Future<Iterable<Tracking>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
 
   @override
   Future<Tracking> onCreate(StorageState<Tracking> state) async {

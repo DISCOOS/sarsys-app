@@ -30,7 +30,7 @@ class PersonnelEditor extends StatefulWidget {
     Key key,
     this.personnel,
     this.devices = const [],
-    this.status = PersonnelStatus.mobilized,
+    this.status = PersonnelStatus.alerted,
   }) : super(key: key);
 
   final Personnel personnel;
@@ -160,7 +160,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 managed
                     ? GestureDetector(
                         child: AffiliationView(
-                          affiliation: widget.personnel.affiliation,
+                          affiliation: _currentAffiliation(),
                         ),
                         onTap: _explainManaged,
                       )
@@ -187,10 +187,11 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
+  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+  Affiliation _currentAffiliation() => affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
+
   Affiliation _ensureAffiliation() {
-    return _affiliationKey?.currentState?.save() ??
-        widget.personnel?.affiliation ??
-        context.bloc<AffiliationBloc>().findUserAffiliation();
+    return _affiliationKey?.currentState?.save() ?? _currentAffiliation() ?? affiliationBloc.findUserAffiliation();
   }
 
   Widget _buildNameField() {
@@ -352,7 +353,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return buildDropDownField(
       attribute: 'status',
       label: 'Status',
-      initialValue: enumName(widget?.personnel?.status ?? PersonnelStatus.mobilized),
+      initialValue: enumName(widget?.personnel?.status ?? PersonnelStatus.alerted),
       items: PersonnelStatus.values
           .map((status) => [enumName(status), translatePersonnelStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
@@ -367,8 +368,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return buildDropDownField(
       attribute: 'function',
       label: 'Funksjon',
-      initialValue: enumName(widget?.personnel?.function ?? OperationalFunction.Personnel),
-      items: OperationalFunction.values
+      initialValue: enumName(widget?.personnel?.function ?? OperationalFunctionType.personnel),
+      items: OperationalFunctionType.values
           .map((function) => [enumName(function), translateOperationalFunction(function)])
           .map((function) => DropdownMenuItem(value: function[0], child: Text("${function[1]}")))
           .toList(),
@@ -378,43 +379,49 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     );
   }
 
-  FormBuilderTextField _buildPhoneField() {
-    return FormBuilderTextField(
-      maxLines: 1,
-      attribute: 'phone',
-      maxLength: 12,
-      maxLengthEnforced: true,
-      controller: _phoneController,
-      decoration: InputDecoration(
-        filled: true,
-        hintText: 'Skriv inn',
-        labelText: 'Mobiltelefon',
-        suffix: GestureDetector(
-          child: Icon(
-            Icons.clear,
-            color: Colors.grey,
-            size: 20,
-          ),
-          onTap: () => _setText(
-            _phoneController,
-            _defaultPhone(),
-          ),
-        ),
-      ),
-      autovalidate: true,
-      inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
-      ],
-      keyboardType: TextInputType.number,
-      valueTransformer: (value) => emptyAsNull(value),
-      validators: [
-        _validatePhone,
-        FormBuilderValidators.numeric(errorText: "Kun talltegn"),
-        (value) => emptyAsNull(value) != null
-            ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
-            : null,
-      ],
-    );
+  Widget _buildPhoneField() {
+    return managed
+        ? _buildDecorator(
+            label: 'Mobiltelefon',
+            onTap: _explainManaged,
+            child: _buildReadOnlyText(context, _defaultPhone()),
+          )
+        : FormBuilderTextField(
+            maxLines: 1,
+            attribute: 'phone',
+            maxLength: 12,
+            maxLengthEnforced: true,
+            controller: _phoneController,
+            decoration: InputDecoration(
+              filled: true,
+              hintText: 'Skriv inn',
+              labelText: 'Mobiltelefon',
+              suffix: GestureDetector(
+                child: Icon(
+                  Icons.clear,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                onTap: () => _setText(
+                  _phoneController,
+                  _defaultPhone(),
+                ),
+              ),
+            ),
+            autovalidate: true,
+            inputFormatters: [
+              WhitelistingTextInputFormatter.digitsOnly,
+            ],
+            keyboardType: TextInputType.number,
+            valueTransformer: (value) => emptyAsNull(value),
+            validators: [
+              _validatePhone,
+              FormBuilderValidators.numeric(errorText: "Kun talltegn"),
+              (value) => emptyAsNull(value) != null
+                  ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
+                  : null,
+            ],
+          );
   }
 
   String _validatePhone(phone) {
@@ -452,9 +459,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         initialValue: _getActualDevices(),
         onChanged: (devices) => _devices = List.from(devices),
         decoration: InputDecoration(
-          labelText: "Sporing",
+          labelText: "Sporinger",
           hintText: "Søk etter apparater",
-          helperText: "Posisjon beregnes som gjennomsnitt",
+          helperText: "Posisjon beregnes som gjennomsnitt av sporinger",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(12.0, 8.0, 8.0, 16.0),
         ),
@@ -552,10 +559,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   void _submit() async {
     if (_formKey.currentState.validate() && (managed || _affiliationKey.currentState.validate())) {
       _formKey.currentState.save();
-      final create = widget.personnel == null;
+      final isNew = widget.personnel == null;
 
-      // Get personnel from current state
-      var personnel = create ? _createPersonnel() : _updatePersonnel();
+      final affiliation = _toAffiliation();
+      final personnel = isNew ? _createPersonnel(affiliation) : _updatePersonnel(affiliation);
 
       var response = true;
       if (PersonnelStatus.retired == personnel.status && personnel.status != widget?.personnel?.status) {
@@ -570,8 +577,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         Navigator.pop(
           context,
           PersonnelParams(
-            personnel: personnel,
             devices: devices,
+            personnel: personnel,
+            affiliation: affiliation,
             position: devices.isEmpty ? _preparePosition() : null,
           ),
         );
@@ -582,18 +590,27 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     }
   }
 
-  Affiliation _toAffiliation() => managed ? widget.personnel.affiliation : _affiliationKey.currentState.save();
+  Affiliation _toAffiliation() {
+    if (managed) {
+      return affiliationBloc.repo[widget.personnel.affiliation?.uuid];
+    }
+    final next = _affiliationKey.currentState.save();
+    return next.uuid == null ? next.copyWith(uuid: widget.personnel?.affiliation?.uuid ?? Uuid().v4()) : next;
+  }
 
-  Personnel _createPersonnel() => PersonnelModel.fromJson(_formKey.currentState.value).copyWith(
+  Personnel _createPersonnel(Affiliation affiliation) => PersonnelModel.fromJson(_formKey.currentState.value).copyWith(
         uuid: Uuid().v4(),
-        affiliation: _toAffiliation(),
+        affiliation: affiliation.toRef(),
+        phone: _formKey.currentState.value['phone'],
         // Backend will use this as tuuid to create new tracking
         tracking: AggregateRef.fromType<Tracking>(Uuid().v4()),
       );
 
-  Personnel _updatePersonnel() => widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
-        affiliation: _toAffiliation(),
-      );
+  Personnel _updatePersonnel(Affiliation affiliation) =>
+      widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
+            affiliation: affiliation.toRef(),
+            phone: _formKey.currentState.value['phone'],
+          );
 
   Position _preparePosition() {
     final position = _formKey.currentState.value['position'] == null

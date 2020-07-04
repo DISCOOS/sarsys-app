@@ -160,7 +160,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     Personnel personnel, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
-      repo.find(personnel, exclude: exclude);
+      repo.findAssignedTo(personnel, exclude: exclude);
 
   /// Get next available number
   int nextAvailableNumber(UnitType type, {bool reuse = true}) => repo.nextAvailableNumber(type, reuse: reuse);
@@ -354,7 +354,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   @override
   UnitBlocError createError(Object error, {StackTrace stackTrace}) => UnitBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 
   @override

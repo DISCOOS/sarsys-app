@@ -224,7 +224,7 @@ void main() async {
       // Act and Assert
       await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: () async {
         await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.retired));
-        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized));
+        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted));
       });
     });
 
@@ -342,7 +342,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceAdded<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
-          status: PersonnelStatus.mobilized,
+          status: PersonnelStatus.alerted,
         )),
       );
     });
@@ -355,7 +355,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
-          status: PersonnelStatus.mobilized,
+          status: PersonnelStatus.alerted,
         )),
       );
     });
@@ -446,8 +446,8 @@ void main() async {
       // Act and Assert
       await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: () async {
         return [
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized)),
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized)),
+          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
+          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
         ];
       });
     });
@@ -509,7 +509,7 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and assert
-      await _shouldReopenClosedPersonnelTrackingAutomatically(harness, PersonnelStatus.mobilized);
+      await _shouldReopenClosedPersonnelTrackingAutomatically(harness, PersonnelStatus.alerted);
     });
 
     test('SHOULD reopen closed tracking automatically when personnel is ONSCENE', () async {
@@ -736,7 +736,7 @@ void main() async {
       // Act and Assert
       await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: () async {
         await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.retired));
-        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized));
+        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted));
       });
     });
 
@@ -854,7 +854,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceAdded<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
-          status: PersonnelStatus.mobilized,
+          status: PersonnelStatus.alerted,
         )),
       );
     });
@@ -867,7 +867,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
-          status: PersonnelStatus.mobilized,
+          status: PersonnelStatus.alerted,
         )),
       );
     });
@@ -958,8 +958,8 @@ void main() async {
       // Act and Assert
       await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: () async {
         return [
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized)),
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.mobilized)),
+          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
+          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
         ];
       });
     });
@@ -1022,7 +1022,7 @@ void main() async {
       harness.connectivity.offline();
 
       // Act and assert
-      await _shouldReopenClosedPersonnelTrackingAutomatically(harness, PersonnelStatus.mobilized);
+      await _shouldReopenClosedPersonnelTrackingAutomatically(harness, PersonnelStatus.alerted);
     });
 
     test('SHOULD reopen closed tracking automatically when personnel is ONSCENE locally', () async {
@@ -1531,7 +1531,7 @@ Future<Tracking> _shouldUpdateUnitTrackingWhenPersonnelAdded(
     reuse: true,
     act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
       uuid: puuid,
-      status: PersonnelStatus.mobilized,
+      status: PersonnelStatus.alerted,
     )),
   );
   final personnel = harness.personnelBloc[puuid];

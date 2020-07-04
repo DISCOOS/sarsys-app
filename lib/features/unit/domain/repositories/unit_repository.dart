@@ -23,7 +23,7 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit,
   });
 
   /// Find unit from personnel
-  Iterable<Unit> find(
+  Iterable<Unit> findAssignedTo(
     Personnel personnel, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   });

@@ -4,6 +4,7 @@ import 'package:SarSys/features/settings/domain/repositories/app_config_reposito
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
@@ -14,6 +15,12 @@ class UserServiceMock extends Mock implements UserCredentialsService {
 
   static String get password => _password;
   static String _password;
+
+  static String get division => _division;
+  static String _division;
+
+  static String get department => _department;
+  static String _department;
 
   static Duration get maxAge => _maxAge;
   static Duration _maxAge = const Duration(minutes: 5);
@@ -36,6 +43,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         _token.userId,
         user.roles.first,
         email: user.email,
+        division: user.division,
+        department: user.department,
         maxAge: Duration.zero,
       );
     }
@@ -45,10 +54,19 @@ class UserServiceMock extends Mock implements UserCredentialsService {
   AuthToken get token => _token;
   static AuthToken _token;
 
-  static UserServiceMock build(UserRole role, String username, String password) {
+  static UserServiceMock build({
+    @required UserRole role,
+    @required String userId,
+    @required String username,
+    @required String password,
+    @required String division,
+    @required String department,
+  }) {
     final UserServiceMock mock = UserServiceMock();
     UserServiceMock._username = username;
     UserServiceMock._password = password;
+    UserServiceMock._division = division;
+    UserServiceMock._department = department;
 
     when(
       mock.login(
@@ -57,15 +75,17 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         password: anyNamed('password'),
       ),
     ).thenAnswer((_) async {
-      final userId = _.namedArguments[Symbol('userId')];
-      if (userId != null && userId == _token?.userId && _token.isValid) {
+      final requestedUserId = _.namedArguments[Symbol('userId')];
+      if (requestedUserId != null && requestedUserId == _token?.userId && _token.isValid) {
         return ServiceResponse.ok(body: _token);
       } else if (_credentialsMatch(_)) {
         final domain = UserService.toDomain(UserServiceMock.username);
         _token = createToken(
-          UserServiceMock.username,
+          userId ?? UserServiceMock.username,
           role,
           maxAge: _maxAge,
+          division: _division,
+          department: _department,
           email: domain != null ? UserServiceMock.username : domain,
         );
         return ServiceResponse.ok(body: _token);
@@ -88,6 +108,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         token.toUser().roles.first,
         maxAge: _maxAge,
         email: user.email,
+        division: user.division,
+        department: user.department,
       );
       return ServiceResponse.ok(body: _token);
     });
@@ -157,6 +179,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     String userId,
     UserRole role, {
     String email,
+    String division,
+    String department,
     Duration maxAge = const Duration(minutes: 5),
   }) {
     final key = 's3cr3t';
@@ -166,8 +190,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       otherClaims: <String, dynamic>{
         if (email != null) 'email': email,
         'roles': [enumName(role)],
-        'division': 'Oslo',
-        'department': 'Oslo',
+        'division': division,
+        'department': department,
       },
       maxAge: maxAge,
     );

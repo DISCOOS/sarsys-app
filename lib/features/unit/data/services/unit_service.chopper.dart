@@ -18,7 +18,7 @@ class _$UnitServiceImpl extends UnitServiceImpl {
 
   @override
   Future<Response<String>> create(dynamic ouuid, Unit body) {
-    final $url = '/operations/{uuid}/units';
+    final $url = '/operations/$ouuid/units';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);

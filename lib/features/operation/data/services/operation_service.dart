@@ -28,7 +28,7 @@ class OperationService with ServiceFetchAll<Operation> implements ServiceDelegat
   Future<ServiceResponse<Operation>> create(Operation operation) async {
     return Api.from<String, Operation>(
       await delegate.create(
-        operation.uuid,
+        operation.incident.uuid,
         operation,
       ),
       // Created 201 returns uri to created operation in body

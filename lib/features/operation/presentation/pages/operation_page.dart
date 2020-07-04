@@ -1,4 +1,4 @@
-import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -98,9 +98,9 @@ class _OperationPageState extends State<OperationPage> {
         SizedBox(height: OperationPage.SPACING),
         _buildMeetup(operation),
         SizedBox(height: OperationPage.SPACING),
-        _buildReference(operation),
-        SizedBox(height: OperationPage.SPACING),
         _buildPasscodes(operation),
+        SizedBox(height: OperationPage.SPACING),
+        _buildReference(operation),
       ],
     );
   }
@@ -143,7 +143,7 @@ class _OperationPageState extends State<OperationPage> {
       children: <Widget>[
         Expanded(
           flex: 5,
-          child: _buildValueTile(operation.reference, label: "Referanse"),
+          child: _buildValueTile(emptyAsNull(operation.reference) ?? 'Ingen', label: "Referanse"),
         ),
       ],
     );

@@ -1,0 +1,102 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'affiliation_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+AffiliationModel _$AffiliationModelFromJson(Map json) {
+  return AffiliationModel(
+    uuid: json['uuid'] as String,
+    person: json['person'] == null
+        ? null
+        : AggregateRef.fromJson((json['person'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    org: json['org'] == null
+        ? null
+        : AggregateRef.fromJson((json['org'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    div: json['div'] == null
+        ? null
+        : AggregateRef.fromJson((json['div'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    dep: json['dep'] == null
+        ? null
+        : AggregateRef.fromJson((json['dep'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    type: _$enumDecodeNullable(_$AffiliationTypeEnumMap, json['type']),
+    status:
+        _$enumDecodeNullable(_$AffiliationStandbyStatusEnumMap, json['status']),
+    active: json['active'] as bool,
+  );
+}
+
+Map<String, dynamic> _$AffiliationModelToJson(AffiliationModel instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('uuid', instance.uuid);
+  writeNotNull('person', instance.person?.toJson());
+  writeNotNull('org', instance.org?.toJson());
+  writeNotNull('div', instance.div?.toJson());
+  writeNotNull('dep', instance.dep?.toJson());
+  writeNotNull('type', _$AffiliationTypeEnumMap[instance.type]);
+  writeNotNull('status', _$AffiliationStandbyStatusEnumMap[instance.status]);
+  writeNotNull('active', instance.active);
+  return val;
+}
+
+T _$enumDecode<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
+  if (source == null) {
+    throw ArgumentError('A value must be provided. Supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
+
+  if (value == null && unknownValue == null) {
+    throw ArgumentError('`$source` is not one of the supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+  return value ?? unknownValue;
+}
+
+T _$enumDecodeNullable<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
+  if (source == null) {
+    return null;
+  }
+  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+}
+
+const _$AffiliationTypeEnumMap = {
+  AffiliationType.member: 'member',
+  AffiliationType.employee: 'employee',
+  AffiliationType.external: 'external',
+  AffiliationType.volunteer: 'volunteer',
+};
+
+const _$AffiliationStandbyStatusEnumMap = {
+  AffiliationStandbyStatus.available: 'available',
+  AffiliationStandbyStatus.short_notice: 'short_notice',
+  AffiliationStandbyStatus.unavailable: 'unavailable',
+};

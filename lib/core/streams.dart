@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/core.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
@@ -38,16 +39,17 @@ FutureOr<T> waitThroughStateWithData<S, T>(
 }
 
 /// Wait for given rule result from stream of results
-Future waitThoughtStates(
-  Bloc bloc, {
+Future<T> waitThoughtEvents<T>(
+  BlocEventBus bus, {
   @required List<Type> expected,
   bool fail = false,
+  FutureOr<T> Function() act,
   Duration timeout = const Duration(
-    milliseconds: 100,
+    hours: 1,
   ),
 }) async {
   try {
-    await bloc
+    await bus.events
         // Match expected events
         .where((event) => expected.contains(event.runtimeType))
         // Match against expected number
@@ -56,10 +58,15 @@ Future waitThoughtStates(
         .last
         // Fail on time
         .timeout(timeout);
+
+    // Act on value?
+    if (act != null) {
+      return await act();
+    }
   } on Exception {
     if (fail) {
       throw TimeoutException("Failed wait for $expected", timeout);
     }
   }
-  return bloc.state;
+  return Future.value();
 }

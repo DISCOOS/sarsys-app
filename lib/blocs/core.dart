@@ -8,7 +8,6 @@ import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/usecase/core.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
   BaseBloc({this.bus}) {
@@ -146,11 +145,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 }
 
-typedef BlocHandlerBuilder = UseCase Function<T extends BlocEvent>(Bloc bloc, T event);
-
-abstract class BlocEventHandler<T extends BlocEvent> {
-  void handle(Bloc bloc, T event);
-}
+typedef BlocHandlerCallback<T> = void Function<T extends BlocEvent>(Bloc bloc, T event);
 
 /// [BlocEvent] bus implementation
 class BlocEventBus {
@@ -159,12 +154,16 @@ class BlocEventBus {
   }) : delegate = delegate ?? BlocSupervisor.delegate;
 
   final BlocDelegate delegate;
+  StreamController<BlocEvent> _controller = StreamController.broadcast();
+
+  /// Get events as stream
+  Stream<BlocEvent> get events => _controller.stream;
 
   /// Registered event routes from Type to to handlers
-  final Map<Type, Set<BlocEventHandler>> _routes = {};
+  final Map<Type, Set<Function>> _routes = {};
 
   /// Subscribe to event with given handler
-  BlocEventHandler<T> subscribe<T extends BlocEvent>(BlocEventHandler<T> handler) {
+  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     _routes.update(
       typeOf<T>(),
       (handlers) => handlers..add(handler),
@@ -174,7 +173,7 @@ class BlocEventBus {
   }
 
   /// Unsubscribe given event handler
-  void unsubscribe<T extends BlocEvent>(BlocEventHandler<T> handler) {
+  void unsubscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     final handlers = _routes[typeOf<T>()] ?? {};
     handlers.remove(handler);
     if (handlers.isEmpty) {
@@ -183,12 +182,17 @@ class BlocEventBus {
   }
 
   /// Unsubscribe all event handlers
-  void unsubscribeAll() => _routes.clear();
+  void unsubscribeAll() {
+    _routes.clear();
+    _controller.close();
+    _controller = StreamController.broadcast();
+  }
 
   void publish(Bloc bloc, BlocEvent event) {
+    _controller.add(event);
     toHandlers(event).forEach((handler) {
       try {
-        handler.handle(bloc, event);
+        handler(bloc, event);
       } on Exception catch (error, stackTrace) {
         delegate.onError(
           bloc,
@@ -200,7 +204,7 @@ class BlocEventBus {
   }
 
   /// Get all handlers for given event
-  Iterable<BlocEventHandler> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
+  Iterable<Function> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
 }
 
 class BlocCommand<D, R> extends Equatable {

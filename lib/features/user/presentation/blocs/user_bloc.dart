@@ -397,7 +397,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   @override
   UserBlocError createError(Object error, {StackTrace stackTrace}) => UserBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 }
 
@@ -502,7 +502,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isError() => this is UserBlocError;
 
   bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked();
-  bool shouldUnload() => !shouldLoad();
+  bool shouldUnload() => !shouldLoad() || isUnset();
 }
 
 class UserUnset extends UserState<void> {

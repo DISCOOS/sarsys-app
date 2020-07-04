@@ -20,18 +20,17 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
   /// Get stream of personnel messages
   Stream<PersonnelMessage> get messages => _controller.stream;
 
-  /// GET ../personnel
   Future<ServiceResponse<List<Personnel>>> fetch(String ouuid, int offset, int limit) async {
     return Api.from<PagedList<Personnel>, List<Personnel>>(
-      await delegate.fetch(
+      await delegate.getAll(
         ouuid,
         offset,
         limit,
+        expand: ['person'],
       ),
     );
   }
 
-  /// POST ../personnel
   Future<ServiceResponse<Personnel>> create(String ouuid, Personnel personnel) async {
     return Api.from<String, Personnel>(
       await delegate.create(
@@ -43,7 +42,6 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
     );
   }
 
-  /// PUT ../personnel/{PersonnelId}
   Future<ServiceResponse<Personnel>> update(Personnel personnel) async {
     return Api.from<Personnel, Personnel>(
       await delegate.update(
@@ -54,7 +52,6 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
     );
   }
 
-  /// DELETE ../personnel/{PersonnelId}
   Future<ServiceResponse<void>> delete(String uuid) async {
     return Api.from<Personnel, Personnel>(await delegate.delete(
       uuid,
@@ -79,18 +76,19 @@ class PersonnelMessage {
 abstract class PersonnelServiceImpl extends ChopperService {
   static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);
 
-  @Post(path: '/operations/{uuid}/personnels')
+  @Post(path: '/operations/{ouuid}/personnels')
   Future<Response<String>> create(
     @Path() ouuid,
     @Body() Personnel body,
   );
 
   @Get(path: '/operations/{ouuid}/personnels')
-  Future<Response<PagedList<Personnel>>> fetch(
+  Future<Response<PagedList<Personnel>>> getAll(
     @Path() ouuid,
     @Query('offset') int offset,
-    @Query('limit') int limit,
-  );
+    @Query('limit') int limit, {
+    @Query('expand') List<String> expand = const [],
+  });
 
   @Patch(path: 'personnels/{uuid}')
   Future<Response<Personnel>> update(

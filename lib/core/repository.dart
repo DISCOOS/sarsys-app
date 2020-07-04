@@ -43,17 +43,20 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   /// If [isReady] is [true], then [isEmpty] is always [true]
   bool get isEmpty => !isReady || _states.isEmpty;
 
+  /// Get value from [key]
+  T operator [](S key) => get(key);
+
+  /// Get number of states
+  int get length => isReady ? _states.length : 0;
+
   /// Check if repository is online
   get isOnline => _shouldSchedule();
 
   /// Check if repository is offline
   get isOffline => connectivity.isOffline;
 
-  /// Get value from [key]
-  T operator [](S key) => get(key);
-
-  /// Get number of states
-  int get length => isReady ? _states.length : 0;
+  /// Find [T]s matching given query
+  Iterable<T> find({bool where(T aggregate)}) => isReady ? values.where(where) : [];
 
   bool _inTransaction = false;
   bool get inTransaction => _inTransaction;
@@ -189,9 +192,8 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
       if (compact) {
         await _states?.compact();
       }
-      await _states?.close();
       _states = await Hive.openBox(
-        ['$runtimeType', postfix].where((part) => !isEmptyOrNull(part)).join('_'),
+        toBoxName(postfix: postfix, runtimeType: runtimeType),
         encryptionKey: await Storage.hiveKey<T>(),
       );
       // Add local states to backlog
@@ -203,6 +205,10 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
     }
     return _states.values;
   }
+
+  /// Get boc
+  static String toBoxName<T>({String postfix, Type runtimeType}) =>
+      ['${runtimeType ?? typeOf<T>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
 
   /// Apply [next] and [commit] to remote
   @visibleForOverriding
@@ -546,13 +552,13 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
     _pending?.cancel();
     _timer = null;
     _pending = null;
-    if (_states?.isOpen == true) {
-      return await _states.close();
-    }
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );
     _subscriptions.clear();
+    if (_states?.isOpen == true) {
+      return _states.close();
+    }
     return Future.value();
   }
 
@@ -608,16 +614,28 @@ class MergeStrategy<S, T extends Aggregate, U extends Service> {
   ) async {
     switch (conflict.type) {
       case ConflictType.exists:
-        return repository.onUpdate(state);
+        return onExists(conflict, state);
       case ConflictType.merge:
-        break;
+        return onMerge(conflict, state);
       case ConflictType.deleted:
-        break;
+        return onDeleted(conflict, state);
     }
     throw UnimplementedError(
       "Reconciling conflict type '${enumName(conflict.type)}' not implemented",
     );
   }
+
+  Future<T> onExists(ConflictModel conflict, StorageState<T> state) {
+    // TODO: Manual merge required, default to last writer wins with "mine" now
+    return repository.onUpdate(state);
+  }
+
+  Future<T> onMerge(ConflictModel conflict, StorageState<T> state) => throw UnimplementedError(
+        "Reconciling conflict type 'merge' not implemented",
+      );
+  Future<T> onDeleted(ConflictModel conflict, StorageState<T> state) => throw UnimplementedError(
+        "Reconciling conflict type 'deleted' not implemented",
+      );
 }
 
 class RepositoryException implements Exception {

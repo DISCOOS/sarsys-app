@@ -79,7 +79,7 @@ class FatalErrorApp extends StatelessWidget {
                   final delete = await prompt(
                     navigatorKey.currentState.overlay.context,
                     "Slette alle data?",
-                    "Dette vil slette alle data SarSys har lagret. Vil du fortsette?",
+                    "Dette vil slette alle data SarSys har lagret på telefonen unntatt kart. Vil du fortsette?",
                   );
                   if (delete) {
                     await Storage.destroy();

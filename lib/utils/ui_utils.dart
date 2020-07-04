@@ -106,7 +106,7 @@ Widget buildDropDownField<T>({
         enabled: enabled,
         initialValue: initialValue,
         builder: (FormFieldState<T> field) => buildDropdown<T>(
-          value: field.value,
+          value: _ensureLegalItem(field, items),
           hasError: field.hasError,
           errorText: field.errorText,
           label: label,
@@ -124,6 +124,13 @@ Widget buildDropDownField<T>({
       ),
       validators: validators,
     );
+
+T _ensureLegalItem<T>(FormFieldState field, List<DropdownMenuItem<T>> items) {
+  if (items.any((item) => item.value == field.value)) {
+    return field.value;
+  }
+  return items.first.value;
+}
 
 Widget buildDropdown<T>({
   @required T value,
@@ -281,7 +288,7 @@ Color toPersonnelStatusColor(PersonnelStatus status) {
       return Colors.green;
     case PersonnelStatus.retired:
       return Colors.brown;
-    case PersonnelStatus.mobilized:
+    case PersonnelStatus.alerted:
     default:
       return Colors.orange;
   }

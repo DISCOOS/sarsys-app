@@ -596,9 +596,8 @@ class _UnitEditorState extends State<UnitEditor> {
 
   List<Personnel> _getLocalPersonnel() => List.from(_personnels ?? <Device>[]);
 
-  List<Personnel> _getActualPersonnel() {
-    return (widget?.unit?.personnels ?? []).toList()..addAll(widget.personnels ?? []);
-  }
+  List<Personnel> _getActualPersonnel() =>
+      List<Personnel>.from(widget?.unit?.personnels ?? []).toList()..addAll(widget.personnels ?? []);
 
   Position _preparePosition() {
     final position = _formKey.currentState.value['position'] == null

@@ -22,6 +22,9 @@ class AggregateRef<T extends Aggregate> extends Equatable {
   /// Get [AggregateRef] from given type
   static AggregateRef<T> fromType<T extends Aggregate>(String uuid) => AggregateRef<T>(uuid: uuid);
 
+  /// Cast this to given type [T], optionally replacing uuid with given
+  AggregateRef<T> cast<T extends Aggregate>({String uuid}) => AggregateRef<T>(uuid: uuid ?? this.uuid);
+
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$AggregateRefToJson(this);
 }

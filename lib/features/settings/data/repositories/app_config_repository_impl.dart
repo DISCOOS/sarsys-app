@@ -137,6 +137,8 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
             ),
           );
           return response.body;
+        } else if (response.is404) {
+          return schedule(state.replace(state.value, remote: false));
         }
         throw AppConfigServiceException(
           'Failed to load AppConfig $version:${state.value.uuid}',

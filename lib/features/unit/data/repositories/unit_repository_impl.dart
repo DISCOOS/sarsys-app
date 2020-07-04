@@ -74,7 +74,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
               .length;
 
   /// Find unit from personnel
-  Iterable<Unit> find(
+  Iterable<Unit> findAssignedTo(
     Personnel personnel, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
@@ -89,7 +89,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
   /// Find and replace given [Personnel]
   Unit findAndReplace(Personnel personnel) {
     // TODO: Stable replace to keep order (plays better with json patch)
-    final unit = find(personnel, exclude: []).firstOrNull;
+    final unit = findAssignedTo(personnel, exclude: []).firstOrNull;
     if (unit != null) {
       final next = _findAndRemove(
         unit,
@@ -104,7 +104,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
 
   /// Find and remove given [Personnel]
   Unit findAndRemove(Personnel personnel) {
-    final unit = find(personnel, exclude: []).firstOrNull;
+    final unit = findAssignedTo(personnel, exclude: []).firstOrNull;
     if (unit != null) {
       return unit.copyWith(
         personnels: _findAndRemove(
@@ -218,7 +218,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
   }
 
   @override
-  Future<Iterable<Unit>> onReset() => _ouuid != null ? load(_ouuid) : values;
+  Future<Iterable<Unit>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
 
   @override
   Future<Unit> onCreate(StorageState<Unit> state) async {

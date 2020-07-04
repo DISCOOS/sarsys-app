@@ -1,13 +1,14 @@
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/operation/data/models/incident_model.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';
 import 'Coordinates.dart';
-import '../features/operation/domain/entities/Incident.dart';
 import 'Tracking.dart';
-import '../features/unit/domain/entities/Unit.dart';
 
 class LatLngConverter implements JsonConverter<LatLng, Map<String, dynamic>> {
   const LatLngConverter();
@@ -80,12 +81,16 @@ class FleetMapTalkGroupConverter implements JsonConverter<List<TalkGroup>, List<
   }
 }
 
-AggregateRef<Unit> toUnitRef(dynamic json) {
-  return json != null ? AggregateRef<Unit>.fromJson(Map<String, dynamic>.from(json)) : null;
+AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) {
+  return json != null ? AggregateRef<AffiliationModel>.fromJson(Map<String, dynamic>.from(json)) : null;
 }
 
-AggregateRef<Incident> toIncidentRef(dynamic json) {
-  return json != null ? AggregateRef<Incident>.fromJson(Map<String, dynamic>.from(json)) : null;
+AggregateRef<UnitModel> toUnitRef(dynamic json) {
+  return json != null ? AggregateRef<UnitModel>.fromJson(Map<String, dynamic>.from(json)) : null;
+}
+
+AggregateRef<IncidentModel> toIncidentRef(dynamic json) {
+  return json != null ? AggregateRef<IncidentModel>.fromJson(Map<String, dynamic>.from(json)) : null;
 }
 
 AggregateRef<Tracking> toTrackingRef(dynamic json) {

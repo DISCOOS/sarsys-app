@@ -1,4 +1,5 @@
-import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
@@ -27,12 +28,14 @@ import 'package:uuid/uuid.dart';
 class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final Position position;
   final List<Device> devices;
+  final Affiliation affiliation;
   OperationBloc get operationBloc => bloc.operationBloc;
   User get user => operationBloc.userBloc.user;
   PersonnelParams({
     Personnel personnel,
-    this.position,
     this.devices,
+    this.position,
+    this.affiliation,
     PersonnelBloc bloc,
   }) : super(personnel, bloc: bloc);
 }
@@ -57,8 +60,16 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
     if (result == null) return dartz.Left(false);
 
+    // Will create affiliation if not exists
+    final affiliation = await params.context.bloc<AffiliationBloc>().temporary(
+          result.data,
+          result.affiliation,
+        );
+
     // Will create personnel and tracking
-    final personnel = await params.bloc.create(result.data);
+    final personnel = await params.bloc.create(result.data.copyWith(
+      affiliation: affiliation.toRef(),
+    ));
 
     // TODO: Move to use case replaceTracking
     // Wait for tracking is created
@@ -76,6 +87,59 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
         );
     return dartz.Right(personnel);
   }
+}
+
+/// Mobilize current [user] if not already mobilized
+Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(PersonnelParams());
+
+class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> {
+  @override
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
+    if (params.operationBloc.isUnselected) {
+      return dartz.left(false);
+    }
+
+    final user = params.user;
+    assert(user != null, "UserBloc contains no user");
+    try {
+      var personnel = _findUser(params, user.userId);
+      if (personnel == null) {
+        final affiliation = params.context.bloc<AffiliationBloc>().findUserAffiliation();
+        personnel = await params.bloc.create(PersonnelModel(
+          uuid: Uuid().v4(),
+          person: PersonModel(
+            uuid: affiliation.person?.uuid,
+            userId: user.userId,
+            fname: user.fname,
+            lname: user.lname,
+            phone: user.phone,
+            email: user.email,
+            temporary: affiliation.isTemporary,
+          ),
+          status: PersonnelStatus.alerted,
+          affiliation: affiliation.toRef(),
+        ));
+        return dartz.right(personnel);
+      } else if (personnel.status != PersonnelStatus.alerted) {
+        return _transitionPersonnel(
+          PersonnelParams(personnel: personnel),
+          PersonnelStatus.alerted,
+        );
+      }
+      // Already mobilized
+      return dartz.right(personnel);
+    } on Exception catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
+    }
+    return dartz.left(false);
+  }
+}
+
+Personnel _findUser(PersonnelParams params, String userId) {
+  return params.bloc.find(
+    userId,
+    exclude: const [],
+  ).firstOrNull;
 }
 
 /// Edit given personnel
@@ -237,56 +301,6 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
   }
 }
 
-/// Mobilize current [user] if not already mobilized
-Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(PersonnelParams());
-
-class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> implements BlocEventHandler<PersonnelsLoaded> {
-  @override
-  Future<dartz.Either<bool, Personnel>> execute(params) async {
-    if (params.operationBloc.isUnselected) {
-      return dartz.left(false);
-    }
-
-    final user = params.user;
-    assert(user != null, "UserBloc contains no user");
-    try {
-      var personnel = _findUser(params, user);
-      if (personnel == null) {
-        personnel = await params.bloc.create(PersonnelModel(
-          uuid: Uuid().v4(),
-          userId: user.userId,
-          fname: user.fname,
-          lname: user.lname,
-          phone: user.phone,
-          status: PersonnelStatus.mobilized,
-          affiliation: params.context.bloc<AffiliationBloc>().findUserAffiliation(),
-        ));
-        return dartz.right(personnel);
-      } else if (personnel.status != PersonnelStatus.mobilized) {
-        return _transitionPersonnel(
-          PersonnelParams(personnel: personnel),
-          PersonnelStatus.mobilized,
-        );
-      }
-      // Already mobilized
-      return dartz.right(personnel);
-    } on Exception catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
-    }
-    return dartz.left(false);
-  }
-
-  @override
-  void handle(Bloc bloc, PersonnelsLoaded event) => call(PersonnelParams(bloc: bloc));
-}
-
-Personnel _findUser(PersonnelParams params, User user) {
-  return params.bloc.find(
-    user,
-    exclude: const [],
-  ).firstOrNull;
-}
-
 /// Transition personnel to mobilized state
 Future<dartz.Either<bool, Personnel>> mobilizePersonnel(
   Personnel personnel,
@@ -300,7 +314,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
-      PersonnelStatus.mobilized,
+      PersonnelStatus.alerted,
       action: "Mobiliser ${params.data.name}",
       message: "Dette endre status til mobilisert. Vil du fortsette?",
     );

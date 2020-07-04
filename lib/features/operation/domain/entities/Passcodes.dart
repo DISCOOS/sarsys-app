@@ -22,8 +22,8 @@ class Passcodes extends ValueObject<Map<String, dynamic>> {
   /// Factory constructor for random generated alpha-numeric command and personnel passcodes
   factory Passcodes.random(int length) {
     return Passcodes(
-      commander: randomAlphaNumeric(length),
-      personnel: randomAlphaNumeric(length),
+      commander: randomAlphaNumeric(length).toUpperCase(),
+      personnel: randomAlphaNumeric(length).toUpperCase(),
     );
   }
 

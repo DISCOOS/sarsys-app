@@ -5,7 +5,6 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/models/core.dart';
@@ -67,13 +66,11 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
               .length;
 
   /// Find personnel from user
-  Iterable<Personnel> find(
-    User user, {
+  Iterable<Personnel> findUser(
+    String userId, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
-      values
-          .where((personnel) => !exclude.contains(personnel.status))
-          .where((personnel) => personnel.userId == user.userId);
+      values.where((personnel) => !exclude.contains(personnel.status)).where((personnel) => personnel.userId == userId);
 
   /// GET ../personnels
   Future<List<Personnel>> load(String ouuid) async {
@@ -149,7 +146,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   }
 
   @override
-  Future<Iterable<Personnel>> onReset() => _ouuid != null ? load(_ouuid) : values;
+  Future<Iterable<Personnel>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
 
   @override
   Future<Personnel> onCreate(StorageState<Personnel> state) async {

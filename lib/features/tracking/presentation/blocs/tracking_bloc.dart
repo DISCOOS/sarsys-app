@@ -358,7 +358,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      repo.find(
+      repo.findTracingFrom(
         aggregate.uuid,
         tracks: tracks,
         exclude: exclude,
@@ -716,7 +716,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   @override
   TrackingBlocError createError(Object error, {StackTrace stackTrace}) => TrackingBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 
   @override

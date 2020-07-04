@@ -197,7 +197,7 @@ bool _shouldRegister(
 FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait = false}) async {
   // Look for existing personnel
   final personnel = params.context.bloc<PersonnelBloc>().find(
-    user,
+    user.userId,
     exclude: const [],
   ).firstOrNull;
   // Wait for personnel to be created

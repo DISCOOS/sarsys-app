@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -58,7 +59,7 @@ class PersonnelWidget extends StatelessWidget {
       children: <Widget>[
         if (withHeader) _buildHeader(context, personnel, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
-        if (Orientation.portrait == orientation) _buildPortrait() else _buildLandscape(),
+        if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
           Divider(),
           Padding(
@@ -80,7 +81,7 @@ class PersonnelWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPortrait() => Padding(
+  Widget _buildPortrait(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -91,8 +92,8 @@ class PersonnelWidget extends StatelessWidget {
             _buildContactView(),
             _buildOperationalView(),
             _buildDivider(Orientation.portrait),
-            if (isAffiliated) ...[
-              _buildAffiliationView(),
+            if (isAffiliated(context)) ...[
+              _buildAffiliationView(context),
               _buildDivider(Orientation.portrait),
             ],
             _buildLocationView(),
@@ -102,9 +103,9 @@ class PersonnelWidget extends StatelessWidget {
         ),
       );
 
-  bool get isAffiliated => personnel.affiliation?.org?.uuid != null;
+  bool isAffiliated(BuildContext context) => context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid] != null;
 
-  Widget _buildLandscape() => Padding(
+  Widget _buildLandscape(BuildContext context) => Padding(
         padding: const EdgeInsets.only(left: 8.0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -119,7 +120,7 @@ class PersonnelWidget extends StatelessWidget {
                 children: <Widget>[
                   if (withName) _buildNameView(),
                   _buildContactView(),
-                  if (!withName && isAffiliated) _buildAffiliationView(),
+                  if (!withName && isAffiliated(context)) _buildAffiliationView(context),
                   _buildLocationView(),
                 ],
               ),
@@ -132,7 +133,7 @@ class PersonnelWidget extends StatelessWidget {
                 children: <Widget>[
                   _buildOperationalView(),
                   _buildTrackingView(),
-                  if (withName && isAffiliated) _buildAffiliationView(),
+                  if (withName && isAffiliated(context)) _buildAffiliationView(context),
                 ],
               ),
             ),
@@ -185,9 +186,9 @@ class PersonnelWidget extends StatelessWidget {
         onComplete: () => _onComplete(personnel),
       );
 
-  Widget _buildAffiliationView() => AffiliationView(
+  Widget _buildAffiliationView(BuildContext context) => AffiliationView(
         onMessage: onMessage,
-        affiliation: personnel.affiliation,
+        affiliation: context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid],
         onComplete: () => _onComplete(personnel),
       );
 
@@ -265,10 +266,10 @@ class PersonnelActionGroup extends StatelessWidget {
             child: _buildMobilizeAction(context),
           ),
           onPressed: () => _onTransition(
-            PersonnelStatus.mobilized,
+            PersonnelStatus.alerted,
           ),
         );
-      case PersonnelStatus.mobilized:
+      case PersonnelStatus.alerted:
         return ActionMenuItem(
           child: IgnorePointer(
             child: _buildOnSceneAction(context),
@@ -357,7 +358,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildMobilizeAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
-    final color = toPersonnelStatusColor(PersonnelStatus.mobilized);
+    final color = toPersonnelStatusColor(PersonnelStatus.alerted);
     return Tooltip(
       message: "Registrer som mobilisert",
       child: FlatButton.icon(
@@ -373,7 +374,7 @@ class PersonnelActionGroup extends StatelessWidget {
           ),
         ),
         onPressed: () => _onTransition(
-          PersonnelStatus.mobilized,
+          PersonnelStatus.alerted,
         ),
       ),
     );
@@ -405,11 +406,21 @@ class PersonnelActionGroup extends StatelessWidget {
 
   void _onTransition(PersonnelStatus status) async {
     switch (status) {
-      case PersonnelStatus.mobilized:
+      case PersonnelStatus.none:
+      case PersonnelStatus.alerted:
         final result = await mobilizePersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert mobilisert");
+          _onChanged(actual);
+          _onCompleted();
+        }
+        break;
+      case PersonnelStatus.enroute:
+        final result = await mobilizePersonnel(personnel);
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${actual.name} er registert på vei");
           _onChanged(actual);
           _onCompleted();
         }
@@ -419,6 +430,15 @@ class PersonnelActionGroup extends StatelessWidget {
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert ankommet");
+          _onChanged(actual);
+          _onCompleted();
+        }
+        break;
+      case PersonnelStatus.leaving:
+        final result = await retirePersonnel(personnel);
+        if (result.isRight()) {
+          final actual = result.toIterable().first;
+          _onMessage("${actual.name} er dimmitert");
           _onChanged(actual);
           _onCompleted();
         }
@@ -645,7 +665,7 @@ class PersonnelTile extends StatelessWidget {
     return ListTile(
       key: ObjectKey(personnel),
       leading: AffiliationAvatar(
-        affiliation: personnel?.affiliation,
+        affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
         size: 10.0,
       ),
       title: Text(personnel.name),
@@ -674,7 +694,7 @@ class PersonnelChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           AffiliationAvatar(
-            affiliation: personnel.affiliation,
+            affiliation: context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid],
             size: 6.0,
             maxRadius: 10.0,
           ),

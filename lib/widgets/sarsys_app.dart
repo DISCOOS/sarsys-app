@@ -30,7 +30,7 @@ import 'package:SarSys/features/settings/presentation/screens/settings_screen.da
 import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/services/navigation_service.dart';
-import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/screens/screen.dart';
 import 'package:SarSys/widgets/access_checker.dart';
@@ -76,7 +76,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   bool get onboarded => configBloc?.config?.onboarded ?? false;
   bool get firstSetup => configBloc?.config?.firstSetup ?? false;
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
-  bool get configured => widget.controller.state.index > BlocControllerState.Built.index;
+  bool get configured => widget.controller.state.index > AppControllerState.Built.index;
 
   @override
   void initState() {

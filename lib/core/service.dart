@@ -7,6 +7,12 @@ abstract class ServiceDelegate<S> implements Service {
   S get delegate;
 }
 
+mixin ServiceGet<T extends Aggregate> {
+  Future<ServiceResponse<T>> get(String uuid) async {
+    throw UnimplementedError("fetch not implemented");
+  }
+}
+
 mixin ServiceFetchAll<T extends Aggregate> {
   Future<ServiceResponse<List<T>>> fetchAll({int offset = 0, int limit = 20}) async {
     final body = <T>[];
@@ -25,7 +31,6 @@ mixin ServiceFetchAll<T extends Aggregate> {
     return response;
   }
 
-  /// GET /divisions
   Future<ServiceResponse<List<T>>> fetch(int offset, int limit) {
     throw UnimplementedError("fetch not implemented");
   }
@@ -54,7 +59,6 @@ mixin ServiceFetchDescendants<T extends Aggregate> {
     return response;
   }
 
-  /// GET /divisions
   Future<ServiceResponse<List<T>>> fetch(String uuid, int offset, int limit) {
     throw UnimplementedError("fetch not implemented");
   }

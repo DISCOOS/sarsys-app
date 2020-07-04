@@ -63,7 +63,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   void _processUserState(UserState state) {
     if (hasSubscriptions) {
-      if (state.shouldLoad()) {
+      if (state.shouldLoad() && !repo.isReady) {
         dispatch(LoadOperations());
       } else if (state.shouldUnload() && repo.isReady) {
         dispatch(UnloadOperations());

@@ -18,17 +18,22 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
 
   @override
   Future<Response<String>> create(dynamic ouuid, Personnel body) {
-    final $url = '/operations/{uuid}/personnels';
+    final $url = '/operations/$ouuid/personnels';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<PagedList<Personnel>>> fetch(
-      dynamic ouuid, int offset, int limit) {
+  Future<Response<PagedList<Personnel>>> getAll(
+      dynamic ouuid, int offset, int limit,
+      {List<String> expand = const []}) {
     final $url = '/operations/$ouuid/personnels';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $params = <String, dynamic>{
+      'offset': offset,
+      'limit': limit,
+      'expand': expand
+    };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<PagedList<Personnel>, Personnel>($request);
   }

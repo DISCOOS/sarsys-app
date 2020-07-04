@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -6,37 +7,34 @@ import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/utils/data_utils.dart';
 
-abstract class Personnel extends Trackable<Map<String, dynamic>> {
+abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate {
   Personnel({
     @required String uuid,
-    @required this.userId,
-    this.status,
-    this.fname,
-    this.lname,
-    this.phone,
-    this.affiliation,
-    this.function,
     this.unit,
+    this.person,
+    this.status,
+    this.function,
+    this.affiliation,
     AggregateRef<Tracking> tracking,
   }) : super(uuid, tracking, fields: [
-          userId,
-          status,
-          fname,
-          lname,
-          phone,
-          affiliation,
-          function,
           unit,
+          person,
+          status,
+          function,
+          affiliation,
         ]);
 
-  final String userId;
+  String get fname => person?.fname;
+  String get lname => person?.lname;
+  String get phone => person?.phone;
+  String get email => person?.email;
+  String get userId => person?.userId;
+
+  final Person person;
   final PersonnelStatus status;
-  final String fname;
-  final String lname;
-  final String phone;
-  final Affiliation affiliation;
-  final OperationalFunction function;
   final AggregateRef<Unit> unit;
+  final OperationalFunctionType function;
+  final AggregateRef<Affiliation> affiliation;
 
   String get name => "${fname ?? ''} ${lname ?? ''}";
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
@@ -45,7 +43,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> {
   /// Get searchable string
   get searchable => props
       .map((prop) => prop is PersonnelStatus ? translatePersonnelStatus(prop) : prop)
-      .map((prop) => prop is OperationalFunction ? translateOperationalFunction(prop) : prop)
+      .map((prop) => prop is OperationalFunctionType ? translateOperationalFunction(prop) : prop)
       .join(' ');
 
   /// Clone with json
@@ -53,26 +51,31 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> {
 
   Personnel copyWith({
     String uuid,
-    String userId,
     String fname,
     String lname,
     String phone,
+    String email,
+    String userId,
     PersonnelStatus status,
-    Affiliation affiliation,
     AggregateRef<Unit> unit,
-    OperationalFunction function,
+    OperationalFunctionType function,
     AggregateRef<Tracking> tracking,
+    AggregateRef<Affiliation> affiliation,
   });
 }
 
-enum PersonnelStatus { mobilized, onscene, retired }
+enum PersonnelStatus { none, alerted, enroute, onscene, leaving, retired }
 
 String translatePersonnelStatus(PersonnelStatus status) {
   switch (status) {
-    case PersonnelStatus.mobilized:
-      return "Mobilisert";
+    case PersonnelStatus.alerted:
+      return "Varslet";
+    case PersonnelStatus.enroute:
+      return "På vei";
     case PersonnelStatus.onscene:
       return "Ankommet";
+    case PersonnelStatus.leaving:
+      return "På vei hjem";
     case PersonnelStatus.retired:
       return "Dimittert";
     default:
@@ -80,15 +83,15 @@ String translatePersonnelStatus(PersonnelStatus status) {
   }
 }
 
-enum OperationalFunction { Commander, UnitLeader, Personnel }
+enum OperationalFunctionType { personnel, unit_leader, commander }
 
-String translateOperationalFunction(OperationalFunction function) {
+String translateOperationalFunction(OperationalFunctionType function) {
   switch (function) {
-    case OperationalFunction.Commander:
+    case OperationalFunctionType.commander:
       return "Aksjonsleder";
-    case OperationalFunction.UnitLeader:
+    case OperationalFunctionType.unit_leader:
       return "Lagleder";
-    case OperationalFunction.Personnel:
+    case OperationalFunctionType.personnel:
       return "Mannskap";
     default:
       return enumName(function);

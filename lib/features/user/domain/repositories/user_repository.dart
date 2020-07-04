@@ -151,7 +151,7 @@ class UserRepository {
     }
 
     // Is login request for user with an old token?
-    if (actualId != null && actualId != _userId) {
+    if (_shouldValidateAndRefresh(actualToken, actualId)) {
       final response = await _validateAndRefresh(
         actualToken,
         lock: true,
@@ -191,6 +191,9 @@ class UserRepository {
       'Unable to login user ${actualId ?? username ?? 'unknown'} in offline mode',
     );
   }
+
+  bool _shouldValidateAndRefresh(AuthToken actualToken, String actualId) =>
+      actualToken != null && actualId != null && actualId != _userId;
 
   /// Refresh [AuthToken]
   Future<User> refresh({String userId}) async {

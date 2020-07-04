@@ -357,7 +357,7 @@ class DeviceWidget extends StatelessWidget {
               context: context,
               label: "Tilhørighet",
               icon: SarSysIcons.of(organisation.prefix),
-              value: context.bloc<AffiliationBloc>().findName(device.number),
+              value: context.bloc<AffiliationBloc>().findEntityName(device.number),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),

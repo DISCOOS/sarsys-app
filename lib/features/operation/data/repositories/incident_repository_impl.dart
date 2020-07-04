@@ -27,9 +27,6 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
     return state?.value?.uuid;
   }
 
-  @override
-  Incident find(String ouuid) => values.firstWhere((incident) => incident.operations.contains(ouuid));
-
   /// Load incidents
   Future<List<Incident>> load({bool force = true}) async {
     await prepare(

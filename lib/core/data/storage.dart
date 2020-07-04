@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
@@ -111,8 +115,12 @@ class Storage {
         fromJson: (data) => User.fromJson(data),
         toJson: (data) => data.toJson(),
       );
+      _registerStorageStateJsonAdapter<Person>(
+        fromJson: (data) => PersonModel.fromJson(data),
+        toJson: (data) => data.toJson(),
+      );
       _registerStorageStateJsonAdapter<Affiliation>(
-        fromJson: (data) => Affiliation.fromJson(data),
+        fromJson: (data) => AffiliationModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Organisation>(
@@ -277,6 +285,8 @@ class StorageState<T> {
   bool get isChanged => StorageStatus.updated == status;
   bool get isDeleted => StorageStatus.deleted == status;
 
+  bool get shouldLoad => !(isCreated && isLocal);
+
   StorageState<T> failed(Object error) => StorageState<T>(
         value: value,
         status: status,
@@ -318,6 +328,15 @@ class StorageTransition<T> {
   StorageTransition({this.from, this.to});
   final StorageState<T> from;
   final StorageState<T> to;
+
+  bool get isError => to?.isError ?? false;
+  bool get isLocal => to?.isLocal ?? false;
+  bool get isRemote => to?.isRemote ?? false;
+  bool get isChanged => to?.isChanged ?? false;
+  bool get isDeleted => to?.isDeleted ?? false;
+  bool get isConflict => to?.error is ConflictModel;
+
+  ConflictModel get conflict => isConflict ? to.error as ConflictModel : null;
 }
 
 class TypeJsonAdapter<T> extends TypeAdapter<T> {

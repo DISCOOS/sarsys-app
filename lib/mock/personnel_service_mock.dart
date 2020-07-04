@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/models/AggregateRef.dart';
@@ -21,13 +21,13 @@ class PersonnelBuilder {
     String uuid,
     String userId,
     String tuuid,
-    PersonnelStatus status = PersonnelStatus.mobilized,
+    PersonnelStatus status = PersonnelStatus.alerted,
   }) {
     return PersonnelModel.fromJson(
       createAsJson(
         uuid: uuid ?? Uuid().v4(),
         userId: userId,
-        status: status ?? PersonnelStatus.mobilized,
+        status: status ?? PersonnelStatus.alerted,
         tuuid: tuuid,
       ),
     );
@@ -46,7 +46,7 @@ class PersonnelBuilder {
           '"lname": "${faker.person.lastName()}",'
           '"status": "${enumName(status)}",'
           '"affiliation": ${json.encode(createAffiliation())},'
-          '"function": "${enumName(OperationalFunction.Personnel)}",'
+          '"function": "${enumName(OperationalFunctionType.personnel)}",'
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 
@@ -55,7 +55,7 @@ class PersonnelBuilder {
     String divuuid,
     String depuuid,
   }) =>
-      Affiliation(
+      AffiliationModel(
         org: AggregateRef.fromType<Organisation>(orguuid ?? Uuid().v4()),
         div: AggregateRef.fromType<Division>(divuuid ?? Uuid().v4()),
         dep: AggregateRef.fromType<Department>(depuuid ?? Uuid().v4()),
@@ -70,7 +70,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     String ouuid, {
     String uuid,
     String tracking,
-    PersonnelStatus status = PersonnelStatus.mobilized,
+    PersonnelStatus status = PersonnelStatus.alerted,
   }) {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
@@ -113,7 +113,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
                 PersonnelBuilder.createAsJson(
                   uuid: "$ouuid:p:$i",
                   userId: "p:$i",
-                  status: PersonnelStatus.mobilized,
+                  status: PersonnelStatus.alerted,
                   tuuid: "$ouuid:t:p:$i",
                 ),
               ),

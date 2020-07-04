@@ -131,8 +131,10 @@ test:
 	flutter test test/blocs/user_tests.dart
 	echo "Testing AppConfigBloc..."
 	flutter test test/blocs/app_config_tests.dart
-	echo "Testing IncidentBloc..."
-	flutter test test/blocs/incident_tests.dart
+	echo "Testing AffiliationBloc..."
+	flutter test test/blocs/affiliation_tests.dart
+	echo "Testing OperationBloc..."
+	flutter test test/blocs/operation_tests.dart
 	echo "Testing DeviceBloc..."
 	flutter test test/blocs/device_tests.dart
 	echo "Testing PersonnelBloc..."

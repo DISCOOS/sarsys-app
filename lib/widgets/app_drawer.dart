@@ -13,7 +13,7 @@ import 'package:SarSys/features/settings/presentation/screens/settings_screen.da
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/screens/map_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
-import 'package:SarSys/features/operation/domain/usecases/operation_user_cases.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 
 import 'descriptions.dart';

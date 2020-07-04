@@ -83,8 +83,9 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
           response: response,
           stackTrace: StackTrace.current,
         );
-      } on SocketException {
+      } on SocketException catch (e) {
         // Assume offline
+        print(e);
       }
     }
     return values;

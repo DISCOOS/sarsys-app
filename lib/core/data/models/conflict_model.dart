@@ -1,4 +1,5 @@
 import 'package:SarSys/models/core.dart';
+import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -14,13 +15,23 @@ enum ConflictType {
 class ConflictModel extends JsonObject<Map<String, dynamic>> {
   ConflictModel({
     @required this.type,
-    this.error,
+    this.code,
+    this.base,
     this.mine,
     this.yours,
-  }) : super([type, error, mine, yours]);
+    this.error,
+  }) : super([
+          type,
+          base,
+          mine,
+          yours,
+          error,
+        ]);
 
-  final ConflictType type;
+  final String code;
   final String error;
+  final ConflictType type;
+  final Map<String, dynamic> base;
   final List<Map<String, dynamic>> mine;
   final List<Map<String, dynamic>> yours;
 
@@ -29,4 +40,6 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$ConflictModelToJson(this);
+
+  bool isCode(Object value) => enumName(value) == code;
 }

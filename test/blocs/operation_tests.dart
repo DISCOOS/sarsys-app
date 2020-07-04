@@ -13,7 +13,11 @@ const PASSWORD = 'password';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withOperationBloc(authenticated: false)
+    ..withOperationBloc(
+      username: UNTRUSTED,
+      password: PASSWORD,
+      authenticated: false,
+    )
     ..install();
 
   test(
@@ -43,7 +47,6 @@ void main() async {
     () async {
       // Arrange
       await _authenticate(harness);
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsLoaded>()), close: false);
 
       // Act
       await harness.userBloc.logout();

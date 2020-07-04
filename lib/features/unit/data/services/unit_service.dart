@@ -15,7 +15,6 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
 
   UnitService() : delegate = UnitServiceImpl.newInstance();
 
-  /// GET ../units
   Future<ServiceResponse<List<Unit>>> fetch(String ouuid, int offset, int limit) async {
     return Api.from<PagedList<Unit>, List<Unit>>(
       await delegate.fetch(
@@ -26,7 +25,6 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
     );
   }
 
-  /// POST ../units
   Future<ServiceResponse<Unit>> create(String ouuid, Unit unit) async {
     return Api.from<String, Unit>(
       await delegate.create(
@@ -38,7 +36,6 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
     );
   }
 
-  /// PUT ../units/{unitId}
   Future<ServiceResponse<Unit>> update(Unit unit) async {
     return Api.from<Unit, Unit>(
       await delegate.update(
@@ -49,7 +46,6 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
     );
   }
 
-  /// DELETE ../units/{unitId}
   Future<ServiceResponse<void>> delete(String uuid) async {
     return Api.from<Unit, Unit>(await delegate.delete(
       uuid,
@@ -61,7 +57,7 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
 abstract class UnitServiceImpl extends ChopperService {
   static UnitServiceImpl newInstance([ChopperClient client]) => _$UnitServiceImpl(client);
 
-  @Post(path: '/operations/{uuid}/units')
+  @Post(path: '/operations/{ouuid}/units')
   Future<Response<String>> create(
     @Path() ouuid,
     @Body() Unit body,

@@ -95,7 +95,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
+              unit: context.bloc<UnitBloc>().repo.findAssignedTo(_personnel).firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -136,7 +136,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         withHeader: false,
         withActions: false,
         personnel: _personnel,
-        unit: context.bloc<UnitBloc>().repo.find(_personnel).firstOrNull,
+        unit: context.bloc<UnitBloc>().repo.findAssignedTo(_personnel).firstOrNull,
         tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
         onGoto: (point) => jumpToPoint(context, center: point),

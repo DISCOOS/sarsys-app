@@ -1007,7 +1007,7 @@ class _OperationEditorState extends State<OperationEditor> {
       'type': json['operation_type'],
       'status': json['operation_status'],
       'resolution': enumName(current?.resolution ?? OperationResolution.unresolved),
-      'passcodes': Passcodes.random(5).toJson(),
+      'passcodes': current?.passcodes?.toJson() ?? Passcodes.random(5).toJson(),
     }..addAll(json);
   }
 

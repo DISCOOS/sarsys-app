@@ -319,16 +319,6 @@ class ManagedProfileDescription extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Text.rich(
-            TextSpan(
-              text: "Telefonnummer kan endres. "
-                  "Endringen vil da kun gjelde for aksjonen "
-                  "som mannskapet er knyttet til.",
-            ),
-          ),
-        ),
       ],
     );
   }

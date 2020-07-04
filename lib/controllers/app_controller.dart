@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/core/service.dart';
+import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/organisation_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/repositories/person_repository_impl.dart';
+import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
+import 'package:SarSys/features/affiliation/data/services/person_service.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
@@ -80,21 +84,21 @@ class AppController {
         value: _blocs[typeOf<T>()] as T,
       );
 
-  BlocControllerState _state = BlocControllerState.Empty;
-  BlocControllerState get state => _state;
-  bool get isEmpty => state == BlocControllerState.Empty;
-  bool get isBuilt => state.index >= BlocControllerState.Built.index;
-  bool get isInitialized => state.index >= BlocControllerState.Initialized.index;
-  bool get isLocal => state == BlocControllerState.Local;
-  bool get isReady => state == BlocControllerState.Ready;
+  AppControllerState _state = AppControllerState.Empty;
+  AppControllerState get state => _state;
+  bool get isEmpty => state == AppControllerState.Empty;
+  bool get isBuilt => state.index >= AppControllerState.Built.index;
+  bool get isInitialized => state.index >= AppControllerState.Initialized.index;
+  bool get isLocal => state == AppControllerState.Local;
+  bool get isReady => state == AppControllerState.Ready;
 
-  bool shouldInitialize(BlocControllerState state) => state == BlocControllerState.Built;
-  bool shouldAuthenticate(BlocControllerState state) => state == BlocControllerState.Local;
+  bool shouldInitialize(AppControllerState state) => state == AppControllerState.Built;
+  bool shouldAuthenticate(AppControllerState state) => state == AppControllerState.Local;
 
   /// [BlocEventHandler]s released on [_unset]
-  List<BlocEventHandler> _handlers = [];
-  List<BlocEventHandler> get handlers => List.unmodifiable(_handlers);
-  void registerEventHandler<T extends BlocEvent>(BlocEventHandler<T> handler) => _handlers.add(
+  List<Function> _handlers = [];
+  List<Function> get handlers => List.unmodifiable(_handlers);
+  void registerEventHandler<T extends BlocEvent>(BlocHandlerCallback<T> handler) => _handlers.add(
         bus.subscribe<T>(handler),
       );
 
@@ -104,8 +108,8 @@ class AppController {
   void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
         subscription,
       );
-  StreamController<BlocControllerState> _controller = StreamController.broadcast();
-  Stream<BlocControllerState> get onChange => _controller.stream;
+  StreamController<AppControllerState> _controller = StreamController.broadcast();
+  Stream<AppControllerState> get onChange => _controller.stream;
 
   List<BlocProvider> get all => [
         toProvider<AppConfigBloc>(),
@@ -171,23 +175,33 @@ class AppController {
     final orgService = OrganisationService();
     final divService = DivisionService();
     final depService = DepartmentService();
+    final personService = PersonService();
+    final affiliationService = AffiliationService();
 
     // ignore: close_sinks
     final affiliationBloc = AffiliationBloc(
-      OrganisationRepositoryImpl(
+      orgs: OrganisationRepositoryImpl(
         orgService,
         connectivity: connectivityService,
       ),
-      DivisionRepositoryImpl(
+      divs: DivisionRepositoryImpl(
         divService,
         connectivity: connectivityService,
       ),
-      DepartmentRepositoryImpl(
+      deps: DepartmentRepositoryImpl(
         depService,
         connectivity: connectivityService,
       ),
-      userBloc,
-      controller.bus,
+      persons: PersonRepositoryImpl(
+        personService,
+        connectivity: connectivityService,
+      ),
+      repo: AffiliationRepositoryImpl(
+        affiliationService,
+        connectivity: connectivityService,
+      ),
+      users: userBloc,
+      bus: controller.bus,
     );
 
     // Configure Incident service
@@ -220,12 +234,14 @@ class AppController {
           );
     // ignore: close_sinks
     final PersonnelBloc personnelBloc = PersonnelBloc(
-        PersonnelRepositoryImpl(
-          personnelService,
-          connectivity: connectivityService,
-        ),
-        controller.bus,
-        operationBloc);
+      PersonnelRepositoryImpl(
+        personnelService,
+        connectivity: connectivityService,
+      ),
+      controller.bus,
+      affiliationBloc,
+      operationBloc,
+    );
 
     // Configure Unit service
     final UnitService unitService = !demo.active
@@ -341,7 +357,7 @@ class AppController {
 
   /// Initialize application state
   Future<AppController> init() async {
-    if (BlocControllerState.Built == _state) {
+    if (AppControllerState.Built == _state) {
       await _init();
     }
     return this;
@@ -371,16 +387,16 @@ class AppController {
     _demo = config.toDemoParams();
 
     // Allow _onUserChange to transition to next legal state
-    _controller.add(_state = BlocControllerState.Initialized);
+    _controller.add(_state = AppControllerState.Initialized);
 
-    // Set state depending on user state
+    // Set app state from user state
     _onUserState(bloc<UserBloc>().state);
   }
 
   /// Reset application
   Future<void> reset() async {
     // Notify blocs not ready, will show splash screen.
-    _controller.add(_state = BlocControllerState.Empty);
+    _controller.add(_state = AppControllerState.Empty);
 
     // Initialize logout and delete user
     await bloc<UserBloc>().logout(delete: true);
@@ -402,7 +418,7 @@ class AppController {
   }) {
     assert(
       _blocs.isEmpty,
-      "Should be empty, forgot to call _unset?",
+      "_blocs should be empty, forgot to call _unset?",
     );
 
     _demo = demo;
@@ -417,11 +433,18 @@ class AppController {
     // Handle changes in user state
     registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
-    // Ensure user is mobilized
-    registerEventHandler<PersonnelsLoaded>(MobilizeUser());
+    // Handle changes in user state
+    registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
+
+    // Ensure user is mobilized after personnel and affiliation blocs are ready
+    waitThoughtEvents(bus, expected: [PersonnelsLoaded, AffiliationsLoaded], act: () {
+      if (bloc<OperationBloc>().isSelected) {
+        mobilizeUser();
+      }
+    });
 
     // Notify that providers are ready
-    _controller.add(_state = BlocControllerState.Built);
+    _controller.add(_state = AppControllerState.Built);
 
     return this;
   }
@@ -429,8 +452,8 @@ class AppController {
   void _onConfigState(AppConfigState state) async {
     // Only rebuild when in local or ready state
     if (const [
-      BlocControllerState.Local,
-      BlocControllerState.Ready,
+      AppControllerState.Local,
+      AppControllerState.Ready,
     ].contains(_state)) {
       if (state.isInitialized() || state.isLoaded() || state.isUpdated()) {
         _rebuild(demo: (state.data as AppConfig).toDemoParams());
@@ -448,12 +471,12 @@ class AppController {
     // 3) Local -> Ready
     // 4) Ready -> Local
     if (const [
-      BlocControllerState.Initialized,
-      BlocControllerState.Local,
-      BlocControllerState.Ready,
+      AppControllerState.Initialized,
+      AppControllerState.Local,
+      AppControllerState.Ready,
     ].contains(_state)) {
       final isReady = state.isAuthenticated() || state.isUnlocked();
-      var next = isReady ? BlocControllerState.Ready : BlocControllerState.Local;
+      var next = isReady ? AppControllerState.Ready : AppControllerState.Local;
       if (next != _state) {
         _state = next;
         _controller.add(_state);
@@ -466,7 +489,7 @@ class AppController {
     bus.unsubscribeAll();
 
     // Notify blocs not ready, will show splash screen
-    _controller.add(_state = BlocControllerState.Empty);
+    _controller.add(_state = AppControllerState.Empty);
 
     // Unsubscribe handlers
     _handlers.forEach((handler) => bus.unsubscribe(handler));
@@ -487,14 +510,14 @@ class AppController {
   }
 }
 
-enum BlocControllerState {
+enum AppControllerState {
   /// Controller is empty, no blocs available
   Empty,
 
   /// Controller is built, blocks not ready
   Built,
 
-  /// Required blocs (user and config) are initialized
+  /// Required blocs (user, config and affiliations) are initialized
   Initialized,
 
   /// Local User (not authenticated), blocks are ready to receive commands

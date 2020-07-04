@@ -1,5 +1,4 @@
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/services/service.dart';
@@ -21,8 +20,8 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   });
 
   /// Find personnel from user
-  Iterable<Personnel> find(
-    User user, {
+  Iterable<Personnel> findUser(
+    String userId, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   });
 

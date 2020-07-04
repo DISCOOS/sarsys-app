@@ -9,19 +9,16 @@ part of 'personnel_model.dart';
 PersonnelModel _$PersonnelModelFromJson(Map json) {
   return PersonnelModel(
     uuid: json['uuid'] as String,
-    userId: json['userId'] as String,
-    status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
-    fname: json['fname'] as String,
-    lname: json['lname'] as String,
-    phone: json['phone'] as String,
-    affiliation: json['affiliation'] == null
+    affiliation: toAffiliationRef(json['affiliation']),
+    unit: toUnitRef(json['unit']),
+    person: json['person'] == null
         ? null
-        : Affiliation.fromJson((json['affiliation'] as Map)?.map(
+        : PersonModel.fromJson((json['person'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
-    function:
-        _$enumDecodeNullable(_$OperationalFunctionEnumMap, json['function']),
-    unit: toUnitRef(json['unit']),
+    status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
+    function: _$enumDecodeNullable(
+        _$OperationalFunctionTypeEnumMap, json['function']),
     tracking: toTrackingRef(json['tracking']),
   );
 }
@@ -37,14 +34,11 @@ Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
 
   writeNotNull('uuid', instance.uuid);
   writeNotNull('tracking', instance.tracking?.toJson());
-  writeNotNull('userId', instance.userId);
   writeNotNull('status', _$PersonnelStatusEnumMap[instance.status]);
-  writeNotNull('fname', instance.fname);
-  writeNotNull('lname', instance.lname);
-  writeNotNull('phone', instance.phone);
-  writeNotNull('affiliation', instance.affiliation?.toJson());
-  writeNotNull('function', _$OperationalFunctionEnumMap[instance.function]);
+  writeNotNull('function', _$OperationalFunctionTypeEnumMap[instance.function]);
+  writeNotNull('person', instance.person?.toJson());
   writeNotNull('unit', instance.unit?.toJson());
+  writeNotNull('affiliation', instance.affiliation?.toJson());
   return val;
 }
 
@@ -81,13 +75,16 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$PersonnelStatusEnumMap = {
-  PersonnelStatus.mobilized: 'mobilized',
+  PersonnelStatus.none: 'none',
+  PersonnelStatus.alerted: 'alerted',
+  PersonnelStatus.enroute: 'enroute',
   PersonnelStatus.onscene: 'onscene',
+  PersonnelStatus.leaving: 'leaving',
   PersonnelStatus.retired: 'retired',
 };
 
-const _$OperationalFunctionEnumMap = {
-  OperationalFunction.Commander: 'Commander',
-  OperationalFunction.UnitLeader: 'UnitLeader',
-  OperationalFunction.Personnel: 'Personnel',
+const _$OperationalFunctionTypeEnumMap = {
+  OperationalFunctionType.personnel: 'personnel',
+  OperationalFunctionType.unit_leader: 'unit_leader',
+  OperationalFunctionType.commander: 'commander',
 };

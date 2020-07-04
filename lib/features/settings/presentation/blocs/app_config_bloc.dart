@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
@@ -7,9 +9,6 @@ import 'package:SarSys/features/settings/domain/repositories/app_config_reposito
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
-
-import '../../../../blocs/core.dart';
-import '../../../../blocs/mixins.dart';
 
 typedef void AppConfigCallback(VoidCallback fn);
 
@@ -159,7 +158,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   // Complete with error and return response as error state to bloc
   AppConfigBlocError createError(Object error, {StackTrace stackTrace}) => AppConfigBlocError(
         error,
-        stackTrace: stackTrace,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 
   @override

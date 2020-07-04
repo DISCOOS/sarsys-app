@@ -22,9 +22,6 @@ abstract class IncidentRepository implements ConnectionAwareRepository<String, I
 
   /// Delete [Incident] with given [uuid]
   Future<Incident> delete(String uuid);
-
-  /// Find incident for given operation
-  Incident find(String ouuid);
 }
 
 class IncidentServiceException implements Exception {

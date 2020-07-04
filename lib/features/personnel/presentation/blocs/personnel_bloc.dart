@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
@@ -26,10 +30,11 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, BlocEventBus bus, this.operationBloc) : super(bus: bus) {
+  PersonnelBloc(this.repo, BlocEventBus bus, this.affiliationBloc, this.operationBloc) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
+    assert(affiliationBloc != null, "affiliationBloc can not be null");
 
     registerStreamSubscription(operationBloc.listen(
       // Load and unload personnels as needed
@@ -39,6 +44,11 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     registerStreamSubscription(service.messages.listen(
       // Update from messages pushed from backend
       _processPersonnelMessage,
+    ));
+
+    registerStreamSubscription(affiliationBloc.persons.onChanged.listen(
+      // Handle person conflicts
+      _processPersonConflicts,
     ));
   }
 
@@ -51,7 +61,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
           dispatch(UnloadPersonnels(repo.ouuid));
         }
       }
-    } on Exception catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       Catcher.reportCheckedError(
         error,
         stackTrace,
@@ -62,13 +72,35 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   void _processPersonnelMessage(PersonnelMessage event) {
     try {
       add(_InternalMessage(event));
-    } on Exception catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       Catcher.reportCheckedError(
         error,
         stackTrace,
       );
     }
   }
+
+  void _processPersonConflicts(StorageTransition<Person> state) {
+    try {
+      if (PersonRepository.isDuplicateUser(state)) {
+        // Find current person usages and replace with existing user
+        final duplicate = state.from.value.uuid;
+        final existing = state.conflict.base;
+        find(
+          duplicate,
+          exclude: [],
+        ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
+      }
+    } catch (error, stackTrace) {
+      Catcher.reportCheckedError(
+        error,
+        stackTrace,
+      );
+    }
+  }
+
+  /// Get [AffiliationBloc]
+  final AffiliationBloc affiliationBloc;
 
   /// Get [OperationBloc]
   final OperationBloc operationBloc;
@@ -91,6 +123,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Check if [Incident.uuid] is not set
   bool get isUnset => repo.ouuid == null;
 
+  /// Check if bloc is ready
+  bool get isReady => repo.isReady;
+
   @override
   PersonnelState get initialState => PersonnelsEmpty();
 
@@ -99,10 +134,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> find(
-    User user, {
+    String userId, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
-      repo.find(user, exclude: exclude);
+      repo.findUser(userId, exclude: exclude);
 
   /// Stream of changes on given [personnel]
   Stream<Personnel> onChanged(Personnel personnel) => where(
@@ -127,13 +162,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  void _assertData(Personnel data) {
+  String _assertData(Personnel data) {
     if (data?.uuid == null) {
       throw ArgumentError(
         "Personnel have no uuid",
       );
     }
     TrackingUtils.assertRef(data);
+    return AffiliationUtils.assertRef(data);
   }
 
   /// Fetch personnel from [service]
@@ -151,6 +187,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       CreatePersonnel(
         ouuid ?? operationBloc.selected.uuid,
         personnel.copyWith(
+          // Personnels MUST contain an affiliation reference
+          affiliation: AffiliationUtils.ensureRef(personnel),
           // Personnels should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
           // reference to create a [Tracking] instance which the
@@ -216,8 +254,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   Future<PersonnelState> _create(CreatePersonnel command) async {
-    _assertData(command.data);
-    var personnel = await repo.create(command.ouuid, command.data);
+    final auuid = _assertData(command.data);
+    if (!affiliationBloc.repo.containsKey(auuid)) {
+      var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
+      if (!affiliation.isAffiliate) {
+        await affiliationBloc.temporary(command.data, affiliation);
+      }
+    }
+    final personnel = await repo.create(command.ouuid, command.data);
     return toOK(
       command,
       PersonnelCreated(personnel),
@@ -275,7 +319,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   @override
   PersonnelBlocError createError(Object error, {StackTrace stackTrace}) => PersonnelBlocError(
         error,
-        stackTrace: StackTrace.current,
+        stackTrace: stackTrace ?? StackTrace.current,
       );
 
   @override

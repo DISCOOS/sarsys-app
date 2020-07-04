@@ -29,9 +29,12 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     idpHints: (json['idpHints'] as List)?.map((e) => e as String)?.toList(),
     keepScreenOn: json['keepScreenOn'] as bool,
     callsignReuse: json['callsignReuse'] as bool,
-    securityType: _$enumDecodeNullable(_$SecurityTypeEnumMap, json['securityType']),
-    securityMode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['securityMode']),
-    trustedDomains: (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
+    securityType:
+        _$enumDecodeNullable(_$SecurityTypeEnumMap, json['securityType']),
+    securityMode:
+        _$enumDecodeNullable(_$SecurityModeEnumMap, json['securityMode']),
+    trustedDomains:
+        (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
     securityLockAfter: json['securityLockAfter'] as int,
   );
 }
@@ -61,7 +64,8 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('mapCacheCapacity', instance.mapCacheCapacity);
   writeNotNull('locationAccuracy', instance.locationAccuracy);
   writeNotNull('locationFastestInterval', instance.locationFastestInterval);
-  writeNotNull('locationSmallestDisplacement', instance.locationSmallestDisplacement);
+  writeNotNull(
+      'locationSmallestDisplacement', instance.locationSmallestDisplacement);
   writeNotNull('keepScreenOn', instance.keepScreenOn);
   writeNotNull('callsignReuse', instance.callsignReuse);
   writeNotNull('units', instance.units);
@@ -83,7 +87,9 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '
