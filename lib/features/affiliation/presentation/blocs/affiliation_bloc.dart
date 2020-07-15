@@ -213,9 +213,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   /// Get [Affiliation] from [Personnel]
   Affiliation findPersonnelAffiliation(Personnel personnel) =>
-      repo[personnel?.affiliation?.uuid] ?? personnel.userId != null
-          ? findUserAffiliation(userId: personnel.userId)
-          : null;
+      repo[personnel?.affiliation?.uuid] ??
+      (personnel.userId != null ? findUserAffiliation(userId: personnel.userId) : null);
 
   /// Get [Organisation] from User
   Organisation findUserOrganisation({String userId}) {

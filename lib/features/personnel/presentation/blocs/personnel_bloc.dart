@@ -132,7 +132,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Get [Personnel] from [puuids]
   Iterable<Aggregate> getAll(List<String> puuids) =>
-      puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]);
+      puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]).toList();
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> find(

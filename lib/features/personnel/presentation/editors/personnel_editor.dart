@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -191,7 +192,18 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Affiliation _currentAffiliation() => affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
 
   Affiliation _ensureAffiliation() {
-    return _affiliationKey?.currentState?.save() ?? _currentAffiliation() ?? affiliationBloc.findUserAffiliation();
+    final affiliation = _affiliationKey?.currentState?.save() ?? _currentAffiliation();
+    if (affiliation == null) {
+      final use = affiliationBloc.findUserAffiliation();
+      if (!use.isEmpty) {
+        return AffiliationModel(
+          org: use.org,
+          div: use.div,
+          dep: use.dep,
+        );
+      }
+    }
+    return affiliation;
   }
 
   Widget _buildNameField() {
@@ -603,6 +615,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Personnel _createPersonnel(Affiliation affiliation) => PersonnelModel.fromJson(_formKey.currentState.value).copyWith(
         uuid: Uuid().v4(),
         affiliation: affiliation.toRef(),
+        fname: _formKey.currentState.value['fname'],
+        lname: _formKey.currentState.value['lname'],
         phone: _formKey.currentState.value['phone'],
         // Backend will use this as tuuid to create new tracking
         tracking: AggregateRef.fromType<Tracking>(Uuid().v4()),
@@ -611,6 +625,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Personnel _updatePersonnel(Affiliation affiliation) =>
       widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
             affiliation: affiliation.toRef(),
+            fname: _formKey.currentState.value['fname'],
+            lname: _formKey.currentState.value['lname'],
             phone: _formKey.currentState.value['phone'],
           );
 

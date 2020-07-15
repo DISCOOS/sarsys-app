@@ -1,5 +1,6 @@
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,7 +61,7 @@ class AffiliationView extends StatelessWidget {
           child: buildCopyableText(
             context: context,
             label: "Tilhørighet",
-            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid].prefix),
+            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid]?.prefix),
             value: context.bloc<AffiliationBloc>().toName(affiliation),
             onMessage: onMessage,
             onComplete: onComplete,
@@ -150,13 +151,13 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   Widget _buildOrganisationField() {
-    _update(ORG_FIELD, org?.prefix);
+    _update(ORG_FIELD, org?.uuid);
     return _buildReadOnly(
       context,
       ORG_FIELD,
       'Organisasjon',
       org?.name,
-      org?.prefix,
+      org?.uuid,
     );
   }
 
@@ -164,8 +165,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<String>(
       valueListenable: _org,
       builder: (context, ouuid, _) {
-        final duuid = _ensureDiv(ouuid);
-//        final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
+        final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
         return org != null && editable
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
@@ -197,8 +197,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     return ValueListenableBuilder<String>(
         valueListenable: _div,
         builder: (context, divuuid, _) {
-          final depuuid = _ensureDep(divuuid);
-//          final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
+          final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
           return editable
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,
@@ -259,10 +258,10 @@ class AffiliationFormState extends State<AffiliationForm> {
   String _update(String attribute, String value) {
     if (_formKey.currentState != null) {
       _formKey.currentState.value[attribute] = value;
-      if (_formKey.currentState.fields[attribute] != null) {
-        _formKey.currentState.fields[attribute].currentState.didChange(value);
-      }
-      _formKey.currentState.save();
+//      if (_formKey.currentState.fields[attribute] != null) {
+//        _formKey.currentState.fields[attribute].currentState.didChange(value);
+//      }
+//      _formKey.currentState.save();
     }
     return value;
   }
@@ -302,7 +301,14 @@ class AffiliationFormState extends State<AffiliationForm> {
   Affiliation save() {
     _formKey?.currentState?.save();
     final json = _formKey.currentState.value;
-    final affiliation = AffiliationModel.fromJson(json);
+    final affiliation = AffiliationModel(
+      uuid: _affiliation?.uuid,
+      org: AggregateRef.fromType<Organisation>(json[ORG_FIELD]),
+      div: AggregateRef.fromType<Division>(json[DIV_FIELD]),
+      dep: AggregateRef.fromType<Department>(json[DEP_FIELD]),
+      type: _affiliation?.type ?? _inferType(json),
+      status: _affiliation?.status ?? AffiliationStandbyStatus.available,
+    );
     return affiliation;
   }
 
@@ -313,4 +319,9 @@ class AffiliationFormState extends State<AffiliationForm> {
   void _onChanged() {
     if (widget.onChanged != null) widget.onChanged(save());
   }
+
+  AffiliationType _inferType(Map<String, dynamic> json) =>
+      (json[ORG_FIELD] ?? json[DIV_FIELD] ?? json[DEP_FIELD]) == null
+          ? AffiliationType.volunteer
+          : AffiliationType.member;
 }

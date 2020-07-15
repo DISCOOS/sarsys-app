@@ -458,7 +458,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
-      personnelBloc.getAll(personnels),
+      personnelBloc.getAll(personnels ?? <String>[]),
     );
     final next = sources == null
         ? tracking
