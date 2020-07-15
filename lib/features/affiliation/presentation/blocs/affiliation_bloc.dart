@@ -324,7 +324,14 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     ).values;
   }
 
-  /// Fetch organisations from [repo]
+  /// Fetch given affiliations from [repo]
+  Future<List<Affiliation>> fetch(Iterable<String> uuids) async {
+    return dispatch(
+      FetchAffiliations(uuids: uuids.toList()),
+    );
+  }
+
+  /// Load affiliations from [repo]
   Future<List<Affiliation>> load() async {
     return dispatch(
       LoadAffiliations(),
@@ -395,6 +402,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   Stream<AffiliationState> execute(AffiliationCommand command) async* {
     if (command is LoadAffiliations) {
       yield* _load(command);
+    } else if (command is FetchAffiliations) {
+      yield* _fetch(command);
     } else if (command is OnboardUser) {
       yield* _onboard(command);
     } else if (command is CreateTemporaryAffiliation) {
@@ -409,21 +418,55 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   Stream<AffiliationState> _load(LoadAffiliations command) async* {
-    // Load from backend
     await orgs.load();
     await divs.load();
     await deps.load();
 
-    // Load from local storage.
-    //
-    // Affiliations and Persons
-    // are populated through
-    // Personnels and during
-    // onboarding of Users
+    // Load from local storage
     await repo.init();
+
+    final exists = await _fetchPersons(
+      repo.values.map((e) => e.person.uuid),
+    );
+
+    final loaded = toOK(
+      command,
+      AffiliationsLoaded(
+        orgs: orgs.keys,
+        divs: orgs.keys,
+        deps: orgs.keys,
+        persons: exists,
+        affiliations: repo.keys,
+      ),
+      result: repo.values,
+    );
+    yield loaded;
+  }
+
+  Stream<AffiliationState> _fetch(FetchAffiliations command) async* {
+    // Load from backend
+    await repo.fetch(command.data);
+
+    // Get persons that should exist
+    final expected = command.data.where((uuid) => repo.containsKey(uuid)).map((uuid) => repo[uuid].person.uuid);
+
+    final exists = await _fetchPersons(expected);
+
+    final loaded = toOK(
+      command,
+      AffiliationsFetched(
+        affiliations: repo.keys,
+        persons: exists,
+      ),
+      result: repo.values,
+    );
+    yield loaded;
+  }
+
+  Future<Iterable<String>> _fetchPersons(Iterable<String> puuids) async {
     try {
-      await persons.load(
-        uuids: repo.values.map((e) => e.person.uuid),
+      await persons.fetch(
+        uuids: puuids,
       );
     } on PersonServiceException catch (e) {
       if (!(e.response.is404 || e.response.is406)) {
@@ -434,30 +477,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
           .where((affiliation) => !persons.containsKey(affiliation.person.uuid))
           .forEach((affiliation) => repo.delete(affiliation.uuid));
     }
-
-    final loaded = toOK(
-      command,
-      AffiliationsLoaded(
-        orgs: orgs.keys,
-        divs: orgs.keys,
-        deps: orgs.keys,
-        persons: persons.keys,
-        affiliations: repo.keys,
-      ),
-      result: repo.values,
-    );
-    yield loaded;
+    return puuids.where((puuid) => persons.containsKey(puuid));
   }
-
-//  void _initPersonsFromAffiliates() =>
-//      repo.values.where((affiliation) => affiliation.isAffiliate).forEach((affiliation) {
-//        // Assumes affiliations was fetched with
-//        // query parameter 'expand=person'
-//        final person = PersonModel.fromJson(
-//          affiliation.toJson()..addAll({"uuid": affiliation.person.uuid}),
-//        );
-//        persons.put(StorageState.created(person, remote: true));
-//      });
 
   Stream<AffiliationState> _onboard(OnboardUser command) async* {
     _assertOnboarding(command);
@@ -604,6 +625,13 @@ class LoadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
   String toString() => '$runtimeType {}';
 }
 
+class FetchAffiliations extends AffiliationCommand<List<String>, List<Affiliation>> {
+  FetchAffiliations({List<String> uuids = const []}) : super(uuids);
+
+  @override
+  String toString() => '$runtimeType {uuids: $data}';
+}
+
 class OnboardUser extends AffiliationCommand<String, Affiliation> {
   final Affiliation affiliation;
   OnboardUser(String userId, this.affiliation) : super(userId, props: [affiliation]);
@@ -680,6 +708,21 @@ class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
       'orgs: $orgs, '
       'divs: $divs, '
       'deps: $deps, '
+      'persons: $persons, '
+      'affiliations: $data'
+      '}';
+}
+
+class AffiliationsFetched extends AffiliationState<Iterable<String>> {
+  AffiliationsFetched({
+    this.persons,
+    Iterable<String> affiliations,
+  }) : super(affiliations);
+
+  final Iterable<String> persons;
+
+  @override
+  String toString() => '$runtimeType {'
       'persons: $persons, '
       'affiliations: $data'
       '}';

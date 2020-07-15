@@ -192,7 +192,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final tracking = TrackingUtils.create(
           unit,
           sources: [
-            ...TrackingUtils.toSources(unit.personnels, repo),
+            ...TrackingUtils.toSources(personnelBloc.getAll(unit.personnels), repo),
             ...TrackingUtils.toSources(created.devices, repo),
           ],
         );
@@ -319,7 +319,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// Get [personnels] being tracked
   TrackableQuery<Personnel> get personnels => TrackableQuery<Personnel>(
         bloc: this,
-        data: this.personnelBloc.personnels,
+        data: this.personnelBloc.repo.map,
       );
 
   /// Test if [aggregate] is being tracked
@@ -453,12 +453,12 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     Position position,
     TrackingStatus status,
     List<Device> devices,
-    List<Personnel> personnels,
+    List<String> personnels,
   }) {
     final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
-      personnels,
+      personnelBloc.getAll(personnels),
     );
     final next = sources == null
         ? tracking

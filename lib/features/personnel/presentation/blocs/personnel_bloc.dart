@@ -13,6 +13,7 @@ import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
@@ -129,8 +130,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   @override
   PersonnelState get initialState => PersonnelsEmpty();
 
-  /// Get personnel
-  Map<String, Personnel> get personnels => repo.map;
+  /// Get [Personnel] from [puuids]
+  Iterable<Aggregate> getAll(List<String> puuids) =>
+      puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]);
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> find(
@@ -246,6 +248,15 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   Future<PersonnelState> _load(LoadPersonnels command) async {
     var personnels = await repo.load(command.data);
+    if (personnels.isNotEmpty) {
+      try {
+        await affiliationBloc.fetch(
+          personnels.map((p) => p.affiliation.uuid),
+        );
+      } on Exception catch (e) {
+        print(e);
+      }
+    }
     return toOK(
       command,
       PersonnelsLoaded(repo.keys),

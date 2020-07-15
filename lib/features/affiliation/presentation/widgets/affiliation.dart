@@ -18,12 +18,14 @@ class AffiliationAvatar extends StatelessWidget {
   final double size;
   final double maxRadius;
 
-  const AffiliationAvatar({
+  AffiliationAvatar({
     Key key,
     @required this.affiliation,
     this.size = 8.0,
     this.maxRadius,
-  }) : super(key: key);
+  }) : super(key: key) {
+    assert(affiliation != null, "Affiliation is required");
+  }
 
   @override
   Widget build(BuildContext context) {

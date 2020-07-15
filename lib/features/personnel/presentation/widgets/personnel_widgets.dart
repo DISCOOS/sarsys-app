@@ -328,7 +328,7 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onAddToUnit() async {
-    final result = await addToUnit(personnels: [personnel], unit: unit);
+    final result = await addToUnit(personnels: [personnel.uuid], unit: unit);
     if (result.isRight()) {
       var actual = result.toIterable().first;
       _onMessage("${personnel.name} er tilknyttet ${actual.name}");
@@ -349,7 +349,7 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onRemoveFromUnit() async {
-    final result = await removeFromUnit(unit, personnels: [personnel]);
+    final result = await removeFromUnit(unit, personnels: [personnel.uuid]);
     if (result.isRight()) {
       _onMessage("${personnel.name} er fjernet fra ${unit.name}");
       _onChanged(personnel);
@@ -577,7 +577,7 @@ class PersonnelContactView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final units = context.bloc<UnitBloc>().find(personnel);
+    final units = context.bloc<UnitBloc>().findAssignedTo(personnel.uuid);
     return Row(
       children: <Widget>[
         Expanded(

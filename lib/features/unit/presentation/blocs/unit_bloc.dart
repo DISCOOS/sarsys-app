@@ -90,21 +90,17 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   void _processPersonnelState(PersonnelState state) {
     try {
-      if (state.isUpdated()) {
-        final event = state as PersonnelUpdated;
-        final unit = repo.findAndReplace(event.data);
-        if (unit != null) {
-          dispatch(
-            _InternalChange(unit),
-          );
-        }
-      } else if (state.isDeleted()) {
+      if (state.isDeleted()) {
         final event = state as PersonnelDeleted;
-        final unit = repo.findAndRemove(event.data);
-        if (unit != null) {
-          dispatch(
-            _InternalChange(unit),
-          );
+        final puuid = event.data.uuid;
+        final units = repo.findAssignedTo(puuid);
+        if (units.isNotEmpty) {
+          for (var unit in units) {
+            dispatch(_ProcessPersonnelDeleted(
+              puuid: puuid,
+              data: unit.copyWith(personnels: unit.personnels.toList()..remove(puuid)),
+            ));
+          }
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -155,12 +151,22 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);
 
-  /// Find unit from personnel
-  Iterable<Unit> find(
-    Personnel personnel, {
+  /// Find units personnel is assigned to
+  Iterable<Unit> findAssignedTo(
+    String puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
-      repo.findAssignedTo(personnel, exclude: exclude);
+      repo.findAssignedTo(puuid, exclude: exclude);
+
+  /// Find personnel in given unit
+  Iterable<Personnel> getPersonnels(
+    Unit unit, {
+    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
+  }) =>
+      unit.personnels
+          .where((puuid) => personnelBloc.repo.containsKey(puuid))
+          .where((puuid) => !exclude.contains(personnelBloc.repo[puuid].status))
+          .map((puuid) => personnelBloc.repo[puuid]);
 
   /// Get next available number
   int nextAvailableNumber(UnitType type, {bool reuse = true}) => repo.nextAvailableNumber(type, reuse: reuse);
@@ -281,7 +287,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       yield await _delete(command);
     } else if (command is UnloadUnits) {
       yield await _unload(command);
-    } else if (command is _InternalChange) {
+    } else if (command is _ProcessPersonnelDeleted) {
       yield await _process(command);
     } else {
       yield toUnsupported(command);
@@ -341,7 +347,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     );
   }
 
-  Future<UnitState> _process(_InternalChange command) async {
+  Future<UnitState> _process(_ProcessPersonnelDeleted command) async {
     final previous = repo[command.data.uuid];
     final state = repo.replace(command.data.uuid, command.data);
     return toOK(
@@ -375,7 +381,7 @@ class LoadUnits extends UnitCommand<String, List<Unit>> {
   LoadUnits(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadUnits {ouuid: $data}';
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
 class CreateUnit extends UnitCommand<Unit, Unit> {
@@ -391,36 +397,40 @@ class CreateUnit extends UnitCommand<Unit, Unit> {
   }) : super(data, [ouuid, position, devices]);
 
   @override
-  String toString() => 'CreateUnit {ouuid: $ouuid, unit: $data, '
-      'position: $position, devices: $devices}';
+  String toString() => '$runtimeType {'
+      'ouuid: $ouuid, '
+      'unit: $data, '
+      'position: $position, '
+      'devices: $devices}';
 }
 
 class UpdateUnit extends UnitCommand<Unit, Unit> {
   UpdateUnit(Unit data) : super(data);
 
   @override
-  String toString() => 'UpdateUnit {unit: $data}';
+  String toString() => '$runtimeType {unit: $data}';
 }
 
 class DeleteUnit extends UnitCommand<Unit, Unit> {
   DeleteUnit(Unit data) : super(data);
 
   @override
-  String toString() => 'DeleteUnit {unit: $data}';
+  String toString() => '$runtimeType {unit: $data}';
 }
 
 class UnloadUnits extends UnitCommand<String, List<Unit>> {
   UnloadUnits(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'UnloadUnits {ouuid: $data}';
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
-class _InternalChange extends UnitCommand<Unit, Unit> {
-  _InternalChange(Unit data) : super(data);
+class _ProcessPersonnelDeleted extends UnitCommand<Unit, Unit> {
+  final String puuid;
+  _ProcessPersonnelDeleted({Unit data, this.puuid}) : super(data, [puuid]);
 
   @override
-  String toString() => '_InternalChange {unit: $data}';
+  String toString() => '$runtimeType {unit: $data, personnel: $puuid}';
 }
 
 /// ---------------------

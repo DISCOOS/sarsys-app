@@ -53,7 +53,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
   }
 
   @override
-  Future<Iterable<Person>> load({
+  Future<Iterable<Person>> fetch({
     String query,
     Iterable<String> uuids,
     bool force = true,

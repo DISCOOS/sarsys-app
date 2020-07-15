@@ -391,7 +391,8 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
 
   Iterable<AddressLookup> _findPersonnel(RegExp match, String query) => controller
       .bloc<PersonnelBloc>()
-      .personnels
+      .repo
+      .map
       .values
       .where((p) => withRetired || p.status != PersonnelStatus.retired)
       .where((p) =>

@@ -8,7 +8,6 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/editors/position_editor.dart';
 import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
@@ -19,7 +18,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   final Position position;
   final List<Device> devices;
-  final List<Personnel> personnels;
+  final List<String> personnels;
   final List<String> templates;
 
   UnitParams({
@@ -36,7 +35,7 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
 Future<dartz.Either<bool, Unit>> createUnit({
   Position position,
   List<Device> devices,
-  List<Personnel> personnels,
+  List<String> personnels,
 }) =>
     CreateUnit()(UnitParams(
       devices: devices,
@@ -195,7 +194,7 @@ class EditUnitLocation extends UseCase<bool, Position, UnitParams> {
 /// Add given devices and personnel to tracking of given unit
 Future<dartz.Either<bool, Unit>> addToUnit({
   List<Device> devices,
-  List<Personnel> personnels,
+  List<String> personnels,
   Unit unit,
 }) =>
     AddToUnit()(UnitParams(
@@ -239,7 +238,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     await params.context.bloc<TrackingBloc>().attach(
           unit.tracking.uuid,
           devices: params.devices,
-          personnels: params.personnels,
+          personnels: params.bloc.personnelBloc.getAll(params.personnels),
         );
 
     return dartz.Right(unit);
@@ -282,7 +281,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
 Future<dartz.Either<bool, Tracking>> removeFromUnit(
   Unit unit, {
   List<Device> devices,
-  List<Personnel> personnels,
+  List<String> personnels,
 }) =>
     RemoveFromUnit()(UnitParams(
       unit: unit,
@@ -300,7 +299,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     // Notify intent
     final names = List.from([
       ...devices.map((device) => device.name).toList(),
-      ...personnels.map((personnel) => personnel.name).toList(),
+      ...personnels.map((puuid) => params.bloc.personnelBloc.repo[puuid]?.name).toList(),
     ]).join((', '));
     var proceed = await prompt(
       params.overlay.context,
@@ -335,28 +334,6 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     return dartz.right(tracking);
   }
 }
-
-//Future<Tracking> _handleTracking(
-//  UnitParams params,
-//  Unit unit, {
-//  @required bool replace,
-//  List<Device> devices,
-//  List<Personnel> personnel,
-//  Position position,
-//}) async {
-//  final tracking = await waitThoughtState<TrackingCreated, Tracking>(
-//    params.bloc,
-//    test: (state) => state.data.uuid == unit.tracking.uuid,
-//    map: (state) => state.data,
-//  );
-//  return await params.context.bloc<TrackingBloc>().update(
-//        tracking,
-//        position: position,
-//        devices: devices,
-//        personnel: personnel,
-//        replace: replace,
-//      );
-//}
 
 /// Transition unit to mobilized state
 Future<dartz.Either<bool, Unit>> mobilizeUnit(

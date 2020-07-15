@@ -19,7 +19,7 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
   Iterable<Person> find({bool where(Person person)});
 
   /// Load given persons
-  Future<Iterable<Person>> load({
+  Future<Iterable<Person>> fetch({
     String query,
     Iterable<String> uuids,
     bool force = true,

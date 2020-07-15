@@ -1,3 +1,5 @@
+import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Point.dart';
@@ -286,7 +288,7 @@ class UnitWidget extends StatelessWidget {
               context: context,
               label: "Mannskaper",
               icon: Icon(Icons.group_work),
-              value: _toPersonnel(),
+              value: _toPersonnel(context.bloc<PersonnelBloc>().repo),
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -294,8 +296,8 @@ class UnitWidget extends StatelessWidget {
         ],
       );
 
-  String _toPersonnel() {
-    final personnel = unit?.personnels?.map((p) => p.formal)?.join(', ');
+  String _toPersonnel(PersonnelRepository repo) {
+    final personnel = unit?.personnels?.map((puuid) => repo[puuid].formal)?.join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 

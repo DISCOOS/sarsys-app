@@ -455,7 +455,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : PersonnelScreen(personnel: personnel);
   }
 
-  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().personnels;
+  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().repo.map;
 
   Widget _toDeviceScreen(RouteSettings settings, bool persisted) {
     var device;

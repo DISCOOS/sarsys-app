@@ -314,7 +314,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   String _validateName(String fname, String lname) {
     Personnel personnel = context
         .bloc<PersonnelBloc>()
-        .personnels
+        .repo
+        .map
         .values
         .where(
           (personnel) => PersonnelStatus.retired != personnel.status,
@@ -427,7 +428,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   String _validatePhone(phone) {
     Personnel match = context
         .bloc<PersonnelBloc>()
-        .personnels
+        .repo
+        .map
         .values
         .where(
           (unit) => PersonnelStatus.retired != unit.status,

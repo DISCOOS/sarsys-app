@@ -1,6 +1,7 @@
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/mock/incident_service_mock.dart';
 import 'package:SarSys/mock/personnel_service_mock.dart';
 import 'package:SarSys/mock/unit_service_mock.dart';
@@ -381,7 +382,11 @@ Future _testShouldDeleteCloneWhenPersonnelIsDeleted(BlocTestHarness harness) asy
 
   // Assert
   expect(
-    harness.unitBloc.repo[unit.uuid].personnels.firstWhere((p) => p == updated, orElse: () => null)?.status,
+    harness.unitBloc.repo[unit.uuid].personnels
+        .where((puuid) => puuid == updated.uuid)
+        .map((puuid) => harness.personnelBloc.repo[puuid])
+        .firstOrNull
+        ?.status,
     isNull,
     reason: "SHOULD NOT contain $p2",
   );
@@ -408,7 +413,11 @@ Future _testShouldUpdateCloneWhenPersonnelIsUpdated(BlocTestHarness harness) asy
     reason: "SHOULD HAVE status onscene",
   );
   expect(
-    harness.unitBloc.repo[unit.uuid].personnels.firstWhere((p) => p == updated, orElse: () => null)?.status,
+    harness.unitBloc.repo[unit.uuid].personnels
+        .where((puuid) => puuid == updated.uuid)
+        .map((puuid) => harness.personnelBloc.repo[puuid])
+        .firstOrNull
+        ?.status,
     equals(PersonnelStatus.onscene),
     reason: "SHOULD HAVE status onscene",
   );

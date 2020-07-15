@@ -21,7 +21,7 @@ void main() async {
     'Personnel bloc should be EMPTY and UNSET',
     () async {
       expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD BE unset");
-      expect(harness.personnelBloc.personnels.length, 0, reason: "SHOULD BE empty");
+      expect(harness.personnelBloc.repo.map.length, 0, reason: "SHOULD BE empty");
       expect(harness.personnelBloc.initialState, isA<PersonnelsEmpty>(), reason: "Unexpected personnel state");
       expect(harness.personnelBloc, emits(isA<PersonnelsEmpty>()));
     },

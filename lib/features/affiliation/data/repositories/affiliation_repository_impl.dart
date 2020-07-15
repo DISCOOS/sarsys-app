@@ -42,7 +42,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }
 
   @override
-  Future<List<Affiliation>> load(List<String> uuids, {bool force = true}) async {
+  Future<List<Affiliation>> fetch(List<String> uuids, {bool force = true}) async {
     await prepare(
       force: force ?? false,
     );

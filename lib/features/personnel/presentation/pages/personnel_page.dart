@@ -106,7 +106,8 @@ class PersonnelPageState extends State<PersonnelPage> {
   List<Personnel> _filteredPersonnel() {
     return context
         .bloc<PersonnelBloc>()
-        .personnels
+        .repo
+        .map
         .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
@@ -237,7 +238,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           caption: 'KNYTT',
           color: Theme.of(context).buttonColor,
           icon: Icons.people,
-          onTap: () async => await addToUnit(personnels: [personnel]),
+          onTap: () async => await addToUnit(personnels: [personnel.uuid]),
         ),
       );
 
@@ -249,7 +250,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           icon: Icons.people,
           onTap: () async {
             if (unit != null) {
-              await removeFromUnit(unit, personnels: [personnel]);
+              await removeFromUnit(unit, personnels: [personnel.uuid]);
             }
           },
         ),
@@ -266,7 +267,7 @@ class PersonnelPageState extends State<PersonnelPage> {
           caption: 'OPPRETT',
           color: Theme.of(context).buttonColor,
           icon: Icons.group_add,
-          onTap: () async => await createUnit(personnels: [personnel]),
+          onTap: () async => await createUnit(personnels: [personnel.uuid]),
         ),
       );
 

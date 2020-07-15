@@ -14,13 +14,7 @@ UnitModel _$UnitModelFromJson(Map json) {
     status: _$enumDecodeNullable(_$UnitStatusEnumMap, json['status']),
     callsign: json['callsign'] as String,
     phone: json['phone'] as String,
-    personnels: (json['personnels'] as List)
-        ?.map((e) => e == null
-            ? null
-            : PersonnelModel.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
+    personnels: (json['personnels'] as List)?.map((e) => e as String)?.toList(),
     tracking: toTrackingRef(json['tracking']),
   );
 }
@@ -41,8 +35,7 @@ Map<String, dynamic> _$UnitModelToJson(UnitModel instance) {
   writeNotNull('status', _$UnitStatusEnumMap[instance.status]);
   writeNotNull('phone', instance.phone);
   writeNotNull('callsign', instance.callsign);
-  writeNotNull(
-      'personnels', instance.personnels?.map((e) => e?.toJson())?.toList());
+  writeNotNull('personnels', instance.personnels);
   return val;
 }
 

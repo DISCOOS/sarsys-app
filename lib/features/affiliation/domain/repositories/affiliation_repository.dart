@@ -18,8 +18,8 @@ abstract class AffiliationRepository implements ConnectionAwareRepository<String
   /// Find [Affiliation]s matching given query
   Iterable<Affiliation> find({bool where(Affiliation affiliation)});
 
-  /// Load given affiliations
-  Future<List<Affiliation>> load(
+  /// Fetch given affiliations
+  Future<List<Affiliation>> fetch(
     List<String> uuids, {
     bool force = true,
   });

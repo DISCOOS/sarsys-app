@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/utils/data_utils.dart';
 
@@ -29,7 +28,7 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
   final UnitStatus status;
   final String phone;
   final String callsign;
-  final List<Personnel> personnels;
+  final List<String> personnels;
 
   String get name => "${translateUnitType(type)} $number";
 
@@ -49,7 +48,7 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
     UnitStatus status,
     String phone,
     String callsign,
-    List<Personnel> personnels,
+    List<String> personnels,
     AggregateRef<Tracking> tracking,
   });
 }

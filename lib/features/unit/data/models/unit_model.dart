@@ -1,11 +1,9 @@
-import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/models/converters.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/models/core.dart';
 
@@ -24,16 +22,16 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
     AggregateRef<Tracking> tracking,
   }) : super(
           uuid: uuid,
-          tracking: tracking,
           type: type,
+          phone: phone,
           number: number,
           status: status,
+          tracking: tracking,
           callsign: callsign,
-          phone: phone,
           personnels: personnels,
         );
 
-  final List<PersonnelModel> personnels;
+  final List<String> personnels;
 
   /// Factory constructor for creating a new `Unit` instance from json data
   factory UnitModel.fromJson(Map<String, dynamic> json) => _$UnitModelFromJson(json);
@@ -63,7 +61,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
     UnitStatus status,
     String phone,
     String callsign,
-    List<Personnel> personnels,
+    List<String> personnels,
     AggregateRef<Tracking> tracking,
   }) {
     return UnitModel(

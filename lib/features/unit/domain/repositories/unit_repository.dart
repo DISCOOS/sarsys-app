@@ -24,15 +24,9 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit,
 
   /// Find unit from personnel
   Iterable<Unit> findAssignedTo(
-    Personnel personnel, {
+    String puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   });
-
-  /// Find and replace given [Personnel]
-  Unit findAndReplace(Personnel personnel);
-
-  /// Find and remove given [Personnel]
-  Unit findAndRemove(Personnel personnel);
 
   /// Get next available [Unit.number]
   int nextAvailableNumber(UnitType type, {bool reuse = true});

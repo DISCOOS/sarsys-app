@@ -186,7 +186,7 @@ void main() async {
       expect(tracking.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(
         tracking.sources.map((source) => source.uuid),
-        equals(unit.personnels.map((p) => p.uuid)),
+        equals(unit.personnels),
         reason: "SHOULD match personnel uuids in unit",
       );
     });
@@ -698,7 +698,7 @@ void main() async {
       expect(tracking.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(
         tracking.sources.map((source) => source.uuid),
-        equals(unit.personnels.map((p) => p.uuid)),
+        equals(unit.personnels),
         reason: "SHOULD match personnel uuids in unit",
       );
     });

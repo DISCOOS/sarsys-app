@@ -28,7 +28,7 @@ class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Position position;
   final Iterable<Device> devices;
-  final Iterable<Personnel> personnels;
+  final Iterable<String> personnels;
 
   final UnitType type;
 
@@ -58,7 +58,7 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _phoneController = TextEditingController();
 
   List<Device> _devices;
-  List<Personnel> _personnels;
+  List<String> _personnels;
 
   String _editedName;
 
@@ -527,13 +527,14 @@ class _UnitEditorState extends State<UnitEditor> {
 
   List<Personnel> _findPersonnel(String query) {
     if (query.length != 0) {
-      final actual = _getActualPersonnel().map((personnel) => personnel.uuid);
-      final local = _getLocalPersonnel().map((personnel) => personnel.uuid);
+      final local = _getLocalPersonnel();
+      final actual = _getActualPersonnel();
       final lowercaseQuery = query.toLowerCase();
       final units = context.bloc<TrackingBloc>().units;
       final found = context
           .bloc<PersonnelBloc>()
-          .personnels
+          .repo
+          .map
           .values
           .where((personnel) => _canAddPersonnel(
                 actual,
@@ -594,10 +595,10 @@ class _UnitEditorState extends State<UnitEditor> {
       ..addAll(widget.devices ?? []);
   }
 
-  List<Personnel> _getLocalPersonnel() => List.from(_personnels ?? <Device>[]);
+  List<String> _getLocalPersonnel() => List.from(_personnels ?? <String>[]);
 
-  List<Personnel> _getActualPersonnel() =>
-      List<Personnel>.from(widget?.unit?.personnels ?? []).toList()..addAll(widget.personnels ?? []);
+  List<String> _getActualPersonnel() =>
+      List<String>.from(widget?.unit?.personnels ?? <String>[]).toList()..addAll(widget.personnels ?? <String>[]);
 
   Position _preparePosition() {
     final position = _formKey.currentState.value['position'] == null

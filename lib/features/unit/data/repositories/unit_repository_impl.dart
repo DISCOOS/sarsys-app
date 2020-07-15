@@ -14,7 +14,6 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
-import 'package:SarSys/core/extensions.dart';
 
 class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitService> implements UnitRepository {
   UnitRepositoryImpl(
@@ -75,7 +74,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
 
   /// Find unit from personnel
   Iterable<Unit> findAssignedTo(
-    Personnel personnel, {
+    String puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
       values
@@ -83,47 +82,8 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
             (unit) => !exclude.contains(unit.status),
           )
           .where(
-            (unit) => unit.personnels.any((p) => p.uuid == personnel.uuid),
+            (unit) => unit.personnels.any((uuid) => puuid == uuid),
           );
-
-  /// Find and replace given [Personnel]
-  Unit findAndReplace(Personnel personnel) {
-    // TODO: Stable replace to keep order (plays better with json patch)
-    final unit = findAssignedTo(personnel, exclude: []).firstOrNull;
-    if (unit != null) {
-      final next = _findAndRemove(
-        unit,
-        personnel,
-      );
-      return unit.copyWith(
-        personnels: next..add(personnel),
-      );
-    }
-    return unit;
-  }
-
-  /// Find and remove given [Personnel]
-  Unit findAndRemove(Personnel personnel) {
-    final unit = findAssignedTo(personnel, exclude: []).firstOrNull;
-    if (unit != null) {
-      return unit.copyWith(
-        personnels: _findAndRemove(
-          unit,
-          personnel,
-        ),
-      );
-    }
-    return unit;
-  }
-
-  List<Personnel> _findAndRemove(
-    Unit unit,
-    Personnel personnel,
-  ) =>
-      unit.personnels.toList()
-        ..removeWhere(
-          (next) => next.uuid == personnel.uuid,
-        );
 
   /// Get next available [Unit.number]
   int nextAvailableNumber(UnitType type, {bool reuse = true}) {
