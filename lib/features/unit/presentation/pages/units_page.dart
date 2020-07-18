@@ -17,8 +17,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class UnitsPage extends StatefulWidget {
-  final bool withActions;
   final String query;
+  final bool withActions;
   final bool Function(Unit unit) where;
   final void Function(Unit unit) onSelection;
   final Comparator<Unit> compareTo;
@@ -366,11 +366,13 @@ class UnitSearch extends SearchDelegate<Unit> {
       builder: (BuildContext context, Set<String> suggestions, Widget child) {
         return _buildSuggestionList(
           context,
-          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
+          suggestions?.where(_matches)?.toList() ?? [],
         );
       },
     );
   }
+
+  bool _matches(String suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase());
 
   ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
     final ThemeData theme = Theme.of(context);
@@ -409,7 +411,10 @@ class UnitSearch extends SearchDelegate<Unit> {
     final recent = _recent.value.toSet()..add(query);
     _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
     _recent.value = recent.toSet() ?? [];
-    return UnitsPage(query: query);
+    return UnitsPage(
+      query: query,
+      withActions: false,
+    );
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {

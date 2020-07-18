@@ -332,13 +332,8 @@ class DeviceSearch extends SearchDelegate<Device> {
 
   void _init() async {
     final stored = await _storage.read(key: RECENT_KEY);
-    final List recent = stored != null
-        ? json.decode(stored)
-        : [
-            "Vaktleder",
-            "Ledelse",
-            "Lag",
-          ];
+    final always = const ["Vaktleder", "Ledelse", "Lag"];
+    final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }
 
@@ -368,16 +363,20 @@ class DeviceSearch extends SearchDelegate<Device> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: _recent,
-      builder: (BuildContext context, Set<String> suggestions, Widget child) {
-        return _buildSuggestionList(
-          context,
-          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
-        );
-      },
-    );
+    return query.isEmpty
+        ? ValueListenableBuilder<Set<String>>(
+            valueListenable: _recent,
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+              return _buildSuggestionList(
+                context,
+                suggestions?.where(_matches)?.toList() ?? [],
+              );
+            },
+          )
+        : _buildResults(context, store: false);
   }
+
+  bool _matches(String suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase());
 
   ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
     final ThemeData theme = Theme.of(context);
@@ -413,10 +412,7 @@ class DeviceSearch extends SearchDelegate<Device> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final recent = _recent.value.toSet()..add(query);
-    _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet() ?? [];
-    return DevicesPage(query: query);
+    return _buildResults(context, store: true);
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {
@@ -424,5 +420,17 @@ class DeviceSearch extends SearchDelegate<Device> {
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
     _recent.value = recent.toSet() ?? [];
     buildSuggestions(context);
+  }
+
+  Widget _buildResults(BuildContext context, {bool store = false}) {
+    if (store) {
+      final recent = _recent.value.toSet()..add(query);
+      _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+      _recent.value = recent.toSet() ?? [];
+    }
+    return DevicesPage(
+      query: query,
+      withActions: false,
+    );
   }
 }

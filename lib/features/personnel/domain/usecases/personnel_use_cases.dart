@@ -13,7 +13,7 @@ import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart';
+import 'package:SarSys/features/personnel/presentation/pages/personnels_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';

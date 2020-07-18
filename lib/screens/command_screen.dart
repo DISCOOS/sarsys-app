@@ -6,7 +6,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/pages/missions_page.dart';
-import 'package:SarSys/features/personnel/presentation/pages/personnel_page.dart';
+import 'package:SarSys/features/personnel/presentation/pages/personnels_page.dart';
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
@@ -46,7 +46,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _missionsKey = GlobalKey<MissionsPageState>();
   final _unitsKey = GlobalKey<UnitsPageState>();
-  final _personnelKey = GlobalKey<PersonnelPageState>();
+  final _personnelKey = GlobalKey<PersonnelsPageState>();
   final _devicesKey = GlobalKey<DevicesPageState>();
 
   @override
@@ -77,7 +77,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         final title = _toTitle(operation);
         final tabs = [
           UnitsPage(key: _unitsKey),
-          PersonnelPage(key: _personnelKey),
+          PersonnelsPage(key: _personnelKey),
           DevicesPage(key: _devicesKey),
           MissionsPage(key: _missionsKey),
         ];

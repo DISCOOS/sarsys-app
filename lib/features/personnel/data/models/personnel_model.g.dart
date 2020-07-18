@@ -75,7 +75,6 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$PersonnelStatusEnumMap = {
-  PersonnelStatus.none: 'none',
   PersonnelStatus.alerted: 'alerted',
   PersonnelStatus.enroute: 'enroute',
   PersonnelStatus.onscene: 'onscene',

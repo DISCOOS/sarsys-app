@@ -406,7 +406,6 @@ class PersonnelActionGroup extends StatelessWidget {
 
   void _onTransition(PersonnelStatus status) async {
     switch (status) {
-      case PersonnelStatus.none:
       case PersonnelStatus.alerted:
         final result = await mobilizePersonnel(personnel);
         if (result.isRight()) {

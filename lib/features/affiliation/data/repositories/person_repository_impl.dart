@@ -92,7 +92,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
       try {
         final values = <Person>[];
         final errors = <ServiceResponse>[];
-        for (var uuid in uuids ?? []) {
+        for (var uuid in (uuids ?? [])) {
           // Do not attempt to load local values
           final state = getState(uuid);
           if (state == null || state?.shouldLoad == true) {

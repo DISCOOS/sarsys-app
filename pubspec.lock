@@ -316,6 +316,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  debounce_throttle:
+    dependency: "direct main"
+    description:
+      name: debounce_throttle
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.0"
   device_info:
     dependency: "direct main"
     description:
@@ -1105,6 +1112,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.5"
+  simple_observable:
+    dependency: transitive
+    description:
+      name: simple_observable
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.0+2"
   sky_engine:
     dependency: transitive
     description: flutter

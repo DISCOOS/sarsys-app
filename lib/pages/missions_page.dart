@@ -315,7 +315,7 @@ class UnitAvatar extends StatelessWidget {
 
 class MissionSearch extends SearchDelegate<Unit> {
   static final _storage = Storage.secure;
-  static const RECENT_KEY = "search/unit/recent";
+  static const RECENT_KEY = "search/mission/recent";
 
   ValueNotifier<Set<String>> _recent = ValueNotifier(null);
 
@@ -325,13 +325,12 @@ class MissionSearch extends SearchDelegate<Unit> {
 
   void _init() async {
     final stored = await _storage.read(key: RECENT_KEY);
-    final List recent = stored != null
-        ? json.decode(stored)
-        : [
-            translateUnitType(UnitType.team),
-            translateUnitType(UnitType.vehicle),
-            translateUnitStatus(UnitStatus.mobilized)
-          ];
+    final always = [
+      translateUnitType(UnitType.team),
+      translateUnitType(UnitType.vehicle),
+      translateUnitStatus(UnitStatus.mobilized),
+    ];
+    final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }
 

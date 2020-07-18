@@ -64,14 +64,14 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   });
 }
 
-enum PersonnelStatus { none, alerted, enroute, onscene, leaving, retired }
+enum PersonnelStatus { alerted, enroute, onscene, leaving, retired }
 
 String translatePersonnelStatus(PersonnelStatus status) {
   switch (status) {
     case PersonnelStatus.alerted:
       return "Varslet";
     case PersonnelStatus.enroute:
-      return "På vei";
+      return "På vei til";
     case PersonnelStatus.onscene:
       return "Ankommet";
     case PersonnelStatus.leaving:

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
@@ -20,29 +21,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class PersonnelPage extends StatefulWidget {
-  final bool withActions;
+class PersonnelsPage extends StatefulWidget {
   final String query;
+  final bool withAvatar;
+  final bool withStatus;
+  final bool withActions;
+  final bool withMultiSelect;
   final bool Function(Personnel personnel) where;
   final void Function(Personnel personnel) onSelection;
 
-  const PersonnelPage({
+  const PersonnelsPage({
     Key key,
     this.query,
-    this.withActions = true,
-    this.onSelection,
     this.where,
+    this.onSelection,
+    this.withStatus = true,
+    this.withAvatar = true,
+    this.withActions = true,
+    this.withMultiSelect = false,
   }) : super(key: key);
 
   @override
-  PersonnelPageState createState() => PersonnelPageState();
+  PersonnelsPageState createState() => PersonnelsPageState();
 }
 
-class PersonnelPageState extends State<PersonnelPage> {
+class PersonnelsPageState extends State<PersonnelsPage> {
   static const FILTER = "personnel_filter";
   StreamGroup<dynamic> _group;
 
   Set<PersonnelStatus> _filter;
+
+  final _selected = <String>{};
 
   @override
   void initState() {
@@ -86,15 +95,15 @@ class PersonnelPageState extends State<PersonnelPage> {
               stream: _group.stream,
               builder: (context, snapshot) {
                 if (snapshot.hasData == false) return Container();
-                var personnel = _filteredPersonnel();
-                return personnel.isEmpty || snapshot.hasError
+                var personnels = _filteredPersonnel();
+                return personnels.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
                         message: snapshot.hasError
                             ? snapshot.error
                             : widget.query == null ? "Legg til mannskap" : "Ingen mannskap funnet",
                       )
-                    : _buildList(personnel);
+                    : _buildList(personnels);
               },
             ),
           ),
@@ -107,7 +116,6 @@ class PersonnelPageState extends State<PersonnelPage> {
     return context
         .bloc<PersonnelBloc>()
         .repo
-        .map
         .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
@@ -166,8 +174,8 @@ class PersonnelPageState extends State<PersonnelPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            PersonnelAvatar(personnel: personnel, tracking: tracking),
-            SizedBox(width: 16.0),
+            if (widget.withAvatar) PersonnelAvatar(personnel: personnel, tracking: tracking),
+            SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
             Chip(
               label: Text("${personnel.name}"),
               labelPadding: EdgeInsets.only(right: 4.0),
@@ -179,19 +187,25 @@ class PersonnelPageState extends State<PersonnelPage> {
               ),
             ),
             Spacer(),
-            Chip(
-              label: Text(
-                _toUsage(unit, personnel, tracking),
-                textAlign: TextAlign.end,
+            if (widget.withStatus)
+              Chip(
+                label: Text(
+                  _toUsage(unit, personnel, tracking),
+                  textAlign: TextAlign.end,
+                ),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  Icons.my_location,
+                  size: 16.0,
+                  color: toPositionStatusColor(tracking?.position),
+                ),
               ),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.my_location,
-                size: 16.0,
-                color: toPositionStatusColor(tracking?.position),
+            if (widget.withMultiSelect)
+              Padding(
+                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+                child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
               ),
-            ),
             if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
               RotatedBox(
                 quarterTurns: 1,
@@ -218,7 +232,8 @@ class PersonnelPageState extends State<PersonnelPage> {
       ].where((value) => emptyAsNull(value) != null).join(' ');
 
   _onTap(Personnel personnel) {
-    if (widget.onSelection == null) {
+    if (widget.withMultiSelect) {
+    } else if (widget.onSelection == null) {
       Navigator.pushNamed(context, PersonnelScreen.ROUTE, arguments: personnel);
     } else {
       widget.onSelection(personnel);
@@ -377,13 +392,13 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
 
   void _init() async {
     final stored = await _storage.read(key: RECENT_KEY);
-    final List recent = stored != null
-        ? json.decode(stored)
-        : [
-            translatePersonnelStatus(PersonnelStatus.alerted),
-            translatePersonnelStatus(PersonnelStatus.onscene),
-            translatePersonnelStatus(PersonnelStatus.retired)
-          ];
+    final always = [
+      translatePersonnelStatus(PersonnelStatus.alerted),
+      translatePersonnelStatus(PersonnelStatus.onscene),
+      translatePersonnelStatus(PersonnelStatus.leaving),
+      translatePersonnelStatus(PersonnelStatus.retired)
+    ];
+    final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }
 
@@ -413,16 +428,20 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: _recent,
-      builder: (BuildContext context, Set<String> suggestions, Widget child) {
-        return _buildSuggestionList(
-          context,
-          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
-        );
-      },
-    );
+    return query.isEmpty
+        ? ValueListenableBuilder<Set<String>>(
+            valueListenable: _recent,
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+              return _buildSuggestionList(
+                context,
+                suggestions?.where(_matches)?.toList() ?? [],
+              );
+            },
+          )
+        : _buildResults(context, store: false);
   }
+
+  bool _matches(String suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase());
 
   ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
     final ThemeData theme = Theme.of(context);
@@ -441,7 +460,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
             ],
           ),
         ),
-        trailing: index > 2
+        trailing: index > 3
             ? IconButton(
                 icon: Icon(Icons.delete),
                 onPressed: () => _delete(context, suggestions, index),
@@ -458,10 +477,21 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final recent = _recent.value.toSet()..add(query);
-    _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet() ?? [];
-    return PersonnelPage(query: query);
+    return _buildResults(context, store: true);
+  }
+
+  PersonnelsPage _buildResults(BuildContext context, {bool store = false}) {
+    if (store) {
+      final recent = _recent.value.toSet()..add(query);
+      _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+      _recent.value = recent.toSet() ?? [];
+    }
+    return PersonnelsPage(
+      query: query,
+      withActions: false,
+      withAvatar: false,
+      withStatus: false,
+    );
   }
 
   void _delete(BuildContext context, List<String> suggestions, int index) async {
@@ -489,7 +519,7 @@ Future<Personnel> selectPersonnel(
           ),
           title: Text("Velg mannskap", textAlign: TextAlign.start),
         ),
-        body: PersonnelPage(
+        body: PersonnelsPage(
           where: where,
           query: query,
           withActions: false,

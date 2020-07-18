@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/controllers/app_controller.dart';
@@ -8,6 +9,7 @@ import 'package:SarSys/services/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:catcher/core/catcher.dart';
+import 'package:debounce_throttle/debounce_throttle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
@@ -218,10 +220,13 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   final LatLng center;
   final MapSearchEngine engine;
-  final int defaultSuggestionCount = 0;
+  final int defaultSuggestionCount = 2;
   final MapWidgetController controller;
 
-  ValueNotifier<Set<String>> _recent = ValueNotifier(null);
+  Debouncer<String> _debouncer;
+  Completer<List<GeocodeResult>> _results;
+
+  final ValueNotifier<Set<String>> _recent = ValueNotifier(null);
 
   MapSearchDelegate({
     @required this.engine,
@@ -232,10 +237,21 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
   }
 
   void _init() async {
-    // Fetch previous searches
     final stored = await _storage.read(key: RECENT_KEY);
-    final List recent = stored != null ? json.decode(stored) : [];
+    final always = [
+      'IPP',
+      'Oppmøte',
+    ];
+    final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
+    _debouncer = Debouncer<String>(
+      const Duration(milliseconds: 100),
+      onChanged: (query) async {
+        if (_results != null && _results.isCompleted != true) {
+          _results.complete(engine.search(query));
+        }
+      },
+    );
   }
 
   @override
@@ -264,15 +280,20 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: _recent,
-      builder: (BuildContext context, Set<String> suggestions, Widget child) {
-        return _buildSuggestionList(
-          context,
-          suggestions?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))?.toList() ?? [],
-        );
-      },
-    );
+    return query.isEmpty
+        ? ValueListenableBuilder<Set<String>>(
+            valueListenable: _recent,
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
+              return _buildSuggestionList(
+                context,
+                suggestions
+                        ?.where((suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase()))
+                        ?.toList() ??
+                    [],
+              );
+            },
+          )
+        : _buildResults(context, store: false);
   }
 
   ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
@@ -316,11 +337,21 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final recent = _recent.value.toSet()..add(query);
-    _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
-    _recent.value = recent.toSet() ?? [];
+    return _buildResults(context, store: true);
+  }
+
+  FutureBuilder<List<GeocodeResult>> _buildResults(BuildContext context, {bool store = false}) {
+    if (store) {
+      final recent = _recent.value.toSet()..add(query);
+      _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
+      _recent.value = recent.toSet() ?? [];
+    }
+    if (_results == null || _results.isCompleted) {
+      _results = Completer();
+    }
+    _debouncer.value = query;
     return FutureBuilder<List<GeocodeResult>>(
-        future: engine.search(query),
+        future: _results.future,
         initialData: [],
         builder: (context, snapshot) {
           final items = _buildItems(
