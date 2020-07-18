@@ -64,6 +64,7 @@ class BlocTestHarness implements BlocDelegate {
   static const TRUSTED = 'username@some.domain';
   static const UNTRUSTED = 'username';
   static const PASSWORD = 'password';
+  static const USER_ID = 'user_id';
   static const DIVISION = 'division';
   static const DEPARTMENT = 'department';
 
@@ -285,7 +286,7 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withUserBloc({
-    String userId,
+    String userId = USER_ID,
     String username = UNTRUSTED,
     String password = PASSWORD,
     String division = DIVISION,
@@ -293,7 +294,7 @@ class BlocTestHarness implements BlocDelegate {
     bool authenticated = false,
   }) {
     withConfigBloc();
-    _userId = userId ?? Uuid().v4();
+    _userId = userId;
     _username = username;
     _password = password;
     _department = department;
@@ -303,7 +304,7 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withAffiliationBloc({
-    String userId,
+    String userId = USER_ID,
     String username = UNTRUSTED,
     String password = PASSWORD,
     String division = DIVISION,
@@ -319,13 +320,18 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void withOperationBloc({
+    String userId = USER_ID,
     String username = UNTRUSTED,
     String password = PASSWORD,
-    bool authenticated = true,
+    String division = DIVISION,
+    String department = DEPARTMENT,
+    bool authenticated = false,
   }) {
-    withUserBloc(
+    withAffiliationBloc(
       username: username,
       password: password,
+      division: division,
+      department: department,
       authenticated: authenticated,
     );
     _withOperationBloc = true;
@@ -491,6 +497,15 @@ class BlocTestHarness implements BlocDelegate {
       users: _userBloc,
       bus: bus,
     );
+
+    if (_authenticated) {
+      await expectThroughLater(
+        _affiliationBloc,
+        emits(isA<UserOnboarded>()),
+        close: false,
+      );
+    }
+
     return Future.value();
   }
 

@@ -272,7 +272,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         await affiliationBloc.temporary(command.data, affiliation);
       }
     }
-    final personnel = await repo.create(command.ouuid, command.data);
+    final personnel = await repo.create(
+      command.ouuid,
+      command.data,
+    );
     return toOK(
       command,
       PersonnelCreated(personnel),

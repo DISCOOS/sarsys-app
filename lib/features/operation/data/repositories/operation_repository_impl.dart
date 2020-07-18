@@ -85,7 +85,6 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
         );
       } on SocketException catch (e) {
         // Assume offline
-        print(e);
       }
     }
     return values;

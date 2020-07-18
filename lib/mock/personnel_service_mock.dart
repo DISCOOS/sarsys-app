@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
@@ -13,22 +15,24 @@ import 'package:SarSys/services/service.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
-import 'package:faker/faker.dart';
+import 'package:faker/faker.dart' as random;
 import 'package:uuid/uuid.dart';
 
 class PersonnelBuilder {
   static Personnel create({
     String uuid,
-    String userId,
     String tuuid,
+    String auuid,
+    String userId,
     PersonnelStatus status = PersonnelStatus.alerted,
   }) {
     return PersonnelModel.fromJson(
       createAsJson(
-        uuid: uuid ?? Uuid().v4(),
-        userId: userId,
-        status: status ?? PersonnelStatus.alerted,
+        auuid: auuid,
         tuuid: tuuid,
+        userId: userId,
+        uuid: uuid ?? Uuid().v4(),
+        status: status ?? PersonnelStatus.alerted,
       ),
     );
   }
@@ -36,29 +40,38 @@ class PersonnelBuilder {
   static Map<String, dynamic> createAsJson({
     @required String uuid,
     @required PersonnelStatus status,
-    String userId,
+    String auuid,
     String tuuid,
+    String userId,
   }) =>
       json.decode('{'
           '"uuid": "$uuid",'
           '"userId": "$userId",'
-          '"fname": "${faker.person.firstName()}",'
-          '"lname": "${faker.person.lastName()}",'
+          '"fname": "${random.faker.person.firstName()}",'
+          '"lname": "${random.faker.person.lastName()}",'
           '"status": "${enumName(status)}",'
-          '"affiliation": ${json.encode(createAffiliation())},'
+          '"affiliation": {"uuid": "${auuid ?? Uuid().v4()}"},'
           '"function": "${enumName(OperationalFunctionType.personnel)}",'
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 
   static Map<String, dynamic> createAffiliation({
+    String uuid,
+    String puuid,
     String orguuid,
     String divuuid,
     String depuuid,
+    AffiliationType type,
+    AffiliationStandbyStatus status,
   }) =>
       AffiliationModel(
-        org: AggregateRef.fromType<Organisation>(orguuid ?? Uuid().v4()),
+        uuid: uuid ?? Uuid().v4(),
+        type: type ?? AffiliationType.volunteer,
+        status: status ?? AffiliationStandbyStatus.available,
+        person: AggregateRef.fromType<Person>(puuid ?? Uuid().v4()),
         div: AggregateRef.fromType<Division>(divuuid ?? Uuid().v4()),
         dep: AggregateRef.fromType<Department>(depuuid ?? Uuid().v4()),
+        org: AggregateRef.fromType<Organisation>(orguuid ?? Uuid().v4()),
       ).toJson();
 }
 
@@ -69,13 +82,15 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
   Personnel add(
     String ouuid, {
     String uuid,
-    String tracking,
+    String auuid,
+    String tuuid,
     PersonnelStatus status = PersonnelStatus.alerted,
   }) {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
+      auuid: auuid,
+      tuuid: tuuid,
       status: status,
-      tuuid: tracking,
     );
     if (personnelsRepo.containsKey(ouuid)) {
       personnelsRepo[ouuid].putIfAbsent(personnel.uuid, () => personnel);

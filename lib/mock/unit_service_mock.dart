@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/services/service.dart';
@@ -16,7 +15,7 @@ class UnitBuilder {
     String userId,
     String tuuid,
     int number = 1,
-    List<Personnel> personnels,
+    List<String> personnels,
     UnitType type = UnitType.team,
     UnitStatus status = UnitStatus.mobilized,
   }) {
@@ -27,7 +26,7 @@ class UnitBuilder {
         number: number ?? 1,
         status: status ?? UnitStatus.mobilized,
         tuuid: tuuid,
-        personnels: (personnels ?? []).map((p) => jsonEncode(p.toJson())).toList(),
+        personnels: (personnels ?? []).toList(),
       ),
     );
   }
@@ -46,7 +45,7 @@ class UnitBuilder {
         '"type": "${enumName(type)}",'
         '"callsign": "${translateUnitType(type)} $number",'
         '"status": "${enumName(status)}",'
-        '"personnels": [${personnels != null ? personnels.join(',') : ''}],'
+        '"personnels": [${personnels != null ? '"${personnels.join('","')}"' : ''}],'
         '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Unit"}'
         '}');
   }

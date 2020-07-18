@@ -192,8 +192,8 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final tracking = TrackingUtils.create(
           unit,
           sources: [
-            ...TrackingUtils.toSources(personnelBloc.getAll(unit.personnels), repo),
-            ...TrackingUtils.toSources(created.devices, repo),
+            ...TrackingUtils.toSources<Personnel>(personnelBloc.getAll(unit.personnels), repo),
+            ...TrackingUtils.toSources<Device>(created.devices, repo),
           ],
         );
         // TODO: Backend will perform this apriori

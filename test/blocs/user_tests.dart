@@ -360,8 +360,8 @@ Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness h
   // Assert
   verify(harness.userService.logout(any));
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
-  expect(harness.userBloc.repo.get(BlocTestHarness.TRUSTED), isNotNull, reason: "SHOULD NOT DELETE User");
-  expect(harness.userBloc.repo.get(BlocTestHarness.TRUSTED).security.locked, isTrue, reason: "SHOULD BE Locked");
+  expect(harness.userBloc.repo.get(harness.userId), isNotNull, reason: "SHOULD NOT DELETE User");
+  expect(harness.userBloc.repo.get(harness.userId).security.locked, isTrue, reason: "SHOULD BE Locked");
   expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
 }
 
@@ -377,6 +377,7 @@ Future _testAuthenticatedPersonalTrustedLogoutShouldUnsetOnly(BlocTestHarness ha
   await harness.userBloc.login(
     username: BlocTestHarness.TRUSTED,
     password: BlocTestHarness.PASSWORD,
+    userId: BlocTestHarness.USER_ID,
   );
   await harness.userBloc.secure('123', locked: false);
   expect(harness.userBloc.isPersonal, isTrue, reason: "SHOULD BE Personal");
@@ -392,7 +393,7 @@ Future _testAuthenticatedPersonalTrustedLogoutShouldUnsetOnly(BlocTestHarness ha
   // Assert
   verify(harness.userService.logout(any));
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
-  expect(harness.userBloc.repo.get(BlocTestHarness.TRUSTED), isNotNull, reason: "SHOULD NOT DELETE User");
-  expect(harness.userBloc.repo.get(BlocTestHarness.TRUSTED).security.locked, isFalse, reason: "SHOULD BE Unlocked");
+  expect(harness.userBloc.repo.get(harness.userId), isNotNull, reason: "SHOULD NOT DELETE User");
+  expect(harness.userBloc.repo.get(harness.userId).security.locked, isFalse, reason: "SHOULD BE Unlocked");
   expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
 }

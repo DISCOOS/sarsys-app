@@ -46,7 +46,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     await prepare(
       force: force ?? false,
     );
-    return _load(uuids);
+    return _fetch(uuids);
   }
 
   @override
@@ -73,7 +73,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     );
   }
 
-  Future<List<Affiliation>> _load(List<String> uuids) async {
+  Future<List<Affiliation>> _fetch(List<String> uuids) async {
     if (connectivity.isOnline) {
       try {
         final values = <Affiliation>[];
@@ -108,7 +108,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
               body: values,
               error: errors,
               statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
-              reasonPhrase: 'Partial failure',
+              reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
             ),
             stackTrace: StackTrace.current,
           );
@@ -122,7 +122,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }
 
   @override
-  Future<Iterable<Affiliation>> onReset() async => await _load(values.map((a) => a.uuid).toList());
+  Future<Iterable<Affiliation>> onReset() async => await _fetch(values.map((a) => a.uuid).toList());
 
   @override
   Future<Affiliation> onCreate(StorageState<Affiliation> state) async {

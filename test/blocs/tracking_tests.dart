@@ -30,7 +30,7 @@ import 'harness.dart';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withOperationBloc()
+    ..withOperationBloc(authenticated: true)
     ..withTrackingBloc()
     ..withPersonnelBloc()
     ..withDeviceBloc()
@@ -127,9 +127,9 @@ void main() async {
       final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
       await _attachDeviceToTrackable(harness, p3, d3);
 
-      final u1 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1]));
-      final u2 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p2]));
-      final u3 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p3]));
+      final u1 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1.uuid]));
+      final u2 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p2.uuid]));
+      final u3 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p3.uuid]));
 
       final ut1 = await harness.trackingBloc.attach(u1.tracking.uuid, personnels: [p1]);
       final ut2 = await harness.trackingBloc.attach(u2.tracking.uuid, personnels: [p2]);
@@ -170,15 +170,23 @@ void main() async {
     test('SHOULD create unit tracking automatically', () async {
       // Arrange
       harness.connectivity.cellular();
+      final personnel1 = PersonnelBuilder.create();
+      final personnel2 = PersonnelBuilder.create();
       final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create(),
-        PersonnelBuilder.create(),
+        personnel1.uuid,
+        personnel2.uuid,
       ]);
 
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(unit),
+        // Expect tracking for two personnel and one unit
+        count: 3,
+        act: (ouuid) async {
+          await harness.personnelBloc.create(personnel1);
+          await harness.personnelBloc.create(personnel2);
+          return await harness.unitBloc.create(unit);
+        },
       );
 
       // Assert unit tracking specifics
@@ -524,8 +532,8 @@ void main() async {
       // Arrange
       harness.connectivity.cellular();
       final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create(),
-        PersonnelBuilder.create(),
+        PersonnelBuilder.create().uuid,
+        PersonnelBuilder.create().uuid,
       ]);
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
@@ -682,15 +690,23 @@ void main() async {
     test('SHOULD create unit tracking automatically locally only', () async {
       // Arrange
       harness.connectivity.offline();
+      final personnel1 = PersonnelBuilder.create();
+      final personnel2 = PersonnelBuilder.create();
       final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create(),
-        PersonnelBuilder.create(),
+        personnel1.uuid,
+        personnel2.uuid,
       ]);
 
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(unit),
+        // Expect tracking for two personnel and one unit
+        count: 3,
+        act: (ouuid) async {
+          await harness.personnelBloc.create(personnel1);
+          await harness.personnelBloc.create(personnel2);
+          return await harness.unitBloc.create(unit);
+        },
       );
 
       // Assert unit tracking specifics
@@ -1036,8 +1052,8 @@ void main() async {
     test('SHOULD delete unit tracking automatically locally', () async {
       // Arrange
       final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create(),
-        PersonnelBuilder.create(),
+        PersonnelBuilder.create().uuid,
+        PersonnelBuilder.create().uuid,
       ]);
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
@@ -1783,6 +1799,11 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   // Act LOCALLY
   final trackable = await act(operation.uuid);
   final tuuid = trackable.tracking.uuid;
+  await expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<TrackingCreated>()),
+    close: false,
+  );
 
   // Assert locally CREATED
   final state = await _assertTrackingState<TrackingCreated>(

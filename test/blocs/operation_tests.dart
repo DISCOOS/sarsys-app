@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/mock/incident_service_mock.dart';
@@ -435,7 +436,12 @@ void main() async {
 // an authenticated user must call this
 Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
   await harness.userBloc.login(username: UNTRUSTED, password: PASSWORD);
-  // Wait for UserAuthenticated event
+  // Wait for UserOnboarded event
+  await expectThroughLater(
+    harness.affiliationBloc,
+    emits(isA<UserOnboarded>()),
+    close: false,
+  );
   // Wait until operations are loaded
   await expectThroughLater(
     harness.operationsBloc,

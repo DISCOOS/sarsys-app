@@ -4,6 +4,7 @@ import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
@@ -72,7 +73,7 @@ void main() async {
       // Arrange
       harness.connectivity.cellular();
       await _authenticate(harness);
-      await _seed(harness);
+      await _seed(harness, offline: false);
 
       // Act
       await harness.affiliationBloc.load();
@@ -120,14 +121,23 @@ void main() async {
     test('SHOULD initially load as EMPTY', () async {
       // Arrange
       await _authenticate(harness);
-      await _seed(harness);
+      // One affiliation
+      await _seed(harness, offline: true);
       harness.connectivity.offline();
+      reset(harness.personService);
+      reset(harness.divisionService);
+      reset(harness.departmentService);
+      reset(harness.affiliationService);
       reset(harness.organisationService);
 
       // Act
       await harness.affiliationBloc.load();
 
       // Assert interactions
+      verifyZeroInteractions(harness.personService);
+      verifyZeroInteractions(harness.divisionService);
+      verifyZeroInteractions(harness.departmentService);
+      verifyZeroInteractions(harness.affiliationService);
       verifyZeroInteractions(harness.organisationService);
 
       // Assert numbers
@@ -136,14 +146,14 @@ void main() async {
       expect(harness.affiliationBloc.deps.length, 0, reason: "SHOULD contain 0 departments");
 
       // These are created locally during onboarding and are always there
-      expect(harness.affiliationBloc.persons.length, 2, reason: "SHOULD contain 2 persons");
-      expect(harness.affiliationBloc.affiliates.length, 2, reason: "SHOULD contain 2 affiliates");
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 persons");
+      expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 1 affiliates");
     });
 
     test('SHOULD reload for local storage', () async {
       // Arrange
       await _authenticate(harness);
-      await _seed(harness);
+      await _seed(harness, offline: false);
       await harness.affiliationBloc.load();
       harness.connectivity.offline();
       reset(harness.organisationService);
@@ -166,7 +176,7 @@ void main() async {
   });
 }
 
-Future _seed(BlocTestHarness harness) async {
+Future _seed(BlocTestHarness harness, {@required bool offline}) async {
   final org1 = harness.organisationService.add();
   final org2 = harness.organisationService.add();
   final div1 = harness.divisionService.add(org1.uuid);
@@ -184,10 +194,12 @@ Future _seed(BlocTestHarness harness) async {
   );
   final p2 = harness.personService.add(userId: Uuid().v4());
   await harness.affiliationService.add(
+    // Add remotely only
+    storage: !offline,
+    puuid: p2.uuid,
     orguuid: org2.uuid,
     divuuid: div2.uuid,
     depuuid: dep2.uuid,
-    puuid: p2.uuid,
   );
 }
 

@@ -191,7 +191,11 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   Person findUserPerson({String userId}) => persons.findUser(userId ?? users.user.userId);
 
   /// Get Affiliation from User
-  Affiliation findUserAffiliation({String userId}) {
+  Affiliation findUserAffiliation({
+    String userId,
+    AffiliationType defaultType = AffiliationType.volunteer,
+    AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
+  }) {
     final _userId = userId ?? users.userId;
     final person = findUserPerson(userId: _userId);
     if (person != null) {
@@ -204,6 +208,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final div = findUserDivision(userId: userId);
     final dep = findUserDepartment(userId: userId);
     return AffiliationModel(
+      type: defaultType,
+      status: defaultStatus,
       div: div?.uuid != null ? AggregateRef.fromType<Division>(div?.uuid) : null,
       dep: dep?.uuid != null ? AggregateRef.fromType<Department>(dep?.uuid) : null,
       org: org?.uuid != null ? AggregateRef.fromType<Organisation>(org.uuid) : null,
@@ -211,10 +217,28 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     );
   }
 
-  /// Get [Affiliation] from [Personnel]
-  Affiliation findPersonnelAffiliation(Personnel personnel) =>
+  /// Get [Affiliation] from [Personnel].
+  /// Throws an [ArgumentError] if [Personnel] does
+  /// not contain a reference to an [Affiliation]
+  Affiliation findPersonnelAffiliation(
+    Personnel personnel, {
+    AffiliationType defaultType = AffiliationType.volunteer,
+    AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
+  }) =>
       repo[personnel?.affiliation?.uuid] ??
-      (personnel.userId != null ? findUserAffiliation(userId: personnel.userId) : null);
+      (personnel.userId != null
+          ? findUserAffiliation(
+              userId: personnel.userId,
+              defaultType: defaultType,
+              defaultStatus: defaultStatus,
+            ).copyWith(
+              uuid: AffiliationUtils.assertRef(personnel),
+            )
+          : AffiliationModel(
+              type: defaultType,
+              status: defaultStatus,
+              uuid: AffiliationUtils.assertRef(personnel),
+            ));
 
   /// Get [Organisation] from User
   Organisation findUserOrganisation({String userId}) {

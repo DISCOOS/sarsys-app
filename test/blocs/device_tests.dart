@@ -9,7 +9,7 @@ import 'harness.dart';
 
 void main() async {
   final harness = BlocTestHarness()
-    ..withOperationBloc()
+    ..withOperationBloc(authenticated: true)
     ..withDeviceBloc()
     ..install();
 

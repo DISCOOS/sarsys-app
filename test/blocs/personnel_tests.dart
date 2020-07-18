@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -6,6 +7,7 @@ import 'package:SarSys/mock/personnel_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -30,10 +32,13 @@ void main() async {
   group('WHEN personnelBloc is ONLINE', () {
     test('SHOULD load personnel', () async {
       // Arrange
-      harness.connectivity.cellular();
-      Operation operation = await _prepare(harness);
-      final personnel1 = harness.personnelService.add(operation.uuid);
-      final personnel2 = harness.personnelService.add(operation.uuid);
+      Operation operation = await _prepare(harness, offline: false);
+      final person1 = harness.personService.add();
+      final person2 = harness.personService.add();
+      final affiliation1 = await harness.affiliationService.add(puuid: person1.uuid);
+      final affiliation2 = await harness.affiliationService.add(puuid: person2.uuid);
+      final personnel1 = harness.personnelService.add(operation.uuid, auuid: affiliation1.uuid);
+      final personnel2 = harness.personnelService.add(operation.uuid, auuid: affiliation2.uuid);
 
       // Act
       List<Personnel> personnel = await harness.personnelBloc.load();
@@ -55,8 +60,7 @@ void main() async {
 
     test('SHOULD create personnel and push to backend', () async {
       // Arrange
-      harness.connectivity.cellular();
-      final operation = await _prepare(harness);
+      final operation = await _prepare(harness, offline: false);
       final personnel = PersonnelBuilder.create();
 
       // Act
@@ -78,9 +82,10 @@ void main() async {
 
     test('SHOULD update operation and push to backend', () async {
       // Arrange
-      harness.connectivity.cellular();
-      final operation = await _prepare(harness);
-      final personnel = harness.personnelService.add(operation.uuid);
+      final operation = await _prepare(harness, offline: false);
+      final person = harness.personService.add();
+      final affiliation = await harness.affiliationService.add(puuid: person.uuid);
+      final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -103,9 +108,10 @@ void main() async {
 
     test('SHOULD delete personnel and push to backend', () async {
       // Arrange
-      harness.connectivity.cellular();
-      final operation = await _prepare(harness);
-      final personnel = harness.personnelService.add(operation.uuid);
+      final operation = await _prepare(harness, offline: false);
+      final person = harness.personService.add();
+      final affiliation = await harness.affiliationService.add(puuid: person.uuid);
+      final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -127,9 +133,10 @@ void main() async {
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
-      harness.connectivity.cellular();
-      final operation = await _prepare(harness);
-      harness.personnelService.add(operation.uuid);
+      final operation = await _prepare(harness, offline: false);
+      final person = harness.personService.add();
+      final affiliation = await harness.affiliationService.add(puuid: person.uuid);
+      harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -144,9 +151,10 @@ void main() async {
 
     test('SHOULD reload one personnel after unload', () async {
       // Arrange
-      harness.connectivity.cellular();
-      final operation = await _prepare(harness);
-      final personnel = harness.personnelService.add(operation.uuid);
+      final operation = await _prepare(harness, offline: false);
+      final person = harness.personService.add();
+      final affiliation = await harness.affiliationService.add(puuid: person.uuid);
+      final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
 
@@ -164,40 +172,34 @@ void main() async {
 
     test('SHOULD reload when operation is switched', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldReloadWhenOperationIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness, offline: false);
     });
 
     test('SHOULD unload when operation is deleted', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldUnloadWhenOperationIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness, offline: false);
     });
 
     test('SHOULD unload when operation is cancelled', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldUnloadWhenOperationIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness, offline: false);
     });
 
     test('SHOULD unload when operation is resolved', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldUnloadWhenOperationIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness, offline: false);
     });
 
     test('SHOULD unload when operations are unloaded', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldUnloadWhenOperationIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness, offline: false);
     });
   });
 
   group('WHEN personnelBloc is OFFLINE', () {
     test('SHOULD load as EMPTY', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       harness.personnelService.add(harness.userBloc.userId);
       harness.personnelService.add(harness.userBloc.userId);
 
@@ -211,8 +213,7 @@ void main() async {
 
     test('SHOULD create personnel with state CREATED', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
 
       // Act
@@ -230,8 +231,7 @@ void main() async {
 
     test('SHOULD update personnel with state CREATED', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
       final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
       await harness.personnelBloc.create(personnel1);
@@ -262,8 +262,7 @@ void main() async {
 
     test('SHOULD delete local personnel', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -278,8 +277,7 @@ void main() async {
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -294,8 +292,7 @@ void main() async {
 
     test('SHOULD be empty after reload', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _prepare(harness);
+      await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -311,38 +308,33 @@ void main() async {
 
     test('SHOULD reload when operation is switched', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldReloadWhenOperationIsSwitched(harness);
+      await _testShouldReloadWhenOperationIsSwitched(harness, offline: false);
     });
 
     test('SHOULD unload when operation is deleted', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldUnloadWhenOperationIsDeleted(harness);
+      await _testShouldUnloadWhenOperationIsDeleted(harness, offline: false);
     });
 
     test('SHOULD unload when operation is cancelled', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldUnloadWhenOperationIsCancelled(harness);
+      await _testShouldUnloadWhenOperationIsCancelled(harness, offline: false);
     });
 
     test('SHOULD unload when operation is resolved', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldUnloadWhenOperationIsResolved(harness);
+      await _testShouldUnloadWhenOperationIsResolved(harness, offline: false);
     });
 
     test('SHOULD unload when operations are unloaded', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldUnloadWhenOperationIsUnloaded(harness);
+      await _testShouldUnloadWhenOperationIsUnloaded(harness, offline: false);
     });
   });
 }
 
-Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
-  await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@required bool offline}) async {
+  await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -366,8 +358,8 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
-  final operation = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@required bool offline}) async {
+  final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -392,8 +384,8 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async {
-  final operation = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@required bool offline}) async {
+  final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -421,8 +413,8 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async 
   );
 }
 
-Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
-  final operation = await _prepare(harness);
+Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@required bool offline}) async {
+  final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -445,8 +437,8 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
-  await _prepare(harness);
+Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@required bool offline}) async {
+  await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -473,7 +465,26 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
 }
 
 /// Prepare blocs for testing
-Future<Operation> _prepare(BlocTestHarness harness) async {
+Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) async {
+  await harness.userBloc.login(
+    username: harness.username,
+    password: harness.password,
+  );
+
+  if (offline) {
+    harness.connectivity.offline();
+  } else {
+    harness.connectivity.cellular();
+  }
+
+  // Wait for UserAuthenticated event
+  // Wait until organisations are loaded
+  await expectThroughLater(
+    harness.affiliationBloc,
+    emits(isA<UserOnboarded>()),
+    close: false,
+  );
+
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
