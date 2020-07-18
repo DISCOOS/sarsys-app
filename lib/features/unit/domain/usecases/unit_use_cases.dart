@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/editors/position_editor.dart';
+import 'package:SarSys/core/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/models/Position.dart';

@@ -5,12 +5,12 @@ typedef ItemWidgetBuilder<T> = Widget Function(BuildContext context, T item);
 
 class SelectorWidget<T> extends StatelessWidget {
   final Size size;
-  final IconData icon;
   final String title;
-  final TextStyle style;
+  final IconData icon;
   final List<T> items;
-  final ItemWidgetBuilder<T> itemBuilder;
+  final TextStyle style;
   final SelectedCallback<T> onSelected;
+  final ItemWidgetBuilder<T> itemBuilder;
 
   const SelectorWidget({
     Key key,

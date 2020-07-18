@@ -1,5 +1,5 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
-import 'package:SarSys/editors/position_editor.dart';
+import 'package:SarSys/core/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/editors/device_editor.dart';
 import 'package:SarSys/models/Position.dart';
