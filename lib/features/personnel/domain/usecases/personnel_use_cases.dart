@@ -163,8 +163,10 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // Update personnel - if retired tracking bloc will handle tracking
+    // Update personnel and affiliation
+    // If was retired, tracking bloc will handle tracking
     final personnel = await params.bloc.update(result.data);
+    await params.context.bloc<AffiliationBloc>().update(result.affiliation);
 
     // Only update tracking if not retired
     if (PersonnelStatus.retired != personnel.status) {
@@ -213,7 +215,7 @@ class EditPersonnelLocation extends UseCase<bool, Position, PersonnelParams> {
   }
 }
 
-/// Add given devices tracking of given personnel
+/// Add given devices to tracking of given personnel
 Future<dartz.Either<bool, Pair<Personnel, Tracking>>> addToPersonnel(
   List<Device> devices, {
   Personnel personnel,
@@ -262,7 +264,9 @@ class AddToPersonnel extends UseCase<bool, Pair<Personnel, Tracking>, PersonnelP
   }
 }
 
-/// Remove given devices from personnel. If no devices are supplied, all devices tracked by personnel is removed
+/// Remove given devices from tracking of personnel.
+/// If no devices are supplied, all devices tracked
+/// by personnel are removed
 Future<dartz.Either<bool, Tracking>> removeFromPersonnel(
   Personnel personnel, {
   List<Device> devices,
@@ -321,14 +325,15 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   }
 }
 
+/// Check in personnel on scene
 Future<dartz.Either<bool, Personnel>> checkInPersonnel(
   Personnel personnel,
 ) =>
-    DeployPersonnel()(PersonnelParams(
+    ChecInPersonnel()(PersonnelParams(
       personnel: personnel,
     ));
 
-class DeployPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class ChecInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(

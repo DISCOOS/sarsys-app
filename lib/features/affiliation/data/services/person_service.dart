@@ -21,12 +21,6 @@ class PersonService with ServiceGet<Person> implements ServiceDelegate<PersonSer
     );
   }
 
-  Future<ServiceResponse<List<Person>>> find(String query) async {
-    return Api.from<PagedList<Person>, List<Person>>(
-      await delegate.find(query: query),
-    );
-  }
-
   Future<ServiceResponse<Person>> create(Person person) async {
     return Api.from<String, Person>(
       await delegate.create(
@@ -63,11 +57,6 @@ abstract class PersonServiceImpl extends ChopperService {
   Future<Response<String>> create(
     @Body() Person body,
   );
-
-  @Get()
-  Future<Response<PagedList<Person>>> find({
-    @Query('query') String query,
-  });
 
   @Get(path: '{uuid}')
   Future<Response<Person>> get({

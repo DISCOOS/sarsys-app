@@ -54,14 +54,13 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
 
   @override
   Future<Iterable<Person>> fetch({
-    String query,
     Iterable<String> uuids,
     bool force = true,
   }) async {
     await prepare(
       force: force ?? false,
     );
-    return query?.isNotEmpty == true ? _find(query) : _getAll(uuids);
+    return _fetch(uuids);
   }
 
   @override
@@ -88,7 +87,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     );
   }
 
-  Future<List<Person>> _getAll(Iterable<String> uuids) async {
+  Future<List<Person>> _fetch(Iterable<String> uuids) async {
     if (connectivity.isOnline) {
       try {
         final values = <Person>[];
@@ -136,38 +135,8 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     return values;
   }
 
-  Future<List<Person>> _find(String query) async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.find(query);
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((department) => department.uuid),
-          );
-          response.body.forEach(
-            (department) => put(
-              StorageState.created(
-                department,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw PersonServiceException(
-          'Failed to find persons',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
-    return values;
-  }
-
   @override
-  Future<Iterable<Person>> onReset() async => await _getAll(values.map((a) => a.uuid).toList());
+  Future<Iterable<Person>> onReset() async => await _fetch(values.map((a) => a.uuid).toList());
 
   @override
   Future<Person> onCreate(StorageState<Person> state) async {

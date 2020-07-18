@@ -15,14 +15,18 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
 
   AffiliationService() : delegate = AffiliationServiceImpl.newInstance();
 
-  /// GET ../affiliations
+  Future<ServiceResponse<List<Affiliation>>> fetch(String filter, int offset, int limit) async {
+    return Api.from<PagedList<Affiliation>, List<Affiliation>>(
+      await delegate.fetch(filter, offset: offset, limit: limit),
+    );
+  }
+
   Future<ServiceResponse<Affiliation>> get(String uuid) async {
     return Api.from<Affiliation, Affiliation>(
       await delegate.get(uuid: uuid),
     );
   }
 
-  /// POST ../affiliations
   Future<ServiceResponse<Affiliation>> create(Affiliation affiliation) async {
     return Api.from<String, Affiliation>(
       await delegate.create(
@@ -33,19 +37,17 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
     );
   }
 
-  /// PUT ../affiliations/{ouuid}
   Future<ServiceResponse<Affiliation>> update(Affiliation affiliation) async {
     return Api.from<Affiliation, Affiliation>(
       await delegate.update(
         affiliation.uuid,
         affiliation,
       ),
-      // Created 201 returns uri to created affiliation in body
+      // 204 No content
       body: affiliation,
     );
   }
 
-  /// DELETE ../affiliations/{ouuid}
   Future<ServiceResponse<Affiliation>> delete(String uuid) async {
     return Api.from<Affiliation, Affiliation>(await delegate.delete(
       uuid,
@@ -57,15 +59,22 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
 abstract class AffiliationServiceImpl extends ChopperService {
   static AffiliationServiceImpl newInstance([ChopperClient client]) => _$AffiliationServiceImpl(client);
 
-  @Post()
-  Future<Response<String>> create(
-    @Body() Affiliation body,
-  );
-
   @Get(path: '{uuid}')
   Future<Response<Affiliation>> get({
     @Path('uuid') String uuid,
   });
+
+  @Get()
+  Future<Response<PagedList<Affiliation>>> fetch(
+    @Query('filter') String filter, {
+    @Query('offset') int offset = 0,
+    @Query('limit') int limit = 20,
+  });
+
+  @Post()
+  Future<Response<String>> create(
+    @Body() Affiliation body,
+  );
 
   @Patch(path: '{uuid}')
   Future<Response<Affiliation>> update(

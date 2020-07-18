@@ -20,7 +20,6 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
 
   /// Load given persons
   Future<Iterable<Person>> fetch({
-    String query,
     Iterable<String> uuids,
     bool force = true,
   });

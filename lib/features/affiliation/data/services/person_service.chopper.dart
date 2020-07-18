@@ -25,14 +25,6 @@ class _$PersonServiceImpl extends PersonServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Person>>> find({String query}) {
-    final $url = '/persons';
-    final $params = <String, dynamic>{'query': query};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Person>, Person>($request);
-  }
-
-  @override
   Future<Response<Person>> get({String uuid}) {
     final $url = '/persons/$uuid';
     final $request = Request('GET', $url, client.baseUrl);

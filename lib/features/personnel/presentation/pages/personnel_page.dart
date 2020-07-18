@@ -229,7 +229,9 @@ class PersonnelPageState extends State<PersonnelPage> {
         caption: 'ENDRE',
         color: Theme.of(context).buttonColor,
         icon: Icons.more_horiz,
-        onTap: () async => await editPersonnel(personnel),
+        onTap: () async {
+          await editPersonnel(personnel);
+        },
       );
 
   Widget _buildAddToUnitAction(Personnel personnel) => Tooltip(
