@@ -67,7 +67,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
     super.didChangeDependencies();
     _user = context.bloc<UserBloc>().user;
     _personnel = context.bloc<PersonnelBloc>().findUser(_user.userId).firstOrNull;
-    _unit = context.bloc<UnitBloc>().findAssignedTo(_personnel.uuid).firstOrNull;
+    _unit = context.bloc<UnitBloc>().findUnitsWithPersonnel(_personnel.uuid).firstOrNull;
   }
 
   @override
@@ -163,7 +163,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,
               onChanged: (personnel) => setState(() => _personnel = personnel),
-              unit: context.bloc<UnitBloc>().repo.findAssignedTo(_personnel.uuid).firstOrNull,
+              unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
             )
         ];
       case UserScreen.TAB_UNIT:

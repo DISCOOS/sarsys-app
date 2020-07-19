@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:uuid/uuid.dart';
 
@@ -17,7 +16,6 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
-import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
@@ -63,6 +61,9 @@ class _UnitEditorState extends State<UnitEditor> {
   List<String> _personnels;
 
   String _editedName;
+
+  bool get hasAvailablePersonnel => context.bloc<UnitBloc>().findAvailablePersonnel().isNotEmpty;
+  bool get hasAvailableDevices => context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty;
 
   @override
   void initState() {
@@ -414,37 +415,45 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget _buildDeviceListField() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-      child: FormBuilderChipsInput(
-        attribute: 'devices',
-        maxChips: 5,
-        initialValue: _getActualDevices(),
-        onChanged: (devices) => _devices = List.from(devices),
-        decoration: InputDecoration(
-          labelText: "Apparater",
-          hintText: "Søk etter apparater",
-          helperText: "Posisjon til apparater blir lagret",
-          filled: true,
-          contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
-        ),
-        findSuggestions: _findDevices,
-        chipBuilder: (context, state, device) => DeviceChip(
-          device: device,
-          state: state,
-        ),
-        suggestionBuilder: (context, state, device) => DeviceTile(
-          device: device,
-          state: state,
-        ),
-        valueTransformer: (values) => values.map((device) => device).toList(),
-        // BUG: These are required, no default values are given.
-        obscureText: false,
-        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-        inputType: TextInputType.text,
-        keyboardAppearance: Brightness.dark,
-        inputAction: TextInputAction.done,
-        autocorrect: true,
-        textCapitalization: TextCapitalization.sentences,
-      ),
+      child: hasAvailableDevices
+          ? FormBuilderChipsInput(
+              attribute: 'devices',
+              maxChips: 5,
+              initialValue: _getActualDevices(),
+              onChanged: (devices) => _devices = List.from(devices),
+              decoration: InputDecoration(
+                labelText: "Apparater",
+                hintText: "Søk etter apparater",
+                helperText: "Posisjon til apparater blir lagret",
+                filled: true,
+                contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
+              ),
+              findSuggestions: _findDevices,
+              chipBuilder: (context, state, device) => DeviceChip(
+                device: device,
+                state: state,
+              ),
+              suggestionBuilder: (context, state, device) => DeviceTile(
+                device: device,
+                state: state,
+              ),
+              valueTransformer: (values) => values.map((device) => device).toList(),
+              // BUG: These are required, no default values are given.
+              obscureText: false,
+              textStyle: TextStyle(height: 1.8, fontSize: 16.0),
+              inputType: TextInputType.text,
+              keyboardAppearance: Brightness.dark,
+              inputAction: TextInputAction.done,
+              autocorrect: true,
+              textCapitalization: TextCapitalization.sentences,
+            )
+          : buildReadOnlyField(
+              context,
+              'devices',
+              "Apparater",
+              "Ingen tilgjengelig",
+              _getActualPersonnel(),
+            ),
     );
   }
 
@@ -452,11 +461,10 @@ class _UnitEditorState extends State<UnitEditor> {
     if (query.length != 0) {
       var actual = _getActualDevices().map((device) => device.uuid);
       var local = _getLocalDevices().map((device) => device.uuid);
-      var lowercaseQuery = query.toLowerCase();
+      var pattern = query.toLowerCase();
       return context
-          .bloc<DeviceBloc>()
-          .devices
-          .values
+          .bloc<TrackingBloc>()
+          .findAvailableDevices()
           .where((device) =>
               // Add locally removed devices
               _canAddDevice(
@@ -464,56 +472,63 @@ class _UnitEditorState extends State<UnitEditor> {
                 device,
                 local,
               ))
-          .where((device) =>
-              device.number.toLowerCase().contains(lowercaseQuery) ||
-              device.type.toString().toLowerCase().contains(lowercaseQuery))
+          .where((device) => _deviceMatch(device, pattern))
           .take(5)
           .toList(growable: false);
     }
     return const <Device>[];
   }
 
+  bool _deviceMatch(Device device, String pattern) =>
+      device.number.toLowerCase().contains(pattern) || device.type.toString().toLowerCase().contains(pattern);
+
   bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
-    return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
+    return !(actual.contains(device.uuid) || local.contains(device.uuid));
   }
 
   Widget _buildPersonnelListField() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-      child: FormBuilderChipsInput(
-        attribute: 'personnels',
-        maxChips: 15,
-        initialValue: _getActualPersonnel(),
-        actionLabel: "Testing",
-        onChanged: (personnels) => _personnels = personnels.map((p) => p.uuid).toList(),
-        decoration: InputDecoration(
-          labelText: "Mannskap",
-          hintText: "Søk etter mannskap",
-          helperText: "Posisjon til mannskap blir lagret",
-          filled: true,
-          alignLabelWithHint: true,
-          hintMaxLines: 3,
-          contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
-        ),
-        findSuggestions: _findPersonnel,
-        suggestionBuilder: (context, state, puuid) => PersonnelTile(
-          personnel: context.bloc<PersonnelBloc>().repo[puuid],
-          state: state,
-        ),
-        chipBuilder: (context, state, puuid) => PersonnelChip(
-          personnel: context.bloc<PersonnelBloc>().repo[puuid],
-          state: state,
-        ),
-//        valueTransformer: (values) => values.map((personnel) => personnel.uuid).toList(),
-        // BUG: These are required, no default values are given.
-        obscureText: false,
-        inputType: TextInputType.text,
-        keyboardAppearance: Brightness.dark,
-        inputAction: TextInputAction.done,
-        autocorrect: true,
-        textCapitalization: TextCapitalization.sentences,
-        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-      ),
+      child: hasAvailablePersonnel
+          ? FormBuilderChipsInput(
+              attribute: 'personnels',
+              maxChips: 15,
+              initialValue: _getActualPersonnel(),
+              onChanged: (personnels) => _personnels = personnels.map((p) => p.uuid).toList(),
+              decoration: InputDecoration(
+                labelText: "Mannskap",
+                hintText: "Søk etter mannskap",
+                helperText: "Posisjon til mannskap blir lagret",
+                filled: true,
+                alignLabelWithHint: true,
+                hintMaxLines: 3,
+                contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
+              ),
+              findSuggestions: _findPersonnel,
+              suggestionBuilder: (context, state, puuid) => PersonnelTile(
+                personnel: context.bloc<PersonnelBloc>().repo[puuid],
+                state: state,
+              ),
+              chipBuilder: (context, state, puuid) => PersonnelChip(
+                personnel: context.bloc<PersonnelBloc>().repo[puuid],
+                state: state,
+              ),
+              // BUG: These are required, no default values are given.
+              obscureText: false,
+              inputType: TextInputType.text,
+              keyboardAppearance: Brightness.dark,
+              inputAction: TextInputAction.done,
+              autocorrect: true,
+              textCapitalization: TextCapitalization.sentences,
+              textStyle: TextStyle(height: 1.8, fontSize: 16.0),
+            )
+          : buildReadOnlyField(
+              context,
+              'personnels',
+              "Mannskap",
+              "Ingen tilgjengelig",
+              _getActualPersonnel(),
+            ),
     );
   }
 
@@ -522,17 +537,13 @@ class _UnitEditorState extends State<UnitEditor> {
       final local = _getLocalPersonnel();
       final actual = _getActualPersonnel();
       final pattern = query.toLowerCase();
-      final units = context.bloc<TrackingBloc>().units;
       final found = context
-          .bloc<PersonnelBloc>()
-          .repo
-          .map
-          .values
+          .bloc<UnitBloc>()
+          .findAvailablePersonnel()
           .where((personnel) => _canAddPersonnel(
                 actual,
                 personnel,
                 local,
-                units,
               ))
           .where((personnel) => _personnelMatch(personnel, pattern))
           .take(5)
@@ -551,9 +562,8 @@ class _UnitEditorState extends State<UnitEditor> {
     Iterable<String> actual,
     Personnel personnel,
     Iterable<String> local,
-    TrackableQuery<Unit> units,
   ) {
-    return actual.contains(personnel.uuid) && !local.contains(personnel.uuid) || units.find(personnel) == null;
+    return !(actual.contains(personnel.uuid) || local.contains(personnel.uuid));
   }
 
   Widget _buildPositionField() {

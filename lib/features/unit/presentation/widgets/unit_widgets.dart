@@ -44,8 +44,7 @@ class UnitWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
     Orientation orientation = MediaQuery.of(context).orientation;
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: orientation == Orientation.portrait ? 300.0 : 600.0),
+    return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

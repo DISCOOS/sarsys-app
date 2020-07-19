@@ -97,7 +97,7 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
             child: PersonnelWidget(
               personnel: personnel,
               tracking: tracking,
-              unit: context.bloc<UnitBloc>().repo.findAssignedTo(personnel.uuid).firstOrNull,
+              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
               devices: bloc.devices(personnel.tracking.uuid),
               onMessage: onMessage,
               withActions: user.isCommander == true,

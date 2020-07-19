@@ -90,9 +90,7 @@ class DevicesPageState extends State<DevicesPage> {
                 return devices.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
-                        message: snapshot.hasError
-                            ? snapshot.error
-                            : "Ingen apparater innen rekkevidde\n\n Legg til et apparat manuelt",
+                        message: snapshot.hasError ? snapshot.error : "Ingen apparater innen rekkevidde",
                       )
                     : ListView.builder(
                         itemCount: devices.length + 1,

@@ -45,9 +45,10 @@ abstract class UseCase<E, T, P> {
       if (_push() || concurrent) {
         final future = execute(params);
         future.whenComplete(_pop);
+        future.catchError(Catcher.reportCheckedError);
         return future;
       }
-    } on Exception catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       Catcher.reportCheckedError(error, stackTrace);
     }
     _pop();

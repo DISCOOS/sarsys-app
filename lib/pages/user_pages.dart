@@ -82,7 +82,7 @@ class UserProfilePageState extends State<UserProfilePage> {
       personnel: _personnel,
       onMessage: widget.onMessage,
       onGoto: (point) => jumpToPoint(context, center: point),
-      unit: context.bloc<UnitBloc>().repo.findAssignedTo(_personnel.uuid).firstOrNull,
+      unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
       devices: context.bloc<TrackingBloc>().devices(tuuid),
     );
   }

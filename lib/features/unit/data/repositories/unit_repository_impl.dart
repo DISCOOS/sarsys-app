@@ -73,7 +73,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
               .length;
 
   /// Find unit from personnel
-  Iterable<Unit> findAssignedTo(
+  Iterable<Unit> findPersonnel(
     String puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>

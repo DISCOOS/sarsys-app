@@ -367,6 +367,21 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }) =>
       repo.has(aggregate.uuid, tracks: tracks, exclude: exclude);
 
+  /// Find [Personnel]s available for tracking.
+  Iterable<Personnel> findAvailablePersonnel() {
+    final query = units.personnels();
+    return personnelBloc.repo.values.where((personnel) => !query.containsKey(personnel.uuid));
+  }
+
+  /// Find [Device]s available for tracking.
+  Iterable<Device> findAvailableDevices() {
+    final queryUnits = units.devices();
+    final queryPersonnels = personnels.devices();
+    return deviceBloc.repo.values.where(
+      (device) => !queryUnits.containsKey(device.uuid) || queryPersonnels.containsKey(device.uuid),
+    );
+  }
+
   /// Find tracking from given [aggregate].
   ///
   /// If status [TrackingStatus.closed] is excluded
@@ -1012,7 +1027,7 @@ class TrackableQuery<T extends Trackable> {
     return UnmodifiableMapView(map);
   }
 
-  /// Get map of [Personnel.uuid] to tracked by aggregate of type [T]
+  /// Get map of [Personnel.uuid] to tracking aggregate of type [T]
   ///
   /// The 'only one active tracking for each source'
   /// rule guarantees a one-to-one mapping.

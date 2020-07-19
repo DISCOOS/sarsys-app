@@ -402,7 +402,7 @@ class TrackingUtils {
     distance ??= 0;
     var offset = max(0, track.length - tail);
     var i = offset + 1;
-    track?.skip(offset)?.forEach((p) {
+    track?.skip(offset)?.where((p) => p.isNotEmpty)?.forEach((p) {
       distance += i < track.length
           ? ProjMath.eucledianDistance(
               p.lat,
@@ -450,7 +450,7 @@ class TrackingUtils {
     final next = isManual ? position : average(tracking);
 
     // Only add tracking history if position has changed
-    if (tracking.position != next) {
+    if (tracking.position != next && next.isNotEmpty) {
       final history = List<Position>.from(tracking.history ?? [])..add(next);
       final distance = TrackingUtils.distance(
         history,

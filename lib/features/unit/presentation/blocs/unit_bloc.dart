@@ -95,7 +95,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       if (state.isDeleted()) {
         final event = state as PersonnelDeleted;
         final puuid = event.data.uuid;
-        final units = repo.findAssignedTo(puuid);
+        final units = repo.findPersonnel(puuid);
         if (units.isNotEmpty) {
           for (var unit in units) {
             dispatch(_ProcessPersonnelDeleted(
@@ -155,15 +155,26 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);
 
-  /// Find units personnel is assigned to
-  Iterable<Unit> findAssignedTo(
+  /// Find units given personnel is assigned to
+  Iterable<Unit> findUnitsWithPersonnel(
     String puuid, {
     List<UnitStatus> exclude: const [UnitStatus.retired],
   }) =>
-      repo.findAssignedTo(puuid, exclude: exclude);
+      repo.findPersonnel(puuid, exclude: exclude);
 
-  /// Find personnel in given unit
-  Iterable<Personnel> getPersonnels(
+  /// Find [Personnel] not allocated to an [Unit]
+  Iterable<Personnel> findAvailablePersonnel() {
+    final assigned = repo.values.fold<List<String>>(
+      [],
+      (personnels, unit) => personnels..addAll(unit.personnels),
+    );
+    return personnelBloc.repo.values.where(
+      (personnel) => !assigned.contains(personnel.uuid),
+    );
+  }
+
+  /// Get [personnels] in given unit as list of [Personnel]
+  Iterable<Personnel> toPersonnels(
     Unit unit, {
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>

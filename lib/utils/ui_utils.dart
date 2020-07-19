@@ -113,7 +113,6 @@ FormBuilderCustomField<T> buildReadOnlyField<T>(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             title ?? '-',
-            style: Theme.of(context).textTheme.subtitle2,
           ),
         ),
       ),
