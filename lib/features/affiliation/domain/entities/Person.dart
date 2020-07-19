@@ -1,3 +1,4 @@
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:flutter/material.dart';
 
 import 'package:SarSys/models/core.dart';
@@ -33,6 +34,9 @@ abstract class Person extends Aggregate<Map<String, dynamic>> {
 
   /// Get searchable string
   String get searchable => [...props, formal, initials].join(' ');
+
+  /// Get [Person] reference
+  AggregateRef<Person> toRef();
 
   Person copyWith({
     String uuid,

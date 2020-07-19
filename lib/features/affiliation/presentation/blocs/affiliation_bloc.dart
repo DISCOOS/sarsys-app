@@ -27,6 +27,7 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -119,27 +120,45 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   final UserBloc users;
 
   void _processUserState(UserState state) async {
-    if (hasSubscriptions) {
-      if (state.shouldLoad() && !repo.isReady) {
-        // Wait for load before onboarding user
-        await dispatch(LoadAffiliations());
-        onboard();
-      } else if (state.shouldUnload() && repo.isReady) {
-        dispatch(UnloadAffiliations());
+    try {
+      if (hasSubscriptions) {
+        if (state.shouldLoad() && !repo.isReady) {
+          // Wait for load before onboarding user
+          await dispatch(LoadAffiliations());
+          onboard();
+        } else if (state.shouldUnload() && repo.isReady) {
+          dispatch(UnloadAffiliations());
+        }
       }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
   void _processPersonConflicts(StorageTransition<Person> event) {
-    if (PersonRepository.isDuplicateUser(event)) {
-      // Find current person usages and replace then with existing user
-      final duplicate = event.from.value.uuid;
-      final existing = event.conflict.base.elementAt<String>('uuid');
-      find(
-        where: (affiliation) => affiliation.person.uuid == duplicate,
-      ).map((affiliation) => affiliation.copyWith(person: affiliation.person.cast(uuid: existing))).forEach(update);
-      // Remove duplicate person
-      persons.delete(duplicate);
+    try {
+      if (PersonRepository.isDuplicateUser(event)) {
+        // Find current person usages and replace then with existing user
+        final duplicate = event.from.value.uuid;
+        final existing = event.conflict.base.elementAt<String>('uuid');
+        find(
+          where: (affiliation) => affiliation.person.uuid == duplicate,
+        ).map((affiliation) => affiliation.copyWith(person: affiliation.person.cast(uuid: existing))).forEach(update);
+        // Remove duplicate person
+        persons.delete(duplicate);
+      }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -171,9 +190,9 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final div = findDivision(number);
     final dep = findDepartment(number);
     return AffiliationModel(
-      org: org != null ? AggregateRef.fromType<Organisation>(org.uuid) : null,
-      div: div != null ? AggregateRef.fromType<Division>(div.uuid) : null,
-      dep: dep != null ? AggregateRef.fromType<Department>(dep.uuid) : null,
+      org: org?.toRef(),
+      div: div?.toRef(),
+      dep: dep?.toRef(),
     );
   }
 
@@ -203,6 +222,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get Affiliation from User
   Affiliation findUserAffiliation({
     String userId,
+    bool ensure = true,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
   }) {
@@ -217,14 +237,16 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final org = findUserOrganisation(userId: userId);
     final div = findUserDivision(userId: userId);
     final dep = findUserDepartment(userId: userId);
-    return AffiliationModel(
+    final affiliation = AffiliationModel(
+      uuid: Uuid().v4(),
       type: defaultType,
+      org: org?.toRef(),
+      div: div?.toRef(),
+      dep: dep?.toRef(),
       status: defaultStatus,
-      div: div?.uuid != null ? AggregateRef.fromType<Division>(div?.uuid) : null,
-      dep: dep?.uuid != null ? AggregateRef.fromType<Department>(dep?.uuid) : null,
-      org: org?.uuid != null ? AggregateRef.fromType<Organisation>(org.uuid) : null,
-      person: person?.uuid != null ? AggregateRef.fromType<Person>(person.uuid) : null,
+      person: person?.toRef(),
     );
+    return ensure || !affiliation.isEmpty ? affiliation : null;
   }
 
   /// Get [Affiliation] from [Personnel].
@@ -232,23 +254,27 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// not contain a reference to an [Affiliation]
   Affiliation findPersonnelAffiliation(
     Personnel personnel, {
+    bool ensure = true,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
   }) =>
       repo[personnel?.affiliation?.uuid] ??
       (personnel.userId != null
           ? findUserAffiliation(
+              ensure: ensure,
               userId: personnel.userId,
               defaultType: defaultType,
               defaultStatus: defaultStatus,
-            ).copyWith(
+            )?.copyWith(
               uuid: AffiliationUtils.assertRef(personnel),
             )
-          : AffiliationModel(
-              type: defaultType,
-              status: defaultStatus,
-              uuid: AffiliationUtils.assertRef(personnel),
-            ));
+          : (ensure
+              ? AffiliationModel(
+                  type: defaultType,
+                  status: defaultStatus,
+                  uuid: AffiliationUtils.assertRef(personnel),
+                )
+              : null));
 
   /// Get [Organisation] from User
   Organisation findUserOrganisation({String userId}) {
@@ -380,7 +406,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }) async {
     _assertState('onboard');
     final affiliation = findUserAffiliation(userId: userId);
-    if (affiliation.uuid == null) {
+    if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
         OnboardUser(
           userId ?? users.user.userId,
@@ -407,7 +433,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   ) async {
     _assertState('temporary');
     final current = findPersonnelAffiliation(personnel);
-    if (current == null) {
+    if (!repo.containsKey(current.uuid)) {
       AffiliationUtils.assertRef(personnel);
       return dispatch(
         CreateTemporaryAffiliation(
@@ -548,7 +574,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ));
     }
     final affiliation = await repo.create(command.affiliation.copyWith(
-      person: AggregateRef.fromType<Person>(person.uuid),
+      person: person.toRef(),
       type: command.affiliation.type ?? AffiliationType.volunteer,
       status: command.affiliation.status ?? AffiliationStandbyStatus.available,
     ));
@@ -613,7 +639,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   void _assertOnboarding(OnboardUser command) {
     final current = findUserAffiliation(userId: command.data);
-    if (current.uuid != null) {
+    if (repo.containsKey(current.uuid)) {
       throw ArgumentError("User ${command.data} already onboarded");
     } else if (command.affiliation.uuid == null) {
       throw ArgumentError("Affiliation has no uuid");
@@ -621,9 +647,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   void _assertTemporary(CreateTemporaryAffiliation command) {
-    if (command.affiliation.isEmpty) {
-      throw ArgumentError("Affiliation is empty");
-    } else if (command.affiliation.uuid == null) {
+    if (command.affiliation.uuid == null) {
       throw ArgumentError("Temporary affiliation has no uuid");
     } else if (command.data.affiliation?.uuid != command.affiliation.uuid) {
       throw ArgumentError("Temporary affiliation uuids does not match");

@@ -40,7 +40,7 @@ class OrganisationBuilder {
         '"name": "$name",'
         '"active": $active,'
         '"prefix": "$prefix",'
-        '"divisions": [${divisions != null ? divisions.join(',') : ''}]'
+        '"divisions": [${divisions != null ? '"${divisions.join("','")}"' : ''}]'
         '}');
   }
 }
@@ -49,11 +49,11 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
   final Map<String, Organisation> orgRepo = {};
 
   Organisation add({
-    String name,
-    String prefix,
     String uuid,
-    List<String> divisions,
+    String name,
     bool active,
+    String prefix,
+    List<String> divisions,
   }) {
     final org = OrganisationBuilder.create(
       uuid: uuid,

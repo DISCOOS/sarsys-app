@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
-import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';

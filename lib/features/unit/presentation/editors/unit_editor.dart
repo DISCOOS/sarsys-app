@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,6 +17,7 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
@@ -471,16 +473,6 @@ class _UnitEditorState extends State<UnitEditor> {
     return const <Device>[];
   }
 
-  /*
-
-    bool _canAddPersonnel(
-      Iterable<String> actual, Personnel personnel, Iterable<String> local, TrackableQuery<Unit> units) {
-    return actual.contains(personnel.uuid) && !local.contains(personnel.uuid) || units.find(personnel) == null;
-  }
-
-
-   */
-
   bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
     return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
   }
@@ -493,7 +485,7 @@ class _UnitEditorState extends State<UnitEditor> {
         maxChips: 15,
         initialValue: _getActualPersonnel(),
         actionLabel: "Testing",
-        onChanged: (personnel) => _personnels = List.from(personnel),
+        onChanged: (personnels) => _personnels = personnels.map((p) => p.uuid).toList(),
         decoration: InputDecoration(
           labelText: "Mannskap",
           hintText: "Søk etter mannskap",
@@ -504,15 +496,15 @@ class _UnitEditorState extends State<UnitEditor> {
           contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
         ),
         findSuggestions: _findPersonnel,
-        chipBuilder: (context, state, personnel) => PersonnelChip(
-          personnel: personnel,
+        suggestionBuilder: (context, state, puuid) => PersonnelTile(
+          personnel: context.bloc<PersonnelBloc>().repo[puuid],
           state: state,
         ),
-        suggestionBuilder: (context, state, personnel) => PersonnelTile(
-          personnel: personnel,
+        chipBuilder: (context, state, puuid) => PersonnelChip(
+          personnel: context.bloc<PersonnelBloc>().repo[puuid],
           state: state,
         ),
-        valueTransformer: (values) => values.map((personnel) => personnel.toJson()).toList(),
+//        valueTransformer: (values) => values.map((personnel) => personnel.uuid).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
         inputType: TextInputType.text,
@@ -525,11 +517,11 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  List<Personnel> _findPersonnel(String query) {
+  List<String> _findPersonnel(String query) {
     if (query.length != 0) {
       final local = _getLocalPersonnel();
       final actual = _getActualPersonnel();
-      final lowercaseQuery = query.toLowerCase();
+      final pattern = query.toLowerCase();
       final units = context.bloc<TrackingBloc>().units;
       final found = context
           .bloc<PersonnelBloc>()
@@ -542,18 +534,25 @@ class _UnitEditorState extends State<UnitEditor> {
                 local,
                 units,
               ))
-          .where((personnel) =>
-              personnel.name.toLowerCase().contains(lowercaseQuery) ||
-              translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery))
+          .where((personnel) => _personnelMatch(personnel, pattern))
           .take(5)
+          .map((personnel) => personnel.uuid)
           .toList(growable: false);
       return found;
     }
-    return const <Personnel>[];
+    return const <String>[];
   }
 
+  bool _personnelMatch(Personnel personnel, String lowercaseQuery) =>
+      personnel.name.toLowerCase().contains(lowercaseQuery) ||
+      translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery);
+
   bool _canAddPersonnel(
-      Iterable<String> actual, Personnel personnel, Iterable<String> local, TrackableQuery<Unit> units) {
+    Iterable<String> actual,
+    Personnel personnel,
+    Iterable<String> local,
+    TrackableQuery<Unit> units,
+  ) {
     return actual.contains(personnel.uuid) && !local.contains(personnel.uuid) || units.find(personnel) == null;
   }
 
@@ -601,10 +600,10 @@ class _UnitEditorState extends State<UnitEditor> {
       List<String>.from(widget?.unit?.personnels ?? <String>[]).toList()..addAll(widget.personnels ?? <String>[]);
 
   Position _preparePosition() {
-    final position = _formKey.currentState.value['position'] == null
+    final position = _toJson()['position'] == null
         ? null
         : Position.fromJson(
-            _formKey.currentState.value['position'],
+            _toJson()['position'],
           );
     // Only manually added points are allowed
     return PositionSource.manual == position?.source ? position : null;
@@ -689,10 +688,12 @@ class _UnitEditorState extends State<UnitEditor> {
 
   bool _changedToRetired(Unit unit) => UnitStatus.retired == unit.status && unit.status != widget?.unit?.status;
 
-  Unit _createdUnit() => UnitModel.fromJson(_formKey.currentState.value).copyWith(
+  Unit _createdUnit() => UnitModel.fromJson(_toJson()).copyWith(
         uuid: Uuid().v4(),
         tracking: TrackingUtils.newRef(),
       );
 
-  Unit _updatedUnit() => widget.unit.mergeWith(_formKey.currentState.value);
+  Unit _updatedUnit() => widget.unit.mergeWith(_toJson());
+
+  Map<String, dynamic> _toJson() => _formKey.currentState.value;
 }

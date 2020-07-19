@@ -1,4 +1,3 @@
-import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/affiliation/presentation/pages/affiliations_page.dart';
@@ -106,7 +105,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     // Register new personnel?
     if (params.data == null) {
       // Only show selectable affiliations
-      final existing = _selectable(params);
+      final existing = _selectables(params);
       final affiliation = await selectOrCreateAffiliation(
         params.overlay.context,
         where: (affiliation) => !existing.contains(affiliation.uuid),
@@ -116,7 +115,8 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
         return dartz.left(false);
       }
       // Create personnel from given affiliation?
-      final personnel = params.bloc.repo.find(where: (p) => p.person.uuid == affiliation.person.uuid).firstOrNull;
+
+      final personnel = _findPersonnel(params, affiliation);
       if (personnel == null) {
         final person = params.context.bloc<AffiliationBloc>().persons[affiliation.person.uuid];
         return dartz.right(await params.bloc.create(PersonnelModel(
@@ -143,7 +143,10 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
   }
 
-  Iterable<String> _selectable(PersonnelParams params) =>
+  Personnel _findPersonnel(PersonnelParams params, Affiliation affiliation) =>
+      params.bloc.repo.find(where: (p) => p.person.uuid == affiliation.person.uuid).firstOrNull;
+
+  Iterable<String> _selectables(PersonnelParams params) =>
       params.bloc.repo.values.where((p) => p.status != PersonnelStatus.retired).map((p) => p.affiliation.uuid);
 }
 

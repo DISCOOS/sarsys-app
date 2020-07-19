@@ -27,4 +27,7 @@ class DepartmentModel extends Department {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DepartmentModelToJson(this);
+
+  @override
+  AggregateRef<Department> toRef() => uuid != null ? AggregateRef.fromType<DepartmentModel>(uuid) : null;
 }

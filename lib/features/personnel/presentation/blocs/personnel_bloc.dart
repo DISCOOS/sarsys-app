@@ -18,7 +18,7 @@ import 'package:SarSys/features/personnel/domain/repositories/personnel_reposito
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
-import 'package:catcher/core/catcher.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
 
@@ -62,16 +62,20 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       if (hasSubscriptions) {
         if (state.shouldLoad(ouuid)) {
           await dispatch(LoadPersonnels(state.data.uuid));
-          await mobilizeUser();
+          if (state.isSelected()) {
+            await mobilizeUser();
+          }
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
           dispatch(UnloadPersonnels(repo.ouuid));
         }
       }
     } catch (error, stackTrace) {
-      Catcher.reportCheckedError(
+      BlocSupervisor.delegate.onError(
+        this,
         error,
         stackTrace,
       );
+      onError(error, stackTrace);
     }
   }
 
@@ -79,10 +83,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     try {
       add(_InternalMessage(event));
     } catch (error, stackTrace) {
-      Catcher.reportCheckedError(
+      BlocSupervisor.delegate.onError(
+        this,
         error,
         stackTrace,
       );
+      onError(error, stackTrace);
     }
   }
 
@@ -98,10 +104,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
       }
     } catch (error, stackTrace) {
-      Catcher.reportCheckedError(
+      BlocSupervisor.delegate.onError(
+        this,
         error,
         stackTrace,
       );
+      onError(error, stackTrace);
     }
   }
 
@@ -223,6 +231,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         ),
         status: PersonnelStatus.alerted,
         affiliation: affiliation.toRef(),
+        tracking: TrackingUtils.newRef(),
       ));
       return personnel;
     } else if (existing.status != PersonnelStatus.alerted) {
@@ -237,12 +246,11 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Create given personnel
   Future<Personnel> create(Personnel personnel) {
     _assertState();
+    _assertData(personnel);
     return dispatch<Personnel>(
       CreatePersonnel(
         ouuid ?? operationBloc.selected.uuid,
         personnel.copyWith(
-          // Personnels MUST contain an affiliation reference
-          affiliation: AffiliationUtils.ensureRef(personnel),
           // Personnels should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
           // reference to create a [Tracking] instance which the
@@ -323,13 +331,18 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       if (!affiliation.isAffiliate) {
         await affiliationBloc.temporary(
           command.data,
-          affiliation,
+          affiliation.copyWith(
+            person: command.data.person.toRef(),
+          ),
         );
       }
     }
+    final affiliation = affiliationBloc.repo[auuid];
+    final person = affiliationBloc.persons[affiliation.person.uuid];
     final personnel = await repo.create(
       command.ouuid,
-      command.data,
+      // Update with current person
+      command.data.withPerson(person),
     );
     return toOK(
       command,

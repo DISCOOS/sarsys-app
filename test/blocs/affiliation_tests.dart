@@ -34,7 +34,57 @@ void main() async {
       expect(harness.affiliationBloc.divs.isEmpty, isTrue, reason: "SHOULD BE empty");
       expect(harness.affiliationBloc.deps.isEmpty, isTrue, reason: "SHOULD BE empty");
       expect(harness.affiliationBloc.initialState, isA<AffiliationsEmpty>(), reason: "Unexpected organisation state");
+    },
+  );
+
+  test(
+    'SHOULD onboard USER on first load',
+    () async {
+      // Arrange
+      final orguuid = Uuid().v4();
+      final divuuid = Uuid().v4();
+      final dep = harness.departmentService.add(
+        divuuid,
+        name: harness.department,
+      );
+      final div = harness.divisionService.add(
+        orguuid,
+        name: harness.division,
+        departments: [dep.uuid],
+      );
+      final org = harness.organisationService.add(divisions: [div.uuid]);
+
+      // Act
+      await _authenticate(harness);
+
+      // Assert states
+      expect(harness.affiliationBloc.orgs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+      expect(harness.affiliationBloc.divs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+      expect(harness.affiliationBloc.deps.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+      expect(harness.affiliationBloc.repo.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+      expect(harness.affiliationBloc.persons.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+      expect(harness.affiliationBloc.state, isA<UserOnboarded>(), reason: " SHOULD be in UserOnboarded state");
       expect(harness.affiliationBloc, emits(isA<UserOnboarded>()));
+
+      // Assert person
+      final user = harness.user;
+      final person = harness.affiliationBloc.findUserPerson(userId: harness.userId);
+      expect(person, isNotNull, reason: "SHOULD contain person with userId ${harness.userId}");
+      expect(person.fname, user.fname);
+      expect(person.lname, user.lname);
+      expect(person.phone, user.phone);
+      expect(person.email, user.email);
+      expect(person.userId, user.userId);
+
+      // Assert person
+      final affiliation = harness.affiliationBloc.findUserAffiliation(userId: harness.userId);
+      expect(affiliation, isNotNull, reason: "SHOULD contain affiliation with userId ${harness.userId}");
+      expect(affiliation.org.uuid, org.uuid);
+      expect(affiliation.div.uuid, div.uuid);
+      expect(affiliation.dep.uuid, dep.uuid);
+      expect(affiliation.person.uuid, person.uuid);
+      expect(affiliation.type, AffiliationType.member);
+      expect(affiliation.status, AffiliationStandbyStatus.available);
     },
   );
 

@@ -85,7 +85,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
       unit: unit?.cast<UnitModel>() ?? this.unit,
-      person: _copyPerson(fname, lname, phone, email, userId),
+      person: _copyPerson(person?.uuid, fname, lname, phone, email, userId),
       status: status ?? this.status,
       function: function ?? this.function,
       tracking: tracking ?? this.tracking,
@@ -94,18 +94,40 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
   }
 
   Person _copyPerson(
+    String uuid,
     String fname,
     String lname,
     String phone,
     String email,
     String userId,
   ) {
-    return (person ?? PersonModel(uuid: null)).copyWith(
+    return (person ?? PersonModel(uuid: uuid)).copyWith(
+      uuid: uuid ?? person?.uuid,
       fname: fname ?? this.fname,
       lname: lname ?? this.lname,
       phone: phone ?? this.phone,
       email: email ?? this.email,
       userId: userId ?? this.userId,
+    );
+  }
+
+  @override
+  Personnel withPerson(Person person) {
+    return PersonnelModel(
+      uuid: this.uuid,
+      unit: unit,
+      status: status,
+      function: function,
+      tracking: tracking,
+      affiliation: affiliation,
+      person: _copyPerson(
+        person.uuid,
+        person.fname,
+        person.lname,
+        person.phone,
+        person.email,
+        person.userId,
+      ),
     );
   }
 }

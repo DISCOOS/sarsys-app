@@ -30,4 +30,7 @@ abstract class Department extends Aggregate<Map<String, dynamic>> {
 
   /// Department status
   final bool active;
+
+  /// Get [Department] reference
+  AggregateRef<Department> toRef();
 }

@@ -44,7 +44,7 @@ class DivisionBuilder {
         '"suffix": $active,'
         '"suffix": "$suffix",'
         '"organisation": {"uuid": "$orguuid"},'
-        '"departments": [${departments != null ? departments.join(',') : ''}]'
+        '"departments": [${departments != null ? '"${departments.join("','")}"' : ''}]'
         '}');
   }
 }

@@ -34,7 +34,6 @@ import 'package:SarSys/features/device/data/repositories/device_repository_impl.
 import 'package:SarSys/features/operation/data/repositories/incident_repository_impl.dart';
 import 'package:SarSys/features/personnel/data/repositories/personnel_repository_impl.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
-import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
@@ -437,9 +436,9 @@ class AppController {
     registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
     // Ensure user is mobilized after personnel and affiliation blocs are ready
-    waitThoughtEvents(bus, expected: [PersonnelsLoaded, AffiliationsLoaded], act: () {
+    waitThoughtEvents(bus, expected: [PersonnelsLoaded, AffiliationsLoaded], act: () async {
       if (bloc<OperationBloc>().isSelected) {
-        mobilizeUser();
+//        await mobilizeUser();
       }
     });
 

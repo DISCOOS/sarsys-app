@@ -93,12 +93,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
                 return affiliations.isEmpty || snapshot.hasError
                     ? toRefreshable(
                         viewportConstraints,
-//                        child: ListTile(
-//                          title: Text("Søk opp"),
-//                        ),
-                        message: snapshot.hasError
-                            ? snapshot.error
-                            : widget.query == null ? "Søk eller legg til mannskap" : "Ingen mannskap funnet",
+                        message: _toEmptyListMessage(snapshot),
                       )
                     : _buildList(context.bloc<AffiliationBloc>(), affiliations);
               },
@@ -108,6 +103,10 @@ class AffiliationsPageState extends State<AffiliationsPage> {
       },
     );
   }
+
+  Object _toEmptyListMessage(AsyncSnapshot snapshot) => snapshot.hasError
+      ? snapshot.error
+      : widget.query == null ? "Søk etter eller opprett mannskap" : "Ingen mannskap funnet";
 
   List<Affiliation> _filteredAffiliation(AffiliationBloc bloc) {
     return context
@@ -436,8 +435,10 @@ Future<Affiliation> selectOrCreateAffiliation(
           withMultiSelect: false,
           onSelection: (affiliation) => Navigator.pop(context, affiliation),
         ),
-        floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
+        floatingActionButton: FloatingActionButton.extended(
+          icon: Icon(Icons.add),
+          label: Text("Manuell"),
+          isExtended: true,
           onPressed: () async {
             final result = await createPersonnel();
             Navigator.pop(

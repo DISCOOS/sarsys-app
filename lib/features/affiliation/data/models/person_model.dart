@@ -1,6 +1,7 @@
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -72,6 +73,9 @@ class PersonModel extends Person {
         userId: userId ?? this.userId,
         temporary: temporary ?? this.temporary,
       );
+
+  @override
+  AggregateRef<Person> toRef() => uuid != null ? AggregateRef.fromType<PersonModel>(uuid) : null;
 }
 
 enum PersonConflictCode { duplicate_user_id }

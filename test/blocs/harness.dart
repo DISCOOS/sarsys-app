@@ -82,6 +82,8 @@ class BlocTestHarness implements BlocDelegate {
   BlocEventBus get bus => _bus;
   BlocEventBus _bus = BlocEventBus();
 
+  User get user => _userBloc.user;
+
   String _userId;
   String get userId => _userId;
 
@@ -337,24 +339,32 @@ class BlocTestHarness implements BlocDelegate {
     _withOperationBloc = true;
   }
 
-  void withDeviceBloc() {
+  void withDeviceBloc({
+    bool waitForOperationsLoaded = true,
+  }) {
     _withDeviceBloc = true;
-    _waitForOperationsLoaded = true;
+    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withPersonnelBloc() {
+  void withPersonnelBloc({
+    bool waitForOperationsLoaded = true,
+  }) {
     _withPersonnelBloc = true;
-    _waitForOperationsLoaded = true;
+    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withUnitBloc() {
+  void withUnitBloc({
+    bool waitForOperationsLoaded = true,
+  }) {
     _withUnitBloc = true;
-    _waitForOperationsLoaded = true;
+    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
-  void withTrackingBloc() {
+  void withTrackingBloc({
+    bool waitForOperationsLoaded = true,
+  }) {
     _withTrackingBloc = true;
-    _waitForOperationsLoaded = true;
+    _waitForOperationsLoaded = waitForOperationsLoaded;
   }
 
   void _buildSecureStoragePlugin() {

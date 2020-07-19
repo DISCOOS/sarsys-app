@@ -1,3 +1,4 @@
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -56,11 +57,9 @@ void main() async {
         reason: "SHOULD contain personnel ${personnel2.uuid}",
       );
       expectThrough(
-          harness.personnelBloc,
-          emitsInAnyOrder([
-            isA<PersonnelsLoaded>(),
-            isA<PersonnelCreated>(),
-          ]));
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>()),
+      );
     });
 
     test('SHOULD create personnel and push to backend', () async {
@@ -175,6 +174,11 @@ void main() async {
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
     });
 
+    test('SHOULD load when operation is selected', () async {
+      // Arrange
+      await _testShouldLoadWhenOperationIsSelected(harness, offline: false);
+    });
+
     test('SHOULD reload when operation is switched', () async {
       // Arrange
       await _testShouldReloadWhenOperationIsSwitched(harness, offline: false);
@@ -212,13 +216,11 @@ void main() async {
       List<Personnel> personnel = await harness.personnelBloc.load();
 
       // Assert that only user is mobilized
-      expect(personnel.length, 1, reason: "SHOULD NOT contain one personnel");
-      expect(
-          harness.personnelBloc,
-          emitsInAnyOrder([
-            isA<PersonnelsLoaded>(),
-            isA<PersonnelCreated>(),
-          ]));
+      expect(personnel.length, 1, reason: "SHOULD contain one personnel");
+      expectThrough(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>()),
+      );
     });
 
     test('SHOULD create personnel with state CREATED', () async {
@@ -314,6 +316,11 @@ void main() async {
       // Assert
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
+    });
+
+    test('SHOULD load when operation is selected', () async {
+      // Arrange
+      await _testShouldLoadWhenOperationIsSelected(harness, offline: true);
     });
 
     test('SHOULD reload when operation is switched', () async {
@@ -447,6 +454,56 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@requir
   );
 }
 
+Future _testShouldLoadWhenOperationIsSelected(BlocTestHarness harness, {@required bool offline}) async {
+  await _prepare(harness, offline: offline, create: false);
+
+  // Act
+  final incident = IncidentBuilder.create();
+  final operation = await harness.operationsBloc.create(
+    OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
+    incident: incident,
+  );
+
+  // Assert state
+  await expectLater(
+    harness.personnelBloc,
+    emitsThrough(isA<PersonnelCreated>()),
+  );
+  expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD change to ${operation.uuid}");
+  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+
+  // Assert person for onboarded user
+  final user = harness.user;
+  final person = harness.affiliationBloc.findUserPerson(userId: harness.userId);
+  expect(person, isNotNull, reason: "SHOULD contain person with userId ${harness.userId}");
+  expect(person.fname, user.fname);
+  expect(person.lname, user.lname);
+  expect(person.phone, user.phone);
+  expect(person.email, user.email);
+  expect(person.userId, user.userId);
+
+  // Assert person
+  final affiliation = harness.affiliationBloc.findUserAffiliation(userId: harness.userId);
+  expect(affiliation, isNotNull, reason: "SHOULD contain affiliation with userId ${harness.userId}");
+  expect(affiliation.org?.uuid, isNull);
+  expect(affiliation.div?.uuid, isNull);
+  expect(affiliation.dep?.uuid, isNull);
+  expect(affiliation.person.uuid, person.uuid);
+  expect(affiliation.type, AffiliationType.volunteer);
+  expect(affiliation.status, AffiliationStandbyStatus.available);
+
+  // Assert personnel for onboarded user
+  final personnels = harness.personnelBloc.findUser(harness.userId);
+  expect(personnels, isNotEmpty, reason: "SHOULD contain personnel with userId ${harness.userId}");
+  final personnel = personnels.first;
+  expect(personnel.fname, user.fname);
+  expect(personnel.lname, user.lname);
+  expect(personnel.phone, user.phone);
+  expect(personnel.email, user.email);
+  expect(personnel.userId, user.userId);
+  expect(personnel.person, person);
+}
+
 Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@required bool offline}) async {
   await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
@@ -475,7 +532,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
 }
 
 /// Prepare blocs for testing
-Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) async {
+Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, bool create = true}) async {
   await harness.userBloc.login(
     username: harness.username,
     password: harness.password,
@@ -487,8 +544,7 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
     harness.connectivity.cellular();
   }
 
-  // Wait for UserAuthenticated event
-  // Wait until organisations are loaded
+  // Wait for UserOnboarded
   await expectThroughLater(
     harness.affiliationBloc,
     emits(isA<UserOnboarded>()),
@@ -497,6 +553,10 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
 
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
+
+  if (!create) {
+    return Future.value();
+  }
 
   // Create operation
   final incident = IncidentBuilder.create();

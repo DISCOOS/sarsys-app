@@ -668,7 +668,7 @@ class PersonnelTile extends StatelessWidget {
         size: 10.0,
       ),
       title: Text(personnel.name),
-      onTap: state != null ? () => state.selectSuggestion(personnel) : null,
+      onTap: state != null ? () => state.selectSuggestion(personnel.uuid) : null,
     );
   }
 }
@@ -701,7 +701,7 @@ class PersonnelChip extends StatelessWidget {
           Text(personnel.formal, style: style),
         ],
       ),
-      onDeleted: () => state.deleteChip(personnel),
+      onDeleted: () => state.deleteChip(personnel.uuid),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }

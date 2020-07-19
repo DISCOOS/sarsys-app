@@ -29,4 +29,7 @@ class DivisionModel extends Division {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$DivisionModelToJson(this);
+
+  @override
+  AggregateRef<Division> toRef() => uuid != null ? AggregateRef.fromType<DivisionModel>(uuid) : null;
 }

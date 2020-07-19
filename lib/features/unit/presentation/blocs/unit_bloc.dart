@@ -18,8 +18,8 @@ import 'package:SarSys/features/unit/data/services/unit_service.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:bloc/bloc.dart';
 
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
 
@@ -80,11 +80,13 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
           dispatch(UnloadUnits(ouuid));
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
         error,
         stackTrace,
       );
+      onError(error, stackTrace);
     }
   }
 
@@ -103,11 +105,13 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
           }
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
         error,
         stackTrace,
       );
+      onError(error, stackTrace);
     }
   }
 

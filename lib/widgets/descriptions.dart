@@ -315,7 +315,7 @@ class ManagedProfileDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Tilhørighet og persondata er styrt av ${affiliation ?? 'organisasjonen'}.",
+              text: "Tilhørighet og persondata er styrt av ${affiliation ?? 'din organisasjon'}.",
             ),
           ),
         ),

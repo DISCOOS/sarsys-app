@@ -64,5 +64,5 @@ class AffiliationModel extends Affiliation {
       );
 
   @override
-  AggregateRef<AffiliationModel> toRef() => AggregateRef.fromType<AffiliationModel>(uuid);
+  AggregateRef<AffiliationModel> toRef() => uuid != null ? AggregateRef.fromType<AffiliationModel>(uuid) : null;
 }

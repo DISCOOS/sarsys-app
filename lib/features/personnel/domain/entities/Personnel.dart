@@ -62,6 +62,8 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     AggregateRef<Tracking> tracking,
     AggregateRef<Affiliation> affiliation,
   });
+
+  Personnel withPerson(Person person);
 }
 
 enum PersonnelStatus { alerted, enroute, onscene, leaving, retired }
@@ -86,7 +88,7 @@ String translatePersonnelStatus(PersonnelStatus status) {
 enum OperationalFunctionType { personnel, unit_leader, commander }
 
 String translateOperationalFunction(OperationalFunctionType function) {
-  switch (function) {
+  switch (function ?? OperationalFunctionType.personnel) {
     case OperationalFunctionType.commander:
       return "Aksjonsleder";
     case OperationalFunctionType.unit_leader:

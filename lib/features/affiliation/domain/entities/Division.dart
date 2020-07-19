@@ -34,4 +34,7 @@ abstract class Division extends Aggregate<Map<String, dynamic>> {
 
   /// Division status
   final bool active;
+
+  /// Get [Division] reference
+  AggregateRef<Division> toRef();
 }

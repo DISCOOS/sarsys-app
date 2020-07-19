@@ -11,6 +11,7 @@ import 'package:SarSys/features/operation/domain/repositories/incident_repositor
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 class OperationBloc extends BaseBloc<OperationCommand, OperationState, OperationBlocError>
@@ -62,12 +63,21 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   String _ouuid;
 
   void _processUserState(UserState state) {
-    if (hasSubscriptions) {
-      if (state.shouldLoad() && !repo.isReady) {
-        dispatch(LoadOperations());
-      } else if (state.shouldUnload() && repo.isReady) {
-        dispatch(UnloadOperations());
+    try {
+      if (hasSubscriptions) {
+        if (state.shouldLoad() && !repo.isReady) {
+          dispatch(LoadOperations());
+        } else if (state.shouldUnload() && repo.isReady) {
+          dispatch(UnloadOperations());
+        }
       }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -536,8 +546,8 @@ abstract class OperationState<T> extends BlocEvent<T> {
   bool isError() => this is OperationBlocError;
   bool isUnselected() => this is OperationUnselected;
   bool isSelected() =>
-      this is OperationCreated && (this as OperationCreated).selected ||
-      this is OperationUpdated && (this as OperationUpdated).selected ||
+//      this is OperationCreated && (this as OperationCreated).selected ||
+//      this is OperationUpdated && (this as OperationUpdated).selected ||
       this is OperationSelected;
 
   /// Check if data referencing [Operation.uuid] should be loaded

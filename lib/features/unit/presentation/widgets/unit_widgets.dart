@@ -492,7 +492,7 @@ class UnitActionGroup extends StatelessWidget {
           color: color,
         ),
         label: Text(
-          "Deployert",
+          "DEPLOYERT",
           textAlign: TextAlign.center,
           style: button.copyWith(
             color: color,

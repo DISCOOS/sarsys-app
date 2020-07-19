@@ -51,29 +51,42 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
           dispatch(UnloadDevices());
         }
       }
-    } on Exception catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(this, error, stackTrace);
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
       onError(error, stackTrace);
     }
   }
 
   void _processRepoState(StorageTransition<Device> transition) async {
-    if (hasSubscriptions && transition.to.isRemote) {
-      switch (transition.to.status) {
-        case StorageStatus.created:
-          final device = transition.to.value;
-          if (_shouldSetName(device)) {
-            dispatch(UpdateDevice(device.copyWith(
-              number: userBloc.user.phone,
-              alias: userBloc.user.shortName,
-            )));
-          }
-          break;
-        case StorageStatus.updated:
-          break;
-        case StorageStatus.deleted:
-          break;
+    try {
+      if (hasSubscriptions && transition.to.isRemote) {
+        switch (transition.to.status) {
+          case StorageStatus.created:
+            final device = transition.to.value;
+            if (_shouldSetName(device)) {
+              dispatch(UpdateDevice(device.copyWith(
+                number: userBloc.user.phone,
+                alias: userBloc.user.shortName,
+              )));
+            }
+            break;
+          case StorageStatus.updated:
+            break;
+          case StorageStatus.deleted:
+            break;
+        }
       }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 

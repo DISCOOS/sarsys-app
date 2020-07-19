@@ -18,7 +18,7 @@ import 'package:SarSys/models/core.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
-import 'package:catcher/catcher_plugin.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 typedef void TrackingCallback(VoidCallback fn);
@@ -112,8 +112,13 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
           dispatch(UnloadTrackings(ouuid));
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -161,8 +166,13 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
           add(_toInternalChange(next));
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -228,8 +238,13 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
           ));
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -283,8 +298,13 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
           ));
         }
       }
-    } on Exception catch (error, stackTrace) {
-      Catcher.reportCheckedError(error, stackTrace);
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 
@@ -292,11 +312,20 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// [TrackingService] as an internal [_HandleMessage]
   /// command processed by method [_process]
   void _processMessage(TrackingMessage event) {
-    if (repo.containsKey(event.uuid)) {
-      add(_HandleMessage(
-        event,
-        internal: false,
-      ));
+    try {
+      if (repo.containsKey(event.uuid)) {
+        add(_HandleMessage(
+          event,
+          internal: false,
+        ));
+      }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
     }
   }
 

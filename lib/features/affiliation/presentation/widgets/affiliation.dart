@@ -61,7 +61,7 @@ class AffiliationView extends StatelessWidget {
           child: buildCopyableText(
             context: context,
             label: "Tilhørighet",
-            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation.org.uuid]?.prefix),
+            icon: SarSysIcons.of(context.bloc<AffiliationBloc>().orgs[affiliation.org?.uuid]?.prefix),
             value: context.bloc<AffiliationBloc>().toName(affiliation),
             onMessage: onMessage,
             onComplete: onComplete,

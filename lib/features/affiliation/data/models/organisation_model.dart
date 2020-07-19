@@ -1,5 +1,6 @@
 import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -38,4 +39,7 @@ class OrganisationModel extends Organisation {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$OrganisationModelToJson(this);
+
+  @override
+  AggregateRef<Organisation> toRef() => uuid != null ? AggregateRef.fromType<OrganisationModel>(uuid) : null;
 }

@@ -58,7 +58,7 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Din tilhørighet er styrt av organisasjonen. '
+                        'Din tilhørighet er styrt din organisasjon. '
                         'Du kan derfor ikke endre denne manuelt. '
                         'Ta kontakt med din organisasjon hvis den er feil.',
                         style: TextStyle(color: Theme.of(context).textTheme.caption.color),
