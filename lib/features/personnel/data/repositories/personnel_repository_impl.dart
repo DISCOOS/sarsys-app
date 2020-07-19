@@ -68,9 +68,13 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   /// Find personnel from user
   Iterable<Personnel> findUser(
     String userId, {
+    bool Function(Personnel personnel) where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
-      values.where((personnel) => !exclude.contains(personnel.status)).where((personnel) => personnel.userId == userId);
+      values
+          .where((personnel) => !exclude.contains(personnel.status))
+          .where((personnel) => where == null || where(personnel))
+          .where((personnel) => personnel.userId == userId);
 
   /// GET ../personnels
   Future<List<Personnel>> load(String ouuid) async {

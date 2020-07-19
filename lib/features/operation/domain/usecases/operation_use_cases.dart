@@ -106,7 +106,7 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Operation is required");
     final user = params.bloc.userBloc.user;
-    assert(user != null, "User must bed authenticated");
+    assert(user != null, "User must be authenticated");
 
     if (_shouldRegister(params)) {
       return mobilizeUser();
@@ -119,6 +119,7 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
     );
 
     if (join == true) {
+      // PersonnelBloc will mobilize user
       await params.bloc.select(params.data.uuid);
       final personnel = await _findPersonnel(
         params,
@@ -196,7 +197,7 @@ bool _shouldRegister(
 
 FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait = false}) async {
   // Look for existing personnel
-  final personnel = params.context.bloc<PersonnelBloc>().find(
+  final personnel = params.context.bloc<PersonnelBloc>().findUser(
     user.userId,
     exclude: const [],
   ).firstOrNull;

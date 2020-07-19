@@ -89,10 +89,10 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             title: Text(title),
           ),
           body: tabs[routeData],
-          bottomNavigationBar: operation == null ? null : _buildBottomAppBar(context),
           floatingActionButton: operation == null ? null : _buildFAB(),
           floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
           floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+          bottomNavigationBar: operation == null ? null : _buildBottomAppBar(context),
         );
       },
     );
@@ -211,7 +211,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         case CommandScreen.TAB_PERSONNEL:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createPersonnel(),
+            onPressed: () async => await mobilizePersonnel(),
           );
         case CommandScreen.TAB_PERSONNEL:
           return FloatingActionButton(

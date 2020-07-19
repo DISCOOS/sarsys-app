@@ -152,7 +152,7 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   Widget _buildOrganisationField() {
     _update(ORG_FIELD, org?.uuid);
-    return _buildReadOnly(
+    return buildReadOnlyField<String>(
       context,
       ORG_FIELD,
       'Organisasjon',
@@ -182,7 +182,7 @@ class AffiliationFormState extends State<AffiliationForm> {
                   FormBuilderValidators.required(errorText: 'Distrikt må velges'),
                 ],
               )
-            : _buildReadOnly(
+            : buildReadOnlyField<String>(
                 context,
                 DIV_FIELD,
                 'Distrikt',
@@ -213,7 +213,7 @@ class AffiliationFormState extends State<AffiliationForm> {
                     FormBuilderValidators.required(errorText: 'Avdeling må velges'),
                   ],
                 )
-              : _buildReadOnly(
+              : buildReadOnlyField<String>(
                   context,
                   DEP_FIELD,
                   'Avdeling',
@@ -223,45 +223,11 @@ class AffiliationFormState extends State<AffiliationForm> {
         });
   }
 
-  FormBuilderCustomField<String> _buildReadOnly(
-    BuildContext context,
-    String attribute,
-    String label,
-    String title,
-    String value,
-  ) {
-    return FormBuilderCustomField<String>(
-      attribute: attribute,
-      formField: FormField<String>(
-        enabled: false,
-        initialValue: value,
-        builder: (FormFieldState<String> field) => InputDecorator(
-          decoration: InputDecoration(
-            labelText: label,
-            filled: true,
-            enabled: false,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Text(
-              title ?? '-',
-              style: Theme.of(context).textTheme.subtitle2,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   bool get editable => widget.user == null;
 
   String _update(String attribute, String value) {
     if (_formKey.currentState != null) {
       _formKey.currentState.value[attribute] = value;
-//      if (_formKey.currentState.fields[attribute] != null) {
-//        _formKey.currentState.fields[attribute].currentState.didChange(value);
-//      }
-//      _formKey.currentState.save();
     }
     return value;
   }

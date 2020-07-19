@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -89,8 +90,8 @@ class _OperationEditorState extends State<OperationEditor> {
     _updateDescriptions();
     _isExercise = widget.incident?.exercise ?? false;
 
-    var catalogs = context.bloc<AffiliationBloc>().findUserOrganisation().fleetMap.catalogs.map((e) => e.name).toList()
-      ..sort();
+    final org = context.bloc<AffiliationBloc>().findUserOrganisation();
+    final catalogs = (org?.fleetMap?.catalogs?.map((e) => e.name) ?? []).toList()..sort();
     _tgCatalog.value = catalogs;
   }
 
@@ -201,13 +202,15 @@ class _OperationEditorState extends State<OperationEditor> {
                   _buildGeneralStep(),
                   _buildPoiStep(),
                   _buildClassificationStep(),
-                  _buildTGStep(),
+                  if (_tgCatalog.value.isNotEmpty) _buildTGStep(),
                   if (createNew) _buildPreparationStep(),
                   _buildReferenceStep(),
                 ],
               ),
               Container(
-                padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom / 2),
+                padding: EdgeInsets.only(
+                  bottom: mediaQuery.viewInsets.bottom / 2,
+                ),
               ),
             ],
           ),
@@ -683,10 +686,12 @@ class _OperationEditorState extends State<OperationEditor> {
               if (query.length != 0) {
                 var lowercaseQuery = query.toLowerCase();
                 final org = context.bloc<AffiliationBloc>().findUserOrganisation();
-                final tgCatalog = AffiliationUtils.findCatalog(
-                  org.fleetMap,
-                  _formKey.currentState.fields["tgCatalog"].currentState.value,
-                );
+                final tgCatalog = org != null
+                    ? AffiliationUtils.findCatalog(
+                        org.fleetMap,
+                        _formKey.currentState.fields["tgCatalog"].currentState.value,
+                      )
+                    : null;
                 return (tgCatalog?.groups ?? [])
                     .where((tg) =>
                         tg.name.toLowerCase().contains(lowercaseQuery) ||
@@ -736,16 +741,24 @@ class _OperationEditorState extends State<OperationEditor> {
   Widget _buildTgCatalogField() {
     return ValueListenableBuilder(
       valueListenable: _tgCatalog,
-      builder: (BuildContext context, List value, Widget child) {
-        return buildDropDownField(
-          attribute: 'tgCatalog',
-          label: 'Nødnett',
-          initialValue: context.bloc<AppConfigBloc>().config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
-          items: _tgCatalog.value.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
-          validators: [
-            FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
-          ],
-        );
+      builder: (BuildContext context, List catalogs, Widget child) {
+        return catalogs.isEmpty
+            ? buildReadOnlyField<String>(
+                context,
+                'tgCatalog',
+                'Nødnett',
+                'Ingen fleetmap',
+                '',
+              )
+            : buildDropDownField(
+                attribute: 'tgCatalog',
+                label: 'Nødnett',
+                initialValue: context.bloc<AppConfigBloc>().config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
+                items: catalogs.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
+                validators: [
+                  FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
+                ],
+              );
       },
     );
   }
@@ -1033,7 +1046,7 @@ class _OperationEditorState extends State<OperationEditor> {
       _formKey.currentState.save();
 
       if (_rememberTalkGroups) {
-        final list = _formKey.currentState.value['talkgroups'];
+        final list = _formKey.currentState.value['talkgroups'] ?? <String>[];
         final talkGroups = List<String>.from(
           list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
         );

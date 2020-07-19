@@ -407,7 +407,7 @@ class PersonnelActionGroup extends StatelessWidget {
   void _onTransition(PersonnelStatus status) async {
     switch (status) {
       case PersonnelStatus.alerted:
-        final result = await mobilizePersonnel(personnel);
+        final result = await mobilizePersonnel(personnel: personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert mobilisert");
@@ -416,7 +416,7 @@ class PersonnelActionGroup extends StatelessWidget {
         }
         break;
       case PersonnelStatus.enroute:
-        final result = await mobilizePersonnel(personnel);
+        final result = await mobilizePersonnel(personnel: personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
           _onMessage("${actual.name} er registert på vei");

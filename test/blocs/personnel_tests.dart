@@ -44,7 +44,7 @@ void main() async {
       List<Personnel> personnel = await harness.personnelBloc.load();
 
       // Assert
-      expect(personnel.length, 2, reason: "SHOULD contain two personnel");
+      expect(personnel.length, 3, reason: "SHOULD contain three personnels");
       expect(
         harness.personnelBloc.repo.containsKey(personnel1.uuid),
         isTrue,
@@ -55,7 +55,12 @@ void main() async {
         isTrue,
         reason: "SHOULD contain personnel ${personnel2.uuid}",
       );
-      expectThrough(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
+      expectThrough(
+          harness.personnelBloc,
+          emitsInAnyOrder([
+            isA<PersonnelsLoaded>(),
+            isA<PersonnelCreated>(),
+          ]));
     });
 
     test('SHOULD create personnel and push to backend', () async {
@@ -67,13 +72,13 @@ void main() async {
       await harness.personnelBloc.create(personnel);
 
       // Assert
-      verify(harness.personnelService.create(any, any)).called(1);
+      verify(harness.personnelService.create(any, any)).called(2);
       expectStorageStatus(
         harness.personnelBloc.repo.states[personnel.uuid],
         StorageStatus.created,
         remote: true,
       );
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
           reason: "SHOULD contain personnel ${personnel.uuid}");
@@ -87,7 +92,7 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.update(personnel.copyWith(status: PersonnelStatus.onscene));
@@ -99,7 +104,7 @@ void main() async {
         StorageStatus.updated,
         remote: true,
       );
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
           reason: "SHOULD contain personnel ${personnel.uuid}");
@@ -113,7 +118,7 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.delete(personnel.uuid);
@@ -125,7 +130,7 @@ void main() async {
         isNull,
         reason: "SHOULD HAVE NO status",
       );
-      expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
       expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expectThrough(harness.personnelBloc, isA<PersonnelDeleted>());
@@ -138,7 +143,7 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
@@ -156,7 +161,7 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
@@ -164,7 +169,7 @@ void main() async {
 
       // Assert
       expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
           reason: "SHOULD contain personnel ${personnel.uuid}");
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
@@ -206,9 +211,14 @@ void main() async {
       // Act
       List<Personnel> personnel = await harness.personnelBloc.load();
 
-      // Assert
-      expect(personnel.length, 0, reason: "SHOULD NOT contain personnel");
-      expect(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
+      // Assert that only user is mobilized
+      expect(personnel.length, 1, reason: "SHOULD NOT contain one personnel");
+      expect(
+          harness.personnelBloc,
+          emitsInAnyOrder([
+            isA<PersonnelsLoaded>(),
+            isA<PersonnelCreated>(),
+          ]));
     });
 
     test('SHOULD create personnel with state CREATED', () async {
@@ -225,7 +235,7 @@ void main() async {
         equals(StorageStatus.created),
         reason: "SHOULD HAVE status CREATED",
       );
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expectThrough(harness.personnelBloc, isA<PersonnelCreated>());
     });
 
@@ -236,7 +246,7 @@ void main() async {
       final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
       await harness.personnelBloc.create(personnel1);
       await harness.personnelBloc.create(personnel2);
-      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnel");
+      expect(harness.personnelBloc.repo.length, 3, reason: "SHOULD contain three personnels");
 
       // Act
       await harness.personnelBloc.update(personnel2.copyWith(status: PersonnelStatus.onscene));
@@ -265,13 +275,13 @@ void main() async {
       await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.delete(personnel.uuid);
 
-      // Assert
-      expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
+      // Assert that only user is mobilized
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
       expectThrough(harness.personnelBloc, isA<PersonnelDeleted>());
     });
 
@@ -280,7 +290,7 @@ void main() async {
       await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
@@ -295,14 +305,14 @@ void main() async {
       await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
       await harness.personnelBloc.create(personnel);
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
       await harness.personnelBloc.load();
 
       // Assert
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
     });
 
@@ -337,7 +347,7 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
   await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
-  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+  expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
   expect(harness.personnelBloc.ouuid, isNotNull, reason: "SHOULD NOT be null");
 
   // Act
@@ -362,7 +372,7 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@requi
   final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
-  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+  expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
   // Act
   await harness.operationsBloc.update(
@@ -388,7 +398,7 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@requ
   final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
-  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+  expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
   // Act
   await harness.operationsBloc.update(
@@ -417,7 +427,7 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@requir
   final operation = await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
-  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+  expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
   // Act
   await harness.operationsBloc.delete(operation.uuid);
@@ -441,7 +451,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
   await _prepare(harness, offline: offline);
   final personnel = PersonnelBuilder.create();
   await harness.personnelBloc.create(personnel);
-  expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
+  expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
   // Act
   final incident = IncidentBuilder.create();

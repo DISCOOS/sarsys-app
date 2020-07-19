@@ -31,6 +31,9 @@ abstract class Person extends Aggregate<Map<String, dynamic>> {
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
   String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
 
+  /// Get searchable string
+  String get searchable => [...props, formal, initials].join(' ');
+
   Person copyWith({
     String uuid,
     String fname,

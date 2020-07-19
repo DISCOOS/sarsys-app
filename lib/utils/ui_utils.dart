@@ -1,9 +1,12 @@
 import 'dart:io';
 
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/icons.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -85,6 +88,36 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
         ],
       );
     },
+  );
+}
+
+FormBuilderCustomField<T> buildReadOnlyField<T>(
+  BuildContext context,
+  String attribute,
+  String label,
+  String title,
+  T value,
+) {
+  return FormBuilderCustomField<T>(
+    attribute: attribute,
+    formField: FormField<T>(
+      enabled: false,
+      initialValue: value,
+      builder: (FormFieldState<T> field) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          enabled: false,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            title ?? '-',
+            style: Theme.of(context).textTheme.subtitle2,
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -296,6 +329,24 @@ Color toPersonnelStatusColor(PersonnelStatus status) {
 
 IconData toPersonnelIconData(Personnel personnel) {
   return Icons.person;
+}
+
+Color toAffiliationStandbyStatusColor(AffiliationStandbyStatus status) {
+  switch (status) {
+    case AffiliationStandbyStatus.available:
+      return Colors.green;
+    case AffiliationStandbyStatus.unavailable:
+      return Colors.brown;
+    case AffiliationStandbyStatus.short_notice:
+    default:
+      return Colors.orange;
+  }
+}
+
+IconData toAffiliationIconData(BuildContext context, Affiliation affiliation) {
+  return SarSysIcons.of(
+    context.bloc<AffiliationBloc>().orgs[affiliation?.org?.uuid]?.prefix,
+  ).icon;
 }
 
 Color toPositionStatusColor(Position position) {

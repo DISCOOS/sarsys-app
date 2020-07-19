@@ -22,6 +22,7 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   /// Find personnel from user
   Iterable<Personnel> findUser(
     String userId, {
+    bool Function(Personnel personnel) where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   });
 

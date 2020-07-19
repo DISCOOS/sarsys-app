@@ -180,7 +180,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               label: Text("${personnel.name}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
-              avatar: new AffiliationAvatar(
+              avatar: AffiliationAvatar(
                 size: 6.0,
                 maxRadius: 10.0,
                 affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],

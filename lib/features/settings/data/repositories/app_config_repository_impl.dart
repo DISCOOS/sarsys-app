@@ -180,6 +180,8 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
       return response.body;
     } else if (response.is204) {
       return state.value;
+    } else if (response.is404) {
+      return onCreate(state);
     } else if (response.is409) {
       return MergeStrategy(this)(
         state,

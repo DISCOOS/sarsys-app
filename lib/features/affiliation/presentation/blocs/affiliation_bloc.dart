@@ -149,6 +149,16 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   @override
   AffiliationsEmpty get initialState => AffiliationsEmpty();
 
+  /// Get searchable string from [Affiliation.uuid]
+  String toSearchable(String uuid) {
+    final affiliation = repo[uuid];
+    if (affiliation?.person?.uuid != null) {
+      final person = persons[affiliation.person.uuid];
+      return "${person?.searchable} ${affiliation?.searchable}";
+    }
+    return "${affiliation?.searchable ?? ''}";
+  }
+
   /// Find [Affiliation]s matching given  query
   Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => repo.find(where: where);
 

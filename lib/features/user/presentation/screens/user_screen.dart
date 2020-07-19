@@ -66,7 +66,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _user = context.bloc<UserBloc>().user;
-    _personnel = context.bloc<PersonnelBloc>().find(_user.userId).firstOrNull;
+    _personnel = context.bloc<PersonnelBloc>().findUser(_user.userId).firstOrNull;
     _unit = context.bloc<UnitBloc>().findAssignedTo(_personnel.uuid).firstOrNull;
   }
 

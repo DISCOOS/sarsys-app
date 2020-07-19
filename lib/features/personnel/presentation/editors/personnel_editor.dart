@@ -30,11 +30,13 @@ class PersonnelEditor extends StatefulWidget {
   const PersonnelEditor({
     Key key,
     this.personnel,
+    this.affiliation,
     this.devices = const [],
     this.status = PersonnelStatus.alerted,
   }) : super(key: key);
 
   final Personnel personnel;
+  final Affiliation affiliation;
   final Iterable<Device> devices;
 
   final PersonnelStatus status;
@@ -189,7 +191,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
-  Affiliation _currentAffiliation() => affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
+  Affiliation _currentAffiliation() => widget.affiliation ?? affiliationBloc.repo[widget.personnel?.affiliation?.uuid];
 
   Affiliation _ensureAffiliation() {
     final affiliation = _affiliationKey?.currentState?.save() ?? _currentAffiliation();

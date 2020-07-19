@@ -4,12 +4,15 @@ import 'package:SarSys/blocs/core.dart';
 import 'package:SarSys/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
@@ -17,6 +20,7 @@ import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:uuid/uuid.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 
@@ -39,7 +43,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
     registerStreamSubscription(operationBloc.listen(
       // Load and unload personnels as needed
-      _processIncidentState,
+      _processOperationState,
     ));
 
     registerStreamSubscription(service.messages.listen(
@@ -53,11 +57,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     ));
   }
 
-  void _processIncidentState(OperationState state) {
+  void _processOperationState(OperationState state) async {
     try {
       if (hasSubscriptions) {
         if (state.shouldLoad(ouuid)) {
-          dispatch(LoadPersonnels(state.data.uuid));
+          await dispatch(LoadPersonnels(state.data.uuid));
+          await mobilizeUser();
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
           dispatch(UnloadPersonnels(repo.ouuid));
         }
@@ -87,7 +92,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         // Find current person usages and replace with existing user
         final duplicate = state.from.value.uuid;
         final existing = state.conflict.base;
-        find(
+        findUser(
           duplicate,
           exclude: [],
         ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
@@ -135,11 +140,16 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]).toList();
 
   /// Find [Personnel] from [user]
-  Iterable<Personnel> find(
+  Iterable<Personnel> findUser(
     String userId, {
+    bool Function(Personnel personnel) where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
-      repo.findUser(userId, exclude: exclude);
+      repo.findUser(
+        userId,
+        exclude: exclude,
+        where: where,
+      );
 
   /// Stream of changes on given [personnel]
   Stream<Personnel> onChanged(Personnel personnel) => where(
@@ -164,14 +174,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  String _assertData(Personnel data) {
-    if (data?.uuid == null) {
+  String _assertData(Personnel personnel) {
+    if (personnel?.uuid == null) {
       throw ArgumentError(
         "Personnel have no uuid",
       );
     }
-    TrackingUtils.assertRef(data);
-    return AffiliationUtils.assertRef(data);
+    TrackingUtils.assertRef(personnel);
+    return AffiliationUtils.assertRef(personnel);
   }
 
   /// Fetch personnel from [service]
@@ -180,6 +190,48 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     return dispatch<List<Personnel>>(
       LoadPersonnels(ouuid ?? operationBloc.selected.uuid),
     );
+  }
+
+  /// Mobilize authenticated user for
+  Future<Personnel> mobilizeUser() async {
+    _assertState();
+    final user = affiliationBloc.users.user;
+    if (user == null) {
+      throw StateError("No user authenticated");
+    }
+    var personnels = findUser(
+      user.userId,
+      exclude: const [],
+    );
+    // Choose mobilized personnels over retired
+    final existing = personnels.firstWhere(
+      (p) => p.status != PersonnelStatus.retired,
+      orElse: () => personnels.firstOrNull,
+    );
+    if (existing == null) {
+      final affiliation = affiliationBloc.findUserAffiliation();
+      final personnel = await create(PersonnelModel(
+        uuid: Uuid().v4(),
+        person: PersonModel(
+          uuid: affiliation.person?.uuid,
+          userId: user.userId,
+          fname: user.fname,
+          lname: user.lname,
+          phone: user.phone,
+          email: user.email,
+          temporary: affiliation.isTemporary,
+        ),
+        status: PersonnelStatus.alerted,
+        affiliation: affiliation.toRef(),
+      ));
+      return personnel;
+    } else if (existing.status != PersonnelStatus.alerted) {
+      return update(existing.copyWith(
+        status: PersonnelStatus.alerted,
+      ));
+    }
+    // Already mobilized
+    return existing;
   }
 
   /// Create given personnel
@@ -269,7 +321,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     if (!affiliationBloc.repo.containsKey(auuid)) {
       var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
       if (!affiliation.isAffiliate) {
-        await affiliationBloc.temporary(command.data, affiliation);
+        await affiliationBloc.temporary(
+          command.data,
+          affiliation,
+        );
       }
     }
     final personnel = await repo.create(
