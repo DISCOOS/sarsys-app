@@ -502,7 +502,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isError() => this is UserBlocError;
 
   bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked();
-  bool shouldUnload() => !shouldLoad() || isUnset();
+  bool shouldUnload() => !(shouldLoad() || isPending()) || isUnset();
 }
 
 class UserUnset extends UserState<void> {

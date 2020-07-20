@@ -21,7 +21,15 @@ abstract class AffiliationRepository implements ConnectionAwareRepository<String
   /// Fetch given affiliations
   Future<List<Affiliation>> fetch(
     List<String> uuids, {
-    bool force = true,
+    bool replace = false,
+  });
+
+  /// Search for affiliations matching given [filter]
+  /// from [repo.service] and store matches in [repo]
+  Future<List<Affiliation>> search(
+    String filter, {
+    int limit,
+    int offset,
   });
 
   /// Init from local storage, overwrite states

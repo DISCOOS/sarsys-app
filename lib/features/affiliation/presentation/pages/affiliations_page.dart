@@ -13,6 +13,7 @@ import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
+import 'package:debounce_throttle/debounce_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -22,6 +23,7 @@ class AffiliationsPage extends StatefulWidget {
   final bool withStatus;
   final bool withActions;
   final bool withMultiSelect;
+  final Completer<List<Affiliation>> request;
   final bool Function(Affiliation affiliation) where;
   final void Function(Affiliation affiliation) onSelection;
 
@@ -29,6 +31,7 @@ class AffiliationsPage extends StatefulWidget {
     Key key,
     this.query,
     this.where,
+    this.request,
     this.onSelection,
     this.withStatus = true,
     this.withActions = true,
@@ -106,7 +109,9 @@ class AffiliationsPageState extends State<AffiliationsPage> {
 
   Object _toEmptyListMessage(AsyncSnapshot snapshot) => snapshot.hasError
       ? snapshot.error
-      : widget.query == null ? "Søk etter eller opprett mannskap" : "Ingen mannskap funnet";
+      : widget.query == null
+          ? "Last ned eller opprett mannskap"
+          : widget.request?.isCompleted == false ? "Søker..." : "Ingen nye mannskap lastet ned";
 
   List<Affiliation> _filteredAffiliation(AffiliationBloc bloc) {
     return context
@@ -169,7 +174,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Chip(
-              label: Text("${person.name}"),
+              label: Text("${person?.name ?? 'Mannskap'}"),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
               avatar: new AffiliationAvatar(
@@ -284,6 +289,10 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
   final bool Function(Affiliation affiliation) where;
   ValueNotifier<Set<String>> _recent = ValueNotifier(null);
 
+  AffiliationBloc _bloc;
+  Debouncer<String> _debouncer;
+  Completer<List<Affiliation>> _request;
+
   AffiliationSearch({this.where}) {
     _init();
   }
@@ -297,6 +306,19 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
     ];
     final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
+
+    // Limit the amount of searches made against the backend
+    _debouncer = Debouncer<String>(
+      const Duration(milliseconds: 250),
+      onChanged: (query) {
+        if (_bloc != null) {
+          if (_request?.isCompleted != false) {
+            _request = Completer();
+          }
+          _request.complete(_bloc?.search(query));
+        }
+      },
+    );
   }
 
   @override
@@ -383,10 +405,25 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
       _storage.write(key: RECENT_KEY, value: json.encode(recent.toList()));
       _recent.value = recent.toSet() ?? [];
     }
+    _bloc ??= context.bloc<AffiliationBloc>();
+    if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.available) == query) {
+      _debouncer.value = enumName(AffiliationStandbyStatus.available);
+    } else if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.unavailable) == query) {
+      _debouncer.value = enumName(AffiliationStandbyStatus.unavailable);
+    } else if (translateAffiliationStandbyStatus(AffiliationStandbyStatus.short_notice) == query) {
+      _debouncer.value = enumName(AffiliationStandbyStatus.short_notice);
+    } else {
+      _debouncer.value = query;
+    }
+    // This will invoke a search which
+    // AffiliationsPage will pick up when
+    // the result is stored to repository
+
     return AffiliationsPage(
       query: query,
       where: where,
-      withStatus: false,
+      request: _request,
+      withStatus: true,
       withActions: false,
     );
   }
@@ -416,13 +453,15 @@ Future<Affiliation> selectOrCreateAffiliation(
           ),
           actions: [
             IconButton(
-              icon: Icon(Icons.search),
+              tooltip: "Søk etter mannskap og last dem ned lokalt",
+              icon: Icon(Icons.file_download),
               onPressed: () async {
-                showSearch<Affiliation>(
+                final affiliation = await showSearch<Affiliation>(
                     context: context,
                     delegate: AffiliationSearch(
                       where: where,
                     ));
+                Navigator.pop(context, affiliation);
               },
             ),
           ],

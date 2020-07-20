@@ -10,7 +10,6 @@ import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -479,8 +478,11 @@ class _UnitEditorState extends State<UnitEditor> {
     return const <Device>[];
   }
 
-  bool _deviceMatch(Device device, String pattern) =>
-      device.number.toLowerCase().contains(pattern) || device.type.toString().toLowerCase().contains(pattern);
+  bool _deviceMatch(Device device, String pattern) => [
+        device.number,
+        device.alias,
+        device.type,
+      ].join().toLowerCase().contains(pattern);
 
   bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
     return !(actual.contains(device.uuid) || local.contains(device.uuid));

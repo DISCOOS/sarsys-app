@@ -15,9 +15,9 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
 
   AffiliationService() : delegate = AffiliationServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Affiliation>>> fetch(String filter, int offset, int limit) async {
+  Future<ServiceResponse<List<Affiliation>>> search(String filter, int offset, int limit) async {
     return Api.from<PagedList<Affiliation>, List<Affiliation>>(
-      await delegate.fetch(filter, offset: offset, limit: limit),
+      await delegate.search(filter, offset: offset, limit: limit),
     );
   }
 
@@ -65,7 +65,7 @@ abstract class AffiliationServiceImpl extends ChopperService {
   });
 
   @Get()
-  Future<Response<PagedList<Affiliation>>> fetch(
+  Future<Response<PagedList<Affiliation>>> search(
     @Query('filter') String filter, {
     @Query('offset') int offset = 0,
     @Query('limit') int limit = 20,

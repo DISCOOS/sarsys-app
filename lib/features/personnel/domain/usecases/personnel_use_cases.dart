@@ -16,6 +16,7 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/presentation/pages/personnels_page.dart';
 import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/utils/tracking_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
@@ -115,7 +116,6 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
         return dartz.left(false);
       }
       // Create personnel from given affiliation?
-
       final personnel = _findPersonnel(params, affiliation);
       if (personnel == null) {
         final person = params.context.bloc<AffiliationBloc>().persons[affiliation.person.uuid];
@@ -123,6 +123,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
           uuid: Uuid().v4(),
           person: person,
           status: PersonnelStatus.alerted,
+          tracking: TrackingUtils.newRef(),
           affiliation: affiliation.toRef(),
         )));
       }
@@ -139,7 +140,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
       params,
       PersonnelStatus.alerted,
       action: "Mobiliser ${params.data.name}",
-      message: "Dette endre status til mobilisert. Vil du fortsette?",
+      message: "Dette endre status til varlset. Vil du fortsette?",
     );
   }
 
@@ -348,8 +349,6 @@ class ChecInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.onscene,
-      action: "Sjekk inn ${params.data.name}",
-      message: "Dette endre status til ankommet. Vil du fortsette?",
     );
   }
 }

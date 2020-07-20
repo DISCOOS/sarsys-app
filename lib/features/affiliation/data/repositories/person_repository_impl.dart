@@ -55,12 +55,13 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
   @override
   Future<Iterable<Person>> fetch({
     Iterable<String> uuids,
-    bool force = true,
+    bool replace = false,
   }) async {
-    await prepare(
-      force: force ?? false,
+    await prepare();
+    return _fetch(
+      uuids,
+      replace: replace,
     );
-    return _fetch(uuids);
   }
 
   @override
@@ -87,7 +88,10 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     );
   }
 
-  Future<List<Person>> _fetch(Iterable<String> uuids) async {
+  Future<List<Person>> _fetch(
+    Iterable<String> uuids, {
+    bool replace = false,
+  }) async {
     if (connectivity.isOnline) {
       try {
         final values = <Person>[];
@@ -112,9 +116,11 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
             values.add(state.value);
           }
         }
-        evict(
-          retainKeys: values.map((person) => person.uuid),
-        );
+        if (replace) {
+          evict(
+            retainKeys: values.map((person) => person.uuid),
+          );
+        }
         if (errors.isNotEmpty) {
           throw PersonServiceException(
             'Failed to load persons',
@@ -136,7 +142,10 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
   }
 
   @override
-  Future<Iterable<Person>> onReset() async => await _fetch(values.map((a) => a.uuid).toList());
+  Future<Iterable<Person>> onReset() async => await _fetch(
+        values.map((a) => a.uuid).toList(),
+        replace: true,
+      );
 
   @override
   Future<Person> onCreate(StorageState<Person> state) async {

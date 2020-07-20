@@ -24,14 +24,9 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Affiliation>>> fetch(String filter,
-      {int offset = 0, int limit = 20}) {
+  Future<Response<PagedList<Affiliation>>> search(String filter, {int offset = 0, int limit = 20}) {
     final $url = '/affiliations';
-    final $params = <String, dynamic>{
-      'filter': filter,
-      'offset': offset,
-      'limit': limit
-    };
+    final $params = <String, dynamic>{'filter': filter, 'offset': offset, 'limit': limit};
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<PagedList<Affiliation>, Affiliation>($request);
   }

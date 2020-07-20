@@ -329,7 +329,7 @@ class _OperationsPageState extends State<OperationsPage> {
     String meetup = operation.meetup.description;
     return "${_replaceLast(operation.justification)}.\n"
         "Oppmøte ${toUTM(operation.meetup.point)}"
-        "${meetup == null ? "." : ", ${meetup.toLowerCase()}."}";
+        "${meetup == null ? "." : ", $meetup."}";
   }
 
   String _replaceLast(String text) => text.replaceFirst(r'.', "", text.length - 1);

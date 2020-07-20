@@ -366,21 +366,43 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get divisions in given [Organisation] sorted on [Division.name]
   Iterable<Division> getDivisions(String orguuid) {
     final org = orgs[orguuid];
-    final divisions = Map.fromEntries(org.divisions.map((uuid) => MapEntry(uuid, divs[uuid])));
-    return sortMapValues<String, Division, String>(
-      divisions ?? <String, Division>{},
-      (division) => division.name,
-    ).values;
+    if (org != null) {
+      final divisions = Map.fromEntries(org.divisions.map((uuid) => MapEntry(uuid, divs[uuid])));
+      return sortMapValues<String, Division, String>(
+        divisions ?? <String, Division>{},
+        (division) => division.name,
+      ).values;
+    }
+    return [];
   }
 
   /// Get departments in given [Division] sorted on [Department.name]
   Iterable<Department> getDepartments(String divuuid) {
     final div = divs[divuuid];
-    final departments = Map.fromEntries(div.departments.map((uuid) => MapEntry(uuid, deps[uuid])));
-    return sortMapValues<String, Department, String>(
-      departments ?? {},
-      (department) => department.name,
-    ).values;
+    if (div != null) {
+      final departments = Map.fromEntries(div.departments.map((uuid) => MapEntry(uuid, deps[uuid])));
+      return sortMapValues<String, Department, String>(
+        departments ?? {},
+        (department) => department.name,
+      ).values;
+    }
+    return [];
+  }
+
+  /// Search for affiliations matching given [filter]
+  /// from [repo.service] and store matches in [repo]
+  Future<List<Affiliation>> search(
+    String filter, {
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    return dispatch(
+      SearchAffiliations(
+        filter,
+        limit: limit,
+        offset: offset,
+      ),
+    );
   }
 
   /// Fetch given affiliations from [repo]
@@ -463,6 +485,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       yield* _load(command);
     } else if (command is FetchAffiliations) {
       yield* _fetch(command);
+    } else if (command is SearchAffiliations) {
+      yield* _search(command);
     } else if (command is OnboardUser) {
       yield* _onboard(command);
     } else if (command is CreateTemporaryAffiliation) {
@@ -507,9 +531,34 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     await repo.fetch(command.data);
 
     // Get persons that should exist
-    final expected = command.data.where((uuid) => repo.containsKey(uuid)).map((uuid) => repo[uuid].person.uuid);
+    final expected = command.data.where((uuid) => repo.containsKey(uuid)).map(
+          (uuid) => repo[uuid].person.uuid,
+        );
 
     final exists = await _fetchPersons(expected);
+
+    final loaded = toOK(
+      command,
+      AffiliationsFetched(
+        affiliations: repo.keys,
+        persons: exists,
+      ),
+      result: repo.values,
+    );
+    yield loaded;
+  }
+
+  Stream<AffiliationState> _search(SearchAffiliations command) async* {
+    // Load from backend
+    final affiliations = await repo.search(
+      command.data,
+      limit: command.limit,
+      offset: command.offset,
+    );
+
+    final exists = await _fetchPersons(
+      affiliations.map((a) => a.person.uuid),
+    );
 
     final loaded = toOK(
       command,
@@ -687,6 +736,20 @@ class FetchAffiliations extends AffiliationCommand<List<String>, List<Affiliatio
 
   @override
   String toString() => '$runtimeType {uuids: $data}';
+}
+
+class SearchAffiliations extends AffiliationCommand<String, List<Affiliation>> {
+  SearchAffiliations(
+    String filter, {
+    this.offset = 0,
+    this.limit = 20,
+  }) : super(filter);
+
+  final int limit;
+  final int offset;
+
+  @override
+  String toString() => '$runtimeType {filter: $data, limit: $limit, offset: $offset}';
 }
 
 class OnboardUser extends AffiliationCommand<String, Affiliation> {

@@ -140,7 +140,7 @@ class UserRolesDescription extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
-              TextSpan(text: "Roller tildeles av din orgainsasjon."),
+              TextSpan(text: "Roller tildeles av din organisasjon."),
             ),
           ),
           Padding(
@@ -160,7 +160,7 @@ class UserRolesDescription extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 text: "Aksjoner krever en kode for å kunne åpnes. "
-                    "Denne koden kan sendes ut med varslingen eller oppgis på annet vis.",
+                    "Denne koden sendes ut med varslingen eller oppgis på annet vis.",
               ),
             ),
           ),
@@ -275,7 +275,7 @@ class UserRolesDescription extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
-              TextSpan(text: "Du ikke delta på aksjoner."),
+              TextSpan(text: "Du kan ikke delta på aksjoner."),
             ),
           ),
         ],

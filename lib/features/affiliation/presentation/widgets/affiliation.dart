@@ -166,12 +166,13 @@ class AffiliationFormState extends State<AffiliationForm> {
       valueListenable: _org,
       builder: (context, ouuid, _) {
         final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
-        return org != null && editable
+        final divisions = _buildDivisionItems(toOrg(ouuid));
+        return editable & divisions.isNotEmpty
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
                 label: 'Distrikt',
                 initialValue: duuid,
-                items: _buildDivisionItems(toOrg(ouuid)),
+                items: divisions,
                 onChanged: (String selected) {
                   if (org != null) {
                     _div.value = selected;
@@ -198,11 +199,12 @@ class AffiliationFormState extends State<AffiliationForm> {
         valueListenable: _div,
         builder: (context, divuuid, _) {
           final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
-          return editable
+          final departments = _buildDepartmentItems(toDiv(divuuid));
+          return editable && departments.isNotEmpty
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,
                   label: 'Avdeling',
-                  items: _buildDepartmentItems(toDiv(divuuid)),
+                  items: departments,
                   initialValue: _dep,
                   enabled: editable,
                   onChanged: (selected) {
@@ -245,7 +247,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   List<DropdownMenuItem<String>> _buildDivisionItems(Organisation org) {
-    final divisions = context.bloc<AffiliationBloc>().getDivisions(org.uuid);
+    final divisions = context.bloc<AffiliationBloc>().getDivisions(org?.uuid);
     return divisions
         .map((division) => DropdownMenuItem<String>(
               value: "${division.uuid}",
@@ -255,7 +257,7 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   List<DropdownMenuItem<String>> _buildDepartmentItems(Division div) {
-    final departments = context.bloc<AffiliationBloc>().getDepartments(div.uuid);
+    final departments = context.bloc<AffiliationBloc>().getDepartments(div?.uuid);
     return departments
         .map((department) => DropdownMenuItem<String>(
               value: "${department.uuid}",

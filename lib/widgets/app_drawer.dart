@@ -72,12 +72,13 @@ class _AppDrawerState extends State<AppDrawer> {
         // As a security precaution, security information
         // for users from untrusted domains are automatically
         // deleted. Notify user about this before logging out
-        final answer = user.isTrusted ||
-            await prompt(
-              context,
-              'Bekreftelse',
-              'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
-            );
+        final answer = await prompt(
+          context,
+          'Bekreftelse',
+          user.isTrusted
+              ? 'Du logges nå ut. Vil du fortsette?'
+              : 'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
+        );
 
         if (answer) {
           Navigator.pop(context);

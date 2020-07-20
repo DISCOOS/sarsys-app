@@ -42,11 +42,29 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }
 
   @override
-  Future<List<Affiliation>> fetch(List<String> uuids, {bool force = true}) async {
-    await prepare(
-      force: force ?? false,
+  Future<List<Affiliation>> fetch(
+    List<String> uuids, {
+    bool replace = false,
+  }) async {
+    await prepare();
+    return _fetch(
+      uuids,
+      replace: replace,
     );
-    return _fetch(uuids);
+  }
+
+  @override
+  Future<List<Affiliation>> search(
+    String filter, {
+    int limit,
+    int offset,
+  }) async {
+    await prepare();
+    return _search(
+      filter,
+      limit: limit,
+      offset: offset,
+    );
   }
 
   @override
@@ -73,7 +91,10 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     );
   }
 
-  Future<List<Affiliation>> _fetch(List<String> uuids) async {
+  Future<List<Affiliation>> _fetch(
+    List<String> uuids, {
+    bool replace = false,
+  }) async {
     if (connectivity.isOnline) {
       try {
         final values = <Affiliation>[];
@@ -98,9 +119,11 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
             values.add(state.value);
           }
         }
-        evict(
-          retainKeys: values.map((affiliation) => affiliation.uuid),
-        );
+        if (replace) {
+          evict(
+            retainKeys: values.map((affiliation) => affiliation.uuid),
+          );
+        }
         if (errors.isNotEmpty) {
           throw AffiliationServiceException(
             'Failed to load affiliations',
@@ -121,8 +144,42 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     return values;
   }
 
+  Future<List<Affiliation>> _search(
+    String filter, {
+    int limit,
+    int offset,
+  }) async {
+    if (connectivity.isOnline) {
+      try {
+        final response = await service.search(filter, offset, limit);
+        if (response.is200) {
+          response.body.forEach((element) {
+            put(
+              StorageState.created(
+                element,
+                remote: true,
+              ),
+            );
+          });
+          return response.body;
+        }
+        throw AffiliationServiceException(
+          'Failed to search for affiliation matching $filter',
+          response: response,
+          stackTrace: StackTrace.current,
+        );
+      } on SocketException {
+        // Assume offline
+      }
+    }
+    return values;
+  }
+
   @override
-  Future<Iterable<Affiliation>> onReset() async => await _fetch(values.map((a) => a.uuid).toList());
+  Future<Iterable<Affiliation>> onReset() async => await _fetch(
+        values.map((a) => a.uuid).toList(),
+        replace: true,
+      );
 
   @override
   Future<Affiliation> onCreate(StorageState<Affiliation> state) async {
