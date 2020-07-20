@@ -233,6 +233,7 @@ class BlocTestHarness implements BlocDelegate {
       if (_withTrackingBloc) {
         _buildTrackingBloc();
       }
+
       // Needed for await above to work
       return Future.value();
     });
@@ -269,8 +270,9 @@ class BlocTestHarness implements BlocDelegate {
       _connectivity?.dispose();
 
       if (Storage.initialized) {
-        return await Storage.destroy();
+        return Storage.destroy();
       }
+
       return Future.value();
     });
 
