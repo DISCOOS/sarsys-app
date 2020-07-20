@@ -162,6 +162,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         user.roles.first,
         maxAge: _maxAge,
         email: user.email,
+        division: user.division,
+        department: user.department,
       );
       return ServiceResponse.ok(body: _token);
     });

@@ -82,7 +82,7 @@ class BlocTestHarness implements BlocDelegate {
   BlocEventBus get bus => _bus;
   BlocEventBus _bus = BlocEventBus();
 
-  User get user => _userBloc.user;
+  User get user => _userService.token.toUser();
 
   String _userId;
   String get userId => _userId;

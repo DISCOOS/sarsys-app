@@ -1051,11 +1051,16 @@ class AffiliationQuery {
         // and departments in organisation
         if (_accept<T>(uuid, where)) {
           final child = (_aggregates[uuid] as Organisation);
-          final divisions = _findChildren(child.divisions, where);
+          final divisions = _findChildren<Division>(child.divisions, where);
           return [
             elementAt(uuid),
             ...divisions.map((div) => elementAt(div.uuid)),
-            ...divisions.fold(<Affiliation>[], (found, div) => _findLeafs<Department>(div.departments, where))
+            ...divisions.fold(
+                <Affiliation>[],
+                (found, div) => _findLeafs<Department>(
+                      div.departments,
+                      where,
+                    ))
           ];
         }
         return [];
@@ -1102,9 +1107,9 @@ class AffiliationQuery {
     }
   }
 
-  Iterable<Division> _findChildren(List<String> uuids, bool where(Aggregate aggregate)) {
-    return uuids.map((uuid) => _aggregates[uuid] as Division).where((div) => where == null || where(div));
-  }
+  Iterable<T> _findChildren<T extends Aggregate>(List<String> uuids, bool where(Aggregate aggregate)) => uuids
+      .map((uuid) => _aggregates[uuid] as T)
+      .where((aggregate) => aggregate != null && (where == null || where(aggregate)));
 
   Iterable<Affiliation> _findLeafs<T extends Aggregate>(
     List<String> uuids,

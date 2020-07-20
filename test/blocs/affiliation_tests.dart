@@ -52,7 +52,10 @@ void main() async {
         name: harness.division,
         departments: [dep.uuid],
       );
-      final org = harness.organisationService.add(divisions: [div.uuid]);
+      final org = harness.organisationService.add(
+        uuid: orguuid,
+        divisions: [div.uuid],
+      );
 
       // Act
       await _authenticate(harness);
@@ -267,6 +270,9 @@ Future _authenticate(
     username: UNTRUSTED,
     password: PASSWORD,
   );
+  expect(harness.user.userId, equals(harness.userId));
+  expect(harness.user.division, equals(harness.division));
+  expect(harness.user.department, equals(harness.department));
   // Wait for UserAuthenticated event
   // Wait until organisations are loaded
   await expectThroughLater(
