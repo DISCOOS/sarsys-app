@@ -1,4 +1,7 @@
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/models/AggregateRef.dart';
 import 'package:flutter/material.dart';
@@ -271,9 +274,10 @@ class AffiliationFormState extends State<AffiliationForm> {
     final json = _formKey.currentState.value;
     final affiliation = AffiliationModel(
       uuid: _affiliation?.uuid,
-      org: AggregateRef.fromType<Organisation>(json[ORG_FIELD]),
-      div: AggregateRef.fromType<Division>(json[DIV_FIELD]),
-      dep: AggregateRef.fromType<Department>(json[DEP_FIELD]),
+      person: _affiliation?.person,
+      org: AggregateRef.fromType<OrganisationModel>(json[ORG_FIELD]),
+      div: AggregateRef.fromType<DivisionModel>(json[DIV_FIELD]),
+      dep: AggregateRef.fromType<DepartmentModel>(json[DEP_FIELD]),
       type: _affiliation?.type ?? _inferType(json),
       status: _affiliation?.status ?? AffiliationStandbyStatus.available,
     );

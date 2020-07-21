@@ -505,7 +505,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     await repo.init();
 
     final exists = await _fetchPersons(
-      repo.values.map((e) => e.person.uuid),
+      repo.values.where((e) => e.person?.uuid != null).map((e) => e.person.uuid),
     );
 
     final loaded = toOK(

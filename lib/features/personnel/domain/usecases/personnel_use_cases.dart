@@ -31,6 +31,7 @@ class PersonnelParams extends BlocParams<PersonnelBloc, Personnel> {
   final List<Device> devices;
   final Affiliation affiliation;
   OperationBloc get operationBloc => bloc.operationBloc;
+  AffiliationBloc get affiliationBloc => bloc.affiliationBloc;
   User get user => operationBloc.userBloc.user;
   PersonnelParams({
     Personnel personnel,
@@ -184,11 +185,12 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data != null, "Personnel must be supplied");
-    var result = await showDialog<PersonnelParams>(
+    final result = await showDialog<PersonnelParams>(
       context: params.overlay.context,
       builder: (context) => PersonnelEditor(
         personnel: params.data,
         devices: params.devices,
+        affiliation: params.affiliationBloc.repo[params.data.affiliation.uuid],
       ),
     );
     if (result == null) return dartz.Left(false);
@@ -380,7 +382,9 @@ Future<dartz.Either<bool, Personnel>> _transitionPersonnel(PersonnelParams param
     var response = await prompt(params.overlay.context, action, message);
     if (!response) return dartz.Left(false);
   }
-  final personnel = await params.bloc.update(params.data.copyWith(status: status));
+  final personnel = await params.bloc.update(
+    params.data.copyWith(status: status),
+  );
   return dartz.Right(personnel);
 }
 

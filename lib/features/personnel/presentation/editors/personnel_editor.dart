@@ -610,7 +610,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Affiliation _toAffiliation() {
     if (managed) {
-      return affiliationBloc.repo[widget.personnel.affiliation?.uuid];
+      return _currentAffiliation();
     }
     final next = _affiliationKey.currentState.save();
     return next.uuid == null ? next.copyWith(uuid: widget.personnel?.affiliation?.uuid ?? Uuid().v4()) : next;

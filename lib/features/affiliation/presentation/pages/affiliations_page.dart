@@ -151,16 +151,19 @@ class AffiliationsPageState extends State<AffiliationsPage> {
     }
     final affiliation = items[index];
     final person = bloc.persons[affiliation.person?.uuid];
-    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
-        ? Slidable(
-            actionPane: SlidableScrollActionPane(),
-            actionExtentRatio: 0.2,
-            child: _buildAffiliationTile(person, affiliation),
-            secondaryActions: <Widget>[
-              _buildTransitionAction(context, affiliation),
-            ],
-          )
-        : _buildAffiliationTile(person, affiliation);
+    return GestureDetector(
+      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+          ? Slidable(
+              actionPane: SlidableScrollActionPane(),
+              actionExtentRatio: 0.2,
+              child: _buildAffiliationTile(person, affiliation),
+              secondaryActions: <Widget>[
+                _buildTransitionAction(context, affiliation),
+              ],
+            )
+          : _buildAffiliationTile(person, affiliation),
+      onTap: () => _onTap(affiliation),
+    );
   }
 
   Widget _buildAffiliationTile(Person person, Affiliation affiliation) {
@@ -169,48 +172,45 @@ class AffiliationsPageState extends State<AffiliationsPage> {
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: GestureDetector(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Chip(
-              label: Text("${person?.name ?? 'Mannskap'}"),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: new AffiliationAvatar(
-                size: 6.0,
-                maxRadius: 10.0,
-                affiliation: affiliation,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Chip(
+            label: Text("${person?.name ?? 'Mannskap'}"),
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: new AffiliationAvatar(
+              size: 6.0,
+              maxRadius: 10.0,
+              affiliation: affiliation,
+            ),
+          ),
+          Spacer(),
+          if (widget.withStatus)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Chip(
+                label: Text(
+                  translateAffiliationStandbyStatus(affiliation.status),
+                  textAlign: TextAlign.end,
+                ),
+                backgroundColor: Colors.grey[100],
               ),
             ),
-            Spacer(),
-            if (widget.withStatus)
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Chip(
-                  label: Text(
-                    translateAffiliationStandbyStatus(affiliation.status),
-                    textAlign: TextAlign.end,
-                  ),
-                  backgroundColor: Colors.grey[100],
-                ),
+          if (widget.withMultiSelect)
+            Padding(
+              padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+              child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
+            ),
+          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.drag_handle,
+                color: Colors.grey.withOpacity(0.2),
               ),
-            if (widget.withMultiSelect)
-              Padding(
-                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-                child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
-              ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-              RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-          ],
-        ),
-        onTap: () => _onTap(affiliation),
+            ),
+        ],
       ),
     );
   }
