@@ -321,14 +321,14 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   Future _process() async {
     while (_pushQueue.isNotEmpty) {
       final next = _pushQueue.first;
-      if (shouldWait(next)) {
-        await Future.delayed(Duration(milliseconds: 10));
-      }
+      final exists = await _waitForDeps(next);
       try {
-        final result = await _push(
-          next,
-        );
-        put(result);
+        if (exists) {
+          final result = await _push(
+            next,
+          );
+          put(result);
+        }
       } on SocketException {
         // Timeout - try again later
         _offline(next);
@@ -337,7 +337,27 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
         onError(error, stackTrace);
       }
       _pushQueue.removeFirst();
+      if (!exists) {
+        // Try again later
+        _pushQueue.add(next);
+      }
     }
+  }
+
+  /// Check if dependencies exists remotely
+  /// and [waitFor] given time. If dependencies
+  /// are still not pushed to remote, give up.
+  ///
+  /// The method returns [true] if dependencies
+  /// exists, [false] otherwise.
+  Future<bool> _waitForDeps(
+    StorageState next, {
+    Duration waitFor = const Duration(milliseconds: 10),
+  }) async {
+    if (shouldWait(next)) {
+      await Future.delayed(waitFor);
+    }
+    return !shouldWait(next);
   }
 
   bool _shouldSchedule() => connectivity.isOnline && !_inTransaction;

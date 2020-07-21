@@ -93,6 +93,7 @@ class PersonServiceMock extends Mock implements PersonService {
           body: personRepo[uuid],
         );
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );
@@ -100,6 +101,7 @@ class PersonServiceMock extends Mock implements PersonService {
     when(mock.create(any)).thenAnswer((_) async {
       final person = _.positionalArguments[0] as Person;
       personRepo[person.uuid] = person;
+      await _doThrottle();
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
@@ -110,6 +112,7 @@ class PersonServiceMock extends Mock implements PersonService {
           body: person,
         );
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: ${person.uuid}",
       );
@@ -120,10 +123,25 @@ class PersonServiceMock extends Mock implements PersonService {
         personRepo.remove(uuid);
         return ServiceResponse.noContent();
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );
     });
     return mock;
+  }
+
+  static Future _doThrottle() async {
+    if (_throttle != null) {
+      return Future.delayed(_throttle);
+    }
+    Future.value();
+  }
+
+  static Duration _throttle;
+  Duration throttle(Duration duration) {
+    final previous = _throttle;
+    _throttle = duration;
+    return previous;
   }
 }

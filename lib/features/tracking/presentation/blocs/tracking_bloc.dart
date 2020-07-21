@@ -202,7 +202,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final tracking = TrackingUtils.create(
           unit,
           sources: [
-            ...TrackingUtils.toSources<Personnel>(personnelBloc.getAll(unit.personnels), repo),
+            ...TrackingUtils.toSources<Personnel>(personnelBloc.from(unit.personnels), repo),
             ...TrackingUtils.toSources<Device>(created.devices, repo),
           ],
         );
@@ -502,7 +502,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     final tracking = _assertExists(tuuid);
     final sources = _toSources(
       devices,
-      personnelBloc.getAll(personnels ?? <String>[]),
+      personnelBloc.from(personnels ?? <String>[]),
     );
     final next = sources == null
         ? tracking

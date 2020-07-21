@@ -140,22 +140,25 @@ class DevicesPageState extends State<DevicesPage> {
     final isSelected = context.bloc<OperationBloc>().isSelected;
     final isCommander = context.bloc<UserBloc>().user.isCommander;
     final isThisApp = context.bloc<DeviceBloc>().isThisApp(device);
-    return widget.withActions && (isCommander || isThisApp)
-        ? Slidable(
-            actionPane: SlidableScrollActionPane(),
-            actionExtentRatio: 0.2,
-            child: _buildDeviceTile(device, status, units, personnel),
-            secondaryActions: <Widget>[
-              _buildEditAction(device),
-              if (isSelected && status != TrackingStatus.none)
-                _buildRemoveAction(device, units, personnel)
-              else if (isSelected) ...[
-                _buildAddToUnitAction(device),
-                _buildAddToPersonnelAction(device),
-              ]
-            ],
-          )
-        : _buildDeviceTile(device, status, units, personnel);
+    return GestureDetector(
+      child: widget.withActions && (isCommander || isThisApp)
+          ? Slidable(
+              actionPane: SlidableScrollActionPane(),
+              actionExtentRatio: 0.2,
+              child: _buildDeviceTile(device, status, units, personnel),
+              secondaryActions: <Widget>[
+                _buildEditAction(device),
+                if (isSelected && status != TrackingStatus.none)
+                  _buildRemoveAction(device, units, personnel)
+                else if (isSelected) ...[
+                  _buildAddToUnitAction(device),
+                  _buildAddToPersonnelAction(device),
+                ]
+              ],
+            )
+          : _buildDeviceTile(device, status, units, personnel),
+      onTap: () => Navigator.pushNamed(context, DeviceScreen.ROUTE, arguments: device),
+    );
   }
 
   Widget _buildAddToUnitAction(Device device) => Tooltip(
@@ -216,52 +219,49 @@ class DevicesPageState extends State<DevicesPage> {
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: GestureDetector(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            CircleAvatar(
-              backgroundColor: toPositionStatusColor(device.position),
-              child: Icon(toDeviceIconData(device.type)),
-              foregroundColor: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          CircleAvatar(
+            backgroundColor: toPositionStatusColor(device.position),
+            child: Icon(toDeviceIconData(device.type)),
+            foregroundColor: Colors.white,
+          ),
+          SizedBox(width: 16.0),
+          Chip(
+            label: Text(
+              [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
             ),
-            SizedBox(width: 16.0),
-            Chip(
-              label: Text(
-                [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
-              ),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                toDialerIconData(device.type),
-                size: 16.0,
-                color: Colors.black38,
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: Icon(
+              toDialerIconData(device.type),
+              size: 16.0,
+              color: Colors.black38,
+            ),
+          ),
+          Spacer(),
+          Chip(
+            label: Text(_toUsage(units, personnel, device)),
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: isSelected || isCommander
+                ? Icon(
+                    Icons.my_location,
+                    size: 16.0,
+                    color: toPositionStatusColor(device?.position),
+                  )
+                : null,
+          ),
+          if (widget.withActions && isCommander)
+            RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.drag_handle,
+                color: Colors.grey.withOpacity(0.2),
               ),
             ),
-            Spacer(),
-            Chip(
-              label: Text(_toUsage(units, personnel, device)),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: isSelected || isCommander
-                  ? Icon(
-                      Icons.my_location,
-                      size: 16.0,
-                      color: toPositionStatusColor(device?.position),
-                    )
-                  : null,
-            ),
-            if (widget.withActions && isCommander)
-              RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-          ],
-        ),
-        onTap: () => Navigator.pushNamed(context, DeviceScreen.ROUTE, arguments: device),
+        ],
       ),
     );
   }

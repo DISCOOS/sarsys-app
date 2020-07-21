@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:async/async.dart';
 
 import 'harness.dart';
 
@@ -67,12 +69,54 @@ void main() async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
       final personnel = PersonnelBuilder.create();
+      final group = StreamGroup.merge([
+        ...harness.affiliationBloc.repos.map((repo) => repo.onChanged),
+        harness.personnelBloc.repo.onChanged,
+      ]);
+
+      final events = [];
+      group.listen((transition) {
+        if (transition.isRemote) {
+          events.add(transition.to.value);
+        }
+      });
+
+      // Force inverse order successful push
+      // by making dependent services slower
+      harness.personService.throttle(Duration(milliseconds: 20));
+      harness.affiliationService.throttle(Duration(milliseconds: 10));
 
       // Act
       await harness.personnelBloc.create(personnel);
+      await expectLater(
+        harness.personnelBloc.repo.onChanged,
+        emitsThrough(
+          isA<StorageTransition>().having(
+            (transition) => transition.isRemote,
+            'is remote',
+            isTrue,
+          ),
+        ),
+      );
 
-      // Assert
+      // Assert service calls
+      verify(harness.personService.create(any)).called(2);
+      verify(harness.affiliationService.create(any)).called(2);
       verify(harness.personnelService.create(any, any)).called(2);
+
+      // Assert execution order
+      expect(
+          events,
+          orderedEquals([
+            // From onboarding
+            isA<Personnel>(),
+            // From creation
+            isA<Person>(),
+            isA<Affiliation>(),
+            isA<Personnel>(),
+          ]));
+
+      // Assert result
       expectStorageStatus(
         harness.personnelBloc.repo.states[personnel.uuid],
         StorageStatus.created,

@@ -127,6 +127,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
           body: affiliationRepo[uuid],
         );
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: $uuid",
       );
@@ -134,6 +135,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     when(mock.create(any)).thenAnswer((_) async {
       final affiliation = _.positionalArguments[0] as Affiliation;
       affiliationRepo[affiliation.uuid] = affiliation;
+      await _doThrottle();
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
@@ -144,6 +146,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
           body: affiliation,
         );
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: ${affiliation.uuid}",
       );
@@ -154,10 +157,25 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         affiliationRepo.remove(uuid);
         return ServiceResponse.noContent();
       }
+      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: $uuid",
       );
     });
     return mock;
+  }
+
+  static Future _doThrottle() async {
+    if (_throttle != null) {
+      return Future.delayed(_throttle);
+    }
+    Future.value();
+  }
+
+  static Duration _throttle;
+  Duration throttle(Duration duration) {
+    final previous = _throttle;
+    _throttle = duration;
+    return previous;
   }
 }

@@ -138,17 +138,20 @@ class UnitsPageState extends State<UnitsPage> {
     var unit = units[index];
     var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
-    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
-        ? Slidable(
-            actionPane: SlidableScrollActionPane(),
-            actionExtentRatio: 0.2,
-            child: _buildUnitTile(unit, status, tracking),
-            secondaryActions: <Widget>[
-              _buildEditAction(context, unit),
-              _buildTransitionAction(context, unit),
-            ],
-          )
-        : _buildUnitTile(unit, status, tracking);
+    return GestureDetector(
+      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+          ? Slidable(
+              actionPane: SlidableScrollActionPane(),
+              actionExtentRatio: 0.2,
+              child: _buildUnitTile(unit, status, tracking),
+              secondaryActions: <Widget>[
+                _buildEditAction(context, unit),
+                _buildTransitionAction(context, unit),
+              ],
+            )
+          : _buildUnitTile(unit, status, tracking),
+      onTap: () => _onTap(unit),
+    );
   }
 
   Widget _buildUnitTile(Unit unit, TrackingStatus status, Tracking tracking) {
@@ -157,48 +160,45 @@ class UnitsPageState extends State<UnitsPage> {
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: GestureDetector(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            UnitAvatar(unit: unit, tracking: tracking),
-            SizedBox(width: 16.0),
-            Chip(
-              label: Text("${unit.callsign}"),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.headset_mic,
-                size: 16.0,
-                color: Colors.black38,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          UnitAvatar(unit: unit, tracking: tracking),
+          SizedBox(width: 16.0),
+          Chip(
+            label: Text("${unit.callsign}"),
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: Icon(
+              Icons.headset_mic,
+              size: 16.0,
+              color: Colors.black38,
+            ),
+          ),
+          SizedBox(width: 16.0),
+          Expanded(
+            child: Text(unit.name, overflow: TextOverflow.ellipsis),
+          ),
+          SizedBox(width: 4.0),
+          Chip(
+            label: Text("${formatSince(tracking?.position?.timestamp, defaultValue: "Ingen")}"),
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: Icon(
+              Icons.my_location,
+              size: 16.0,
+              color: toPositionStatusColor(tracking?.position),
+            ),
+          ),
+          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.drag_handle,
+                color: Colors.grey.withOpacity(0.2),
               ),
             ),
-            SizedBox(width: 16.0),
-            Expanded(
-              child: Text(unit.name, overflow: TextOverflow.ellipsis),
-            ),
-            SizedBox(width: 4.0),
-            Chip(
-              label: Text("${formatSince(tracking?.position?.timestamp, defaultValue: "Ingen")}"),
-              labelPadding: EdgeInsets.only(right: 4.0),
-              backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.my_location,
-                size: 16.0,
-                color: toPositionStatusColor(tracking?.position),
-              ),
-            ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-              RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-          ],
-        ),
-        onTap: () => _onTap(unit),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
+import 'package:async/async.dart';
 
 import 'harness.dart';
 
@@ -56,9 +58,49 @@ void main() async {
         uuid: orguuid,
         divisions: [div.uuid],
       );
+      final group = StreamGroup.merge([
+        ...harness.affiliationBloc.repos.map((repo) => repo.onChanged),
+      ]);
+
+      final events = [];
+      group.listen((transition) {
+        if (transition.isRemote) {
+          events.add(transition.to.value);
+        }
+      });
+
+      // Force inverse order successful push
+      // by making dependent services slower
+      harness.personService.throttle(Duration(milliseconds: 10));
 
       // Act
       await _authenticate(harness);
+      await expectLater(
+        harness.affiliationBloc.repo.onChanged,
+        emitsThrough(
+          isA<StorageTransition>().having(
+            (transition) => transition.isRemote,
+            'is remote',
+            isTrue,
+          ),
+        ),
+      );
+
+      // Assert service calls
+      verify(harness.personService.create(any)).called(1);
+      verify(harness.affiliationService.create(any)).called(1);
+
+      // Assert execution order
+      expect(
+          events,
+          orderedEquals([
+            // From onboarding
+            isA<Organisation>(),
+            isA<Division>(),
+            isA<Department>(),
+            isA<Person>(),
+            isA<Affiliation>(),
+          ]));
 
       // Assert states
       expect(harness.affiliationBloc.orgs.values, isNotEmpty, reason: "SHOULD NOT BE empty");

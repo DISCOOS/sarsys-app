@@ -146,22 +146,25 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     var unit = _toUnit(personnel);
     var tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
-    return widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
-        ? Slidable(
-            actionPane: SlidableScrollActionPane(),
-            actionExtentRatio: 0.2,
-            child: _buildPersonnelTile(unit, personnel, status, tracking),
-            secondaryActions: <Widget>[
-              _buildEditAction(context, personnel),
-              _buildTransitionAction(context, personnel),
-              if (unit == null) ...[
-                _buildCreateUnitAction(personnel),
-                _buildAddToUnitAction(personnel),
-              ] else
-                _buildRemoveFromUnitAction(unit, personnel)
-            ],
-          )
-        : _buildPersonnelTile(unit, personnel, status, tracking);
+    return GestureDetector(
+      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+          ? Slidable(
+              actionPane: SlidableScrollActionPane(),
+              actionExtentRatio: 0.2,
+              child: _buildPersonnelTile(unit, personnel, status, tracking),
+              secondaryActions: <Widget>[
+                _buildEditAction(context, personnel),
+                _buildTransitionAction(context, personnel),
+                if (unit == null) ...[
+                  _buildCreateUnitAction(personnel),
+                  _buildAddToUnitAction(personnel),
+                ] else
+                  _buildRemoveFromUnitAction(unit, personnel)
+              ],
+            )
+          : _buildPersonnelTile(unit, personnel, status, tracking),
+      onTap: () => _onTap(personnel),
+    );
   }
 
   Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
@@ -170,53 +173,50 @@ class PersonnelsPageState extends State<PersonnelsPage> {
       color: Colors.white,
       constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: GestureDetector(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            if (widget.withAvatar) PersonnelAvatar(personnel: personnel, tracking: tracking),
-            SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          if (widget.withAvatar) PersonnelAvatar(personnel: personnel, tracking: tracking),
+          SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
+          Chip(
+            label: Text("${personnel.name}"),
+            labelPadding: EdgeInsets.only(right: 4.0),
+            backgroundColor: Colors.grey[100],
+            avatar: AffiliationAvatar(
+              size: 6.0,
+              maxRadius: 10.0,
+              affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
+            ),
+          ),
+          Spacer(),
+          if (widget.withStatus)
             Chip(
-              label: Text("${personnel.name}"),
+              label: Text(
+                _toUsage(unit, personnel, tracking),
+                textAlign: TextAlign.end,
+              ),
               labelPadding: EdgeInsets.only(right: 4.0),
               backgroundColor: Colors.grey[100],
-              avatar: AffiliationAvatar(
-                size: 6.0,
-                maxRadius: 10.0,
-                affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
+              avatar: Icon(
+                Icons.my_location,
+                size: 16.0,
+                color: toPositionStatusColor(tracking?.position),
               ),
             ),
-            Spacer(),
-            if (widget.withStatus)
-              Chip(
-                label: Text(
-                  _toUsage(unit, personnel, tracking),
-                  textAlign: TextAlign.end,
-                ),
-                labelPadding: EdgeInsets.only(right: 4.0),
-                backgroundColor: Colors.grey[100],
-                avatar: Icon(
-                  Icons.my_location,
-                  size: 16.0,
-                  color: toPositionStatusColor(tracking?.position),
-                ),
+          if (widget.withMultiSelect)
+            Padding(
+              padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+              child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
+            ),
+          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.drag_handle,
+                color: Colors.grey.withOpacity(0.2),
               ),
-            if (widget.withMultiSelect)
-              Padding(
-                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-                child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
-              ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-              RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-          ],
-        ),
-        onTap: () => _onTap(personnel),
+            ),
+        ],
       ),
     );
   }
@@ -231,7 +231,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         formatSince(tracking?.position?.timestamp, defaultValue: "Ingen"),
       ].where((value) => emptyAsNull(value) != null).join(' ');
 
-  _onTap(Personnel personnel) {
+  void _onTap(Personnel personnel) {
     if (widget.withMultiSelect) {
     } else if (widget.onSelection == null) {
       Navigator.pushNamed(context, PersonnelScreen.ROUTE, arguments: personnel);

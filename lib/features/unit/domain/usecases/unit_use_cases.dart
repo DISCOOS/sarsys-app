@@ -240,7 +240,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     await params.context.bloc<TrackingBloc>().attach(
           unit.tracking.uuid,
           devices: params.devices,
-          personnels: params.personnelBloc.getAll(params.personnels),
+          personnels: params.personnelBloc.from(params.personnels),
         );
 
     return dartz.Right(unit);
