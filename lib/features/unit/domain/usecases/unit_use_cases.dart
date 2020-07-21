@@ -1,5 +1,5 @@
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,11 +17,6 @@ import 'package:SarSys/usecase/core.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 
 class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
-  final Position position;
-  final List<Device> devices;
-  final List<String> personnels;
-  final List<String> templates;
-
   UnitParams({
     Unit unit,
     this.position,
@@ -30,6 +25,13 @@ class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
     this.templates,
     UnitBloc bloc,
   }) : super(unit, bloc: bloc);
+
+  final Position position;
+  final List<Device> devices;
+  final List<String> personnels;
+  final List<String> templates;
+
+  PersonnelBloc get personnelBloc => context.bloc<PersonnelBloc>();
 }
 
 /// Create unit with tracking of given devices
@@ -238,7 +240,7 @@ class AddToUnit extends UseCase<bool, Unit, UnitParams> {
     await params.context.bloc<TrackingBloc>().attach(
           unit.tracking.uuid,
           devices: params.devices,
-          personnels: params.bloc.personnelBloc.getAll(params.personnels),
+          personnels: params.personnelBloc.getAll(params.personnels),
         );
 
     return dartz.Right(unit);
@@ -299,7 +301,7 @@ class RemoveFromUnit extends UseCase<bool, Tracking, UnitParams> {
     // Notify intent
     final names = List.from([
       ...devices.map((device) => device.name).toList(),
-      ...personnels.map((puuid) => params.bloc.personnelBloc.repo[puuid]?.name).toList(),
+      ...personnels.map((puuid) => params.personnelBloc.repo[puuid]?.name).toList(),
     ]).join((', '));
     var proceed = await prompt(
       params.overlay.context,

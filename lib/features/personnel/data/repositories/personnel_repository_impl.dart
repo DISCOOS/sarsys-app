@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
+import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/services/connectivity_service.dart';
 import 'package:SarSys/utils/data_utils.dart';
@@ -16,15 +18,24 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     implements PersonnelRepository {
   PersonnelRepositoryImpl(
     PersonnelService service, {
+    @required this.units,
+    @required this.affiliations,
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
+          dependencies: [units, affiliations],
         );
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;
   String _ouuid;
+
+  /// Get [Unit] repository
+  final UnitRepository units;
+
+  /// Get [Affiliation] repository
+  final AffiliationRepository affiliations;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with

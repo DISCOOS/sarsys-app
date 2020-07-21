@@ -25,7 +25,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   ///
   /// Default constructor
   ///
-  OperationBloc(this.repo, this.incidents, BlocEventBus bus, this.userBloc) : super(bus: bus) {
+  OperationBloc(this.repo, BlocEventBus bus, this.userBloc) : super(bus: bus) {
     assert(this.userBloc != null, "userBloc can not be null");
     assert(this.repo != null, "operations repository can not be null");
     assert(this.incidents != null, "incidents repository can not be null");
@@ -49,7 +49,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   final UserBloc userBloc;
 
   /// Get [IncidentRepository]
-  final IncidentRepository incidents;
+  IncidentRepository get incidents => repo.incidents;
 
   /// Get [OperationRepository]
   final OperationRepository repo;

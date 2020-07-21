@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
+
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/service.dart';
+import 'package:SarSys/models/AggregateRef.dart';
 import 'package:SarSys/models/core.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:meta/meta.dart';
@@ -25,10 +28,15 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   ConnectionAwareRepository({
     @required this.service,
     @required this.connectivity,
+    this.dependencies = const [],
   });
   final U service;
   final ConnectivityService connectivity;
+  final Iterable<ConnectionAwareRepository> dependencies;
   final StreamController<StorageTransition<T>> _controller = StreamController.broadcast();
+
+  /// Get aggregate type
+  Type get aggregateType => typeOf<T>();
 
   /// Get stream of state changes
   Stream<StorageTransition<T>> get onChanged => _controller.stream;
@@ -139,6 +147,38 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
     } else if (_disposed) {
       throw RepositoryIsDisposedException();
     }
+  }
+
+  /// Get references to dependent aggregates
+  ///
+  /// Override this to prevent '404 Not Found'
+  /// returned by service because dependency
+  /// was not found in backend.
+  @visibleForOverriding
+  Iterable<AggregateRef> toRefs(T value) => value?.props?.whereType<AggregateRef>() ?? [];
+
+  /// Is called before create, update and delete to
+  /// prevent '404 Not Found' returned by service
+  /// because dependency was not found in backend.
+  @protected
+  bool shouldWait(StorageState<T> state) {
+    if (state.isLocal) {
+      final refs = toRefs(state.value);
+      return refs.any(_isRefLocal);
+    }
+    return false;
+  }
+
+  bool _isRefLocal(AggregateRef ref) {
+    final state = dependencies
+        .where((dep) => dep.containsKey(ref.uuid))
+        .map((dep) => dep.getState(ref.uuid))
+        .where((state) => state.value.runtimeType == ref.type)
+        .firstOrNull;
+    if (state != null) {
+      return state.isCreated && state.isLocal;
+    }
+    return false;
   }
 
   /// Get key [S] from state [T]
@@ -281,6 +321,9 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   Future _process() async {
     while (_pushQueue.isNotEmpty) {
       final next = _pushQueue.first;
+      if (shouldWait(next)) {
+        await Future.delayed(Duration(milliseconds: 10));
+      }
       try {
         final result = await _push(
           next,

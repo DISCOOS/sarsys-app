@@ -44,14 +44,10 @@ OperationModel _$OperationModelFromJson(Map json) {
         _$enumDecodeNullable(_$OperationResolutionEnumMap, json['resolution']),
     incident: json['incident'] == null
         ? null
-        : AggregateRef.fromJson((json['incident'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : AggregateRef.fromJson(json['incident']),
     commander: json['commander'] == null
         ? null
-        : AggregateRef.fromJson((json['commander'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : AggregateRef.fromJson(json['commander']),
     reference: json['reference'] as String,
   );
 }

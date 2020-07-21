@@ -179,24 +179,24 @@ class AppController {
 
     // ignore: close_sinks
     final affiliationBloc = AffiliationBloc(
-      orgs: OrganisationRepositoryImpl(
-        orgService,
-        connectivity: connectivityService,
-      ),
-      divs: DivisionRepositoryImpl(
-        divService,
-        connectivity: connectivityService,
-      ),
-      deps: DepartmentRepositoryImpl(
-        depService,
-        connectivity: connectivityService,
-      ),
-      persons: PersonRepositoryImpl(
-        personService,
-        connectivity: connectivityService,
-      ),
       repo: AffiliationRepositoryImpl(
         affiliationService,
+        orgs: OrganisationRepositoryImpl(
+          orgService,
+          connectivity: connectivityService,
+        ),
+        divs: DivisionRepositoryImpl(
+          divService,
+          connectivity: connectivityService,
+        ),
+        deps: DepartmentRepositoryImpl(
+          depService,
+          connectivity: connectivityService,
+        ),
+        persons: PersonRepositoryImpl(
+          personService,
+          connectivity: connectivityService,
+        ),
         connectivity: connectivityService,
       ),
       users: userBloc,
@@ -213,16 +213,34 @@ class AppController {
         ? OperationService()
         : OperationServiceMock.build(userRepo, count: 2, role: demo.role, passcode: "T123");
     final OperationBloc operationBloc = OperationBloc(
-        OperationRepositoryImpl(
-          operationService,
-          connectivity: connectivityService,
-        ),
-        IncidentRepositoryImpl(
+      OperationRepositoryImpl(
+        operationService,
+        connectivity: connectivityService,
+        incidents: IncidentRepositoryImpl(
           incidentService,
           connectivity: connectivityService,
         ),
-        controller.bus,
-        userBloc);
+      ),
+      controller.bus,
+      userBloc,
+    );
+
+    // Configure Unit service
+    final UnitService unitService = !demo.active
+        ? UnitService()
+        : UnitServiceMock.build(
+            demo.unitCount,
+            ouuids: operationBloc.repo.keys,
+          );
+    // ignore: close_sinks
+    final UnitBloc unitBloc = UnitBloc(
+      UnitRepositoryImpl(
+        unitService,
+        connectivity: connectivityService,
+      ),
+      controller.bus,
+      operationBloc,
+    );
 
     // Configure Personnel service
     final PersonnelService personnelService = !demo.active
@@ -235,29 +253,14 @@ class AppController {
     final PersonnelBloc personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
         personnelService,
+        units: unitBloc.repo,
+        affiliations: affiliationBloc.repo,
         connectivity: connectivityService,
       ),
       controller.bus,
       affiliationBloc,
       operationBloc,
     );
-
-    // Configure Unit service
-    final UnitService unitService = !demo.active
-        ? UnitService()
-        : UnitServiceMock.build(
-            demo.unitCount,
-            ouuids: operationBloc.repo.keys,
-          );
-    // ignore: close_sinks
-    final UnitBloc unitBloc = UnitBloc(
-        UnitRepositoryImpl(
-          unitService,
-          connectivity: connectivityService,
-        ),
-        controller.bus,
-        operationBloc,
-        personnelBloc);
 
     // Configure Device service
     final DeviceService deviceService = !demo.active

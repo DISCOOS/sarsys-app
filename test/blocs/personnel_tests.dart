@@ -17,6 +17,7 @@ import 'harness.dart';
 void main() async {
   final harness = BlocTestHarness()
     ..withOperationBloc()
+    ..withUnitBloc()
     ..withPersonnelBloc()
     ..install();
 

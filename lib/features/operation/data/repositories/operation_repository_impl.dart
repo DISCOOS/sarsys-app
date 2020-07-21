@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
 import 'package:flutter/foundation.dart';
 
@@ -15,11 +16,17 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
     implements OperationRepository {
   OperationRepositoryImpl(
     OperationService service, {
+    @required this.incidents,
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
+          dependencies: [incidents],
           connectivity: connectivity,
         );
+
+  /// Get [Incident] repository
+  @override
+  final IncidentRepository incidents;
 
   /// Get [Operation.uuid] from [state]
   @override

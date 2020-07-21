@@ -4,9 +4,14 @@ import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/services/service.dart';
 
+import 'incident_repository.dart';
+
 abstract class OperationRepository implements ConnectionAwareRepository<String, Operation, OperationService> {
   /// Operation service
   OperationService get service;
+
+  /// Get [Incident] repository
+  IncidentRepository get incidents;
 
   /// Get [Operation.uuid] from [state]
   @override

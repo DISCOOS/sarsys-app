@@ -13,9 +13,7 @@ DepartmentModel _$DepartmentModelFromJson(Map json) {
     suffix: json['suffix'] as String,
     division: json['division'] == null
         ? null
-        : AggregateRef.fromJson((json['division'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : AggregateRef.fromJson(json['division']),
     active: json['active'] as bool,
   );
 }

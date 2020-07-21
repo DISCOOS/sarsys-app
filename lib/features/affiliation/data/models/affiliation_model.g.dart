@@ -9,30 +9,14 @@ part of 'affiliation_model.dart';
 AffiliationModel _$AffiliationModelFromJson(Map json) {
   return AffiliationModel(
     uuid: json['uuid'] as String,
-    person: json['person'] == null
-        ? null
-        : AggregateRef.fromJson((json['person'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    org: json['org'] == null
-        ? null
-        : AggregateRef.fromJson((json['org'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    div: json['div'] == null
-        ? null
-        : AggregateRef.fromJson((json['div'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    dep: json['dep'] == null
-        ? null
-        : AggregateRef.fromJson((json['dep'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+    div: toDivRef(json['div']),
+    dep: toDepRef(json['dep']),
+    org: toOrgRef(json['org']),
+    person: toPersonRef(json['person']),
+    active: json['active'] as bool,
     type: _$enumDecodeNullable(_$AffiliationTypeEnumMap, json['type']),
     status:
         _$enumDecodeNullable(_$AffiliationStandbyStatusEnumMap, json['status']),
-    active: json['active'] as bool,
   );
 }
 
@@ -46,13 +30,13 @@ Map<String, dynamic> _$AffiliationModelToJson(AffiliationModel instance) {
   }
 
   writeNotNull('uuid', instance.uuid);
-  writeNotNull('person', instance.person?.toJson());
-  writeNotNull('org', instance.org?.toJson());
-  writeNotNull('div', instance.div?.toJson());
-  writeNotNull('dep', instance.dep?.toJson());
   writeNotNull('type', _$AffiliationTypeEnumMap[instance.type]);
   writeNotNull('status', _$AffiliationStandbyStatusEnumMap[instance.status]);
   writeNotNull('active', instance.active);
+  writeNotNull('org', instance.org?.toJson());
+  writeNotNull('div', instance.div?.toJson());
+  writeNotNull('dep', instance.dep?.toJson());
+  writeNotNull('person', instance.person?.toJson());
   return val;
 }
 

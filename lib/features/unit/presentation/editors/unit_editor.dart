@@ -61,7 +61,13 @@ class _UnitEditorState extends State<UnitEditor> {
 
   String _editedName;
 
-  bool get hasAvailablePersonnel => context.bloc<UnitBloc>().findAvailablePersonnel().isNotEmpty;
+  bool get hasAvailablePersonnel => context
+      .bloc<UnitBloc>()
+      .findAvailablePersonnel(
+        context.bloc<PersonnelBloc>().repo,
+      )
+      .isNotEmpty;
+
   bool get hasAvailableDevices => context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty;
 
   @override
@@ -543,7 +549,7 @@ class _UnitEditorState extends State<UnitEditor> {
       final pattern = query.toLowerCase();
       final found = context
           .bloc<UnitBloc>()
-          .findAvailablePersonnel()
+          .findAvailablePersonnel(context.bloc<PersonnelBloc>().repo)
           .where((personnel) => _canAddPersonnel(
                 actual,
                 personnel,

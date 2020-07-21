@@ -13,9 +13,7 @@ DivisionModel _$DivisionModelFromJson(Map json) {
     suffix: json['suffix'] as String,
     organisation: json['organisation'] == null
         ? null
-        : AggregateRef.fromJson((json['organisation'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : AggregateRef.fromJson(json['organisation']),
     departments:
         (json['departments'] as List)?.map((e) => e as String)?.toList(),
     active: json['active'] as bool,

@@ -1,4 +1,8 @@
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
@@ -81,21 +85,14 @@ class FleetMapTalkGroupConverter implements JsonConverter<List<TalkGroup>, List<
   }
 }
 
-AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) {
-  return json != null ? AggregateRef<AffiliationModel>.fromJson(Map<String, dynamic>.from(json)) : null;
-}
-
-AggregateRef<UnitModel> toUnitRef(dynamic json) {
-  return json != null ? AggregateRef<UnitModel>.fromJson(Map<String, dynamic>.from(json)) : null;
-}
-
-AggregateRef<IncidentModel> toIncidentRef(dynamic json) {
-  return json != null ? AggregateRef<IncidentModel>.fromJson(Map<String, dynamic>.from(json)) : null;
-}
-
-AggregateRef<Tracking> toTrackingRef(dynamic json) {
-  return json != null ? AggregateRef<Tracking>.fromJson(Map<String, dynamic>.from(json)) : null;
-}
+AggregateRef<UnitModel> toUnitRef(dynamic json) => AggregateRef<UnitModel>.fromJson(json);
+AggregateRef<Tracking> toTrackingRef(dynamic json) => AggregateRef<Tracking>.fromJson(json);
+AggregateRef<PersonModel> toPersonRef(dynamic json) => AggregateRef<PersonModel>.fromJson(json);
+AggregateRef<DivisionModel> toDivRef(dynamic json) => AggregateRef<DivisionModel>.fromJson(json);
+AggregateRef<DepartmentModel> toDepRef(dynamic json) => AggregateRef<DepartmentModel>.fromJson(json);
+AggregateRef<IncidentModel> toIncidentRef(dynamic json) => AggregateRef<IncidentModel>.fromJson(json);
+AggregateRef<OrganisationModel> toOrgRef(dynamic json) => AggregateRef<OrganisationModel>.fromJson(json);
+AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) => AggregateRef<AffiliationModel>.fromJson(json);
 
 double latFromJson(Object json) => _toDouble(json, 0);
 double lonFromJson(Object json) => _toDouble(json, 1);

@@ -7,6 +7,7 @@ import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:SarSys/models/converters.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'package:SarSys/models/AggregateRef.dart';
@@ -17,13 +18,13 @@ part 'affiliation_model.g.dart';
 class AffiliationModel extends Affiliation {
   AffiliationModel({
     String uuid,
-    AggregateRef<Person> person,
-    AggregateRef<Organisation> org,
-    AggregateRef<Division> div,
-    AggregateRef<Department> dep,
+    this.div,
+    this.dep,
+    this.org,
+    this.person,
+    bool active,
     AffiliationType type,
     AffiliationStandbyStatus status,
-    bool active,
   }) : super(
           uuid: uuid,
           person: person,
@@ -34,6 +35,22 @@ class AffiliationModel extends Affiliation {
           status: status,
           active: active,
         );
+
+  @override
+  @JsonKey(fromJson: toOrgRef)
+  final AggregateRef<OrganisationModel> org;
+
+  @override
+  @JsonKey(fromJson: toDivRef)
+  final AggregateRef<DivisionModel> div;
+
+  @override
+  @JsonKey(fromJson: toDepRef)
+  final AggregateRef<DepartmentModel> dep;
+
+  @override
+  @JsonKey(fromJson: toPersonRef)
+  final AggregateRef<PersonModel> person;
 
   /// Factory constructor for creating a new `Affiliation` instance
   factory AffiliationModel.fromJson(Map<String, dynamic> json) => _$AffiliationModelFromJson(json);

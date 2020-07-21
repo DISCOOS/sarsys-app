@@ -4,6 +4,10 @@ import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/division_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/organisation_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -15,11 +19,32 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     implements AffiliationRepository {
   AffiliationRepositoryImpl(
     AffiliationService service, {
+    @required this.divs,
+    @required this.deps,
+    @required this.orgs,
+    @required this.persons,
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
+          dependencies: [persons, orgs, divs, deps],
         );
+
+  /// [Organisation] repository
+  @override
+  final OrganisationRepository orgs;
+
+  /// [Division] repository
+  @override
+  final DivisionRepository divs;
+
+  /// [Department] repository
+  @override
+  final DepartmentRepository deps;
+
+  /// [Person] repository
+  @override
+  final PersonRepository persons;
 
   /// Get [Operation.uuid] from [state]
   @override

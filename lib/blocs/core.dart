@@ -23,8 +23,8 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   final BlocEventBus bus;
 
   /// Subscriptions released on [close]
-  final List<StreamSubscription> _subscriptions = [];
   bool get hasSubscriptions => _subscriptions.isNotEmpty;
+  final List<StreamSubscription> _subscriptions = [];
   void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
         subscription,
       );

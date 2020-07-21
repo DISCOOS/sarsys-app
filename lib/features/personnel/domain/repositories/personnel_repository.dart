@@ -1,11 +1,19 @@
+import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
+import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/services/service.dart';
 
 abstract class PersonnelRepository implements ConnectionAwareRepository<String, Personnel, PersonnelService> {
   /// Get [Operation.uuid]
   String get ouuid;
+
+  /// Get [Unit] repository
+  UnitRepository get units;
+
+  /// Get [Affiliation] repository
+  AffiliationRepository get affiliations;
 
   /// Check if repository is operational.
   /// Is true if and only if loaded with

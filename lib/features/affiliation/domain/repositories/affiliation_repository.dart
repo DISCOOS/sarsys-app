@@ -5,7 +5,24 @@ import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/services/service.dart';
 import 'package:SarSys/core/repository.dart';
 
+import 'person_repository.dart';
+import 'department_repository.dart';
+import 'division_repository.dart';
+import 'organisation_repository.dart';
+
 abstract class AffiliationRepository implements ConnectionAwareRepository<String, Affiliation, AffiliationService> {
+  /// [Organisation] repository
+  OrganisationRepository get orgs;
+
+  /// [Division] repository
+  DivisionRepository get divs;
+
+  /// [Department] repository
+  DepartmentRepository get deps;
+
+  /// [Person] repository
+  PersonRepository get persons;
+
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Affiliation> state) {

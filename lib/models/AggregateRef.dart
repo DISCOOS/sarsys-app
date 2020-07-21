@@ -8,16 +8,18 @@ part 'AggregateRef.g.dart';
 
 @JsonSerializable()
 class AggregateRef<T extends Aggregate> extends Equatable {
-  final String type;
-  final String uuid;
-
   AggregateRef({
     @required this.uuid,
-  })  : type = typeOf<T>().toString(),
-        super([uuid]);
+  }) : super([uuid, typeOf<T>()]);
+
+  final String uuid;
+
+  @JsonKey(ignore: true)
+  Type get type => typeOf<T>();
 
   /// Factory constructor for creating a new `AggregateRef` instance
-  factory AggregateRef.fromJson(Map<String, dynamic> json) => _$AggregateRefFromJson<T>(json);
+  factory AggregateRef.fromJson(dynamic json) =>
+      json is Map ? _$AggregateRefFromJson<T>(Map<String, dynamic>.from(json)) : null;
 
   /// Get [AggregateRef] from given type
   static AggregateRef<T> fromType<T extends Aggregate>(String uuid) => AggregateRef<T>(uuid: uuid);

@@ -61,11 +61,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Default constructor
   ///
   AffiliationBloc({
-    @required this.orgs,
-    @required this.divs,
-    @required this.deps,
     @required this.users,
-    @required this.persons,
     @required this.repo,
     @required BlocEventBus bus,
   }) : super(bus: bus) {
@@ -102,16 +98,16 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ];
 
   /// Get [OrganisationRepository]
-  final OrganisationRepository orgs;
+  OrganisationRepository get orgs => repo.orgs;
 
   /// Get [DivisionRepository]
-  final DivisionRepository divs;
+  DivisionRepository get divs => repo.divs;
 
   /// Get [DepartmentRepository]
-  final DepartmentRepository deps;
+  DepartmentRepository get deps => repo.deps;
 
   /// Get [PersonRepository]
-  final PersonRepository persons;
+  PersonRepository get persons => repo.persons;
 
   /// Get [AffiliationRepository]
   final AffiliationRepository repo;
@@ -598,7 +594,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ));
     }
     final affiliation = await repo.create(command.affiliation.copyWith(
-      person: AggregateRef.fromType<Person>(person.uuid),
+      person: AggregateRef.fromType<PersonModel>(person.uuid),
     ));
 
     final loaded = toOK(
@@ -1005,20 +1001,20 @@ class AffiliationQuery {
     switch (child.runtimeType) {
       case OrganisationModel:
         return AffiliationModel(
-          org: AggregateRef.fromType<Organisation>(uuid),
+          org: AggregateRef.fromType<OrganisationModel>(uuid),
         );
       case DivisionModel:
         return AffiliationModel(
-          org: AggregateRef.fromType<Organisation>((child as Division).organisation.uuid),
-          div: AggregateRef.fromType<Division>(uuid),
+          org: AggregateRef.fromType<OrganisationModel>((child as Division).organisation.uuid),
+          div: AggregateRef.fromType<DivisionModel>(uuid),
         );
       case DepartmentModel:
         return AffiliationModel(
-          org: AggregateRef.fromType<Organisation>(
+          org: AggregateRef.fromType<OrganisationModel>(
             (_aggregates[(child as Department).division.uuid] as Division).organisation.uuid,
           ),
-          div: AggregateRef.fromType<Division>((child as Department).division.uuid),
-          dep: AggregateRef.fromType<Department>(uuid),
+          div: AggregateRef.fromType<DivisionModel>((child as Department).division.uuid),
+          dep: AggregateRef.fromType<DepartmentModel>(uuid),
         );
       case PersonModel:
         return _aggregates.values.whereType<Affiliation>().firstWhere(

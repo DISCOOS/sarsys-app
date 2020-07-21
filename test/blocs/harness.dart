@@ -224,11 +224,11 @@ class BlocTestHarness implements BlocDelegate {
       if (_withDeviceBloc) {
         _buildDeviceBloc();
       }
-      if (_withPersonnelBloc) {
-        _buildPersonnelBloc();
-      }
       if (_withUnitBloc) {
         _buildUnitBloc();
+      }
+      if (_withPersonnelBloc) {
+        _buildPersonnelBloc();
       }
       if (_withTrackingBloc) {
         _buildTrackingBloc();
@@ -486,25 +486,25 @@ class BlocTestHarness implements BlocDelegate {
     _personService = PersonServiceMock.build();
     _affiliationService = await AffiliationServiceMock.build();
     _affiliationBloc = AffiliationBloc(
-      orgs: OrganisationRepositoryImpl(
-        _organisationService,
-        connectivity: _connectivity,
-      ),
-      divs: DivisionRepositoryImpl(
-        _divisionService,
-        connectivity: _connectivity,
-      ),
-      deps: DepartmentRepositoryImpl(
-        _departmentService,
-        connectivity: _connectivity,
-      ),
-      persons: PersonRepositoryImpl(
-        personService,
-        connectivity: _connectivity,
-      ),
       repo: AffiliationRepositoryImpl(
         affiliationService,
         connectivity: _connectivity,
+        orgs: OrganisationRepositoryImpl(
+          _organisationService,
+          connectivity: _connectivity,
+        ),
+        divs: DivisionRepositoryImpl(
+          _divisionService,
+          connectivity: _connectivity,
+        ),
+        deps: DepartmentRepositoryImpl(
+          _departmentService,
+          connectivity: _connectivity,
+        ),
+        persons: PersonRepositoryImpl(
+          personService,
+          connectivity: _connectivity,
+        ),
       ),
       users: _userBloc,
       bus: bus,
@@ -541,10 +541,10 @@ class BlocTestHarness implements BlocDelegate {
       OperationRepositoryImpl(
         _operationService,
         connectivity: _connectivity,
-      ),
-      IncidentRepositoryImpl(
-        _incidentService,
-        connectivity: _connectivity,
+        incidents: IncidentRepositoryImpl(
+          _incidentService,
+          connectivity: _connectivity,
+        ),
       ),
       bus,
       _userBloc,
@@ -587,12 +587,15 @@ class BlocTestHarness implements BlocDelegate {
   void _buildPersonnelBloc({
     int count = 0,
   }) {
+    assert(_withUnitBloc, 'PersonnelBloc requires UnitBloc');
     assert(_withOperationBloc, 'PersonnelBloc requires OperationBloc');
     assert(_withAffiliationBloc, 'PersonnelBloc requires AffiliationBloc');
     _personnelService = PersonnelServiceMock.build(count);
     _personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
         _personnelService,
+        affiliations: _affiliationBloc.repo,
+        units: _unitBloc.repo,
         connectivity: _connectivity,
       ),
       bus,
@@ -614,7 +617,6 @@ class BlocTestHarness implements BlocDelegate {
       ),
       bus,
       _operationsBloc,
-      _personnelBloc,
     );
 
     if (_authenticated) {

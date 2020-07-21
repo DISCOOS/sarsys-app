@@ -9,6 +9,7 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/models/Position.dart';
@@ -40,12 +41,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     this.repo,
     BlocEventBus bus,
     this.operationBloc,
-    this.personnelBloc,
   ) : super(bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
-    assert(personnelBloc != null, "personnelBloc can not be null");
 
     registerStreamSubscription(operationBloc.listen(
       // 1) Load and unloads units as needed
@@ -53,11 +52,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       _processIncidentState,
     ));
 
-    registerStreamSubscription(personnelBloc.listen(
-      // Keeps local Personnel instances in sync
-      // TODO: Replace with direct lookup instead
-      _processPersonnelState,
-    ));
+    registerStreamSubscription(bus.events.where((e) => e is PersonnelDeleted).map((e) => e as PersonnelDeleted).listen(
+          // 1) Remove reference to personnel
+          _processPersonnelDeleted,
+        ));
   }
 
   /// All repositories
@@ -90,7 +88,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     }
   }
 
-  void _processPersonnelState(PersonnelState state) {
+  void _processPersonnelDeleted(PersonnelState state) {
     try {
       if (state.isDeleted()) {
         final event = state as PersonnelDeleted;
@@ -118,8 +116,8 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get [OperationBloc]
   final OperationBloc operationBloc;
 
-  /// Get [PersonnelBloc]
-  final PersonnelBloc personnelBloc;
+//  /// Get [PersonnelBloc]
+//  final PersonnelBloc personnelBloc;
 
   /// Get [UnitRepository]
   final UnitRepository repo;
@@ -163,25 +161,15 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       repo.findPersonnel(puuid, exclude: exclude);
 
   /// Find [Personnel] not allocated to an [Unit]
-  Iterable<Personnel> findAvailablePersonnel() {
+  Iterable<Personnel> findAvailablePersonnel(PersonnelRepository personnels) {
     final assigned = repo.values.fold<List<String>>(
       [],
       (personnels, unit) => personnels..addAll(unit.personnels),
     );
-    return personnelBloc.repo.values.where(
+    return personnels.values.where(
       (personnel) => !assigned.contains(personnel.uuid),
     );
   }
-
-  /// Get [personnels] in given unit as list of [Personnel]
-  Iterable<Personnel> toPersonnels(
-    Unit unit, {
-    List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
-  }) =>
-      unit.personnels
-          .where((puuid) => personnelBloc.repo.containsKey(puuid))
-          .where((puuid) => !exclude.contains(personnelBloc.repo[puuid].status))
-          .map((puuid) => personnelBloc.repo[puuid]);
 
   /// Get next available number
   int nextAvailableNumber(UnitType type, {bool reuse = true}) => repo.nextAvailableNumber(type, reuse: reuse);
