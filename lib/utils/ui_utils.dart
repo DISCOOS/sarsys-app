@@ -11,7 +11,7 @@ import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/map/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Point.dart' as sarsys;
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
@@ -353,7 +353,7 @@ Color toPositionStatusColor(Position position) {
   return since == null || since > 5 ? Colors.red : (since > 1 ? Colors.orange : Colors.green);
 }
 
-void jumpToPoint(BuildContext context, {Point center, Operation operation}) {
+void jumpToPoint(BuildContext context, {sarsys.Point center, Operation operation}) {
   jumpToLatLng(context, center: toLatLng(center), operation: operation);
 }
 

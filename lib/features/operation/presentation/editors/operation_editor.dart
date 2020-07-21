@@ -21,7 +21,7 @@ import 'package:SarSys/map/map_search.dart';
 import 'package:SarSys/map/map_widget.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/models/Location.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/models/Point.dart' as sarsys;
 import 'package:SarSys/models/Position.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/models/converters.dart';
@@ -36,7 +36,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class OperationEditor extends StatefulWidget {
-  final Point ipp;
+  final sarsys.Point ipp;
   final Incident incident;
   final Operation operation;
 
@@ -581,7 +581,7 @@ class _OperationEditorState extends State<OperationEditor> {
           suffixIcon: GestureDetector(
             child: Icon(Icons.search),
             onTap: () async {
-              if (_ipp.point is Point) {
+              if (_ipp.point is sarsys.Point) {
                 _ipp = await _updateDescriptionFromPoint(
                   _ipp,
                   'ipp_description',
@@ -610,7 +610,7 @@ class _OperationEditorState extends State<OperationEditor> {
             suffixIcon: GestureDetector(
               child: Icon(Icons.search),
               onTap: () async {
-                if (_meetup.point is Point) {
+                if (_meetup.point is sarsys.Point) {
                   _meetup = await _updateDescriptionFromPoint(
                     _meetup,
                     'meetup_description',
@@ -874,7 +874,7 @@ class _OperationEditorState extends State<OperationEditor> {
     );
   }
 
-  Location _toLocation(Location location, Point point) {
+  Location _toLocation(Location location, sarsys.Point point) {
     return location?.cloneWith(
           point: point,
         ) ??
@@ -885,7 +885,7 @@ class _OperationEditorState extends State<OperationEditor> {
     Location location,
     String attribute,
     TextEditingController controller, {
-    Point point,
+    sarsys.Point point,
     bool search = false,
   }) async {
     try {
@@ -926,7 +926,7 @@ class _OperationEditorState extends State<OperationEditor> {
     setText(controller, description);
   }
 
-  Future<String> _lookup(Point point, {bool search = false, String query}) async {
+  Future<String> _lookup(sarsys.Point point, {bool search = false, String query}) async {
     if (point?.isNotEmpty == true) {
       if (search) {
         final result = await showSearch(
@@ -973,8 +973,8 @@ class _OperationEditorState extends State<OperationEditor> {
         : null;
   }
 
-  Position toPosition(Point point, {Point defaultValue}) {
-    return point is Point
+  Position toPosition(sarsys.Point point, {sarsys.Point defaultValue}) {
+    return point is sarsys.Point
         ? Position.fromPoint(
             point ?? defaultValue,
             source: PositionSource.manual,

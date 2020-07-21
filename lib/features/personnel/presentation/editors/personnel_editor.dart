@@ -475,9 +475,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         initialValue: _getActualDevices(),
         onChanged: (devices) => _devices = List.from(devices),
         decoration: InputDecoration(
-          labelText: "Sporinger",
+          labelText: "Apparater",
           hintText: "Søk etter apparater",
-          helperText: "Posisjon beregnes som gjennomsnitt av sporinger",
+          helperText: "Spor blir kun lagret i aksjonen",
           filled: true,
           contentPadding: EdgeInsets.fromLTRB(12.0, 8.0, 8.0, 16.0),
         ),
@@ -493,10 +493,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
         valueTransformer: (values) => values.map((device) => device).toList(),
         // BUG: These are required, no default values are given.
         obscureText: false,
-        inputType: TextInputType.text,
-        keyboardAppearance: Brightness.dark,
-        inputAction: TextInputAction.done,
         autocorrect: true,
+        inputType: TextInputType.text,
+        inputAction: TextInputAction.done,
+        keyboardAppearance: Brightness.dark,
         textCapitalization: TextCapitalization.sentences,
         textStyle: TextStyle(height: 1.8, fontSize: 16.0),
       ),
@@ -507,7 +507,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     if (query.length != 0) {
       var actual = _getActualDevices().map((device) => device.uuid);
       var local = _getLocalDevices().map((device) => device.uuid);
-      var lowercaseQuery = query.toLowerCase();
+      var pattern = query.toLowerCase();
       return context
           .bloc<DeviceBloc>()
           .devices
@@ -519,14 +519,18 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 device,
                 local,
               ))
-          .where((device) =>
-              device.number.toLowerCase().contains(lowercaseQuery) ||
-              device.type.toString().toLowerCase().contains(lowercaseQuery))
+          .where((device) => _deviceMatch(device, pattern))
           .take(5)
           .toList(growable: false);
     }
     return const <Device>[];
   }
+
+  bool _deviceMatch(Device device, String pattern) => [
+        device.number,
+        device.alias,
+        device.type,
+      ].join().toLowerCase().contains(pattern);
 
   bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
     return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
@@ -546,11 +550,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   String _toTrackingHelperText(Position position) {
-    return position != null
-        ? (PositionSource.manual == position.source
-            ? 'Manuell lagt inn.'
-            : 'Gjennomsnitt av siste posisjoner fra apparater.')
-        : '';
+    return PositionSource.manual == position?.source
+        ? 'Manuell lagt inn'
+        : 'Gjennomsnitt av siste posisjon til apparater';
   }
 
   Position _toPosition() {

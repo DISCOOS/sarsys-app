@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,17 +70,16 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
     );
     if (result == null) return dartz.Left(false);
 
-    // This will create unit.
+    // This will create a new unit.
     //
     // Tracking will be created
-    // from UnitCreated by TrackingBloc
+    // from UnitCreated in TrackingBloc
     //
     final unit = await params.bloc.create(
       result.data,
       devices: result.devices,
       position: result.position,
     );
-
     return dartz.Right(unit);
   }
 }

@@ -87,7 +87,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _set() {
     _devices ??= _getActualDevices();
-    _personnels ??= _getActualPersonnel();
+    _personnels ??= _getActualPersonnel(init: true);
   }
 
   void _init() async {
@@ -423,7 +423,7 @@ class _UnitEditorState extends State<UnitEditor> {
               decoration: InputDecoration(
                 labelText: "Apparater",
                 hintText: "Søk etter apparater",
-                helperText: "Posisjon til apparater blir lagret",
+                helperText: "Spor blir kun lagret i aksjonen",
                 filled: true,
                 contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
               ),
@@ -495,18 +495,20 @@ class _UnitEditorState extends State<UnitEditor> {
           ? FormBuilderChipsInput(
               attribute: 'personnels',
               maxChips: 15,
-              initialValue: _getActualPersonnel(),
-              onChanged: (personnels) => _personnels = personnels.map((p) => p.uuid).toList(),
+              initialValue: _personnels,
+              onChanged: (personnels) {
+                _personnels = List<String>.from(personnels.map((p) => p.uuid));
+              },
               decoration: InputDecoration(
                 labelText: "Mannskap",
                 hintText: "Søk etter mannskap",
-                helperText: "Posisjon til mannskap blir lagret",
+                helperText: "Spor blir kun lagret i aksjonen",
                 filled: true,
                 alignLabelWithHint: true,
                 hintMaxLines: 3,
                 contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
               ),
-              findSuggestions: _findPersonnel,
+              findSuggestions: _findPersonnels,
               suggestionBuilder: (context, state, puuid) => PersonnelTile(
                 personnel: context.bloc<PersonnelBloc>().repo[puuid],
                 state: state,
@@ -534,7 +536,7 @@ class _UnitEditorState extends State<UnitEditor> {
     );
   }
 
-  List<String> _findPersonnel(String query) {
+  List<String> _findPersonnels(String query) {
     if (query.length != 0) {
       final local = _getLocalPersonnel();
       final actual = _getActualPersonnel();
@@ -608,8 +610,13 @@ class _UnitEditorState extends State<UnitEditor> {
 
   List<String> _getLocalPersonnel() => List.from(_personnels ?? <String>[]);
 
-  List<String> _getActualPersonnel() =>
-      List<String>.from(widget?.unit?.personnels ?? <String>[]).toList()..addAll(widget.personnels ?? <String>[]);
+  List<String> _getActualPersonnel({bool init = false}) {
+    final personnels = List<String>.from(widget?.unit?.personnels ?? <String>[]);
+    if (init) {
+      personnels.addAll(widget.personnels ?? <String>[]);
+    }
+    return personnels;
+  }
 
   Position _preparePosition() {
     final position = _toJson()['position'] == null
