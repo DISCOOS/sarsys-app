@@ -124,48 +124,51 @@ class _UnitEditorState extends State<UnitEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Text(widget.unit == null ? 'Ny enhet' : 'Endre enhet'),
-        centerTitle: false,
-        leading: GestureDetector(
-          child: Icon(Icons.close),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(widget.unit == null ? 'OPPRETT' : 'OPPDATER',
-                style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () => _submit(),
+    return keyboardDismisser(
+      context: context,
+      child: Scaffold(
+        key: _scaffoldKey,
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          title: Text(widget.unit == null ? 'Ny enhet' : 'Endre enhet'),
+          centerTitle: false,
+          leading: GestureDetector(
+            child: Icon(Icons.close),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: FormBuilder(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                buildTwoCellRow(_buildNameField(), _buildNumberField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                buildTwoCellRow(_buildTypeField(), _buildCallsignField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                buildTwoCellRow(_buildStatusField(), _buildPhoneField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                _buildPersonnelListField(),
-                SizedBox(height: SPACING),
-                _buildDeviceListField(),
-                SizedBox(height: SPACING),
-                _buildPositionField(),
-                SizedBox(height: MediaQuery.of(context).size.height / 2),
-              ],
+          actions: <Widget>[
+            FlatButton(
+              child: Text(widget.unit == null ? 'OPPRETT' : 'OPPDATER',
+                  style: TextStyle(fontSize: 14.0, color: Colors.white)),
+              padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              onPressed: () => _submit(),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  buildTwoCellRow(_buildNameField(), _buildNumberField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  buildTwoCellRow(_buildTypeField(), _buildCallsignField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  buildTwoCellRow(_buildStatusField(), _buildPhoneField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  _buildPersonnelListField(),
+                  SizedBox(height: SPACING),
+                  _buildDeviceListField(),
+                  SizedBox(height: SPACING),
+                  _buildPositionField(),
+                  SizedBox(height: MediaQuery.of(context).size.height / 2),
+                ],
+              ),
             ),
           ),
         ),

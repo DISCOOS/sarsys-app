@@ -66,51 +66,54 @@ class _DeviceEditorState extends State<DeviceEditor> {
   @override
   Widget build(BuildContext context) {
     final actualType = _getActualType(widget.type);
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(widget.device == null ? 'Nytt apparat' : 'Endre apparat'),
-        centerTitle: false,
-        leading: GestureDetector(
-          child: Icon(Icons.close),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(widget.device == null ? 'OPPRETT' : 'OPPDATER',
-                style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () => _submit(context),
+    return keyboardDismisser(
+      context: context,
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text(widget.device == null ? 'Nytt apparat' : 'Endre apparat'),
+          centerTitle: false,
+          leading: GestureDetector(
+            child: Icon(Icons.close),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: FormBuilder(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                buildTwoCellRow(_buildNameField(), _buildTypeField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                buildTwoCellRow(_buildNumberField(), _buildAliasField(), spacing: SPACING),
-                if (DeviceType.tetra == actualType) ...[
+          actions: <Widget>[
+            FlatButton(
+              child: Text(widget.device == null ? 'OPPRETT' : 'OPPDATER',
+                  style: TextStyle(fontSize: 14.0, color: Colors.white)),
+              padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              onPressed: () => _submit(context),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  buildTwoCellRow(_buildNameField(), _buildTypeField(), spacing: SPACING),
                   SizedBox(height: SPACING),
-                  buildTwoCellRow(
-                    _buildOrgAliasField(),
-                    _buildFunctionField(),
-                    spacing: SPACING,
-                  ),
+                  buildTwoCellRow(_buildNumberField(), _buildAliasField(), spacing: SPACING),
+                  if (DeviceType.tetra == actualType) ...[
+                    SizedBox(height: SPACING),
+                    buildTwoCellRow(
+                      _buildOrgAliasField(),
+                      _buildFunctionField(),
+                      spacing: SPACING,
+                    ),
+                    SizedBox(height: SPACING),
+                    _buildAffiliationInfo(),
+                  ],
                   SizedBox(height: SPACING),
-                  _buildAffiliationInfo(),
+                  _buildPointField(),
+                  SizedBox(height: MediaQuery.of(context).size.height / 2),
                 ],
-                SizedBox(height: SPACING),
-                _buildPointField(),
-                SizedBox(height: MediaQuery.of(context).size.height / 2),
-              ],
+              ),
             ),
           ),
         ),

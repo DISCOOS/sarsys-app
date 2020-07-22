@@ -116,73 +116,76 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   @override
   Widget build(BuildContext context) {
     final caption = Theme.of(context).textTheme.caption;
-    return Scaffold(
-      key: _scaffoldKey,
-      extendBody: true,
-      appBar: AppBar(
-        title: Text(widget.personnel == null ? 'Nytt mannskap' : 'Endre mannskap'),
-        centerTitle: false,
-        leading: GestureDetector(
-          child: Icon(Icons.close),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(widget.personnel == null ? 'OPPRETT' : 'OPPDATER',
-                style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () => _submit(),
+    return keyboardDismisser(
+      context: context,
+      child: Scaffold(
+        key: _scaffoldKey,
+        extendBody: true,
+        appBar: AppBar(
+          title: Text(widget.personnel == null ? 'Nytt mannskap' : 'Endre mannskap'),
+          centerTitle: false,
+          leading: GestureDetector(
+            child: Icon(Icons.close),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: FormBuilder(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                buildTwoCellRow(_buildNameField(), _buildStatusField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                buildTwoCellRow(_buildFNameField(), _buildLNameField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                buildTwoCellRow(_buildFunctionField(), _buildPhoneField(), spacing: SPACING),
-                SizedBox(height: SPACING),
-                Divider(),
-                if (!managed) ...[
+          actions: <Widget>[
+            FlatButton(
+              child: Text(widget.personnel == null ? 'OPPRETT' : 'OPPDATER',
+                  style: TextStyle(fontSize: 14.0, color: Colors.white)),
+              padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              onPressed: () => _submit(),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  buildTwoCellRow(_buildNameField(), _buildStatusField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  buildTwoCellRow(_buildFNameField(), _buildLNameField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  buildTwoCellRow(_buildFunctionField(), _buildPhoneField(), spacing: SPACING),
+                  SizedBox(height: SPACING),
+                  Divider(),
+                  if (!managed) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12.0),
+                      child: Text("Tilhørighet", style: caption),
+                    ),
+                    SizedBox(height: SPACING),
+                  ],
+                  managed
+                      ? GestureDetector(
+                          child: AffiliationView(
+                            affiliation: _currentAffiliation(),
+                          ),
+                          onTap: _explainManaged,
+                        )
+                      : AffiliationForm(
+                          key: _affiliationKey,
+                          value: _ensureAffiliation(),
+                        ),
+                  SizedBox(height: SPACING),
+                  Divider(),
                   Padding(
                     padding: const EdgeInsets.only(left: 12.0),
-                    child: Text("Tilhørighet", style: caption),
+                    child: Text("Posisjonering", style: caption),
                   ),
                   SizedBox(height: SPACING),
+                  _buildDeviceListField(),
+                  SizedBox(height: SPACING),
+                  _buildPointField(),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.75),
                 ],
-                managed
-                    ? GestureDetector(
-                        child: AffiliationView(
-                          affiliation: _currentAffiliation(),
-                        ),
-                        onTap: _explainManaged,
-                      )
-                    : AffiliationForm(
-                        key: _affiliationKey,
-                        value: _ensureAffiliation(),
-                      ),
-                SizedBox(height: SPACING),
-                Divider(),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0),
-                  child: Text("Posisjonering", style: caption),
-                ),
-                SizedBox(height: SPACING),
-                _buildDeviceListField(),
-                SizedBox(height: SPACING),
-                _buildPointField(),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.75),
-              ],
+              ),
             ),
           ),
         ),

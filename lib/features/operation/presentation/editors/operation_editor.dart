@@ -159,59 +159,62 @@ class _OperationEditorState extends State<OperationEditor> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(createNew ? 'Ny aksjon' : 'Endre aksjon'),
-        centerTitle: false,
-        leading: GestureDetector(
-          child: Icon(Icons.close),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(createNew ? 'OPPRETT' : 'OPPDATER', style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
-            onPressed: () => _submit(context),
+    return keyboardDismisser(
+      context: context,
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text(createNew ? 'Ny aksjon' : 'Endre aksjon'),
+          centerTitle: false,
+          leading: GestureDetector(
+            child: Icon(Icons.close),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        reverse: _currentStep > 1,
-        child: FormBuilder(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              Stepper(
-                type: StepperType.vertical,
-                currentStep: _currentStep,
-                physics: ClampingScrollPhysics(),
-                onStepTapped: (int step) {
-                  setState(() => _currentStep = step);
-                  FocusScope.of(context).unfocus();
-                },
-                onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
-                onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
-                controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
-                  return Container();
-                },
-                steps: [
-                  _buildGeneralStep(),
-                  _buildPoiStep(),
-                  _buildClassificationStep(),
-                  if (_tgCatalog.value.isNotEmpty) _buildTGStep(),
-                  if (createNew) _buildPreparationStep(),
-                  _buildReferenceStep(),
-                ],
-              ),
-              Container(
-                padding: EdgeInsets.only(
-                  bottom: mediaQuery.viewInsets.bottom / 2,
+          actions: <Widget>[
+            FlatButton(
+              child: Text(createNew ? 'OPPRETT' : 'OPPDATER', style: TextStyle(fontSize: 14.0, color: Colors.white)),
+              padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              onPressed: () => _submit(context),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          reverse: _currentStep > 1,
+          child: FormBuilder(
+            key: _formKey,
+            child: Column(
+              children: <Widget>[
+                Stepper(
+                  type: StepperType.vertical,
+                  currentStep: _currentStep,
+                  physics: ClampingScrollPhysics(),
+                  onStepTapped: (int step) {
+                    setState(() => _currentStep = step);
+                    FocusScope.of(context).unfocus();
+                  },
+                  onStepContinue: _currentStep < 2 ? () => setState(() => _currentStep += 1) : null,
+                  onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep -= 1) : null,
+                  controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
+                    return Container();
+                  },
+                  steps: [
+                    _buildGeneralStep(),
+                    _buildPoiStep(),
+                    _buildClassificationStep(),
+                    if (_tgCatalog.value.isNotEmpty) _buildTGStep(),
+                    if (createNew) _buildPreparationStep(),
+                    _buildReferenceStep(),
+                  ],
                 ),
-              ),
-            ],
+                Container(
+                  padding: EdgeInsets.only(
+                    bottom: mediaQuery.viewInsets.bottom / 2,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
