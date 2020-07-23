@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
@@ -18,6 +19,7 @@ import 'package:SarSys/mock/division_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/mock/organisation_service_mock.dart';
 import 'package:SarSys/mock/person_service_mock.dart';
+import 'package:SarSys/models/core.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -195,6 +197,7 @@ class BlocTestHarness implements BlocDelegate {
     });
 
     setUp(() async {
+      _print('setUp...');
       // Hive does not handle close
       // with pending writes in a
       // well-behaved manner. This
@@ -234,11 +237,14 @@ class BlocTestHarness implements BlocDelegate {
         _buildTrackingBloc();
       }
 
+      _print('setUp...ok');
+
       // Needed for await above to work
       return Future.value();
     });
 
     tearDown(() async {
+      _print('teardown...');
       if (_withConfigBloc) {
         await _configBloc?.close();
       }
@@ -270,9 +276,11 @@ class BlocTestHarness implements BlocDelegate {
       _connectivity?.dispose();
 
       if (Storage.initialized) {
+        _print('teardown...destroy');
         return Storage.destroy();
       }
 
+      _print('teardown...ok');
       return Future.value();
     });
 
@@ -602,22 +610,6 @@ class BlocTestHarness implements BlocDelegate {
       _affiliationBloc,
       _operationsBloc,
     );
-  }
-
-  void _buildUnitBloc({
-    int count = 0,
-  }) {
-    assert(_withOperationBloc, 'UnitBloc requires OperationBloc');
-    assert(_withPersonnelBloc, 'UnitBloc requires PersonnelBloc');
-    _unitService = UnitServiceMock.build(count);
-    _unitBloc = UnitBloc(
-      UnitRepositoryImpl(
-        _unitService,
-        connectivity: _connectivity,
-      ),
-      bus,
-      _operationsBloc,
-    );
 
     if (_authenticated) {
       // Consume PersonnelsLoaded fired by IncidentsLoaded
@@ -627,6 +619,21 @@ class BlocTestHarness implements BlocDelegate {
         close: false,
       );
     }
+  }
+
+  void _buildUnitBloc({
+    int count = 0,
+  }) {
+    assert(_withOperationBloc, 'UnitBloc requires OperationBloc');
+    _unitService = UnitServiceMock.build(count);
+    _unitBloc = UnitBloc(
+      UnitRepositoryImpl(
+        _unitService,
+        connectivity: _connectivity,
+      ),
+      bus,
+      _operationsBloc,
+    );
   }
 
   void _buildTrackingBloc({
@@ -767,6 +774,36 @@ Future<void> expectThroughLater<B extends Bloc<dynamic, State>, State>(
   }
 }
 
+Future<void> expectThroughLaterIf<State extends BlocEvent>(
+  Bloc bloc,
+  expected, {
+  bool close = false,
+}) async {
+  assert(bloc != null);
+  if (bloc.state is State) {
+    assert(expected != null);
+    await expectLater(bloc, emitsThrough(expected));
+    if (close) {
+      bloc.close();
+    }
+  }
+}
+
+Future<void> expectThroughLaterIfNot<State extends BlocEvent>(
+  Bloc bloc,
+  expected, {
+  bool close = false,
+}) async {
+  assert(bloc != null);
+  if (bloc.state is! State) {
+    assert(expected != null);
+    await expectLater(bloc, emitsThrough(expected));
+    if (close) {
+      bloc.close();
+    }
+  }
+}
+
 Future<void> expectThroughInOrderLater<B extends Bloc<dynamic, State>, State>(
   B bloc,
   Iterable expected, {
@@ -798,4 +835,42 @@ void expectStorageStatus(
     remote ? isTrue : isFalse,
     reason: "SHOULD HAVE ${remote ? 'remote' : 'local'} origin",
   );
+}
+
+Future expectStorageStatusLater(
+  String uuid,
+  ConnectionAwareRepository repo,
+  StorageStatus expected, {
+  @required bool remote,
+}) async {
+  await expectLater(
+    repo.onChanged,
+    emitsThrough(
+      isA<StorageTransition>().having(
+        (transition) =>
+            transition.from?.value is Aggregate &&
+            (transition.from?.value as Aggregate)?.uuid == uuid &&
+            (remote ? transition.isRemote : transition.isLocal),
+        'is ${remote ? 'remote' : 'local'}',
+        isTrue,
+      ),
+    ),
+  );
+  expect(
+    repo.getState(uuid)?.status,
+    equals(expected == StorageStatus.deleted && remote ? isNull : expected),
+    reason: "SHOULD HAVE status ${enumName(expected)}",
+  );
+  expect(
+    repo.getState(uuid)?.isRemote,
+    expected == StorageStatus.deleted && remote ? isNull : (remote ? isTrue : isFalse),
+    reason: "SHOULD HAVE ${remote ? 'remote' : 'local'} origin",
+  );
+}
+
+bool _debug = false;
+void _print(String message) {
+  if (_debug) {
+    print(message);
+  }
 }

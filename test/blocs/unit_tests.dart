@@ -69,8 +69,9 @@ void main() async {
 
       // Assert
       verify(harness.unitService.create(any, any)).called(1);
-      expectStorageStatus(
-        harness.unitBloc.repo.states[unit.uuid],
+      await expectStorageStatusLater(
+        unit.uuid,
+        harness.unitBloc.repo,
         StorageStatus.created,
         remote: true,
       );
@@ -93,8 +94,9 @@ void main() async {
 
       // Assert
       verify(harness.unitService.update(any)).called(1);
-      expectStorageStatus(
-        harness.unitBloc.repo.states[unit.uuid],
+      await expectStorageStatusLater(
+        unit.uuid,
+        harness.unitBloc.repo,
         StorageStatus.updated,
         remote: true,
       );
@@ -116,12 +118,13 @@ void main() async {
       await harness.unitBloc.delete(unit.uuid);
 
       // Assert
-      verify(harness.unitService.delete(any)).called(1);
-      expect(
-        harness.unitBloc.repo.states[unit.uuid],
-        isNull,
-        reason: "SHOULD HAVE NO status",
+      await expectStorageStatusLater(
+        unit.uuid,
+        harness.unitBloc.repo,
+        StorageStatus.deleted,
+        remote: true,
       );
+      verify(harness.unitService.delete(any)).called(1);
       expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
       expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");

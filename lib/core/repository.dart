@@ -138,7 +138,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
 
   /// Check if repository is operational
   @mustCallSuper
-  bool get isReady => _states?.isOpen == true;
+  bool get isReady => _isReady();
 
   /// Asserts that repository is operational.
   /// Should be called before methods is called.
@@ -146,9 +146,9 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   @protected
   void checkState() {
     if (_states?.isOpen != true) {
-      throw RepositoryNotReadyException();
+      throw RepositoryNotReadyException(this);
     } else if (_disposed) {
-      throw RepositoryIsDisposedException();
+      throw RepositoryIsDisposedException(this);
     }
   }
 
@@ -326,11 +326,13 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
       final next = _pushQueue.first;
       final exists = await _waitForDeps(next);
       try {
-        if (exists) {
+        if (exists && _isReady()) {
           final result = await _push(
             next,
           );
-          put(result);
+          if (_isReady()) {
+            put(result);
+          }
         }
       } on SocketException {
         // Timeout - try again later
@@ -346,6 +348,8 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
       }
     }
   }
+
+  bool _isReady() => _states?.isOpen == true;
 
   /// Check if dependencies exists remotely
   /// and [waitFor] given time. If dependencies
@@ -557,7 +561,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   /// Clear all states from local storage
   Iterable<T> clear() {
     final Iterable<T> elements = values.toList();
-    if (_states?.isOpen == true) {
+    if (_isReady()) {
       _states.clear();
     }
     return List.unmodifiable(elements);
@@ -573,7 +577,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
       return clear();
     }
     final List<T> evicted = [];
-    if (_states?.isOpen == true) {
+    if (_isReady()) {
       final keys = [];
       _states.keys.where((key) => !retainKeys.contains(key)).forEach((key) {
         final state = _states.get(key);
@@ -598,7 +602,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
   /// write operations finished.
   Future<List<T>> close() async {
     final Iterable<T> elements = values.toList();
-    if (_states?.isOpen == true) {
+    if (_isReady()) {
       await _states.close();
     }
     _states = null;
@@ -622,7 +626,7 @@ abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Servi
       (subscription) => subscription.cancel(),
     );
     _subscriptions.clear();
-    if (_states?.isOpen == true) {
+    if (_isReady()) {
       return _states.close();
     }
     return Future.value();
@@ -724,11 +728,13 @@ class RepositoryIllegalStateValueException extends RepositoryException {
 }
 
 class RepositoryNotReadyException extends RepositoryException {
-  RepositoryNotReadyException() : super('is not ready');
+  RepositoryNotReadyException(this.repo) : super('${repo.runtimeType} is not ready');
+  final Repository repo;
 }
 
 class RepositoryIsDisposedException extends RepositoryException {
-  RepositoryIsDisposedException() : super('is disposed');
+  RepositoryIsDisposedException(this.repo) : super('${repo.runtimeType} is disposed');
+  final Repository repo;
 }
 
 class RepositoryStateExistsException extends RepositoryException {

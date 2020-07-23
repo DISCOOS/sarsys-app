@@ -84,7 +84,7 @@ class UserRepository implements Repository {
       _users ??= await _open();
       _userId = await Storage.readUserId();
     } else if (!isReady) {
-      throw UserRepositoryNotReadyException();
+      throw RepositoryNotReadyException(this);
     }
   }
 
@@ -521,8 +521,4 @@ class AuthTokenNotFoundException implements Exception {
   String toString() {
     return 'AuthToken for User $userId not found';
   }
-}
-
-class UserRepositoryNotReadyException extends RepositoryNotReadyException {
-  UserRepositoryNotReadyException();
 }

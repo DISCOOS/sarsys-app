@@ -213,7 +213,6 @@ Future _testAppConfigShouldDeleteValues(BlocTestHarness harness, bool offline) a
   expect(oldConfig, isNotNull, reason: "SHOULD contain AppConfig");
   expect(newConfig, equals(newConfig), reason: "SHOULD equals old AppConfig");
   expect(harness.configBloc.isReady, isFalse, reason: "SHOULD NOT be ready");
-  expect(harness.configBloc.repo.state, isNull, reason: "SHOULD HAVE NO repository state}");
   expectThroughInOrder(harness.configBloc, [isA<AppConfigLoaded>(), isA<AppConfigDeleted>()]);
 }
 
@@ -257,10 +256,18 @@ Future _testAppConfigShouldLoadWithDefaultValues(BlocTestHarness harness, bool o
 
   // Assert
   expect(harness.configBloc.config, isNotNull, reason: "SHOULD have AppConfig");
+  final isRemote = !offline;
+  if (isRemote) {
+    await expectLater(
+      harness.configBloc.repo.onChanged,
+      emitsThrough(isA<StorageTransition>()),
+    );
+  }
+
   expectStorageStatus(
     harness.configBloc.repo.state,
     StorageStatus.created,
-    remote: !offline,
+    remote: isRemote,
   );
   expectThroughInOrder(
     harness.configBloc,
@@ -282,10 +289,18 @@ Future _testAppConfigShouldInitializeWithDefaultValues(
 
   // Assert
   expect(harness.configBloc.repo.config, isNotNull, reason: "AppConfigRepository SHOULD have AppConfig");
+  final isRemote = !(offline || local);
+  if (isRemote) {
+    await expectLater(
+      harness.configBloc.repo.onChanged,
+      emitsThrough(isA<StorageTransition>()),
+    );
+  }
+
   expectStorageStatus(
     harness.configBloc.repo.state,
     StorageStatus.created,
-    remote: !(offline || local),
+    remote: isRemote,
   );
   expectThroughInOrder(
     harness.configBloc,

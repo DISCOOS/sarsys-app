@@ -26,7 +26,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   AppConfigEmpty get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
-  bool get isReady => repo.isReady && repo.state?.isDeleted != null;
+  bool get isReady => repo.isReady && repo.state != null && repo.state.isDeleted != true;
 
   /// Get config
   AppConfig get config => repo.config;

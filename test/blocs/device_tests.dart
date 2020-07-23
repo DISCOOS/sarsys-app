@@ -58,12 +58,13 @@ void main() async {
       await harness.deviceBloc.create(device);
 
       // Assert
-      verify(harness.deviceService.create(any)).called(1);
-      expectStorageStatus(
-        harness.deviceBloc.repo.states[device.uuid],
+      await expectStorageStatusLater(
+        device.uuid,
+        harness.deviceBloc.repo,
         StorageStatus.created,
         remote: true,
       );
+      verify(harness.deviceService.create(any)).called(1);
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expect(harness.deviceBloc.repo.containsKey(device.uuid), isTrue, reason: "SHOULD contain device ${device.uuid}");
       expectThrough(harness.deviceBloc, isA<DeviceCreated>());
@@ -81,12 +82,13 @@ void main() async {
       await harness.deviceBloc.update(device.copyWith(type: DeviceType.tetra));
 
       // Assert
-      verify(harness.deviceService.update(any)).called(1);
-      expectStorageStatus(
-        harness.deviceBloc.repo.states[device.uuid],
+      await expectStorageStatusLater(
+        device.uuid,
+        harness.deviceBloc.repo,
         StorageStatus.updated,
         remote: true,
       );
+      verify(harness.deviceService.update(any)).called(1);
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expect(harness.deviceBloc.repo.containsKey(device.uuid), isTrue, reason: "SHOULD contain device ${device.uuid}");
       expectThrough(harness.deviceBloc, isA<DeviceUpdated>());
@@ -104,12 +106,13 @@ void main() async {
       await harness.deviceBloc.delete(device.uuid);
 
       // Assert
-      verify(harness.deviceService.delete(any)).called(1);
-      expect(
-        harness.deviceBloc.repo.states[device.uuid],
-        isNull,
-        reason: "SHOULD HAVE NO status",
+      await expectStorageStatusLater(
+        device.uuid,
+        harness.deviceBloc.repo,
+        StorageStatus.deleted,
+        remote: true,
       );
+      verify(harness.deviceService.delete(any)).called(1);
       expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
       expectThrough(harness.deviceBloc, isA<DeviceDeleted>());
     });

@@ -43,7 +43,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
 
     registerStreamSubscription(
       // Load and unload trackings as needed
-      operationBloc.listen(_processIncidentState),
+      operationBloc.listen(_processOperationState),
     );
     registerStreamSubscription(
       // Updates tracking for unit
@@ -103,7 +103,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processIncidentState(OperationState state) {
+  void _processOperationState(OperationState state) {
     try {
       if (hasSubscriptions) {
         if (state.shouldLoad(ouuid)) {

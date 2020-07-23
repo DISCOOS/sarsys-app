@@ -88,15 +88,11 @@ void main() async {
 
       // Act
       await harness.personnelBloc.create(personnel);
-      await expectLater(
-        harness.personnelBloc.repo.onChanged,
-        emitsThrough(
-          isA<StorageTransition>().having(
-            (transition) => transition.isRemote,
-            'is remote',
-            isTrue,
-          ),
-        ),
+      await expectStorageStatusLater(
+        personnel.uuid,
+        harness.personnelBloc.repo,
+        StorageStatus.created,
+        remote: true,
       );
 
       // Assert service calls
@@ -142,12 +138,13 @@ void main() async {
       await harness.personnelBloc.update(personnel.copyWith(status: PersonnelStatus.onscene));
 
       // Assert
-      verify(harness.personnelService.update(any)).called(1);
-      expectStorageStatus(
-        harness.personnelBloc.repo.states[personnel.uuid],
+      await expectStorageStatusLater(
+        personnel.uuid,
+        harness.personnelBloc.repo,
         StorageStatus.updated,
         remote: true,
       );
+      verify(harness.personnelService.update(any)).called(1);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
       expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
@@ -168,6 +165,12 @@ void main() async {
       await harness.personnelBloc.delete(personnel.uuid);
 
       // Assert
+      await expectStorageStatusLater(
+        personnel.uuid,
+        harness.personnelBloc.repo,
+        StorageStatus.deleted,
+        remote: true,
+      );
       verify(harness.personnelService.delete(any)).called(1);
       expect(
         harness.personnelBloc.repo.states[personnel.uuid],
@@ -610,11 +613,11 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
     incident: incident,
   );
 
-  // Prepare OperationBloc
+  // Await OperationBloc
   await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()), close: false);
   expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
-  // Prepare PersonnelBloc
+  // Await PersonnelBloc
   await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()), close: false);
   expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");

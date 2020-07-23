@@ -1,4 +1,5 @@
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -216,6 +217,7 @@ void main() async {
     test('SHOULD initially load as EMPTY', () async {
       // Arrange
       await _authenticate(harness);
+
       // One affiliation
       await _seed(harness, offline: true);
       harness.connectivity.offline();
@@ -271,7 +273,10 @@ void main() async {
   });
 }
 
-Future _seed(BlocTestHarness harness, {@required bool offline}) async {
+Future _seed(
+  BlocTestHarness harness, {
+  @required bool offline,
+}) async {
   final org1 = harness.organisationService.add();
   final org2 = harness.organisationService.add();
   final div1 = harness.divisionService.add(org1.uuid);
@@ -284,7 +289,11 @@ Future _seed(BlocTestHarness harness, {@required bool offline}) async {
       )
       .first;
   expect(
-    harness.affiliationService.affiliationRepo.values.where((affiliation) => affiliation.person.uuid == p1.uuid).first,
+    harness.affiliationBloc.repo.values
+        .where(
+          (affiliation) => affiliation.person.uuid == p1.uuid,
+        )
+        .firstOrNull,
     isNotNull,
   );
   final p2 = harness.personService.add(userId: Uuid().v4());
@@ -315,6 +324,7 @@ Future _authenticate(
   expect(harness.user.userId, equals(harness.userId));
   expect(harness.user.division, equals(harness.division));
   expect(harness.user.department, equals(harness.department));
+
   // Wait for UserAuthenticated event
   // Wait until organisations are loaded
   await expectThroughLater(
@@ -325,4 +335,7 @@ Future _authenticate(
   if (reset) {
     clearInteractions(harness.organisationService);
   }
+
+  // A user must be authenticated
+  expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 }

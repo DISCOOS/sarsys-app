@@ -52,8 +52,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     ));
 
     registerStreamSubscription(affiliationBloc.persons.onChanged.listen(
-      // Handle person conflicts
-      _processPersonConflicts,
+      // Handle person changes
+      _processPersonChanged,
     ));
   }
 
@@ -92,7 +92,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  void _processPersonConflicts(StorageTransition<Person> state) {
+  void _processPersonChanged(StorageTransition<Person> state) {
     try {
       if (PersonRepository.isDuplicateUser(state)) {
         // Find current person usages and replace with existing user
@@ -102,6 +102,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
           duplicate,
           exclude: [],
         ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
+      } else {
+        findUser(
+          state.from.value.uuid,
+          exclude: [],
+        ).map((personnel) => personnel.withPerson(state.from.value)).forEach((personnel) => repo.replace(
+              personnel.uuid,
+              personnel,
+            ));
       }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(

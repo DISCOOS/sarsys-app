@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
@@ -1167,7 +1168,7 @@ void main() async {
         isTrue,
         reason: "SHOULD contain tracking ${tracking.uuid}",
       );
-      expectThroughInOrder(harness.trackingBloc, [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()]);
+      expectThroughInOrder(harness.trackingBloc, [isA<TrackingsLoaded>()]);
     });
 
     test('SHOULD reload when operation is switched', () async {
@@ -2128,20 +2129,53 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
 
 /// Prepare blocs for testing
 Future<Operation> _prepare(BlocTestHarness harness) async {
+  _print(harness, '_prepare...');
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
   // Create operation
+  _print(harness, '_prepare...operation');
   final incident = IncidentBuilder.create();
   final operation = await harness.operationsBloc.create(
     OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
     incident: incident,
   );
 
+  // Prepare OperationBloc
+  _print(harness, '_prepare...operation[was:${harness.operationsBloc.state}]');
+  await expectThroughLaterIfNot<OperationSelected>(harness.operationsBloc, emits(isA<OperationSelected>()));
+  expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
+  _print(harness, '_prepare...operation.ok[is:${harness.operationsBloc.state}]');
+
+  // Prepare PersonnelBloc
+  _print(harness, '_prepare...personnel[was:${harness.personnelBloc.state}]');
+  await expectThroughLaterIfNot<PersonnelsLoaded>(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
+  expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
+  _print(harness, '_prepare...personnel.ok[is:${harness.personnelBloc.state}]');
+
+  // Prepare UnitBloc
+  _print(harness, '_prepare...unit[was:${harness.unitBloc.state}]');
+  await expectThroughLaterIfNot<UnitsLoaded>(harness.unitBloc, emits(isA<UnitsLoaded>()));
+  expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
+  expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
+  _print(harness, '_prepare...unit.ok[is:${harness.unitBloc.state}]');
+
   // Prepare TrackingBloc
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingsLoaded>()), close: false);
+  _print(harness, '_prepare...tracking[was: ${harness.trackingBloc.state}]');
+  await expectThroughLaterIfNot<TrackingCreated>(harness.trackingBloc, emits(isA<TrackingCreated>()));
   expect(harness.trackingBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.trackingBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
+  _print(harness, '_prepare...tracking.ok[is: ${harness.trackingBloc.state}]');
+
+  _print(harness, '_prepare...ok');
 
   return operation;
+}
+
+bool _debug = false;
+void _print(BlocTestHarness harness, String message) {
+  if (_debug) {
+    print(message);
+  }
 }
