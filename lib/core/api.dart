@@ -34,6 +34,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
+import 'package:http/io_client.dart';
 
 class Api {
   Api({
@@ -44,6 +45,11 @@ class Api {
   }) : chopperClient = ChopperClient(
           services: services,
           baseUrl: baseRestUrl,
+          client: IOClient(
+            HttpClient()
+              ..connectionTimeout = const Duration(seconds: 30)
+              ..idleTimeout,
+          ),
           converter: JsonSerializableConverter(
             reducers: {
               Tracking: (value) => JsonUtils.toJson<Tracking>(value),
