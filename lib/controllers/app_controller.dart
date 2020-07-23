@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:SarSys/core/service.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
@@ -12,7 +13,18 @@ import 'package:SarSys/features/affiliation/data/services/department_service.dar
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/division_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/organisation_repository.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
+import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
+import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
+import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
+import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -79,8 +91,15 @@ class AppController {
   T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
   final _blocs = <Type, Bloc>{};
 
-  BlocProvider<T> toProvider<T extends Bloc>() => BlocProvider.value(
+  BlocProvider<T> toBlocProvider<T extends Bloc>() => BlocProvider.value(
         value: _blocs[typeOf<T>()] as T,
+      );
+
+  T repository<T>() => _repos[typeOf<T>()] as T;
+  final _repos = <Type, Repository>{};
+
+  RepositoryProvider<T> toRepoProvider<T extends Repository>() => RepositoryProvider.value(
+        value: _repos[typeOf<T>()] as T,
       );
 
   AppControllerState _state = AppControllerState.Empty;
@@ -110,15 +129,32 @@ class AppController {
   StreamController<AppControllerState> _controller = StreamController.broadcast();
   Stream<AppControllerState> get onChange => _controller.stream;
 
-  List<BlocProvider> get all => [
-        toProvider<AppConfigBloc>(),
-        toProvider<AffiliationBloc>(),
-        toProvider<UserBloc>(),
-        toProvider<OperationBloc>(),
-        toProvider<UnitBloc>(),
-        toProvider<PersonnelBloc>(),
-        toProvider<DeviceBloc>(),
-        toProvider<TrackingBloc>(),
+  List<BlocProvider> get blocs => [
+        toBlocProvider<AppConfigBloc>(),
+        toBlocProvider<AffiliationBloc>(),
+        toBlocProvider<UserBloc>(),
+        toBlocProvider<OperationBloc>(),
+        toBlocProvider<UnitBloc>(),
+        toBlocProvider<PersonnelBloc>(),
+        toBlocProvider<DeviceBloc>(),
+        toBlocProvider<TrackingBloc>(),
+      ];
+
+  List<RepositoryProvider> get repos => [
+        toRepoProvider<AppConfigRepository>(),
+        toRepoProvider<AffiliationRepository>(),
+        toRepoProvider<PersonRepository>(),
+        toRepoProvider<OrganisationRepository>(),
+        toRepoProvider<DivisionRepository>(),
+        toRepoProvider<DepartmentRepository>(),
+        toRepoProvider<UserRepository>(),
+        toRepoProvider<AuthTokenRepository>(),
+        toRepoProvider<IncidentRepository>(),
+        toRepoProvider<OperationRepository>(),
+        toRepoProvider<UnitRepository>(),
+        toRepoProvider<PersonnelRepository>(),
+        toRepoProvider<DeviceRepository>(),
+        toRepoProvider<TrackingRepository>(),
       ];
 
   /// Create providers for mocking
@@ -150,7 +186,7 @@ class AppController {
     final authRepo = AuthTokenRepository();
     final userRepo = UserRepository(
       service: userService,
-      auth: authRepo,
+      tokens: authRepo,
       connectivity: connectivityService,
     );
     final configRepo = AppConfigRepositoryImpl(
@@ -340,6 +376,16 @@ class AppController {
       api: api,
       demo: demo,
       blocs: blocs,
+      repos: [
+        // Resolve from config
+        ...blocs
+            .whereType<ConnectionAwareBloc>()
+            .map((bloc) => bloc.repos)
+            .fold<Iterable<Repository>>(<Repository>[], (all, repos) => List.from(all)..addAll(repos)),
+        // Add special cases
+        userBloc.repo,
+        userBloc.repo.tokens,
+      ],
     );
   }
 
@@ -417,16 +463,25 @@ class AppController {
     @required Api api,
     @required DemoParams demo,
     @required Iterable<Bloc> blocs,
+    @required Iterable<Repository> repos,
   }) {
     assert(
       _blocs.isEmpty,
       "_blocs should be empty, forgot to call _unset?",
     );
+    assert(
+      _repos.isEmpty,
+      "_repos should be empty, forgot to call _unset?",
+    );
 
     _demo = demo;
 
+    // Prepare for providers
     blocs.forEach((bloc) {
       _blocs[bloc.runtimeType] = bloc;
+    });
+    repos.forEach((repo) {
+      _repos[repo.runtimeType] = repo;
     });
 
     // Rebuild providers when demo parameters changes
@@ -504,6 +559,9 @@ class AppController {
     // Dispose current blocs
     _blocs.values.forEach((bloc) => bloc.close());
     _blocs.clear();
+
+    // Repos are managed by blocs
+    _repos.clear();
   }
 
   void dispose() {

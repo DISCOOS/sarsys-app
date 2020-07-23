@@ -62,9 +62,6 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
   /// Check if affiliation is empty
   bool get isEmpty => !(isAffiliate || isEntity);
 
-  /// Check if affiliation with person is temporary
-  bool get isTemporary => isEmpty || isUnorganized;
-
   /// Get searchable string
   String get searchable => props
       .where((prop) => prop is! AggregateRef)

@@ -431,12 +431,18 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
           affiliation.copyWith(
             status: status,
             uuid: Uuid().v4(),
-            type: affiliation.isTemporary ? AffiliationType.volunteer : type,
+            type: affiliation.isUnorganized ? AffiliationType.volunteer : type,
           ),
         ),
       );
     }
     return affiliation;
+  }
+
+  /// Check if [Affiliation.uuid] is [Affiliation.temporary]
+  bool isTemporary(String uuid) {
+    final affiliation = repo[uuid];
+    return affiliation?.isUnorganized == true || persons[affiliation?.person?.uuid].temporary == true;
   }
 
   /// Create affiliation for temporary
@@ -454,10 +460,10 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     if (!repo.containsKey(current.uuid)) {
       AffiliationUtils.assertRef(personnel);
       return dispatch(
-        CreateTemporaryAffiliation(
+        _assertTemporary(CreateTemporaryAffiliation(
           personnel,
           affiliation,
-        ),
+        )),
       );
     }
     return current;
@@ -590,7 +596,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     if (person == null) {
       person = await persons.create(PersonModel.fromUser(
         users.repo[command.data],
-        temporary: command.affiliation.isTemporary,
+        temporary: command.affiliation.isUnorganized,
       ));
     }
     final affiliation = await repo.create(command.affiliation.copyWith(
@@ -691,13 +697,14 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     }
   }
 
-  void _assertTemporary(CreateTemporaryAffiliation command) {
+  CreateTemporaryAffiliation _assertTemporary(CreateTemporaryAffiliation command) {
     if (command.affiliation.uuid == null) {
       throw ArgumentError("Temporary affiliation has no uuid");
     } else if (command.data.affiliation?.uuid != command.affiliation.uuid) {
       throw ArgumentError("Temporary affiliation uuids does not match");
     }
     AffiliationUtils.assertRef(command.data);
+    return command;
   }
 
   void _assertState(String action) {

@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/repository.dart';
 import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 
-class AuthTokenRepository {
+class AuthTokenRepository implements Repository {
   AuthTokenRepository();
 
   Box<AuthToken> _tokens;

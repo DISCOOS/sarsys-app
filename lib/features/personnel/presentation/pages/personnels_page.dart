@@ -15,6 +15,7 @@ import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
+import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
@@ -188,6 +189,26 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
             ),
           ),
+          if (isTemporary(personnel))
+            GestureDetector(
+                child: Chip(
+                  label: Text(
+                    'M',
+                    textAlign: TextAlign.end,
+                  ),
+                  labelPadding: EdgeInsets.only(right: 4.0),
+                  backgroundColor: Colors.grey[100],
+                  avatar: Icon(
+                    Icons.warning,
+                    size: 16.0,
+                    color: Colors.orange,
+                  ),
+                ),
+                onTap: () => alert(
+                      context,
+                      title: "Mannskap opprettet manuelt",
+                      content: TemporaryPersonnelDescription(),
+                    )),
           Spacer(),
           if (widget.withStatus)
             Chip(
@@ -220,6 +241,10 @@ class PersonnelsPageState extends State<PersonnelsPage> {
       ),
     );
   }
+
+  bool isTemporary(Personnel personnel) => context.bloc<AffiliationBloc>().isTemporary(
+        personnel.affiliation.uuid,
+      );
 
   String _toUsage(
     Unit unit,

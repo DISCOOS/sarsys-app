@@ -227,7 +227,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
           lname: user.lname,
           phone: user.phone,
           email: user.email,
-          temporary: affiliation.isTemporary,
+          temporary: affiliation.isUnorganized,
         ),
         status: PersonnelStatus.alerted,
         affiliation: affiliation.toRef(),

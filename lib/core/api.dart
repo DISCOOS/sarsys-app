@@ -303,7 +303,11 @@ class BearerTokenInterceptor implements RequestInterceptor {
         await users.refresh();
       }
       return applyHeader(
-        request,
+        applyHeader(
+          request,
+          'Content-Encoding',
+          'gzip',
+        ),
         'Authorization',
         'Bearer ${users.token.accessToken}',
       );

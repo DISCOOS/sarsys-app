@@ -246,8 +246,11 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           child: Provider.value(
             value: widget.controller,
             child: MultiBlocProvider(
-              providers: widget.controller.all,
-              child: child,
+              providers: widget.controller.blocs,
+              child: MultiRepositoryProvider(
+                child: child,
+                providers: widget.controller.repos,
+              ),
             ),
           ),
         ),

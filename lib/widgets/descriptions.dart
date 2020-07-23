@@ -323,3 +323,31 @@ class ManagedProfileDescription extends StatelessWidget {
     );
   }
 }
+
+class TemporaryPersonnelDescription extends StatelessWidget {
+  const TemporaryPersonnelDescription({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: "Mannskap opprettet som midlertidig person for "
+                  "denne aksjonen. Vil gi duplikater hvis personen "
+                  "logger på med en bruker i SARSys eller blir medlem "
+                  "av en organisasjon",
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

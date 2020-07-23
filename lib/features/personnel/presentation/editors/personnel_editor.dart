@@ -113,6 +113,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     _setText(_phoneController, _defaultPhone());
   }
 
+  bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
+        widget.personnel?.affiliation?.uuid,
+      );
+
   @override
   Widget build(BuildContext context) {
     final caption = Theme.of(context).textTheme.caption;
@@ -148,6 +152,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
                   buildTwoCellRow(_buildNameField(), _buildStatusField(), spacing: SPACING),
                   SizedBox(height: SPACING),
                   buildTwoCellRow(_buildFNameField(), _buildLNameField(), spacing: SPACING),
@@ -186,6 +191,44 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                   SizedBox(height: MediaQuery.of(context).size.height * 0.75),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTemporaryPersonnelWarning(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Container(
+          color: Colors.grey[300],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              children: <Widget>[
+                GestureDetector(
+                    child: Chip(
+                      label: Text(
+                        'Mannskap opprettet manuelt',
+                        textAlign: TextAlign.end,
+                      ),
+                      labelPadding: EdgeInsets.only(right: 4.0),
+                      backgroundColor: Colors.grey[100],
+                      avatar: Icon(
+                        Icons.warning,
+                        size: 16.0,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    onTap: () => alert(
+                          context,
+                          title: "Mannskap opprettet manuelt",
+                          content: TemporaryPersonnelDescription(),
+                        )),
+              ],
             ),
           ),
         ),

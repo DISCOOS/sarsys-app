@@ -17,6 +17,9 @@ import 'package:hive/hive.dart';
 
 import 'data/models/conflict_model.dart';
 
+/// To be used together with [RepositoryProvider]
+abstract class Repository {}
+
 /// Base class for implementing a stateful
 /// repository that is aware of connection status.
 ///
@@ -24,7 +27,7 @@ import 'data/models/conflict_model.dart';
 /// should cache all changes locally before
 /// attempting to [commit] them to a backend API.
 ///
-abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Service> {
+abstract class ConnectionAwareRepository<S, T extends Aggregate, U extends Service> implements Repository {
   ConnectionAwareRepository({
     @required this.service,
     @required this.connectivity,

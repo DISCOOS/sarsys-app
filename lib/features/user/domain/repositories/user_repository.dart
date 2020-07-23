@@ -14,16 +14,16 @@ import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';
 
-class UserRepository {
+class UserRepository implements Repository {
   UserRepository({
     @required this.service,
-    @required this.auth,
+    @required this.tokens,
     @required this.connectivity,
     this.compactWhen = 10,
   });
   final int compactWhen;
   final UserService service;
-  final AuthTokenRepository auth;
+  final AuthTokenRepository tokens;
   final ConnectivityService connectivity;
 
   String _userId;
@@ -49,10 +49,10 @@ class UserRepository {
   User operator [](String userId) => get(userId);
 
   /// Check if user has token
-  bool get hasToken => isReady && auth.containsKey(_userId);
+  bool get hasToken => isReady && tokens.containsKey(_userId);
 
   /// Get token for authenticated [user]
-  AuthToken get token => isReady ? auth[_userId] : null;
+  AuthToken get token => isReady ? tokens[_userId] : null;
 
   /// Check if token is valid
   bool get isTokenValid => token?.isValid == true;
@@ -89,7 +89,7 @@ class UserRepository {
   }
 
   Future<Box<User>> _open() async {
-    await auth.load();
+    await tokens.load();
     return Hive.openBox(
       '$UserRepository',
       encryptionKey: await Storage.hiveKey<User>(),
@@ -131,7 +131,7 @@ class UserRepository {
     await _checkState(open: true);
 
     final actualId = userId ?? _userId;
-    final actualToken = auth[actualId];
+    final actualToken = tokens[actualId];
     if (hasToken) {
       if (actualId == _userId) {
         // Login request is for current user
@@ -200,7 +200,7 @@ class UserRepository {
     await _checkState();
 
     final actualId = userId ?? _userId;
-    final actualToken = auth[actualId];
+    final actualToken = tokens[actualId];
     if (actualToken != null) {
       final response = await _validateAndRefresh(
         actualToken,
@@ -262,7 +262,7 @@ class UserRepository {
     await _checkState();
     final users = _users.values.toList();
     await _users.clear();
-    await auth.clear();
+    await tokens.clear();
     return users;
   }
 
@@ -364,7 +364,7 @@ class UserRepository {
     bool validate = true,
   }) async {
     final actualId = userId ?? _userId;
-    final actualToken = auth[actualId];
+    final actualToken = tokens[actualId];
     if (actualToken != null) {
       bool isValid = actualToken.isValid;
       if (isValid || !validate) {
@@ -378,7 +378,7 @@ class UserRepository {
         );
       }
       // Get refreshed token
-      final token = auth[actualId];
+      final token = tokens[actualId];
       if (token != null) {
         return token;
       }
@@ -432,7 +432,7 @@ class UserRepository {
     String userId, {
     bool user: false,
   }) async {
-    final token = await auth.delete(
+    final token = await tokens.delete(
       userId,
     );
     if (user) {
@@ -443,7 +443,7 @@ class UserRepository {
   }
 
   Future<AuthToken> _putToken(AuthToken token, {Security security}) async {
-    await auth.put(token);
+    await tokens.put(token);
     await _putUser(token.toUser(security: security));
     return token;
   }

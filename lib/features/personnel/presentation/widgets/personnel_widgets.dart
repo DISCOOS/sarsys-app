@@ -12,6 +12,7 @@ import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/action_group.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/widgets/coordinate_view.dart';
+import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,6 +50,10 @@ class PersonnelWidget extends StatelessWidget {
     this.withActions = true,
   }) : super(key: key);
 
+  bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
+        personnel.affiliation?.uuid,
+      );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
@@ -57,6 +62,7 @@ class PersonnelWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (withHeader) _buildHeader(context, personnel, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
@@ -78,6 +84,44 @@ class PersonnelWidget extends StatelessWidget {
         ] else
           SizedBox(height: 16.0)
       ],
+    );
+  }
+
+  Padding _buildTemporaryPersonnelWarning(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Container(
+          color: Colors.grey[300],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              children: <Widget>[
+                GestureDetector(
+                    child: Chip(
+                      label: Text(
+                        'Mannskap opprettet manuelt',
+                        textAlign: TextAlign.end,
+                      ),
+                      labelPadding: EdgeInsets.only(right: 4.0),
+                      backgroundColor: Colors.grey[100],
+                      avatar: Icon(
+                        Icons.warning,
+                        size: 16.0,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    onTap: () => alert(
+                          context,
+                          title: "Mannskap opprettet manuelt",
+                          content: TemporaryPersonnelDescription(),
+                        )),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
