@@ -1,6 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async/async.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:grouped_list/grouped_list.dart';
+
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/presentation/pages/affiliations_page.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -14,19 +23,15 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/widgets/descriptions.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
-import 'package:async/async.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 
 class PersonnelsPage extends StatefulWidget {
   final String query;
   final bool withAvatar;
   final bool withStatus;
   final bool withActions;
+  final bool withGrouped;
   final bool withMultiSelect;
   final bool Function(Personnel personnel) where;
   final void Function(Personnel personnel) onSelection;
@@ -39,6 +44,7 @@ class PersonnelsPage extends StatefulWidget {
     this.withStatus = true,
     this.withAvatar = true,
     this.withActions = true,
+    this.withGrouped = true,
     this.withMultiSelect = false,
   }) : super(key: key);
 
@@ -91,7 +97,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
             context.bloc<PersonnelBloc>().load();
           },
           child: Container(
-            color: Color.fromRGBO(168, 168, 168, 0.6),
+//            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
@@ -114,38 +120,59 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   }
 
   List<Personnel> _filteredPersonnel() {
-    return context
+    final personnels = context
         .bloc<PersonnelBloc>()
         .repo
         .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
         .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
-        .toList()
-          ..sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
+        .toList();
+    if (!widget.withGrouped) {
+      personnels.sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
+    }
+    return personnels;
   }
 
   String _prepare(Personnel personnel) => "${personnel.searchable}".toLowerCase();
 
-  ListView _buildList(List personnel) {
-    return ListView.builder(
-      itemCount: personnel.length + 1,
-      itemExtent: 72.0,
-      itemBuilder: (context, index) {
-        return _buildPersonnel(personnel, index);
-      },
-    );
+  Widget _buildList(List personnels) {
+    return widget.withGrouped
+        ? GroupedListView<Personnel, AffiliationGroupEntry>(
+            elements: personnels,
+            sort: true,
+            floatingHeader: true,
+            useStickyGroupSeparators: true,
+            order: GroupedListOrder.DESC,
+            itemBuilder: (context, personnel) {
+              return _buildPersonnel(personnel);
+            },
+            groupBy: (personnel) {
+              final affiliation = _toAffiliation(personnel);
+              final org = affiliationBloc.orgs[affiliation.org?.uuid];
+              return AffiliationGroupEntry(
+                prefix: org.prefix ?? '0',
+                name: affiliationBloc.toName(
+                  affiliation,
+                  empty: 'Uorganisert',
+                  short: true,
+                ),
+              );
+            },
+            groupSeparatorBuilder: (affiliation) => AffiliationGroupDelimiter(affiliation),
+          )
+        : ListView.builder(
+            itemCount: personnels.length,
+            itemExtent: 72.0,
+            itemBuilder: (context, index) {
+              return _buildPersonnel(personnels[index]);
+            },
+          );
   }
 
-  Widget _buildPersonnel(List<Personnel> items, int index) {
-    if (index == items.length) {
-      return Center(
-        child: Text("Antall mannskaper: $index"),
-      );
-    }
-    var personnel = items[index];
-    var unit = _toUnit(personnel);
-    var tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
+  Widget _buildPersonnel(Personnel personnel) {
+    final unit = _toUnit(personnel);
+    final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
       child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
@@ -169,80 +196,93 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   }
 
   Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
-    return Container(
-      key: ObjectKey(personnel.uuid),
-      color: Colors.white,
-      constraints: BoxConstraints.expand(),
-      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          if (widget.withAvatar) PersonnelAvatar(personnel: personnel, tracking: tracking),
-          SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
-          Chip(
-            label: Text("${personnel.name}"),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: AffiliationAvatar(
-              size: 6.0,
-              maxRadius: 10.0,
-              affiliation: context.bloc<AffiliationBloc>().repo[personnel?.affiliation?.uuid],
-            ),
-          ),
-          if (isTemporary(personnel))
-            GestureDetector(
-                child: Chip(
-                  label: Text(
-                    'M',
-                    textAlign: TextAlign.end,
-                  ),
-                  labelPadding: EdgeInsets.only(right: 4.0),
-                  backgroundColor: Colors.grey[100],
-                  avatar: Icon(
-                    Icons.warning,
-                    size: 16.0,
-                    color: Colors.orange,
-                  ),
-                ),
-                onTap: () => alert(
-                      context,
-                      title: "Mannskap opprettet manuelt",
-                      content: TemporaryPersonnelDescription(),
-                    )),
-          Spacer(),
-          if (widget.withStatus)
+    return ConstrainedBox(
+      constraints: BoxConstraints.tightForFinite(height: 72.0),
+      child: Container(
+        key: ObjectKey(personnel.uuid),
+        color: Colors.white,
+        constraints: BoxConstraints.expand(),
+        padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            if (widget.withAvatar)
+              PersonnelAvatar(
+                personnel: personnel,
+                tracking: tracking,
+              ),
+            SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
             Chip(
-              label: Text(
-                _toUsage(unit, personnel, tracking),
-                textAlign: TextAlign.end,
-              ),
-              labelPadding: EdgeInsets.only(right: 4.0),
+              label: Text("${personnel.name}"),
               backgroundColor: Colors.grey[100],
-              avatar: Icon(
-                Icons.my_location,
-                size: 16.0,
-                color: toPositionStatusColor(tracking?.position),
+//              avatar: AffiliationAvatar(
+//                size: 6.0,
+//                maxRadius: 10.0,
+//                affiliation: _toAffiliation(personnel),
+//              ),
+            ),
+            if (isTemporary(personnel))
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: GestureDetector(
+                    child: Chip(
+                      label: Text(
+                        'M',
+                        textAlign: TextAlign.end,
+                      ),
+                      labelPadding: EdgeInsets.only(right: 4.0),
+                      backgroundColor: Colors.grey[100],
+                      avatar: Icon(
+                        Icons.warning,
+                        size: 16.0,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    onTap: () => alert(
+                          context,
+                          title: "Mannskap opprettet manuelt",
+                          content: TemporaryPersonnelDescription(),
+                        )),
               ),
-            ),
-          if (widget.withMultiSelect)
-            Padding(
-              padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-              child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
-            ),
-          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-            RotatedBox(
-              quarterTurns: 1,
-              child: Icon(
-                Icons.drag_handle,
-                color: Colors.grey.withOpacity(0.2),
+            Spacer(),
+            if (widget.withStatus)
+              Chip(
+                label: Text(
+                  _toUsage(unit, personnel, tracking),
+                  textAlign: TextAlign.end,
+                ),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  Icons.my_location,
+                  size: 16.0,
+                  color: toPositionStatusColor(tracking?.position),
+                ),
               ),
-            ),
-        ],
+            if (widget.withMultiSelect)
+              Padding(
+                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+                child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
+              ),
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+              RotatedBox(
+                quarterTurns: 1,
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  bool isTemporary(Personnel personnel) => context.bloc<AffiliationBloc>().isTemporary(
+  Affiliation _toAffiliation(Personnel personnel) => affiliationBloc.repo[personnel?.affiliation?.uuid];
+
+  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+
+  bool isTemporary(Personnel personnel) => affiliationBloc.isTemporary(
         personnel.affiliation.uuid,
       );
 

@@ -9,6 +9,7 @@ import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.da
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/icons.dart';
 import 'package:SarSys/utils/data_utils.dart';
 import 'package:SarSys/utils/ui_utils.dart';
 import 'package:SarSys/widgets/filter_sheet.dart';
@@ -17,11 +18,13 @@ import 'package:debounce_throttle/debounce_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:grouped_list/grouped_list.dart';
 
 class AffiliationsPage extends StatefulWidget {
   final String query;
   final bool withStatus;
   final bool withActions;
+  final bool withGrouped;
   final bool withMultiSelect;
   final Completer<List<Affiliation>> request;
   final bool Function(Affiliation affiliation) where;
@@ -35,6 +38,7 @@ class AffiliationsPage extends StatefulWidget {
     this.onSelection,
     this.withStatus = true,
     this.withActions = true,
+    this.withGrouped = true,
     this.withMultiSelect = false,
   }) : super(key: key);
 
@@ -81,13 +85,13 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints viewportConstraints) {
+      builder: (BuildContext context, BoxConstraints constraints) {
         return RefreshIndicator(
           onRefresh: () async {
             context.bloc<AffiliationBloc>().load();
           },
           child: Container(
-            color: Color.fromRGBO(168, 168, 168, 0.6),
+//            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
@@ -95,7 +99,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
                 var affiliations = _filteredAffiliation(context.bloc<AffiliationBloc>());
                 return affiliations.isEmpty || snapshot.hasError
                     ? toRefreshable(
-                        viewportConstraints,
+                        constraints,
                         message: _toEmptyListMessage(snapshot),
                       )
                     : _buildList(context.bloc<AffiliationBloc>(), affiliations);
@@ -114,7 +118,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           : widget.request?.isCompleted == false ? "Søker..." : "Ingen nye mannskap lastet ned";
 
   List<Affiliation> _filteredAffiliation(AffiliationBloc bloc) {
-    return context
+    final affiliations = context
         .bloc<AffiliationBloc>()
         .repo
         .values
@@ -125,6 +129,13 @@ class AffiliationsPageState extends State<AffiliationsPage> {
           ..sort(
             (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
           );
+
+    if (!widget.withGrouped) {
+      affiliations.sort(
+        (p1, p2) => _prepare(bloc, p1).compareTo(_prepare(bloc, p2)),
+      );
+    }
+    return affiliations;
   }
 
   bool _matches(AffiliationBloc bloc, Affiliation affiliation) =>
@@ -133,23 +144,46 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   String _prepare(AffiliationBloc bloc, Affiliation affiliation) =>
       "${bloc.toSearchable(affiliation.uuid)}".toLowerCase();
 
-  ListView _buildList(AffiliationBloc bloc, List affiliations) {
-    return ListView.builder(
-      itemCount: affiliations.length + 1,
-      itemExtent: 72.0,
-      itemBuilder: (context, index) {
-        return _buildAffiliation(bloc, affiliations, index);
-      },
-    );
+  AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
+
+  Widget _buildList(AffiliationBloc bloc, List affiliations) {
+    return widget.withGrouped
+        ? GroupedListView<Affiliation, AffiliationGroupEntry>(
+            sort: true,
+            floatingHeader: true,
+            elements: affiliations,
+            useStickyGroupSeparators: true,
+            physics: AlwaysScrollableScrollPhysics(),
+            order: GroupedListOrder.DESC,
+            itemBuilder: (context, affiliation) {
+              return _buildAffiliation(bloc, affiliation);
+            },
+            groupBy: (affiliation) {
+              final org = affiliationBloc.orgs[affiliation.org?.uuid];
+              return AffiliationGroupEntry(
+                prefix: org.prefix ?? '0',
+                name: affiliationBloc.toName(
+                  affiliation,
+                  empty: 'Uorganisert',
+                  short: true,
+                ),
+              );
+            },
+            groupSeparatorBuilder: (affiliation) => AffiliationGroupDelimiter(
+              affiliation,
+            ),
+          )
+        : ListView.builder(
+            itemCount: affiliations.length + 1,
+            itemExtent: 72.0,
+            physics: AlwaysScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              return _buildAffiliation(bloc, affiliations[index]);
+            },
+          );
   }
 
-  Widget _buildAffiliation(AffiliationBloc bloc, List<Affiliation> items, int index) {
-    if (index == items.length) {
-      return Center(
-        child: Text("Antall personer: $index"),
-      );
-    }
-    final affiliation = items[index];
+  Widget _buildAffiliation(AffiliationBloc bloc, Affiliation affiliation) {
     final person = bloc.persons[affiliation.person?.uuid];
     return GestureDetector(
       child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
@@ -167,50 +201,58 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   }
 
   Widget _buildAffiliationTile(Person person, Affiliation affiliation) {
-    return Container(
-      key: ObjectKey(affiliation.uuid),
-      color: Colors.white,
-      constraints: BoxConstraints.expand(),
-      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Chip(
-            label: Text("${person?.name ?? 'Mannskap'}"),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: new AffiliationAvatar(
-              size: 6.0,
-              maxRadius: 10.0,
-              affiliation: affiliation,
+    return ConstrainedBox(
+      constraints: BoxConstraints.tightForFinite(height: 72.0),
+      child: Container(
+        key: ObjectKey(affiliation.uuid),
+        color: Colors.white,
+        constraints: BoxConstraints.expand(),
+        padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Chip(
+              label: Text("${person?.name ?? 'Mannskap'}"),
+              backgroundColor: Colors.grey[100],
             ),
-          ),
-          Spacer(),
-          if (widget.withStatus)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Chip(
-                label: Text(
-                  translateAffiliationStandbyStatus(affiliation.status),
-                  textAlign: TextAlign.end,
+            SizedBox(width: 8.0),
+            Chip(
+              label: Text("${person?.phone ?? 'Ingen telefon'}"),
+              backgroundColor: Colors.grey[100],
+              labelPadding: EdgeInsets.only(right: 4.0),
+              avatar: Icon(
+                Icons.phone,
+                size: 16.0,
+                color: Colors.black38,
+              ),
+            ),
+            Spacer(),
+            if (widget.withStatus)
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Chip(
+                  label: Text(
+                    translateAffiliationStandbyStatus(affiliation.status),
+                    textAlign: TextAlign.end,
+                  ),
+                  backgroundColor: Colors.grey[100],
                 ),
-                backgroundColor: Colors.grey[100],
               ),
-            ),
-          if (widget.withMultiSelect)
-            Padding(
-              padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-              child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
-            ),
-          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-            RotatedBox(
-              quarterTurns: 1,
-              child: Icon(
-                Icons.drag_handle,
-                color: Colors.grey.withOpacity(0.2),
+            if (widget.withMultiSelect)
+              Padding(
+                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+                child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
               ),
-            ),
-        ],
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+              RotatedBox(
+                quarterTurns: 1,
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -280,6 +322,66 @@ class AffiliationsPageState extends State<AffiliationsPage> {
         (e) => value == enumName(e),
         orElse: () => AffiliationStandbyStatus.unavailable,
       );
+}
+
+class AffiliationGroupEntry implements Comparable {
+  AffiliationGroupEntry({this.name, this.prefix});
+  final String name;
+  final String prefix;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AffiliationGroupEntry &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          prefix == other.prefix;
+
+  @override
+  int get hashCode => name.hashCode ^ prefix.hashCode;
+
+  @override
+  int compareTo(other) {
+    if (other is AffiliationGroupEntry) {
+      return other.name.compareTo(name);
+    }
+    return double.maxFinite.toInt();
+  }
+}
+
+class AffiliationGroupDelimiter extends StatelessWidget {
+  const AffiliationGroupDelimiter(
+    this.affiliation, {
+    Key key,
+  }) : super(key: key);
+  final AffiliationGroupEntry affiliation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: <Widget>[
+            CircleAvatar(
+              child: SarSysIcons.of(
+                affiliation.prefix,
+                size: 8,
+              ),
+              maxRadius: 10,
+              backgroundColor: Colors.white,
+            ),
+            SizedBox(width: 8.0),
+            Text(
+              affiliation.name,
+              style: Theme.of(context).textTheme.subtitle2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class AffiliationSearch extends SearchDelegate<Affiliation> {

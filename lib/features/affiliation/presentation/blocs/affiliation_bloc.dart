@@ -203,13 +203,17 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   /// Get full affiliation name as comma-separated list of organisation, division and department names
-  String toName(Affiliation affiliation, {String empty = 'Ingen'}) {
+  String toName(
+    Affiliation affiliation, {
+    String empty = 'Ingen',
+    bool short = false,
+  }) {
     final names = [
       orgs[affiliation?.org?.uuid]?.name,
       divs[affiliation?.div?.uuid]?.name,
       deps[affiliation?.dep?.uuid]?.name,
     ]..removeWhere((name) => name == null);
-    return names.isEmpty ? empty : names.join(', ');
+    return names.isEmpty ? empty : short ? names.last : names.join(', ');
   }
 
   /// Get [Person] from User

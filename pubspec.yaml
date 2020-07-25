@@ -80,6 +80,7 @@ dependencies:
   flutter_phoenix: ^0.1.0
   chopper: ^3.0.2
   debounce_throttle: ^1.1.0
+  grouped_list: ^3.3.0
 
   # Mocking support
   uuid: ^2.0.2

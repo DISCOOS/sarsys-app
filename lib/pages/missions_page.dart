@@ -79,7 +79,7 @@ class MissionsPageState extends State<MissionsPage> {
             context.bloc<UnitBloc>().load();
           },
           child: Container(
-            color: Color.fromRGBO(168, 168, 168, 0.6),
+//            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {

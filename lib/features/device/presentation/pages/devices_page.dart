@@ -78,7 +78,7 @@ class DevicesPageState extends State<DevicesPage> {
           context.bloc<DeviceBloc>().load();
         },
         child: Container(
-          color: Color.fromRGBO(168, 168, 168, 0.6),
+//          color: Color.fromRGBO(168, 168, 168, 0.6),
           child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
