@@ -16,6 +16,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/pages/repository_page.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
@@ -65,11 +66,10 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SingleChildScrollView(
-          child: ListView(
-            shrinkWrap: true,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
             children: <Widget>[
               _buildConfigsTile(context),
               _buildIncidentsTile(context),
@@ -94,7 +94,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Innstillinger",
       withResetAction: false,
       repo: context.bloc<AppConfigBloc>().repo,
-      subtitle: (StorageState<AppConfig> state) => 'Device id ${state?.value?.udid}',
+      subtitle: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
     );
   }
 
@@ -238,40 +238,34 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Object>(
-        stream: repo.onChanged,
-        builder: (context, snapshot) {
-          return repo.isEmpty
-              ? _buildRepoActions(context,
-                  child: ListTile(
-                    leading: const Icon(Icons.storage),
-                    title: Text(title),
-                    subtitle: Text('Ingen elementer'),
-                  ))
-              : _buildRepoActions(context,
-                  child: ExpansionTile(
-                    key: PageStorageKey<ConnectionAwareRepository>(repo),
-                    leading: const Icon(Icons.storage),
-                    title: Text(title),
-                    subtitle: Text("Elementer: ${repo.length}, feil: ${repo.errors.length}"),
-                    children: repo.states.values.map((state) => _buildTile(context, state)).toList(),
-                  ));
-        });
-  }
-
-  Widget _buildTile(BuildContext context, StorageState<T> state) {
-    final key = repo.toKey(state);
-    return ListTile(
-      title: Text(subtitle(state)),
-      subtitle: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Key $key'),
-          Text('Status ${enumName(state.status)}, '
-              'last change was ${state.isLocal ? 'local' : 'remote'},'),
-          if (state.isError) Text('Last error: ${state.error}'),
-        ],
+    return GestureDetector(
+      child: StreamBuilder<Object>(
+          stream: repo.onChanged,
+          builder: (context, snapshot) {
+            return _buildRepoActions(context,
+                child: ListTile(
+                  key: PageStorageKey<ConnectionAwareRepository>(repo),
+                  leading: const Icon(Icons.storage),
+                  title: Text(title),
+                  subtitle: repo.isEmpty
+                      ? Text('Ingen elementer')
+                      : Text("Elementer: ${repo.length}, feil: ${repo.errors.length}"),
+                ));
+          }),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (context) => Scaffold(
+            appBar: AppBar(
+              title: Text("${typeOf<T>()}"),
+            ),
+            body: RepositoryPage<T>(
+              repository: repo,
+              subtitle: subtitle,
+            ),
+          ),
+        ),
       ),
     );
   }
