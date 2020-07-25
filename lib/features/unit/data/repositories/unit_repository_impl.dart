@@ -126,7 +126,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
           return response.body;
         }
         throw UnitServiceException(
-          'Failed to fetch personnel for incident $ouuid',
+          'Failed to fetch personnel for operation $ouuid',
           response: response,
           stackTrace: StackTrace.current,
         );

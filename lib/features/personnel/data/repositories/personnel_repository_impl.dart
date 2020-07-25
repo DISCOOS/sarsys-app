@@ -109,7 +109,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
           return response.body;
         }
         throw PersonnelServiceException(
-          'Failed to fetch personnel for incident $ouuid',
+          'Failed to fetch personnel for operation $ouuid',
           response: response,
           stackTrace: StackTrace.current,
         );
