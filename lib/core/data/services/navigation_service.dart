@@ -1,4 +1,4 @@
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';

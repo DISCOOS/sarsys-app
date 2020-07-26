@@ -7,7 +7,7 @@ import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';

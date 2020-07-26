@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:catcher/catcher_plugin.dart';
+import 'package:catcher/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as gl;
 import 'package:permission_handler/permission_handler.dart';
@@ -12,22 +12,29 @@ import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'location_service.dart';
 
 class GeolocatorService implements LocationService {
-  GeolocatorService(AppConfigBloc bloc) {
-    assert(bloc != null, "AppConfigBloc must be supplied");
-    _appConfigBloc = bloc;
-    _geolocator = gl.Geolocator();
-    _events.insert(0, CreateEvent(bloc.config));
+  GeolocatorService(
+    this.duuid,
+    this.configBloc,
+  ) {
+    assert(configBloc != null, "AppConfigBloc must be supplied");
+    assert(duuid != null, "Device uuid must be supplied");
+    _events.insert(0, CreateEvent(duuid, configBloc.config));
   }
+  final String duuid;
+  final AppConfigBloc configBloc;
 
   static List<LocationEvent> _events = [];
 
   final _isReady = ValueNotifier(false);
 
+  final bool isSharing = false;
+  final bool isTracking = false;
+
   Position _current;
   gl.Geolocator _geolocator;
   PermissionStatus _status = PermissionStatus.unknown;
 
-  AppConfigBloc _appConfigBloc;
+  AppConfigBloc _bloc;
   LocationOptions _options;
 
   Stream<Position> _internalStream;
@@ -35,6 +42,9 @@ class GeolocatorService implements LocationService {
   StreamSubscription _locatorSubscription;
   StreamController<Position> _positionController = StreamController.broadcast();
   StreamController<LocationEvent> _eventController = StreamController.broadcast();
+
+  @override
+  String token;
 
   @override
   Position get current => _current;
@@ -55,20 +65,39 @@ class GeolocatorService implements LocationService {
   Iterable<LocationEvent> get events => List.unmodifiable(_events);
 
   @override
+  Iterable<Position> get positions => events.whereType<PositionEvent>().map((e) => e.position);
+
+  @override
   LocationEvent operator [](int index) => _events[index];
 
   @override
-  Future<PermissionStatus> configure({bool force = false}) async {
+  Future<Iterable<Position>> history() async {
+    return positions;
+  }
+
+  @override
+  Future clear() async {
+    return _events.clear();
+  }
+
+  @override
+  Future<PermissionStatus> configure({
+    String duuid,
+    String token,
+    bool track,
+    bool share,
+    bool force = false,
+  }) async {
     _status = await PermissionHandler().checkPermissionStatus(
       PermissionGroup.locationWhenInUse,
     );
     if ([PermissionStatus.granted].contains(_status)) {
-      final config = _appConfigBloc.config;
+      final config = _bloc.config;
       var options = _toOptions(config);
       if (force || _isConfigChanged(options)) {
         _subscribe(options);
         _configSubscription?.cancel();
-        _configSubscription = _appConfigBloc.listen(
+        _configSubscription = _bloc.listen(
           (state) {
             if (state.data is AppConfig) {
               final options = _toOptions(state.data);
@@ -80,7 +109,7 @@ class GeolocatorService implements LocationService {
         );
       }
     } else {
-      dispose();
+      await dispose();
     }
     return _status;
   }
@@ -206,7 +235,10 @@ class GeolocatorService implements LocationService {
   _handleError(dynamic error, StackTrace stackTrace) {
     _unsubscribe();
     _notify(ErrorEvent(_options, error, stackTrace));
-    Catcher.reportCheckedError("Location stream failed with error: $error", stackTrace);
+    Catcher.reportCheckedError(
+      "Location stream failed with error: $error",
+      stackTrace,
+    );
   }
 
   Position _toPosition(gl.Position position) => Position.timestamp(

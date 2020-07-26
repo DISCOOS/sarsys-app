@@ -1,11 +1,13 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -95,6 +97,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Check if device is this application
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
+
   bool _shouldSetName(Device device) => device.name == null && isThisApp(device);
 
   /// Get [OperationBloc]
@@ -108,6 +111,12 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Get devices
   Map<String, Device> get devices => repo.map;
+
+  /// Find device for this app
+  Device findThisApp() {
+    final udid = userBloc.config.udid;
+    return repo.find(where: (device) => device.uuid == udid).firstOrNull;
+  }
 
   @override
   DevicesEmpty get initialState => DevicesEmpty();
@@ -216,6 +225,12 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _load(LoadDevices command) async {
     var devices = await repo.load();
+
+    LocationService().configure(
+      duuid: findThisApp()?.uuid,
+      token: userBloc.repo.token.accessToken,
+    );
+
     return toOK(
       command,
       DevicesLoaded(repo.keys),
@@ -256,6 +271,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _unload(UnloadDevices command) async {
     final devices = await repo.close();
+    LocationService().dispose();
     return toOK(
       command,
       DevicesUnloaded(devices),

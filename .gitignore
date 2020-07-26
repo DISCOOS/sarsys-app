@@ -3,6 +3,7 @@ android/key.properties
 */fastlane/report.xml
 ios/Runner.*
 ios/Flutter/flutter_export_environment.sh
+**/*/res/values/secrets.xml
 
 # Miscellaneous
 *.class

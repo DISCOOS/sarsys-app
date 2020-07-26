@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:latlong/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -71,7 +72,10 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
 
   Position _ensurePosition() => widget.position?.isNotEmpty != true
       ? Position.fromPoint(
-            LocationService(context.bloc<AppConfigBloc>()).current.geometry,
+            LocationService(
+              configBloc: context.bloc<AppConfigBloc>(),
+              duuid: context.bloc<DeviceBloc>().findThisApp()?.uuid,
+            ).current.geometry,
             source: PositionSource.manual,
           ) ??
           Position.now(

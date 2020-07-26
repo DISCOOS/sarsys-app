@@ -6,13 +6,14 @@ import 'package:SarSys/core/presentation/widgets/network_sensitive.dart';
 import 'package:SarSys/core/presentation/widgets/sarsys_app.dart';
 import 'package:SarSys/core/presentation/widgets/screen_report.dart';
 import 'package:bloc/bloc.dart';
-import 'package:catcher/catcher_plugin.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:catcher/catcher.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
+import 'package:sentry/sentry.dart';
 
 import 'features/settings/presentation/blocs/app_config_bloc.dart';
 import 'core/page_state.dart';
@@ -129,14 +130,14 @@ void runAppWithCatcher(Widget app, AppController controller) {
     app,
     debugConfig: CatcherOptions(
       ScreenReportMode(),
-      [SentryHandler(sentryDns), ConsoleHandler(enableStackTrace: true)],
+      [SentryHandler(SentryClient(dsn: sentryDns)), ConsoleHandler(enableStackTrace: true)],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],
     ),
     releaseConfig: CatcherOptions(
       ScreenReportMode(),
-      [SentryHandler(sentryDns)],
+      [SentryHandler(SentryClient(dsn: sentryDns))],
       explicitExceptionReportModesMap: explicitReportModesMap,
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],

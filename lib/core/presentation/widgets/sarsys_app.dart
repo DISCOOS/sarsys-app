@@ -7,8 +7,8 @@ import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
-import 'package:SarSys/core/controllers/permission_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
+import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/data/storage.dart';

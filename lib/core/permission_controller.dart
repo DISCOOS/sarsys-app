@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:catcher/catcher_plugin.dart';
+import 'package:catcher/catcher.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,7 +84,23 @@ class PermissionController {
         platforms: ALL_OS,
         group: PermissionGroup.locationWhenInUse,
         title: "Stedstjenester",
-        rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er.",
+        rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er og lagre spor under aksjoner.",
+        disabledMessage: "Stedstjenester er avslått.",
+        deniedMessage: "Lokalisering er ikke tillatt.",
+        deniedBefore: "Du har tidligere avslått deling av posisjon.",
+        consequence: "Du kan ikke vise hvor du er i kartet eller lagre sporet ditt automatisk.",
+        settingTarget: PermissionRequest.SETTINGS_APPLICATION,
+        onCheck: () => _updateAppConfig(
+          locationWhenInUse: true,
+        ),
+      );
+
+  /// Get [PermissionGroup.locationWhenInUseRequest] request
+  PermissionRequest get locationAlwaysRequest => PermissionRequest(
+        platforms: ALL_OS,
+        group: PermissionGroup.locationAlways,
+        title: "Stedstjenester",
+        rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er og lagre spor under aksjoner.",
         disabledMessage: "Stedstjenester er avslått.",
         deniedMessage: "Lokalisering er ikke tillatt.",
         deniedBefore: "Du har tidligere avslått deling av posisjon.",
@@ -198,7 +214,10 @@ class PermissionController {
     var notify = true;
     if (configBloc.isReady) {
       final config = configBloc.config;
-      notify = config != (await configBloc.updateWith(locationWhenInUse: locationWhenInUse));
+      notify = config.locationWhenInUse != locationWhenInUse;
+      if (notify) {
+        await configBloc.updateWith(locationWhenInUse: locationWhenInUse);
+      }
     }
     return notify;
   }

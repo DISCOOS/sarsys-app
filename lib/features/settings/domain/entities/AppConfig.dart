@@ -1,7 +1,7 @@
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';

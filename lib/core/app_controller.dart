@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -493,13 +494,6 @@ class AppController {
     // Handle changes in user state
     registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
-    // Ensure user is mobilized after personnel and affiliation blocs are ready
-    waitThoughtEvents(bus, expected: [PersonnelsLoaded, AffiliationsLoaded], act: () async {
-      if (bloc<OperationBloc>().isSelected) {
-//        await mobilizeUser();
-      }
-    });
-
     // Notify that providers are ready
     _controller.add(_state = AppControllerState.Built);
 
@@ -537,6 +531,14 @@ class AppController {
       if (next != _state) {
         _state = next;
         _controller.add(_state);
+        // Ensure location service is
+        // initialized as early as possible.
+        //
+        // 1) DeviceBloc will reconfigure with duuid for this app
+        // 2) OperationBloc will reconfigure tracking s
+        LocationService(
+          configBloc: bloc<AppConfigBloc>(),
+        ).configure();
       }
     }
   }

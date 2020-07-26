@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/features/settings/presentation/screens/debug_screen.dart';
 import 'package:SarSys/core/presentation/screens/about_screen.dart';
 import 'package:SarSys/core/utils/ui.dart';

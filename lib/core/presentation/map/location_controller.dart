@@ -3,12 +3,11 @@ import 'dart:io';
 
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/controllers/permission_controller.dart';
+import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/presentation/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:catcher/catcher_plugin.dart';
+import 'package:catcher/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:latlong/latlong.dart';
@@ -18,7 +17,8 @@ typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
 class LocationController {
-  final AppConfigBloc configBloc;
+//  final String duuid;
+//  final AppConfigBloc configBloc;
   final MapWidgetController mapController;
   final PermissionController permissionController;
   final TickerProvider tickerProvider;
@@ -39,22 +39,31 @@ class LocationController {
   MyLocationOptions get options => _options;
 
   LocationController({
-    @required this.configBloc,
+//    @required this.duuid,
+//    @required String token,
+//    @required this.configBloc,
     @required this.mapController,
     @required this.permissionController,
     this.tickerProvider,
     this.onTrackingChanged,
     this.onLocationChanged,
-  })  : assert(configBloc != null, "configBloc must not be null"),
-        assert(mapController != null, "mapController must not be null"),
+  })  : assert(mapController != null, "mapController must not be null"),
         assert(permissionController != null, "permissionController must not be null"),
-        _service = LocationService(configBloc);
+        _service = LocationService();
 
   Position get current => _service.current;
 
-  Future<LatLng> configure() async {
+  Future<LatLng> configure({
+    String duuid,
+    String token,
+    bool force = false,
+  }) async {
     return _handle(
-      await _service.configure(force: true),
+      await _service.configure(
+        duuid: duuid,
+        token: token,
+        force: force,
+      ),
     );
   }
 
@@ -178,9 +187,12 @@ class LocationController {
   }
 
   void _onReady(Completer<LatLng> completer) async {
+    if (_disposed) {
+      return completer.complete(_toLatLng(_service.current));
+    }
     try {
       final status = await _service.configure();
-      if (!_disposed && _service.isReady.value) {
+      if (_service.isReady.value) {
         final point = _toLatLng(_service.current);
         _options?.cancel();
         _options = MyLocationOptions(
@@ -193,7 +205,8 @@ class LocationController {
         _subscribe();
         if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
         completer.complete(point);
-      } else {
+      } else if (status != PermissionStatus.granted) {
+        await Future.delayed(Duration(milliseconds: 100));
         final point = await _handle(status);
         completer.complete(point);
       }

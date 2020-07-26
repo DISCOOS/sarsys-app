@@ -1,3 +1,4 @@
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -21,7 +22,10 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _locationService = LocationService(bloc);
+    _locationService = LocationService(
+      configBloc: context.bloc<AppConfigBloc>(),
+      duuid: context.bloc<DeviceBloc>().findThisApp().uuid,
+    );
   }
 
   @override //new
@@ -61,7 +65,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
                         "Dette vil konfigurere posisjonstjenesten på nytt, vil du forsette?",
                       );
                       if (answer) {
-                        await LocationService(bloc).configure(force: true);
+                        await LocationService().configure(force: true);
                         setState(() {});
                       }
                     },
@@ -71,7 +75,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
                     tooltip: "Be om min posisjon",
                     padding: EdgeInsets.zero,
                     onPressed: () async {
-                      await LocationService(bloc).update();
+                      await LocationService().update();
                     },
                   ),
                   IconButton(

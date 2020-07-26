@@ -4,8 +4,8 @@ import 'package:latlong/latlong.dart';
 
 class Defaults {
   static const String baseWsUrl = 'wss://sarsys.app';
-//  static const String baseRestUrl = 'http://192.168.1.100/api';
-  static const String baseRestUrl = 'https://sarsys.app/api';
+  static const String baseRestUrl = 'http://192.168.1.100/api';
+//  static const String baseRestUrl = 'https://sarsys.app/api';
   static const double zoom = 16.0;
   static const double minZoom = 3.0;
   static const double maxZoom = 20.0;
@@ -14,7 +14,7 @@ class Defaults {
   static const int mapCacheCapacity = 15000;
   static const String locationAccuracy = "high";
   static const int locationFastestInterval = 1000;
-  static const int locationSmallestDisplacement = 3;
+  static const int locationSmallestDisplacement = 0;
   static const bool keepScreenOn = false;
   static const bool callsignReuse = true;
   static const List<String> idpHints = const ['rodekors'];

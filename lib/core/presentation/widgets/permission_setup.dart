@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/controllers/permission_controller.dart';
+import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -139,7 +139,7 @@ class PermissionSetupState extends State<PermissionSetup> {
                         onChanged: (value) async {
                           if (value) {
                             _permissions.ask(
-                              _permissions.locationWhenInUseRequest,
+                              _permissions.locationAlwaysRequest,
                             );
                           }
                         },

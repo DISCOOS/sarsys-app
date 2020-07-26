@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -402,7 +401,7 @@ void jumpToMe(
   BuildContext context, {
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) async {
-  final service = LocationService(context.bloc<AppConfigBloc>());
+  final service = LocationService();
   var status = service.status;
   if (PermissionStatus.unknown == status) {
     status = await service.configure();
@@ -444,7 +443,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   final url = Platform.isIOS ? "comgooglemaps://?q" : "google.navigation:q";
   var success = await launch("$url=${point.latitude},${point.longitude}");
   if (success == false && Platform.isIOS) {
-    final service = LocationService(context.bloc<AppConfigBloc>());
+    final service = LocationService();
     var status = service.status;
     if (PermissionStatus.unknown == status) {
       status = await service.configure();

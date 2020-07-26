@@ -15,7 +15,7 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/core/presentation/map/map_search.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
@@ -102,7 +102,7 @@ class _OperationEditorState extends State<OperationEditor> {
   void _setMeetupToMe() async {
     _meetup = _toLocation(
       _meetup,
-      LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
+      LocationService.toPoint(LocationService().current),
     );
     _updateField('meetup', toPosition(_meetup.point));
     _meetup = await _updateDescriptionFromPoint(
@@ -119,7 +119,7 @@ class _OperationEditorState extends State<OperationEditor> {
   void _setIppToMe() async {
     _ipp = _toLocation(
       _ipp,
-      LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
+      LocationService.toPoint(LocationService().current),
     );
     _updateField('ipp', toPosition(_ipp.point));
     _ipp = await _updateDescriptionFromPoint(

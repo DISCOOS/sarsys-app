@@ -43,7 +43,9 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
 
   /// Load config from [service]
   @override
-  Future<AppConfig> update(AppConfig data) async => dispatch(UpdateAppConfig(data));
+  Future<AppConfig> update(AppConfig data) async => dispatch(
+        UpdateAppConfig(data),
+      );
 
   /// Update with given settings
   Future<AppConfig> updateWith({

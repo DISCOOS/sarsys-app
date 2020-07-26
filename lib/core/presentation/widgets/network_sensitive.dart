@@ -15,10 +15,13 @@ class NetworkSensitive extends StatelessWidget {
     return StreamProvider<ConnectivityStatus>(
       initialData: service.status,
       create: (context) => ConnectivityService().changes,
-      catchError: (error, stackTrace) => Catcher.reportCheckedError(
-        error,
-        stackTrace,
-      ),
+      catchError: (error, stackTrace) {
+        Catcher.reportCheckedError(
+          error,
+          stackTrace,
+        );
+        return service.status;
+      },
       child: child,
     );
   }

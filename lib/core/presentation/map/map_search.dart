@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/domain/models/Point.dart';

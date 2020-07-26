@@ -18,7 +18,7 @@ import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/controllers/permission_controller.dart';
+import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/core/presentation/map/basemap_card.dart';
 import 'package:SarSys/core/presentation/map/layers/coordate_layer.dart';
@@ -27,7 +27,7 @@ import 'package:SarSys/core/presentation/map/layers/measure_layer.dart';
 import 'package:SarSys/core/presentation/map/layers/personnel_layer.dart';
 import 'package:SarSys/core/presentation/map/map_controls.dart';
 import 'package:SarSys/core/presentation/map/painters.dart';
-import 'package:SarSys/core/controllers/location_controller.dart';
+import 'package:SarSys/core/presentation/map/location_controller.dart';
 import 'package:SarSys/core/presentation/map/tile_providers.dart';
 import 'package:SarSys/core/presentation/map/layers/scalebar.dart';
 import 'package:SarSys/core/presentation/map/tools/position_tool.dart';
@@ -459,11 +459,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     if (widget.withControlsLocateMe && _locationController == null) {
       _locationController = LocationController(
         tickerProvider: this,
-        configBloc: context.bloc<AppConfigBloc>(),
-        permissionController: _ensurePermissionController(),
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
         onLocationChanged: _onLocationChanged,
+        permissionController: _ensurePermissionController(),
       );
       _scheduleInitLocation((_) {
         final following = _readState(STATE_FOLLOWING, defaultValue: false);
@@ -476,8 +475,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _scheduleInitLocation(ValueChanged<LatLng> callback) {
-    _locationRequest ??= _locationController.configure();
-    _locationRequest.then(callback);
+    if (_locationRequest == null) {
+      _locationRequest = _locationController.configure();
+      _locationRequest.then(callback);
+    }
   }
 
   PermissionController _ensurePermissionController() {
