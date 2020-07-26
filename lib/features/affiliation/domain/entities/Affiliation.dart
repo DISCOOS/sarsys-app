@@ -1,8 +1,8 @@
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 import 'Department.dart';
 import 'Division.dart';

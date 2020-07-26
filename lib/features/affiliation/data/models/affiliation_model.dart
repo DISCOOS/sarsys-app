@@ -7,10 +7,10 @@ import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:SarSys/models/converters.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 
 part 'affiliation_model.g.dart';
 

@@ -13,8 +13,8 @@ import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/screens/screen.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/presentation/screens/screen.dart';
 
 class LoginScreen extends StatefulWidget {
   static const ROUTE = 'login';

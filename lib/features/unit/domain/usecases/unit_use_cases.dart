@@ -9,12 +9,12 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
-import 'package:SarSys/usecase/core.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/domain/usecase/core.dart';
+import 'package:SarSys/core/utils/ui.dart';
 
 class UnitParams<T> extends BlocParams<UnitBloc, Unit> {
   UnitParams({

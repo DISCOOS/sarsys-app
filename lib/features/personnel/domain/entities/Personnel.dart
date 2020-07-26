@@ -2,10 +2,10 @@ import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 
 abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate {
   Personnel({

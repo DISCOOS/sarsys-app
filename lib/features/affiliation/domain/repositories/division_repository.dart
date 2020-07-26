@@ -1,8 +1,8 @@
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 abstract class DivisionRepository implements ConnectionAwareRepository<String, Division, DivisionService> {
   /// Get [Division.uuid] from [state]

@@ -1,6 +1,6 @@
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/core/service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -20,8 +20,8 @@ import 'package:SarSys/features/settings/presentation/pages/repository_page.dart
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';

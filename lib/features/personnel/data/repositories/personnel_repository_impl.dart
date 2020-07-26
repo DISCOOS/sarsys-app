@@ -6,12 +6,12 @@ import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repo
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
 
 class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personnel, PersonnelService>

@@ -9,13 +9,13 @@ import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/features/user/presentation/widget/passcode_popup.dart';
-import 'package:SarSys/screens/screen.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/presentation/screens/screen.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/filter_sheet.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
 
 class OperationsScreen extends Screen<OperationsScreenState> {
   static const ROUTE = 'operation/list';

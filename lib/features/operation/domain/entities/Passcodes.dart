@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:random_string/random_string.dart';
 import 'package:meta/meta.dart';
 
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 part 'Passcodes.g.dart';
 

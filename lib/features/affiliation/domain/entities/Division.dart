@@ -1,5 +1,5 @@
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:meta/meta.dart';
 
 import 'Organisation.dart';

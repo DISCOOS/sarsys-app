@@ -1,4 +1,4 @@
-import 'package:SarSys/models/BaseMap.dart';
+import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:latlong/latlong.dart';
 

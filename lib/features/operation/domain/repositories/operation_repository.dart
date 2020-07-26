@@ -1,8 +1,8 @@
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 import 'incident_repository.dart';
 

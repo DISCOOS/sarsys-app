@@ -5,7 +5,7 @@ import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +17,7 @@ import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/utils/ui.dart';
 
 class AffiliationAvatar extends StatelessWidget {
   final Affiliation affiliation;

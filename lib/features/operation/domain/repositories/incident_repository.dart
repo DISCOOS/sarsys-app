@@ -1,7 +1,7 @@
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
 abstract class IncidentRepository implements ConnectionAwareRepository<String, Incident, IncidentService> {

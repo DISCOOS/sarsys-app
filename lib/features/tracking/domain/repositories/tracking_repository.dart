@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:SarSys/models/Track.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/domain/models/Track.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
 class TrackingRepository extends ConnectionAwareRepository<String, Tracking, TrackingService> {

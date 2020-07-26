@@ -1,6 +1,6 @@
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 

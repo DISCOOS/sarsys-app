@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';

@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'package:SarSys/core/api.dart';
-import 'package:SarSys/core/service.dart';
+import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
 
 part 'personnel_service.chopper.dart';

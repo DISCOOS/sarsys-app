@@ -1,7 +1,7 @@
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:flutter/material.dart';
 
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 abstract class Person extends Aggregate<Map<String, dynamic>> {
   Person({

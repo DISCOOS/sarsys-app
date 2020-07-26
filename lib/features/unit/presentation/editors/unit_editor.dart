@@ -15,13 +15,13 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/utils/tracking_utils.dart';
-import 'package:SarSys/models/Position.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/utils/tracking.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
-import 'package:SarSys/widgets/position_field.dart';
+import 'package:SarSys/core/presentation/widgets/position_field.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;

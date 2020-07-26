@@ -15,16 +15,16 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/presentation/screens/personnel_screen.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/descriptions.dart';
-import 'package:SarSys/widgets/filter_sheet.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/presentation/widgets/descriptions.dart';
+import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
 
 class PersonnelsPage extends StatefulWidget {
   final String query;

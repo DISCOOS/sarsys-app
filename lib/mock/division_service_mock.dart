@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 class DivisionBuilder {
   static Division create(

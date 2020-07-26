@@ -9,14 +9,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/streams.dart';
+import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/operation/presentation/editors/operation_editor.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/Point.dart';
+import 'package:SarSys/core/domain/models/Point.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/usecase/core.dart';
+import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class OperationParams extends BlocParams<OperationBloc, Operation> {

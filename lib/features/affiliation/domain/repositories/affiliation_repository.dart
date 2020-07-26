@@ -2,8 +2,8 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 
 import 'person_repository.dart';
 import 'department_repository.dart';

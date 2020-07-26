@@ -2,8 +2,8 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 
 abstract class PersonRepository implements ConnectionAwareRepository<String, Person, PersonService> {
   /// Get [Operation.uuid] from [state]

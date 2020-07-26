@@ -1,5 +1,5 @@
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/widgets/permission_setup.dart';
+import 'package:SarSys/core/presentation/widgets/permission_setup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

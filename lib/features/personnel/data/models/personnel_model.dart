@@ -4,11 +4,11 @@ import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 

@@ -9,13 +9,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/map/painters.dart';
-import 'package:SarSys/map/map_search.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/services/location_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/widgets/coordinate_input.dart';
+import 'package:SarSys/core/presentation/map/map_widget.dart';
+import 'package:SarSys/core/presentation/map/painters.dart';
+import 'package:SarSys/core/presentation/map/map_search.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/presentation/widgets/coordinate_input.dart';
 
 class PositionEditor extends StatefulWidget {
   final Position position;

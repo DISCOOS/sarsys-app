@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/services/location_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

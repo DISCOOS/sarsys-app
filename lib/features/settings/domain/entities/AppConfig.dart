@@ -1,8 +1,8 @@
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/controllers/app_controller.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/controllers/app_controller.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:meta/meta.dart';

@@ -1,9 +1,9 @@
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/material.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 
 class RepositoryPage<T extends Aggregate> extends StatefulWidget {
   final bool withActions;

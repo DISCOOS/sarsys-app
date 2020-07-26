@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/services/image_cache_service.dart';
+import 'package:SarSys/core/data/services/image_cache_service.dart';
 import 'package:filesize/filesize.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

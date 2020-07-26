@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -16,8 +16,8 @@ import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';

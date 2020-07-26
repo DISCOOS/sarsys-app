@@ -1,7 +1,7 @@
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 abstract class DeviceRepository implements ConnectionAwareRepository<String, Device, DeviceService> {
   /// [Device] service

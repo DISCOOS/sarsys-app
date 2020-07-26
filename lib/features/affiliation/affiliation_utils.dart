@@ -1,7 +1,7 @@
 import 'package:SarSys/features/affiliation/domain/entities/OperationalFunction.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroupCatalog.dart';
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:uuid/uuid.dart';
 

@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/controllers/app_controller.dart';
+import 'package:SarSys/core/controllers/app_controller.dart';
 import 'package:SarSys/features/settings/presentation/screens/debug_screen.dart';
-import 'package:SarSys/screens/about_screen.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/presentation/screens/about_screen.dart';
+import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';

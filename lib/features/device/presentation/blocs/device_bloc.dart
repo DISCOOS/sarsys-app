@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';

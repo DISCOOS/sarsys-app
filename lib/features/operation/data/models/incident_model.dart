@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 part 'incident_model.g.dart';
 

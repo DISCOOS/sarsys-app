@@ -1,9 +1,9 @@
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';

@@ -2,11 +2,11 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/features/operation/domain/entities/Author.dart';
-import 'package:SarSys/models/Location.dart';
+import 'package:SarSys/core/domain/models/Location.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 

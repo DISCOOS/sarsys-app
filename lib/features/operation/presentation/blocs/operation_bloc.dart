@@ -1,16 +1,16 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 

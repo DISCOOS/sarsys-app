@@ -26,143 +26,149 @@ void main() async {
     )
     ..install();
 
-  test(
-    'Affiliation bloc should be load when user is authenticated',
-    () async {
-      // Arrange
-      await _authenticate(harness);
+  group('WHEN AffiliationBloc is initialized', () {
+    test(
+      'Affiliation bloc should be load when user is authenticated',
+      () async {
+        // Arrange
+        await _authenticate(harness);
 
-      // Assert
-      expect(harness.affiliationBloc.orgs.isEmpty, isTrue, reason: "SHOULD BE empty");
-      expect(harness.affiliationBloc.divs.isEmpty, isTrue, reason: "SHOULD BE empty");
-      expect(harness.affiliationBloc.deps.isEmpty, isTrue, reason: "SHOULD BE empty");
-      expect(harness.affiliationBloc.initialState, isA<AffiliationsEmpty>(), reason: "Unexpected organisation state");
-    },
-  );
+        // Assert
+        expect(harness.affiliationBloc.orgs.isEmpty, isTrue, reason: "SHOULD BE empty");
+        expect(harness.affiliationBloc.divs.isEmpty, isTrue, reason: "SHOULD BE empty");
+        expect(harness.affiliationBloc.deps.isEmpty, isTrue, reason: "SHOULD BE empty");
+        expect(harness.affiliationBloc.initialState, isA<AffiliationsEmpty>(), reason: "Unexpected organisation state");
+      },
+    );
 
-  test(
-    'SHOULD onboard USER on first load',
-    () async {
-      // Arrange
-      final orguuid = Uuid().v4();
-      final divuuid = Uuid().v4();
-      final dep = harness.departmentService.add(
-        divuuid,
-        name: harness.department,
-      );
-      final div = harness.divisionService.add(
-        orguuid,
-        name: harness.division,
-        departments: [dep.uuid],
-      );
-      final org = harness.organisationService.add(
-        uuid: orguuid,
-        divisions: [div.uuid],
-      );
-      final group = StreamGroup.merge([
-        ...harness.affiliationBloc.repos.map((repo) => repo.onChanged),
-      ]);
+    test(
+      'SHOULD onboard USER on first load',
+      () async {
+        // Arrange
+        final orguuid = Uuid().v4();
+        final divuuid = Uuid().v4();
+        final dep = harness.departmentService.add(
+          divuuid,
+          name: harness.department,
+        );
+        final div = harness.divisionService.add(
+          orguuid,
+          name: harness.division,
+          departments: [dep.uuid],
+        );
+        final org = harness.organisationService.add(
+          uuid: orguuid,
+          divisions: [div.uuid],
+        );
+        final group = StreamGroup.merge([
+          ...harness.affiliationBloc.repos.map((repo) => repo.onChanged),
+        ]);
 
-      final events = [];
-      group.listen((transition) {
-        if (transition.isRemote) {
-          events.add(transition.to.value);
-        }
-      });
+        final events = [];
+        group.listen((transition) {
+          if (transition.isRemote) {
+            events.add(transition.to.value);
+          }
+        });
 
-      // Force inverse order successful push
-      // by making dependent services slower
-      harness.personService.throttle(Duration(milliseconds: 10));
+        // Force inverse order successful push
+        // by making dependent services slower
+        harness.personService.throttle(Duration(milliseconds: 10));
 
-      // Act
-      await _authenticate(harness);
-      await expectLater(
-        harness.affiliationBloc.repo.onChanged,
-        emitsThrough(
-          isA<StorageTransition>().having(
-            (transition) => transition.isRemote,
-            'is remote',
-            isTrue,
+        // Act
+        await _authenticate(harness);
+        await expectLater(
+          harness.affiliationBloc.repo.onChanged,
+          emitsThrough(
+            isA<StorageTransition>().having(
+              (transition) => transition.isRemote,
+              'is remote',
+              isTrue,
+            ),
           ),
-        ),
-      );
+        );
 
-      // Assert service calls
-      verify(harness.personService.create(any)).called(1);
-      verify(harness.affiliationService.create(any)).called(1);
+        // Assert service calls
+        verify(harness.personService.create(any)).called(1);
+        verify(harness.affiliationService.create(any)).called(1);
 
-      // Assert execution order
-      expect(
-          events,
-          orderedEquals([
-            // From onboarding
-            isA<Organisation>(),
-            isA<Division>(),
-            isA<Department>(),
-            isA<Person>(),
-            isA<Affiliation>(),
-          ]));
+        // Assert execution order
+        expect(
+            events,
+            orderedEquals([
+              // From onboarding
+              isA<Organisation>(),
+              isA<Division>(),
+              isA<Department>(),
+              isA<Person>(),
+              isA<Affiliation>(),
+            ]));
 
-      // Assert states
-      expect(harness.affiliationBloc.orgs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
-      expect(harness.affiliationBloc.divs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
-      expect(harness.affiliationBloc.deps.values, isNotEmpty, reason: "SHOULD NOT BE empty");
-      expect(harness.affiliationBloc.repo.values, isNotEmpty, reason: "SHOULD NOT BE empty");
-      expect(harness.affiliationBloc.persons.values, isNotEmpty, reason: "SHOULD NOT BE empty");
-      expect(harness.affiliationBloc.state, isA<UserOnboarded>(), reason: " SHOULD be in UserOnboarded state");
-      expect(harness.affiliationBloc, emits(isA<UserOnboarded>()));
+        // Assert states
+        expect(harness.affiliationBloc.orgs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+        expect(harness.affiliationBloc.divs.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+        expect(harness.affiliationBloc.deps.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+        expect(harness.affiliationBloc.repo.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+        expect(harness.affiliationBloc.persons.values, isNotEmpty, reason: "SHOULD NOT BE empty");
+        expect(harness.affiliationBloc.state, isA<UserOnboarded>(), reason: " SHOULD be in UserOnboarded state");
+        expect(harness.affiliationBloc, emits(isA<UserOnboarded>()));
 
-      // Assert person
-      final user = harness.user;
-      final person = harness.affiliationBloc.findUserPerson(userId: harness.userId);
-      expect(person, isNotNull, reason: "SHOULD contain person with userId ${harness.userId}");
-      expect(person.fname, user.fname);
-      expect(person.lname, user.lname);
-      expect(person.phone, user.phone);
-      expect(person.email, user.email);
-      expect(person.userId, user.userId);
+        // Assert person
+        final user = harness.user;
+        final person = harness.affiliationBloc.findUserPerson(userId: harness.userId);
+        expect(person, isNotNull, reason: "SHOULD contain person with userId ${harness.userId}");
+        expect(person.fname, user.fname);
+        expect(person.lname, user.lname);
+        expect(person.phone, user.phone);
+        expect(person.email, user.email);
+        expect(person.userId, user.userId);
 
-      // Assert person
-      final affiliation = harness.affiliationBloc.findUserAffiliation(userId: harness.userId);
-      expect(affiliation, isNotNull, reason: "SHOULD contain affiliation with userId ${harness.userId}");
-      expect(affiliation.org.uuid, org.uuid);
-      expect(affiliation.div.uuid, div.uuid);
-      expect(affiliation.dep.uuid, dep.uuid);
-      expect(affiliation.person.uuid, person.uuid);
-      expect(affiliation.type, AffiliationType.member);
-      expect(affiliation.status, AffiliationStandbyStatus.available);
-    },
-  );
+        // Assert person
+        final affiliation = harness.affiliationBloc.findUserAffiliation(userId: harness.userId);
+        expect(affiliation, isNotNull, reason: "SHOULD contain affiliation with userId ${harness.userId}");
+        expect(affiliation.org.uuid, org.uuid);
+        expect(affiliation.div.uuid, div.uuid);
+        expect(affiliation.dep.uuid, dep.uuid);
+        expect(affiliation.person.uuid, person.uuid);
+        expect(affiliation.type, AffiliationType.member);
+        expect(affiliation.status, AffiliationStandbyStatus.available);
+      },
+    );
 
-  test(
-    'Affiliation bloc should unload when user is logged out',
-    () async {
-      // Arrange
-      await _authenticate(harness);
+    test(
+      'Affiliation bloc should unload when user is logged out',
+      () async {
+        // Arrange
+        await _authenticate(harness);
 
-      // Act
-      await harness.userBloc.logout();
+        // Act
+        await harness.userBloc.logout();
 
-      // Assert
-      await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsUnloaded>()));
-    },
-  );
+        // Assert
+        await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsUnloaded>()));
+      },
+    );
 
-  test(
-    'Affiliation bloc should be reload when user is logged in again',
-    () async {
-      // Arrange
-      await _authenticate(harness);
-      await harness.userBloc.logout();
-      await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsUnloaded>()), close: false);
+    test(
+      'Affiliation bloc should be reload when user is logged in again',
+      () async {
+        // Arrange
+        await _authenticate(harness);
+        await harness.userBloc.logout();
+        await expectThroughLater(
+          harness.affiliationBloc,
+          emits(isA<AffiliationsUnloaded>()),
+          close: false,
+        );
 
-      // Act
-      await _authenticate(harness);
+        // Act
+        await _authenticate(harness);
 
-      // Assert
-      await expectThroughLater(harness.affiliationBloc, emits(isA<UserOnboarded>()));
-    },
-  );
+        // Assert
+        await expectThroughLater(harness.affiliationBloc, emits(isA<UserOnboarded>()));
+      },
+    );
+  });
 
   group('WHEN AffiliationBloc is ONLINE', () {
     test('SHOULD load from backend', () async {
@@ -283,7 +289,7 @@ Future _seed(
   final div2 = harness.divisionService.add(org2.uuid);
   harness.departmentService.add(div1.uuid);
   final dep2 = harness.departmentService.add(div2.uuid);
-  final p1 = harness.personService.personRepo.values
+  final p1 = harness.affiliationBloc.persons.values
       .where(
         (person) => person.userId == harness.userId,
       )

@@ -3,11 +3,11 @@ import 'package:SarSys/mock/device_service_mock.dart';
 import 'package:SarSys/mock/personnel_service_mock.dart';
 import 'package:SarSys/mock/tracking_service_mock.dart';
 import 'package:SarSys/mock/unit_service_mock.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Track.dart';
-import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/domain/models/Track.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/core/utils/tracking.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 

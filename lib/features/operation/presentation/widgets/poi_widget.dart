@@ -1,7 +1,7 @@
-import 'package:SarSys/map/layers/poi_layer.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
+import 'package:SarSys/core/presentation/map/layers/poi_layer.dart';
+import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/utils/ui.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

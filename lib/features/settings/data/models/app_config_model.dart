@@ -1,7 +1,7 @@
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 

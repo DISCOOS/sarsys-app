@@ -6,7 +6,7 @@ import 'package:mockito/mockito.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 class AppConfigServiceMock extends Mock implements AppConfigService {
   static AppConfigService build(String asset, String baseUrl, Client client) {

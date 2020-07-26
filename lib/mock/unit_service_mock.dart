@@ -5,9 +5,9 @@ import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 
 class UnitBuilder {
   static Unit create({

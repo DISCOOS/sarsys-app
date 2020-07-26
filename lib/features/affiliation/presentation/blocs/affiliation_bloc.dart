@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/mixins.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -24,9 +24,9 @@ import 'package:SarSys/features/affiliation/domain/repositories/organisation_rep
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';

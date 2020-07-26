@@ -6,12 +6,12 @@ import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 
 class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, PersonService>
     implements PersonRepository {

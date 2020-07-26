@@ -1,18 +1,18 @@
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 class AffiliationBuilder {
   static Affiliation create({
@@ -121,24 +121,25 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     final affiliationRepo = mock.affiliationRepo;
 
     when(mock.get(any)).thenAnswer((_) async {
+      await _doThrottle();
       final uuid = _.positionalArguments[0];
       if (affiliationRepo.containsKey(uuid)) {
         return ServiceResponse.ok(
           body: affiliationRepo[uuid],
         );
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: $uuid",
       );
     });
     when(mock.create(any)).thenAnswer((_) async {
+      await _doThrottle();
       final affiliation = _.positionalArguments[0] as Affiliation;
       affiliationRepo[affiliation.uuid] = affiliation;
-      await _doThrottle();
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
+      await _doThrottle();
       final Affiliation affiliation = _.positionalArguments[0];
       if (affiliationRepo.containsKey(affiliation.uuid)) {
         affiliationRepo[affiliation.uuid] = affiliation;
@@ -146,18 +147,17 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
           body: affiliation,
         );
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: ${affiliation.uuid}",
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
+      await _doThrottle();
       final String uuid = _.positionalArguments[0];
       if (affiliationRepo.containsKey(uuid)) {
         affiliationRepo.remove(uuid);
         return ServiceResponse.noContent();
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Affiliation not found: $uuid",
       );

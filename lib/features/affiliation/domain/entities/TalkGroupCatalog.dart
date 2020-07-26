@@ -1,4 +1,4 @@
-import 'package:SarSys/models/converters.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';

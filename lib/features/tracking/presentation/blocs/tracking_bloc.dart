@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:SarSys/blocs/core.dart';
-import 'package:SarSys/blocs/mixins.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -11,13 +11,13 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
-import 'package:SarSys/utils/tracking_utils.dart';
+import 'package:SarSys/core/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 

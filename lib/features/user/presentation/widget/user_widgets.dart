@@ -5,9 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
-import 'package:SarSys/models/Point.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/action_group.dart';
+import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 
 class UserWidget extends StatelessWidget {

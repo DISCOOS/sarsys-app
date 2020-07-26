@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
@@ -19,7 +19,7 @@ import 'package:SarSys/mock/division_service_mock.dart';
 import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/mock/organisation_service_mock.dart';
 import 'package:SarSys/mock/person_service_mock.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -29,7 +29,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/blocs/core.dart';
+import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -55,8 +55,8 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
-import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/utils/data.dart';
 
 const MethodChannel udidChannel = MethodChannel('flutter_udid');
 const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
@@ -193,7 +193,9 @@ class BlocTestHarness implements BlocDelegate {
       SharedPreferences.setMockInitialValues({});
 
       // Delete any previous data from failed tests
-      return await Storage.destroy();
+      return await Storage.destroy().catchError(
+        (e, stackTrace) => _printError('install > Storage.destroy failed', e, stackTrace),
+      );
     });
 
     setUp(() async {
@@ -207,22 +209,33 @@ class BlocTestHarness implements BlocDelegate {
       // deleted from the next zone
       // before next test is run.
       if (Storage.initialized) {
-        await Storage.destroy();
+        await Storage.destroy().catchError(
+          (e, stackTrace) => _printError('setUp > Storage.destroy() failed', e, stackTrace),
+        );
       }
-      await Storage.init();
+      await Storage.init().catchError(
+        (e, stackTrace) => _printError('setUp > Storage.init() failed', e, stackTrace),
+      );
+
       _buildConnectivity();
 
       if (_withConfigBloc) {
         _buildAppConfigBloc();
       }
       if (_withUserBloc) {
-        await _buildUserBloc();
+        await _buildUserBloc().catchError(
+          (e, stackTrace) => _printError('setUp > _buildUserBloc() failed', e, stackTrace),
+        );
       }
       if (_withAffiliationBloc) {
-        await _buildAffiliationBloc();
+        await _buildAffiliationBloc().catchError(
+          (e, stackTrace) => _printError('setUp > _buildAffiliationBloc() failed', e, stackTrace),
+        );
       }
       if (_withOperationBloc) {
-        await _buildOperationBloc();
+        await _buildOperationBloc().catchError(
+          (e, stackTrace) => _printError('setUp > _buildOperationBloc() failed', e, stackTrace),
+        );
       }
       if (_withDeviceBloc) {
         _buildDeviceBloc();
@@ -246,28 +259,44 @@ class BlocTestHarness implements BlocDelegate {
     tearDown(() async {
       _print('teardown...');
       if (_withConfigBloc) {
-        await _configBloc?.close();
+        await _configBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _configBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withUserBloc) {
-        await _userBloc?.close();
+        await _userBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _userBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withAffiliationBloc) {
-        await _affiliationBloc?.close();
+        await _affiliationBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _affiliationBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withOperationBloc) {
-        await _operationsBloc?.close();
+        await _operationsBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _operationsBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withDeviceBloc) {
-        await _deviceBloc?.close();
+        await _deviceBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _deviceBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withPersonnelBloc) {
-        await _personnelBloc?.close();
+        await _personnelBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _personnelBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withUnitBloc) {
-        await _unitBloc?.close();
+        await _unitBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _unitBloc.close() failed', e, stackTrace),
+            );
       }
       if (_withTrackingBloc) {
-        await _trackingBloc?.close();
+        await _trackingBloc?.close()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _trackingBloc.close() failed', e, stackTrace),
+            );
         _trackingService.reset();
       }
       events.clear();
@@ -277,7 +306,9 @@ class BlocTestHarness implements BlocDelegate {
 
       if (Storage.initialized) {
         _print('teardown...destroy');
-        return Storage.destroy();
+        return Storage.destroy().catchError(
+          (e, stackTrace) => _printError('tearDown > Storage.destroy() failed', e, stackTrace),
+        );
       }
 
       _print('teardown...ok');
@@ -687,6 +718,12 @@ class BlocTestHarness implements BlocDelegate {
   @override
   void onTransition(Bloc bloc, Transition transition) {
     // TODO: implement onTransition
+  }
+
+  void _printError(String message, Object error, StackTrace stackTrace) {
+    print(message);
+    print(error);
+    print(stackTrace);
   }
 }
 

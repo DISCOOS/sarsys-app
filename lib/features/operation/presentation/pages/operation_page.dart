@@ -11,11 +11,11 @@ import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/map/map_widget.dart';
+import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
-import 'package:SarSys/utils/data_utils.dart';
-import 'package:SarSys/utils/ui_utils.dart';
-import 'package:SarSys/widgets/action_group.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/presentation/widgets/action_group.dart';
 
 class OperationPage extends StatefulWidget {
   static const HEIGHT = 82.0;

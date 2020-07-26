@@ -2,11 +2,11 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
-import 'package:SarSys/models/Position.dart';
-import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 part 'device_model.g.dart';
 

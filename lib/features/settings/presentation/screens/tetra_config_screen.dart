@@ -4,8 +4,8 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
-import 'package:SarSys/models/converters.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

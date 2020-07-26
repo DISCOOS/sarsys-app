@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/services/connectivity_service.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 
 class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, DeviceService>
     implements DeviceRepository {

@@ -7,9 +7,9 @@ import 'package:SarSys/features/affiliation/domain/repositories/division_reposit
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/services/connectivity_service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 
 class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division, DivisionService>
     implements DivisionRepository {

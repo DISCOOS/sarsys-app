@@ -1,11 +1,11 @@
-import 'package:SarSys/models/converters.dart';
+import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
-import 'package:SarSys/models/AggregateRef.dart';
-import 'package:SarSys/models/Tracking.dart';
-import 'package:SarSys/models/core.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 part 'unit_model.g.dart';
 

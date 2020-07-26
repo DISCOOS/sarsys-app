@@ -1,6 +1,6 @@
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
-import 'package:SarSys/models/core.dart';
-import 'package:SarSys/utils/data_utils.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:meta/meta.dart';
 
 abstract class Incident extends Aggregate<Map<String, dynamic>> {

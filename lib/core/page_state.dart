@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:SarSys/map/map_widget.dart';
-import 'package:SarSys/map/models/map_widget_state_model.dart';
+import 'package:SarSys/core/presentation/map/map_widget.dart';
+import 'package:SarSys/core/presentation/map/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
-import 'package:SarSys/screens/screen.dart';
+import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/widgets.dart';

@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/services/service.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 class PersonBuilder {
   static Person create({
@@ -88,23 +88,24 @@ class PersonServiceMock extends Mock implements PersonService {
 
     when(mock.get(any)).thenAnswer((_) async {
       final uuid = _.positionalArguments[0];
+      await _doThrottle();
       if (personRepo.containsKey(uuid)) {
         return ServiceResponse.ok(
           body: personRepo[uuid],
         );
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );
     });
     when(mock.create(any)).thenAnswer((_) async {
+      await _doThrottle();
       final person = _.positionalArguments[0] as Person;
       personRepo[person.uuid] = person;
-      await _doThrottle();
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
+      await _doThrottle();
       final person = _.positionalArguments[0] as Person;
       if (personRepo.containsKey(person.uuid)) {
         personRepo[person.uuid] = person;
@@ -112,18 +113,17 @@ class PersonServiceMock extends Mock implements PersonService {
           body: person,
         );
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: ${person.uuid}",
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
+      await _doThrottle();
       final String uuid = _.positionalArguments[0];
       if (personRepo.containsKey(uuid)) {
         personRepo.remove(uuid);
         return ServiceResponse.noContent();
       }
-      await _doThrottle();
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
       );

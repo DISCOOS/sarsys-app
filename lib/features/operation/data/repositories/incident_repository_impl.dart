@@ -5,10 +5,10 @@ import 'package:SarSys/features/operation/domain/repositories/incident_repositor
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/services/service.dart';
-import 'package:SarSys/services/connectivity_service.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
-import 'package:SarSys/core/repository.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
 class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident, IncidentService>

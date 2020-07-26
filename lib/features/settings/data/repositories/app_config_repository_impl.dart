@@ -13,8 +13,8 @@ import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
-import 'package:SarSys/core/repository.dart';
-import 'package:SarSys/services/connectivity_service.dart';
+import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
