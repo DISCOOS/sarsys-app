@@ -14,7 +14,7 @@ class Defaults {
   static const int mapCacheCapacity = 15000;
   static const String locationAccuracy = "high";
   static const int locationFastestInterval = 1000;
-  static const int locationSmallestDisplacement = 3;
+  static const int locationSmallestDisplacement = 0;
   static const bool keepScreenOn = false;
   static const bool callsignReuse = true;
   static const List<String> idpHints = const ['rodekors'];

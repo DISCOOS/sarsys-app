@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/location/background_geolocation_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -9,8 +10,6 @@ import 'package:latlong/latlong.dart';
 import 'dart:async';
 
 import 'package:permission_handler/permission_handler.dart';
-
-import 'geolocator_service.dart';
 
 abstract class LocationService {
   Position get current;
@@ -60,7 +59,7 @@ abstract class LocationService {
 
   factory LocationService([AppConfigBloc bloc]) {
     if (_singleton == null || _singleton.disposed) {
-      _singleton = GeolocatorService(bloc);
+      _singleton = BackgroundGeolocationService(bloc);
     }
     return _singleton;
   }

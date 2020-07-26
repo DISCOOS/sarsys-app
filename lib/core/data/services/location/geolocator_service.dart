@@ -14,7 +14,7 @@ import 'location_service.dart';
 class GeolocatorService implements LocationService {
   GeolocatorService(AppConfigBloc bloc) {
     assert(bloc != null, "AppConfigBloc must be supplied");
-    _appConfigBloc = bloc;
+    _bloc = bloc;
     _geolocator = gl.Geolocator();
     _events.insert(0, CreateEvent(bloc.config));
   }
@@ -27,7 +27,7 @@ class GeolocatorService implements LocationService {
   gl.Geolocator _geolocator;
   PermissionStatus _status = PermissionStatus.unknown;
 
-  AppConfigBloc _appConfigBloc;
+  AppConfigBloc _bloc;
   LocationOptions _options;
 
   Stream<Position> _internalStream;
@@ -63,12 +63,12 @@ class GeolocatorService implements LocationService {
       PermissionGroup.locationWhenInUse,
     );
     if ([PermissionStatus.granted].contains(_status)) {
-      final config = _appConfigBloc.config;
+      final config = _bloc.config;
       var options = _toOptions(config);
       if (force || _isConfigChanged(options)) {
         _subscribe(options);
         _configSubscription?.cancel();
-        _configSubscription = _appConfigBloc.listen(
+        _configSubscription = _bloc.listen(
           (state) {
             if (state.data is AppConfig) {
               final options = _toOptions(state.data);
@@ -206,7 +206,10 @@ class GeolocatorService implements LocationService {
   _handleError(dynamic error, StackTrace stackTrace) {
     _unsubscribe();
     _notify(ErrorEvent(_options, error, stackTrace));
-    Catcher.reportCheckedError("Location stream failed with error: $error", stackTrace);
+    Catcher.reportCheckedError(
+      "Location stream failed with error: $error",
+      stackTrace,
+    );
   }
 
   Position _toPosition(gl.Position position) => Position.timestamp(
