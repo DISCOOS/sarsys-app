@@ -62,9 +62,9 @@ class PersonnelWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (withHeader) _buildHeader(context, personnel, theme),
         if (withHeader) Divider() else SizedBox(height: 8.0),
+        if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
           Divider(),
@@ -90,37 +90,33 @@ class PersonnelWidget extends StatelessWidget {
   Padding _buildTemporaryPersonnelWarning(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.0),
-        child: Container(
-          color: Colors.grey[300],
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              children: <Widget>[
-                GestureDetector(
-                    child: Chip(
-                      label: Text(
-                        'Mannskap opprettet manuelt',
-                        textAlign: TextAlign.end,
-                      ),
-                      labelPadding: EdgeInsets.only(right: 4.0),
-                      backgroundColor: Colors.grey[100],
-                      avatar: Icon(
-                        Icons.warning,
-                        size: 16.0,
-                        color: Colors.orange,
-                      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              GestureDetector(
+                  child: Chip(
+                    label: Text(
+                      'Mannskap er opprettet manuelt',
+                      textAlign: TextAlign.end,
                     ),
-                    onTap: () => alert(
-                          context,
-                          title: "Mannskap opprettet manuelt",
-                          content: TemporaryPersonnelDescription(),
-                        )),
-              ],
-            ),
+                    labelPadding: EdgeInsets.only(right: 4.0),
+                    backgroundColor: Colors.grey[100],
+                    avatar: Icon(
+                      Icons.warning,
+                      size: 16.0,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  onTap: () => alert(
+                        context,
+                        title: "Mannskap opprettet manuelt",
+                        content: TemporaryPersonnelDescription(),
+                      )),
+            ],
           ),
-        ),
+          Divider(),
+        ],
       ),
     );
   }

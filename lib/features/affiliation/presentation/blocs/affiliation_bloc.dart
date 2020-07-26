@@ -363,10 +363,18 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         types: [OrganisationModel, DivisionModel, DepartmentModel],
       );
 
+  /// Get all [Organisation] sorted on [Organisation.name]
+  Iterable<Organisation> getOrganisations() {
+    return sortMapValues<String, Organisation, String>(
+      orgs.map ?? <String, Organisation>{},
+      (org) => org.name,
+    ).values;
+  }
+
   /// Get divisions in given [Organisation] sorted on [Division.name]
   Iterable<Division> getDivisions(String orguuid) {
     final org = orgs[orguuid];
-    if (org != null) {
+    if (org?.divisions?.isNotEmpty == true) {
       final divisions = Map.fromEntries(org.divisions.map((uuid) => MapEntry(uuid, divs[uuid])));
       return sortMapValues<String, Division, String>(
         divisions ?? <String, Division>{},
@@ -446,7 +454,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Check if [Affiliation.uuid] is [Affiliation.temporary]
   bool isTemporary(String uuid) {
     final affiliation = repo[uuid];
-    return affiliation?.isUnorganized == true || persons[affiliation?.person?.uuid].temporary == true;
+    return affiliation?.isUnorganized == true || persons[affiliation?.person?.uuid]?.temporary == true;
   }
 
   /// Create affiliation for temporary

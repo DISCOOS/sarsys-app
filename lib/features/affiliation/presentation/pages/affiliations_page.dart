@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -343,7 +342,7 @@ class AffiliationGroupEntry implements Comparable {
   @override
   int compareTo(other) {
     if (other is AffiliationGroupEntry) {
-      return other.name.compareTo(name);
+      return '$name$prefix'.compareTo('${other.name}${other.prefix}');
     }
     return double.maxFinite.toInt();
   }

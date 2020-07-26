@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -93,9 +95,9 @@ class AffiliationForm extends StatefulWidget {
 
 class AffiliationFormState extends State<AffiliationForm> {
   static const SPACING = 16.0;
-  static const ORG_FIELD = 'orgId';
-  static const DIV_FIELD = 'divId';
-  static const DEP_FIELD = 'depId';
+  static const ORG_FIELD = 'orguuid';
+  static const DIV_FIELD = 'divuuid';
+  static const DEP_FIELD = 'depuuid';
 
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -154,14 +156,29 @@ class AffiliationFormState extends State<AffiliationForm> {
   }
 
   Widget _buildOrganisationField() {
-    _update(ORG_FIELD, org?.uuid);
-    return buildReadOnlyField<String>(
-      context,
-      ORG_FIELD,
-      'Organisasjon',
-      org?.name,
-      org?.uuid,
-    );
+    final ouuid = _update(ORG_FIELD, org?.uuid);
+    final orgs = _buildOrgItems();
+    return editable
+        ? buildDropDownField<String>(
+            attribute: ORG_FIELD,
+            label: 'Organisasjon',
+            initialValue: ouuid,
+            items: orgs,
+            onChanged: (String selected) {
+              _org.value = selected;
+              _onChanged();
+            },
+            validators: [
+              FormBuilderValidators.required(errorText: 'Organisasjon må velges'),
+            ],
+          )
+        : buildReadOnlyField<String>(
+            context,
+            ORG_FIELD,
+            'Organisasjon',
+            org?.name,
+            org?.uuid,
+          );
   }
 
   Widget _buildDivisionField() {
@@ -169,7 +186,8 @@ class AffiliationFormState extends State<AffiliationForm> {
       valueListenable: _org,
       builder: (context, ouuid, _) {
         final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
-        final divisions = _buildDivisionItems(toOrg(ouuid));
+        final divisions = _buildDivItems(toOrg(ouuid));
+        scheduleMicrotask(() => _div.value = duuid);
         return editable & divisions.isNotEmpty
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
@@ -177,10 +195,8 @@ class AffiliationFormState extends State<AffiliationForm> {
                 initialValue: duuid,
                 items: divisions,
                 onChanged: (String selected) {
-                  if (org != null) {
-                    _div.value = selected;
-                    _onChanged();
-                  }
+                  _div.value = selected;
+                  _onChanged();
                 },
                 validators: [
                   FormBuilderValidators.required(errorText: 'Distrikt må velges'),
@@ -202,7 +218,8 @@ class AffiliationFormState extends State<AffiliationForm> {
         valueListenable: _div,
         builder: (context, divuuid, _) {
           final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
-          final departments = _buildDepartmentItems(toDiv(divuuid));
+          final departments = _buildDepItems(toDiv(divuuid));
+          scheduleMicrotask(() => _dep = depuuid);
           return editable && departments.isNotEmpty
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,
@@ -228,7 +245,11 @@ class AffiliationFormState extends State<AffiliationForm> {
         });
   }
 
-  bool get editable => widget.user == null;
+  bool get editable => widget.user == null && (_affiliation?.isAffiliate != true || isTemporary());
+
+  bool isTemporary() => context.bloc<AffiliationBloc>().isTemporary(
+        _affiliation?.uuid,
+      );
 
   String _update(String attribute, String value) {
     if (_formKey.currentState != null) {
@@ -249,22 +270,50 @@ class AffiliationFormState extends State<AffiliationForm> {
     return (div?.departments?.contains(depuuid) == true ? depuuid : div?.departments?.first);
   }
 
-  List<DropdownMenuItem<String>> _buildDivisionItems(Organisation org) {
-    final divisions = context.bloc<AffiliationBloc>().getDivisions(org?.uuid);
-    return divisions
-        .map((division) => DropdownMenuItem<String>(
-              value: "${division.uuid}",
-              child: Text("${division.name}"),
+  List<DropdownMenuItem<String>> _buildOrgItems() {
+    final orgs = context.bloc<AffiliationBloc>().getOrganisations();
+    return orgs
+        .map((org) => DropdownMenuItem<String>(
+              value: "${org.uuid}",
+              child: Row(
+                children: <Widget>[
+                  SarSysIcons.of(org.prefix),
+                  SizedBox(width: 16.0),
+                  Text("${org.name}"),
+                ],
+              ),
             ))
         .toList();
   }
 
-  List<DropdownMenuItem<String>> _buildDepartmentItems(Division div) {
-    final departments = context.bloc<AffiliationBloc>().getDepartments(div?.uuid);
-    return departments
-        .map((department) => DropdownMenuItem<String>(
-              value: "${department.uuid}",
-              child: Text("${department.name}"),
+  List<DropdownMenuItem<String>> _buildDivItems(Organisation org) {
+    final divs = context.bloc<AffiliationBloc>().getDivisions(org?.uuid);
+    return divs
+        .map((div) => DropdownMenuItem<String>(
+              value: "${div.uuid}",
+              child: Row(
+                children: <Widget>[
+                  SarSysIcons.of(org.prefix),
+                  SizedBox(width: 16.0),
+                  Text("${div.name}"),
+                ],
+              ),
+            ))
+        .toList();
+  }
+
+  List<DropdownMenuItem<String>> _buildDepItems(Division div) {
+    final deps = context.bloc<AffiliationBloc>().getDepartments(div?.uuid);
+    return deps
+        .map((dep) => DropdownMenuItem<String>(
+              value: "${dep.uuid}",
+              child: Row(
+                children: <Widget>[
+                  SarSysIcons.of(org?.prefix),
+                  SizedBox(width: 16.0),
+                  Text("${dep.name}"),
+                ],
+              ),
             ))
         .toList();
   }

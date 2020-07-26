@@ -201,37 +201,33 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Widget _buildTemporaryPersonnelWarning(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: 16.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.0),
-        child: Container(
-          color: Colors.grey[300],
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              children: <Widget>[
-                GestureDetector(
-                    child: Chip(
-                      label: Text(
-                        'Mannskap opprettet manuelt',
-                        textAlign: TextAlign.end,
-                      ),
-                      labelPadding: EdgeInsets.only(right: 4.0),
-                      backgroundColor: Colors.grey[100],
-                      avatar: Icon(
-                        Icons.warning,
-                        size: 16.0,
-                        color: Colors.orange,
-                      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              GestureDetector(
+                  child: Chip(
+                    label: Text(
+                      'Mannskap er opprettet manuelt',
+                      textAlign: TextAlign.end,
                     ),
-                    onTap: () => alert(
-                          context,
-                          title: "Mannskap opprettet manuelt",
-                          content: TemporaryPersonnelDescription(),
-                        )),
-              ],
-            ),
+                    labelPadding: EdgeInsets.only(right: 4.0),
+                    backgroundColor: Colors.grey[100],
+                    avatar: Icon(
+                      Icons.warning,
+                      size: 16.0,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  onTap: () => alert(
+                        context,
+                        title: "Mannskap opprettet manuelt",
+                        content: TemporaryPersonnelDescription(),
+                      )),
+            ],
           ),
-        ),
+          Divider(),
+        ],
       ),
     );
   }

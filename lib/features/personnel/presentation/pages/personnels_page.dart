@@ -139,11 +139,11 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   Widget _buildList(List personnels) {
     return widget.withGrouped
         ? GroupedListView<Personnel, AffiliationGroupEntry>(
-            elements: personnels,
             sort: true,
-            floatingHeader: true,
-            useStickyGroupSeparators: true,
-            order: GroupedListOrder.DESC,
+            elements: personnels,
+//            floatingHeader: false,
+            order: GroupedListOrder.ASC,
+            useStickyGroupSeparators: false,
             itemBuilder: (context, personnel) {
               return _buildPersonnel(personnel);
             },
@@ -151,15 +151,17 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               final affiliation = _toAffiliation(personnel);
               final org = affiliationBloc.orgs[affiliation.org?.uuid];
               return AffiliationGroupEntry(
-                prefix: org.prefix ?? '0',
-                name: affiliationBloc.toName(
-                  affiliation,
-                  empty: 'Uorganisert',
-                  short: true,
-                ),
+                prefix: org?.prefix ?? '0',
+                name: affiliationBloc
+                    .toName(
+                      affiliation,
+                      empty: 'Uorganisert',
+                      short: true,
+                    )
+                    .trim(),
               );
             },
-            groupSeparatorBuilder: (affiliation) => AffiliationGroupDelimiter(affiliation),
+            groupSeparatorBuilder: (group) => AffiliationGroupDelimiter(group),
           )
         : ListView.builder(
             itemCount: personnels.length,
