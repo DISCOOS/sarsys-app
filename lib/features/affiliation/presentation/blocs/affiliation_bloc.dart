@@ -387,7 +387,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get departments in given [Division] sorted on [Department.name]
   Iterable<Department> getDepartments(String divuuid) {
     final div = divs[divuuid];
-    if (div != null) {
+    if (div?.departments?.isNotEmpty == true) {
       final departments = Map.fromEntries(div.departments.map((uuid) => MapEntry(uuid, deps[uuid])));
       return sortMapValues<String, Department, String>(
         departments ?? {},

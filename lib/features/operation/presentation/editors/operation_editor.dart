@@ -25,8 +25,8 @@ import 'package:SarSys/core/domain/models/Point.dart' as sarsys;
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
-import 'package:SarSys/core/data/services/geocode_services.dart';
-import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/data/services/location/geocode_services.dart';
+import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -100,7 +100,10 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   void _setMeetupToMe() async {
-    _meetup = _toLocation(_meetup, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    _meetup = _toLocation(
+      _meetup,
+      LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
+    );
     _updateField('meetup', toPosition(_meetup.point));
     _meetup = await _updateDescriptionFromPoint(
       _meetup,
@@ -114,7 +117,10 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   void _setIppToMe() async {
-    _ipp = _toLocation(_ipp, LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current));
+    _ipp = _toLocation(
+      _ipp,
+      LocationService.toPoint(LocationService(context.bloc<AppConfigBloc>()).current),
+    );
     _updateField('ipp', toPosition(_ipp.point));
     _ipp = await _updateDescriptionFromPoint(
       _ipp,

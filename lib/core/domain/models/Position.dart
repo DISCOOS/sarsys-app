@@ -1,9 +1,11 @@
-import 'package:SarSys/core/domain/models/Coordinates.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+import 'package:latlong/latlong.dart';
+
+import 'package:SarSys/core/domain/models/Coordinates.dart';
+import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 import 'Source.dart';
 
@@ -117,6 +119,8 @@ class Position extends ValueObject<Map<String, dynamic>> {
       ),
     );
   }
+
+  LatLng toLatLng() => LatLng(lat, lon);
 
   /// Factory constructor for creating a new `Position`  instance
   factory Position.fromJson(Map<String, dynamic> json) => _$PositionFromJson(json);

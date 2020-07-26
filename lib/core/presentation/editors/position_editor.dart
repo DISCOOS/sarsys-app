@@ -13,7 +13,7 @@ import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/presentation/map/painters.dart';
 import 'package:SarSys/core/presentation/map/map_search.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/widgets/coordinate_input.dart';
 
@@ -71,7 +71,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
 
   Position _ensurePosition() => widget.position?.isNotEmpty != true
       ? Position.fromPoint(
-            LocationService(context.bloc<AppConfigBloc>()).currentAsPoint,
+            LocationService(context.bloc<AppConfigBloc>()).current.geometry,
             source: PositionSource.manual,
           ) ??
           Position.now(

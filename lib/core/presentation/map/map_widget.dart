@@ -2,6 +2,17 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:latlong/latlong.dart';
+import 'package:wakelock/wakelock.dart';
+
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -38,17 +49,6 @@ import 'package:SarSys/core/presentation/map/layers/poi_layer.dart';
 import 'package:SarSys/core/presentation/map/map_search.dart';
 import 'package:SarSys/core/presentation/map/layers/my_location.dart';
 import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
-
-import 'package:geolocator/geolocator.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
-import 'package:latlong/latlong.dart';
-import 'package:wakelock/wakelock.dart';
 
 import 'models/map_widget_state_model.dart';
 
@@ -509,7 +509,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         (context.bloc<OperationBloc>()?.selected?.meetup != null
             ? toLatLng(context.bloc<OperationBloc>()?.selected?.meetup?.point)
             : null) ??
-        (current != null ? LatLng(current.latitude, current.longitude) : Defaults.origo);
+        (current != null ? LatLng(current.lat, current.lon) : Defaults.origo);
     return candidate;
   }
 

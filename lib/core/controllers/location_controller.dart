@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/controllers/permission_controller.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
@@ -10,7 +11,6 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:catcher/catcher_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -34,7 +34,7 @@ class LocationController {
   bool get isLocked => _locked;
   LocationService get service => _service;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
-  bool get isLocated => mapController.ready && (isLocked || _toLatLng(_service?.current) == mapController?.center);
+  bool get isLocated => mapController.ready && (isLocked || _service?.current?.toLatLng() == mapController?.center);
   bool get isReady => _service.isReady.value && _options != null;
   MyLocationOptions get options => _options;
 
@@ -50,7 +50,6 @@ class LocationController {
         assert(permissionController != null, "permissionController must not be null"),
         _service = LocationService(configBloc);
 
-  /// Get current location
   Position get current => _service.current;
 
   Future<LatLng> configure() async {
@@ -114,15 +113,15 @@ class LocationController {
   }
 
   LatLng _toLatLng(Position position) {
-    return position == null ? LatLng(0, 0) : LatLng(position?.latitude, position?.longitude);
+    return position == null ? LatLng(0, 0) : LatLng(position?.lat, position?.lon);
   }
 
   bool _updateLocation(Position position, bool goto) {
     bool hasMoved = false;
     bool wasLocated = isLocated;
     if (position != null && mapController.ready) {
-      final wasChangeInAccuracy = (_options?.accuracy != position?.accuracy);
-      _options?.accuracy = position?.accuracy;
+      final wasChangeInAccuracy = (_options?.accuracy != position?.acc);
+      _options?.accuracy = position?.acc;
       final point = _toLatLng(position);
       // Full refresh of map needed?
       if (goto || _locked) {

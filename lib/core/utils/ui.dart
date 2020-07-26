@@ -16,7 +16,7 @@ import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/presentation/screens/map_screen.dart';
-import 'package:SarSys/core/data/services/location_service.dart';
+import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -412,10 +412,7 @@ void jumpToMe(
     if (current != null) {
       jumpToLatLng(
         context,
-        center: LatLng(
-          current.latitude,
-          current.longitude,
-        ),
+        center: current.toLatLng(),
       );
     }
   }
@@ -457,7 +454,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
       if (current != null) {
         success = await launch(
           "http://maps.apple.com/maps?"
-          "saddr=${current.latitude},${current.longitude}&"
+          "saddr=${current.lat},${current.lon}&"
           "daddr=${point.latitude},${point.longitude}",
         );
       }

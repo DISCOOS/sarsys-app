@@ -5,7 +5,7 @@ import 'package:SarSys/core/controllers/app_controller.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
-import 'package:SarSys/core/data/services/geocode_services.dart';
+import 'package:SarSys/core/data/services/location/geocode_services.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:catcher/core/catcher.dart';
