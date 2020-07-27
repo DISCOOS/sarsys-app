@@ -15,10 +15,32 @@ abstract class LocationService {
   /// Get [Device.uuid] being tracked
   String get duuid;
 
-  /// Check if positions stored locally
-  bool get isTracking;
+  /// Check if service is able to store
+  /// positions locally. Storing is only
+  /// possible if user has enabled it with
+  /// [AppConfig.locationStoreLocally].
+  bool get canStore;
 
-  /// Check if positions stored locally are posted to [Device.uuid]
+  /// Check if positions are stored locally.
+  /// Storing is controlled with [configure]
+  /// using parameter [store]. Storing is
+  /// only possible if [canStore] is [true].
+  bool get isStoring;
+
+  /// Check if service is able to share
+  /// positions for given [duuid]. Sharing is
+  /// only possible if both [duuid] and
+  /// [token] is given, and user has enabled
+  /// it with [AppConfig.locationAllowSharing].
+  bool get canShare;
+
+  /// Check if sharing is requested.
+  bool get share;
+
+  /// Check if positions stored locally are
+  /// shared by posting to backend using id
+  /// [duuid]. Storing is only possible
+  /// if [canShare] is [true].
   bool get isSharing;
 
   /// Get [AppConfigBloc] instance
@@ -67,14 +89,12 @@ abstract class LocationService {
   ///
   /// Use [duuid] to change which id positions are publish with
   /// Use [token] to change which authorisation token to publish positions with
-  /// Use [track] to control storing positions to history locally
   /// Use [share] to control pushing positions with id [duuid]
   /// Use [force] to force reconfiguration of service
   Future<PermissionStatus> configure({
+    bool share,
     String duuid,
     String token,
-    bool track,
-    bool share,
     bool force = false,
   });
 
@@ -89,8 +109,9 @@ abstract class LocationService {
 
   /// Dispose service.
   /// If disposed, it can not be
-  /// used anymore and [LocationService]
-  /// must be created one more.
+  /// used anymore and a new
+  /// [LocationService] must
+  /// be created again.
   Future dispose();
 
   static LatLng toLatLng(Position position) => position == null ? Defaults.origo : LatLng(position?.lat, position?.lon);
@@ -117,19 +138,21 @@ abstract class LocationService {
   }
 
   static LocationService _singleton;
+  static LocationService get instance => _singleton;
+  static bool get exists => _singleton?.disposed == false;
 
   factory LocationService({
     String duuid,
     String token,
     AppConfigBloc configBloc,
   }) {
-    if (_singleton == null || _singleton.disposed) {
+    if (!exists) {
       _singleton = BackgroundGeolocationService(
+        share: _singleton?.share,
         duuid: duuid ?? _singleton?.duuid,
         token: token ?? _singleton?.token,
         configBloc: configBloc ?? _singleton?.configBloc,
       );
-//      _singleton = GeolocatorService(bloc);
     }
     return _singleton;
   }
@@ -153,11 +176,32 @@ class LocationOptions {
   /// - forceAndroidLocationManager: false
   /// - timeInterval: 0
   const LocationOptions({
-    this.accuracy = LocationAccuracy.best,
-    this.distanceFilter = 0,
-    this.forceAndroidLocationManager = false,
+    this.store,
     this.timeInterval = 0,
+    this.distanceFilter = 0,
+    this.locationAlways,
+    this.locationWhenInUse,
+    this.activityRecognition,
+    this.accuracy = LocationAccuracy.best,
+    this.forceAndroidLocationManager,
   });
+
+  /// Tells service to store locations locally
+  ///
+  /// The default value for this field is [Defaults.locationStoreLocally].
+  final bool store;
+
+  /// Tells service to track location also when app is terminated by OS
+  ///
+  final bool locationAlways;
+
+  /// Tells service to track location only when app is in use
+  ///
+  final bool locationWhenInUse;
+
+  /// Tells service to use activity recognition service to optimize location tracking
+  ///
+  final bool activityRecognition;
 
   /// Defines the desired accuracy that should be used to determine the location data.
   ///
@@ -195,10 +239,13 @@ class CreateEvent extends LocationEvent {
   String toString() => 'When: ${timestamp.toIso8601String()}\n'
       'duuid: $duuid,'
       'AppConfig: {\n'
+      '   store: ${config.locationStoreLocally}\n'
       '   accuracy: ${config.locationAccuracy}\n'
       '   interval: ${config.locationFastestInterval}\n'
       '   displacement: ${config.locationSmallestDisplacement}\n'
-      '   permission: ${config.locationWhenInUse}\n'
+      '   locationAlways: ${config.locationAlways}\n'
+      '   locationWhenInUse: ${config.locationWhenInUse}\n'
+      '   activityRecognition: ${config.activityRecognition}\n'
       '}';
 }
 
@@ -227,9 +274,13 @@ class SubscribeEvent extends LocationEvent {
   @override
   String toString() => 'When: ${timestamp.toIso8601String()}\n'
       'Options: {\n'
+      '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
       '   timeInterval: ${options.timeInterval}\n'
       '   distanceFilter: ${options.distanceFilter}\n'
+      '   locationAlways: ${options.locationAlways}\n'
+      '   locationWhenInUse: ${options.locationWhenInUse}\n'
+      '   activityRecognition: ${options.activityRecognition}\n'
       '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
       '}';
 }
@@ -240,9 +291,13 @@ class UnsubscribeEvent extends LocationEvent {
   @override
   String toString() => 'When: ${timestamp.toIso8601String()}\n'
       'Options: {\n'
+      '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
       '   timeInterval: ${options.timeInterval}\n'
       '   distanceFilter: ${options.distanceFilter}\n'
+      '   locationAlways: ${options.locationAlways}\n'
+      '   locationWhenInUse: ${options.locationWhenInUse}\n'
+      '   activityRecognition: ${options.activityRecognition}\n'
       '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
       '}';
 }
@@ -258,9 +313,13 @@ class ErrorEvent extends LocationEvent {
       '   stackTrace: $stackTrace\n'
       '}\n'
       'Options: {\n'
+      '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
       '   timeInterval: ${options.timeInterval}\n'
       '   distanceFilter: ${options.distanceFilter}\n'
+      '   locationAlways: ${options.locationAlways}\n'
+      '   locationWhenInUse: ${options.locationWhenInUse}\n'
+      '   activityRecognition: ${options.activityRecognition}\n'
       '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
       '}';
 }

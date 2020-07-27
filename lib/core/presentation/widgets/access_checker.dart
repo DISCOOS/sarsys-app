@@ -16,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AccessChecker extends StatefulWidget {
   final Widget child;
   final AppConfigBloc configBloc;
-  final List<PermissionGroup> permissions;
+  final List<Permission> permissions;
 
   const AccessChecker({
     Key key,

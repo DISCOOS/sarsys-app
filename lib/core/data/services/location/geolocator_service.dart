@@ -20,19 +20,11 @@ class GeolocatorService implements LocationService {
     assert(duuid != null, "Device uuid must be supplied");
     _events.insert(0, CreateEvent(duuid, configBloc.config));
   }
-  final String duuid;
-  final AppConfigBloc configBloc;
 
   static List<LocationEvent> _events = [];
 
-  final _isReady = ValueNotifier(false);
-
-  final bool isSharing = false;
-  final bool isTracking = false;
-
-  Position _current;
   gl.Geolocator _geolocator;
-  PermissionStatus _status = PermissionStatus.unknown;
+  PermissionStatus _status = PermissionStatus.undetermined;
 
   AppConfigBloc _bloc;
   LocationOptions _options;
@@ -47,13 +39,36 @@ class GeolocatorService implements LocationService {
   String token;
 
   @override
+  final String duuid;
+
+  @override
+  final AppConfigBloc configBloc;
+
+  @override
+  bool get canStore => false;
+
+  @override
+  final bool isStoring = false;
+
+  @override
+  bool get share => false;
+
+  @override
+  bool get canShare => false;
+
+  @override
+  final bool isSharing = false;
+
+  @override
   Position get current => _current;
+  Position _current;
 
   @override
   PermissionStatus get status => _status;
 
   @override
   ValueNotifier<bool> get isReady => _isReady;
+  final _isReady = ValueNotifier(false);
 
   @override
   Stream<Position> get stream => _positionController.stream;
@@ -82,15 +97,12 @@ class GeolocatorService implements LocationService {
 
   @override
   Future<PermissionStatus> configure({
+    bool share,
     String duuid,
     String token,
-    bool track,
-    bool share,
     bool force = false,
   }) async {
-    _status = await PermissionHandler().checkPermissionStatus(
-      PermissionGroup.locationWhenInUse,
-    );
+    _status = await Permission.locationWhenInUse.status;
     if ([PermissionStatus.granted].contains(_status)) {
       final config = _bloc.config;
       var options = _toOptions(config);
@@ -207,14 +219,16 @@ class GeolocatorService implements LocationService {
 
   @override
   Future dispose() async {
-    await _eventController.close();
-    await _positionController.close();
-    await _configSubscription?.cancel();
-    _eventController = null;
-    _positionController = null;
-    _configSubscription = null;
-    _unsubscribe();
-    _disposed = true;
+    if (!_disposed) {
+      await _eventController.close();
+      await _positionController.close();
+      await _configSubscription?.cancel();
+      _eventController = null;
+      _positionController = null;
+      _configSubscription = null;
+      _unsubscribe();
+      _disposed = true;
+    }
     return Future.value();
   }
 

@@ -18,11 +18,15 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     this.onboarded = false,
     this.firstSetup = false,
     this.storage = false,
+    this.locationAlways = false,
     this.locationWhenInUse = false,
+    this.activityRecognition = false,
     List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
     this.mapCacheCapacity = Defaults.mapCacheCapacity,
+    this.locationAllowSharing = Defaults.locationAllowSharing,
+    this.locationStoreLocally = Defaults.locationStoreLocally,
     this.locationAccuracy = Defaults.locationAccuracy,
     this.locationFastestInterval = Defaults.locationFastestInterval,
     this.locationSmallestDisplacement = Defaults.locationSmallestDisplacement,
@@ -45,6 +49,8 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           onboarded,
           firstSetup,
           storage,
+          locationAlways,
+          activityRecognition,
           locationWhenInUse,
           talkGroups ?? const <String>[],
           talkGroupCatalog,
@@ -72,9 +78,13 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final List<String> talkGroups;
   final String talkGroupCatalog;
   final bool storage;
+  final bool locationAlways;
   final bool locationWhenInUse;
+  final bool activityRecognition;
   final int mapCacheTTL;
   final int mapCacheCapacity;
+  final bool locationAllowSharing;
+  final bool locationStoreLocally;
   final String locationAccuracy;
   final int locationFastestInterval;
   final int locationSmallestDisplacement;
@@ -102,9 +112,13 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     List<String> talkGroups,
     String talkGroupCatalog,
     bool storage,
+    bool locationAlways,
     bool locationWhenInUse,
+    bool activityRecognition,
     int mapCacheTTL,
     int mapCacheCapacity,
+    bool locationAllowSharing,
+    bool locationStoreLocally,
     String locationAccuracy,
     int locationFastestInterval,
     int locationSmallestDisplacement,

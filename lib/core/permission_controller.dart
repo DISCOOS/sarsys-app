@@ -24,9 +24,10 @@ class PermissionController {
   static const String ANDROID = "android";
   static const List<String> ALL_OS = const [ANDROID, IOS];
 
-  static const List<PermissionGroup> REQUIRED = const [
-    PermissionGroup.storage,
-    PermissionGroup.locationWhenInUse,
+  static const List<Permission> REQUIRED = const [
+    Permission.storage,
+    Permission.locationWhenInUse,
+    Permission.activityRecognition,
   ];
 
   final PromptCallback onPrompt;
@@ -36,7 +37,7 @@ class PermissionController {
   bool _resolving = false;
   bool get resolving => _resolving;
 
-  Set<PermissionGroup> _permissions = {};
+  Set<Permission> _permissions = {};
 
   Stream<PermissionResponse> get responses => _responses.stream;
   StreamController<PermissionResponse> _responses = StreamController.broadcast();
@@ -63,10 +64,10 @@ class PermissionController {
         .._resolving = _resolving
         .._permissions = _permissions;
 
-  /// Get [PermissionGroup.storage] request
+  /// Get [Permission.storage] request
   PermissionRequest get storageRequest => PermissionRequest(
         platforms: [ANDROID],
-        group: PermissionGroup.storage,
+        permission: Permission.storage,
         title: "Minnekort",
         rationale: "Du må akseptere tilgang for å lese kartdata fra minnekort.",
         disabledMessage: "Tilgang til minnekort er avslått.",
@@ -74,15 +75,15 @@ class PermissionController {
         deniedBefore: "Du har tidligere avslått tilgang til minnekort.",
         consequence: "Du kan ikke lese kartdata lagret lokalt.",
         settingTarget: PermissionRequest.SETTINGS_APPLICATION,
-        onCheck: () => _updateAppConfig(
-          storage: true,
+        update: (bool value) => _updateAppConfig(
+          storage: value,
         ),
       );
 
-  /// Get [PermissionGroup.locationWhenInUseRequest] request
+  /// Get [Permission.locationWhenInUseRequest] request
   PermissionRequest get locationWhenInUseRequest => PermissionRequest(
         platforms: ALL_OS,
-        group: PermissionGroup.locationWhenInUse,
+        permission: Permission.locationWhenInUse,
         title: "Stedstjenester",
         rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er og lagre spor under aksjoner.",
         disabledMessage: "Stedstjenester er avslått.",
@@ -90,15 +91,15 @@ class PermissionController {
         deniedBefore: "Du har tidligere avslått deling av posisjon.",
         consequence: "Du kan ikke vise hvor du er i kartet eller lagre sporet ditt automatisk.",
         settingTarget: PermissionRequest.SETTINGS_APPLICATION,
-        onCheck: () => _updateAppConfig(
-          locationWhenInUse: true,
+        update: (bool value) => _updateAppConfig(
+          locationWhenInUse: value,
         ),
       );
 
-  /// Get [PermissionGroup.locationWhenInUseRequest] request
+  /// Get [Permission.locationWhenInUseRequest] request
   PermissionRequest get locationAlwaysRequest => PermissionRequest(
         platforms: ALL_OS,
-        group: PermissionGroup.locationAlways,
+        permission: Permission.locationAlways,
         title: "Stedstjenester",
         rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er og lagre spor under aksjoner.",
         disabledMessage: "Stedstjenester er avslått.",
@@ -106,70 +107,93 @@ class PermissionController {
         deniedBefore: "Du har tidligere avslått deling av posisjon.",
         consequence: "Du kan ikke vise hvor du er i kartet eller lagre sporet ditt automatisk.",
         settingTarget: PermissionRequest.SETTINGS_APPLICATION,
-        onCheck: () => _updateAppConfig(
-          locationWhenInUse: true,
+        update: (bool value) => _updateAppConfig(
+          locationAlways: value,
+        ),
+      );
+
+  /// Get [Permission.activityRecognition] request
+  PermissionRequest get activityRecognitionRequest => PermissionRequest(
+        platforms: [ANDROID],
+        permission: Permission.activityRecognition,
+        title: "Aktivitetsgjenkjenning",
+        rationale: "Du må akseptere tilgang til aktivtetsgjenkjenning for at "
+            "lokasjonstjenesten skal kunne spare batteri når appen ikke "
+            "er i bevegelse.",
+        disabledMessage: "Aktivitetsgjenkjenning er avslått.",
+        deniedMessage: "Aktivitetsgjenkjenning er ikke tillatt.",
+        deniedBefore: "Du har tidligere avslått tilgang til aktivitetsgjenkjenning.",
+        consequence: "Lokasjonstjenesten vil bruke mer batteri enn normalt.",
+        settingTarget: PermissionRequest.SETTINGS_APPLICATION,
+        update: (bool value) => _updateAppConfig(
+          activityRecognition: value,
         ),
       );
 
   void init({
-    List<PermissionGroup> permissions = REQUIRED,
+    List<Permission> permissions = REQUIRED,
     VoidCallback onReady,
   }) async {
     _permissions.addAll(permissions ?? REQUIRED);
-    if (_permissions.contains(PermissionGroup.storage))
+    if (_permissions.contains(Permission.storage))
       await ask(
         storageRequest.copyWith(onReady: onReady),
       );
-    if (_permissions.contains(PermissionGroup.locationWhenInUse))
+    if (_permissions.contains(Permission.locationWhenInUse))
       await ask(
         locationWhenInUseRequest.copyWith(onReady: onReady),
       );
   }
 
   Future<PermissionStatus> check(PermissionRequest request) async {
-    final handler = PermissionHandler();
-    return await handler.checkPermissionStatus(request.group);
+    return await request.permission.status;
   }
 
   Future<PermissionStatus> ask(PermissionRequest request) async {
     if (request.platforms.contains(Platform.operatingSystem)) {
-      final handler = PermissionHandler();
-      final status = await handler.checkServiceStatus(request.group);
-      switch (status) {
-        case ServiceStatus.enabled:
-        case ServiceStatus.notApplicable:
-          await handle(
-            await handler.checkPermissionStatus(request.group),
-            request,
-          );
-          break;
-        case ServiceStatus.disabled:
-          await _handleServiceDisabled(request);
-          break;
-        case ServiceStatus.unknown:
-          if (onMessage != null)
-            onMessage(
-              "${request.title} er ikke tilgjengelig. ${request.consequence}",
-              data: request,
+      if (request.permission is PermissionWithService) {
+        final permission = request.permission as PermissionWithService;
+        final status = await permission.serviceStatus;
+        switch (status) {
+          case ServiceStatus.enabled:
+            await handle(
+              await request.permission.status,
+              request,
             );
-          break;
-        default:
-          break;
+            break;
+          case ServiceStatus.disabled:
+            await _handleServiceDisabled(request);
+            break;
+          case ServiceStatus.notApplicable:
+            if (onMessage != null)
+              onMessage(
+                "${request.title} er ikke tilgjengelig. ${request.consequence}",
+                data: request,
+              );
+            break;
+          default:
+            break;
+        }
+      } else {
+        await handle(
+          await request.permission.status,
+          request,
+        );
       }
     }
     return check(request);
   }
 
   Future<bool> handle(PermissionStatus status, PermissionRequest request) async {
-    var isReady = false;
-
     // Prevent re-entrant loop
     _resolving = true;
+
+    var isReady = false;
 
     if (request.platforms.contains(Platform.operatingSystem)) {
       switch (status) {
         case PermissionStatus.granted:
-          if (await _updateAppConfig(locationWhenInUse: true) && onMessage != null)
+          if (await request.update(true) && onMessage != null)
             onMessage(
               "${request.title} er tilgjengelig",
               data: request,
@@ -177,7 +201,7 @@ class PermissionController {
           isReady = true;
           break;
         case PermissionStatus.restricted:
-          if (await _updateAppConfig(locationWhenInUse: true) && onMessage != null)
+          if (await request.update(false) && onMessage != null)
             onMessage(
               "Tilgang til ${toBeginningOfSentenceCase(request.title)} tillates ikke",
               data: request,
@@ -187,11 +211,19 @@ class PermissionController {
         case PermissionStatus.denied:
           await _handleServiceDenied(request);
           break;
-        case PermissionStatus.disabled:
-          await _handleServiceDenied(request);
-          break;
         default:
-          await _handlePermissionRequest("${request.title} er ikke tilgjengelig. ${request.consequence}", request);
+          // Check if permission has a service that could be disabled
+          if (request.permission is PermissionWithService) {
+            final permission = request.permission as PermissionWithService;
+            final serviceStatus = await permission.serviceStatus;
+            if (serviceStatus.isDisabled) {
+              await _handleServiceDenied(request);
+            }
+          }
+          await _handlePermissionRequest(
+            "${request.title} er ikke tilgjengelig. ${request.consequence}",
+            request,
+          );
           break;
       }
       if (isReady && request.onReady != null) request.onReady();
@@ -209,40 +241,47 @@ class PermissionController {
 
   Future<bool> _updateAppConfig({
     bool storage,
+    bool locationAlways,
     bool locationWhenInUse,
+    bool activityRecognition,
   }) async {
     var notify = true;
     if (configBloc.isReady) {
       final config = configBloc.config;
-      notify = config.locationWhenInUse != locationWhenInUse;
+      notify = config.locationAlways != locationAlways ||
+          config.locationWhenInUse != locationWhenInUse ||
+          config.activityRecognition != activityRecognition;
       if (notify) {
-        await configBloc.updateWith(locationWhenInUse: locationWhenInUse);
+        await configBloc.updateWith(
+          locationAlways: locationAlways,
+          locationWhenInUse: locationWhenInUse,
+          activityRecognition: activityRecognition,
+        );
       }
     }
     return notify;
   }
 
   Future _handlePermissionRequest(String reason, PermissionRequest request) async {
-    final handler = PermissionHandler();
     if (onMessage == null)
-      await _onAction(handler, request);
+      await _onAction(request);
     else
       onMessage(reason, action: "LØS", data: request, onPressed: () async {
-        await _onAction(handler, request);
+        await _onAction(request);
       });
   }
 
-  Future _onAction(PermissionHandler handler, PermissionRequest request) async {
+  Future _onAction(PermissionRequest request) async {
     var prompt = true;
 
-    /// TODO: Move userDeniedGroupBefore counter to AppConfig
     final prefs = await SharedPreferences.getInstance();
-    var status = await handler.checkPermissionStatus(request.group);
-    // In case permissions was granted in app settings screen
-    if ([PermissionStatus.denied, PermissionStatus.restricted].contains(status)) {
-      var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.group}") ?? 0;
+    final status = await request.permission.status;
+    if (status.isPermanentlyDenied) {
+      await _onOpenSetting(request);
+    } else if ([PermissionStatus.undetermined, PermissionStatus.denied, PermissionStatus.restricted].contains(status)) {
+      var deniedBefore = prefs.getInt("userDeniedGroupBefore_${request.permission}") ?? 0;
       // Only supported on Android, iOS always return false
-      if (deniedBefore > 0 || await handler.shouldShowRequestPermissionRationale(request.group)) {
+      if (deniedBefore > 0 || await request.permission.shouldShowRequestRationale) {
         prompt = onPrompt == null
             ? true
             : await onPrompt(
@@ -254,12 +293,12 @@ class PermissionController {
       }
       if (prompt) {
         if (deniedBefore < 2) {
-          await _request(handler, request, prefs, deniedBefore);
+          await _request(request, prefs, deniedBefore);
         } else {
           // In case permissions was granted in app settings screen
-          var status = await handler.checkPermissionStatus(request.group);
+          var status = await request.permission.status;
           if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
-            await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
+            await prefs.setInt("userDeniedGroupBefore_${request.permission}", 0);
             handle(status, request);
           } else {
             await _onOpenSetting(request);
@@ -270,15 +309,17 @@ class PermissionController {
   }
 
   Future _request(
-      PermissionHandler handler, PermissionRequest request, SharedPreferences prefs, int deniedBefore) async {
+    PermissionRequest request,
+    SharedPreferences prefs,
+    int deniedBefore,
+  ) async {
     try {
-      var response = await handler.requestPermissions([request.group]);
-      var status = response[request.group];
+      final status = await request.permission.request();
       if ([PermissionStatus.granted, PermissionStatus.restricted].contains(status)) {
-        await prefs.setInt("userDeniedGroupBefore_${request.group}", 0);
+        await prefs.setInt("userDeniedGroupBefore_${request.permission}", 0);
         handle(status, request);
       } else {
-        await prefs.setInt("userDeniedGroupBefore_${request.group}", ++deniedBefore);
+        await prefs.setInt("userDeniedGroupBefore_${request.permission}", ++deniedBefore);
         if (onMessage != null) {
           onMessage(
             "${request.title} er ikke tilgjengelig. ${request.consequence}",
@@ -301,13 +342,14 @@ class PermissionController {
   }
 
   Future _handleServiceDenied(PermissionRequest request) async {
-    final handler = PermissionHandler();
-    var check = await handler.checkPermissionStatus(request.group);
-    if (check == PermissionStatus.disabled) {
-      await _handleServiceDisabled(request);
-    } else {
-      await _handlePermissionRequest(request.deniedMessage, request);
+    if (request.permission is PermissionWithService) {
+      final permission = request.permission as PermissionWithService;
+      var check = await permission.serviceStatus;
+      if (check == ServiceStatus.disabled) {
+        return await _handleServiceDisabled(request);
+      }
     }
+    await _handlePermissionRequest(request.deniedMessage, request);
   }
 
   Future _handleServiceDisabled(PermissionRequest request) async {
@@ -332,7 +374,7 @@ class PermissionController {
         break;
     }
     await handle(
-      await PermissionHandler().checkPermissionStatus(request.group),
+      await request.permission.status,
       request,
     );
   }
@@ -351,11 +393,11 @@ class PermissionRequest {
   final String title;
   final String rationale;
   final String deniedBefore;
-  final PermissionGroup group;
+  final Permission permission;
   final String deniedMessage;
   final String disabledMessage;
   final String consequence;
-  final AsyncValueGetter<bool> onCheck;
+  final Future<bool> Function(bool value) update;
 
   final VoidCallback onReady;
   final String settingTarget;
@@ -368,8 +410,8 @@ class PermissionRequest {
     @required this.rationale,
     @required this.consequence,
     @required this.deniedBefore,
-    @required this.group,
-    @required this.onCheck,
+    @required this.permission,
+    @required this.update,
     @required this.deniedMessage,
     @required this.disabledMessage,
     this.onReady,
@@ -381,16 +423,16 @@ class PermissionRequest {
   }) {
     return PermissionRequest(
       title: this.title,
-      group: this.group,
+      update: this.update,
       platforms: this.platforms,
       rationale: this.rationale,
+      permission: this.permission,
       consequence: this.consequence,
       deniedBefore: this.deniedBefore,
-      deniedMessage: this.deniedMessage,
-      disabledMessage: this.disabledMessage,
-      onCheck: this.onCheck,
       onReady: onReady ?? this.onReady,
+      deniedMessage: this.deniedMessage,
       settingTarget: this.settingTarget,
+      disabledMessage: this.disabledMessage,
     );
   }
 }

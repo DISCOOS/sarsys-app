@@ -403,7 +403,7 @@ void jumpToMe(
 }) async {
   final service = LocationService();
   var status = service.status;
-  if (PermissionStatus.unknown == status) {
+  if (PermissionStatus.undetermined == status) {
     status = await service.configure();
   }
   if ([PermissionStatus.granted].contains(status)) {
@@ -445,7 +445,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   if (success == false && Platform.isIOS) {
     final service = LocationService();
     var status = service.status;
-    if (PermissionStatus.unknown == status) {
+    if (PermissionStatus.undetermined == status) {
       status = await service.configure();
     }
     if ([PermissionStatus.granted].contains(status)) {

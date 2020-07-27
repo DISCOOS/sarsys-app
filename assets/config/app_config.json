@@ -9,6 +9,8 @@
   "talkGroupCatalog": "Oslo",
   "storage": false,
   "locationWhenInUse": false,
+  "allowSharing": false,
+  "allowTracking": true,
   "mapCacheTTL": 30,
   "mapCacheCapacity": 15000,
   "locationAccuracy": "high",

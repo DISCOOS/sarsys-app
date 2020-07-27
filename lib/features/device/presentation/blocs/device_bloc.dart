@@ -73,6 +73,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
               dispatch(UpdateDevice(device.copyWith(
                 number: userBloc.user.phone,
                 alias: userBloc.user.shortName,
+                networkId: userBloc.user.userId,
               )));
             }
             break;
@@ -225,11 +226,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _load(LoadDevices command) async {
     var devices = await repo.load();
-
-    LocationService().configure(
-      duuid: findThisApp()?.uuid,
-      token: userBloc.repo.token.accessToken,
-    );
 
     return toOK(
       command,

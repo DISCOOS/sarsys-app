@@ -26,6 +26,7 @@ import 'package:SarSys/features/operation/domain/repositories/operation_reposito
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
+import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -491,8 +492,11 @@ class AppController {
     // Handle changes in user state
     registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
-    // Handle changes in user state
-    registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
+    // Handle changes in device state
+    registerStreamSubscription(bloc<DeviceBloc>().listen(_onDeviceState));
+
+    // Handle changes in operation state
+    registerStreamSubscription(bloc<OperationBloc>().listen(_onOperationState));
 
     // Notify that providers are ready
     _controller.add(_state = AppControllerState.Built);
@@ -531,15 +535,46 @@ class AppController {
       if (next != _state) {
         _state = next;
         _controller.add(_state);
-        // Ensure location service is
-        // initialized as early as possible.
-        //
-        // 1) DeviceBloc will reconfigure with duuid for this app
-        // 2) OperationBloc will reconfigure tracking s
-        LocationService(
-          configBloc: bloc<AppConfigBloc>(),
-        ).configure();
       }
+    }
+    if (isReady) {
+      // Ensure that token is updated
+      LocationService(
+        configBloc: bloc<AppConfigBloc>(),
+      ).token = bloc<UserBloc>().repo.token.accessToken;
+    } else if (LocationService.exists) {
+      if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
+        // Delete positions from shared devices
+        LocationService().clear();
+      }
+      // An authenticated user is required
+      LocationService().dispose();
+    }
+  }
+
+  void _onDeviceState(DeviceState state) {
+    if (state.isLoaded()) {
+      // Ensure tracking is enabled
+      LocationService(
+        configBloc: bloc<AppConfigBloc>(),
+      ).configure(
+        share: bloc<OperationBloc>().isSelected,
+        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+        token: bloc<UserBloc>().repo.token.accessToken,
+      );
+    }
+  }
+
+  void _onOperationState(OperationState state) {
+    if (state.isSelected() || state.isUnselected()) {
+      // Ensure tracking is only active when operation is selected
+      LocationService(
+        configBloc: bloc<AppConfigBloc>(),
+      ).configure(
+        share: state.isSelected(),
+        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+        token: bloc<UserBloc>().repo.token.accessToken,
+      );
     }
   }
 

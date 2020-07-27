@@ -22,6 +22,8 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     talkGroupCatalog: json['talkGroupCatalog'] as String,
     mapCacheTTL: json['mapCacheTTL'] as int,
     mapCacheCapacity: json['mapCacheCapacity'] as int,
+    locationStoreLocally: json['locationStoreLocally'] as bool,
+    locationAllowSharing: json['locationAllowSharing'] as bool,
     locationAccuracy: json['locationAccuracy'] as String,
     locationFastestInterval: json['locationFastestInterval'] as int,
     locationSmallestDisplacement: json['locationSmallestDisplacement'] as int,
@@ -62,6 +64,8 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('locationWhenInUse', instance.locationWhenInUse);
   writeNotNull('mapCacheTTL', instance.mapCacheTTL);
   writeNotNull('mapCacheCapacity', instance.mapCacheCapacity);
+  writeNotNull('locationAllowSharing', instance.locationAllowSharing);
+  writeNotNull('locationStoreLocally', instance.locationStoreLocally);
   writeNotNull('locationAccuracy', instance.locationAccuracy);
   writeNotNull('locationFastestInterval', instance.locationFastestInterval);
   writeNotNull(

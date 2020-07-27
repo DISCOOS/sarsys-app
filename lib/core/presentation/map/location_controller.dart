@@ -203,7 +203,7 @@ class LocationController {
           rebuild: _locationUpdateController?.stream,
         );
         _subscribe();
-        if (isLocated && permissionController.resolving) onTrackingChanged(isLocated, _locked);
+        if (isLocated && !permissionController.resolving) onTrackingChanged(isLocated, _locked);
         completer.complete(point);
       } else if (status != PermissionStatus.granted) {
         await Future.delayed(Duration(milliseconds: 100));

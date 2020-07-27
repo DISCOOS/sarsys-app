@@ -73,9 +73,9 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         child: PermissionSetup(
           key: _permissionsKey,
           onChanged: (response) {
-            if (response.request.group == PermissionGroup.location) {
+            if (response.request.permission == Permission.location) {
               setState(() => _isLocationGranted = PermissionStatus.granted == response.status);
-            } else if (response.request.group == PermissionGroup.storage) {
+            } else if (response.request.permission == Permission.storage) {
               setState(() => _isStorageGranted = PermissionStatus.granted == response.status);
             }
           },

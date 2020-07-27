@@ -114,7 +114,7 @@ class SettingsScreenState extends State<SettingsScreen> {
         subtitle: Text("Endre innstillinger i operativsystemet"),
         trailing: Icon(Icons.open_in_new),
         onTap: () async {
-          await PermissionHandler().openAppSettings();
+          await openAppSettings();
         },
       ),
       _buildGotoDebugScreen(),
