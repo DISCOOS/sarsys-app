@@ -55,13 +55,14 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future<Iterable<Position>> history() async {
     final locations = await bg.BackgroundGeolocation.locations;
-    return locations.map(_toPosition);
+    return locations.cast<bg.Location>().map(_toPosition);
   }
 
   @override
   Future clear() async {
     _events.clear();
-    return await bg.BackgroundGeolocation.destroyLocations();
+    await bg.BackgroundGeolocation.destroyLocations();
+    _notify(ClearEvent(current));
   }
 
   @override

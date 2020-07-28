@@ -82,6 +82,7 @@ dependencies:
   debounce_throttle: ^1.1.0
   grouped_list: ^3.3.0
   flutter_background_geolocation: ^1.9.3
+  percent_indicator: ^2.1.5
 
   # Mocking support
   uuid: ^2.0.2

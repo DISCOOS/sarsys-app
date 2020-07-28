@@ -1,8 +1,13 @@
-import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
+import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
@@ -263,6 +268,227 @@ class UserActionGroup extends StatelessWidget {
 //  void _onDeleted() {
 //    if (onDeleted != null) onDeleted();
 //  }
+}
+
+class UserLocationWidget extends StatefulWidget {
+  @override
+  _UserLocationWidgetState createState() => _UserLocationWidgetState();
+}
+
+class _UserLocationWidgetState extends State<UserLocationWidget> {
+  var state = 0;
+  final isSelected = <bool>[false, false, false];
+
+  @override
+  void didChangeDependencies() {
+    final config = context.bloc<AppConfigBloc>().config;
+    if (config.locationStoreLocally == false) {
+      state = 0;
+    } else if (config.locationAllowSharing == false) {
+      state = 1;
+    } else {
+      state = 2;
+    }
+    isSelected[state] = true;
+    super.didChangeDependencies();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = LocationService();
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.center,
+            child: FittedBox(child: _buildStatus(service)),
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh,
+                color: Colors.green,
+              ),
+              tooltip: 'Oppdater posisjon',
+              onPressed: () => service.update(),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: IconButton(
+              icon: Icon(
+                Icons.delete,
+                color: Colors.red,
+              ),
+              tooltip: 'Slett posisjoner',
+              onPressed: () async {
+                if (await prompt(
+                  context,
+                  "Bekreftelse",
+                  "Dette vil slette alle posisjoner lokalt. Vil du fortsette?",
+                )) {
+                  service.clear();
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatus(LocationService service) => StreamBuilder<LocationEvent>(
+        stream: service.onChanged,
+        builder: (context, snapshot) {
+          final point = service.current?.geometry;
+          return FutureBuilder<Iterable<Position>>(
+              future: service.history(),
+              builder: (context, history) {
+                final positions = history.hasData ? history.data as Iterable : [];
+                final capacity = positions.length / 1000;
+                return CircularPercentIndicator(
+                  radius: 272.0,
+                  lineWidth: 15.0,
+                  percent: capacity,
+                  header: Text(
+                    'SPORING',
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  footer: Text(
+                    'Posisjoner lagret: ${positions.length} av 1000 (${(capacity * 100).toStringAsFixed(1)} %)',
+                  ),
+                  center: Padding(
+                    padding: const EdgeInsets.only(top: 36.0, bottom: 52.0, left: 24.0, right: 24.0),
+                    child: Stack(
+                      children: <Widget>[
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            children: <Widget>[
+                              buildCopyableText(
+                                context: context,
+                                prefixWidth: 0.0,
+                                value: toUTM(point, prefix: "", empty: "Ingen"),
+                                label: "UTM",
+                              ),
+                              buildCopyableText(
+                                context: context,
+                                prefixWidth: 0.0,
+                                value: toDDM(point, prefix: "", empty: "Ingen"),
+                                label: "Desimalminutter (DDM)",
+                              ),
+                              Divider(
+                                thickness: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: <Widget>[
+                              ToggleButtons(
+                                renderBorder: false,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.visibility_off,
+                                    color: Colors.red,
+                                  ),
+                                  Icon(
+                                    Icons.storage,
+                                    color: Colors.orange,
+                                  ),
+                                  Icon(
+                                    Icons.cloud_upload,
+                                    color: Colors.green,
+                                  ),
+                                ],
+                                onPressed: (int index) {
+                                  setState(() {
+                                    for (int buttonIndex = 0; buttonIndex < isSelected.length; buttonIndex++) {
+                                      if (buttonIndex == index) {
+                                        state = index;
+                                        isSelected[buttonIndex] = true;
+                                        _apply(context, service, state);
+                                      } else {
+                                        isSelected[buttonIndex] = false;
+                                      }
+                                    }
+                                  });
+                                },
+                                isSelected: isSelected,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _toTrackingStatus(state),
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  progressColor: _toTrackingColor(state),
+                );
+              });
+        },
+      );
+
+  MaterialColor _toTrackingColor(int index) {
+    switch (index) {
+      case 1:
+        return Colors.orange;
+      case 2:
+        return Colors.green;
+      default:
+        return Colors.red;
+    }
+  }
+
+  String _toTrackingStatus(int index) {
+    switch (index) {
+      case 1:
+        return 'LAGRES LOKALT';
+      case 2:
+        return 'LAGRES I AKSJON';
+      default:
+        return 'INGEN LAGRING';
+    }
+  }
+
+  Future _apply(
+    BuildContext context,
+    LocationService service,
+    int index,
+  ) async {
+    switch (index) {
+      case 0:
+        await context.bloc<AppConfigBloc>().updateWith(
+              locationStoreLocally: false,
+              locationAllowSharing: false,
+            );
+        break;
+      case 1:
+        await context.bloc<AppConfigBloc>().updateWith(
+              locationStoreLocally: true,
+              locationAllowSharing: false,
+            );
+        break;
+      case 2:
+        await context.bloc<AppConfigBloc>().updateWith(
+              locationStoreLocally: true,
+              locationAllowSharing: true,
+            );
+        break;
+    }
+    return service.configure();
+  }
 }
 
 class UserNameView extends StatelessWidget {

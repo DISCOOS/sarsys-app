@@ -302,6 +302,15 @@ class UnsubscribeEvent extends LocationEvent {
       '}';
 }
 
+class ClearEvent extends LocationEvent {
+  final Position position;
+
+  ClearEvent(this.position) : super(StackTrace.current);
+
+  @override
+  String toString() => 'When: ${timestamp.toIso8601String()}';
+}
+
 class ErrorEvent extends LocationEvent {
   ErrorEvent(this.options, this.error, StackTrace stackTrace) : super(stackTrace);
   final Object error;

@@ -48,7 +48,7 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends RouteWriter<UserScreen, int> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _unitKey = GlobalKey<UserUnitPageState>();
-  final _statusKey = GlobalKey<UserProfilePageState>();
+  final _statusKey = GlobalKey<UserStatusPageState>();
   final _historyKey = GlobalKey<UserHistoryPageState>();
 
   User _user;
@@ -89,7 +89,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
           final tabs = [
-            UserProfilePage(
+            UserStatusPage(
               key: _statusKey,
               user: _user,
               personnel: _personnel,
@@ -114,7 +114,9 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               actions: _buildActions(),
               title: Text(_toTitle(operation)),
             ),
-            body: tabs[routeData],
+            body: SingleChildScrollView(
+              child: tabs[routeData],
+            ),
             bottomNavigationBar: Container(
               child: BottomNavigationBar(
                 currentIndex: routeData,

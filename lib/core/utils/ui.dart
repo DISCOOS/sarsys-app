@@ -469,6 +469,7 @@ Widget buildCopyableText({
   String value,
   Icon action,
   bool selectable = false,
+  double prefixWidth = 24.0,
   GestureTapCallback onAction,
   ValueChanged<String> onCopy,
   MessageCallback onMessage,
@@ -480,7 +481,7 @@ Widget buildCopyableText({
           decoration: InputDecoration(
             labelText: label,
             hintMaxLines: 3,
-            prefixIcon: icon == null ? Container(width: 24.0) : icon,
+            prefixIcon: icon == null ? Container(width: prefixWidth) : icon,
             suffixIcon: action != null
                 ? IconButton(
                     icon: action,

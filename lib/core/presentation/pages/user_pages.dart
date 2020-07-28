@@ -15,8 +15,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:async/async.dart';
 
-class UserProfilePage extends StatefulWidget {
-  UserProfilePage({
+class UserStatusPage extends StatefulWidget {
+  UserStatusPage({
     Key key,
     @required this.onMessage,
     @required this.user,
@@ -32,10 +32,10 @@ class UserProfilePage extends StatefulWidget {
   final ValueChanged<Personnel> onChanged;
 
   @override
-  UserProfilePageState createState() => UserProfilePageState();
+  UserStatusPageState createState() => UserStatusPageState();
 }
 
-class UserProfilePageState extends State<UserProfilePage> {
+class UserStatusPageState extends State<UserStatusPage> {
   Personnel _personnel;
 
   @override
@@ -54,7 +54,13 @@ class UserProfilePageState extends State<UserProfilePage> {
             if (state.isUpdated() && state.data.uuid == _personnel.uuid) {
               _personnel = state.data;
             }
-            return _personnel == null ? _buildUserWidget(context) : _buildPersonnelWidget(context);
+            return Column(
+              children: <Widget>[
+                UserLocationWidget(),
+                Divider(),
+                _personnel == null ? _buildUserWidget(context) : _buildPersonnelWidget(context),
+              ],
+            );
           }
           return Container();
         });
