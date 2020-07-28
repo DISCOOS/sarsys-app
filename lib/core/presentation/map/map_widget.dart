@@ -623,7 +623,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
         if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
-        if (widget.withControlsLocateMe && _locationController?.isReady == true) _locationController.options,
+        if (widget.withControlsLocateMe && _locationController?.isReady == true)
+          _locationController.build(
+            withTail: _useLayers.contains(LAYER_TRACKING),
+          ),
         if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
         if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),

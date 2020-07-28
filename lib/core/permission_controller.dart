@@ -245,14 +245,16 @@ class PermissionController {
     bool locationWhenInUse,
     bool activityRecognition,
   }) async {
-    var notify = true;
+    var notify = false;
     if (configBloc.isReady) {
       final config = configBloc.config;
-      notify = config.locationAlways != locationAlways ||
-          config.locationWhenInUse != locationWhenInUse ||
-          config.activityRecognition != activityRecognition;
+      notify = config.storage != (storage ?? config.storage) ||
+          config.locationAlways != (locationAlways ?? config.locationAlways) ||
+          config.locationWhenInUse != (locationWhenInUse ?? config.locationWhenInUse) ||
+          config.activityRecognition != (activityRecognition ?? config.activityRecognition);
       if (notify) {
         await configBloc.updateWith(
+          storage: storage,
           locationAlways: locationAlways,
           locationWhenInUse: locationWhenInUse,
           activityRecognition: activityRecognition,

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/presentation/map/painters.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/material.dart';
@@ -13,34 +15,37 @@ import 'package:latlong/latlong.dart' hide Path;
 class MyLocationOptions extends LayerOptions {
   MyLocationOptions(
     this.point, {
-    this.size = 30.0,
+    @required this.tickerProvider,
+    @required this.locationUpdates,
     this.bearing,
     this.accuracy,
+    this.size = 30.0,
     this.opacity = 0.6,
+    this.showTail = true,
+    this.track = const [],
     this.milliSeconds = 500,
     this.color = Colors.green,
-    @required this.tickerProvider,
-    @required this.locationUpdateController,
     Stream<Null> rebuild,
   }) : super(rebuild: rebuild) {
     assert(tickerProvider != null, 'tickerProvider can not be null');
-    assert(locationUpdateController != null, 'locationUpdateController can not be null');
+    assert(locationUpdates != null, 'locationUpdates can not be null');
   }
 
-  // Allow external change
-  double accuracy;
-
+  final Color color;
   final double bearing;
   final double opacity;
   final int milliSeconds;
+  final Iterable<Position> track;
   final TickerProvider tickerProvider;
-  final StreamController<Null> locationUpdateController;
-  final Color color;
+  final StreamSink<Null> locationUpdates;
 
+  // Allow external change
   double size;
   LatLng point;
   LatLng next;
+  bool showTail;
   LatLng previous;
+  double accuracy;
 
   AnimationController _controller;
   bool get isAnimating => _controller != null;
@@ -76,7 +81,7 @@ class MyLocationOptions extends LayerOptions {
     _controller.addListener(() {
       this.point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
       if (onMove != null) onMove(this.point);
-      if (!locationUpdateController.isClosed) locationUpdateController.add(null);
+      locationUpdates.add(null);
     });
 
     animation.addStatusListener((status) {
@@ -101,22 +106,43 @@ class MyLocation extends MapPlugin {
 
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
-    return IgnorePointer(
-      child: StreamBuilder<Null>(
-        stream: stream,
-        builder: (context, snapshot) => Stack(
-          children: <Widget>[_buildPosition(context, options, map, stream)],
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints bc) {
+      final size = Size(bc.maxWidth, bc.maxHeight);
+      return IgnorePointer(
+        child: StreamBuilder<Null>(
+          stream: stream,
+          builder: (context, snapshot) => _build(
+            context,
+            options as MyLocationOptions,
+            map,
+            size,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
-  Widget _buildPosition(
+  Stack _build(
     BuildContext context,
     MyLocationOptions options,
     MapState map,
-    Stream<Null> stream,
+    Size size,
   ) {
+    return Stack(
+      children: <Widget>[
+        _buildPosition(context, options, map),
+        if (options.showTail && options.track.isNotEmpty)
+          _buildTrack(
+            context,
+            options,
+            map,
+            size,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPosition(BuildContext context, MyLocationOptions options, MapState map) {
     var size = 8.0;
     var pos = map.project(options.point);
     pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
@@ -156,6 +182,35 @@ class MyLocation extends MapPlugin {
           ),
         ],
       ),
+    );
+  }
+
+  static int _idx = 0;
+
+  _buildTrack(
+    BuildContext context,
+    MyLocationOptions options,
+    MapState map,
+    Size size,
+  ) {
+    final track = List<Position>.from(options.track);
+    final bounds = map.getBounds();
+    _idx++;
+    print('$_idx');
+    var offsets = track.reversed.take(10).map((p) => p.toLatLng()).where((p) => bounds.contains(p)).map((position) {
+      var pos = map.project(position);
+      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+      return Offset(pos.x.toDouble(), pos.y.toDouble());
+    }).toList();
+
+    return CustomPaint(
+      painter: LineStringPainter(
+        offsets: offsets,
+        color: Colors.blue,
+        borderColor: Colors.blue,
+        opacity: options.opacity,
+      ),
+      size: size,
     );
   }
 

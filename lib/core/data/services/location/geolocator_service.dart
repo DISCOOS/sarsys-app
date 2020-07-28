@@ -107,6 +107,7 @@ class GeolocatorService implements LocationService {
       final config = _bloc.config;
       var options = _toOptions(config);
       if (force || _isConfigChanged(options)) {
+        _notify(ConfigureEvent(duuid, configBloc.config, options));
         _subscribe(options);
         _configSubscription?.cancel();
         _configSubscription = _bloc.listen(
@@ -114,6 +115,7 @@ class GeolocatorService implements LocationService {
             if (state.data is AppConfig) {
               final options = _toOptions(state.data);
               if (_isConfigChanged(options)) {
+                _notify(ConfigureEvent(duuid, configBloc.config, options));
                 _subscribe(options);
               }
             }

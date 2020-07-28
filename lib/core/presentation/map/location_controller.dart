@@ -17,19 +17,17 @@ typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
 class LocationController {
-//  final String duuid;
-//  final AppConfigBloc configBloc;
-  final MapWidgetController mapController;
-  final PermissionController permissionController;
   final TickerProvider tickerProvider;
+  final MapWidgetController mapController;
   final TrackingCallback onTrackingChanged;
   final LocationCallback onLocationChanged;
+  final PermissionController permissionController;
 
   bool _locked = false;
   LocationService _service;
   MyLocationOptions _options;
   StreamSubscription _positionSubscription;
-  StreamController<Null> _locationUpdateController = StreamController.broadcast();
+  StreamController<Null> _updateController = StreamController.broadcast();
 
   bool get isLocked => _locked;
   LocationService get service => _service;
@@ -39,9 +37,6 @@ class LocationController {
   MyLocationOptions get options => _options;
 
   LocationController({
-//    @required this.duuid,
-//    @required String token,
-//    @required this.configBloc,
     @required this.mapController,
     @required this.permissionController,
     this.tickerProvider,
@@ -75,10 +70,10 @@ class LocationController {
     mapController?.cancel();
     permissionController?.dispose();
     _positionSubscription?.cancel();
-    _locationUpdateController?.close();
+    _updateController?.close();
     _options = null;
     _positionSubscription = null;
-    _locationUpdateController = null;
+    _updateController = null;
   }
 
   bool goto({locked: false}) {
@@ -88,7 +83,9 @@ class LocationController {
       _locked = locked;
       _updateLocation(_service.current, isReady);
       if (wasLocated != isLocated || wasLocked != _locked) {
-        if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+        if (onTrackingChanged != null) {
+          onTrackingChanged(isLocated, _locked);
+        }
       }
     } else {
       _handle(_service.status);
@@ -100,7 +97,9 @@ class LocationController {
     var wasLocked = _locked;
     _locked = false;
     if (wasLocked != _locked) {
-      if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+      if (onTrackingChanged != null) {
+        onTrackingChanged(isLocated, _locked);
+      }
     }
     return wasLocked;
   }
@@ -135,7 +134,9 @@ class LocationController {
       // Full refresh of map needed?
       if (goto || _locked) {
         hasMoved = true;
-        if (onLocationChanged != null) onLocationChanged(point, goto, _locked);
+        if (onLocationChanged != null) {
+          onLocationChanged(point, goto, _locked);
+        }
         if (goto || _locked) {
           if (tickerProvider != null) {
             mapController.animatedMove(
@@ -145,27 +146,35 @@ class LocationController {
             );
             _options.animatedMove(point, onMove: (point) {
               // Synchronize map control state with my location animation
-              if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+              if (onTrackingChanged != null) {
+                onTrackingChanged(isLocated, _locked);
+              }
             });
           } else {
             mapController.move(point, mapController.zoom ?? Defaults.zoom);
           }
         }
       } else if (_isMoved(point)) {
-        if (onLocationChanged != null) onLocationChanged(point, false, isLocked);
+        if (onLocationChanged != null) {
+          onLocationChanged(point, false, isLocked);
+        }
         if (_options?.point == null || tickerProvider == null) {
-          _locationUpdateController.add(null);
+          _updateController.add(null);
         } else {
           _options.animatedMove(point, onMove: (point) {
             // Synchronize map control state with my location animation
-            if (onTrackingChanged != null) onTrackingChanged(isLocated, _locked);
+            if (onTrackingChanged != null) {
+              onTrackingChanged(isLocated, _locked);
+            }
           });
         }
       } else if (wasChangeInAccuracy) {
-        _locationUpdateController.add(null);
+        _updateController.add(null);
       }
     }
-    if (onTrackingChanged != null && wasLocated != isLocated) onTrackingChanged(isLocated, _locked);
+    if (onTrackingChanged != null && wasLocated != isLocated) {
+      onTrackingChanged(isLocated, _locked);
+    }
     return hasMoved;
   }
 
@@ -179,32 +188,35 @@ class LocationController {
 
   Future<LatLng> _handle(PermissionStatus status) async {
     final completer = Completer<LatLng>();
-    await permissionController.handle(
-      status,
-      permissionController.locationWhenInUseRequest.copyWith(onReady: () => _onReady(completer)),
-    );
+    if (status.isGranted) {
+      _onReady(completer);
+    } else {
+      // Wait for result to prevent concurrent attempts
+      await permissionController.handle(
+        status,
+        permissionController.locationWhenInUseRequest.copyWith(
+          onReady: () => _onReady(completer),
+        ),
+      );
+    }
     return completer.future;
   }
 
   void _onReady(Completer<LatLng> completer) async {
     if (_disposed) {
-      return completer.complete(_toLatLng(_service.current));
+      return completer.complete(
+        _toLatLng(_service.current),
+      );
     }
     try {
       final status = await _service.configure();
       if (_service.isReady.value) {
-        final point = _toLatLng(_service.current);
-        _options?.cancel();
-        _options = MyLocationOptions(
-          point,
-          opacity: 0.5,
-          tickerProvider: tickerProvider,
-          locationUpdateController: _locationUpdateController,
-          rebuild: _locationUpdateController?.stream,
-        );
+        final options = build();
         _subscribe();
-        if (isLocated && !permissionController.resolving) onTrackingChanged(isLocated, _locked);
-        completer.complete(point);
+        if (isLocated && !permissionController.resolving) {
+          onTrackingChanged(isLocated, _locked);
+        }
+        completer.complete(options.point);
       } else if (status != PermissionStatus.granted) {
         await Future.delayed(Duration(milliseconds: 100));
         final point = await _handle(status);
@@ -213,5 +225,22 @@ class LocationController {
     } on Exception catch (e, stackTrace) {
       completer.completeError(e, stackTrace);
     }
+  }
+
+  MyLocationOptions build({bool withTail}) {
+    // Duplicates are overwritten
+    final history = List<Position>.from(_service.positions);
+    final point = _toLatLng(_service.current);
+    _options?.cancel();
+    _options = MyLocationOptions(
+      point,
+      opacity: 0.5,
+      track: history,
+      tickerProvider: tickerProvider,
+      locationUpdates: _updateController,
+      rebuild: _updateController?.stream,
+      showTail: withTail ?? _options?.showTail ?? false,
+    );
+    return _options;
   }
 }

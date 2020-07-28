@@ -28,6 +28,7 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   static List<LocationEvent> _events = [];
+  static List<Position> _positions = [];
 
   @override
   String get duuid => _duuid;
@@ -50,17 +51,18 @@ class BackgroundGeolocationService implements LocationService {
   bool get isSharing => _share && canShare;
 
   @override
-  Iterable<Position> get positions => events.whereType<PositionEvent>().map((e) => e.position);
+  Iterable<Position> get positions => _positions;
 
   @override
   Future<Iterable<Position>> history() async {
     final locations = await bg.BackgroundGeolocation.locations;
-    return locations.cast<bg.Location>().map(_toPosition);
+    return locations.map((json) => Position.fromJson(Map<String, dynamic>.from(json))).toList();
   }
 
   @override
   Future clear() async {
     _events.clear();
+    _positions.clear();
     await bg.BackgroundGeolocation.destroyLocations();
     _notify(ClearEvent(current));
   }
@@ -129,15 +131,28 @@ class BackgroundGeolocationService implements LocationService {
           if (!state.enabled) {
             await bg.BackgroundGeolocation.start();
           }
-          await bg.BackgroundGeolocation.destroyLocations();
+          // Prepare
+          _positions = await history();
+          _events.insertAll(0, _positions.map((p) => PositionEvent(p, historic: true)));
+          _notify(ConfigureEvent(
+            duuid,
+            configBloc.config,
+            _options,
+          ));
           _subscribe();
+          await bg.BackgroundGeolocation.getCurrentPosition();
         });
         _configSubscription = configBloc.listen(
-          (state) {
+          (state) async {
             if (state.data is AppConfig) {
               if (_isConfigChanged(state.data)) {
                 _options = _toOptions(state.data);
-                bg.BackgroundGeolocation.setConfig(_toConfig());
+                await bg.BackgroundGeolocation.setConfig(_toConfig());
+                _notify(ConfigureEvent(
+                  duuid,
+                  configBloc.config,
+                  _options,
+                ));
               }
             }
           },
@@ -151,13 +166,17 @@ class BackgroundGeolocationService implements LocationService {
             token: token,
             share: share,
           )) {
-        bg.BackgroundGeolocation.setConfig(_toConfig(
+        await bg.BackgroundGeolocation.setConfig(_toConfig(
           duuid: duuid,
           token: token,
           share: share,
         ));
+        _notify(ConfigureEvent(
+          duuid,
+          configBloc.config,
+          _options,
+        ));
       }
-      await update();
     } else {
       await dispose();
     }
@@ -302,9 +321,6 @@ class BackgroundGeolocationService implements LocationService {
         _onLocation,
         _onError,
       );
-      bg.BackgroundGeolocation.onMotionChange(
-        _onLocation,
-      );
       _notify(SubscribeEvent(_options));
       _isReady.value = true;
     }
@@ -313,6 +329,9 @@ class BackgroundGeolocationService implements LocationService {
 
   void _notify(LocationEvent event) {
     _events.insert(0, event);
+    if (event is PositionEvent) {
+      _positions.add(event.position);
+    }
     _eventController.add(event);
   }
 

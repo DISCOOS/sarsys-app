@@ -18,13 +18,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 
 class DeviceLayerOptions extends LayerOptions {
-  double size;
-  double opacity;
-  bool showLabels;
-  bool showTail;
-  final TrackingBloc bloc;
-  final ActionCallback onMessage;
-
   DeviceLayerOptions({
     @required this.bloc,
     this.size = 8.0,
@@ -33,6 +26,14 @@ class DeviceLayerOptions extends LayerOptions {
     this.showLabels = true,
     this.onMessage,
   }) : super(rebuild: bloc.deviceBloc.where((state) => state.isLocationChanged()).map((_) => null));
+
+  final TrackingBloc bloc;
+  final ActionCallback onMessage;
+
+  double size;
+  double opacity;
+  bool showLabels;
+  bool showTail;
 }
 
 class DeviceLayer extends MapPlugin {

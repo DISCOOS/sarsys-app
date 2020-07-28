@@ -231,13 +231,17 @@ abstract class LocationEvent {
 }
 
 class CreateEvent extends LocationEvent {
-  CreateEvent(this.duuid, this.config) : super(StackTrace.current);
+  CreateEvent(
+    this.duuid,
+    this.config,
+  ) : super(StackTrace.current);
   final String duuid;
   final AppConfig config;
 
   @override
-  String toString() => 'When: ${timestamp.toIso8601String()}\n'
-      'duuid: $duuid,'
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
+      'Device: {uuid: $duuid},'
       'AppConfig: {\n'
       '   store: ${config.locationStoreLocally}\n'
       '   accuracy: ${config.locationAccuracy}\n'
@@ -249,13 +253,51 @@ class CreateEvent extends LocationEvent {
       '}';
 }
 
+class ConfigureEvent extends LocationEvent {
+  ConfigureEvent(
+    this.duuid,
+    this.config,
+    this.options,
+  ) : super(StackTrace.current);
+  final String duuid;
+  final AppConfig config;
+  final LocationOptions options;
+
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
+      'Device: {uuid: $duuid},'
+      'AppConfig: {\n'
+      '   store: ${config.locationStoreLocally}\n'
+      '   accuracy: ${config.locationAccuracy}\n'
+      '   interval: ${config.locationFastestInterval}\n'
+      '   displacement: ${config.locationSmallestDisplacement}\n'
+      '   locationAlways: ${config.locationAlways}\n'
+      '   locationWhenInUse: ${config.locationWhenInUse}\n'
+      '   activityRecognition: ${config.activityRecognition}\n'
+      '},'
+      'Options: {\n'
+      '   store: ${options.store}\n'
+      '   accuracy: ${options.accuracy}\n'
+      '   timeInterval: ${options.timeInterval}\n'
+      '   distanceFilter: ${options.distanceFilter}\n'
+      '   locationAlways: ${options.locationAlways}\n'
+      '   locationWhenInUse: ${options.locationWhenInUse}\n'
+      '   activityRecognition: ${options.activityRecognition}\n'
+      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
+      '}';
+}
+
 class PositionEvent extends LocationEvent {
-  PositionEvent(this.position) : super(StackTrace.current);
+  PositionEvent(this.position, {this.historic = false}) : super(StackTrace.current);
   final Position position;
+  final bool historic;
 
   @override
   String toString() {
-    return 'When: ${timestamp.toIso8601String()}\n'
+    return '$runtimeType\n'
+        'When: ${timestamp.toIso8601String()},\n'
+        'Historic: $historic,\n'
         'Position: {\n'
         '   lat: ${position.lat}\n'
         '   lon: ${position.lon}\n'
@@ -272,7 +314,8 @@ class SubscribeEvent extends LocationEvent {
   SubscribeEvent(this.options) : super(StackTrace.current);
   final LocationOptions options;
   @override
-  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
       'Options: {\n'
       '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
@@ -289,7 +332,8 @@ class UnsubscribeEvent extends LocationEvent {
   UnsubscribeEvent(this.options) : super(StackTrace.current);
   final LocationOptions options;
   @override
-  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
       'Options: {\n'
       '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
@@ -308,7 +352,8 @@ class ClearEvent extends LocationEvent {
   ClearEvent(this.position) : super(StackTrace.current);
 
   @override
-  String toString() => 'When: ${timestamp.toIso8601String()}';
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()}';
 }
 
 class ErrorEvent extends LocationEvent {
@@ -316,11 +361,12 @@ class ErrorEvent extends LocationEvent {
   final Object error;
   final LocationOptions options;
   @override
-  String toString() => 'When: ${timestamp.toIso8601String()}\n'
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()}\n'
       'Error: {\n'
       '   message: $error\n'
       '   stackTrace: $stackTrace\n'
-      '}\n'
+      '},\n'
       'Options: {\n'
       '   store: ${options.store}\n'
       '   accuracy: ${options.accuracy}\n'
