@@ -94,8 +94,16 @@ AggregateRef<IncidentModel> toIncidentRef(dynamic json) => AggregateRef<Incident
 AggregateRef<OrganisationModel> toOrgRef(dynamic json) => AggregateRef<OrganisationModel>.fromJson(json);
 AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) => AggregateRef<AffiliationModel>.fromJson(json);
 
-double latFromJson(Object json) => _toDouble(json, 0);
-double lonFromJson(Object json) => _toDouble(json, 1);
+/// GeoJSON specifies longitude at index 0,
+/// see https://tools.ietf.org/html/rfc7946#section-3.1.1
+double lonFromJson(Object json) => _toDouble(json, 0);
+
+/// GeoJSON specifies latitude at index 1,
+/// see https://tools.ietf.org/html/rfc7946#section-3.1.1
+double latFromJson(Object json) => _toDouble(json, 1);
+
+/// GeoJSON specifies altitude at index 2,
+/// see https://tools.ietf.org/html/rfc7946#section-3.1.1
 double altFromJson(Object json) => _toDouble(json, 2);
 
 double _toDouble(Object json, int index) {
