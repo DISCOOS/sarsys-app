@@ -142,6 +142,7 @@ void runAppWithCatcher(Widget app, AppController controller) {
       explicitExceptionHandlersMap: explicitExceptionHandlersMap,
       localizationOptions: [localizationOptions],
     ),
+    navigatorKey: NavigationService.navigatorKey,
   );
 }
 

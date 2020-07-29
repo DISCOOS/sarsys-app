@@ -84,6 +84,7 @@ class _OperationPageState extends State<OperationPage> {
 
   ListView _buildDashboard(BuildContext context, Incident incident, Operation operation) {
     return ListView(
+      shrinkWrap: true,
       controller: _controller,
       padding: const EdgeInsets.all(OperationPage.SPACING),
       physics: AlwaysScrollableScrollPhysics(),

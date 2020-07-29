@@ -33,6 +33,9 @@ class Coordinates extends ValueObject<List<double>> {
         alt: altFromJson(json),
       );
 
-  /// Declare support for serialization to JSON
-  List<double> toJson() => [lat, lon, if (alt != null) alt];
+  /// Declare support for serialization to JSON.
+  /// GeoJSON specifies longitude at index 0,
+  /// latitude at index 1 and altitude at index 2,
+  /// see https://tools.ietf.org/html/rfc7946#section-3.1.1
+  List<double> toJson() => [lon, lat, if (alt != null) alt];
 }

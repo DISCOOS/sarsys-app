@@ -1,5 +1,4 @@
 import 'package:SarSys/core/app_controller.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +7,7 @@ class NavigationService {
   factory NavigationService() => _instance;
 
   static final _instance = NavigationService._();
-  static final GlobalKey<NavigatorState> _navigatorKey = Catcher.navigatorKey;
+  static final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   static GlobalKey<NavigatorState> get navigatorKey => _navigatorKey;
 
   OverlayState get overlay => navigatorKey.currentState.overlay;

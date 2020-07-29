@@ -296,7 +296,7 @@ class UnitWidget extends StatelessWidget {
       );
 
   String _toPersonnel(PersonnelRepository repo) {
-    final personnel = unit?.personnels?.map((puuid) => repo[puuid].formal)?.join(', ');
+    final personnel = unit?.personnels?.map((puuid) => repo[puuid]?.formal ?? 'Mannskap')?.join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 

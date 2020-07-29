@@ -211,7 +211,7 @@ class BackgroundGeolocationService implements LocationService {
       maxBatchSize: 10,
       autoSyncThreshold: 5,
       httpRootProperty: '.',
-      httpTimeout: 5000,
+      httpTimeout: 30000,
       url: url,
       method: 'POST',
       headers: {
@@ -321,6 +321,13 @@ class BackgroundGeolocationService implements LocationService {
         _onLocation,
         _onError,
       );
+      bg.BackgroundGeolocation.onHttp((event) {
+        if (event.status != 204) {
+          _notify(
+            ErrorEvent(_options, '${event.status} ${event.responseText}', null),
+          );
+        }
+      });
       _notify(SubscribeEvent(_options));
       _isReady.value = true;
     }

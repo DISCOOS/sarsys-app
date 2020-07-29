@@ -197,7 +197,7 @@ class MyLocation extends MapPlugin {
     final bounds = map.getBounds();
     _idx++;
     print('$_idx');
-    var offsets = track.reversed.take(10).map((p) => p.toLatLng()).where((p) => bounds.contains(p)).map((position) {
+    var offsets = track.reversed.take(1000).map((p) => p.toLatLng()).where((p) => bounds.contains(p)).map((position) {
       var pos = map.project(position);
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());
