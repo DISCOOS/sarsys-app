@@ -5,6 +5,7 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
 import 'package:SarSys/core/utils/data.dart' as utils;
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:flutter/foundation.dart';
 import 'package:latlong/latlong.dart';
 import 'dart:async';
@@ -78,8 +79,8 @@ abstract class LocationService {
 
   /// Get authentication token required
   /// to publish positions to backend
-  String get token;
-  set token(String token);
+  AuthToken get token;
+  set token(AuthToken token);
 
   /// Get event from index
   LocationEvent operator [](int index);
@@ -94,7 +95,7 @@ abstract class LocationService {
   Future<PermissionStatus> configure({
     bool share,
     String duuid,
-    String token,
+    AuthToken token,
     bool force = false,
   });
 

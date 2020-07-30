@@ -42,6 +42,7 @@ class UserIdentityService extends UserService {
     TOKEN_ERROR_CODE,
     AUTHORIZE_AND_EXCHANGE_CODE_FAILED,
   ];
+  static const String REFRESH_URL = 'https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/token';
 
   final FlutterAppAuth _appAuth = FlutterAppAuth();
   final String _clientId = 'sarsys-app';

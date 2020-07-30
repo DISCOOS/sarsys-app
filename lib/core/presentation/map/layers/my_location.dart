@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
 
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/presentation/map/painters.dart';
 import 'package:SarSys/core/proj4d.dart';

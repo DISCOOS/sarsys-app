@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as gl;
@@ -36,7 +37,7 @@ class GeolocatorService implements LocationService {
   StreamController<LocationEvent> _eventController = StreamController.broadcast();
 
   @override
-  String token;
+  AuthToken token;
 
   @override
   final String duuid;
@@ -99,7 +100,7 @@ class GeolocatorService implements LocationService {
   Future<PermissionStatus> configure({
     bool share,
     String duuid,
-    String token,
+    AuthToken token,
     bool force = false,
   }) async {
     _status = await Permission.locationWhenInUse.status;

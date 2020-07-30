@@ -541,7 +541,7 @@ class AppController {
       // Ensure that token is updated
       LocationService(
         configBloc: bloc<AppConfigBloc>(),
-      ).token = bloc<UserBloc>().repo.token.accessToken;
+      ).token = bloc<UserBloc>().repo.token;
     } else if (LocationService.exists) {
       if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
         // Delete positions from shared devices
@@ -558,9 +558,9 @@ class AppController {
       LocationService(
         configBloc: bloc<AppConfigBloc>(),
       ).configure(
+        token: bloc<UserBloc>().repo.token,
         share: bloc<OperationBloc>().isSelected,
         duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
-        token: bloc<UserBloc>().repo.token.accessToken,
       );
     }
   }
@@ -572,8 +572,8 @@ class AppController {
         configBloc: bloc<AppConfigBloc>(),
       ).configure(
         share: state.isSelected(),
+        token: bloc<UserBloc>().repo.token,
         duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
-        token: bloc<UserBloc>().repo.token.accessToken,
       );
     }
   }

@@ -7,6 +7,7 @@ import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/presentation/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -31,10 +32,10 @@ class LocationController {
 
   bool get isLocked => _locked;
   LocationService get service => _service;
+  MyLocationOptions get options => _options;
+  bool get isReady => _service.isReady.value && _options != null;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
   bool get isLocated => mapController.ready && (isLocked || _service?.current?.toLatLng() == mapController?.center);
-  bool get isReady => _service.isReady.value && _options != null;
-  MyLocationOptions get options => _options;
 
   LocationController({
     @required this.mapController,
@@ -50,7 +51,7 @@ class LocationController {
 
   Future<LatLng> configure({
     String duuid,
-    String token,
+    AuthToken token,
     bool force = false,
   }) async {
     return _handle(

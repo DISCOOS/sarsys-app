@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/data/services/user_service.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart';
@@ -16,7 +18,7 @@ import 'location_service.dart';
 class BackgroundGeolocationService implements LocationService {
   BackgroundGeolocationService({
     String duuid,
-    String token,
+    AuthToken token,
     this.configBloc,
     bool share = true,
   }) {
@@ -70,7 +72,7 @@ class BackgroundGeolocationService implements LocationService {
   @override
   final AppConfigBloc configBloc;
 
-  String _token;
+  AuthToken _token;
   LocationOptions _options;
   PermissionStatus _status = PermissionStatus.undetermined;
 
@@ -102,10 +104,10 @@ class BackgroundGeolocationService implements LocationService {
   LocationEvent operator [](int index) => _events[index];
 
   @override
-  String get token => _token;
+  AuthToken get token => _token;
 
   @override
-  set token(String token) {
+  set token(AuthToken token) {
     if (_isReady.value) {
       bg.BackgroundGeolocation.setConfig(_toConfig(token: token));
     }
@@ -115,7 +117,7 @@ class BackgroundGeolocationService implements LocationService {
   Future<PermissionStatus> configure({
     bool share,
     String duuid,
-    String token,
+    AuthToken token,
     bool force = false,
   }) async {
     _status = await Permission.locationWhenInUse.status;
@@ -196,7 +198,7 @@ class BackgroundGeolocationService implements LocationService {
   bg.Config _toConfig({
     bool share,
     String duuid,
-    String token,
+    AuthToken token,
   }) {
     _duuid = duuid ?? _duuid;
     _token = token ?? _token;
@@ -214,9 +216,11 @@ class BackgroundGeolocationService implements LocationService {
       httpTimeout: 30000,
       url: url,
       method: 'POST',
-      headers: {
-        if (isSharing) "Authorization": "Bearer $_token",
-      },
+      authorization: Authorization(
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        refreshUrl: UserIdentityService.REFRESH_URL,
+      ),
       logLevel: _logLevel,
       persistMode: _persistMode,
       logMaxDays: 3,
@@ -293,15 +297,15 @@ class BackgroundGeolocationService implements LocationService {
     return Future.value();
   }
 
-  bool _isTokenChanged(String token) => token != null && token != _token;
   bool _isDeviceChanged(String duuid) => duuid != null && duuid != _duuid;
+  bool _isTokenChanged(AuthToken token) => token != null && token != _token;
   bool _isSharingStateChanged(bool share) => share != null && share != _share;
 
   bool _isConfigChanged(
     AppConfig config, {
     bool share,
     String duuid,
-    String token,
+    AuthToken token,
   }) {
     return _options?.accuracy != config.toLocationAccuracy() ||
         _options?.locationAlways != (config.locationAlways ?? false) ||
