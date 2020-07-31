@@ -85,7 +85,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           Flexible(
             child: DropdownButton<LocationAccuracy>(
               isExpanded: true,
-              items: _toOsSpecific(LocationAccuracy.values)
+              items: LocationAccuracy.values
                   .map((value) => DropdownMenuItem<LocationAccuracy>(
                         value: value,
                         child: Text("${LocationService.toAccuracyName(value)}", textAlign: TextAlign.center),
@@ -173,12 +173,5 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
         ],
       ),
     );
-  }
-
-  List<LocationAccuracy> _toOsSpecific(List<LocationAccuracy> values) {
-    if (Platform.isIOS == false) {
-      values = values.toList()..remove(LocationAccuracy.best)..remove(LocationAccuracy.bestForNavigation);
-    }
-    return values;
   }
 }

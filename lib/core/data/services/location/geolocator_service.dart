@@ -186,7 +186,7 @@ class GeolocatorService implements LocationService {
         return gl.LocationAccuracy.high;
       case LocationAccuracy.best:
         return gl.LocationAccuracy.best;
-      case LocationAccuracy.bestForNavigation:
+      case LocationAccuracy.navigation:
         return gl.LocationAccuracy.bestForNavigation;
       default:
         return gl.LocationAccuracy.best;

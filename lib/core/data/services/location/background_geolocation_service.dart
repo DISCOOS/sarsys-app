@@ -226,18 +226,19 @@ class BackgroundGeolocationService implements LocationService {
       logMaxDays: 3,
       maxDaysToPersist: 3,
       maxRecordsToPersist: 1000,
+      // We handle permissions our self
+      showsBackgroundLocationIndicator: true,
+      disableLocationAuthorizationAlert: true,
+      locationTemplate: _toLocationTemplate(),
+      locationUpdateInterval: _options.timeInterval,
+      desiredAccuracy: _toAccuracy(_options.accuracy),
+      distanceFilter: _options.distanceFilter.toDouble(),
+      fastestLocationUpdateInterval: _options.timeInterval,
+      disableMotionActivityUpdates: _options.activityRecognition,
       notification: Notification(
         title: "SARSys",
         text: "Sporing er ${isSharing ? 'aktiv' : 'inaktiv'}",
       ),
-      // We handle permissions our self
-      disableLocationAuthorizationAlert: true,
-      locationTemplate: _toLocationTemplate(),
-      desiredAccuracy: _toAccuracy(_options.accuracy),
-      distanceFilter: _options.distanceFilter.toDouble(),
-      locationUpdateInterval: _options.timeInterval,
-      fastestLocationUpdateInterval: _options.timeInterval,
-      disableMotionActivityUpdates: _options.activityRecognition,
     );
   }
 
@@ -255,7 +256,8 @@ class BackgroundGeolocationService implements LocationService {
       case LocationAccuracy.high:
         return bg.Config.DESIRED_ACCURACY_HIGH;
       case LocationAccuracy.best:
-      case LocationAccuracy.bestForNavigation:
+        return bg.Config.DESIRED_ACCURACY_HIGH;
+      case LocationAccuracy.navigation:
         return bg.Config.DESIRED_ACCURACY_NAVIGATION;
       default:
         return bg.Config.DESIRED_ACCURACY_HIGH;
@@ -326,11 +328,22 @@ class BackgroundGeolocationService implements LocationService {
         _onError,
       );
       bg.BackgroundGeolocation.onHttp((event) {
-        if (event.status != 204) {
-          _notify(
-            ErrorEvent(_options, '${event.status} ${event.responseText}', null),
-          );
-        }
+        _notify(
+          HttpServiceEvent(
+            _options,
+            event.status,
+            event.responseText,
+          ),
+        );
+      });
+      bg.BackgroundGeolocation.onHttp((event) {
+        _notify(
+          HttpServiceEvent(
+            _options,
+            event.status,
+            event.responseText,
+          ),
+        );
       });
       _notify(SubscribeEvent(_options));
       _isReady.value = true;

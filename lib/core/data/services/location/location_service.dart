@@ -131,7 +131,7 @@ abstract class LocationService {
         return "Høy";
       case LocationAccuracy.best:
         return "Best";
-      case LocationAccuracy.bestForNavigation:
+      case LocationAccuracy.navigation:
         return "Navigasjon";
       default:
         return "Høy";
@@ -165,7 +165,7 @@ enum LocationAccuracy {
   medium,
   high,
   best,
-  bestForNavigation,
+  navigation,
 }
 
 class LocationOptions {
@@ -355,6 +355,30 @@ class ClearEvent extends LocationEvent {
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()}';
+}
+
+class HttpServiceEvent extends LocationEvent {
+  HttpServiceEvent(this.options, this.status, this.reason) : super(null);
+  final int status;
+  final String reason;
+  final LocationOptions options;
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()}\n'
+      'HttpServiceEvent: {\n'
+      '   status: $status\n'
+      '   reason: $reason\n'
+      '},\n'
+      'Options: {\n'
+      '   store: ${options.store}\n'
+      '   accuracy: ${options.accuracy}\n'
+      '   timeInterval: ${options.timeInterval}\n'
+      '   distanceFilter: ${options.distanceFilter}\n'
+      '   locationAlways: ${options.locationAlways}\n'
+      '   locationWhenInUse: ${options.locationWhenInUse}\n'
+      '   activityRecognition: ${options.activityRecognition}\n'
+      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
+      '}';
 }
 
 class ErrorEvent extends LocationEvent {
