@@ -217,10 +217,13 @@ class BackgroundGeolocationService implements LocationService {
       url: url,
       method: 'POST',
       authorization: Authorization(
-        accessToken: token.accessToken,
-        refreshToken: token.refreshToken,
-        refreshUrl: UserIdentityService.REFRESH_URL,
-      ),
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          refreshUrl: UserIdentityService.REFRESH_URL,
+          refreshPayload: {
+            'grant_type': 'refresh_token',
+            'refresh_token': '{refreshToken}',
+          }),
       logLevel: _logLevel,
       persistMode: _persistMode,
       logMaxDays: 3,
