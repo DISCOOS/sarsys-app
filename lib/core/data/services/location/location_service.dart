@@ -71,8 +71,8 @@ abstract class LocationService {
   /// last application start
   Iterable<Position> get positions;
 
-  /// Get all positions stored on this device
-  Future<Iterable<Position>> history();
+  /// Get backlog of positions stored on this device pending push to backend
+  Future<Iterable<Position>> backlog();
 
   /// Clear all positions stored on this device
   Future clear();
@@ -91,16 +91,22 @@ abstract class LocationService {
   /// Use [duuid] to change which id positions are publish with
   /// Use [token] to change which authorisation token to publish positions with
   /// Use [share] to control pushing positions with id [duuid]
+  /// Use [debug] to enable debugging
   /// Use [force] to force reconfiguration of service
   Future<PermissionStatus> configure({
     bool share,
     String duuid,
     AuthToken token,
+    bool debug = false,
     bool force = false,
   });
 
   /// Request location update manually.
   Future<Position> update();
+
+  /// Push buffered positions to backend.
+  /// Returns number of positions pushed.
+  Future<int> push();
 
   /// Check if service is disposed.
   /// If disposed, it can not be
@@ -177,20 +183,21 @@ class LocationOptions {
   /// - forceAndroidLocationManager: false
   /// - timeInterval: 0
   const LocationOptions({
-    this.store,
+    this.debug = false,
     this.timeInterval = 0,
     this.distanceFilter = 0,
     this.locationAlways,
     this.locationWhenInUse,
     this.activityRecognition,
+    this.locationStoreLocally,
+    this.locationAllowSharing,
     this.accuracy = LocationAccuracy.best,
     this.forceAndroidLocationManager,
   });
 
-  /// Tells service to store locations locally
+  /// Tells service to enter debug mode
   ///
-  /// The default value for this field is [Defaults.locationStoreLocally].
-  final bool store;
+  final bool debug;
 
   /// Tells service to track location also when app is terminated by OS
   ///
@@ -203,6 +210,16 @@ class LocationOptions {
   /// Tells service to use activity recognition service to optimize location tracking
   ///
   final bool activityRecognition;
+
+  /// Tells service to store positions locally in backlog
+  ///
+  /// The default value for this field is [Defaults.locationStoreLocally].
+  final bool locationStoreLocally;
+
+  /// Tells service to push positions in backlog to backend
+  ///
+  /// The default value for this field is [Defaults.locationAllowSharing].
+  final bool locationAllowSharing;
 
   /// Defines the desired accuracy that should be used to determine the location data.
   ///
@@ -223,6 +240,20 @@ class LocationOptions {
   ///
   /// On iOS this value is ignored since position updates based on time intervals are not supported.
   final int timeInterval;
+
+  @override
+  String toString() => 'Options: {\n'
+      '   debug: $debug\n'
+      '   accuracy: $accuracy\n'
+      '   timeInterval: $timeInterval\n'
+      '   distanceFilter: $distanceFilter\n'
+      '   locationAlways: $locationAlways\n'
+      '   locationWhenInUse: $locationWhenInUse\n'
+      '   activityRecognition: $activityRecognition\n'
+      '   locationStoreLocally: $locationStoreLocally\n'
+      '   locationAllowSharing: $locationAllowSharing\n'
+      '   forceAndroidLocationManager: $forceAndroidLocationManager\n'
+      '}';
 }
 
 abstract class LocationEvent {
@@ -276,17 +307,8 @@ class ConfigureEvent extends LocationEvent {
       '   locationAlways: ${config.locationAlways}\n'
       '   locationWhenInUse: ${config.locationWhenInUse}\n'
       '   activityRecognition: ${config.activityRecognition}\n'
-      '},'
-      'Options: {\n'
-      '   store: ${options.store}\n'
-      '   accuracy: ${options.accuracy}\n'
-      '   timeInterval: ${options.timeInterval}\n'
-      '   distanceFilter: ${options.distanceFilter}\n'
-      '   locationAlways: ${options.locationAlways}\n'
-      '   locationWhenInUse: ${options.locationWhenInUse}\n'
-      '   activityRecognition: ${options.activityRecognition}\n'
-      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
-      '}';
+      '},\n'
+      '$options';
 }
 
 class PositionEvent extends LocationEvent {
@@ -317,16 +339,7 @@ class SubscribeEvent extends LocationEvent {
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'Options: {\n'
-      '   store: ${options.store}\n'
-      '   accuracy: ${options.accuracy}\n'
-      '   timeInterval: ${options.timeInterval}\n'
-      '   distanceFilter: ${options.distanceFilter}\n'
-      '   locationAlways: ${options.locationAlways}\n'
-      '   locationWhenInUse: ${options.locationWhenInUse}\n'
-      '   activityRecognition: ${options.activityRecognition}\n'
-      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
-      '}';
+      '$options';
 }
 
 class UnsubscribeEvent extends LocationEvent {
@@ -335,26 +348,31 @@ class UnsubscribeEvent extends LocationEvent {
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'Options: {\n'
-      '   store: ${options.store}\n'
-      '   accuracy: ${options.accuracy}\n'
-      '   timeInterval: ${options.timeInterval}\n'
-      '   distanceFilter: ${options.distanceFilter}\n'
-      '   locationAlways: ${options.locationAlways}\n'
-      '   locationWhenInUse: ${options.locationWhenInUse}\n'
-      '   activityRecognition: ${options.activityRecognition}\n'
-      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
-      '}';
+      '$options';
 }
 
-class ClearEvent extends LocationEvent {
+class MoveEvent extends LocationEvent {
+  final bool isMoving;
   final Position position;
 
-  ClearEvent(this.position) : super(StackTrace.current);
+  MoveEvent(this.position, this.isMoving) : super(StackTrace.current);
 
   @override
   String toString() => '$runtimeType\n'
-      'When: ${timestamp.toIso8601String()}';
+      'When: ${timestamp.toIso8601String()},\n'
+      'IsMoving: $isMoving,\n'
+      'Position: $position';
+}
+
+class PushEvent extends LocationEvent {
+  final Iterable<Position> positions;
+
+  PushEvent(this.positions) : super(StackTrace.current);
+
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
+      'Positions: $positions';
 }
 
 class HttpServiceEvent extends LocationEvent {
@@ -369,16 +387,17 @@ class HttpServiceEvent extends LocationEvent {
       '   status: $status\n'
       '   reason: $reason\n'
       '},\n'
-      'Options: {\n'
-      '   store: ${options.store}\n'
-      '   accuracy: ${options.accuracy}\n'
-      '   timeInterval: ${options.timeInterval}\n'
-      '   distanceFilter: ${options.distanceFilter}\n'
-      '   locationAlways: ${options.locationAlways}\n'
-      '   locationWhenInUse: ${options.locationWhenInUse}\n'
-      '   activityRecognition: ${options.activityRecognition}\n'
-      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
-      '}';
+      '$options';
+}
+
+class ClearEvent extends LocationEvent {
+  final Position position;
+
+  ClearEvent(this.position) : super(StackTrace.current);
+
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()}';
 }
 
 class ErrorEvent extends LocationEvent {
@@ -392,14 +411,5 @@ class ErrorEvent extends LocationEvent {
       '   message: $error\n'
       '   stackTrace: $stackTrace\n'
       '},\n'
-      'Options: {\n'
-      '   store: ${options.store}\n'
-      '   accuracy: ${options.accuracy}\n'
-      '   timeInterval: ${options.timeInterval}\n'
-      '   distanceFilter: ${options.distanceFilter}\n'
-      '   locationAlways: ${options.locationAlways}\n'
-      '   locationWhenInUse: ${options.locationWhenInUse}\n'
-      '   activityRecognition: ${options.activityRecognition}\n'
-      '   forceAndroidLocationManager: ${options.forceAndroidLocationManager}\n'
-      '}';
+      '$options';
 }

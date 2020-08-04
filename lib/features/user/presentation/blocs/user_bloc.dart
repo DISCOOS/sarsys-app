@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
@@ -17,6 +18,7 @@ import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 typedef void UserCallback(VoidCallback fn);
 
@@ -370,11 +372,31 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     if (configBloc.repo.isEmpty) {
       if (isAuthenticated) {
         await configBloc.load();
+        await _updatePermissions();
       } else {
         await configBloc.init(local: true);
       }
     } else if (isAuthenticated) {
       await configBloc.repo.commit();
+    }
+  }
+
+  Future _updatePermissions() async {
+    var isStorageGranted = Platform.isAndroid ? await Permission.storage.isGranted : false;
+    var isLocationAlwaysGranted = await Permission.locationAlways.isGranted;
+    var isLocationWhenInUseGranted = await Permission.locationWhenInUse.isGranted;
+    var isActivityRecognitionGranted = await Permission.activityRecognition.isGranted;
+    final config = configBloc.config;
+    if (config.storage != isStorageGranted ||
+        config.locationAlways != isLocationAlwaysGranted ||
+        config.locationWhenInUse != isLocationWhenInUseGranted ||
+        config.activityRecognition != isActivityRecognitionGranted) {
+      await configBloc.updateWith(
+        storage: isStorageGranted,
+        locationAlways: isLocationAlwaysGranted,
+        locationWhenInUse: isLocationWhenInUseGranted,
+        activityRecognition: isActivityRecognitionGranted,
+      );
     }
   }
 

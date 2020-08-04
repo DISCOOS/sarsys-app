@@ -1,4 +1,4 @@
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,12 +7,14 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/settings/presentation/screens/location_config_screen.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 
 class UserWidget extends StatelessWidget {
@@ -271,6 +273,9 @@ class UserActionGroup extends StatelessWidget {
 }
 
 class UserLocationWidget extends StatefulWidget {
+  const UserLocationWidget({Key key, this.onMessage}) : super(key: key);
+  final ActionCallback onMessage;
+
   @override
   _UserLocationWidgetState createState() => _UserLocationWidgetState();
 }
@@ -296,46 +301,89 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
   @override
   Widget build(BuildContext context) {
     final service = LocationService();
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Stack(
-        children: [
-          Align(
-            alignment: Alignment.center,
-            child: FittedBox(child: _buildStatus(service)),
-          ),
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              icon: Icon(
-                Icons.refresh,
-                color: Colors.green,
-              ),
-              tooltip: 'Oppdater posisjon',
-              onPressed: () => service.update(),
+    return ConstrainedBox(
+      constraints: BoxConstraints.loose(Size.fromRadius(175)),
+      child: Padding(
+        padding: const EdgeInsets.all(0.0),
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: _buildStatus(service),
             ),
-          ),
-          Align(
-            alignment: Alignment.topLeft,
-            child: IconButton(
-              icon: Icon(
-                Icons.delete,
-                color: Colors.red,
-              ),
-              tooltip: 'Slett posisjoner',
-              onPressed: () async {
-                if (await prompt(
-                  context,
-                  "Bekreftelse",
-                  "Dette vil slette alle posisjoner lokalt. Vil du fortsette?",
-                )) {
-                  service.clear();
-                }
-              },
+            Align(
+              alignment: Alignment.topLeft,
+              child: _buildDeleteButton(context, service),
             ),
-          ),
-        ],
+            Align(
+              alignment: Alignment.topRight,
+              child: _buildRefreshButton(service),
+            ),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: _buildSettingsButton(context, service),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: _buildSyncButton(service),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  IconButton _buildRefreshButton(LocationService service) {
+    return IconButton(
+      icon: Icon(
+        Icons.refresh,
+        color: Colors.green,
+      ),
+      tooltip: 'Oppdater posisjon',
+      onPressed: () => service.update(),
+    );
+  }
+
+  IconButton _buildSettingsButton(BuildContext context, LocationService service) {
+    return IconButton(
+      icon: Icon(
+        Icons.settings,
+      ),
+      tooltip: 'Endre innstillinger',
+      onPressed: () => showDialog(
+        context: context,
+        builder: (context) => LocationConfigScreen(),
+      ),
+    );
+  }
+
+  IconButton _buildSyncButton(LocationService service) {
+    return IconButton(
+      icon: Icon(
+        Icons.publish,
+        color: Colors.green,
+      ),
+      tooltip: 'Del posisjoner nå',
+      onPressed: () => service.push(),
+    );
+  }
+
+  IconButton _buildDeleteButton(BuildContext context, LocationService service) {
+    return IconButton(
+      icon: Icon(
+        Icons.delete,
+        color: Colors.red,
+      ),
+      tooltip: 'Slett bufrede posisjoner',
+      onPressed: () async {
+        if (await prompt(
+          context,
+          "Bekreftelse",
+          "Dette vil slette bufrede posisjoner. Vil du fortsette?",
+        )) {
+          service.clear();
+        }
+      },
     );
   }
 
@@ -344,7 +392,7 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
         builder: (context, snapshot) {
           final point = service.current?.geometry;
           return FutureBuilder<Iterable<Position>>(
-              future: service.history(),
+              future: service.backlog(),
               builder: (context, history) {
                 final positions = history.hasData ? history.data as Iterable : [];
                 final capacity = positions.length / 1000;
@@ -357,10 +405,10 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
                     style: Theme.of(context).textTheme.headline6,
                   ),
                   footer: Text(
-                    'Posisjoner lagret: ${positions.length} av 1000 (${(capacity * 100).toStringAsFixed(1)} %)',
+                    'Posisjoner bufret: ${positions.length} av 1000 (${(capacity * 100).toStringAsFixed(1)} %)',
                   ),
                   center: Padding(
-                    padding: const EdgeInsets.only(top: 36.0, bottom: 52.0, left: 24.0, right: 24.0),
+                    padding: const EdgeInsets.only(top: 48.0, bottom: 52.0, left: 24.0, right: 24.0),
                     child: Stack(
                       children: <Widget>[
                         Align(
@@ -368,16 +416,31 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
                           child: Column(
                             children: <Widget>[
                               buildCopyableText(
+                                label: "UTM",
+                                isDense: true,
                                 context: context,
                                 prefixWidth: 0.0,
                                 value: toUTM(point, prefix: "", empty: "Ingen"),
-                                label: "UTM",
+                                onCopy: (value) => copy(
+                                  value,
+                                  widget.onMessage,
+                                  message: 'UTM kopiert til utklippstavlen',
+                                ),
+                                onTap: () => jumpToPoint(context, center: point),
                               ),
                               buildCopyableText(
+                                label: "Desimalminutter (DDM)",
+                                isDense: true,
                                 context: context,
                                 prefixWidth: 0.0,
+                                contentPadding: EdgeInsets.zero,
                                 value: toDDM(point, prefix: "", empty: "Ingen"),
-                                label: "Desimalminutter (DDM)",
+                                onCopy: (value) => copy(
+                                  value,
+                                  widget.onMessage,
+                                  message: 'DDM kopiert til utklippstavlen',
+                                ),
+                                onTap: () => jumpToPoint(context, center: point),
                               ),
                               Divider(
                                 thickness: 2,
@@ -454,11 +517,11 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
   String _toTrackingStatus(int index) {
     switch (index) {
       case 1:
-        return 'LAGRES LOKALT';
+        return 'BUFRES LOKALT';
       case 2:
         return 'LAGRES I AKSJON';
       default:
-        return 'INGEN LAGRING';
+        return 'INGEN BUFRING';
     }
   }
 

@@ -10,13 +10,11 @@ import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
-import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong/latlong.dart';
 
 class UnitScreen extends Screen<_UnitScreenState> {
   static const ROUTE = 'unit';
@@ -57,9 +55,9 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_group != null) _group.close();
+    _group?.close();
     _group = StreamGroup.broadcast()
-      ..add(context.bloc<UnitBloc>().onChanged(widget.unit))
+      ..add(context.bloc<UnitBloc>().onChanged(widget.unit?.uuid))
       ..add(context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
     _onMoved = context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid).listen(_onMove);
@@ -95,93 +93,45 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
-      child: Padding(
-        padding: const EdgeInsets.all(0),
-        child: ListView(
-          padding: const EdgeInsets.all(UnitScreen.SPACING),
-          physics: AlwaysScrollableScrollPhysics(),
-          children: [
-            _buildMapTile(context, _unit),
-            StreamBuilder(
-                initialData: _unit,
-                stream: _group.stream,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                  if (snapshot.data is Unit) {
-                    _unit = snapshot.data;
-                  }
-                  final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
-                  return _buildInfoPanel(tracking, context);
-                }),
-          ],
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: StreamBuilder(
+          initialData: _unit,
+          stream: _group.stream,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+            if (snapshot.data is Unit) {
+              _unit = snapshot.data;
+            }
+            final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
+            return _build(context, tracking);
+          },
         ),
       ),
     );
   }
 
-  UnitWidget _buildInfoPanel(Tracking tracking, BuildContext context) => UnitWidget(
+  UnitWidget _build(
+    BuildContext context,
+    Tracking tracking,
+  ) =>
+      UnitWidget(
         unit: _unit,
+        withMap: true,
         withHeader: false,
         withActions: false,
         tracking: tracking,
-        devices: tracking?.sources
-            ?.map((source) => context.bloc<TrackingBloc>().deviceBloc.devices[source.uuid])
-            ?.where((unit) => unit != null),
         onMessage: showMessage,
-        onChanged: (unit) => setState(() => _unit = unit),
+        controller: _controller,
         onDeleted: () => Navigator.pop(context),
+        onChanged: (unit) => setState(() => _unit = unit),
         onGoto: (point) => jumpToPoint(context, center: point),
+        devices: context.bloc<TrackingBloc>().devices(tracking?.uuid),
       );
 
-  Widget _buildMapTile(BuildContext context, Unit unit) {
-    final center = toCenter(context.bloc<TrackingBloc>().trackings[unit.tracking.uuid]);
-    return Material(
-      elevation: UnitScreen.ELEVATION,
-      borderRadius: BorderRadius.circular(UnitScreen.CORNER),
-      child: Container(
-        height: 240.0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(UnitScreen.CORNER),
-          child: GestureDetector(
-            child: MapWidget(
-              key: ObjectKey(unit.uuid),
-              center: center,
-              zoom: 16.0,
-              interactive: false,
-              withUnits: true,
-              withDevices: false,
-              withPersonnel: false,
-              withRead: true,
-              withWrite: true,
-              withControls: true,
-              withControlsZoom: true,
-              withControlsLayer: true,
-              withControlsBaseMap: true,
-              withControlsOffset: 16.0,
-              showRetired: UnitStatus.retired == unit.status,
-              showLayers: [
-                MapWidgetState.LAYER_POI,
-                MapWidgetState.LAYER_PERSONNEL,
-                MapWidgetState.LAYER_TRACKING,
-                MapWidgetState.LAYER_SCALE,
-              ],
-              mapController: _controller,
-            ),
-            onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
-          ),
-        ),
-      ),
-    );
-  }
-
-  LatLng toCenter(Tracking event) {
-    final point = event?.position?.geometry;
-    return point != null ? toLatLng(point) : null;
-  }
-
-  void _onMove(Tracking event) {
+  void _onMove(Tracking tracking) {
     if (mounted) {
-      final center = toCenter(event);
+      final center = tracking?.position?.toLatLng();
       if (center != null) {
         _controller.animatedMove(center, _controller.zoom, this);
       }

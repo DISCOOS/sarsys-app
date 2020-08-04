@@ -12,16 +12,19 @@ class AuthToken extends Equatable {
   AuthToken({
     @required this.accessToken,
     this.idToken,
+    this.clientId,
     this.refreshToken,
     this.accessTokenExpiration,
   }) : super([
           idToken,
+          clientId,
           accessToken,
           refreshToken,
           accessTokenExpiration,
         ]);
 
   final String idToken;
+  final String clientId;
   final String accessToken;
   final String refreshToken;
   final DateTime accessTokenExpiration;

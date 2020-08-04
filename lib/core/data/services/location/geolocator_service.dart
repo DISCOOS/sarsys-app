@@ -87,8 +87,13 @@ class GeolocatorService implements LocationService {
   LocationEvent operator [](int index) => _events[index];
 
   @override
-  Future<Iterable<Position>> history() async {
+  Future<Iterable<Position>> backlog() async {
     return positions;
+  }
+
+  @override
+  Future<int> push() {
+    throw UnimplementedError('Push not implemented');
   }
 
   @override
@@ -101,6 +106,7 @@ class GeolocatorService implements LocationService {
     bool share,
     String duuid,
     AuthToken token,
+    bool debug = false,
     bool force = false,
   }) async {
     _status = await Permission.locationWhenInUse.status;

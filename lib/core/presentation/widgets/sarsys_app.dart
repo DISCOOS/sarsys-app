@@ -20,7 +20,7 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
 import 'package:SarSys/features/device/presentation/screens/device_screen.dart';
-import 'package:SarSys/core/presentation/screens/first_setup_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
 import 'package:SarSys/features/personnel/presentation/screens/personnel_screen.dart';
 import 'package:SarSys/core/presentation/screens/splash_screen.dart';
 import 'package:SarSys/features/unit/presentation/screens/unit_screen.dart';
@@ -34,7 +34,7 @@ import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.da
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/presentation/widgets/access_checker.dart';
-import 'package:SarSys/core/presentation/screens/command_screen.dart';
+import 'package:SarSys/features/operation/presentation/screens/command_screen.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/core/extensions.dart';

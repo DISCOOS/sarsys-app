@@ -1,4 +1,3 @@
-import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
@@ -46,24 +45,37 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<PersonnelState>(
-        stream: context.bloc<PersonnelBloc>(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final state = snapshot.data;
-            if (state.isUpdated() && state.data.uuid == _personnel.uuid) {
-              _personnel = state.data;
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.bloc<PersonnelBloc>().load();
+      },
+      child: StreamBuilder<PersonnelState>(
+          stream: context.bloc<PersonnelBloc>(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final state = snapshot.data;
+              if (state.isUpdated() && state.data.uuid == _personnel.uuid) {
+                _personnel = state.data;
+              }
+              return SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: <Widget>[
+                    UserLocationWidget(
+                      onMessage: widget.onMessage,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Divider(),
+                    ),
+                    _personnel == null ? _buildUserWidget(context) : _buildPersonnelWidget(context),
+                  ],
+                ),
+              );
             }
-            return Column(
-              children: <Widget>[
-                UserLocationWidget(),
-                Divider(),
-                _personnel == null ? _buildUserWidget(context) : _buildPersonnelWidget(context),
-              ],
-            );
-          }
-          return Container();
-        });
+            return Container();
+          }),
+    );
   }
 
   UserWidget _buildUserWidget(BuildContext context) {
@@ -84,6 +96,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       withName: true,
       withHeader: false,
       withActions: false,
+      withLocation: false,
       tracking: tracking,
       personnel: _personnel,
       onMessage: widget.onMessage,
@@ -118,10 +131,11 @@ class UserUnitPageState extends State<UserUnitPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _group?.close();
-    _group = StreamGroup<BlocEvent>.broadcast()
-      ..add(context.bloc<UnitBloc>())
-      ..add(context.bloc<TrackingBloc>())
-      ..add(context.bloc<UserBloc>());
+    _group = StreamGroup.broadcast()
+      ..add(context.bloc<UserBloc>())
+      ..add(context.bloc<PersonnelBloc>())
+      ..add(context.bloc<UnitBloc>().onChanged(_unit?.uuid))
+      ..add(context.bloc<TrackingBloc>().onChanged(_unit?.tracking?.uuid));
     _unit = widget.unit;
   }
 
@@ -134,24 +148,33 @@ class UserUnitPageState extends State<UserUnitPage> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<BlocEvent>(
-        stream: _group.stream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final state = snapshot.data;
-            if (state is UnitUpdated && state.data.uuid == widget.unit.uuid) {
-              _unit = state.data;
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.bloc<PersonnelBloc>().load();
+      },
+      child: StreamBuilder(
+          stream: _group.stream,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final state = snapshot.data;
+              if (state is UnitUpdated && state.data.uuid == widget.unit.uuid) {
+                _unit = state.data;
+              }
+              return SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: _unit == null ? Center(child: Text('Ikke tilordnet lag')) : _build(context),
+              );
             }
-            return _unit == null ? Center(child: Text('Ikke tilordnet lag')) : _buildInfoPanel(context);
-          }
-          return Container();
-        });
+            return Container();
+          }),
+    );
   }
 
-  Widget _buildInfoPanel(BuildContext context) {
+  Widget _build(BuildContext context) {
     final tracking = context.bloc<TrackingBloc>().find(_unit).firstOrNull;
     return UnitWidget(
       unit: _unit,
+      withMap: true,
       withHeader: false,
       withActions: false,
       tracking: tracking,

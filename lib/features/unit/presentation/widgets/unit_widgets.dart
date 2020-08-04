@@ -1,3 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -9,24 +15,9 @@ import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
-import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UnitWidget extends StatelessWidget {
-  final Unit unit;
-  final Tracking tracking;
-  final Iterable<Device> devices;
-  final bool withHeader;
-  final bool withActions;
-  final ValueChanged<Point> onGoto;
-  final ValueChanged<Unit> onChanged;
-  final ValueChanged<Unit> onCompleted;
-  final VoidCallback onDeleted;
-  final ActionCallback onMessage;
-
-  const UnitWidget({
+  UnitWidget({
     Key key,
     @required this.unit,
     @required this.tracking,
@@ -36,9 +27,31 @@ class UnitWidget extends StatelessWidget {
     this.onChanged,
     this.onCompleted,
     this.onDeleted,
+    this.withMap = true,
     this.withHeader = true,
     this.withActions = true,
-  }) : super(key: key);
+    MapWidgetController controller,
+  })  : this.controller = controller ?? MapWidgetController(),
+        super(key: key);
+
+  static const HEIGHT = 82.0;
+  static const CORNER = 4.0;
+  static const SPACING = 8.0;
+  static const ELEVATION = 2.0;
+
+  final Unit unit;
+  final Tracking tracking;
+  final Iterable<Device> devices;
+  final bool withMap;
+  final bool withHeader;
+  final bool withActions;
+  final ValueChanged<Point> onGoto;
+  final ValueChanged<Unit> onChanged;
+  final ValueChanged<Unit> onCompleted;
+  final VoidCallback onDeleted;
+  final ActionCallback onMessage;
+
+  final MapWidgetController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +62,9 @@ class UnitWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (withHeader) _buildHeader(unit, theme, context),
+          if (withHeader) _buildHeader(context, theme),
           if (withHeader) Divider() else SizedBox(height: 8.0),
+          if (withMap) _buildMap(context),
           if (Orientation.portrait == orientation) _buildPortrait(context, theme) else _buildLandscape(context, theme),
           if (withActions) ...[
             Divider(),
@@ -73,65 +87,59 @@ class UnitWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPortrait(BuildContext context, TextTheme theme) => Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMetaInfo(context),
-            _buildContactInfo(context),
-            _buildPersonnelInfo(context),
-            _buildDivider(Orientation.portrait),
-            _buildLocationInfo(context, theme),
-            _buildDivider(Orientation.portrait),
-            _buildTrackingInfo(context),
-            _buildEffortInfo(context)
-          ],
-        ),
+  Widget _buildPortrait(BuildContext context, TextTheme theme) => Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMetaInfo(context),
+          _buildContactInfo(context),
+          _buildPersonnelInfo(context),
+          _buildDivider(Orientation.portrait),
+          _buildLocationInfo(context, theme),
+          _buildDivider(Orientation.portrait),
+          _buildTrackingInfo(context),
+          _buildEffortInfo(context)
+        ],
       );
 
-  Widget _buildLandscape(BuildContext context, TextTheme theme) => Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              fit: FlexFit.loose,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _buildMetaInfo(context),
-                  _buildContactInfo(context),
-                  _buildPersonnelInfo(context),
-                ],
-              ),
+  Widget _buildLandscape(BuildContext context, TextTheme theme) => Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _buildMetaInfo(context),
+                _buildContactInfo(context),
+                _buildPersonnelInfo(context),
+              ],
             ),
-            _buildDivider(Orientation.landscape),
-            Flexible(
-              fit: FlexFit.loose,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _buildLocationInfo(context, theme),
-                  _buildTrackingInfo(context),
-                  _buildEffortInfo(context),
-                ],
-              ),
+          ),
+          _buildDivider(Orientation.landscape),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildLocationInfo(context, theme),
+                _buildTrackingInfo(context),
+                _buildEffortInfo(context),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       );
 
   Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation
       ? Divider(indent: 16.0, endIndent: 16.0)
       : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
-  Padding _buildHeader(Unit unit, TextTheme theme, BuildContext context) => Padding(
+  Padding _buildHeader(BuildContext context, TextTheme theme) => Padding(
         padding: EdgeInsets.only(left: 16, top: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -144,6 +152,50 @@ class UnitWidget extends StatelessWidget {
           ],
         ),
       );
+
+  Widget _buildMap(BuildContext context) {
+    final center = tracking?.position?.toLatLng();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Material(
+        elevation: ELEVATION,
+        borderRadius: BorderRadius.circular(CORNER),
+        child: Container(
+          height: 240.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(CORNER),
+            child: GestureDetector(
+              child: MapWidget(
+                key: ObjectKey(unit.uuid),
+                center: center,
+                zoom: 16.0,
+                interactive: false,
+                withUnits: true,
+                withDevices: false,
+                withPersonnel: false,
+                withRead: true,
+                withWrite: true,
+                withControls: true,
+                withControlsZoom: true,
+                withControlsLayer: true,
+                withControlsBaseMap: true,
+                withControlsOffset: 16.0,
+                showRetired: UnitStatus.retired == unit.status,
+                showLayers: [
+                  MapWidgetState.LAYER_POI,
+                  MapWidgetState.LAYER_PERSONNEL,
+                  MapWidgetState.LAYER_TRACKING,
+                  MapWidgetState.LAYER_SCALE,
+                ],
+                mapController: controller,
+              ),
+              onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Row _buildLocationInfo(BuildContext context, TextTheme theme) => Row(
         children: <Widget>[

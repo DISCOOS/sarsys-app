@@ -10,8 +10,8 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/operation/presentation/pages/operation_page.dart';
-import 'package:SarSys/core/presentation/pages/user_history_page.dart';
-import 'package:SarSys/core/presentation/pages/user_pages.dart';
+import 'package:SarSys/features/user/presentation/pages/user_history_page.dart';
+import 'package:SarSys/features/user/presentation/pages/user_pages.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:SarSys/core/presentation/widgets/app_drawer.dart';
@@ -114,9 +114,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
               actions: _buildActions(),
               title: Text(_toTitle(operation)),
             ),
-            body: SingleChildScrollView(
-              child: tabs[routeData],
-            ),
+            body: tabs[routeData],
             bottomNavigationBar: Container(
               child: BottomNavigationBar(
                 currentIndex: routeData,

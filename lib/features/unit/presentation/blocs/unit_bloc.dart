@@ -61,10 +61,15 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// All repositories
   Iterable<ConnectionAwareRepository> get repos => [repo];
 
+  /// Process [OperationState] events
+  ///
+  /// Invokes [load] and [unload] as needed.
+  ///
   void _processIncidentState(OperationState state) async {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(ouuid)) {
+        if (state.shouldLoad(_unloading ? null : ouuid)) {
+          _unloading = false;
           await dispatch(LoadUnits((state.data as Operation).uuid));
           if (state is OperationCreated) {
             if (state.units.isNotEmpty) {
@@ -75,7 +80,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
             }
           }
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          dispatch(UnloadUnits(ouuid));
+          _unloading = true;
+          await unload();
+          print(_unloading);
         }
       }
     } catch (error, stackTrace) {
@@ -87,6 +94,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       onError(error, stackTrace);
     }
   }
+
+  /// Ensures that load is scheduled before unload has returned
+  bool _unloading = false;
 
   void _processPersonnelDeleted(PersonnelState state) {
     try {
@@ -116,9 +126,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get [OperationBloc]
   final OperationBloc operationBloc;
 
-//  /// Get [PersonnelBloc]
-//  final PersonnelBloc personnelBloc;
-
   /// Get [UnitRepository]
   final UnitRepository repo;
 
@@ -144,11 +151,10 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   UnitState get initialState => UnitsEmpty();
 
   /// Stream of changes on given unit
-  Stream<Unit> onChanged(Unit unit) => where(
+  Stream<Unit> onChanged(String uuid) => where(
         (state) =>
-            (state is UnitUpdated && state.data.uuid == unit.uuid) ||
-            (state is UnitsLoaded && state.data.contains(unit.uuid)),
-      ).map((state) => state is UnitsLoaded ? repo[unit.uuid] : state.data);
+            (state is UnitUpdated && state.data.uuid == uuid) || (state is UnitsLoaded && state.data.contains(uuid)),
+      ).map((state) => state is UnitsLoaded ? repo[uuid] : state.data);
 
   /// Get count
   int count({List<UnitStatus> exclude: const [UnitStatus.retired]}) => repo.count(exclude: exclude);

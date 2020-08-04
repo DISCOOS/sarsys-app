@@ -27,11 +27,14 @@ class PermissionSetupState extends State<PermissionSetup> {
   bool get isStorageGranted => _storageGranted;
   bool _storageGranted = false;
 
-  bool _locationGranted = false;
-  bool get isLocationGranted => _locationGranted;
+  bool _locationWhenInUseGranted = false;
+  bool get isLocationWhenInUseGranted => _locationWhenInUseGranted;
+
+  bool _locationAlwaysGranted = false;
+  bool get isLocationAlwaysGranted => _locationAlwaysGranted;
 
   bool _activityRecognitionGranted = false;
-  bool get activityRecognitionGranted => _activityRecognitionGranted;
+  bool get isActivityRecognitionGranted => _activityRecognitionGranted;
 
   @override
   void didChangeDependencies() {
@@ -131,7 +134,7 @@ class PermissionSetupState extends State<PermissionSetup> {
         reason: 'For å finne deg selv i kartet og til sporing',
         status: _locationWhenInUseStatus,
         request: _permissions.locationWhenInUseRequest,
-        onGranted: (value) => _locationGranted = value,
+        onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
   ListTile _buildPermissionLocationAlways() => _buildPermissionCheck(
@@ -141,7 +144,7 @@ class PermissionSetupState extends State<PermissionSetup> {
             'lommen eller er låst',
         status: _locationAlwaysStatus,
         request: _permissions.locationAlwaysRequest,
-        onGranted: (value) => _locationGranted = value,
+        onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
   ListTile _buildPermissionActivityRecognition() => _buildPermissionCheck(

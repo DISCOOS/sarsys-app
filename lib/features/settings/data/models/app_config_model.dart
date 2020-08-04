@@ -55,6 +55,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
           locationWhenInUse: locationWhenInUse,
           activityRecognition: activityRecognition,
           locationStoreLocally: locationStoreLocally,
+          locationAllowSharing: locationAllowSharing,
           talkGroupCatalog: talkGroupCatalog ?? Defaults.talkGroupCatalog,
           mapCacheTTL: mapCacheTTL ?? Defaults.mapCacheTTL,
           mapCacheCapacity: mapCacheCapacity ?? Defaults.mapCacheCapacity,

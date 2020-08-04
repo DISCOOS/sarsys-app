@@ -57,16 +57,22 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     ));
   }
 
+  /// Process [OperationState] events
+  ///
+  /// Invokes [load] and [unload] as needed.
+  ///
   void _processOperationState(OperationState state) async {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(ouuid)) {
+        if (state.shouldLoad(_unloading ? null : ouuid)) {
+          _unloading = false;
           await dispatch(LoadPersonnels(state.data.uuid));
           if (state.isSelected()) {
             await mobilizeUser();
           }
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          dispatch(UnloadPersonnels(repo.ouuid));
+          _unloading = true;
+          await unload();
         }
       }
     } catch (error, stackTrace) {
@@ -79,6 +85,13 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
+  /// Ensures that load is scheduled before unload has returned
+  bool _unloading = false;
+
+  /// Process [PersonnelMessage] events
+  ///
+  /// Schedules [_InternalMessage].
+  ///
   void _processPersonnelMessage(PersonnelMessage event) {
     try {
       add(_InternalMessage(event));

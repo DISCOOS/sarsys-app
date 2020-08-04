@@ -44,13 +44,23 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
     'rodekors': 'Røde Kors Hjelpekorps',
   };
 
-  bool get isComplete => isLocationGranted && (isStorageGranted || !Platform.isAndroid);
+  // Minimum requirements
+  bool get isComplete => isLocationWhenInUseGranted && (isStorageGranted || !Platform.isAndroid);
 
   bool get isStorageGranted => _isStorageGranted || (_permissionsKey?.currentState?.isStorageGranted ?? false);
   bool _isStorageGranted = false;
 
-  bool get isLocationGranted => _isLocationGranted || (_permissionsKey?.currentState?.isLocationGranted ?? false);
-  bool _isLocationGranted = false;
+  bool get isLocationAlwaysGranted =>
+      _isLocationAlwaysGranted || (_permissionsKey?.currentState?.isLocationAlwaysGranted ?? false);
+  bool _isLocationAlwaysGranted = false;
+
+  bool get isLocationWhenInUseGranted =>
+      _isLocationWhenInUseGranted || (_permissionsKey?.currentState?.isLocationWhenInUseGranted ?? false);
+  bool _isLocationWhenInUseGranted = false;
+
+  bool get isActivityRecognitionGranted =>
+      _isActivityRecognitionGranted || (_permissionsKey?.currentState?.isActivityRecognitionGranted ?? false);
+  bool _isActivityRecognitionGranted = false;
 
   @override
   void dispose() {
@@ -73,10 +83,30 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         child: PermissionSetup(
           key: _permissionsKey,
           onChanged: (response) {
-            if (response.request.permission == Permission.location) {
-              setState(() => _isLocationGranted = PermissionStatus.granted == response.status);
-            } else if (response.request.permission == Permission.storage) {
-              setState(() => _isStorageGranted = PermissionStatus.granted == response.status);
+            switch (response.request.permission) {
+              case Permission.locationAlways:
+                setState(
+                  () => _isLocationAlwaysGranted = PermissionStatus.granted == response.status,
+                );
+                break;
+              case Permission.locationWhenInUse:
+                setState(
+                  () => _isLocationWhenInUseGranted = PermissionStatus.granted == response.status,
+                );
+                break;
+              default:
+                switch (response.request.permission) {
+                  case Permission.storage:
+                    setState(
+                      () => _isStorageGranted = PermissionStatus.granted == response.status,
+                    );
+                    break;
+                  case Permission.activityRecognition:
+                    setState(
+                      () => _isActivityRecognitionGranted = PermissionStatus.granted == response.status,
+                    );
+                    break;
+                }
             }
           },
         ),
@@ -263,9 +293,14 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                             firstSetup: true,
                             securityMode: _mode,
                             storage: isStorageGranted,
-                            locationWhenInUse: isLocationGranted,
+                            locationAlways: isLocationAlwaysGranted,
+                            locationWhenInUse: isLocationWhenInUseGranted,
+                            activityRecognition: isActivityRecognitionGranted,
                           );
-                      Navigator.pushReplacementNamed(context, LoginScreen.ROUTE);
+                      Navigator.pushReplacementNamed(
+                        context,
+                        LoginScreen.ROUTE,
+                      );
                     } else {
                       final answer = await prompt(
                         context,

@@ -103,13 +103,15 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processOperationState(OperationState state) {
+  void _processOperationState(OperationState state) async {
     try {
       if (hasSubscriptions) {
-        if (state.shouldLoad(ouuid)) {
+        if (state.shouldLoad(_unloading ? null : ouuid)) {
+          _unloading = false;
           dispatch(LoadTrackings(state.data.uuid));
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          dispatch(UnloadTrackings(ouuid));
+          _unloading = true;
+          await unload();
         }
       }
     } catch (error, stackTrace) {
@@ -121,6 +123,9 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       onError(error, stackTrace);
     }
   }
+
+  /// Ensures that load is scheduled before unload has returned
+  bool _unloading = false;
 
   /// Process [DeviceState] events.
   ///

@@ -10,6 +10,7 @@ AuthToken _$AuthTokenFromJson(Map json) {
   return AuthToken(
     accessToken: json['accessToken'] as String,
     idToken: json['idToken'] as String,
+    clientId: json['clientId'] as String,
     refreshToken: json['refreshToken'] as String,
     accessTokenExpiration: json['accessTokenExpiration'] == null
         ? null
@@ -27,6 +28,7 @@ Map<String, dynamic> _$AuthTokenToJson(AuthToken instance) {
   }
 
   writeNotNull('idToken', instance.idToken);
+  writeNotNull('clientId', instance.clientId);
   writeNotNull('accessToken', instance.accessToken);
   writeNotNull('refreshToken', instance.refreshToken);
   writeNotNull('accessTokenExpiration',

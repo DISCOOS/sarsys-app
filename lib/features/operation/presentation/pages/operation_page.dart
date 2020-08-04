@@ -1,10 +1,12 @@
-import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
-import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:async/async.dart';
 
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
+import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -42,8 +44,21 @@ class _OperationPageState extends State<OperationPage> {
   TextStyle valueStyle;
   TextStyle unitStyle;
 
+  StreamGroup<dynamic> _group;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _group?.close();
+    _group = StreamGroup<BlocEvent>.broadcast()
+      ..add(context.bloc<UnitBloc>())
+      ..add(context.bloc<OperationBloc>())
+      ..add(context.bloc<PersonnelBloc>());
+  }
+
   @override
   void dispose() {
+    _group?.close();
     _controller.dispose();
     super.dispose();
   }
@@ -57,11 +72,10 @@ class _OperationPageState extends State<OperationPage> {
       onRefresh: () async {
         context.bloc<OperationBloc>().load();
       },
-      child: StreamBuilder<Operation>(
-        stream: context.bloc<OperationBloc>().onChanged(),
-        initialData: context.bloc<OperationBloc>().selected,
+      child: StreamBuilder<BlocEvent>(
+        stream: _group.stream,
         builder: (context, snapshot) {
-          final operation = (snapshot.hasData ? snapshot.data : null);
+          final operation = context.bloc<OperationBloc>().selected;
           return Container(
             color: operation == null ? null : Color.fromRGBO(168, 168, 168, 0.6),
             child: Padding(

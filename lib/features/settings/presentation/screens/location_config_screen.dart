@@ -1,12 +1,12 @@
-import 'dart:io';
-
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationConfigScreen extends StatefulWidget {
   @override
@@ -59,6 +59,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 _buildLocationAccuracyField(),
                 _buildLocationFastestIntervalField(),
                 _buildLocationSmallestDisplacementField(),
+                _buildLocationDebugField(),
               ],
             ),
           ],
@@ -131,7 +132,11 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                bloc.updateWith(locationSmallestDisplacement: int.parse(value ?? 0));
+                if (value.isNotEmpty) {
+                  bloc.updateWith(
+                    locationSmallestDisplacement: int.parse(value ?? 0),
+                  );
+                }
               },
             ),
           ),
@@ -166,10 +171,54 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
-                bloc.updateWith(locationFastestInterval: int.parse(value ?? 0) * 1000);
+                if (value.isNotEmpty) {
+                  bloc.updateWith(
+                    locationFastestInterval: int.parse(value ?? 0) * 1000,
+                  );
+                }
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  bool _debug = kDebugMode;
+
+  Padding _buildLocationDebugField() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: ListTile(
+              title: Text("Aktiver debugging"),
+              subtitle: Text("En lyd høres når endringer skjer"),
+            ),
+          ),
+          Flexible(
+              child: FutureBuilder<SharedPreferences>(
+                  future: SharedPreferences.getInstance(),
+                  builder: (context, snapshot) {
+                    _debug = snapshot.hasData ? snapshot.data.getBool('location_debug') ?? false : _debug;
+                    return Switch(
+                      value: _debug,
+                      onChanged: (value) async {
+                        if (snapshot.hasData) {
+                          await snapshot.data.setBool('location_debug', value);
+                          await LocationService().configure(
+                            debug: value,
+                          );
+                        }
+                        setState(() => _debug = value);
+                      },
+                    );
+                  })),
         ],
       ),
     );

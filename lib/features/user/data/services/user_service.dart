@@ -109,6 +109,7 @@ class UserIdentityService extends UserService {
       // Write token and get user
       return ServiceResponse.ok<AuthToken>(
         body: AuthToken(
+          clientId: _clientId,
           idToken: response.idToken,
           accessToken: response.accessToken,
           refreshToken: response.refreshToken,
@@ -149,6 +150,7 @@ class UserIdentityService extends UserService {
       );
       return ServiceResponse.ok<AuthToken>(
         body: AuthToken(
+          clientId: _clientId,
           idToken: response.idToken,
           accessToken: response.accessToken,
           refreshToken: response.refreshToken,

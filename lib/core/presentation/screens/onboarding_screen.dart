@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
-import 'package:SarSys/core/presentation/screens/first_setup_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

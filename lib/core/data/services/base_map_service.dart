@@ -41,7 +41,7 @@ class BaseMapService {
   }
 
   Future<List<BaseMap>> fetchOnlineMaps() async {
-    // TODO: Get list off online maps from server instead
+    // TODO: Get online maps from server instead
     return _assets.map((value) => BaseMap.fromJson(value)).toList();
   }
 

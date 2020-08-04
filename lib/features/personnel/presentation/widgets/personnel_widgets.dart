@@ -24,6 +24,7 @@ class PersonnelWidget extends StatelessWidget {
   final bool withName;
   final bool withHeader;
   final bool withActions;
+  final bool withLocation;
   final Unit unit;
   final Tracking tracking;
   final Personnel personnel;
@@ -48,6 +49,7 @@ class PersonnelWidget extends StatelessWidget {
     this.withName = false,
     this.withHeader = true,
     this.withActions = true,
+    this.withLocation = true,
   }) : super(key: key);
 
   bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
@@ -89,7 +91,7 @@ class PersonnelWidget extends StatelessWidget {
 
   Padding _buildTemporaryPersonnelWarning(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.only(left: 8.0, bottom: 16.0),
       child: Column(
         children: <Widget>[
           Row(
@@ -121,64 +123,58 @@ class PersonnelWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPortrait(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (withName) _buildNameView(),
-            _buildContactView(),
-            _buildOperationalView(),
+  Widget _buildPortrait(BuildContext context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (withName) _buildNameView(),
+          _buildContactView(),
+          _buildOperationalView(),
+          _buildDivider(Orientation.portrait),
+          if (isAffiliated(context)) ...[
+            _buildAffiliationView(context),
             _buildDivider(Orientation.portrait),
-            if (isAffiliated(context)) ...[
-              _buildAffiliationView(context),
-              _buildDivider(Orientation.portrait),
-            ],
-            _buildLocationView(),
-            _buildDivider(Orientation.portrait),
-            _buildTrackingView(),
           ],
-        ),
+          if (withLocation) _buildLocationView(),
+          if (withLocation) _buildDivider(Orientation.portrait),
+          _buildTrackingView(),
+        ],
       );
 
   bool isAffiliated(BuildContext context) => context.bloc<AffiliationBloc>().repo[personnel.affiliation?.uuid] != null;
 
-  Widget _buildLandscape(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              fit: FlexFit.loose,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (withName) _buildNameView(),
-                  _buildContactView(),
-                  if (!withName && isAffiliated(context)) _buildAffiliationView(context),
-                  _buildLocationView(),
-                ],
-              ),
+  Widget _buildLandscape(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (withName) _buildNameView(),
+                _buildContactView(),
+                if (!withName && isAffiliated(context)) _buildAffiliationView(context),
+                if (withLocation) _buildLocationView(),
+              ],
             ),
-            _buildDivider(Orientation.landscape),
-            Flexible(
-              fit: FlexFit.loose,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _buildOperationalView(),
-                  _buildTrackingView(),
-                  if (withName && isAffiliated(context)) _buildAffiliationView(context),
-                ],
-              ),
+          ),
+          _buildDivider(Orientation.landscape),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildOperationalView(),
+                _buildTrackingView(),
+                if (withName && isAffiliated(context)) _buildAffiliationView(context),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       );
 
   Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation

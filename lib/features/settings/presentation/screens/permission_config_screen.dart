@@ -34,7 +34,7 @@ class _PermissionConfigScreenState extends State<PermissionConfigScreen> {
           onChanged: (response) async {
             await context.bloc<AppConfigBloc>().updateWith(
                   storage: _permissionsKey.currentState.isStorageGranted,
-                  locationWhenInUse: _permissionsKey.currentState.isLocationGranted,
+                  locationWhenInUse: _permissionsKey.currentState.isLocationWhenInUseGranted,
                 );
           },
         ),
