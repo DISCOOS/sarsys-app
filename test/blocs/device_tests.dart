@@ -293,7 +293,6 @@ Future _testShouldUnloadWhenUserIsLoggedOut(BlocTestHarness harness) async {
   await expectThroughLater(
     harness.deviceBloc,
     emits(isA<DevicesUnloaded>()),
-    close: false,
   );
   expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
@@ -335,5 +334,5 @@ Future _prepare(BlocTestHarness harness) async {
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
   // Prepare DeviceBloc
-  return await expectThroughLater(harness.deviceBloc, emits(isA<DevicesLoaded>()), close: false);
+  return await expectThroughLater(harness.deviceBloc, emits(isA<DevicesLoaded>()));
 }

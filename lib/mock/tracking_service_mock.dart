@@ -25,13 +25,13 @@ class TrackingBuilder {
     List<Source> sources = const [],
     List<Track> tracks = const [],
     List<Position> history = const [],
-    TrackingStatus status = TrackingStatus.created,
+    TrackingStatus status = TrackingStatus.empty,
   }) {
     final tracking = Tracking.fromJson(
       createAsJson(
         uuid ?? Uuid().v4(),
         position: position,
-        status: status ?? TrackingStatus.created,
+        status: status ?? TrackingStatus.empty,
         tracks: (tracks ?? []).map((p) => jsonEncode(p.toJson())).toList(),
         sources: (sources ?? []).map((p) => jsonEncode(p.toJson())).toList(),
         history: (history ?? []).map((p) => jsonEncode(p.toJson())).toList(),
@@ -46,7 +46,7 @@ class TrackingBuilder {
     List<String> sources = const [],
     List<String> tracks = const [],
     List<String> history = const [],
-    TrackingStatus status = TrackingStatus.created,
+    TrackingStatus status = TrackingStatus.empty,
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
@@ -74,7 +74,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     List<Source> sources = const [],
     List<Track> tracks = const [],
     List<Position> history = const [],
-    TrackingStatus status = TrackingStatus.created,
+    TrackingStatus status = TrackingStatus.empty,
   }) {
     final tracking = TrackingBuilder.create(
       uuid: uuid,
@@ -399,8 +399,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   static TrackingStatus _toStatus(TrackingStatus status, bool hasSources) {
-    return [TrackingStatus.none, TrackingStatus.created].contains(status)
-        ? (hasSources ? TrackingStatus.tracking : TrackingStatus.created)
+    return [TrackingStatus.none, TrackingStatus.empty].contains(status)
+        ? (hasSources ? TrackingStatus.tracking : TrackingStatus.empty)
         : (hasSources ? TrackingStatus.tracking : (TrackingStatus.closed == status ? status : TrackingStatus.paused));
   }
 
@@ -414,7 +414,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     if (tracking != null) {
       // Only simulate aggregated position for tracking with devices
       if ([
-        TrackingStatus.created,
+        TrackingStatus.empty,
         TrackingStatus.tracking,
         TrackingStatus.paused,
       ].contains(tracking.status)) {

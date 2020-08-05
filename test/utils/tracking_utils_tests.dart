@@ -201,7 +201,7 @@ void main() {
 
     test('[t1] tracking status is created', () {
       // Assert
-      expect(t1.status, TrackingStatus.created, reason: "SHOULD be created");
+      expect(t1.status, TrackingStatus.empty, reason: "SHOULD be empty");
     });
 
     test('[t2] tracking history is updated with manual position', () {
@@ -210,7 +210,7 @@ void main() {
       final t3 = TrackingUtils.calculate(t2, position: p2, status: TrackingStatus.tracking);
 
       // Assert t2
-      expect(t2.status, TrackingStatus.paused, reason: "SHOULD be paused");
+      expect(t2.status, TrackingStatus.empty, reason: "SHOULD be empty");
       expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
       expect(t2.history.length, 1, reason: "SHOULD be 1");
       expect(t2.history.first.geometry, equals(p1.geometry), reason: "SHOULD be p1");
@@ -219,7 +219,7 @@ void main() {
       expect(t2.speed, 0.0, reason: "SHOULD be 0.0");
 
       // Assert t3
-      expect(t3.status, TrackingStatus.paused, reason: "SHOULD be paused");
+      expect(t3.status, TrackingStatus.empty, reason: "SHOULD be empty");
       expect(t3.position.geometry, equals(p2.geometry), reason: "SHOULD be p2");
       expect(t3.history.length, 2, reason: "SHOULD be 1");
       expect(t3.history.first.geometry, equals(p1.geometry), reason: "SHOULD be p1");
@@ -306,7 +306,7 @@ void main() {
       expect(t2.tracks.isNotEmpty, isTrue, reason: "SHOULD not be empty");
       expect(t2.tracks.first.status, TrackStatus.detached, reason: "SHOULD be detached");
       expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
-      expect(t2.status, TrackingStatus.paused, reason: "SHOULD be paused");
+      expect(t2.status, TrackingStatus.empty, reason: "SHOULD be empty");
     });
 
     test('and [s1p1] is replaced with [s1p2] in [t2], position is added to existing track', () {
@@ -334,7 +334,7 @@ void main() {
       // Assert
       expect(t2.tracks.isEmpty, isTrue, reason: "SHOULD be empty");
       expect(t2.position.geometry, equals(p1.geometry), reason: "SHOULD be p1");
-      expect(t2.status, TrackingStatus.paused, reason: "SHOULD be paused");
+      expect(t2.status, TrackingStatus.empty, reason: "SHOULD be empty");
     });
 
     test('and [s1p1] is re-attached in [t2], old track should be re-attached and tracking resumed', () {

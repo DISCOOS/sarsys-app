@@ -3,6 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:bloc/bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
@@ -20,14 +28,6 @@ import 'package:SarSys/mock/operation_service_mock.dart';
 import 'package:SarSys/mock/organisation_service_mock.dart';
 import 'package:SarSys/mock/person_service_mock.dart';
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:bloc/bloc.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/device/data/repositories/device_repository_impl.dart';
@@ -60,6 +60,7 @@ import 'package:SarSys/core/utils/data.dart';
 
 const MethodChannel udidChannel = MethodChannel('flutter_udid');
 const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+const MethodChannel permissionHandlerChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
 const MethodChannel secureStorageChannel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
 class BlocTestHarness implements BlocDelegate {
@@ -188,6 +189,7 @@ class BlocTestHarness implements BlocDelegate {
       _buildUdidPlugin();
       _buildPathPlugin();
       _buildSecureStoragePlugin();
+      _buildPermissionHandlerPlugin();
 
       // Initialize shared preferences for testing
       SharedPreferences.setMockInitialValues({});
@@ -297,7 +299,7 @@ class BlocTestHarness implements BlocDelegate {
         await _trackingBloc?.close()?.catchError(
               (e, stackTrace) => _printError('tearDown > _trackingBloc.close() failed', e, stackTrace),
             );
-        _trackingService.reset();
+        _trackingService?.reset();
       }
       events.clear();
       errors.clear();
@@ -432,6 +434,18 @@ class BlocTestHarness implements BlocDelegate {
     });
   }
 
+  void _buildPermissionHandlerPlugin() {
+    permissionHandlerChannel.setMockMethodCallHandler((MethodCall methodCall) async {
+      switch (methodCall.method) {
+        case 'checkPermissionStatus':
+          return 1; // PermissionStatus.granted;
+      }
+      throw UnimplementedError(
+        'PermissionHandler method ${methodCall.method} not implemented',
+      );
+    });
+  }
+
   void _buildUdidPlugin() {
     final udid = Uuid().v4();
     udidChannel.setMockMethodCallHandler((MethodCall methodCall) async {
@@ -550,11 +564,7 @@ class BlocTestHarness implements BlocDelegate {
     );
 
     if (_authenticated) {
-      await expectThroughLater(
-        _affiliationBloc,
-        emits(isA<UserOnboarded>()),
-        close: false,
-      );
+      await expectThroughLater(_affiliationBloc, emits(isA<UserOnboarded>()));
     }
 
     return Future.value();
@@ -798,17 +808,10 @@ void expectThroughInOrder<B extends Bloc<dynamic, State>, State>(
   }
 }
 
-Future<void> expectThroughLater<B extends Bloc<dynamic, State>, State>(
-  B bloc,
-  expected, {
-  bool close = false,
-}) async {
+Future<void> expectThroughLater(Stream<BlocEvent> bloc, expected) async {
   assert(bloc != null);
   assert(expected != null);
   await expectLater(bloc, emitsThrough(expected));
-  if (close) {
-    bloc.close();
-  }
 }
 
 Future<void> expectThroughLaterIf<State extends BlocEvent>(
@@ -879,6 +882,7 @@ Future expectStorageStatusLater(
   ConnectionAwareRepository repo,
   StorageStatus expected, {
   @required bool remote,
+  dynamic key,
 }) async {
   await expectLater(
     repo.onChanged,
@@ -894,12 +898,12 @@ Future expectStorageStatusLater(
     ),
   );
   expect(
-    repo.getState(uuid)?.status,
+    repo.getState(key ?? uuid)?.status,
     equals(expected == StorageStatus.deleted && remote ? isNull : expected),
     reason: "SHOULD HAVE status ${enumName(expected)}",
   );
   expect(
-    repo.getState(uuid)?.isRemote,
+    repo.getState(key ?? uuid)?.isRemote,
     expected == StorageStatus.deleted && remote ? isNull : (remote ? isTrue : isFalse),
     reason: "SHOULD HAVE ${remote ? 'remote' : 'local'} origin",
   );

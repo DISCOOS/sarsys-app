@@ -201,7 +201,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   /// Unload [devices] from local storage
   @override
   Future<Iterable<Device>> unload() {
-    _assertState();
     return dispatch<Iterable<Device>>(
       UnloadDevices(),
     );
@@ -267,7 +266,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Future<DeviceState> _unload(UnloadDevices command) async {
     final devices = await repo.close();
-    LocationService().dispose();
     return toOK(
       command,
       DevicesUnloaded(devices),

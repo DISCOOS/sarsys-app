@@ -412,7 +412,6 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
   expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -438,7 +437,6 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@requi
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
   expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -467,7 +465,6 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@requ
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
   expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -491,7 +488,6 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@requir
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
   expect(harness.personnelBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -596,7 +592,6 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
   await expectThroughLater(
     harness.affiliationBloc,
     emits(isA<UserOnboarded>()),
-    close: false,
   );
 
   // A user must be authenticated
@@ -614,11 +609,11 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
   );
 
   // Await OperationBloc
-  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()), close: false);
+  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()));
   expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
 
   // Await PersonnelBloc
-  await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()), close: false);
+  await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
   expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
 

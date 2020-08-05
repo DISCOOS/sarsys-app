@@ -278,7 +278,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   /// Unload [units] from local storage
   Future<List<Unit>> unload() {
-    _assertState();
     return dispatch<List<Unit>>(
       UnloadUnits(ouuid),
     );

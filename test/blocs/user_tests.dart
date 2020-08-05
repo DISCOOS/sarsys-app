@@ -46,15 +46,11 @@ void main() async {
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
-
       // Assert
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
-      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
-      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
-      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
+      await _waitForConfigBloc(harness, StorageStatus.updated);
     });
 
     test('SHOULD reload user', () async {
@@ -64,7 +60,7 @@ void main() async {
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+      await _waitForConfigBloc(harness, StorageStatus.updated);
 
       // Act
       await harness.userBloc.load();
@@ -73,10 +69,6 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expect(harness.userBloc.user.isUntrusted, isTrue, reason: "SHOULD BE Untrusted");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticated>()]);
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
-      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
-      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
-      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
     });
 
     test('and USER token is INVALID, token SHOULD be refreshed', () async {
@@ -99,10 +91,6 @@ void main() async {
       verify(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
-      await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
-      expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
-      expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
-      expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
     });
 
     test('User SHOULD BE secured using PIN', () async {
@@ -110,7 +98,7 @@ void main() async {
       await _testAnyAuthenticatedSecuredByPin(harness, false);
     });
 
-    test('and UN-TRUSTED User is AUTHENTICATED, securing SHOULD NOT yield trust ewrwerwer', () async {
+    test('and UN-TRUSTED User is AUTHENTICATED, securing SHOULD NOT yield trust', () async {
       await _testAuthenticatedAnyUntrustedSecuringShouldNotYieldTrust(harness, false);
     });
 
@@ -217,6 +205,18 @@ void main() async {
   });
 }
 
+Future _waitForConfigBloc(BlocTestHarness harness, StorageStatus status) async {
+  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+  await expectStorageStatusLater(
+    harness.configBloc.config.uuid,
+    harness.configBloc.repo,
+    status,
+    remote: true,
+    key: harness.configBloc.config.version,
+  );
+  expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
+}
+
 Future _testAnyAuthenticatedSecuredByPin(BlocTestHarness harness, bool offline) async {
   // Arrange
   harness.connectivity.cellular();
@@ -314,7 +314,7 @@ Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHar
     username: BlocTestHarness.UNTRUSTED,
     password: BlocTestHarness.PASSWORD,
   );
-  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+  await _waitForConfigBloc(harness, StorageStatus.updated);
   if (offline) {
     harness.connectivity.offline();
   }
@@ -327,10 +327,6 @@ Future _testAuthenticatedPersonalUntrustedLogoutShouldUnsetAndDelete(BlocTestHar
   expect(harness.userBloc.user, isNull, reason: "SHOULD NOT HAVE User");
   expect(harness.userBloc.repo.get(BlocTestHarness.UNTRUSTED), isNull, reason: "SHOULD DELETE User");
   expectThroughInOrder(harness.userBloc, [isA<UserUnset>()]);
-  await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
-  expect(harness.configBloc.repo.state.status, StorageStatus.created, reason: "SHOULD HAVE created status");
-  expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
-  expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
 }
 
 Future _testAuthenticatedSharedTrustedLogoutShouldUnsetAndLock(BlocTestHarness harness, bool offline) async {

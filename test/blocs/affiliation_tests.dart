@@ -158,7 +158,6 @@ void main() async {
         await expectThroughLater(
           harness.affiliationBloc,
           emits(isA<AffiliationsUnloaded>()),
-          close: false,
         );
 
         // Act
@@ -214,7 +213,6 @@ void main() async {
       await expectThroughLater(
         harness.affiliationBloc,
         emits(isA<AffiliationsLoaded>()),
-        close: false,
       );
     });
   });
@@ -336,7 +334,6 @@ Future _authenticate(
   await expectThroughLater(
     harness.affiliationBloc,
     emits(isA<UserOnboarded>()),
-    close: false,
   );
   if (reset) {
     clearInteractions(harness.organisationService);

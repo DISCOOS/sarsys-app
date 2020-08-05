@@ -63,7 +63,7 @@ void main() async {
       // Arrange
       await _authenticate(harness);
       await harness.userBloc.logout();
-      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()), close: false);
+      await expectThroughLater(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
 
       // Act
       await _authenticate(harness);
@@ -90,7 +90,6 @@ void main() async {
       await expectThroughLater(
         harness.operationsBloc,
         emits(isA<OperationsLoaded>()),
-        close: false,
       );
     });
 
@@ -440,13 +439,11 @@ Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
   await expectThroughLater(
     harness.affiliationBloc,
     emits(isA<UserOnboarded>()),
-    close: false,
   );
   // Wait until operations are loaded
   await expectThroughLater(
     harness.operationsBloc,
     emits(isA<OperationsLoaded>()),
-    close: false,
   );
   if (reset) {
     clearInteractions(harness.operationService);

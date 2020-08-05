@@ -597,7 +597,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
 
   /// Unload [trackings] from local storage
   Future<List<Tracking>> unload() {
-    _assertState();
     return dispatch<List<Tracking>>(
       UnloadTrackings(ouuid),
     );

@@ -302,7 +302,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Unload [personnels] from local storage
   Future<List<Personnel>> unload() {
-    _assertState();
     return dispatch<List<Personnel>>(
       UnloadPersonnels(ouuid),
     );

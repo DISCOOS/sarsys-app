@@ -1102,7 +1102,6 @@ void main() async {
       await expectThroughLater(
         harness.trackingBloc,
         emits(isA<TrackingCreated>()),
-        close: false,
       );
       expectTrackingCount(harness, 1);
       expect(
@@ -1121,7 +1120,6 @@ void main() async {
       await expectThroughLater(
         harness.trackingBloc,
         emitsInAnyOrder([isA<TrackingCreated>()]),
-        close: false,
       );
       expectTrackingCount(harness, 1);
       expectStorageStatus(
@@ -1237,7 +1235,7 @@ Future<Tracking> _shouldUpdateTrackingDirectly<T extends Trackable>(
 
   // Assert
   expect(t2.position.geometry, equals(p2.geometry), reason: "SHOULD be position p2");
-  expect(t2.status, equals(TrackingStatus.paused), reason: "SHOULD be status paused");
+  expect(t2.status, equals(TrackingStatus.empty), reason: "SHOULD be status empty");
   expect(t2.history.length, 1, reason: "SHOULD be length 1");
   expect(t2.history.last.geometry, equals(p2.geometry), reason: "SHOULD be position p2");
   expect(t2.history.last.source, equals(PositionSource.manual), reason: "SHOULD be manual");
@@ -1365,7 +1363,7 @@ Future<Tracking> _shouldDetachFromTrackingWhenDeviceUnavailable<T extends Tracka
   await harness.deviceBloc.detach(d3);
 
   // Assert
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()), close: false);
+  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()));
   final t3 = harness.trackingBloc.repo[t2.uuid];
 
   expect(t3.status, equals(TrackingStatus.tracking), reason: "SHOULD be status tracking");
@@ -1401,7 +1399,7 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
   await harness.deviceBloc.delete(d3.uuid);
 
   // Assert
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()), close: false);
+  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()));
   final t3 = harness.trackingBloc.repo[t2.uuid];
 
   expect(t3.status, equals(TrackingStatus.tracking), reason: "SHOULD be status tracking");
@@ -1434,7 +1432,6 @@ Future _shouldCreateTrackingForActiveUnitsOnly<T extends Trackable>(
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingCreated>()),
-    close: false,
   );
   expectTrackingCount(harness, 1);
   expect(
@@ -1466,7 +1463,7 @@ Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable>(
     isNot(equals(trackables.last)),
     reason: "SHOULD contain two unique ${typeOf<T>()}s",
   );
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingCreated>()), close: false);
+  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingCreated>()));
   final first = harness.trackingBloc.repo[trackables.first.tracking.uuid];
   final d1 = await harness.deviceBloc.create(DeviceBuilder.create(position: p1, status: DeviceStatus.available));
   await harness.trackingBloc.attach(first.uuid, devices: [d1]);
@@ -1494,7 +1491,6 @@ Future _shouldDeleteTrackingAutomatically<T extends Trackable>(
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingDeleted>()),
-    close: false,
   );
 
   // Only deleted locally (which is good enough for this test)
@@ -1737,7 +1733,6 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
       await expectThroughLater(
         harness.personnelBloc,
         emits(isA<PersonnelUpdated>()),
-        close: false,
       );
     },
   );
@@ -1745,7 +1740,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Personnel>(
     harness,
-    status: TrackingStatus.created,
+    status: TrackingStatus.empty,
     act: () async {
       final next = await harness.personnelBloc.update(
         personnel.copyWith(status: status),
@@ -1753,7 +1748,6 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
       await expectThroughLater(
         harness.personnelBloc,
         emits(isA<PersonnelUpdated>()),
-        close: false,
       );
       return next;
     },
@@ -1775,7 +1769,6 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
       await expectThroughLater(
         harness.unitBloc,
         emits(isA<UnitUpdated>()),
-        close: false,
       );
     },
   );
@@ -1783,7 +1776,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Unit>(
     harness,
-    status: TrackingStatus.created,
+    status: TrackingStatus.empty,
     act: () async {
       final next = await harness.unitBloc.update(
         unit.copyWith(status: status),
@@ -1791,7 +1784,6 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
       await expectThroughLater(
         harness.unitBloc,
         emits(isA<UnitUpdated>()),
-        close: false,
       );
       return next;
     },
@@ -1812,7 +1804,6 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingCreated>()),
-    close: false,
   );
 
   // Assert locally CREATED
@@ -1924,7 +1915,6 @@ Future<StorageState<Tracking>> _assertTrackingState<T extends TrackingState>(
   await expectThroughLater(
     harness.trackingBloc,
     emitsInAnyOrder([isA<T>()]),
-    close: false,
   );
   int expected = _ensureTrackingCount(count, harness);
   expect(harness.trackingBloc.repo.length, expected, reason: "SHOULD contain $expected tracking(s)");
@@ -1971,7 +1961,6 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingsUnloaded>()),
-    close: false,
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expectTrackingCount(harness, 0);
@@ -1992,7 +1981,6 @@ Future<Tracking> _ensurePersonnelWithTracking(BlocTestHarness harness, Operation
     await expectThroughLater(
       harness.trackingBloc,
       emits(isA<TrackingCreated>()),
-      close: false,
     );
     expectTrackingCount(harness, 1);
   }
@@ -2014,14 +2002,12 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness) async {
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
 
   // Assert
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingsUnloaded>()),
-    close: false,
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -2047,14 +2033,12 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness) async 
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelsUnloaded>()),
-    close: false,
   );
 
   // Assert
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingsUnloaded>()),
-    close: false,
   );
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -2071,24 +2055,14 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
   await _ensurePersonnelWithTracking(harness, operation, tracking);
 
   // Act
-  await harness.operationsBloc.delete(operation.uuid);
-  await expectThroughLater(
-    harness.personnelBloc,
-    emits(isA<PersonnelsUnloaded>()),
-    close: false,
-  );
-  await expectThroughLater(
-    harness.unitBloc,
-    emits(isA<UnitsUnloaded>()),
-    close: false,
-  );
+  harness.operationsBloc.delete(operation.uuid);
 
   // Assert
   await expectThroughLater(
     harness.trackingBloc,
     emits(isA<TrackingsUnloaded>()),
-    close: false,
   );
+
   expect(harness.trackingBloc.ouuid, isNull, reason: "SHOULD change to null");
   expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(
