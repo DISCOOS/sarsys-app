@@ -99,7 +99,7 @@ T _$enumDecodeNullable<T>(
 
 const _$TrackingStatusEnumMap = {
   TrackingStatus.none: 'none',
-  TrackingStatus.created: 'created',
+  TrackingStatus.empty: 'empty',
   TrackingStatus.tracking: 'tracking',
   TrackingStatus.paused: 'paused',
   TrackingStatus.closed: 'closed',

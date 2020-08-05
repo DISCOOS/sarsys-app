@@ -120,7 +120,7 @@ class Tracking extends Positionable<Map<String, dynamic>> {
 
 enum TrackingStatus {
   none,
-  created,
+  empty,
   tracking,
   paused,
   closed,
@@ -130,8 +130,8 @@ String translateTrackingStatus(TrackingStatus status) {
   switch (status) {
     case TrackingStatus.none:
       return "Ingen";
-    case TrackingStatus.created:
-      return "Opprettet";
+    case TrackingStatus.empty:
+      return "Tom";
     case TrackingStatus.tracking:
       return "Sporer";
     case TrackingStatus.paused:

@@ -239,7 +239,7 @@ Color toTrackingStatusColor(TrackingStatus status) {
       return Colors.orange;
     case TrackingStatus.closed:
       return Colors.brown;
-    case TrackingStatus.created:
+    case TrackingStatus.empty:
       return Colors.grey;
     case TrackingStatus.none:
     default:
@@ -249,7 +249,7 @@ Color toTrackingStatusColor(TrackingStatus status) {
 
 IconData toTrackingIconData(TrackingStatus status) {
   switch (status) {
-    case TrackingStatus.created:
+    case TrackingStatus.empty:
       return Icons.more_horiz;
     case TrackingStatus.paused:
       return Icons.pause;

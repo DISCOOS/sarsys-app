@@ -141,7 +141,7 @@ class TrackingUtils {
       position: position,
       sources: tracks.map((t) => t.source).toList(),
       tracks: tracks,
-      status: sources.isEmpty ? TrackingStatus.created : TrackingStatus.tracking,
+      status: sources.isEmpty ? TrackingStatus.empty : TrackingStatus.tracking,
     );
     return calculate ? TrackingUtils.calculate(tracking) : tracking;
   }
@@ -378,7 +378,7 @@ class TrackingUtils {
         status: _derive(
           TrackingStatus.closed,
           sources.isNotEmpty,
-          defaultStatus: TrackingStatus.created,
+          defaultStatus: TrackingStatus.empty,
         ),
         sources: sources.toList(),
         tracks: tracks.toList(),
@@ -552,11 +552,11 @@ class TrackingUtils {
     bool isNotEmpty, {
     TrackingStatus defaultStatus,
   }) {
-    final next = [TrackingStatus.created].contains(current)
-        ? (isNotEmpty ? TrackingStatus.tracking : TrackingStatus.created)
+    final next = [TrackingStatus.empty].contains(current)
+        ? (isNotEmpty ? TrackingStatus.tracking : TrackingStatus.empty)
         : (isNotEmpty
-            ? TrackingStatus.tracking
-            : ([TrackingStatus.closed].contains(current) ? (defaultStatus ?? current) : TrackingStatus.paused));
+            ? ([TrackingStatus.paused].contains(current) ? (defaultStatus ?? current) : TrackingStatus.tracking)
+            : ([TrackingStatus.closed].contains(current) ? (defaultStatus ?? current) : TrackingStatus.empty));
     return next;
   }
 
