@@ -17,7 +17,7 @@ import 'package:permission_handler/permission_handler.dart';
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
-class LocationController {
+class MyLocationController {
   final TickerProvider tickerProvider;
   final MapWidgetController mapController;
   final TrackingCallback onTrackingChanged;
@@ -37,7 +37,7 @@ class LocationController {
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
   bool get isLocated => mapController.ready && (isLocked || _service?.current?.toLatLng() == mapController?.center);
 
-  LocationController({
+  MyLocationController({
     @required this.mapController,
     @required this.permissionController,
     this.tickerProvider,

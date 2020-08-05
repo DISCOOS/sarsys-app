@@ -27,7 +27,7 @@ import 'package:SarSys/core/presentation/map/layers/measure_layer.dart';
 import 'package:SarSys/core/presentation/map/layers/personnel_layer.dart';
 import 'package:SarSys/core/presentation/map/map_controls.dart';
 import 'package:SarSys/core/presentation/map/painters.dart';
-import 'package:SarSys/core/presentation/map/location_controller.dart';
+import 'package:SarSys/core/presentation/map/my_location_controller.dart';
 import 'package:SarSys/core/presentation/map/tile_providers.dart';
 import 'package:SarSys/core/presentation/map/layers/scalebar.dart';
 import 'package:SarSys/core/presentation/map/tools/position_tool.dart';
@@ -205,7 +205,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   MapControls _mapControls;
   MapWidgetController _mapController;
   MapToolController _mapToolController;
-  LocationController _locationController;
+  MyLocationController _locationController;
   PermissionController _permissionController;
 
   /// Conditionally set during initialization
@@ -457,7 +457,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _ensureLocationControllers() {
     // Configure location controller only once
     if (widget.withControlsLocateMe && _locationController == null) {
-      _locationController = LocationController(
+      _locationController = MyLocationController(
         tickerProvider: this,
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
