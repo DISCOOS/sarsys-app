@@ -1,6 +1,6 @@
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/core/presentation/widgets/coordinate_widget.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';
 import 'package:SarSys/features/activity/domain/activity_profile.dart';
 import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';

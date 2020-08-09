@@ -5,7 +5,7 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
-import 'package:SarSys/core/presentation/widgets/position_field.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

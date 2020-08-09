@@ -7,7 +7,7 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/data/streams.dart';
-import 'package:SarSys/core/presentation/editors/position_editor.dart';
+import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.dart';
 import 'package:SarSys/core/domain/models/Position.dart';

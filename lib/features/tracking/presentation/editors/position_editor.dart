@@ -13,7 +13,7 @@ import 'package:SarSys/core/presentation/map/map_search.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/core/presentation/widgets/coordinate_input.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/coordinate_input.dart';
 
 class PositionEditor extends StatefulWidget {
   final Position position;

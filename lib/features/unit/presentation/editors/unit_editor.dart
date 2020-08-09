@@ -21,7 +21,7 @@ import 'package:SarSys/core/utils/tracking.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
-import 'package:SarSys/core/presentation/widgets/position_field.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
 
 class UnitEditor extends StatefulWidget {
   final Unit unit;

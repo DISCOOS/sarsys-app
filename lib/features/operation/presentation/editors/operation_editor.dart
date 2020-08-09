@@ -30,7 +30,7 @@ import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
-import 'package:SarSys/core/presentation/widgets/position_field.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';

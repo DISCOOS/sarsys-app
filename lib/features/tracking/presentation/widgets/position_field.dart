@@ -1,4 +1,4 @@
-import 'package:SarSys/core/presentation/editors/position_editor.dart';
+import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 import 'package:SarSys/core/utils/data.dart';
