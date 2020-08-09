@@ -37,13 +37,7 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
   @override
   void initState() {
     super.initState();
-    _filter = FilterSheet.read(context, FILTER,
-        defaultValue: Set.of([
-          OperationStatus.planned,
-          OperationStatus.enroute,
-          OperationStatus.onscene,
-        ]),
-        onRead: _onRead);
+    _filter = FilterSheet.read(context, FILTER, defaultValue: OperationsPage.DEFAULT_FILTER, onRead: _onRead);
   }
 
   @override
@@ -118,6 +112,12 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
 }
 
 class OperationsPage extends StatefulWidget {
+  static const DEFAULT_FILTER = const {
+    OperationStatus.planned,
+    OperationStatus.enroute,
+    OperationStatus.onscene,
+  };
+
   final String query;
   final Set<OperationStatus> filter;
 

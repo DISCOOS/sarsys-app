@@ -38,7 +38,8 @@ class PersonnelScreen extends Screen<_PersonnelScreenState> {
   _PersonnelScreenState createState() => _PersonnelScreenState(personnel);
 }
 
-class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with TickerProviderStateMixin {
+class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
+    with TickerProviderStateMixin {
   _PersonnelScreenState(Personnel personnel)
       : super(
           title: "${personnel.name}",
@@ -69,9 +70,14 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
-      ..add(context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid));
+      ..add(context
+          .bloc<TrackingBloc>()
+          .onChanged(widget.personnel?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid).listen(_onMove);
+    _onMoved = context
+        .bloc<TrackingBloc>()
+        .onChanged(widget.personnel?.tracking?.uuid)
+        .listen(_onMove);
   }
 
   @override
@@ -95,7 +101,11 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+              unit: context
+                  .bloc<UnitBloc>()
+                  .repo
+                  .findPersonnel(_personnel.uuid)
+                  .firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -104,30 +114,26 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    return Container(
-      child: Padding(
-        padding: const EdgeInsets.all(0),
-        child: Stack(
-          children: [
-            ListView(
-              padding: const EdgeInsets.all(PersonnelScreen.SPACING),
-              physics: AlwaysScrollableScrollPhysics(),
-              children: [
-                StreamBuilder(
-                    initialData: _personnel,
-                    stream: _group.stream,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                      if (snapshot.data is Personnel) {
-                        _personnel = snapshot.data;
-                      }
-                      return _buildMapTile(context, _personnel);
-                    }),
-                _buildInfoPanel(context),
-              ],
-            ),
-          ],
-        ),
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.bloc<PersonnelBloc>().load();
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(PersonnelScreen.SPACING),
+        physics: AlwaysScrollableScrollPhysics(),
+        children: [
+          StreamBuilder(
+              initialData: _personnel,
+              stream: _group.stream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+                if (snapshot.data is Personnel) {
+                  _personnel = snapshot.data;
+                }
+                return _buildMapTile(context, _personnel);
+              }),
+          _buildInfoPanel(context),
+        ],
       ),
     );
   }
@@ -136,8 +142,13 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         withHeader: false,
         withActions: false,
         personnel: _personnel,
-        unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
-        tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
+        unit: context
+            .bloc<UnitBloc>()
+            .repo
+            .findPersonnel(_personnel.uuid)
+            .firstOrNull,
+        tracking:
+            context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
@@ -146,7 +157,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
       );
 
   Widget _buildMapTile(BuildContext context, Personnel personnel) {
-    final center = toCenter(context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid]);
+    final center = toCenter(
+        context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid]);
     return Material(
       elevation: PersonnelScreen.ELEVATION,
       borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),

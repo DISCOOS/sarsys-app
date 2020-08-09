@@ -43,6 +43,12 @@ PositionProperties _$PositionPropertiesFromJson(Map json) {
         : DateTime.parse(json['timestamp'] as String),
     speed: (json['speed'] as num)?.toDouble(),
     bearing: (json['bearing'] as num)?.toDouble(),
+    isMoving: json['isMoving'] as bool,
+    activity: json['activity'] == null
+        ? null
+        : Activity.fromJson((json['activity'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     source: _$enumDecodeNullable(_$PositionSourceEnumMap, json['source']),
   );
 }
@@ -59,6 +65,8 @@ Map<String, dynamic> _$PositionPropertiesToJson(PositionProperties instance) {
   writeNotNull('accuracy', instance.acc);
   writeNotNull('speed', instance.speed);
   writeNotNull('bearing', instance.bearing);
+  writeNotNull('isMoving', instance.isMoving);
+  writeNotNull('activity', instance.activity?.toJson());
   writeNotNull('timestamp', instance.timestamp?.toIso8601String());
   writeNotNull('source', _$PositionSourceEnumMap[instance.source]);
   return val;
@@ -100,4 +108,35 @@ const _$PositionSourceEnumMap = {
   PositionSource.manual: 'manual',
   PositionSource.device: 'device',
   PositionSource.aggregate: 'aggregate',
+};
+
+Activity _$ActivityFromJson(Map json) {
+  return Activity(
+    type: _$enumDecodeNullable(_$ActivityTypeEnumMap, json['type']),
+    confidence: json['confidence'] as int,
+  );
+}
+
+Map<String, dynamic> _$ActivityToJson(Activity instance) {
+  final val = <String, dynamic>{};
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('type', _$ActivityTypeEnumMap[instance.type]);
+  writeNotNull('confidence', instance.confidence);
+  return val;
+}
+
+const _$ActivityTypeEnumMap = {
+  ActivityType.still: 'still',
+  ActivityType.on_foot: 'on_foot',
+  ActivityType.walking: 'walking',
+  ActivityType.running: 'running',
+  ActivityType.unknown: 'unknown',
+  ActivityType.on_bicycle: 'on_bicycle',
+  ActivityType.in_vehicle: 'in_vehicle',
 };

@@ -32,11 +32,20 @@ class JsonUtils {
     List<String> retain = const [],
     List<String> remove = const [],
   }) {
+    assert(
+      !(retain?.isNotEmpty == true && remove?.isNotEmpty == true),
+      'only use retain or remove',
+    );
     final json = value.toJson();
-    if (retain?.isNotEmpty == true || remove?.isNotEmpty == true)
+    if (retain?.isNotEmpty == true) {
       json.removeWhere(
-        (key, _) => (!retain.contains(key)) && remove.contains(key),
+        (key, _) => !retain.contains(key),
       );
+    } else if (remove?.isNotEmpty == true) {
+      json.removeWhere(
+        (key, _) => remove.contains(key),
+      );
+    }
     return json;
   }
 

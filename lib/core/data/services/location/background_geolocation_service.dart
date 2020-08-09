@@ -1,40 +1,41 @@
 import 'dart:async';
 
-import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/user/data/services/user_service.dart';
-import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/user/data/services/user_service.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
 
 import 'location_service.dart';
 
 class BackgroundGeolocationService implements LocationService {
   BackgroundGeolocationService({
+    @required LocationOptions options,
     String duuid,
     AuthToken token,
-    this.configBloc,
-    bool share = true,
-    this.history = 100,
+    bool share = false,
+    this.maxEvents = 100,
   }) {
-    assert(configBloc != null, "AppConfigBloc must be supplied");
+    assert(options != null, "options are required");
     _duuid = duuid;
     _token = token;
+    _options = options;
     _share = share ?? false;
-    _events.insert(0, CreateEvent(duuid, configBloc.config));
+    _events.insert(0, CreateEvent(duuid: duuid, share: _share, maxEvents: maxEvents));
   }
 
+  final int maxEvents;
   static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
-  final int history;
+  @override
+  LocationOptions get options => _options;
+  LocationOptions _options;
 
   @override
   String get duuid => _duuid;
@@ -50,6 +51,7 @@ class BackgroundGeolocationService implements LocationService {
   bool get canShare =>
       _duuid != null && _token != null && _options.locationAllowSharing ?? Defaults.locationAllowSharing;
 
+  @override
   bool get share => _share;
   bool _share = true;
 
@@ -57,7 +59,14 @@ class BackgroundGeolocationService implements LocationService {
   bool get isSharing => _share && canShare;
 
   @override
+  Activity get activity => _current?.activity ?? Activity.unknown;
+
+  @override
   Iterable<Position> get positions => _positions;
+
+  @override
+  double get odometer => _odometer;
+  double _odometer = 0;
 
   @override
   Future<Iterable<Position>> backlog() async {
@@ -75,11 +84,7 @@ class BackgroundGeolocationService implements LocationService {
     _notify(ClearEvent(current));
   }
 
-  @override
-  final AppConfigBloc configBloc;
-
   AuthToken _token;
-  LocationOptions _options;
   PermissionStatus _status = PermissionStatus.undetermined;
 
   StreamSubscription _configSubscription;
@@ -128,14 +133,11 @@ class BackgroundGeolocationService implements LocationService {
     AuthToken token,
     bool debug = false,
     bool force = false,
+    LocationOptions options,
   }) async {
     _status = await Permission.locationWhenInUse.status;
 
     if ([PermissionStatus.granted].contains(_status)) {
-      _options ??= _toOptions(
-        configBloc.config,
-        debug: debug,
-      );
       if (_configSubscription == null) {
         bg.BackgroundGeolocation.ready(_toConfig(
           duuid: duuid,
@@ -147,45 +149,28 @@ class BackgroundGeolocationService implements LocationService {
             await bg.BackgroundGeolocation.start();
           }
           // Prepare
-          _positions = await backlog();
-          _notify(ConfigureEvent(
-            duuid,
-            configBloc.config,
-            _options,
-          ));
-          _subscribe();
-          await bg.BackgroundGeolocation.getCurrentPosition();
+          if (!isReady.value) {
+            _positions = await backlog();
+            await bg.BackgroundGeolocation.setOdometer(_odometer);
+            _subscribe();
+            _notify(ConfigureEvent(
+              duuid,
+              _options,
+            ));
+          }
         });
-        _configSubscription = configBloc.listen(
-          (state) async {
-            if (state.data is AppConfig) {
-              if (_isConfigChanged(state.data)) {
-                _options = _toOptions(
-                  state.data,
-                  debug: _options.debug ?? kDebugMode,
-                );
-                await bg.BackgroundGeolocation.setConfig(
-                  _toConfig(),
-                );
-                _notify(ConfigureEvent(
-                  duuid,
-                  configBloc.config,
-                  _options,
-                ));
-              }
-            }
-          },
-        );
       }
 
       if (force ||
           _isConfigChanged(
-            configBloc.config,
             duuid: duuid,
             token: token,
             debug: debug,
             share: share,
+            options: options ?? _options,
           )) {
+        final wasSharing = isSharing;
+        _options = options ?? _options;
         await bg.BackgroundGeolocation.setConfig(_toConfig(
           duuid: duuid,
           token: token,
@@ -194,27 +179,17 @@ class BackgroundGeolocationService implements LocationService {
         ));
         _notify(ConfigureEvent(
           duuid,
-          configBloc.config,
           _options,
         ));
+        if (!wasSharing && isSharing) {
+          await bg.BackgroundGeolocation.sync();
+        }
       }
     } else {
       await dispose();
     }
     return _status;
   }
-
-  LocationOptions _toOptions(AppConfig config, {@required bool debug}) => LocationOptions(
-        debug: debug,
-        accuracy: config.toLocationAccuracy(),
-        locationAlways: config.locationAlways ?? false,
-        locationWhenInUse: config.locationWhenInUse ?? false,
-        activityRecognition: config.activityRecognition ?? false,
-        timeInterval: config.locationFastestInterval ?? Defaults.locationFastestInterval,
-        locationStoreLocally: config.locationStoreLocally ?? Defaults.locationStoreLocally,
-        locationAllowSharing: config.locationAllowSharing ?? Defaults.locationAllowSharing,
-        distanceFilter: config.locationSmallestDisplacement ?? Defaults.locationSmallestDisplacement,
-      );
 
   bg.Config _toConfig({
     bool share,
@@ -252,15 +227,15 @@ class BackgroundGeolocationService implements LocationService {
       distanceFilter: _options.distanceFilter.toDouble(),
       fastestLocationUpdateInterval: _options.timeInterval,
       disableMotionActivityUpdates: !_options.activityRecognition,
-      notification: Notification(
+      notification: bg.Notification(
         title: "SARSys",
         text: "Sporing er ${isSharing ? 'aktiv' : 'inaktiv'}",
       ),
     );
   }
 
-  Authorization _toAuthorization() {
-    return Authorization(
+  bg.Authorization _toAuthorization() {
+    return bg.Authorization(
         accessToken: _token.accessToken,
         refreshToken: _token.refreshToken,
         refreshUrl: UserIdentityService.REFRESH_URL,
@@ -288,6 +263,7 @@ class BackgroundGeolocationService implements LocationService {
         return bg.Config.DESIRED_ACCURACY_HIGH;
       case LocationAccuracy.navigation:
         return bg.Config.DESIRED_ACCURACY_NAVIGATION;
+      case LocationAccuracy.automatic:
       default:
         return bg.Config.DESIRED_ACCURACY_HIGH;
     }
@@ -299,7 +275,9 @@ class BackgroundGeolocationService implements LocationService {
       try {
         await bg.BackgroundGeolocation.getCurrentPosition();
       } on Exception catch (e, stackTrace) {
-        _notify(ErrorEvent(_options, e, stackTrace));
+        _notify(
+          ErrorEvent(_options, e, stackTrace),
+        );
         Catcher.reportCheckedError(
           "Failed to get position with error: $e",
           StackTrace.current,
@@ -364,22 +342,22 @@ class BackgroundGeolocationService implements LocationService {
   bool _isTokenChanged(AuthToken token) => token != null && token != _token;
   bool _isSharingStateChanged(bool share) => share != null && share != _share;
 
-  bool _isConfigChanged(
-    AppConfig config, {
+  bool _isConfigChanged({
     bool share,
     bool debug,
     String duuid,
     AuthToken token,
+    LocationOptions options,
   }) {
     return _options?.debug != (debug ?? kDebugMode) ||
-        _options?.accuracy != config.toLocationAccuracy() ||
-        _options?.locationAlways != (config.locationAlways ?? false) ||
-        _options?.locationWhenInUse != (config.locationWhenInUse ?? false) ||
-        _options?.activityRecognition != (config.activityRecognition ?? false) ||
-        _options?.timeInterval != (config.locationFastestInterval ?? Defaults.locationFastestInterval) ||
-        _options?.locationStoreLocally != (config.locationStoreLocally ?? Defaults.locationStoreLocally) ||
-        _options?.locationAllowSharing != (config.locationAllowSharing ?? Defaults.locationAllowSharing) ||
-        _options?.distanceFilter != (config.locationSmallestDisplacement ?? Defaults.locationSmallestDisplacement) ||
+        _options?.accuracy != options.accuracy ||
+        _options?.locationAlways != (options.locationAlways ?? false) ||
+        _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
+        _options?.activityRecognition != (options.activityRecognition ?? false) ||
+        _options?.timeInterval != (options.timeInterval ?? Defaults.locationFastestInterval) ||
+        _options?.distanceFilter != (options.distanceFilter ?? Defaults.locationSmallestDisplacement) ||
+        _options?.locationStoreLocally != (options.locationStoreLocally ?? Defaults.locationStoreLocally) ||
+        _options?.locationAllowSharing != (options.locationAllowSharing ?? Defaults.locationAllowSharing) ||
         _isTokenChanged(token) ||
         _isDeviceChanged(duuid) ||
         _isSharingStateChanged(share);
@@ -395,23 +373,38 @@ class BackgroundGeolocationService implements LocationService {
 
       // Process http service events
       bg.BackgroundGeolocation.onHttp(_onHttp);
-      bg.BackgroundGeolocation.onMotionChange(_onMove);
+      bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
       bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
-      _notify(SubscribeEvent(_options));
+      bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+      _notify(
+        SubscribeEvent(_options),
+      );
       _isReady.value = true;
+      await update();
     }
-    await update();
   }
 
   void _onLocation(bg.Location location) {
+    _odometer = location.odometer;
     _current = _toPosition(location);
     _positionController.add(_current);
     _notify(PositionEvent(_current));
   }
 
-  void _onMove(bg.Location location) {
+  void _onMoveChange(bg.Location location) {
     _notify(
-      MoveEvent(_toPosition(location), location.isMoving),
+      MoveChangeEvent(
+        _toPosition(location),
+      ),
+    );
+  }
+
+  void _onActivityChange(bg.ActivityChangeEvent event) {
+    _current = _current?.copyWith(
+      activity: Activity.fromJson(event.toMap()),
+    );
+    _notify(
+      ActivityChangeEvent(_current),
     );
   }
 
@@ -425,7 +418,7 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  void _onAuthorization(AuthorizationEvent event) {
+  void _onAuthorization(bg.AuthorizationEvent event) {
     if (event.success) {
       _token = AuthToken(
         idToken: _token.idToken,
@@ -448,7 +441,7 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   void _notify(LocationEvent event) {
-    if ((_events?.length ?? 0) > history) {
+    if ((_events?.length ?? 0) > maxEvents) {
       _events.removeLast();
     }
     _events.insert(0, event);
@@ -459,13 +452,18 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   Position _toPosition(bg.Location location) => Position.timestamp(
+        isMoving: location.isMoving,
+        speed: location.coords.speed,
         lat: location.coords.latitude,
         lon: location.coords.longitude,
         alt: location.coords.altitude,
         acc: location.coords.accuracy,
-        speed: location.coords.speed,
         source: PositionSource.device,
         bearing: location.coords.heading,
+        activity: Activity.fromJson({
+          'type': location.activity.type,
+          'confidence': location.activity.confidence,
+        }),
         timestamp: DateTime.tryParse(location.timestamp) ?? DateTime.now(),
       );
 
@@ -481,13 +479,15 @@ class BackgroundGeolocationService implements LocationService {
   String _toLocationTemplate() {
     return '{'
         '"type": "Feature",'
-        '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]},'
         '"properties": {'
         '"source": "device",'
-        '"timestamp": "<%= timestamp %>",'
-        '"accuracy": <%= accuracy %>,'
+        '"speed": <%= speed %>,'
         '"bearing": <%= heading %>,'
-        '"speed": <%= speed %>'
+        '"accuracy": <%= accuracy %>,'
+        '"isMoving": <%= is_moving %>,'
+        '"timestamp": "<%= timestamp %>",'
+        '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>},'
+        '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]}'
         '}}';
   }
 }

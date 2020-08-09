@@ -496,7 +496,7 @@ class BlocTestHarness implements BlocDelegate {
       service: configService,
       connectivity: _connectivity,
     );
-    _configBloc = AppConfigBloc(configRepo);
+    _configBloc = AppConfigBloc(configRepo, bus);
   }
 
   Future _buildUserBloc() async {
@@ -516,6 +516,7 @@ class BlocTestHarness implements BlocDelegate {
         connectivity: connectivity,
       ),
       configBloc,
+      bus,
     );
 
     if (_authenticated) {
@@ -595,8 +596,8 @@ class BlocTestHarness implements BlocDelegate {
           connectivity: _connectivity,
         ),
       ),
-      bus,
       _userBloc,
+      bus,
     );
 
     await _configBloc.init();
@@ -630,6 +631,7 @@ class BlocTestHarness implements BlocDelegate {
     _deviceBloc = DeviceBloc(
       _deviceRepo,
       _userBloc,
+      bus,
     );
   }
 
@@ -647,9 +649,9 @@ class BlocTestHarness implements BlocDelegate {
         units: _unitBloc.repo,
         connectivity: _connectivity,
       ),
-      bus,
       _affiliationBloc,
       _operationsBloc,
+      bus,
     );
 
     if (_authenticated) {
@@ -672,8 +674,8 @@ class BlocTestHarness implements BlocDelegate {
         _unitService,
         connectivity: _connectivity,
       ),
-      bus,
       _operationsBloc,
+      bus,
     );
   }
 
@@ -699,6 +701,7 @@ class BlocTestHarness implements BlocDelegate {
       deviceBloc: _deviceBloc,
       personnelBloc: _personnelBloc,
       unitBloc: _unitBloc,
+      bus: bus,
     );
 
     if (_authenticated) {

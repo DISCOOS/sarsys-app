@@ -12,9 +12,10 @@ class Defaults {
   static const String talkGroupCatalog = "Nasjonal";
   static const int mapCacheTTL = 30;
   static const int mapCacheCapacity = 15000;
+  static const bool activityRecognition = false;
   static const bool locationStoreLocally = true;
   static const bool locationAllowSharing = true;
-  static const String locationAccuracy = "high";
+  static const String locationAccuracy = "automatic";
   static const int locationFastestInterval = 1000;
   static const int locationSmallestDisplacement = 0;
   static const bool keepScreenOn = false;

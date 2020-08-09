@@ -1,3 +1,7 @@
+import 'dart:math';
+
+import 'package:SarSys/core/size_config.dart';
+import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +10,6 @@ import 'package:percent_indicator/percent_indicator.dart';
 
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
@@ -272,63 +275,82 @@ class UserActionGroup extends StatelessWidget {
 //  }
 }
 
-class UserLocationWidget extends StatefulWidget {
-  const UserLocationWidget({Key key, this.onMessage}) : super(key: key);
+class LocationBufferWidget extends StatefulWidget {
+  const LocationBufferWidget({Key key, this.onMessage}) : super(key: key);
   final ActionCallback onMessage;
 
   @override
-  _UserLocationWidgetState createState() => _UserLocationWidgetState();
+  _LocationBufferWidgetState createState() => _LocationBufferWidgetState();
 }
 
-class _UserLocationWidgetState extends State<UserLocationWidget> {
+class _LocationBufferWidgetState extends State<LocationBufferWidget> {
   var state = 0;
-  final isSelected = <bool>[false, false, false];
-
-  @override
-  void didChangeDependencies() {
-    final config = context.bloc<AppConfigBloc>().config;
-    if (config.locationStoreLocally == false) {
-      state = 0;
-    } else if (config.locationAllowSharing == false) {
-      state = 1;
-    } else {
-      state = 2;
-    }
-    isSelected[state] = true;
-    super.didChangeDependencies();
-  }
+  AppConfig get config => context.bloc<AppConfigBloc>().config;
+  bool get locationAllowSharing => config.locationAllowSharing;
+  bool get isLocationStoreLocally => config.locationStoreLocally;
 
   @override
   Widget build(BuildContext context) {
     final service = LocationService();
+    SizeConfig.init(context);
+    final size = SizeConfig.screenMin - 60;
     return ConstrainedBox(
-      constraints: BoxConstraints.loose(Size.fromRadius(175)),
-      child: Padding(
-        padding: const EdgeInsets.all(0.0),
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.center,
-              child: _buildStatus(service),
+      constraints: BoxConstraints.tightFor(width: size),
+      child: Column(
+        children: <Widget>[
+          ConstrainedBox(
+            constraints: BoxConstraints.tightFor(width: size, height: size - 36),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: _buildStatus(service),
+                ),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: _buildDeleteButton(context, service),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: _buildRefreshButton(service),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: _buildSettingsButton(context, service),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: _buildSyncButton(service),
+                ),
+              ],
             ),
-            Align(
-              alignment: Alignment.topLeft,
-              child: _buildDeleteButton(context, service),
-            ),
-            Align(
-              alignment: Alignment.topRight,
-              child: _buildRefreshButton(service),
-            ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: _buildSettingsButton(context, service),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: _buildSyncButton(service),
-            ),
-          ],
-        ),
+          ),
+          Divider(),
+          SwitchListTile(
+            value: isLocationStoreLocally,
+            secondary: Icon(Icons.storage),
+            title: Text('Del'),
+            subtitle: Text('Kan bli lagret i aksjonen'),
+            onChanged: (value) {
+              context.bloc<AppConfigBloc>().updateWith(
+                    locationStoreLocally: value,
+                  );
+              setState(() {});
+            },
+          ),
+          SwitchListTile(
+            value: locationAllowSharing,
+            secondary: Icon(Icons.cloud_upload),
+            title: Text('Bufre'),
+            subtitle: Text('Lagres lokalt når du er uten nett'),
+            onChanged: (value) {
+              context.bloc<AppConfigBloc>().updateWith(
+                    locationAllowSharing: value,
+                  );
+              setState(() {});
+            },
+          ),
+        ],
       ),
     );
   }
@@ -390,105 +412,41 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
   Widget _buildStatus(LocationService service) => StreamBuilder<LocationEvent>(
         stream: service.onChanged,
         builder: (context, snapshot) {
-          final point = service.current?.geometry;
           return FutureBuilder<Iterable<Position>>(
               future: service.backlog(),
               builder: (context, history) {
                 final positions = history.hasData ? history.data as Iterable : [];
-                final capacity = positions.length / 1000;
+                final usage = positions.length / 1000;
                 return CircularPercentIndicator(
-                  radius: 272.0,
-                  lineWidth: 15.0,
-                  percent: capacity,
-                  header: Text(
-                    'SPORING',
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                  footer: Text(
-                    'Posisjoner bufret: ${positions.length} av 1000 (${(capacity * 100).toStringAsFixed(1)} %)',
-                  ),
-                  center: Padding(
-                    padding: const EdgeInsets.only(top: 48.0, bottom: 52.0, left: 24.0, right: 24.0),
+                  radius: SizeConfig.screenMin * 0.70,
+                  lineWidth: 20.0,
+                  percent: usage,
+                  center: FractionallySizedBox(
+                    widthFactor: 0.7,
+                    heightFactor: 0.5,
                     child: Stack(
                       children: <Widget>[
                         Align(
                           alignment: Alignment.topCenter,
                           child: Column(
                             children: <Widget>[
-                              buildCopyableText(
-                                label: "UTM",
-                                isDense: true,
-                                context: context,
-                                prefixWidth: 0.0,
-                                value: toUTM(point, prefix: "", empty: "Ingen"),
-                                onCopy: (value) => copy(
-                                  value,
-                                  widget.onMessage,
-                                  message: 'UTM kopiert til utklippstavlen',
-                                ),
-                                onTap: () => jumpToPoint(context, center: point),
-                              ),
-                              buildCopyableText(
-                                label: "Desimalminutter (DDM)",
-                                isDense: true,
-                                context: context,
-                                prefixWidth: 0.0,
-                                contentPadding: EdgeInsets.zero,
-                                value: toDDM(point, prefix: "", empty: "Ingen"),
-                                onCopy: (value) => copy(
-                                  value,
-                                  widget.onMessage,
-                                  message: 'DDM kopiert til utklippstavlen',
-                                ),
-                                onTap: () => jumpToPoint(context, center: point),
-                              ),
+                              _buildValue(context, positions.length, 'punkter'),
                               Divider(
                                 thickness: 2,
                               ),
-                            ],
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              ToggleButtons(
-                                renderBorder: false,
-                                children: <Widget>[
-                                  Icon(
-                                    Icons.visibility_off,
-                                    color: Colors.red,
-                                  ),
-                                  Icon(
-                                    Icons.storage,
-                                    color: Colors.orange,
-                                  ),
-                                  Icon(
-                                    Icons.cloud_upload,
-                                    color: Colors.green,
-                                  ),
-                                ],
-                                onPressed: (int index) {
-                                  setState(() {
-                                    for (int buttonIndex = 0; buttonIndex < isSelected.length; buttonIndex++) {
-                                      if (buttonIndex == index) {
-                                        state = index;
-                                        isSelected[buttonIndex] = true;
-                                        _apply(context, service, state);
-                                      } else {
-                                        isSelected[buttonIndex] = false;
-                                      }
-                                    }
-                                  });
-                                },
-                                isSelected: isSelected,
+                              _buildValue(context, service.odometer?.toInt(), 'meter'),
+                              Spacer(),
+                              Text(
+                                service.isStoring ? '${positions.length} av 1000 bufret' : 'Bufrer ikke',
                               ),
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
-                                  _toTrackingStatus(state),
-                                  style: Theme.of(context).textTheme.caption,
+                                  service.isSharing ? 'Posisjoner deles' : 'Posisjoner deles ikke',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: _toTrackingColor(usage),
+                                  ),
                                 ),
                               ),
                             ],
@@ -497,60 +455,33 @@ class _UserLocationWidgetState extends State<UserLocationWidget> {
                       ],
                     ),
                   ),
-                  progressColor: _toTrackingColor(state),
+                  progressColor: _toTrackingColor(usage),
                 );
               });
         },
       );
 
-  MaterialColor _toTrackingColor(int index) {
-    switch (index) {
-      case 1:
-        return Colors.orange;
-      case 2:
-        return Colors.green;
-      default:
-        return Colors.red;
-    }
-  }
+  Text _buildValue(BuildContext context, Object value, String unit) => Text.rich(TextSpan(
+        text: '$value',
+        style: Theme.of(context).textTheme.headline4,
+        children: [
+          TextSpan(
+            text: ' $unit',
+            style: Theme.of(context).textTheme.caption,
+          ),
+        ],
+      ));
 
-  String _toTrackingStatus(int index) {
-    switch (index) {
-      case 1:
-        return 'BUFRES LOKALT';
-      case 2:
-        return 'LAGRES I AKSJON';
-      default:
-        return 'INGEN BUFRING';
+  MaterialColor _toTrackingColor(double capacity) {
+    if (!locationAllowSharing) {
+      return Colors.red;
     }
-  }
-
-  Future _apply(
-    BuildContext context,
-    LocationService service,
-    int index,
-  ) async {
-    switch (index) {
-      case 0:
-        await context.bloc<AppConfigBloc>().updateWith(
-              locationStoreLocally: false,
-              locationAllowSharing: false,
-            );
-        break;
-      case 1:
-        await context.bloc<AppConfigBloc>().updateWith(
-              locationStoreLocally: true,
-              locationAllowSharing: false,
-            );
-        break;
-      case 2:
-        await context.bloc<AppConfigBloc>().updateWith(
-              locationStoreLocally: true,
-              locationAllowSharing: true,
-            );
-        break;
+    if (capacity < 0.5) {
+      return Colors.green;
+    } else if (capacity > 0.90) {
+      return Colors.red;
     }
-    return service.configure();
+    return Colors.orange;
   }
 }
 

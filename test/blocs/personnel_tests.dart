@@ -537,7 +537,7 @@ Future _testShouldLoadWhenOperationIsSelected(BlocTestHarness harness, {@require
   expect(affiliation.status, AffiliationStandbyStatus.available);
 
   // Assert personnel for onboarded user
-  final personnels = harness.personnelBloc.findUser(harness.userId);
+  final personnels = harness.personnelBloc.findUser(userId: harness.userId);
   expect(personnels, isNotEmpty, reason: "SHOULD contain personnel with userId ${harness.userId}");
   final personnel = personnels.first;
   expect(personnel.fname, user.fname);

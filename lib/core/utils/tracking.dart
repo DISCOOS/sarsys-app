@@ -161,7 +161,7 @@ class TrackingUtils {
       position: position,
       tracks: tracks,
       sources: attached,
-      status: _derive(
+      status: _inferStatus(
         tracking.status,
         attached.isNotEmpty,
       ),
@@ -194,7 +194,7 @@ class TrackingUtils {
       position: position,
       tracks: attached,
       sources: replaced,
-      status: _derive(
+      status: _inferStatus(
         tracking.status,
         replaced.isNotEmpty,
       ),
@@ -300,7 +300,7 @@ class TrackingUtils {
     final next = tracking.cloneWith(
       sources: sources,
       tracks: tracks,
-      status: _derive(
+      status: _inferStatus(
         tracking.status,
         sources.isNotEmpty,
       ),
@@ -339,7 +339,7 @@ class TrackingUtils {
     final next = tracking.cloneWith(
       sources: sources,
       tracks: tracks,
-      status: _derive(
+      status: _inferStatus(
         tracking.status,
         sources.isNotEmpty,
       ),
@@ -375,7 +375,7 @@ class TrackingUtils {
       final sources = tracking.tracks.map((track) => track.source);
       final tracks = tracking.tracks.map((track) => track.cloneWith(status: TrackStatus.attached));
       return tracking.cloneWith(
-        status: _derive(
+        status: _inferStatus(
           TrackingStatus.closed,
           sources.isNotEmpty,
           defaultStatus: TrackingStatus.empty,
@@ -463,7 +463,7 @@ class TrackingUtils {
         history: history,
         distance: distance,
         speed: speed(distance, effort),
-        status: _derive(
+        status: _inferStatus(
           status ?? tracking.status,
           tracking.isNotEmpty,
         ),
@@ -475,7 +475,7 @@ class TrackingUtils {
       effort: tracking.effort ?? Duration.zero,
       speed: tracking.speed ?? 0.0,
       history: tracking.history ?? [],
-      status: _derive(
+      status: _inferStatus(
         status ?? tracking.status,
         tracking.isNotEmpty,
       ),
@@ -501,7 +501,7 @@ class TrackingUtils {
     // Aggregate lat, lon, acc and latest timestamp in tracks
     var sum = tracks.fold<List<num>>(
       [0.0, 0.0, 0.0, 0.0],
-      (sum, track) => track.positions.isEmpty
+      (sum, track) => track.positions?.isNotEmpty != true
           ? sum
           : [
               track.positions.last.lat + sum[0],
@@ -547,7 +547,7 @@ class TrackingUtils {
           ))
       .toList();
 
-  static TrackingStatus _derive(
+  static TrackingStatus _inferStatus(
     TrackingStatus current,
     bool isNotEmpty, {
     TrackingStatus defaultStatus,

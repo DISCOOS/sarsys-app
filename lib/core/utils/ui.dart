@@ -471,7 +471,6 @@ Widget buildCopyableText({
   int hintMaxLines = 3,
   bool isDense = false,
   bool selectable = false,
-  double prefixWidth = 24.0,
   EdgeInsetsGeometry contentPadding,
   GestureTapCallback onAction,
   ValueChanged<String> onCopy,
@@ -484,9 +483,9 @@ Widget buildCopyableText({
           decoration: InputDecoration(
             labelText: label,
             isDense: isDense,
-            contentPadding: contentPadding,
             hintMaxLines: hintMaxLines,
-            prefixIcon: icon == null ? Container(width: prefixWidth) : icon,
+            contentPadding: contentPadding,
+            prefixIcon: icon,
             suffixIcon: action != null
                 ? IconButton(
                     icon: action,

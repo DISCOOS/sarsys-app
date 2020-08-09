@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
@@ -12,6 +11,7 @@ import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
+import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 
@@ -28,7 +28,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   ///
   /// Default constructor
   ///
-  DeviceBloc(this.repo, this.userBloc) {
+  DeviceBloc(this.repo, this.userBloc, BlocEventBus bus) : super(bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");
     assert(this.userBloc != null, "userBloc can not be null");
@@ -42,6 +42,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       // Notify when repository state has changed
       _processRepoState,
     ));
+
+    // Toggle device trackability
+    bus.subscribe<ActivityProfileChanged>(_processActivityChange);
   }
 
   void _processUserState(UserState state) {
@@ -90,6 +93,17 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         stackTrace,
       );
       onError(error, stackTrace);
+    }
+  }
+
+  void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
+    if (event is ActivityProfileChanged) {
+      final device = findThisApp();
+      if (device.trackable != event.data.isTrackable) {
+        dispatch(
+          UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
+        );
+      }
     }
   }
 
@@ -357,21 +371,21 @@ class DevicesEmpty extends DeviceState<Null> {
   DevicesEmpty() : super(null);
 
   @override
-  String toString() => 'DevicesEmpty';
+  String toString() => '$runtimeType';
 }
 
 class DevicesLoaded extends DeviceState<List<String>> {
   DevicesLoaded(List<String> data) : super(data);
 
   @override
-  String toString() => 'DevicesLoaded {devices: $data}';
+  String toString() => '$runtimeType {devices: $data}';
 }
 
 class DeviceCreated extends DeviceState<Device> {
   DeviceCreated(Device device) : super(device);
 
   @override
-  String toString() => 'DeviceAttached {device: $data}';
+  String toString() => '$runtimeType {device: $data}';
 }
 
 class DeviceUpdated extends DeviceState<Device> {
@@ -382,21 +396,21 @@ class DeviceUpdated extends DeviceState<Device> {
   bool isLocationChanged() => data.position != previous?.position;
 
   @override
-  String toString() => 'DeviceUpdated {device: $data, previous: $previous}';
+  String toString() => '$runtimeType {device: $data, previous: $previous}';
 }
 
 class DeviceDeleted extends DeviceState<Device> {
   DeviceDeleted(Device device) : super(device);
 
   @override
-  String toString() => 'DeviceDetached {device: $data}';
+  String toString() => '$runtimeType {device: $data}';
 }
 
 class DevicesUnloaded extends DeviceState<Iterable<Device>> {
   DevicesUnloaded(Iterable<Device> devices) : super(devices);
 
   @override
-  String toString() => 'DevicesUnloaded {devices: $data}';
+  String toString() => '$runtimeType {devices: $data}';
 }
 
 /// ---------------------

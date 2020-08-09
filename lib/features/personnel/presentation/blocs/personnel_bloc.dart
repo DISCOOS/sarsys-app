@@ -35,7 +35,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, BlocEventBus bus, this.affiliationBloc, this.operationBloc) : super(bus: bus) {
+  PersonnelBloc(this.repo, this.affiliationBloc, this.operationBloc, BlocEventBus bus) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
@@ -112,12 +112,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         final duplicate = state.from.value.uuid;
         final existing = state.conflict.base;
         findUser(
-          duplicate,
+          userId: duplicate,
           exclude: [],
         ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
       } else {
         findUser(
-          state.from.value.uuid,
+          userId: state.from.value.uuid,
           exclude: [],
         ).map((personnel) => personnel.withPerson(state.from.value)).forEach((personnel) => repo.replace(
               personnel.uuid,
@@ -168,16 +168,19 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Iterable<Aggregate> from(List<String> puuids) =>
       puuids.where((puuid) => repo.containsKey(puuid)).map((puuid) => repo[puuid]).toList();
 
+  /// Check if given [Personnel.uuid] is current user
+  bool isUser(String uuid) => repo[uuid]?.userId == operationBloc.userBloc.userId;
+
   /// Find [Personnel] from [user]
-  Iterable<Personnel> findUser(
-    String userId, {
+  Iterable<Personnel> findUser({
+    String userId,
     bool Function(Personnel personnel) where,
     List<PersonnelStatus> exclude: const [PersonnelStatus.retired],
   }) =>
       repo.findUser(
-        userId,
-        exclude: exclude,
+        userId ?? operationBloc.userBloc.userId,
         where: where,
+        exclude: exclude,
       );
 
   /// Stream of changes on given [personnel]
@@ -229,7 +232,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       throw StateError("No user authenticated");
     }
     var personnels = findUser(
-      user.userId,
+      userId: user.userId,
       exclude: const [],
     );
     // Choose mobilized personnels over retired

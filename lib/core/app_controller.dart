@@ -4,6 +4,7 @@ import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
@@ -115,13 +116,6 @@ class AppController {
   bool shouldInitialize(AppControllerState state) => state == AppControllerState.Built;
   bool shouldAuthenticate(AppControllerState state) => state == AppControllerState.Local;
 
-  /// [BlocEventHandler]s released on [_unset]
-  List<Function> _handlers = [];
-  List<Function> get handlers => List.unmodifiable(_handlers);
-  void registerEventHandler<T extends BlocEvent>(BlocHandlerCallback<T> handler) => _handlers.add(
-        bus.subscribe<T>(handler),
-      );
-
   /// Subscriptions released on [close]
   final List<StreamSubscription> _subscriptions = [];
   List<StreamSubscription> get subscriptions => List.unmodifiable(_subscriptions);
@@ -140,6 +134,7 @@ class AppController {
         toBlocProvider<PersonnelBloc>(),
         toBlocProvider<DeviceBloc>(),
         toBlocProvider<TrackingBloc>(),
+        toBlocProvider<ActivityBloc>(),
       ];
 
   List<RepositoryProvider> get repos => [
@@ -203,10 +198,10 @@ class AppController {
     // -----------
 
     // ignore: close_sinks
-    final configBloc = AppConfigBloc(configRepo);
+    final configBloc = AppConfigBloc(configRepo, controller.bus);
 
     // ignore: close_sinks
-    final UserBloc userBloc = UserBloc(userRepo, configBloc);
+    final UserBloc userBloc = UserBloc(userRepo, configBloc, controller.bus);
 
     // Configure affiliation services
     final orgService = OrganisationService();
@@ -259,8 +254,8 @@ class AppController {
           connectivity: connectivityService,
         ),
       ),
-      controller.bus,
       userBloc,
+      controller.bus,
     );
 
     // Configure Unit service
@@ -276,8 +271,8 @@ class AppController {
         unitService,
         connectivity: connectivityService,
       ),
-      controller.bus,
       operationBloc,
+      controller.bus,
     );
 
     // Configure Personnel service
@@ -295,9 +290,9 @@ class AppController {
         affiliations: affiliationBloc.repo,
         connectivity: connectivityService,
       ),
-      controller.bus,
       affiliationBloc,
       operationBloc,
+      controller.bus,
     );
 
     // Configure Device service
@@ -318,6 +313,7 @@ class AppController {
         connectivity: connectivityService,
       ),
       userBloc,
+      controller.bus,
     );
 
     // Configure Tracking service
@@ -341,7 +337,11 @@ class AppController {
       deviceBloc: deviceBloc,
       operationBloc: operationBloc,
       personnelBloc: personnelBloc,
+      bus: controller.bus,
     );
+
+    // ignore: close_sinks
+    final activityBloc = ActivityBloc(bus: controller.bus);
 
     final blocs = <Bloc>[
       configBloc,
@@ -352,6 +352,7 @@ class AppController {
       personnelBloc,
       deviceBloc,
       trackingBloc,
+      activityBloc,
     ];
 
     // Get all chopper services
@@ -495,9 +496,6 @@ class AppController {
     // Handle changes in device state
     registerStreamSubscription(bloc<DeviceBloc>().listen(_onDeviceState));
 
-    // Handle changes in operation state
-    registerStreamSubscription(bloc<OperationBloc>().listen(_onOperationState));
-
     // Notify that providers are ready
     _controller.add(_state = AppControllerState.Built);
 
@@ -540,7 +538,7 @@ class AppController {
     if (isReady) {
       // Ensure that token is updated
       LocationService(
-        configBloc: bloc<AppConfigBloc>(),
+        options: bloc<ActivityBloc>().profile.options,
       ).token = bloc<UserBloc>().repo.token;
     } else if (LocationService.exists) {
       if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
@@ -554,24 +552,9 @@ class AppController {
 
   void _onDeviceState(DeviceState state) {
     if (state.isLoaded()) {
-      // Ensure tracking is enabled
       LocationService(
-        configBloc: bloc<AppConfigBloc>(),
+        options: bloc<ActivityBloc>().profile.options,
       ).configure(
-        token: bloc<UserBloc>().repo.token,
-        share: bloc<OperationBloc>().isSelected,
-        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
-      );
-    }
-  }
-
-  void _onOperationState(OperationState state) {
-    if (state.isSelected() || state.isUnselected()) {
-      // Ensure tracking is only active when operation is selected
-      LocationService(
-        configBloc: bloc<AppConfigBloc>(),
-      ).configure(
-        share: state.isSelected(),
         token: bloc<UserBloc>().repo.token,
         duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
       );
@@ -584,10 +567,6 @@ class AppController {
 
     // Notify blocs not ready, will show splash screen
     _controller.add(_state = AppControllerState.Empty);
-
-    // Unsubscribe handlers
-    _handlers.forEach((handler) => bus.unsubscribe(handler));
-    _handlers.clear();
 
     // Cancel state change subscriptions on current blocs
     _subscriptions.forEach((subscription) => subscription.cancel());

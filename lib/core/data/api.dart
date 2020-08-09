@@ -83,11 +83,12 @@ class Api {
                     'objectives',
                     "transitions",
                   ]),
-              DeviceModel: (value) => JsonUtils.toJson<Device>(value, retain: const [
-                    'uuid',
-                    'alias',
-                    'number',
-                    'allocatedTo',
+              DeviceModel: (value) => JsonUtils.toJson<Device>(value, remove: const [
+                    'type',
+                    'manual',
+                    'position',
+                    'messages',
+                    'transitions',
                   ]),
             },
             decoders: {

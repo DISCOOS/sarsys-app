@@ -11,7 +11,7 @@ import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
-import 'package:SarSys/core/presentation/widgets/coordinate_view.dart';
+import 'package:SarSys/core/presentation/widgets/coordinate_widget.dart';
 import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 import 'package:SarSys/core/presentation/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
@@ -203,7 +203,7 @@ class PersonnelWidget extends StatelessWidget {
         onComplete: () => _onComplete(personnel),
       );
 
-  Widget _buildLocationView() => CoordinateView(
+  Widget _buildLocationView() => CoordinateWidget(
         point: tracking?.position?.geometry,
         onMessage: onMessage,
         onGoto: onGoto,

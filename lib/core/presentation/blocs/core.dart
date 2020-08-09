@@ -173,6 +173,18 @@ class BlocEventBus {
     return handler;
   }
 
+  /// Subscribe to event with given handler
+  BlocHandlerCallback subscribeAll(BlocHandlerCallback handler, List<Type> types) {
+    for (var type in types) {
+      _routes.update(
+        type,
+        (handlers) => handlers..add(handler),
+        ifAbsent: () => {handler},
+      );
+    }
+    return handler;
+  }
+
   /// Unsubscribe given event handler
   void unsubscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     final handlers = _routes[typeOf<T>()] ?? {};

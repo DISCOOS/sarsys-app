@@ -107,7 +107,10 @@ abstract class RouteWriter<S extends StatefulWidget, T> extends State<S> with Ro
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _observer.subscribe(this, ModalRoute.of(context));
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      _observer.subscribe(this, ModalRoute.of(context));
+    }
   }
 
   @override

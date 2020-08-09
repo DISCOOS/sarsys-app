@@ -34,7 +34,8 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     @required this.deviceBloc,
     @required this.unitBloc,
     @required this.personnelBloc,
-  }) {
+    @required BlocEventBus bus,
+  }) : super(bus: bus) {
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
     assert(unitBloc != null, "unitBloc can not be null");
@@ -485,7 +486,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         TrackingUtils.calculate(
           next,
           status: status,
-          position: position?.cloneWith(
+          position: position?.copyWith(
             // Always manual when from outside
             source: PositionSource.manual,
           ),
@@ -521,7 +522,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         TrackingUtils.calculate(
           next,
           status: status,
-          position: position?.cloneWith(
+          position: position?.copyWith(
             // Always manual when from outside
             source: PositionSource.manual,
           ),
@@ -555,7 +556,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         TrackingUtils.calculate(
           next,
           status: status,
-          position: position?.cloneWith(
+          position: position?.copyWith(
             // Always manual when from outside
             source: PositionSource.manual,
           ),
@@ -576,7 +577,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         TrackingUtils.calculate(
           tracking,
           status: status,
-          position: position?.cloneWith(
+          position: position?.copyWith(
             // Always manual when from outside
             source: PositionSource.manual,
           ),

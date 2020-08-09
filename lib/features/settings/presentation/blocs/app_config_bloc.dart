@@ -14,7 +14,7 @@ typedef void AppConfigCallback(VoidCallback fn);
 
 class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfigBlocError>
     with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig>, ConnectionAwareBloc {
-  AppConfigBloc(this.repo);
+  AppConfigBloc(this.repo, BlocEventBus bus) : super(bus: bus);
   final AppConfigRepository repo;
 
   /// All repositories

@@ -23,8 +23,8 @@ class Position extends ValueObject<Map<String, dynamic>> {
         ]);
 
   final Point geometry;
-  final PositionType type = PositionType.feature;
   final PositionProperties properties;
+  final PositionType type = PositionType.feature;
 
   @JsonKey(ignore: true)
   double get lat => geometry.lat;
@@ -45,6 +45,12 @@ class Position extends ValueObject<Map<String, dynamic>> {
   double get bearing => properties.bearing;
 
   @JsonKey(ignore: true)
+  bool get isMoving => properties.isMoving;
+
+  @JsonKey(ignore: true)
+  Activity get activity => properties.activity;
+
+  @JsonKey(ignore: true)
   PositionSource get source => properties.source;
 
   @JsonKey(ignore: true)
@@ -58,7 +64,9 @@ class Position extends ValueObject<Map<String, dynamic>> {
     @required PositionSource source,
     double acc,
     double speed,
+    bool isMoving,
     double bearing,
+    Activity activity,
     DateTime timestamp,
   }) {
     return Position.timestamp(
@@ -67,8 +75,10 @@ class Position extends ValueObject<Map<String, dynamic>> {
       alt: point.alt,
       acc: acc,
       speed: speed,
-      bearing: bearing,
       source: source,
+      bearing: bearing,
+      isMoving: isMoving,
+      activity: activity,
       timestamp: DateTime.now(),
     );
   }
@@ -80,7 +90,9 @@ class Position extends ValueObject<Map<String, dynamic>> {
     double alt,
     double acc,
     double speed,
+    bool isMoving,
     double bearing,
+    Activity activity,
   }) {
     return Position.timestamp(
       lat: lat,
@@ -88,8 +100,10 @@ class Position extends ValueObject<Map<String, dynamic>> {
       alt: alt,
       acc: acc,
       speed: speed,
-      bearing: bearing,
       source: source,
+      bearing: bearing,
+      isMoving: isMoving,
+      activity: activity,
       timestamp: DateTime.now(),
     );
   }
@@ -101,7 +115,9 @@ class Position extends ValueObject<Map<String, dynamic>> {
     double acc,
     double alt,
     double speed,
+    bool isMoving,
     double bearing,
+    Activity activity,
     PositionSource source,
   }) {
     return Position(
@@ -113,9 +129,11 @@ class Position extends ValueObject<Map<String, dynamic>> {
       properties: PositionProperties(
         acc: acc,
         speed: speed,
-        bearing: bearing,
-        timestamp: timestamp,
         source: source,
+        bearing: bearing,
+        isMoving: isMoving,
+        activity: activity,
+        timestamp: timestamp,
       ),
     );
   }
@@ -129,30 +147,33 @@ class Position extends ValueObject<Map<String, dynamic>> {
   Map<String, dynamic> toJson() => _$PositionToJson(this);
 
   /// Clone with given overrides
-  Position cloneWith({
+  Position copyWith({
     double lat,
     double lon,
     double alt,
     double acc,
     double speed,
     double bearing,
-    PositionSource source,
+    Activity activity,
     DateTime timestamp,
+    PositionSource source,
   }) =>
       Position(
-        properties: PositionProperties(
-          source: source ?? this.source,
-          timestamp: timestamp ?? this.timestamp,
-          acc: acc ?? this.acc,
-          speed: speed ?? this.speed,
-          bearing: bearing ?? this.bearing,
-        ),
         geometry: Point(
           coordinates: Coordinates(
             lon: lon ?? this.lon,
             lat: lat ?? this.lat,
             alt: alt ?? this.alt,
           ),
+        ),
+        properties: PositionProperties(
+          acc: acc ?? this.acc,
+          speed: speed ?? this.speed,
+          source: source ?? this.source,
+          bearing: bearing ?? this.bearing,
+          activity: activity ?? this.activity,
+          isMoving: isMoving ?? this.isMoving,
+          timestamp: timestamp ?? this.timestamp,
         ),
       );
 }
@@ -188,14 +209,19 @@ class PositionProperties extends Equatable {
     @required this.timestamp,
     this.speed,
     this.bearing,
+    this.isMoving,
+    Activity activity,
     this.source = PositionSource.manual,
-  }) : super();
+  })  : activity = activity ?? Activity.unknown,
+        super();
 
   @override
   List<Object> get props => [
         acc,
-        timestamp,
         source,
+        activity,
+        isMoving,
+        timestamp,
       ];
 
   /// The estimated horizontal accuracy of the position in meters.
@@ -207,6 +233,12 @@ class PositionProperties extends Equatable {
 
   /// The heading in which the device is traveling in degrees.
   final double bearing;
+
+  /// [True] if devices was moving when positions was sampled
+  final bool isMoving;
+
+  /// Estimated activity type with confidence
+  final Activity activity;
 
   /// The [DateTime] at which this position was determined.
   final DateTime timestamp;
@@ -222,14 +254,17 @@ class PositionProperties extends Equatable {
 
   PositionProperties cloneWith({
     double acc,
+    bool isMoving,
     SourceType source,
     DateTime timestamp,
   }) =>
       PositionProperties(
         acc: acc ?? this.acc,
         speed: speed ?? this.speed,
-        bearing: bearing ?? this.bearing,
         source: source ?? this.source,
+        bearing: bearing ?? this.bearing,
+        activity: activity ?? this.activity,
+        isMoving: isMoving ?? this.isMoving,
         timestamp: timestamp ?? this.timestamp,
       );
 }
@@ -241,4 +276,78 @@ abstract class Positionable<T> extends Aggregate<T> {
     List fields = const [],
   }) : super(uuid, fields: [position, ...fields]);
   final Position position;
+}
+
+@JsonSerializable()
+class Activity extends Equatable {
+  static Activity unknown = Activity(
+    type: ActivityType.unknown,
+    confidence: 100,
+  );
+
+  Activity({
+    @required this.type,
+    @required this.confidence,
+  }) : super();
+
+  @override
+  List<Object> get props => [
+        type,
+        confidence,
+      ];
+
+  /// Estimated activity type
+  final ActivityType type;
+
+  /// Estimate confidence (0-100%)
+  final int confidence;
+
+  /// Factory constructor for creating a new `Activity`  instance
+  factory Activity.fromJson(Map<String, dynamic> json) => _$ActivityFromJson(json);
+
+  @JsonKey(ignore: true)
+  bool get isMoving => !const [ActivityType.unknown, ActivityType.still].contains(type);
+
+  /// Declare support for serialization to JSON
+  Map<String, dynamic> toJson() => _$ActivityToJson(this);
+
+  Activity cloneWith({
+    double acc,
+    SourceType source,
+    DateTime timestamp,
+  }) =>
+      Activity(
+        type: acc ?? this.type,
+        confidence: confidence ?? this.confidence,
+      );
+}
+
+enum ActivityType {
+  still,
+  on_foot,
+  walking,
+  running,
+  unknown,
+  on_bicycle,
+  in_vehicle,
+}
+
+String translateActivityType(ActivityType type) {
+  switch (type) {
+    case ActivityType.still:
+      return "I ro";
+    case ActivityType.on_foot:
+      return "Til fots";
+    case ActivityType.walking:
+      return "Går";
+    case ActivityType.running:
+      return "Løper";
+    case ActivityType.on_bicycle:
+      return "På sykkel";
+    case ActivityType.in_vehicle:
+      return "I bil";
+    case ActivityType.unknown:
+    default:
+      return "Ukjent";
+  }
 }

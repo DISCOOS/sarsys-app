@@ -13,6 +13,7 @@ DeviceModel _$DeviceModelFromJson(Map json) {
     alias: json['alias'] as String,
     number: json['number'] as String,
     manual: json['manual'] as bool,
+    trackable: json['trackable'] as bool,
     network: json['network'] as String,
     networkId: json['networkId'] as String,
     allocatedTo: toIncidentRef(json['allocatedTo']),
@@ -41,6 +42,7 @@ Map<String, dynamic> _$DeviceModelToJson(DeviceModel instance) {
   writeNotNull('status', _$DeviceStatusEnumMap[instance.status]);
   writeNotNull('number', instance.number);
   writeNotNull('alias', instance.alias);
+  writeNotNull('trackable', instance.trackable);
   writeNotNull('network', instance.network);
   writeNotNull('networkId', instance.networkId);
   writeNotNull('allocatedTo', instance.allocatedTo?.toJson());

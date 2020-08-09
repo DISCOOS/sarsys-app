@@ -24,7 +24,7 @@ typedef void UserCallback(VoidCallback fn);
 
 class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     with LoadableBloc<User>, UnloadableBloc<List<User>> {
-  UserBloc(this.repo, this.configBloc);
+  UserBloc(this.repo, this.configBloc, BlocEventBus bus) : super(bus: bus);
 
   final UserRepository repo;
   final AppConfigBloc configBloc;

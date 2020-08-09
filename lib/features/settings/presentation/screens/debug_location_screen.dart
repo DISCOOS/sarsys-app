@@ -1,4 +1,3 @@
-import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/data/services/location/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -16,16 +15,13 @@ class DebugLocationScreen extends StatefulWidget {
 class _DebugLocationScreenState extends State<DebugLocationScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  LocationService _locationService;
+  LocationService _service;
   AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _locationService = LocationService(
-      configBloc: context.bloc<AppConfigBloc>(),
-      duuid: context.bloc<DeviceBloc>().findThisApp().uuid,
-    );
+    _service = LocationService();
   }
 
   @override //new
@@ -84,7 +80,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
                     padding: EdgeInsets.zero,
                     onPressed: () async {
                       final Email email = Email(
-                        body: 'Posisjonstjeneste log:\n\n${_locationService.events.map(
+                        body: 'Posisjonstjeneste log:\n\n${_service.events.map(
                               (event) => '${event.runtimeType}\n$event',
                             ).join('\n\n')}',
                         subject: 'Posisjonstjeneste - log',
@@ -97,16 +93,16 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
               ),
             ),
             StreamBuilder<LocationEvent>(
-                stream: _locationService.onChanged,
+                stream: _service.onChanged,
                 builder: (context, snapshot) {
                   final now = DateTime.now();
                   return ListView.separated(
                     shrinkWrap: true,
                     physics: ClampingScrollPhysics(),
-                    itemCount: _locationService.events.length,
+                    itemCount: _service.events.length,
                     itemBuilder: (BuildContext context, int index) {
-                      final LocationEvent event = _locationService[index];
-                      final duration = now.difference(_locationService[index].timestamp);
+                      final LocationEvent event = _service[index];
+                      final duration = now.difference(_service[index].timestamp);
                       return ListTile(
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

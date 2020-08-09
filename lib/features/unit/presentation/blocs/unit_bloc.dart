@@ -39,8 +39,8 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   ///
   UnitBloc(
     this.repo,
-    BlocEventBus bus,
     this.operationBloc,
+    BlocEventBus bus,
   ) : super(bus: bus) {
     assert(repo != null, "repository can not be null");
     assert(service != null, "service can not be null");

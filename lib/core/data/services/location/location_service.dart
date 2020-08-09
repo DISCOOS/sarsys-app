@@ -1,6 +1,5 @@
 import 'package:SarSys/core/data/services/location/background_geolocation_service.dart';
 import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/core/domain/models/Point.dart';
@@ -44,11 +43,11 @@ abstract class LocationService {
   /// if [canShare] is [true].
   bool get isSharing;
 
-  /// Get [AppConfigBloc] instance
-  AppConfigBloc get configBloc;
-
   /// Get current [Position]
   Position get current;
+
+  /// Get estimated activity if supported
+  Activity get activity;
 
   /// Get permission status
   PermissionStatus get status;
@@ -71,11 +70,17 @@ abstract class LocationService {
   /// last application start
   Iterable<Position> get positions;
 
+  /// Distance moved since app started
+  double get odometer;
+
   /// Get backlog of positions stored on this device pending push to backend
   Future<Iterable<Position>> backlog();
 
   /// Clear all positions stored on this device
   Future clear();
+
+  /// Get current options
+  LocationOptions get options;
 
   /// Get authentication token required
   /// to publish positions to backend
@@ -99,6 +104,7 @@ abstract class LocationService {
     AuthToken token,
     bool debug = false,
     bool force = false,
+    LocationOptions options,
   });
 
   /// Request location update manually.
@@ -139,6 +145,8 @@ abstract class LocationService {
         return "Best";
       case LocationAccuracy.navigation:
         return "Navigasjon";
+      case LocationAccuracy.automatic:
+        return "Automatisk";
       default:
         return "Høy";
     }
@@ -149,16 +157,16 @@ abstract class LocationService {
   static bool get exists => _singleton?.disposed == false;
 
   factory LocationService({
+    LocationOptions options,
     String duuid,
     String token,
-    AppConfigBloc configBloc,
   }) {
     if (!exists) {
       _singleton = BackgroundGeolocationService(
         share: _singleton?.share,
         duuid: duuid ?? _singleton?.duuid,
         token: token ?? _singleton?.token,
-        configBloc: configBloc ?? _singleton?.configBloc,
+        options: _singleton?.options ?? options,
       );
     }
     return _singleton;
@@ -172,6 +180,7 @@ enum LocationAccuracy {
   high,
   best,
   navigation,
+  automatic,
 }
 
 class LocationOptions {
@@ -184,15 +193,15 @@ class LocationOptions {
   /// - timeInterval: 0
   const LocationOptions({
     this.debug = false,
-    this.timeInterval = 0,
-    this.distanceFilter = 0,
     this.locationAlways,
     this.locationWhenInUse,
-    this.activityRecognition,
-    this.locationStoreLocally,
-    this.locationAllowSharing,
-    this.accuracy = LocationAccuracy.best,
     this.forceAndroidLocationManager,
+    this.accuracy = LocationAccuracy.best,
+    this.timeInterval = Defaults.locationFastestInterval,
+    this.activityRecognition = Defaults.activityRecognition,
+    this.locationStoreLocally = Defaults.locationStoreLocally,
+    this.locationAllowSharing = Defaults.locationAllowSharing,
+    this.distanceFilter = Defaults.locationSmallestDisplacement,
   });
 
   /// Tells service to enter debug mode
@@ -241,6 +250,31 @@ class LocationOptions {
   /// On iOS this value is ignored since position updates based on time intervals are not supported.
   final int timeInterval;
 
+  LocationOptions copyWith({
+    bool debug,
+    int timeInterval,
+    int distanceFilter,
+    bool locationAlways,
+    bool locationWhenInUse,
+    bool activityRecognition,
+    bool locationStoreLocally,
+    bool locationAllowSharing,
+    bool forceAndroidLocationManager,
+    LocationAccuracy accuracy = LocationAccuracy.best,
+  }) =>
+      LocationOptions(
+        debug: debug ?? this.debug,
+        accuracy: accuracy ?? this.accuracy,
+        timeInterval: timeInterval ?? this.timeInterval,
+        distanceFilter: distanceFilter ?? this.distanceFilter,
+        locationAlways: locationAlways ?? this.locationAlways,
+        locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
+        activityRecognition: activityRecognition ?? this.activityRecognition,
+        locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally,
+        locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing,
+        forceAndroidLocationManager: forceAndroidLocationManager ?? this.forceAndroidLocationManager,
+      );
+
   @override
   String toString() => 'Options: {\n'
       '   debug: $debug\n'
@@ -263,51 +297,36 @@ abstract class LocationEvent {
 }
 
 class CreateEvent extends LocationEvent {
-  CreateEvent(
+  CreateEvent({
+    this.share,
     this.duuid,
-    this.config,
-  ) : super(StackTrace.current);
+    this.maxEvents,
+  }) : super(StackTrace.current);
+  final bool share;
   final String duuid;
-  final AppConfig config;
+  final int maxEvents;
 
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'Device: {uuid: $duuid},'
-      'AppConfig: {\n'
-      '   store: ${config.locationStoreLocally}\n'
-      '   accuracy: ${config.locationAccuracy}\n'
-      '   interval: ${config.locationFastestInterval}\n'
-      '   displacement: ${config.locationSmallestDisplacement}\n'
-      '   locationAlways: ${config.locationAlways}\n'
-      '   locationWhenInUse: ${config.locationWhenInUse}\n'
-      '   activityRecognition: ${config.activityRecognition}\n'
+      'Device: {uuid: $duuid},\n'
+      'share: $share,\n'
+      'maxEvents: $maxEvents,\n'
       '}';
 }
 
 class ConfigureEvent extends LocationEvent {
   ConfigureEvent(
     this.duuid,
-    this.config,
     this.options,
   ) : super(StackTrace.current);
   final String duuid;
-  final AppConfig config;
   final LocationOptions options;
 
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'Device: {uuid: $duuid},'
-      'AppConfig: {\n'
-      '   store: ${config.locationStoreLocally}\n'
-      '   accuracy: ${config.locationAccuracy}\n'
-      '   interval: ${config.locationFastestInterval}\n'
-      '   displacement: ${config.locationSmallestDisplacement}\n'
-      '   locationAlways: ${config.locationAlways}\n'
-      '   locationWhenInUse: ${config.locationWhenInUse}\n'
-      '   activityRecognition: ${config.activityRecognition}\n'
-      '},\n'
+      'Device: {uuid: $duuid},\n'
       '$options';
 }
 
@@ -326,8 +345,10 @@ class PositionEvent extends LocationEvent {
         '   lon: ${position.lon}\n'
         '   alt: ${position.alt}\n'
         '   acc: ${position.acc}\n'
-        '   heading: ${position.bearing}\n'
         '   speed: ${position.speed}\n'
+        '   heading: ${position.bearing}\n'
+        '   isMoving: ${position.isMoving}\n'
+        '   activity: ${position.activity}\n'
         '   time: ${position.timestamp.toIso8601String()}\n'
         '}';
   }
@@ -351,16 +372,28 @@ class UnsubscribeEvent extends LocationEvent {
       '$options';
 }
 
-class MoveEvent extends LocationEvent {
-  final bool isMoving;
+class MoveChangeEvent extends LocationEvent {
   final Position position;
 
-  MoveEvent(this.position, this.isMoving) : super(StackTrace.current);
+  MoveChangeEvent(this.position) : super(StackTrace.current);
 
   @override
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()},\n'
-      'IsMoving: $isMoving,\n'
+      'IsMoving: ${position.isMoving},\n'
+      'Position: $position';
+}
+
+class ActivityChangeEvent extends LocationEvent {
+  final Position position;
+
+  ActivityChangeEvent(this.position) : super(StackTrace.current);
+
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
+      'IsMoving: ${position.isMoving},\n'
+      'Activity: ${position.activity},\n'
       'Position: $position';
 }
 

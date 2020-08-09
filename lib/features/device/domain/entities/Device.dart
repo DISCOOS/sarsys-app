@@ -16,6 +16,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
     this.manual,
     this.network,
     this.networkId,
+    this.trackable,
     this.allocatedTo,
     Position position,
     this.status = DeviceStatus.unavailable,
@@ -25,6 +26,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
           number,
           manual,
           network,
+          trackable,
           networkId,
           allocatedTo,
           status,
@@ -35,6 +37,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
   final DeviceStatus status;
   final String number;
   final String alias;
+  final bool trackable;
   final String network;
   final String networkId;
   @JsonKey(fromJson: toIncidentRef)
@@ -56,6 +59,7 @@ abstract class Device extends Positionable<Map<String, dynamic>> {
     DeviceStatus status,
     String alias,
     bool manual,
+    bool trackable,
     String network,
     String networkId,
     String number,

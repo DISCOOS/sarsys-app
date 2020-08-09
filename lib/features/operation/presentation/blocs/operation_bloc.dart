@@ -25,7 +25,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   ///
   /// Default constructor
   ///
-  OperationBloc(this.repo, BlocEventBus bus, this.userBloc) : super(bus: bus) {
+  OperationBloc(this.repo, this.userBloc, BlocEventBus bus) : super(bus: bus) {
     assert(this.userBloc != null, "userBloc can not be null");
     assert(this.repo != null, "operations repository can not be null");
     assert(this.incidents != null, "incidents repository can not be null");
@@ -634,7 +634,7 @@ class OperationSelected extends OperationState<Operation> {
   OperationSelected(Operation data) : super(data);
 
   @override
-  String toString() => '$runtimeType {operation: $data,}';
+  String toString() => '$runtimeType {operation: $data}';
 }
 
 class OperationDeleted extends OperationState<Operation> {

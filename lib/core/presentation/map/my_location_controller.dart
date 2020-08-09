@@ -7,7 +7,6 @@ import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/presentation/map/map_widget.dart';
 import 'package:SarSys/core/presentation/map/layers/my_location.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/catcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -49,17 +48,9 @@ class MyLocationController {
 
   Position get current => _service.current;
 
-  Future<LatLng> configure({
-    String duuid,
-    AuthToken token,
-    bool force = false,
-  }) async {
+  Future<LatLng> configure() async {
     return _handle(
-      await _service.configure(
-        duuid: duuid,
-        token: token,
-        force: force,
-      ),
+      await _service.configure(),
     );
   }
 

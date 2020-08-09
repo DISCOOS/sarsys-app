@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/widgets.dart';
 
 class SizeConfig {
@@ -6,6 +8,9 @@ class SizeConfig {
   static double screenHeight;
   static double blockSizeHorizontal;
   static double blockSizeVertical;
+
+  static double get screenMin => min(screenWidth, screenHeight);
+  static double get screenMax => max(screenWidth, screenHeight);
 
   static double safeAreaHorizontal;
   static double safeAreaVertical;

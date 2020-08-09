@@ -59,6 +59,10 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 _buildLocationAccuracyField(),
                 _buildLocationFastestIntervalField(),
                 _buildLocationSmallestDisplacementField(),
+                Divider(),
+                _buildLocationStoreLocallyField(),
+                _buildLocationAllowSharingField(),
+                Divider(),
                 _buildLocationDebugField(),
               ],
             ),
@@ -185,6 +189,34 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   }
 
   bool _debug = kDebugMode;
+
+  Widget _buildLocationAllowSharingField() {
+    return SwitchListTile(
+      value: context.bloc<AppConfigBloc>().config.locationAllowSharing,
+      title: Text('Del posisjoner'),
+      subtitle: Text('Posisjonen kan bli lagret i aksjonen'),
+      onChanged: (value) {
+        context.bloc<AppConfigBloc>().updateWith(
+              locationAllowSharing: value,
+            );
+        setState(() {});
+      },
+    );
+  }
+
+  Widget _buildLocationStoreLocallyField() {
+    return SwitchListTile(
+      value: context.bloc<AppConfigBloc>().config.locationStoreLocally,
+      title: Text('Bufre posisjoner'),
+      subtitle: Text('Lagres lokalt når du er uten nett'),
+      onChanged: (value) {
+        context.bloc<AppConfigBloc>().updateWith(
+              locationStoreLocally: value,
+            );
+        setState(() {});
+      },
+    );
+  }
 
   Padding _buildLocationDebugField() {
     return Padding(

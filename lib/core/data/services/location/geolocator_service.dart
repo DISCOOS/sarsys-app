@@ -7,28 +7,25 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as gl;
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
-
 import 'location_service.dart';
 
 class GeolocatorService implements LocationService {
-  GeolocatorService(
+  GeolocatorService({
+    @required LocationOptions options,
     this.duuid,
-    this.configBloc,
-  ) {
-    assert(configBloc != null, "AppConfigBloc must be supplied");
-    assert(duuid != null, "Device uuid must be supplied");
-    _events.insert(0, CreateEvent(duuid, configBloc.config));
+    this.maxEvents = 100,
+  }) {
+    assert(options != null, "options are required");
+    _options = options;
+    _events.insert(0, CreateEvent(duuid: duuid, share: false, maxEvents: maxEvents));
   }
 
+  final int maxEvents;
+  static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
   gl.Geolocator _geolocator;
   PermissionStatus _status = PermissionStatus.undetermined;
-
-  AppConfigBloc _bloc;
-  LocationOptions _options;
 
   Stream<Position> _internalStream;
   StreamSubscription _configSubscription;
@@ -43,7 +40,11 @@ class GeolocatorService implements LocationService {
   final String duuid;
 
   @override
-  final AppConfigBloc configBloc;
+  final double odometer = 0;
+
+  @override
+  LocationOptions get options => _options;
+  LocationOptions _options;
 
   @override
   bool get canStore => false;
@@ -63,6 +64,9 @@ class GeolocatorService implements LocationService {
   @override
   Position get current => _current;
   Position _current;
+
+  @override
+  Activity get activity => Activity.unknown;
 
   @override
   PermissionStatus get status => _status;
@@ -98,7 +102,9 @@ class GeolocatorService implements LocationService {
 
   @override
   Future clear() async {
-    return _events.clear();
+    _events.clear();
+    _positions.clear();
+    _notify(ClearEvent(current));
   }
 
   @override
@@ -108,26 +114,15 @@ class GeolocatorService implements LocationService {
     AuthToken token,
     bool debug = false,
     bool force = false,
+    LocationOptions options,
   }) async {
     _status = await Permission.locationWhenInUse.status;
     if ([PermissionStatus.granted].contains(_status)) {
-      final config = _bloc.config;
-      var options = _toOptions(config);
-      if (force || _isConfigChanged(options)) {
-        _notify(ConfigureEvent(duuid, configBloc.config, options));
-        _subscribe(options);
-        _configSubscription?.cancel();
-        _configSubscription = _bloc.listen(
-          (state) {
-            if (state.data is AppConfig) {
-              final options = _toOptions(state.data);
-              if (_isConfigChanged(options)) {
-                _notify(ConfigureEvent(duuid, configBloc.config, options));
-                _subscribe(options);
-              }
-            }
-          },
+      if (force || _isConfigChanged(_options)) {
+        _notify(
+          ConfigureEvent(duuid, _options),
         );
+        _subscribe(_options);
       }
     } else {
       await dispose();
@@ -168,16 +163,15 @@ class GeolocatorService implements LocationService {
   }
 
   void _notify(LocationEvent event) {
+    if ((_events?.length ?? 0) > maxEvents) {
+      _events.removeLast();
+    }
     _events.insert(0, event);
+    if (event is PositionEvent) {
+      _positions.add(event.position);
+    }
     _eventController.add(event);
-  }
-
-  LocationOptions _toOptions(AppConfig config) {
-    return LocationOptions(
-      accuracy: config.toLocationAccuracy(),
-      timeInterval: config.locationFastestInterval,
-      distanceFilter: config.locationSmallestDisplacement,
-    );
+    _eventController.add(event);
   }
 
   static gl.LocationAccuracy _toAccuracy(LocationAccuracy value) {

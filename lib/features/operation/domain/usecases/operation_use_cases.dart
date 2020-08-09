@@ -96,6 +96,40 @@ class SelectOperation extends UseCase<bool, Operation, OperationParams> {
   }
 }
 
+Future<dartz.Either<bool, Operation>> editOperation(
+  Operation operation,
+) =>
+    EditOperation()(OperationParams(operation: operation));
+
+class EditOperation extends UseCase<bool, Operation, OperationParams> {
+  @override
+  Future<dartz.Either<bool, Operation>> execute(params) async {
+    assert(params.data != null, "Operation is required");
+
+    var result = await showDialog<OperationEditorResult>(
+      context: params.overlay.context,
+      useRootNavigator: false,
+      builder: (context) => OperationEditor(
+        ipp: params.ipp,
+        operation: params.data,
+        incident: params.bloc.incidents[params.data.incident.uuid],
+      ),
+    );
+    if (result == null) return dartz.Left(false);
+    final operation = await params.bloc.update(
+      result.operation,
+      incident: result.incident,
+    );
+    return dartz.Right(operation);
+  }
+}
+
+User _assertUser(OperationParams params) {
+  final user = params.bloc.userBloc.user;
+  assert(user != null, "User must bed authenticated");
+  return user;
+}
+
 Future<dartz.Either<bool, Personnel>> joinOperation(
   Operation operation,
 ) =>
@@ -156,40 +190,6 @@ class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, Operation>> editOperation(
-  Operation operation,
-) =>
-    EditOperation()(OperationParams(operation: operation));
-
-class EditOperation extends UseCase<bool, Operation, OperationParams> {
-  @override
-  Future<dartz.Either<bool, Operation>> execute(params) async {
-    assert(params.data != null, "Operation is required");
-
-    var result = await showDialog<OperationEditorResult>(
-      context: params.overlay.context,
-      useRootNavigator: false,
-      builder: (context) => OperationEditor(
-        ipp: params.ipp,
-        operation: params.data,
-        incident: params.bloc.incidents[params.data.incident.uuid],
-      ),
-    );
-    if (result == null) return dartz.Left(false);
-    final operation = await params.bloc.update(
-      result.operation,
-      incident: result.incident,
-    );
-    return dartz.Right(operation);
-  }
-}
-
-User _assertUser(OperationParams params) {
-  final user = params.bloc.userBloc.user;
-  assert(user != null, "User must bed authenticated");
-  return user;
-}
-
 bool _shouldRegister(
   OperationParams params,
 ) =>
@@ -198,7 +198,7 @@ bool _shouldRegister(
 FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait = false}) async {
   // Look for existing personnel
   final personnel = params.context.bloc<PersonnelBloc>().findUser(
-    user.userId,
+    userId: user.userId,
     exclude: const [],
   ).firstOrNull;
   // Wait for personnel to be created

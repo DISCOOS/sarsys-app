@@ -1,5 +1,6 @@
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/domain/models/Tracking.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
@@ -79,6 +80,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
               _buildAffiliationsTile(context),
               _buildPersonnelsTile(context),
               _buildDevicesTile(context),
+              _buildTrackingsTile(context),
               _buildOrgsTile(context),
               _buildDivsTile(context),
               _buildDepsTile(context),
@@ -151,6 +153,14 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Apparater",
       repo: context.bloc<DeviceBloc>().repo,
       subtitle: (StorageState<Device> state) => '${state?.value?.name}',
+    );
+  }
+
+  Widget _buildTrackingsTile(BuildContext context) {
+    return RepositoryTile<Tracking>(
+      title: "Sporinger",
+      repo: context.bloc<TrackingBloc>().repo,
+      subtitle: (StorageState<Tracking> state) => '${enumName(state?.value?.status)}',
     );
   }
 

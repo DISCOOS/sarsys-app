@@ -1,6 +1,7 @@
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/affiliation/presentation/pages/affiliations_page.dart';
+import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
@@ -128,7 +129,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
           affiliation: affiliation.toRef(),
         )));
       }
-      // Remobilize personnel?
+      // Re-mobilize personnel?
       if (personnel.status == PersonnelStatus.retired) {
         return dartz.right(await params.bloc.update(personnel.copyWith(
           status: PersonnelStatus.alerted,
@@ -161,9 +162,7 @@ class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> {
     if (params.operationBloc.isUnselected) {
       return dartz.left(false);
     }
-
-    final user = params.user;
-    assert(user != null, "UserBloc contains no user");
+    assert(params.user != null, "UserBloc contains no user");
     try {
       return dartz.right(await params.bloc.mobilizeUser());
     } on Exception catch (e, stackTrace) {
@@ -337,20 +336,56 @@ class RemoveFromPersonnel extends UseCase<bool, Tracking, PersonnelParams> {
   }
 }
 
+/// Register personnel as ingress on scene
+Future<dartz.Either<bool, Personnel>> ingressPersonnel(
+  Personnel personnel,
+) =>
+    IngressPersonnel()(PersonnelParams(
+      personnel: personnel,
+    ));
+
+class IngressPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+  @override
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
+    return await _transitionPersonnel(
+      params,
+      PersonnelStatus.enroute,
+    );
+  }
+}
+
 /// Check in personnel on scene
 Future<dartz.Either<bool, Personnel>> checkInPersonnel(
   Personnel personnel,
 ) =>
-    ChecInPersonnel()(PersonnelParams(
+    CheckInPersonnel()(PersonnelParams(
       personnel: personnel,
     ));
 
-class ChecInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+class CheckInPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     return await _transitionPersonnel(
       params,
       PersonnelStatus.onscene,
+    );
+  }
+}
+
+/// Check out personnel from on scene
+Future<dartz.Either<bool, Personnel>> checkOutPersonnel(
+  Personnel personnel,
+) =>
+    CheckOutPersonnel()(PersonnelParams(
+      personnel: personnel,
+    ));
+
+class CheckOutPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
+  @override
+  Future<dartz.Either<bool, Personnel>> execute(params) async {
+    return await _transitionPersonnel(
+      params,
+      PersonnelStatus.leaving,
     );
   }
 }
@@ -366,6 +401,11 @@ Future<dartz.Either<bool, Personnel>> retirePersonnel(
 class RetirePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
+    // User must use leaveOperation
+    if (params.user.userId != null && params.user.userId == params.data.userId) {
+      return leaveOperation();
+    }
+
     return await _transitionPersonnel(
       params,
       PersonnelStatus.retired,
