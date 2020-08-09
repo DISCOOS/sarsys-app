@@ -12,7 +12,7 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/operation/presentation/editors/operation_editor.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';

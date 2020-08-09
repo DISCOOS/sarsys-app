@@ -11,7 +11,7 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/operation/presentation/screens/command_screen.dart';
 import 'package:SarSys/features/settings/presentation/screens/settings_screen.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
-import 'package:SarSys/core/presentation/screens/map_screen.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/core/utils/ui.dart';

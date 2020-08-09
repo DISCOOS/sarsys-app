@@ -17,7 +17,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:SarSys/core/utils/tracking.dart';
+import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';

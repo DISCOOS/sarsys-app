@@ -13,7 +13,7 @@ import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/core/presentation/map/map_widget.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';

@@ -1,4 +1,4 @@
-import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/app_controller.dart';

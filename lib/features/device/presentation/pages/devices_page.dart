@@ -15,7 +15,7 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/device/presentation/screens/device_screen.dart';
 import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';

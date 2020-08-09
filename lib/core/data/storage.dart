@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/page_state.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -25,7 +26,7 @@ import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -37,8 +38,6 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path_helper;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../page_state.dart';
 
 class Storage {
   static const CURRENT_USER_ID_KEY = 'current_user_id';

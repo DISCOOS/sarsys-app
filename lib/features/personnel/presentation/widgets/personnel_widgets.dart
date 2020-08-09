@@ -2,8 +2,8 @@ import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';

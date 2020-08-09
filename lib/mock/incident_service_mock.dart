@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/core/domain/models/Location.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';

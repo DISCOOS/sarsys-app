@@ -4,15 +4,15 @@ import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
+import 'package:SarSys/features/mapping/domain/entities/Coordinates.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';
-import 'Coordinates.dart';
-import 'Tracking.dart';
 
 class LatLngConverter implements JsonConverter<LatLng, Map<String, dynamic>> {
   const LatLngConverter();

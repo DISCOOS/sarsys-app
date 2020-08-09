@@ -1,6 +1,6 @@
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';

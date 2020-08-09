@@ -15,7 +15,7 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/presentation/screens/personnel_screen.dart';
@@ -66,8 +66,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     _filter = FilterSheet.read(
       context,
       FILTER,
-      defaultValue: PersonnelStatus.values.toSet()
-        ..remove(PersonnelStatus.retired),
+      defaultValue: PersonnelStatus.values.toSet()..remove(PersonnelStatus.retired),
       onRead: _onRead,
     );
   }
@@ -107,9 +106,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
                       viewportConstraints,
                       message: snapshot.hasError
                           ? snapshot.error
-                          : widget.query == null
-                              ? "Legg til mannskap"
-                              : "Ingen mannskap funnet",
+                          : widget.query == null ? "Legg til mannskap" : "Ingen mannskap funnet",
                     )
                   : _buildList(personnels);
             },
@@ -126,19 +123,15 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         .values
         .where((personnel) => _filter.contains(personnel.status))
         .where((personnel) => widget.where == null || widget.where(personnel))
-        .where((personnel) =>
-            widget.query == null ||
-            _prepare(personnel).contains(widget.query.toLowerCase()))
+        .where((personnel) => widget.query == null || _prepare(personnel).contains(widget.query.toLowerCase()))
         .toList();
     if (!widget.withGrouped) {
-      personnels.sort(
-          (p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
+      personnels.sort((p1, p2) => p1.name.toLowerCase().compareTo(p2.name.toLowerCase()));
     }
     return personnels;
   }
 
-  String _prepare(Personnel personnel) =>
-      "${personnel.searchable}".toLowerCase();
+  String _prepare(Personnel personnel) => "${personnel.searchable}".toLowerCase();
 
   Widget _buildList(List personnels) {
     return widget.withGrouped
@@ -178,12 +171,10 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 
   Widget _buildPersonnel(Personnel personnel) {
     final unit = _toUnit(personnel);
-    final tracking =
-        context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
+    final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
-      child: widget.withActions &&
-              context.bloc<UserBloc>()?.user?.isCommander == true
+      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -203,8 +194,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     );
   }
 
-  Widget _buildPersonnelTile(Unit unit, Personnel personnel,
-      TrackingStatus status, Tracking tracking) {
+  Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
     return ConstrainedBox(
       constraints: BoxConstraints.tightForFinite(height: 72.0),
       child: Container(
@@ -270,14 +260,10 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               ),
             if (widget.withMultiSelect)
               Padding(
-                padding: EdgeInsets.only(
-                    left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-                child: Icon(_selected.contains(personnel.uuid)
-                    ? Icons.check_box
-                    : Icons.check_box_outline_blank),
+                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+                child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
               ),
-            if (widget.withActions &&
-                context.bloc<UserBloc>()?.user?.isCommander == true)
+            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(
@@ -291,8 +277,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     );
   }
 
-  Affiliation _toAffiliation(Personnel personnel) =>
-      affiliationBloc.repo[personnel?.affiliation?.uuid];
+  Affiliation _toAffiliation(Personnel personnel) => affiliationBloc.repo[personnel?.affiliation?.uuid];
 
   AffiliationBloc get affiliationBloc => context.bloc<AffiliationBloc>();
 
@@ -319,8 +304,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     }
   }
 
-  IconSlideAction _buildEditAction(BuildContext context, Personnel personnel) =>
-      IconSlideAction(
+  IconSlideAction _buildEditAction(BuildContext context, Personnel personnel) => IconSlideAction(
         caption: 'ENDRE',
         color: Theme.of(context).buttonColor,
         icon: Icons.more_horiz,
@@ -353,11 +337,10 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ),
       );
 
-  Unit _toUnit(Personnel personnel) =>
-      context.bloc<TrackingBloc>().unitBloc.units.values.firstWhere(
-            (unit) => unit.personnels?.contains(personnel) == true,
-            orElse: () => null,
-          );
+  Unit _toUnit(Personnel personnel) => context.bloc<TrackingBloc>().unitBloc.units.values.firstWhere(
+        (unit) => unit.personnels?.contains(personnel) == true,
+        orElse: () => null,
+      );
 
   Widget _buildCreateUnitAction(Personnel personnel) => Tooltip(
         message: "Opprett enhet med mannskap",
@@ -369,8 +352,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ),
       );
 
-  IconSlideAction _buildTransitionAction(
-      BuildContext context, Personnel personnel) {
+  IconSlideAction _buildTransitionAction(BuildContext context, Personnel personnel) {
     switch (personnel.status) {
       case PersonnelStatus.retired:
         return IconSlideAction(
@@ -412,8 +394,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               title: translatePersonnelStatus(status),
             ),
           ),
-          onChanged: (Set<PersonnelStatus> selected) =>
-              setState(() => _filter = selected),
+          onChanged: (Set<PersonnelStatus> selected) => setState(() => _filter = selected),
         ),
       );
 
@@ -481,9 +462,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
       translatePersonnelStatus(PersonnelStatus.leaving),
       translatePersonnelStatus(PersonnelStatus.retired)
     ];
-    final recent = stored != null
-        ? (Set.from(always)..addAll(json.decode(stored)))
-        : always.toSet();
+    final recent = stored != null ? (Set.from(always)..addAll(json.decode(stored))) : always.toSet();
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
   }
 
@@ -516,8 +495,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
     return query.isEmpty
         ? ValueListenableBuilder<Set<String>>(
             valueListenable: _recent,
-            builder:
-                (BuildContext context, Set<String> suggestions, Widget child) {
+            builder: (BuildContext context, Set<String> suggestions, Widget child) {
               return _buildSuggestionList(
                 context,
                 suggestions?.where(_matches)?.toList() ?? [],
@@ -527,11 +505,9 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
         : _buildResults(context, store: false);
   }
 
-  bool _matches(String suggestion) =>
-      suggestion.toLowerCase().startsWith(query.toLowerCase());
+  bool _matches(String suggestion) => suggestion.toLowerCase().startsWith(query.toLowerCase());
 
-  ListView _buildSuggestionList(
-      BuildContext context, List<String> suggestions) {
+  ListView _buildSuggestionList(BuildContext context, List<String> suggestions) {
     final ThemeData theme = Theme.of(context);
     return ListView.builder(
       itemBuilder: (context, index) => ListTile(
@@ -539,8 +515,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
         title: RichText(
           text: TextSpan(
             text: suggestions[index].substring(0, query.length),
-            style:
-                theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
             children: <TextSpan>[
               TextSpan(
                 text: suggestions[index].substring(query.length),
@@ -583,8 +558,7 @@ class PersonnelSearch extends SearchDelegate<Personnel> {
     );
   }
 
-  void _delete(
-      BuildContext context, List<String> suggestions, int index) async {
+  void _delete(BuildContext context, List<String> suggestions, int index) async {
     final recent = suggestions.toList()..remove(suggestions[index]);
     await _storage.write(key: RECENT_KEY, value: json.encode(recent));
     _recent.value = recent.toSet() ?? [];

@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/utils/data.dart';
 

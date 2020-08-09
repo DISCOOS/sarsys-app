@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/core/presentation/map/map_widget.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/utils/ui.dart';

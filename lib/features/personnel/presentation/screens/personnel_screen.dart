@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
-import 'package:SarSys/core/presentation/screens/map_screen.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:async/async.dart';
 
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
-import 'package:SarSys/core/presentation/map/map_widget.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -38,8 +38,7 @@ class PersonnelScreen extends Screen<_PersonnelScreenState> {
   _PersonnelScreenState createState() => _PersonnelScreenState(personnel);
 }
 
-class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
-    with TickerProviderStateMixin {
+class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with TickerProviderStateMixin {
   _PersonnelScreenState(Personnel personnel)
       : super(
           title: "${personnel.name}",
@@ -70,14 +69,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
-      ..add(context
-          .bloc<TrackingBloc>()
-          .onChanged(widget.personnel?.tracking?.uuid));
+      ..add(context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context
-        .bloc<TrackingBloc>()
-        .onChanged(widget.personnel?.tracking?.uuid)
-        .listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid).listen(_onMove);
   }
 
   @override
@@ -101,11 +95,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
               onMessage: showMessage,
               onDeleted: () => Navigator.pop(context),
               type: ActionGroupType.popupMenuButton,
-              unit: context
-                  .bloc<UnitBloc>()
-                  .repo
-                  .findPersonnel(_personnel.uuid)
-                  .firstOrNull,
+              unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
               onChanged: (personnel) => setState(() => _personnel = personnel),
             )
           ]
@@ -142,13 +132,8 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
         withHeader: false,
         withActions: false,
         personnel: _personnel,
-        unit: context
-            .bloc<UnitBloc>()
-            .repo
-            .findPersonnel(_personnel.uuid)
-            .firstOrNull,
-        tracking:
-            context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
+        unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
+        tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
         onGoto: (point) => jumpToPoint(context, center: point),
         onMessage: showMessage,
@@ -157,8 +142,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String>
       );
 
   Widget _buildMapTile(BuildContext context, Personnel personnel) {
-    final center = toCenter(
-        context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid]);
+    final center = toCenter(context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid]);
     return Material(
       elevation: PersonnelScreen.ELEVATION,
       borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),

@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
@@ -13,9 +15,6 @@ import 'package:meta/meta.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-
-import '../data/models/conflict_model.dart';
-import '../data/services/service.dart';
 
 /// To be used together with [RepositoryProvider]
 abstract class Repository {}

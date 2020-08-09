@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'dart:collection';
 
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/proj4d.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong/latlong.dart';

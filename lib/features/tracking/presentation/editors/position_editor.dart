@@ -7,11 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/core/presentation/map/map_widget.dart';
-import 'package:SarSys/core/presentation/map/painters.dart';
-import 'package:SarSys/core/presentation/map/map_search.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
+import 'package:SarSys/features/mapping/presentation/painters.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_search.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/coordinate_input.dart';
 

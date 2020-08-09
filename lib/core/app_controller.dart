@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/repository.dart';

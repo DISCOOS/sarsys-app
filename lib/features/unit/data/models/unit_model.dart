@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 
 part 'unit_model.g.dart';

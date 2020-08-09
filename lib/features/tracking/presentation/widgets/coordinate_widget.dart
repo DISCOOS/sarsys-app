@@ -1,4 +1,4 @@
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 

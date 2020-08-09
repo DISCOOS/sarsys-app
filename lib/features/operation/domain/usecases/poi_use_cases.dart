@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 
 class PoiParams extends BlocParams<OperationBloc, Point> {

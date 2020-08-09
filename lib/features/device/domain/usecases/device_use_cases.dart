@@ -2,7 +2,7 @@ import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/editors/device_editor.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/core/utils/ui.dart';

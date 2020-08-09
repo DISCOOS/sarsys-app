@@ -23,6 +23,7 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     talkGroups: (json['talkGroups'] as List)?.map((e) => e as String)?.toList(),
     talkGroupCatalog: json['talkGroupCatalog'] as String,
     mapCacheTTL: json['mapCacheTTL'] as int,
+    mapRetinaMode: json['mapRetinaMode'] as bool,
     mapCacheCapacity: json['mapCacheCapacity'] as int,
     locationStoreLocally: json['locationStoreLocally'] as bool,
     locationAllowSharing: json['locationAllowSharing'] as bool,
@@ -67,6 +68,7 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('locationWhenInUse', instance.locationWhenInUse);
   writeNotNull('activityRecognition', instance.activityRecognition);
   writeNotNull('mapCacheTTL', instance.mapCacheTTL);
+  writeNotNull('mapRetinaMode', instance.mapRetinaMode);
   writeNotNull('mapCacheCapacity', instance.mapCacheCapacity);
   writeNotNull('locationAllowSharing', instance.locationAllowSharing);
   writeNotNull('locationStoreLocally', instance.locationStoreLocally);

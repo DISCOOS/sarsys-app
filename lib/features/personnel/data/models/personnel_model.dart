@@ -5,7 +5,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/core/domain/models/core.dart';

@@ -8,9 +8,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
-import 'package:SarSys/core/data/services/location/location_service.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';

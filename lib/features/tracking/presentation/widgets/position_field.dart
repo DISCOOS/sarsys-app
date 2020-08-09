@@ -1,6 +1,6 @@
 import 'package:SarSys/features/tracking/presentation/editors/position_editor.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';

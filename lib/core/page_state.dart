@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:SarSys/core/presentation/map/map_widget.dart';
-import 'package:SarSys/core/presentation/map/models/map_widget_state_model.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
+import 'package:SarSys/features/mapping/presentation/models/map_widget_state_model.dart';
 import 'package:SarSys/features/device/presentation/pages/devices_page.dart';
 import 'package:SarSys/features/unit/presentation/pages/units_page.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';

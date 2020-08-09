@@ -1,6 +1,6 @@
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/material.dart';

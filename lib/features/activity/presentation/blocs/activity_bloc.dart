@@ -1,4 +1,4 @@
-import 'package:SarSys/core/data/services/location/location_service.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/features/activity/domain/activity_profile.dart';

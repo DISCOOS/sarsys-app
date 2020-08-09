@@ -12,13 +12,13 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/core/utils/tracking.dart';
+import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:bloc/bloc.dart';
 
 import 'package:flutter/foundation.dart' show VoidCallback;

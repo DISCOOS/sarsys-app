@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/core/domain/models/Position.dart';
+import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';

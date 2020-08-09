@@ -1,5 +1,5 @@
-import 'package:SarSys/core/presentation/map/layers/poi_layer.dart';
-import 'package:SarSys/core/domain/models/Point.dart';
+import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
+import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:dartz/dartz.dart';

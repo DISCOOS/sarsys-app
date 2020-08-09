@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:SarSys/core/domain/models/Tracking.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' show Client;
