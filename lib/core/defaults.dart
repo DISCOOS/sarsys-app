@@ -11,6 +11,7 @@ class Defaults {
   static const double maxZoom = 20.0;
   static const String talkGroupCatalog = "Nasjonal";
   static const int mapCacheTTL = 30;
+  static const bool mapRetinaMode = false;
   static const int mapCacheCapacity = 15000;
   static const bool activityRecognition = false;
   static const bool locationStoreLocally = true;

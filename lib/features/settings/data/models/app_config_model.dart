@@ -25,6 +25,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
     List<String> talkGroups = const <String>[],
     String talkGroupCatalog = Defaults.talkGroupCatalog,
     int mapCacheTTL = Defaults.mapCacheTTL,
+    bool mapRetinaMode = Defaults.mapRetinaMode,
     int mapCacheCapacity = Defaults.mapCacheCapacity,
     bool locationStoreLocally = Defaults.locationStoreLocally,
     bool locationAllowSharing = Defaults.locationAllowSharing,
@@ -58,6 +59,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
           locationAllowSharing: locationAllowSharing,
           talkGroupCatalog: talkGroupCatalog ?? Defaults.talkGroupCatalog,
           mapCacheTTL: mapCacheTTL ?? Defaults.mapCacheTTL,
+          mapRetinaMode: mapRetinaMode ?? Defaults.mapRetinaMode,
           mapCacheCapacity: mapCacheCapacity ?? Defaults.mapCacheCapacity,
           locationAccuracy: locationAccuracy ?? Defaults.locationAccuracy,
           locationFastestInterval: locationFastestInterval ?? Defaults.locationFastestInterval,
@@ -71,6 +73,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
           securityLockAfter: securityLockAfter ?? Defaults.securityLockAfter,
         );
 
+  @override
   AppConfig copyWith({
     String uuid,
     String udid,
@@ -89,10 +92,11 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
     bool locationAlways,
     bool locationWhenInUse,
     bool activityRecognition,
+    int mapCacheTTL,
+    bool mapRetinaMode,
+    int mapCacheCapacity,
     bool locationAllowSharing,
     bool locationStoreLocally,
-    int mapCacheTTL,
-    int mapCacheCapacity,
     String locationAccuracy,
     int locationFastestInterval,
     int locationSmallestDisplacement,
@@ -123,6 +127,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
       locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally,
       locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing,
       mapCacheTTL: mapCacheTTL ?? this.mapCacheTTL,
+      mapRetinaMode: mapRetinaMode ?? this.mapRetinaMode,
       mapCacheCapacity: mapCacheCapacity ?? this.mapCacheCapacity,
       locationAccuracy: locationAccuracy ?? this.locationAccuracy,
       locationFastestInterval: locationFastestInterval ?? this.locationFastestInterval,

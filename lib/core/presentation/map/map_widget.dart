@@ -236,6 +236,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   /// Flag indicating that network connection is offline
   bool _offline = false;
 
+  /// Tile provider
+  ManagedCacheTileProvider _tileProvider;
+
   @override
   void initState() {
     super.initState();
@@ -333,6 +336,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         _center = _readState(STATE_CENTER, defaultValue: _ensureCenter(), read: widget.readCenter);
         _attemptRestore = false;
       }
+
+      _tileProvider?.evictErrorTiles();
+      _tileProvider = ManagedCacheTileProvider(
+        FileCacheService(
+          context.bloc<AppConfigBloc>().config,
+        ),
+        connectivity: ConnectivityService(),
+      );
     }
   }
 
@@ -635,17 +646,21 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
-        urlTemplate: _currentBaseMap.url,
-        maxZoom: _currentBaseMap.maxZoom,
-        subdomains: _currentBaseMap.subdomains,
         tms: _currentBaseMap.tms,
+        urlTemplate: _currentBaseMap.url,
+        subdomains: _currentBaseMap.subdomains,
+        overrideTilesWhenUrlChanges: true,
+        tileProvider: _tileProvider,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
-        tileProvider: ManagedCacheTileProvider(FileCacheService(context.bloc<AppConfigBloc>().config)),
-        overrideTilesWhenUrlChanges: true,
-        offline: _offline,
-        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        maxZoom: useRetinaMode ? _currentBaseMap.maxZoom - 1 : _currentBaseMap.maxZoom,
+        retinaMode: useRetinaMode,
+        rebuild: _tileProvider.onEvicted,
+        errorTileCallback: _tileProvider.onError,
       );
+
+  bool get useRetinaMode =>
+      context.bloc<AppConfigBloc>().config.mapRetinaMode && MediaQuery.of(context).devicePixelRatio > 1.0;
 
   void _onTap(LatLng point) {
     if (_searchMatch == null) _clearSearchField();

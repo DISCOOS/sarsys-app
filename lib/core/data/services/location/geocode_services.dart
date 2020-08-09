@@ -21,6 +21,7 @@ import 'package:http/http.dart';
 import 'package:xml/xml.dart' as xml;
 
 import 'package:geocoder/geocoder.dart';
+import 'package:xml/xml.dart';
 
 abstract class GeocodeService {
   final Client client;
@@ -96,7 +97,7 @@ class _SSRService extends GeocodeService with GeocodeSearchQuery {
     final request = '$url?antPerSide=$maxCount&eksakteForst=$exactFirst&epsgKode=4326&json&navn=${query.trim()}*';
     final response = await client.get(Uri.encodeFull(request));
     if (response.statusCode == 200) {
-      final doc = xml.parse(toUtf8(response.body));
+      final doc = XmlDocument.parse(toUtf8(response.body));
       final result = doc.findAllElements('sokRes').first;
       final state = result.findAllElements('ok')?.first?.text;
       if (state == 'false') {

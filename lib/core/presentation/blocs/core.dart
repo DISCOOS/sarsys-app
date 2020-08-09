@@ -10,7 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/utils/data.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
-  BaseBloc({@required this.bus}) {
+  BaseBloc({@required this.bus}) : super() {
     // Publish own events to bus?
     if (bus != null) {
       _subscriptions.add(listen(

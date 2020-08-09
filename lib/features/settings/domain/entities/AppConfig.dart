@@ -24,6 +24,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     List<String> talkGroups = const <String>[],
     this.talkGroupCatalog = Defaults.talkGroupCatalog,
     this.mapCacheTTL = Defaults.mapCacheTTL,
+    this.mapRetinaMode = Defaults.mapRetinaMode,
     this.mapCacheCapacity = Defaults.mapCacheCapacity,
     this.locationAllowSharing = Defaults.locationAllowSharing,
     this.locationStoreLocally = Defaults.locationStoreLocally,
@@ -55,6 +56,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           talkGroups ?? const <String>[],
           talkGroupCatalog,
           mapCacheTTL,
+          mapRetinaMode,
           mapCacheCapacity,
           locationAccuracy,
           locationFastestInterval,
@@ -82,6 +84,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final bool locationWhenInUse;
   final bool activityRecognition;
   final int mapCacheTTL;
+  final bool mapRetinaMode;
   final int mapCacheCapacity;
   final bool locationAllowSharing;
   final bool locationStoreLocally;
@@ -116,6 +119,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     bool locationWhenInUse,
     bool activityRecognition,
     int mapCacheTTL,
+    bool mapRetinaMode,
     int mapCacheCapacity,
     bool locationAllowSharing,
     bool locationStoreLocally,

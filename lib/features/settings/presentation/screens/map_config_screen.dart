@@ -58,7 +58,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           _buildMapCacheTTLField(),
           _buildMapCacheCapacityField(),
           Divider(),
-          _buildKeepScreenOn(),
+          _buildUseRetinaModeField(),
+          _buildKeepScreenOnField(),
         ],
       ),
     );
@@ -165,7 +166,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
         });
   }
 
-  Widget _buildKeepScreenOn() {
+  Widget _buildKeepScreenOnField() {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: Row(
@@ -190,6 +191,20 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUseRetinaModeField() {
+    return SwitchListTile(
+      value: context.bloc<AppConfigBloc>().config.mapRetinaMode,
+      title: Text('Vis høy oppløsning'),
+      subtitle: Text('Krever skjerm med stor oppløsning (retina)'),
+      onChanged: (value) {
+        context.bloc<AppConfigBloc>().updateWith(
+              mapRetinaMode: value,
+            );
+        setState(() {});
+      },
     );
   }
 }
