@@ -445,7 +445,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                                   service.isSharing ? 'Posisjoner deles' : 'Posisjoner deles ikke',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: _toTrackingColor(usage),
+                                    color: _toTrackingColor(service, usage),
                                   ),
                                 ),
                               ),
@@ -455,7 +455,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                       ],
                     ),
                   ),
-                  progressColor: _toTrackingColor(usage),
+                  progressColor: _toTrackingColor(service, usage),
                 );
               });
         },
@@ -472,8 +472,8 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
         ],
       ));
 
-  MaterialColor _toTrackingColor(double capacity) {
-    if (!locationAllowSharing) {
+  MaterialColor _toTrackingColor(LocationService service, double capacity) {
+    if (!service.isSharing) {
       return Colors.red;
     }
     if (capacity < 0.5) {

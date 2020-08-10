@@ -266,14 +266,14 @@ class LocationOptions {
       LocationOptions(
         debug: debug ?? this.debug,
         accuracy: accuracy ?? this.accuracy,
-        timeInterval: timeInterval ?? this.timeInterval,
-        distanceFilter: distanceFilter ?? this.distanceFilter,
-        locationAlways: locationAlways ?? this.locationAlways,
-        locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse,
-        activityRecognition: activityRecognition ?? this.activityRecognition,
-        locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally,
-        locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing,
-        forceAndroidLocationManager: forceAndroidLocationManager ?? this.forceAndroidLocationManager,
+        locationAlways: locationAlways ?? this.locationAlways ?? false,
+        locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse ?? false,
+        activityRecognition: activityRecognition ?? this.activityRecognition ?? false,
+        timeInterval: timeInterval ?? this.timeInterval ?? Defaults.locationFastestInterval,
+        distanceFilter: distanceFilter ?? this.distanceFilter ?? Defaults.locationSmallestDisplacement,
+        forceAndroidLocationManager: forceAndroidLocationManager ?? this.forceAndroidLocationManager ?? false,
+        locationStoreLocally: locationStoreLocally ?? this.locationStoreLocally ?? Defaults.locationStoreLocally,
+        locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing ?? Defaults.locationAllowSharing,
       );
 
   @override

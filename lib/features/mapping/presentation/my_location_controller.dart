@@ -201,7 +201,10 @@ class MyLocationController {
       );
     }
     try {
-      final status = await _service.configure();
+      var status = _service.status;
+      if (!_service.isReady.value) {
+        status = await _service.configure();
+      }
       if (_service.isReady.value) {
         final options = build();
         _subscribe();
@@ -213,6 +216,8 @@ class MyLocationController {
         await Future.delayed(Duration(milliseconds: 100));
         final point = await _handle(status);
         completer.complete(point);
+      } else {
+        completer.complete(options?.point);
       }
     } on Exception catch (e, stackTrace) {
       completer.completeError(e, stackTrace);
