@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/message_channel.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
+import 'package:SarSys/features/mapping/data/services/base_map_service.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -76,6 +77,9 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 
+import 'data/services/navigation_service.dart';
+import 'data/services/provider.dart';
+
 class AppController {
   AppController._(
     this.client,
@@ -87,31 +91,24 @@ class AppController {
 
   BlocEventBus get bus => delegate.bus;
 
+  /// Get SARSys api implementation
   Api get api => _api;
   Api _api;
 
-  MessageChannel get channel => _channel;
-  MessageChannel _channel;
-
+  /// Demo parameters. Is deprecated.
+  @deprecated
   DemoParams get demo => _demo;
   DemoParams _demo;
 
-  T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
-  final _blocs = <Type, Bloc>{};
+  /// [MessageChannel] instance communicating
+  /// with the backend using web-socket
+  MessageChannel get channel => _channel;
+  MessageChannel _channel;
 
-  BlocProvider<T> toBlocProvider<T extends Bloc>() => BlocProvider.value(
-        value: _blocs[typeOf<T>()] as T,
-      );
-
-  T repository<T>() => _repos[typeOf<T>()] as T;
-  final _repos = <Type, Repository>{};
-
-  RepositoryProvider<T> toRepoProvider<T extends Repository>() => RepositoryProvider.value(
-        value: _repos[typeOf<T>()] as T,
-      );
-
-  AppControllerState _state = AppControllerState.Empty;
+  /// Get current [state] of [AppController]
   AppControllerState get state => _state;
+  AppControllerState _state = AppControllerState.Empty;
+
   bool get isEmpty => state == AppControllerState.Empty;
   bool get isBuilt => state.index >= AppControllerState.Built.index;
   bool get isInitialized => state.index >= AppControllerState.Initialized.index;
@@ -134,6 +131,34 @@ class AppController {
   StreamController<AppControllerState> _controller = StreamController.broadcast();
   Stream<AppControllerState> get onChange => _controller.stream;
 
+  /// Get [Bloc] instance of type [T]
+  T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
+  final _blocs = <Type, Bloc>{};
+
+  /// Get [BlocProvider] instance for [Bloc] of type [T]
+  BlocProvider<T> toBlocProvider<T extends Bloc>() => BlocProvider.value(
+        value: _blocs[typeOf<T>()] as T,
+      );
+
+  /// Get [Repository] instance of type [T]
+  T repository<T extends Repository>() => _repos[typeOf<T>()] as T;
+  final _repos = <Type, Repository>{};
+
+  /// Get [RepositoryProvider] instance for [Repository] of type [T]
+  RepositoryProvider<T> toRepoProvider<T extends Repository>() => RepositoryProvider.value(
+        value: _repos[typeOf<T>()] as T,
+      );
+
+  /// Get [Service] instance of type [T]
+  T service<T extends Service>() => _services[typeOf<T>()] as T;
+  final _services = <Type, Service>{};
+
+  /// Get [ServiceProvider] instance for [Service] of type [T]
+  ServiceProvider<T> toServiceProvider<T extends Service>() => ServiceProvider.value(
+        value: _services[typeOf<T>()] as T,
+      );
+
+  /// Get all [BlocProvider]s as list
   List<BlocProvider> get blocs => [
         toBlocProvider<AppConfigBloc>(),
         toBlocProvider<AffiliationBloc>(),
@@ -146,6 +171,7 @@ class AppController {
         toBlocProvider<ActivityBloc>(),
       ];
 
+  /// Get all [RepositoryProvider]s as list
   List<RepositoryProvider> get repos => [
         toRepoProvider<AppConfigRepository>(),
         toRepoProvider<AffiliationRepository>(),
@@ -161,6 +187,23 @@ class AppController {
         toRepoProvider<PersonnelRepository>(),
         toRepoProvider<DeviceRepository>(),
         toRepoProvider<TrackingRepository>(),
+      ];
+
+  /// Get all [ServiceProvider]s as list
+  List<ServiceProvider> get services => [
+        toServiceProvider<MessageChannel>(),
+        toServiceProvider<BaseMapService>(),
+        toServiceProvider<NavigationService>(),
+        toServiceProvider<ConnectivityService>(),
+        // Services that are initialized after build
+        ServiceProvider<LocationService>(
+          create: (_) => LocationService(),
+          lazy: true,
+        ),
+        ServiceProvider<MessageChannel>(
+          create: (_) => _channel,
+          lazy: true,
+        ),
       ];
 
   /// Create providers for mocking
@@ -380,24 +423,25 @@ class AppController {
       activityBloc,
     ];
 
-    // Get all chopper services
-    final services = blocs.whereType<ConnectionAwareBloc>().map((bloc) => bloc.repos).fold<Iterable<ChopperService>>(
-      <ChopperService>[],
+    // Get all services
+    final repoServices = blocs.whereType<ConnectionAwareBloc>().map((bloc) => bloc.repos).fold<Iterable<Service>>(
+      <Service>[],
       (services, repos) => List.from(services)
         ..addAll(
-          repos
-              .map((repo) => repo.service)
-              .whereType<ServiceDelegate>()
-              .map((service) => service.delegate)
-              .whereType<ChopperService>(),
+          repos.map((repo) => repo.service),
         ),
     ).toList();
+    final apiServices = repoServices
+        .whereType<ServiceDelegate>()
+        .map((service) => service.delegate)
+        .whereType<ChopperService>()
+        .toList();
 
     final api = Api(
       httpClient: client,
       baseRestUrl: baseRestUrl,
       users: userRepo,
-      services: services,
+      services: apiServices,
     );
 
     return controller._set(
@@ -405,6 +449,13 @@ class AppController {
       demo: demo,
       blocs: blocs,
       channel: channel,
+      services: [
+        ...repoServices,
+        // Singletons
+        BaseMapService(),
+        NavigationService(),
+        ConnectivityService(),
+      ],
       repos: [
         // Resolve from config
         ...blocs
@@ -498,6 +549,7 @@ class AppController {
     @required DemoParams demo,
     @required Iterable<Bloc> blocs,
     @required MessageChannel channel,
+    @required Iterable<Service> services,
     @required Iterable<Repository> repos,
   }) {
     assert(
@@ -508,16 +560,23 @@ class AppController {
       _repos.isEmpty,
       "_repos should be empty, forgot to call _unset?",
     );
+    assert(
+      _services.isEmpty,
+      "_services should be empty, forgot to call _unset?",
+    );
 
     _demo = demo;
     _channel = channel;
 
-    // Prepare for providers
+    // Prepare providers
     blocs.forEach((bloc) {
       _blocs[bloc.runtimeType] = bloc;
     });
     repos.forEach((repo) {
       _repos[repo.runtimeType] = repo;
+    });
+    services.forEach((service) {
+      _services[service.runtimeType] = service;
     });
 
     // Rebuild providers when demo parameters changes
@@ -623,6 +682,9 @@ class AppController {
 
     // Repos are managed by blocs
     _repos.clear();
+
+    // It is assumed that services are not managed by app-controller
+    _services.clear();
   }
 
   void dispose() {

@@ -1,8 +1,9 @@
 import 'package:SarSys/core/app_controller.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-class NavigationService {
+class NavigationService extends Service {
   NavigationService._();
   factory NavigationService() => _instance;
 

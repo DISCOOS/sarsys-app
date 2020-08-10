@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
@@ -8,14 +10,24 @@ import 'package:web_socket_channel/io.dart';
 
 import 'package:SarSys/core/extensions.dart';
 
-class MessageChannel {
-  String _url;
+class MessageChannel extends Service {
   AuthToken _token;
   IOWebSocketChannel _channel;
   StreamSubscription _channelSubscription;
+  MessageChannelStatistics _stats = MessageChannelStatistics();
+
+  /// Get web-service url
+  String get url => _url;
+  String _url;
 
   /// Registered event routes from [Type] to handlers
   final Map<String, Set<Function>> _routes = {};
+
+  /// Check if channel is open
+  bool get isOpen => !_isClosed;
+
+  /// Get [MessageChannelStatistics]
+  MessageChannelStatistics get stats => _stats;
 
   /// Subscribe to event with given handler
   ValueChanged<Map<String, dynamic>> subscribe(String type, ValueChanged<Map<String, dynamic>> handler) {
@@ -69,6 +81,7 @@ class MessageChannel {
             Catcher.reportCheckedError(e, stackTrace);
           }
         });
+        _stats = _stats.update(inbound: 1);
       }
     } catch (e, stackTrace) {
       Catcher.reportCheckedError(
@@ -113,6 +126,7 @@ class MessageChannel {
       onDone: _onDone,
     );
     _isClosed = false;
+    _stats = _stats.update(connected: true);
     debugPrint('Opened message channel');
   }
 
@@ -128,4 +142,40 @@ class MessageChannel {
       debugPrint('Closed message channel');
     }
   }
+}
+
+class MessageChannelStatistics {
+  MessageChannelStatistics({
+    int connected = 0,
+    int inboundCount = 0,
+    DateTime started,
+  })  : _connected = connected,
+        _inboundCount = inboundCount,
+        _fromDate = started;
+
+  final int _connected;
+  final int _inboundCount;
+  final DateTime _fromDate;
+
+  int get connected => _connected;
+  int get inboundCount => _inboundCount;
+  double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
+
+  MessageChannelStatistics update({
+    int inbound,
+    bool connected = false,
+  }) =>
+      MessageChannelStatistics(
+        started: _fromDate,
+        inboundCount: inboundCount ?? _inboundCount,
+        connected: connected ? _connected + 1 : _connected,
+      );
+
+  @override
+  String toString() => '$runtimeType{'
+      'connected: $connected, '
+      'inboundRate: $inboundRate,'
+      'inboundCount: $inboundCount, '
+      'from: ${_fromDate.toIso8601String()},'
+      '}';
 }

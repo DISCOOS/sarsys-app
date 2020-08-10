@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/provider.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -245,11 +246,14 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           value: widget.controller.client,
           child: Provider.value(
             value: widget.controller,
-            child: MultiBlocProvider(
-              providers: widget.controller.blocs,
+            child: MultiServiceProvider(
+              providers: widget.controller.services,
               child: MultiRepositoryProvider(
-                child: child,
                 providers: widget.controller.repos,
+                child: MultiBlocProvider(
+                  providers: widget.controller.blocs,
+                  child: child,
+                ),
               ),
             ),
           ),

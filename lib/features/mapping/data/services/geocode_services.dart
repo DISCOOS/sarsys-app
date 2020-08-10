@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -23,7 +24,7 @@ import 'package:xml/xml.dart' as xml;
 import 'package:geocoder/geocoder.dart';
 import 'package:xml/xml.dart';
 
-abstract class GeocodeService {
+abstract class GeocodeService extends Service {
   final Client client;
   final String url;
   final String name;

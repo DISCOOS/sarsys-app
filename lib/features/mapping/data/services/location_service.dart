@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/mapping/data/services/background_geolocation_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -11,7 +12,7 @@ import 'dart:async';
 
 import 'package:permission_handler/permission_handler.dart';
 
-abstract class LocationService {
+abstract class LocationService extends Service {
   /// Get [Device.uuid] being tracked
   String get duuid;
 

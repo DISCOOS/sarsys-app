@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 
 abstract class Service {}
 
@@ -217,15 +218,3 @@ class PageResult {
         offset: body['offset'],
       );
 }
-
-//class Conflict {
-//  Conflict(Map<String, dynamic> mine, Map<String, dynamic> theirs)
-//      : _mine = Map.unmodifiable(mine),
-//        _theirs = Map.unmodifiable(theirs);
-//
-//  final Map<String, dynamic> _mine;
-//  Map<String, dynamic> get mine => _mine;
-//
-//  final Map<String, dynamic> _theirs;
-//  Map<String, dynamic> get theirs => _theirs;
-//}

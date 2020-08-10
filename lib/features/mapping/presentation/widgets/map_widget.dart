@@ -40,7 +40,7 @@ import 'package:SarSys/features/mapping/presentation/tools/unit_tool.dart';
 import 'package:SarSys/features/mapping/presentation/layers/unit_layer.dart';
 import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/data/services/image_cache_service.dart';
+import 'package:SarSys/core/data/services/file_cache_service.dart';
 import 'package:SarSys/features/mapping/data/services/base_map_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';

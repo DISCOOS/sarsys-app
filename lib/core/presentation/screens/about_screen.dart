@@ -1,7 +1,12 @@
+import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/data/services/provider.dart';
+import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AboutScreen extends StatefulWidget {
   @override
@@ -39,6 +44,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   _buildPacketInfo(BuildContext context, PackageInfo data) {
+    final channel = context.service<MessageChannel>();
     return ListView(
       children: <Widget>[
         ListTile(
@@ -61,9 +67,30 @@ class _AboutScreenState extends State<AboutScreen> {
           title: Text("REST API"),
           subtitle: Text(Defaults.baseRestUrl),
         ),
-        ListTile(
-          title: Text("Websocket API"),
-          subtitle: Text(Defaults.baseWsUrl),
+        GestureDetector(
+          child: ListTile(
+            title: Text("Websocket API"),
+            subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.connected} '
+                '${channel.stats.connected > 1 ? 'ganger' : 'gang'})'),
+            trailing: context.service<MessageChannel>().isOpen
+                ? Icon(Icons.check_circle, color: Colors.green)
+                : Icon(Icons.warning, color: Colors.orange),
+          ),
+          onLongPress: () async {
+            final answer = await prompt(
+              context,
+              'Koble opp på nytt',
+              'Vil du koble opp web-socket på nytt?',
+            );
+            if (answer) {
+              channel.close();
+              channel.open(
+                url: channel.url,
+                token: context.bloc<UserBloc>().repo.token,
+              );
+              setState(() {});
+            }
+          },
         ),
       ],
     );

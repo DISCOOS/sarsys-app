@@ -1,11 +1,12 @@
 import 'dart:io';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-class FileCacheService extends BaseCacheManager {
+class FileCacheService extends BaseCacheManager implements Service {
   static const key = "libCachedImageTiles";
 
   static FileCacheService _instance;

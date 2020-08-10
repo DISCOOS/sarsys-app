@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/data/services/image_cache_service.dart';
+import 'package:SarSys/core/data/services/file_cache_service.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:flutter/material.dart';

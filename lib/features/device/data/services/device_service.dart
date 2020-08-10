@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/api.dart';
-import 'package:SarSys/core/data/message_channel.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/services/service.dart';
