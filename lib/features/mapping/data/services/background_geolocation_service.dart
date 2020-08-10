@@ -169,7 +169,7 @@ class BackgroundGeolocationService implements LocationService {
             _options,
           ));
           if (!wasSharing && isSharing) {
-            await bg.BackgroundGeolocation.sync();
+            await push();
           }
         });
       }
