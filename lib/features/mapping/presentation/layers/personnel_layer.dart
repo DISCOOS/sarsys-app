@@ -62,39 +62,78 @@ class PersonnelLayer extends MapPlugin {
     final trackings = options.bloc.trackings;
     final personnels = sortMapValues<String, Personnel, TrackingStatus>(
             options.bloc.personnels.where(exclude: options.showRetired ? [] : [TrackingStatus.closed]).map,
-            (personnel) => trackings[personnel.tracking.uuid].status,
+            (personnel) => trackings[personnel.tracking.uuid].status ?? TrackingStatus.none,
             (s1, s2) => s1.index - s2.index)
         .values
         .where((personnel) => trackings[personnel.tracking.uuid]?.position?.isNotEmpty == true)
         .where((personnel) => options.showRetired || personnel.status != PersonnelStatus.retired)
-        .where((personne) => bounds.contains(toLatLng(trackings[personne.tracking.uuid]?.position?.geometry)));
+        .where(
+          (personnel) => bounds.contains(toLatLng(trackings[personnel.tracking.uuid]?.position?.geometry)),
+        );
     return trackings.isEmpty
         ? Container()
         : Stack(
             overflow: Overflow.clip,
             children: [
-              if (options.showTail)
-                ...personnels
-                    .map((personnels) =>
-                        _buildTrack(context, size, options, map, personnels, trackings[personnels.tracking.uuid]))
-                    .toList(),
-              if (options.showLabels)
-                ...personnels
-                    .map((personnels) => _buildLabel(
-                          context,
-                          options,
-                          map,
-                          personnels,
-                          trackings[personnels.tracking.uuid]?.position?.geometry,
-                        ))
-                    .toList(),
-              ...personnels
-                  .map((personnels) =>
-                      _buildPoint(context, options, map, personnels, trackings[personnels.tracking.uuid]))
-                  .toList(),
+              if (options.showTail) ..._buildTracks(context, personnels, size, options, map, trackings),
+              if (options.showLabels) ..._buildLabels(context, personnels, options, map, trackings),
+              ..._buildPoints(context, personnels, options, map, trackings),
             ],
           );
   }
+
+  List<Widget> _buildPoints(
+    BuildContext context,
+    Iterable<Personnel> personnels,
+    PersonnelLayerOptions options,
+    MapState map,
+    Map<String, Tracking> trackings,
+  ) =>
+      personnels
+          .map((personnels) => _buildPoint(
+                context,
+                options,
+                map,
+                personnels,
+                trackings[personnels.tracking.uuid],
+              ))
+          .toList();
+
+  List _buildLabels(
+    BuildContext context,
+    Iterable<Personnel> personnels,
+    PersonnelLayerOptions options,
+    MapState map,
+    Map<String, Tracking> trackings,
+  ) =>
+      personnels
+          .map((personnels) => _buildLabel(
+                context,
+                options,
+                map,
+                personnels,
+                trackings[personnels.tracking.uuid]?.position?.geometry,
+              ))
+          .toList();
+
+  List _buildTracks(
+    BuildContext context,
+    Iterable<Personnel> personnels,
+    Size size,
+    PersonnelLayerOptions options,
+    MapState map,
+    Map<String, Tracking> trackings,
+  ) =>
+      personnels
+          .map((personnels) => _buildTrack(
+                context,
+                size,
+                options,
+                map,
+                personnels,
+                trackings[personnels.tracking.uuid],
+              ))
+          .toList();
 
   _buildTrack(
     BuildContext context,
