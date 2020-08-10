@@ -216,12 +216,14 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
                       child: buildDropdown<String>(
                         value: _idpHint,
                         isDense: false,
-                        items: _idpHints.keys.map(
-                          (idpHint) => DropdownMenuItem(
-                            value: idpHint,
-                            child: Text(_idpHints[idpHint]),
-                          ),
-                        ),
+                        items: _idpHints.keys
+                            .map(
+                              (idpHint) => DropdownMenuItem(
+                                value: idpHint,
+                                child: Text(_idpHints[idpHint]),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) => setState(() => _idpHint = value),
                       ),
                     ),
