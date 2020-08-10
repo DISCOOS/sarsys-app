@@ -70,8 +70,8 @@ class _AboutScreenState extends State<AboutScreen> {
         GestureDetector(
           child: ListTile(
             title: Text("Websocket API"),
-            subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.connected} '
-                '${channel.stats.connected > 1 ? 'ganger' : 'gang'})'),
+            subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.opened} '
+                '${channel.stats.opened > 1 ? 'ganger' : 'gang'})'),
             trailing: context.service<MessageChannel>().isOpen
                 ? Icon(Icons.check_circle, color: Colors.green)
                 : Icon(Icons.warning, color: Colors.orange),

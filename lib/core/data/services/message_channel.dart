@@ -126,7 +126,7 @@ class MessageChannel extends Service {
       onDone: _onDone,
     );
     _isClosed = false;
-    _stats = _stats.update(connected: true);
+    _stats = _stats.update(opened: true);
     debugPrint('Opened message channel');
   }
 
@@ -146,34 +146,34 @@ class MessageChannel extends Service {
 
 class MessageChannelStatistics {
   MessageChannelStatistics({
-    int connected = 0,
+    int opened = 0,
     int inboundCount = 0,
     DateTime started,
-  })  : _connected = connected,
+  })  : _opened = opened,
         _inboundCount = inboundCount,
         _fromDate = started;
 
-  final int _connected;
+  final int _opened;
   final int _inboundCount;
   final DateTime _fromDate;
 
-  int get connected => _connected;
+  int get opened => _opened;
   int get inboundCount => _inboundCount;
   double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
 
   MessageChannelStatistics update({
     int inbound,
-    bool connected = false,
+    bool opened = false,
   }) =>
       MessageChannelStatistics(
         started: _fromDate,
         inboundCount: inboundCount ?? _inboundCount,
-        connected: connected ? _connected + 1 : _connected,
+        opened: opened ? _opened + 1 : _opened,
       );
 
   @override
   String toString() => '$runtimeType{'
-      'connected: $connected, '
+      'opened: $opened, '
       'inboundRate: $inboundRate,'
       'inboundCount: $inboundCount, '
       'from: ${_fromDate.toIso8601String()},'
