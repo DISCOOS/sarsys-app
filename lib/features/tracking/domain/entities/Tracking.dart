@@ -9,10 +9,7 @@ import 'package:meta/meta.dart';
 import 'Source.dart';
 import 'Track.dart';
 
-part 'Tracking.g.dart';
-
-@JsonSerializable()
-class Tracking extends Positionable<Map<String, dynamic>> {
+abstract class Tracking extends Positionable<Map<String, dynamic>> {
   Tracking({
     /// Tracking id
     @required String uuid,
@@ -33,14 +30,17 @@ class Tracking extends Positionable<Map<String, dynamic>> {
     this.effort,
 
     /// List of tracked sources
-    this.sources = const [],
+    List<Source> sources = const [],
 
     /// List of historical positions aggregated from temporally and spatially related positions in tracks
-    this.history = const [],
+    List<Position> history = const [],
 
     /// Map from track id to list of positions
-    this.tracks = const [],
-  }) : super(uuid, position, fields: [
+    List<Track> tracks = const [],
+  })  : tracks = tracks ?? [],
+        sources = sources ?? [],
+        history = history ?? [],
+        super(uuid, position, fields: [
           status,
           position,
           distance,
@@ -51,13 +51,13 @@ class Tracking extends Positionable<Map<String, dynamic>> {
           tracks,
         ]);
 
-  final TrackingStatus status;
   final double speed;
   final Duration effort;
   final double distance;
-  final List<Source> sources;
-  final List<Position> history;
   final List<Track> tracks;
+  final List<Source> sources;
+  final TrackingStatus status;
+  final List<Position> history;
 
   bool get isNotEmpty => !isEmpty;
   bool get isEmpty => sources.isEmpty;
@@ -65,14 +65,8 @@ class Tracking extends Positionable<Map<String, dynamic>> {
   /// Get searchable string
   get searchable => props.map((prop) => prop is TrackingStatus ? translateTrackingStatus(prop) : prop).join(' ');
 
-  /// Factory constructor for creating a new `Tracking` instance
-  factory Tracking.fromJson(Map<String, dynamic> json) => _$TrackingFromJson(json);
-
-  /// Declare support for serialization to JSON
-  Map<String, dynamic> toJson() => _$TrackingToJson(this);
-
   /// Clone with given devices and state
-  Tracking cloneWith({
+  Tracking copyWith({
     double speed,
     double distance,
     Duration effort,
@@ -81,46 +75,23 @@ class Tracking extends Positionable<Map<String, dynamic>> {
     List<Position> history,
     TrackingStatus status,
     List<Track> tracks,
-  }) {
-    return Tracking(
-      uuid: this.uuid,
-      status: status ?? this.status,
-      position: position ?? this.position,
-      distance: distance ?? this.distance,
-      speed: speed ?? this.speed,
-      effort: effort ?? this.effort,
-      sources: sources ?? this.sources,
-      history: history ?? this.history,
-      tracks: tracks ?? this.tracks,
-    );
-  }
+  });
 
   /// Clone with json
-  Tracking withJson(Map<String, dynamic> json) {
-    var clone = Tracking.fromJson(json);
-    return cloneWith(
-      status: clone.status ?? status,
-      position: clone.position ?? position,
-      distance: clone.distance ?? distance,
-      speed: clone.speed ?? speed,
-      effort: clone.effort ?? effort,
-      history: clone.history ?? history,
-      tracks: clone.tracks ?? tracks,
-    );
-  }
+  Tracking withJson(Map<String, dynamic> json);
 
-  Tracking asTracking() => cloneWith(
+  Tracking asTracking() => copyWith(
         status: TrackingStatus.tracking,
       );
 
-  Tracking asClosed() => cloneWith(
+  Tracking asClosed() => copyWith(
         status: TrackingStatus.closed,
       );
 }
 
 enum TrackingStatus {
   none,
-  empty,
+  ready,
   tracking,
   paused,
   closed,
@@ -130,8 +101,8 @@ String translateTrackingStatus(TrackingStatus status) {
   switch (status) {
     case TrackingStatus.none:
       return "Ingen";
-    case TrackingStatus.empty:
-      return "Tom";
+    case TrackingStatus.ready:
+      return "Klar";
     case TrackingStatus.tracking:
       return "Sporer";
     case TrackingStatus.paused:

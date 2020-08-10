@@ -647,15 +647,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
         tms: _currentBaseMap.tms,
-        urlTemplate: _currentBaseMap.url,
-        subdomains: _currentBaseMap.subdomains,
-        overrideTilesWhenUrlChanges: true,
         tileProvider: _tileProvider,
+        urlTemplate: _currentBaseMap.url,
+        overrideTilesWhenUrlChanges: true,
+        subdomains: _currentBaseMap.subdomains,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
         maxZoom: useRetinaMode ? _currentBaseMap.maxZoom - 1 : _currentBaseMap.maxZoom,
         retinaMode: useRetinaMode,
-        rebuild: _tileProvider.onEvicted,
         errorTileCallback: _tileProvider.onError,
       );
 

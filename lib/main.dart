@@ -32,7 +32,10 @@ void main() async {
   BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
 
   // Build and initialize bloc provider
-  final controller = AppController.build(client, demo: DemoParams(false));
+  final controller = AppController.build(
+    client,
+    demo: DemoParams(false),
+  );
 
   // SarSysApp widget will handle rebuilds
   controller.init().then((_) {

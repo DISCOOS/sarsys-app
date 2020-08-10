@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Tracking.dart';
+part of 'tracking_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Tracking _$TrackingFromJson(Map json) {
-  return Tracking(
+TrackingModel _$TrackingModelFromJson(Map json) {
+  return TrackingModel(
     uuid: json['uuid'] as String,
     status: _$enumDecodeNullable(_$TrackingStatusEnumMap, json['status']),
     position: json['position'] == null
@@ -23,7 +23,14 @@ Tracking _$TrackingFromJson(Map json) {
     sources: (json['sources'] as List)
         ?.map((e) => e == null
             ? null
-            : Source.fromJson((e as Map)?.map(
+            : SourceModel.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
+        ?.toList(),
+    tracks: (json['tracks'] as List)
+        ?.map((e) => e == null
+            ? null
+            : TrackModel.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),
@@ -34,17 +41,10 @@ Tracking _$TrackingFromJson(Map json) {
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),
-    tracks: (json['tracks'] as List)
-        ?.map((e) => e == null
-            ? null
-            : Track.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
   );
 }
 
-Map<String, dynamic> _$TrackingToJson(Tracking instance) {
+Map<String, dynamic> _$TrackingModelToJson(TrackingModel instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
@@ -55,12 +55,12 @@ Map<String, dynamic> _$TrackingToJson(Tracking instance) {
 
   writeNotNull('uuid', instance.uuid);
   writeNotNull('position', instance.position?.toJson());
-  writeNotNull('status', _$TrackingStatusEnumMap[instance.status]);
   writeNotNull('speed', instance.speed);
   writeNotNull('effort', instance.effort?.inMicroseconds);
   writeNotNull('distance', instance.distance);
-  writeNotNull('sources', instance.sources?.map((e) => e?.toJson())?.toList());
+  writeNotNull('status', _$TrackingStatusEnumMap[instance.status]);
   writeNotNull('history', instance.history?.map((e) => e?.toJson())?.toList());
+  writeNotNull('sources', instance.sources?.map((e) => e?.toJson())?.toList());
   writeNotNull('tracks', instance.tracks?.map((e) => e?.toJson())?.toList());
   return val;
 }
@@ -99,7 +99,7 @@ T _$enumDecodeNullable<T>(
 
 const _$TrackingStatusEnumMap = {
   TrackingStatus.none: 'none',
-  TrackingStatus.empty: 'empty',
+  TrackingStatus.ready: 'ready',
   TrackingStatus.tracking: 'tracking',
   TrackingStatus.paused: 'paused',
   TrackingStatus.closed: 'closed',

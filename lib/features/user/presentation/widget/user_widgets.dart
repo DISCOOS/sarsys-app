@@ -327,25 +327,25 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
           ),
           Divider(),
           SwitchListTile(
-            value: isLocationStoreLocally,
-            secondary: Icon(Icons.storage),
+            value: locationAllowSharing,
+            secondary: Icon(Icons.cloud_upload),
             title: Text('Del'),
             subtitle: Text('Kan bli lagret i aksjonen'),
             onChanged: (value) {
               context.bloc<AppConfigBloc>().updateWith(
-                    locationStoreLocally: value,
+                    locationAllowSharing: value,
                   );
               setState(() {});
             },
           ),
           SwitchListTile(
-            value: locationAllowSharing,
-            secondary: Icon(Icons.cloud_upload),
+            value: isLocationStoreLocally,
+            secondary: Icon(Icons.storage),
             title: Text('Bufre'),
             subtitle: Text('Lagres lokalt når du er uten nett'),
             onChanged: (value) {
               context.bloc<AppConfigBloc>().updateWith(
-                    locationAllowSharing: value,
+                    locationStoreLocally: value,
                   );
               setState(() {});
             },

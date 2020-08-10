@@ -1235,7 +1235,7 @@ Future<Tracking> _shouldUpdateTrackingDirectly<T extends Trackable>(
 
   // Assert
   expect(t2.position.geometry, equals(p2.geometry), reason: "SHOULD be position p2");
-  expect(t2.status, equals(TrackingStatus.empty), reason: "SHOULD be status empty");
+  expect(t2.status, equals(TrackingStatus.ready), reason: "SHOULD be status empty");
   expect(t2.history.length, 1, reason: "SHOULD be length 1");
   expect(t2.history.last.geometry, equals(p2.geometry), reason: "SHOULD be position p2");
   expect(t2.history.last.source, equals(PositionSource.manual), reason: "SHOULD be manual");
@@ -1740,7 +1740,7 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Personnel>(
     harness,
-    status: TrackingStatus.empty,
+    status: TrackingStatus.ready,
     act: () async {
       final next = await harness.personnelBloc.update(
         personnel.copyWith(status: status),
@@ -1776,7 +1776,7 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Unit>(
     harness,
-    status: TrackingStatus.empty,
+    status: TrackingStatus.ready,
     act: () async {
       final next = await harness.unitBloc.update(
         unit.copyWith(status: status),

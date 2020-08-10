@@ -1,8 +1,13 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
-import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/core/data/services/service.dart';
+
+import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
+
+import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/message_channel.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 part 'device_service.chopper.dart';
 
@@ -10,11 +15,25 @@ part 'device_service.chopper.dart';
 ///
 /// Delegates to a ChopperService implementation
 class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<DeviceServiceImpl> {
+  DeviceService(this.channel) : delegate = DeviceServiceImpl.newInstance() {
+    // Listen for Device messages
+    channel.subscribe('DeviceCreated', _onMessage);
+    channel.subscribe('DeviceDeleted', _onMessage);
+    channel.subscribe('DevicePositionChanged', _onMessage);
+    channel.subscribe('DeviceInformationUpdated', _onMessage);
+  }
+
+  final MessageChannel channel;
   final DeviceServiceImpl delegate;
-
-  DeviceService() : delegate = DeviceServiceImpl.newInstance();
-
   final StreamController<DeviceMessage> _controller = StreamController.broadcast();
+
+  void _onMessage(Map<String, dynamic> data) {
+    _controller.add(
+      DeviceMessage(
+        data: data,
+      ),
+    );
+  }
 
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;
@@ -54,23 +73,28 @@ class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<Devi
 
   void dispose() {
     _controller.close();
+    channel.unsubscribe('DeviceCreated', _onMessage);
+    channel.unsubscribe('DeviceDeleted', _onMessage);
+    channel.unsubscribe('DevicePositionChanged', _onMessage);
+    channel.unsubscribe('DeviceInformationUpdated', _onMessage);
   }
 }
 
-enum DeviceMessageType { LocationChanged }
-
 class DeviceMessage {
-  final String duuid;
-  final DeviceMessageType type;
-  final Map<String, dynamic> json;
-  DeviceMessage({this.duuid, this.type, this.json});
+  DeviceMessage({
+    @required this.data,
+  });
+  final Map<String, dynamic> data;
+  String get uuid => data.elementAt('data/uuid');
+  String get type => data.elementAt('data/type');
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 
 @ChopperApi(baseUrl: '/devices')
 abstract class DeviceServiceImpl extends ChopperService {
   static DeviceServiceImpl newInstance([ChopperClient client]) => _$DeviceServiceImpl(client);
 
-  @Post(path: '/devices')
+  @Post()
   Future<Response<String>> create(
     @Body() Device body,
   );

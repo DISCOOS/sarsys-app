@@ -228,6 +228,7 @@ class MyLocationController {
       point,
       opacity: 0.5,
       track: history,
+      accuracy: service.current?.acc,
       tickerProvider: tickerProvider,
       locationUpdates: _updateController,
       rebuild: _updateController?.stream,

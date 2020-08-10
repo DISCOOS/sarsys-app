@@ -19,6 +19,18 @@ extension MapX on Map {
     });
     return found as T;
   }
+
+  /// Get [List] of type [T] at given path
+  List<T> listAt<T>(String path) {
+    final list = elementAt(path);
+    return list == null ? null : List<T>.from(list);
+  }
+
+  /// Get [Map] with keys of type [S] and values of type [T] at given path
+  Map<S, T> mapAt<S, T>(String path) {
+    final map = elementAt(path);
+    return map == null ? null : Map<S, T>.from(map);
+  }
 }
 
 extension IterableX<T> on Iterable<T> {

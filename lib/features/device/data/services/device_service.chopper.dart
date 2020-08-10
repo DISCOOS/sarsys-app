@@ -18,7 +18,7 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
 
   @override
   Future<Response<String>> create(Device body) {
-    final $url = '/devices/devices';
+    final $url = '/devices';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);

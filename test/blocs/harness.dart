@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:SarSys/features/tracking/data/repositories/tracking_repository_impl.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -52,7 +53,6 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
@@ -693,7 +693,7 @@ class BlocTestHarness implements BlocDelegate {
       unitCount: unitCount,
     );
     _trackingBloc = TrackingBloc(
-      TrackingRepository(
+      TrackingRepositoryImpl(
         _trackingService,
         connectivity: _connectivity,
       ),
@@ -717,8 +717,9 @@ class BlocTestHarness implements BlocDelegate {
   final errors = <Bloc, List<Object>>{};
 
   @override
-  void onError(Bloc bloc, Object error, StackTrace stacktrace) {
+  void onError(Bloc bloc, Object error, StackTrace stackTrace) {
     errors.update(bloc, (errors) => errors..add(error), ifAbsent: () => [error]);
+    _printError('onError(${bloc.runtimeType})', error, stackTrace);
   }
 
   final events = <Bloc, List<Object>>{};
@@ -726,6 +727,10 @@ class BlocTestHarness implements BlocDelegate {
   @override
   void onEvent(Bloc bloc, Object event) {
     events.update(bloc, (events) => events..add(event), ifAbsent: () => [event]);
+    if (_debug) {
+      print('onError(${bloc.runtimeType})');
+      print(event);
+    }
   }
 
   @override

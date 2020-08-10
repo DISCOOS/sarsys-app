@@ -7,6 +7,7 @@ import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -695,7 +696,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         final current = repo.states[event.data.uuid];
         if (current == null) {
           // Not found
-          next = Tracking.fromJson(event.data.json);
+          next = TrackingModel.fromJson(event.data.json);
           repo.put(
             StorageState.created(next, remote: remote),
           );
@@ -748,9 +749,9 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   Tracking _merge(StorageState<Tracking> current, _HandleMessage event) {
     final json = JsonUtils.patch(
       current.value,
-      Tracking.fromJson(event.data.json),
+      TrackingModel.fromJson(event.data.json),
     );
-    final next = Tracking.fromJson(json);
+    final next = TrackingModel.fromJson(json);
     return next;
   }
 

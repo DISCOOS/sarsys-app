@@ -275,9 +275,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         );
         controller.add(
           DeviceMessage(
-            duuid: device.uuid,
-            type: DeviceMessageType.LocationChanged,
-            json: device.toJson(),
+            data: device.toJson(),
           ),
         );
       }

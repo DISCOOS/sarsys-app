@@ -19,6 +19,7 @@ import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -52,7 +53,6 @@ class Api {
           ),
           converter: JsonSerializableConverter(
             reducers: {
-              Tracking: (value) => JsonUtils.toJson<Tracking>(value),
               UnitModel: (value) => JsonUtils.toJson<Unit>(value),
               PersonModel: (value) => JsonUtils.toJson<PersonModel>(value),
               AppConfigModel: (value) => JsonUtils.toJson<AppConfig>(value),
@@ -90,6 +90,16 @@ class Api {
                     'messages',
                     'transitions',
                   ]),
+              TrackingModel: (value) => JsonUtils.toJson<Tracking>(value, remove: const [
+                    'speed',
+                    'status',
+                    'effort',
+                    'tracks',
+                    'history',
+                    'sources',
+                    'distance',
+                    'position',
+                  ]),
             },
             decoders: {
               typeOf<PagedList<Unit>>(): _toUnitList,
@@ -97,15 +107,16 @@ class Api {
               typeOf<PagedList<Device>>(): _toDeviceList,
               typeOf<PagedList<Incident>>(): _toIncidentList,
               typeOf<PagedList<Division>>(): _toDivisionList,
+              typeOf<PagedList<Tracking>>(): _toTrackingList,
               typeOf<PagedList<Operation>>(): _toOperationList,
               typeOf<PagedList<Personnel>>(): _toPersonnelList,
               typeOf<PagedList<Department>>(): _toDepartmentList,
               typeOf<PagedList<Affiliation>>(): _toAffiliationList,
               typeOf<PagedList<Organisation>>(): _toOrganisationList,
               Unit: (json) => json['data'] == null ? null : UnitModel.fromJson(json['data']),
-              Tracking: (json) => json['data'] == null ? null : Tracking.fromJson(json['data']),
               Person: (json) => json['data'] == null ? null : PersonModel.fromJson(json['data']),
               Device: (json) => json['data'] == null ? null : DeviceModel.fromJson(json['data']),
+              Tracking: (json) => json['data'] == null ? null : TrackingModel.fromJson(json['data']),
               Incident: (json) => json['data'] == null ? null : IncidentModel.fromJson(json['data']),
               Division: (json) => json['data'] == null ? null : DivisionModel.fromJson(json['data']),
               Operation: (json) => json['data'] == null ? null : OperationModel.fromJson(json['data']),
@@ -145,6 +156,11 @@ class Api {
   static PagedList<Personnel> _toPersonnelList(Map<String, dynamic> json) => _toPagedList<Personnel>(
         json,
         (entity) => PersonnelModel.fromJson(entity['data']),
+      );
+
+  static PagedList<Tracking> _toTrackingList(Map<String, dynamic> json) => _toPagedList<Tracking>(
+        json,
+        (entity) => TrackingModel.fromJson(entity['data']),
       );
 
   static PagedList<Operation> _toOperationList(Map<String, dynamic> json) => _toPagedList<Operation>(

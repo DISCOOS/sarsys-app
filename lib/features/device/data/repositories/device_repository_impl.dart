@@ -11,6 +11,7 @@ import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:json_patch/json_patch.dart';
 
 class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, DeviceService>
     implements DeviceRepository {
@@ -173,21 +174,25 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
     if (hasSubscriptions) {
       var state;
       try {
-        switch (message.type) {
-          case DeviceMessageType.LocationChanged:
-            if (containsKey(message.duuid)) {
-              final previous = getState(message.duuid);
-              // Merge with local changes
-              final next = _patch(
-                DeviceModel.fromJson(message.json),
-              );
-              state = previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next);
-              put(state);
-            }
-            break;
+        // Merge with local changes?
+        if (containsKey(message.uuid)) {
+          final previous = getState(message.uuid);
+          final next = DeviceModel.fromJson(JsonPatch.apply(
+            previous.value.toJson(),
+            message.patches,
+            strict: false,
+          ));
+          state = previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next);
+          put(state);
+        } else if (message.type == 'DeviceCreated') {
+          final next = DeviceModel.fromJson(
+            JsonPatch.apply({}, message.patches, strict: false),
+          );
+          state = StorageState.created(next, remote: true);
+          put(state);
         }
       } on Exception catch (error, stackTrace) {
-        if (state) {
+        if (state != null) {
           put(state.failed(error));
         }
         onError(error, stackTrace);

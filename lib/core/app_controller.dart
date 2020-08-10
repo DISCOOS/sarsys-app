@@ -1,5 +1,11 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/message_channel.dart';
+import 'package:chopper/chopper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -26,13 +32,9 @@ import 'package:SarSys/features/operation/domain/repositories/incident_repositor
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
+import 'package:SarSys/features/tracking/data/repositories/tracking_repository_impl.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
-import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -88,6 +90,9 @@ class AppController {
   Api get api => _api;
   Api _api;
 
+  MessageChannel get channel => _channel;
+  MessageChannel _channel;
+
   DemoParams get demo => _demo;
   DemoParams _demo;
 
@@ -119,9 +124,13 @@ class AppController {
   /// Subscriptions released on [close]
   final List<StreamSubscription> _subscriptions = [];
   List<StreamSubscription> get subscriptions => List.unmodifiable(_subscriptions);
-  void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
-        subscription,
-      );
+  StreamSubscription registerStreamSubscription(StreamSubscription subscription) {
+    _subscriptions.add(
+      subscription,
+    );
+    return subscription;
+  }
+
   StreamController<AppControllerState> _controller = StreamController.broadcast();
   Stream<AppControllerState> get onChange => _controller.stream;
 
@@ -159,22 +168,38 @@ class AppController {
     Client client, {
     DemoParams demo = DemoParams.NONE,
   }) {
-    return _build(AppController._(client, demo), demo, client);
+    return _build(
+      AppController._(client, demo),
+      demo: demo,
+      client: client,
+    );
   }
 
-  static AppController _build(AppController controller, DemoParams demo, Client client) {
-    final baseWsUrl = Defaults.baseWsUrl;
+  static AppController _build(
+    AppController controller, {
+    @required DemoParams demo,
+    @required Client client,
+  }) {
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
+
+    // ---------------------
+    // Build message channel
+    // ---------------------
+    final channel = MessageChannel();
 
     // --------------
     // Build services
     // --------------
     final connectivityService = ConnectivityService();
 
-    final AppConfigService configService =
-        !demo.active ? AppConfigService() : AppConfigServiceMock.build(assetConfig, '$baseRestUrl/api', client);
-
+    final AppConfigService configService = !demo.active
+        ? AppConfigService()
+        : AppConfigServiceMock.build(
+            assetConfig,
+            '$baseRestUrl/api',
+            client,
+          );
     final userService = UserIdentityService(client);
 
     // ------------------
@@ -297,7 +322,7 @@ class AppController {
 
     // Configure Device service
     final DeviceService deviceService = !demo.active
-        ? DeviceService()
+        ? DeviceService(channel)
         : DeviceServiceMock.build(
             operationBloc,
             tetraCount: demo.tetraCount,
@@ -317,19 +342,19 @@ class AppController {
     );
 
     // Configure Tracking service
-    final TrackingService trackingService = !(demo.active || true)
-        ? TrackingService('$baseRestUrl/api/incidents', '$baseWsUrl/api/incidents', client)
+    final TrackingService trackingService = !demo.active
+        ? TrackingService()
         : TrackingServiceMock.build(
             deviceBloc.repo,
-            personnelCount: demo.personnelCount,
+            simulate: demo.simulate,
             unitCount: demo.unitCount,
             ouuids: operationBloc.repo.keys,
-            simulate: demo.simulate,
+            personnelCount: demo.personnelCount,
           );
 
     // ignore: close_sinks
     final TrackingBloc trackingBloc = TrackingBloc(
-      TrackingRepository(
+      TrackingRepositoryImpl(
         trackingService,
         connectivity: connectivityService,
       ),
@@ -379,6 +404,7 @@ class AppController {
       api: api,
       demo: demo,
       blocs: blocs,
+      channel: channel,
       repos: [
         // Resolve from config
         ...blocs
@@ -401,7 +427,12 @@ class AppController {
   }) async {
     if (force || _demo != demo) {
       _unset();
-      return _build(this, demo, client) != null;
+      return _build(
+            this,
+            demo: demo,
+            client: client,
+          ) !=
+          null;
     }
     return false;
   }
@@ -466,6 +497,7 @@ class AppController {
     @required Api api,
     @required DemoParams demo,
     @required Iterable<Bloc> blocs,
+    @required MessageChannel channel,
     @required Iterable<Repository> repos,
   }) {
     assert(
@@ -478,6 +510,7 @@ class AppController {
     );
 
     _demo = demo;
+    _channel = channel;
 
     // Prepare for providers
     blocs.forEach((bloc) {
@@ -536,12 +569,20 @@ class AppController {
       }
     }
     if (isReady) {
+      final token = bloc<UserBloc>().repo.token;
+      // Establish message channel
+      _channel.open(
+        token: token,
+        url: '${Defaults.baseWsUrl}/api/messages/connect',
+      );
       // Ensure that token is updated
       LocationService(
         options: bloc<ActivityBloc>().profile.options,
-      ).token = bloc<UserBloc>().repo.token;
+      ).token = token;
     } else if (LocationService.exists) {
       if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
+        // Close message channel
+        _channel.close();
         // Delete positions from shared devices
         LocationService().clear();
       }
@@ -562,8 +603,12 @@ class AppController {
   }
 
   void _unset() {
-    // Unsubscribe all event handlers
+    // Unsubscribe all handlers
     bus.unsubscribeAll();
+    channel.unsubscribeAll();
+
+    // Close message channel to backend
+    channel.close();
 
     // Notify blocs not ready, will show splash screen
     _controller.add(_state = AppControllerState.Empty);

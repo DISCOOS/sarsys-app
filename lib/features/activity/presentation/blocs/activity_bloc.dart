@@ -82,8 +82,9 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   Future<ActivityState> _change(ChangeActivityProfile command) async {
     _profile = command.data;
-    await LocationService().configure(
-      options: command.data.options,
+    _apply(
+      command.config,
+      _profile.options,
     );
     return toOK(
       command,
@@ -108,12 +109,12 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     final service = LocationService();
     if (_isConfigChanged(config, options)) {
       service.configure(
+        share: isTrackable,
         options: _toOptions(
           config,
           defaultAccuracy: options.accuracy,
           debug: service.options?.debug ?? kDebugMode,
         ),
-        share: isTrackable,
       );
     }
   }
@@ -156,12 +157,8 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         _profile = ActivityProfile.PRIVATE;
         break;
     }
-    _apply(
-      config,
-      _profile.options,
-    );
     dispatch(
-      ChangeActivityProfile(_profile),
+      ChangeActivityProfile(_profile, config),
     );
   }
 }
@@ -175,7 +172,10 @@ abstract class ActivityCommand<S, T> extends BlocCommand<S, T> {
 }
 
 class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityProfile> {
-  ChangeActivityProfile(ActivityProfile data) : super(data);
+  ChangeActivityProfile(ActivityProfile data, this.config) : super(data);
+
+  final AppConfig config;
+
   @override
   String toString() => '$runtimeType {profile: $data}';
 }

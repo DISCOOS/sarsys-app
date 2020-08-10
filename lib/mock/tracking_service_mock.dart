@@ -6,6 +6,8 @@ import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
+import 'package:SarSys/features/tracking/data/models/source_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Source.dart';
 import 'package:SarSys/features/tracking/domain/entities/Track.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -25,13 +27,13 @@ class TrackingBuilder {
     List<Source> sources = const [],
     List<Track> tracks = const [],
     List<Position> history = const [],
-    TrackingStatus status = TrackingStatus.empty,
+    TrackingStatus status = TrackingStatus.ready,
   }) {
-    final tracking = Tracking.fromJson(
+    final tracking = TrackingModel.fromJson(
       createAsJson(
         uuid ?? Uuid().v4(),
         position: position,
-        status: status ?? TrackingStatus.empty,
+        status: status ?? TrackingStatus.ready,
         tracks: (tracks ?? []).map((p) => jsonEncode(p.toJson())).toList(),
         sources: (sources ?? []).map((p) => jsonEncode(p.toJson())).toList(),
         history: (history ?? []).map((p) => jsonEncode(p.toJson())).toList(),
@@ -46,7 +48,7 @@ class TrackingBuilder {
     List<String> sources = const [],
     List<String> tracks = const [],
     List<String> history = const [],
-    TrackingStatus status = TrackingStatus.empty,
+    TrackingStatus status = TrackingStatus.ready,
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
@@ -74,7 +76,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     List<Source> sources = const [],
     List<Track> tracks = const [],
     List<Position> history = const [],
-    TrackingStatus status = TrackingStatus.empty,
+    TrackingStatus status = TrackingStatus.ready,
   }) {
     final tracking = TrackingBuilder.create(
       uuid: uuid,
@@ -179,7 +181,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       (_) => mock.controller.stream,
     );
 
-    when(mock.fetch(any)).thenAnswer((_) async {
+    when(mock.fetchAll(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var trackingList = mock.trackingsRepo[ouuid];
       if (trackingList == null) {
@@ -189,7 +191,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
 
-    when(mock.create(any, any)).thenAnswer((_) async {
+    when(mock.create(any)).thenAnswer((_) async {
       final ouuid = _.positionalArguments[0] as String;
       final tracking = _.positionalArguments[1] as Tracking;
       return _create(
@@ -222,7 +224,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
         final original = trackingList[request.uuid];
 
         // Ensure only valid statuses are persisted
-        var tracking = request.cloneWith(
+        var tracking = request.copyWith(
             status: _toStatus(
           request.status,
           request.sources?.isNotEmpty == true,
@@ -371,14 +373,14 @@ class TrackingServiceMock extends Mock implements TrackingService {
   ) {
     return [
       for (var i = 1; i <= count; i++)
-        Tracking.fromJson(
+        TrackingModel.fromJson(
           TrackingBuilder.createAsJson(
             "$ouuid:t:$entity:$i",
             status: TrackingStatus.tracking,
           ),
-        ).cloneWith(
+        ).copyWith(
             sources: List.from([
-          Source(
+          SourceModel(
             uuid: "$ouuid:$device:$i",
             type: SourceType.device,
           )
@@ -399,8 +401,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   static TrackingStatus _toStatus(TrackingStatus status, bool hasSources) {
-    return [TrackingStatus.none, TrackingStatus.empty].contains(status)
-        ? (hasSources ? TrackingStatus.tracking : TrackingStatus.empty)
+    return [TrackingStatus.none, TrackingStatus.ready].contains(status)
+        ? (hasSources ? TrackingStatus.tracking : TrackingStatus.ready)
         : (hasSources ? TrackingStatus.tracking : (TrackingStatus.closed == status ? status : TrackingStatus.paused));
   }
 
@@ -414,7 +416,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     if (tracking != null) {
       // Only simulate aggregated position for tracking with devices
       if ([
-        TrackingStatus.empty,
+        TrackingStatus.ready,
         TrackingStatus.tracking,
         TrackingStatus.paused,
       ].contains(tracking.status)) {
@@ -439,7 +441,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     Map<String, _TrackSimulation> simulations,
     StreamController<TrackingMessage> controller,
   ) {
-    final device = DeviceModel.fromJson(message.json);
+    final device = DeviceModel.fromJson(message.data);
     if (s2t.containsKey(device.uuid)) {
       final tuuid = s2t[device.uuid];
       // Assumes that a device is attached to a single incident only
@@ -612,7 +614,7 @@ class _TrackSimulation {
         speed = TrackingUtils.speed(distance, effort);
       }
 
-      return current.cloneWith(
+      return current.copyWith(
         position: position,
         distance: distance ?? 0.0,
         speed: speed ?? 0.0,

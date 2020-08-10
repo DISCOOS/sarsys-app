@@ -6,6 +6,9 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
+import 'package:SarSys/features/tracking/data/models/source_model.dart';
+import 'package:SarSys/features/tracking/data/models/track_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Source.dart';
 import 'package:SarSys/features/tracking/domain/entities/Track.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -136,12 +139,12 @@ class TrackingUtils {
   }) {
     final tuuid = assertRef(trackable);
     final tracks = _concatAll(sources, []);
-    final tracking = Tracking(
+    final tracking = TrackingModel(
       uuid: tuuid,
       position: position,
-      sources: tracks.map((t) => t.source).toList(),
-      tracks: tracks,
-      status: sources.isEmpty ? TrackingStatus.empty : TrackingStatus.tracking,
+      tracks: tracks.cast<TrackModel>(),
+      sources: tracks.map((t) => t.source).cast<SourceModel>().toList(),
+      status: sources.isEmpty ? TrackingStatus.ready : TrackingStatus.tracking,
     );
     return calculate ? TrackingUtils.calculate(tracking) : tracking;
   }
@@ -155,9 +158,9 @@ class TrackingUtils {
     Position position,
     bool calculate = true,
   }) {
-    final tracks = _attachAll(tracking.tracks, sources);
-    final attached = _toAttaced(tracks);
-    final next = tracking.cloneWith(
+    final tracks = _attachAll(tracking.tracks.cast<TrackModel>(), sources);
+    final attached = _toAttached(tracks);
+    final next = tracking.copyWith(
       position: position,
       tracks: tracks,
       sources: attached,
@@ -169,8 +172,12 @@ class TrackingUtils {
     return calculate ? TrackingUtils.calculate(next) : next;
   }
 
-  static List<Source> _toAttaced(List<Track> tracks) {
-    return tracks.where((track) => TrackStatus.attached == track.status).map((track) => track.source).toList();
+  static List<SourceModel> _toAttached(List<Track> tracks) {
+    return tracks
+        .where((track) => TrackStatus.attached == track.status)
+        .map((track) => track.source)
+        .cast<SourceModel>()
+        .toList();
   }
 
   /// Replace [sources] with given [sources]
@@ -188,9 +195,9 @@ class TrackingUtils {
     );
 
     // Append to existing and create new tracks
-    final attached = _attachAll(tracks, sources);
+    final attached = _attachAll(tracks.cast<TrackModel>(), sources);
     final replaced = _toReplaced(attached, suuids);
-    final next = tracking.cloneWith(
+    final next = tracking.copyWith(
       position: position,
       tracks: attached,
       sources: replaced,
@@ -202,15 +209,16 @@ class TrackingUtils {
     return calculate ? TrackingUtils.calculate(next) : next;
   }
 
-  static List<Source> _toReplaced(List<Track> attached, Iterable<String> suuids) {
+  static List<SourceModel> _toReplaced(List<Track> attached, Iterable<String> suuids) {
     return attached
         // limit sources to suuids
         .where((t) => suuids.contains(t.source.uuid))
         .map((track) => track.source)
+        .cast<SourceModel>()
         .toList();
   }
 
-  static List<Track> _attachAll(
+  static List<TrackModel> _attachAll(
     Iterable<Track> tracks,
     Iterable<Source> sources,
   ) {
@@ -220,14 +228,16 @@ class TrackingUtils {
       ..removeWhere(
         (track) => suuids.contains(track.source.uuid),
       );
-    return unchanged..addAll(attached);
+    return unchanged
+      ..addAll(attached.cast<TrackModel>())
+      ..cast<TrackModel>();
   }
 
   // Handles duplicate sources by
   // concatenation of unique positions
   // into same track
-  static List<Track> _concatAll(Iterable<Source> sources, Iterable<Track> tracks) {
-    final attached = <String, Track>{};
+  static List<TrackModel> _concatAll(Iterable<Source> sources, Iterable<TrackModel> tracks) {
+    final attached = <String, TrackModel>{};
     sources.forEach((source) {
       final position = toPosition(source);
       if (position != null) {
@@ -249,7 +259,7 @@ class TrackingUtils {
     return attached.values.toList();
   }
 
-  static Track _attach(Iterable<Track> tracks, Source source) {
+  static Track _attach(Iterable<TrackModel> tracks, Source source) {
     final existing = find(tracks, source.uuid);
     final position = toPosition(source);
     final track = existing == null
@@ -275,11 +285,11 @@ class TrackingUtils {
   }
 
   static Track _newTrack(Source source, Position position) {
-    return Track(
+    return TrackModel(
       id: source.uuid,
-      positions: position == null ? [] : [position],
-      source: Source.fromJson(source.toJson()),
       status: TrackStatus.attached,
+      positions: position == null ? [] : [position],
+      source: SourceModel.fromJson(source.toJson()),
     );
   }
 
@@ -289,7 +299,7 @@ class TrackingUtils {
     Iterable<String> suuids, {
     bool calculate = true,
   }) {
-    final sources = List<Source>.from(tracking.sources)
+    final sources = List<SourceModel>.from(tracking.sources)
       ..removeWhere(
         (source) => suuids.contains(source.uuid),
       );
@@ -297,7 +307,7 @@ class TrackingUtils {
       tracking.tracks,
       suuids,
     );
-    final next = tracking.cloneWith(
+    final next = tracking.copyWith(
       sources: sources,
       tracks: tracks,
       status: _inferStatus(
@@ -308,9 +318,9 @@ class TrackingUtils {
     return calculate ? TrackingUtils.calculate(next) : next;
   }
 
-  static List<Track> _detachAll(List<Track> tracks, Iterable<String> suuids) {
+  static List<TrackModel> _detachAll(List<TrackModel> tracks, Iterable<String> suuids) {
     final found = findAll(tracks, suuids);
-    final next = List<Track>.from(tracks)
+    final next = List<TrackModel>.from(tracks)
       ..removeWhere(
         (track) => suuids.contains(track.source.uuid),
       )
@@ -328,7 +338,7 @@ class TrackingUtils {
     Iterable<String> suuids, {
     bool calculate = true,
   }) {
-    final sources = List<Source>.from(tracking.sources)
+    final sources = List<SourceModel>.from(tracking.sources)
       ..removeWhere(
         (source) => suuids.contains(source.uuid),
       );
@@ -336,7 +346,7 @@ class TrackingUtils {
       tracking.tracks,
       suuids,
     );
-    final next = tracking.cloneWith(
+    final next = tracking.copyWith(
       sources: sources,
       tracks: tracks,
       status: _inferStatus(
@@ -347,7 +357,7 @@ class TrackingUtils {
     return calculate ? TrackingUtils.calculate(next) : next;
   }
 
-  static List<Track> _deleteAll(List<Track> tracks, Iterable<String> suuids) {
+  static List<TrackModel> _deleteAll(List<TrackModel> tracks, Iterable<String> suuids) {
     return tracks.toList()
       ..removeWhere(
         (track) => suuids.contains(track.source.uuid),
@@ -359,7 +369,7 @@ class TrackingUtils {
   }
 
   static Tracking close(Tracking tracking) {
-    return tracking.cloneWith(
+    return tracking.copyWith(
       status: TrackingStatus.closed,
       sources: [],
       tracks: tracking.tracks
@@ -374,11 +384,11 @@ class TrackingUtils {
     if (TrackingStatus.closed == tracking.status) {
       final sources = tracking.tracks.map((track) => track.source);
       final tracks = tracking.tracks.map((track) => track.cloneWith(status: TrackStatus.attached));
-      return tracking.cloneWith(
+      return tracking.copyWith(
         status: _inferStatus(
           TrackingStatus.closed,
           sources.isNotEmpty,
-          defaultStatus: TrackingStatus.empty,
+          defaultStatus: TrackingStatus.ready,
         ),
         sources: sources.toList(),
         tracks: tracks.toList(),
@@ -457,7 +467,7 @@ class TrackingUtils {
         distance: tracking.distance ?? 0,
       );
       final effort = TrackingUtils.effort(history);
-      return tracking.cloneWith(
+      return tracking.copyWith(
         effort: effort,
         position: next,
         history: history,
@@ -469,7 +479,7 @@ class TrackingUtils {
         ),
       );
     }
-    return tracking.cloneWith(
+    return tracking.copyWith(
       position: position,
       distance: tracking.distance ?? 0.0,
       effort: tracking.effort ?? Duration.zero,
@@ -552,11 +562,11 @@ class TrackingUtils {
     bool isNotEmpty, {
     TrackingStatus defaultStatus,
   }) {
-    final next = [TrackingStatus.empty].contains(current)
-        ? (isNotEmpty ? TrackingStatus.tracking : TrackingStatus.empty)
+    final next = [TrackingStatus.ready].contains(current)
+        ? (isNotEmpty ? TrackingStatus.tracking : TrackingStatus.ready)
         : (isNotEmpty
             ? ([TrackingStatus.paused].contains(current) ? (defaultStatus ?? current) : TrackingStatus.tracking)
-            : ([TrackingStatus.closed].contains(current) ? (defaultStatus ?? current) : TrackingStatus.empty));
+            : ([TrackingStatus.closed].contains(current) ? (defaultStatus ?? current) : TrackingStatus.ready));
     return next;
   }
 
@@ -575,7 +585,7 @@ class TrackingUtils {
 /// A convenience class for implementing a [Trackable] with [position]
 ///
 /// Should be together with [TrackingUtils.replace]
-class PositionableSource<T extends Aggregate> extends Source implements Positionable<Map<String, dynamic>> {
+class PositionableSource<T extends Aggregate> extends SourceModel implements Positionable<Map<String, dynamic>> {
   PositionableSource({
     @required T aggregate,
     @required this.position,
@@ -596,5 +606,5 @@ class PositionableSource<T extends Aggregate> extends Source implements Position
       );
 
   @override
-  final Position position;
+  Position position;
 }

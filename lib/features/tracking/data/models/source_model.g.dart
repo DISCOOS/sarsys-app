@@ -1,19 +1,19 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'Source.dart';
+part of 'source_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Source _$SourceFromJson(Map json) {
-  return Source(
+SourceModel _$SourceModelFromJson(Map json) {
+  return SourceModel(
     uuid: json['uuid'] as String,
     type: _$enumDecodeNullable(_$SourceTypeEnumMap, json['type']),
   );
 }
 
-Map<String, dynamic> _$SourceToJson(Source instance) {
+Map<String, dynamic> _$SourceModelToJson(SourceModel instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {

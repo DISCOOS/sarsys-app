@@ -42,14 +42,14 @@ class BackgroundGeolocationService implements LocationService {
   String _duuid;
 
   @override
-  bool get canStore => _options.locationStoreLocally ?? Defaults.locationStoreLocally;
+  bool get canStore => (_options?.locationStoreLocally ?? Defaults.locationStoreLocally);
 
   @override
   bool get isStoring => isReady.value && canStore;
 
   @override
   bool get canShare =>
-      _duuid != null && _token != null && _options.locationAllowSharing ?? Defaults.locationAllowSharing;
+      _duuid != null && _token != null && (_options?.locationAllowSharing ?? Defaults.locationAllowSharing);
 
   @override
   bool get share => _share;
@@ -87,7 +87,6 @@ class BackgroundGeolocationService implements LocationService {
   AuthToken _token;
   PermissionStatus _status = PermissionStatus.undetermined;
 
-  StreamSubscription _configSubscription;
   StreamController<Position> _positionController = StreamController.broadcast();
   StreamController<LocationEvent> _eventController = StreamController.broadcast();
 
@@ -138,7 +137,18 @@ class BackgroundGeolocationService implements LocationService {
     _status = await Permission.locationWhenInUse.status;
 
     if ([PermissionStatus.granted].contains(_status)) {
-      if (_configSubscription == null) {
+      final wasSharing = isSharing;
+      final shouldConfigure = !isReady.value ||
+          force ||
+          _isConfigChanged(
+            duuid: duuid,
+            token: token,
+            debug: debug,
+            share: share,
+            options: options ?? _options,
+          );
+      if (shouldConfigure) {
+        _options = options ?? _options;
         bg.BackgroundGeolocation.ready(_toConfig(
           duuid: duuid,
           token: token,
@@ -148,42 +158,20 @@ class BackgroundGeolocationService implements LocationService {
           if (!state.enabled) {
             await bg.BackgroundGeolocation.start();
           }
-          // Prepare
+          // Only first time
           if (!isReady.value) {
             _positions = await backlog();
             await bg.BackgroundGeolocation.setOdometer(_odometer);
             _subscribe();
-            _notify(ConfigureEvent(
-              duuid,
-              _options,
-            ));
+          }
+          _notify(ConfigureEvent(
+            duuid,
+            _options,
+          ));
+          if (!wasSharing && isSharing) {
+            await bg.BackgroundGeolocation.sync();
           }
         });
-      }
-
-      if (force ||
-          _isConfigChanged(
-            duuid: duuid,
-            token: token,
-            debug: debug,
-            share: share,
-            options: options ?? _options,
-          )) {
-        final wasSharing = isSharing;
-        _options = options ?? _options;
-        await bg.BackgroundGeolocation.setConfig(_toConfig(
-          duuid: duuid,
-          token: token,
-          share: share,
-          debug: debug,
-        ));
-        _notify(ConfigureEvent(
-          duuid,
-          _options,
-        ));
-        if (!wasSharing && isSharing) {
-          await bg.BackgroundGeolocation.sync();
-        }
       }
     } else {
       await dispose();
@@ -329,10 +317,8 @@ class BackgroundGeolocationService implements LocationService {
       _notify(UnsubscribeEvent(_options));
       await _eventController.close();
       await _positionController.close();
-      await _configSubscription?.cancel();
       _eventController = null;
       _positionController = null;
-      _configSubscription = null;
       _disposed = true;
     }
     return Future.value();

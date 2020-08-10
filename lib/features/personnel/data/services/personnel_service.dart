@@ -21,7 +21,7 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
 
   Future<ServiceResponse<List<Personnel>>> fetch(String ouuid, int offset, int limit) async {
     return Api.from<PagedList<Personnel>, List<Personnel>>(
-      await delegate.getAll(
+      await delegate.fetchAll(
         ouuid,
         offset,
         limit,
@@ -82,7 +82,7 @@ abstract class PersonnelServiceImpl extends ChopperService {
   );
 
   @Get(path: '/operations/{ouuid}/personnels')
-  Future<Response<PagedList<Personnel>>> getAll(
+  Future<Response<PagedList<Personnel>>> fetchAll(
     @Path() ouuid,
     @Query('offset') int offset,
     @Query('limit') int limit, {

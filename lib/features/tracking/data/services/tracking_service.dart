@@ -1,48 +1,99 @@
 import 'dart:async';
+import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' show Client;
 
-class TrackingService implements Service {
-  final String wsUrl;
-  final String restUrl;
-  final Client client;
+part 'tracking_service.chopper.dart';
+
+/// Service for consuming the trackings endpoint
+///
+/// Delegates to a ChopperService implementation
+class TrackingService with ServiceFetchDescendants<Tracking> implements ServiceDelegate<TrackingServiceImpl> {
+  final TrackingServiceImpl delegate;
+
+  TrackingService() : delegate = TrackingServiceImpl.newInstance();
 
   final StreamController<TrackingMessage> _controller = StreamController.broadcast();
-
-  TrackingService(this.restUrl, this.wsUrl, this.client);
 
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  /// GET ../incident/{ouuid}/tracking
-  Future<ServiceResponse<List<Tracking>>> fetch(String uuid) async {
-    // TODO: Implement fetch tracking
-    throw "Not implemented";
+  Future<ServiceResponse<List<Tracking>>> fetch(String uuid, int offset, int limit) async {
+    return Api.from<PagedList<Tracking>, List<Tracking>>(
+      await delegate.fetchAll(
+        uuid,
+        offset,
+        limit,
+      ),
+    );
   }
 
-  /// POST ../incident/{ouuid}/tracking
-  Future<ServiceResponse<Tracking>> create(String ouuid, Tracking tracking) async {
-    // TODO: Implement create unit tracking
-    throw "Not implemented";
+  /// POST ../tracking/{uuid}
+  Future<ServiceResponse<Tracking>> create(Tracking tracking) async {
+    return Api.from<String, Tracking>(
+      await delegate.create(
+        tracking.uuid,
+        tracking,
+      ),
+      // Created 201 returns uri to created tracking in body
+      body: tracking,
+    );
   }
 
-  /// PATCH ../incident/tracking/{uuid}
+  /// PATCH ../tracking/{uuid}
   Future<ServiceResponse<Tracking>> update(Tracking tracking) async {
-    // TODO: Implement update tracking
-    throw "Not implemented";
+    return Api.from<Tracking, Tracking>(
+      await delegate.update(
+        tracking.uuid,
+        tracking,
+      ),
+      // Created 201 returns uri to created tracking in body
+      body: tracking,
+    );
   }
 
   /// DELETE ../incident/tracking/{uuid}
-  Future<ServiceResponse<void>> delete(Tracking tracking) async {
-    // TODO: Implement delete unit
-    throw "Not implemented";
+  Future<ServiceResponse<void>> delete(String uuid) async {
+    return Api.from<Tracking, Tracking>(await delegate.delete(
+      uuid,
+    ));
   }
 
   void dispose() {
     _controller.close();
   }
+}
+
+@ChopperApi()
+abstract class TrackingServiceImpl extends ChopperService {
+  static TrackingServiceImpl newInstance([ChopperClient client]) => _$TrackingServiceImpl(client);
+
+  @Get(path: '/operations/{ouuid}/trackings')
+  Future<Response<PagedList<Tracking>>> fetchAll(
+    @Path() ouuid,
+    @Query('offset') int offset,
+    @Query('limit') int limit, {
+    @Query('expand') List<String> expand = const [],
+  });
+
+  @Post(path: '/trackings')
+  Future<Response<String>> create(
+    @Path() iuuid,
+    @Body() Tracking body,
+  );
+
+  @Patch(path: '/trackings/{uuid}')
+  Future<Response<Tracking>> update(
+    @Path('uuid') String uuid,
+    @Body() Tracking body,
+  );
+
+  @Delete(path: '/trackings/{uuid}')
+  Future<Response<void>> delete(
+    @Path('uuid') String uuid,
+  );
 }
 
 enum TrackingMessageType { created, updated, deleted }

@@ -20,6 +20,7 @@ import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
@@ -155,7 +156,7 @@ class Storage {
         toJson: (data) => data.toJson(),
       );
       _registerStorageStateJsonAdapter<Tracking>(
-        fromJson: (data) => Tracking.fromJson(data),
+        fromJson: (data) => TrackingModel.fromJson(data),
         toJson: (data) => data.toJson(),
       );
     }

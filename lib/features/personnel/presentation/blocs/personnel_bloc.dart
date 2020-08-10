@@ -109,7 +109,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     try {
       if (PersonRepository.isDuplicateUser(state)) {
         // Find current person usages and replace with existing user
-        final duplicate = state.from.value.uuid;
+        final duplicate = state.to.value.uuid;
         final existing = state.conflict.base;
         findUser(
           userId: duplicate,
@@ -117,7 +117,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
       } else {
         findUser(
-          userId: state.from.value.uuid,
+          userId: state.to.value.uuid,
           exclude: [],
         ).map((personnel) => personnel.withPerson(state.from.value)).forEach((personnel) => repo.replace(
               personnel.uuid,
@@ -258,7 +258,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         tracking: TrackingUtils.newRef(),
       ));
       return personnel;
-    } else if (existing.status != PersonnelStatus.alerted) {
+    } else if (existing.status == PersonnelStatus.retired) {
       return update(existing.copyWith(
         status: PersonnelStatus.alerted,
       ));
