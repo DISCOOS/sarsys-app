@@ -165,7 +165,7 @@ class BackgroundGeolocationService implements LocationService {
             _subscribe();
           }
           _notify(ConfigureEvent(
-            duuid,
+            _duuid,
             _options,
           ));
           if (!wasSharing && isSharing) {
@@ -188,7 +188,7 @@ class BackgroundGeolocationService implements LocationService {
     _duuid = duuid ?? _duuid;
     _token = token ?? _token;
     _share = share ?? _share;
-    final url = isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
+    debugPrint(_toUrl());
     return bg.Config(
       batchSync: true,
       maxBatchSize: 10,
@@ -196,7 +196,7 @@ class BackgroundGeolocationService implements LocationService {
       autoSyncThreshold: 5,
       startOnBoot: isSharing,
       stopOnTerminate: isSharing,
-      url: url,
+      url: _toUrl(),
       method: 'POST',
       logMaxDays: 3,
       logLevel: _logLevel,
@@ -204,6 +204,7 @@ class BackgroundGeolocationService implements LocationService {
       maxRecordsToPersist: 1000,
       persistMode: _persistMode,
       httpRootProperty: '.',
+      httpTimeout: 60000,
       authorization: _toAuthorization(),
       locationTemplate: _toLocationTemplate(),
       showsBackgroundLocationIndicator: true,
@@ -222,16 +223,20 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
+  String _toUrl() => isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
+
   bg.Authorization _toAuthorization() {
-    return bg.Authorization(
-        accessToken: _token.accessToken,
-        refreshToken: _token.refreshToken,
-        refreshUrl: UserIdentityService.REFRESH_URL,
-        refreshPayload: {
-          'client_id': _token.clientId,
-          'grant_type': 'refresh_token',
-          'refresh_token': '{refreshToken}',
-        });
+    return _token != null
+        ? bg.Authorization(
+            accessToken: _token.accessToken,
+            refreshToken: _token.refreshToken,
+            refreshUrl: UserIdentityService.REFRESH_URL,
+            refreshPayload: {
+                'client_id': _token.clientId,
+                'grant_type': 'refresh_token',
+                'refresh_token': '{refreshToken}',
+              })
+        : null;
   }
 
   int get _logLevel => kDebugMode ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO;
@@ -314,6 +319,7 @@ class BackgroundGeolocationService implements LocationService {
   Future dispose() async {
     if (!_disposed) {
       _isReady.value = false;
+      await bg.BackgroundGeolocation.removeListeners();
       _notify(UnsubscribeEvent(_options));
       await _eventController.close();
       await _positionController.close();
@@ -371,58 +377,79 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   void _onLocation(bg.Location location) {
-    _odometer = location.odometer;
-    _current = _toPosition(location);
-    _positionController.add(_current);
-    _notify(PositionEvent(_current));
+    if (!_disposed) {
+      _odometer = location.odometer;
+      _current = _toPosition(location);
+      _positionController.add(_current);
+      _notify(PositionEvent(_current));
+    }
   }
 
   void _onMoveChange(bg.Location location) {
-    _notify(
-      MoveChangeEvent(
-        _toPosition(location),
-      ),
-    );
+    if (!_disposed) {
+      _notify(
+        MoveChangeEvent(
+          _toPosition(location),
+        ),
+      );
+    }
   }
 
   void _onActivityChange(bg.ActivityChangeEvent event) {
-    _current = _current?.copyWith(
-      activity: Activity.fromJson(event.toMap()),
-    );
-    _notify(
-      ActivityChangeEvent(_current),
-    );
+    if (!_disposed) {
+      _current = _current?.copyWith(
+        activity: Activity.fromJson(event.toMap()),
+      );
+      _notify(
+        ActivityChangeEvent(_current),
+      );
+    }
   }
 
   void _onHttp(event) {
-    _notify(
-      HttpServiceEvent(
-        _options,
-        event.status,
-        event.responseText,
-      ),
-    );
+    if (!_disposed) {
+      _notify(
+        HttpServiceEvent(
+          _toUrl(),
+          _options,
+          event.status,
+          event.responseText,
+        ),
+      );
+    }
   }
 
   void _onAuthorization(bg.AuthorizationEvent event) {
-    if (event.success) {
-      _token = AuthToken(
-        idToken: _token.idToken,
-        clientId: _token.clientId,
-        accessToken: event.response['access_token'],
-        refreshToken: event.response['refresh_token'],
-        accessTokenExpiration: DateTime.now()
-          ..add(
-            Duration(seconds: event.response['expires_in'] ?? 300),
+    if (!_disposed) {
+      if (event.success) {
+        _token = AuthToken(
+          idToken: _token.idToken,
+          clientId: _token.clientId,
+          accessToken: event.response['access_token'],
+          refreshToken: event.response['refresh_token'],
+          accessTokenExpiration: DateTime.now()
+            ..add(
+              Duration(seconds: event.response['expires_in'] ?? 300),
+            ),
+        );
+        _notify(
+          HttpServiceEvent(
+            UserIdentityService.REFRESH_URL,
+            _options,
+            200,
+            '{$event.response}',
           ),
-      );
-      _notify(
-        HttpServiceEvent(_options, 200, '{$event.response}'),
-      );
-    } else {
-      _notify(
-        HttpServiceEvent(_options, 401, event.error),
-      );
+        );
+      } else {
+        _notify(
+          HttpServiceEvent(
+            UserIdentityService.REFRESH_URL,
+            _options,
+            401,
+            event.error,
+          ),
+        );
+      }
     }
   }
 
@@ -465,6 +492,7 @@ class BackgroundGeolocationService implements LocationService {
   String _toLocationTemplate() {
     return '{'
         '"type": "Feature",'
+        '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]},'
         '"properties": {'
         '"source": "device",'
         '"speed": <%= speed %>,'
@@ -472,8 +500,7 @@ class BackgroundGeolocationService implements LocationService {
         '"accuracy": <%= accuracy %>,'
         '"isMoving": <%= is_moving %>,'
         '"timestamp": "<%= timestamp %>",'
-        '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>},'
-        '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]}'
+        '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>}'
         '}}';
   }
 }

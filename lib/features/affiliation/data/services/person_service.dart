@@ -42,7 +42,7 @@ class PersonService with ServiceGet<Person> implements ServiceDelegate<PersonSer
   }
 
   Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Person, void>(await delegate.delete(
+    return Api.from<void, Person>(await delegate.delete(
       uuid,
     ));
   }

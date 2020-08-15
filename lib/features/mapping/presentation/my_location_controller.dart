@@ -143,6 +143,7 @@ class MyLocationController {
               }
             });
           } else {
+            _options?.point = point;
             mapController.move(point, mapController.zoom ?? Defaults.zoom);
           }
         }
@@ -150,7 +151,8 @@ class MyLocationController {
         if (onLocationChanged != null) {
           onLocationChanged(point, false, isLocked);
         }
-        if (_options?.point == null || tickerProvider == null) {
+        if (tickerProvider == null) {
+          _options?.point = point;
           _updateController.add(null);
         } else {
           _options.animatedMove(point, onMove: (point) {
@@ -161,6 +163,7 @@ class MyLocationController {
           });
         }
       } else if (wasChangeInAccuracy) {
+        _options?.point = point;
         _updateController.add(null);
       }
     }

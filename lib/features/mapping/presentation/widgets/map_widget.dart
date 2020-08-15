@@ -472,10 +472,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         tickerProvider: this,
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
-        onLocationChanged: _onLocationChanged,
         permissionController: _ensurePermissionController(),
       );
       _scheduleInitLocation((_) {
+        _setLayerOptions();
         final following = _readState(STATE_FOLLOWING, defaultValue: false);
         if (following) {
           _locationController.goto(locked: true);
@@ -528,7 +528,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   Position _tryCenterOnMe() {
     final current = widget.withControlsLocateMe ? _locationController.current : null;
     if (widget.withControlsLocateMe && _center == null && current == null) {
-      _scheduleInitLocation((location) => setState(() => _center = location));
+      _scheduleInitLocation((location) {
+        _setLayerOptions();
+        setState(() => _center = location);
+      });
     }
     return current;
   }
@@ -963,13 +966,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       toggled: isLocated,
       locked: isLocked,
     );
-    _setLayerOptions();
-  }
-
-  void _onLocationChanged(LatLng point, bool goto, bool locked) {
-    if (mounted) {
-      _setLayerOptions();
-    }
+    //_setLayerOptions();
   }
 
   void _showLayerSheet(context) {

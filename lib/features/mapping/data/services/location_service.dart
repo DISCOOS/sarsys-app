@@ -167,7 +167,7 @@ abstract class LocationService extends Service {
         share: _singleton?.share,
         duuid: duuid ?? _singleton?.duuid,
         token: token ?? _singleton?.token,
-        options: _singleton?.options ?? options,
+        options: options ?? _singleton?.options,
       );
     }
     return _singleton;
@@ -410,7 +410,8 @@ class PushEvent extends LocationEvent {
 }
 
 class HttpServiceEvent extends LocationEvent {
-  HttpServiceEvent(this.options, this.status, this.reason) : super(null);
+  HttpServiceEvent(this.url, this.options, this.status, this.reason) : super(null);
+  final String url;
   final int status;
   final String reason;
   final LocationOptions options;
@@ -418,6 +419,7 @@ class HttpServiceEvent extends LocationEvent {
   String toString() => '$runtimeType\n'
       'When: ${timestamp.toIso8601String()}\n'
       'HttpServiceEvent: {\n'
+      '   url: $url\n'
       '   status: $status\n'
       '   reason: $reason\n'
       '},\n'

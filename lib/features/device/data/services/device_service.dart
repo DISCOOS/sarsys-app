@@ -27,12 +27,14 @@ class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<Devi
   final DeviceServiceImpl delegate;
   final StreamController<DeviceMessage> _controller = StreamController.broadcast();
 
+  void publish(DeviceMessage message) {
+    _controller.add(message);
+  }
+
   void _onMessage(Map<String, dynamic> data) {
-    _controller.add(
-      DeviceMessage(
-        data: data,
-      ),
-    );
+    publish(DeviceMessage(
+      data: data.mapAt<String, dynamic>('data'),
+    ));
   }
 
   /// Get stream of device messages
@@ -85,8 +87,8 @@ class DeviceMessage {
     @required this.data,
   });
   final Map<String, dynamic> data;
+  String get type => data.elementAt('type');
   String get uuid => data.elementAt('data/uuid');
-  String get type => data.elementAt('data/type');
   List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 

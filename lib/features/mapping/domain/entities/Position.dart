@@ -26,37 +26,37 @@ class Position extends ValueObject<Map<String, dynamic>> {
   final PositionType type = PositionType.feature;
 
   @JsonKey(ignore: true)
-  double get lat => geometry.lat;
+  double get lat => geometry?.lat;
 
   @JsonKey(ignore: true)
-  double get lon => geometry.lon;
+  double get lon => geometry?.lon;
 
   @JsonKey(ignore: true)
-  double get alt => geometry.alt;
+  double get alt => geometry?.alt;
 
   @JsonKey(ignore: true)
-  double get acc => properties.acc;
+  double get acc => properties?.acc;
 
   @JsonKey(ignore: true)
-  double get speed => properties.speed;
+  double get speed => properties?.speed;
 
   @JsonKey(ignore: true)
-  double get bearing => properties.bearing;
+  double get bearing => properties?.bearing;
 
   @JsonKey(ignore: true)
-  bool get isMoving => properties.isMoving;
+  bool get isMoving => properties?.isMoving;
 
   @JsonKey(ignore: true)
-  Activity get activity => properties.activity;
+  Activity get activity => properties?.activity;
 
   @JsonKey(ignore: true)
-  PositionSource get source => properties.source;
+  PositionSource get source => properties?.source;
 
   @JsonKey(ignore: true)
-  DateTime get timestamp => properties.timestamp;
+  DateTime get timestamp => properties?.timestamp;
 
-  bool get isNotEmpty => !isEmpty;
-  bool get isEmpty => geometry.isEmpty;
+  bool get isEmpty => !isNotEmpty;
+  bool get isNotEmpty => geometry?.isNotEmpty == true;
 
   factory Position.fromPoint(
     Point point, {

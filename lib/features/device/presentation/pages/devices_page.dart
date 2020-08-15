@@ -114,13 +114,17 @@ class DevicesPageState extends State<DevicesPage> {
           (widget.query == null || _prepare(device).contains(widget.query.toLowerCase())))
       .toList()
         ..sort(
-          (d1, d2) => d1.number?.toLowerCase()?.compareTo(d2.number?.toLowerCase()),
+          _compare,
         );
 
   String _prepare(Device device) => "${device.searchable} "
           "${_toDivision(device.number)} "
           "${_toFunction(device.number)}"
       .toLowerCase();
+
+  int _compare(Device d1, Device d2) {
+    return '${d1.number}'?.toLowerCase()?.compareTo('${d2.number}'.toLowerCase());
+  }
 
   Widget _buildDevice(
     List<Device> devices,

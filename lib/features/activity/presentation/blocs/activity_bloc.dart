@@ -100,13 +100,16 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       final config = event.data as AppConfig;
       _apply(
         config,
-        LocationService().options,
+        currentOptions,
       );
     }
   }
 
+  LocationOptions get currentOptions =>
+      LocationService.exists ? (LocationService().options ?? _profile.options) : _profile.options;
+
   void _apply(AppConfig config, LocationOptions options) {
-    final service = LocationService();
+    final service = LocationService(options: options);
     if (_isConfigChanged(config, options)) {
       service.configure(
         share: isTrackable,

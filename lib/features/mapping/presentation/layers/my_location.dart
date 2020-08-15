@@ -184,8 +184,6 @@ class MyLocation extends MapPlugin {
     );
   }
 
-  static int _idx = 0;
-
   _buildTrack(
     BuildContext context,
     MyLocationOptions options,
@@ -194,9 +192,12 @@ class MyLocation extends MapPlugin {
   ) {
     final track = List<Position>.from(options.track);
     final bounds = map.getBounds();
-    _idx++;
-    print('$_idx');
-    var offsets = track.reversed.take(1000).map((p) => p.toLatLng()).where((p) => bounds.contains(p)).map((position) {
+    var offsets = track.reversed
+        .where((p) => p.isNotEmpty)
+        .take(1000)
+        .map((p) => p.toLatLng())
+        .where((p) => bounds.contains(p))
+        .map((position) {
       var pos = map.project(position);
       pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
       return Offset(pos.x.toDouble(), pos.y.toDouble());

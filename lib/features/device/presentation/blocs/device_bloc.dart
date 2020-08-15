@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
@@ -96,6 +98,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     }
   }
 
+  StreamSubscription _locationChanged;
+
   void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
     if (event is ActivityProfileChanged) {
       final device = findThisApp();
@@ -104,6 +108,21 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
           UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
         );
       }
+      _locationChanged?.cancel();
+      _locationChanged = LocationService().stream.listen((p) {
+        // Update device position for this app
+        // a-priori of message from backend
+        final current = repo[device.uuid];
+        final next = device.copyWith(position: p);
+        final patches = JsonUtils.diff(current, next);
+        service.publish(DeviceMessage(data: {
+          'type': 'DevicePositionChanged',
+          'data': {
+            'uuid': device.uuid,
+            'patches': patches,
+          }
+        }));
+      });
     }
   }
 

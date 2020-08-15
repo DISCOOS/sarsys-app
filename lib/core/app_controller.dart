@@ -637,7 +637,10 @@ class AppController {
       // Ensure that token is updated
       LocationService(
         options: bloc<ActivityBloc>().profile.options,
-      ).token = token;
+      ).configure(
+        token: token,
+        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+      );
     } else if (LocationService.exists) {
       if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
         // Close message channel
@@ -657,6 +660,7 @@ class AppController {
       ).configure(
         token: bloc<UserBloc>().repo.token,
         duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+        options: bloc<ActivityBloc>().profile.options,
       );
     }
   }
