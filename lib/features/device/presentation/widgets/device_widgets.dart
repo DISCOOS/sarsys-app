@@ -91,6 +91,7 @@ class DeviceWidget extends StatelessWidget {
   final Device device;
   final bool withHeader;
   final bool withActions;
+  final bool withActivity;
   final Tracking tracking;
   final ActionCallback onMessage;
   final ValueChanged<Point> onGoto;
@@ -112,6 +113,7 @@ class DeviceWidget extends StatelessWidget {
     this.onDeleted,
     this.withHeader = true,
     this.withActions = true,
+    this.withActivity = true,
     this.organisation,
   }) : super(key: key);
 
@@ -162,6 +164,10 @@ class DeviceWidget extends StatelessWidget {
   Widget _buildLandscape(BuildContext context, TextTheme theme) {
     final items = _buildData(context, theme);
     final median = items.length ~/ 2;
+    final reminder = items.skip(median).toList();
+    if (reminder.first is Divider) {
+      reminder.removeAt(0);
+    }
     return Padding(
       padding: const EdgeInsets.only(left: 8.0),
       child: Row(
@@ -182,7 +188,7 @@ class DeviceWidget extends StatelessWidget {
             fit: FlexFit.loose,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: items.skip(median).toList(),
+              children: reminder.toList(),
             ),
           ),
         ],
@@ -223,58 +229,70 @@ class DeviceWidget extends StatelessWidget {
         ),
       );
 
-  Row _buildLocationInfo(BuildContext context, TextTheme theme) => Row(
-        children: <Widget>[
-          Expanded(
-            flex: 4,
-            child: Column(
-              children: <Widget>[
-                buildCopyableLocation(
-                  context,
-                  label: "UTM",
-                  icon: Icons.my_location,
-                  point: device.position?.geometry,
-                  formatter: (point) => toUTM(
-                    device.position?.geometry,
-                    prefix: "",
-                    empty: "Ingen",
-                  ),
+  Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Column(
+        children: [
+          Row(
+            children: <Widget>[
+              Expanded(
+                flex: 4,
+                child: Column(
+                  children: <Widget>[
+                    buildCopyableLocation(
+                      context,
+                      label: "UTM",
+                      icon: Icons.my_location,
+                      point: device.position?.geometry,
+                      formatter: (point) => toUTM(
+                        device.position?.geometry,
+                        prefix: "",
+                        empty: "Ingen",
+                      ),
+                    ),
+                    buildCopyableLocation(
+                      context,
+                      label: "Desimalgrader (DD)",
+                      icon: Icons.my_location,
+                      point: device.position?.geometry,
+                      formatter: (point) => toDD(
+                        device.position?.geometry,
+                        prefix: "",
+                        empty: "Ingen",
+                      ),
+                    ),
+                  ],
                 ),
-                buildCopyableLocation(
-                  context,
-                  label: "Desimalgrader (DD)",
-                  icon: Icons.my_location,
-                  point: device.position?.geometry,
-                  formatter: (point) => toDD(
-                    device.position?.geometry,
-                    prefix: "",
-                    empty: "Ingen",
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (device.position != null)
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.navigation, color: Colors.black45),
-                    onPressed: device.position == null
-                        ? null
-                        : () {
-                            navigateToLatLng(
-                              context,
-                              toLatLng(device.position.geometry),
-                            );
-                            _onComplete(device);
-                          },
-                  ),
-                  Text("Naviger", style: theme.caption),
-                ],
               ),
+              if (device.position != null)
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(Icons.navigation, color: Colors.black45),
+                        onPressed: device.position == null
+                            ? null
+                            : () {
+                                navigateToLatLng(
+                                  context,
+                                  toLatLng(device.position.geometry),
+                                );
+                                _onComplete(device);
+                              },
+                      ),
+                      Text("Naviger", style: theme.caption),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          if (withActivity) _buildDivider(Orientation.portrait),
+          if (withActivity)
+            buildCopyableText(
+              context: context,
+              label: "Aktivitet",
+              icon: Icon(Icons.local_activity),
+              value: translateActivityType(device.position?.activity?.type),
             ),
         ],
       );
