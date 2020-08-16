@@ -169,7 +169,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     _controller.clear();
     request = null;
     if (widget.onCleared != null) widget.onCleared();
-    FocusScope.of(context).requestFocus(new FocusNode());
+    FocusScope.of(context).requestFocus(FocusNode());
     setState(() {});
   }
 
@@ -210,7 +210,7 @@ class MapSearchFieldState extends State<MapSearchField> with TickerProviderState
     widget.mapController.animatedMove(_match, widget.zoom ?? widget.mapController.zoom, this);
     if (widget.onMatch != null) widget.onMatch(_match);
     _controller.text = query;
-    FocusScope.of(context).unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
   }
 }
 

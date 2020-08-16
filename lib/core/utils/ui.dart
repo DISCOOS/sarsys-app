@@ -198,7 +198,7 @@ Widget buildDropdown<T>({
                   isDense: isDense,
                   onChanged: (T value) {
                     // Unfocus input-fields with current focus
-                    FocusScope.of(context).requestFocus(new FocusNode());
+                    FocusScope.of(context).requestFocus(FocusNode());
                     onChanged?.call(value);
                   },
                   items: items,
@@ -560,7 +560,7 @@ SingleChildScrollView toRefreshable(
 Widget keyboardDismisser({BuildContext context, Widget child}) {
   final gesture = GestureDetector(
     onTap: () {
-      FocusScope.of(context).requestFocus(new FocusNode());
+      FocusScope.of(context).requestFocus(FocusNode());
     },
     child: child,
   );

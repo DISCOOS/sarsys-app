@@ -29,7 +29,7 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    FocusScope.of(context).requestFocus(new FocusNode());
+    FocusScope.of(context).requestFocus(FocusNode());
   }
 
   @override
