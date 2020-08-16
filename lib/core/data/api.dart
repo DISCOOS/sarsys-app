@@ -47,9 +47,7 @@ class Api {
           services: services,
           baseUrl: baseRestUrl,
           client: IOClient(
-            HttpClient()
-              ..connectionTimeout = const Duration(seconds: 30)
-              ..idleTimeout,
+            HttpClient()..connectionTimeout = const Duration(seconds: 30),
           ),
           converter: JsonSerializableConverter(
             reducers: {

@@ -723,7 +723,9 @@ class RepositoryIllegalStateValueException extends RepositoryException {
   RepositoryIllegalStateValueException([
     this.state,
     this.reason,
-  ]) : super('state value [${state.value?.runtimeType} ${state.value}}] is invalid: $reason');
+  ]) : super('[${state.value?.runtimeType}}] state value is invalid: $reason, '
+            'state: ${state.runtimeType}, value: ${state.value}, '
+            'status: ${state.status}, remote: ${state.isRemote}');
 }
 
 class RepositoryNotReadyException extends RepositoryException {

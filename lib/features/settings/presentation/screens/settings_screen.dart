@@ -86,12 +86,7 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   List<Widget> _buildSettings(BuildContext context) {
     return <Widget>[
-      ListTile(
-        title: Text(
-          "Oppsett",
-          style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ),
+      _buildSection(context, "Oppsett"),
       _buildGotoAffiliationConfig(),
       _buildGotoOperationsConfig(),
       _buildGotoMapConfig(),
@@ -100,38 +95,50 @@ class SettingsScreenState extends State<SettingsScreen> {
       _buildGotoSecurityConfig(),
       _buildPermissionsConfig(),
       Divider(),
-      ListTile(
-        title: Text(
-          "System",
-          style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ),
-      ListTile(
-        title: Text(
-          "Innstillinger for ${Platform.operatingSystem} app",
-          style: Theme.of(context).textTheme.bodyText2,
-        ),
-        subtitle: Text("Endre innstillinger i operativsystemet"),
-        trailing: Icon(Icons.open_in_new),
-        onTap: () async {
-          await openAppSettings();
-        },
-      ),
+      _buildSection(context, "System"),
+      _buildAboutPage(context),
       _buildGotoDebugScreen(),
+      _buildOsConfig(context),
       _buildFactoryReset(),
-      ListTile(
-        title: Text(
-          "Om SarSys",
-          style: Theme.of(context).textTheme.bodyText2,
-        ),
-        trailing: Icon(Icons.keyboard_arrow_right),
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-            return AboutScreen();
-          }));
-        },
-      ),
     ];
+  }
+
+  ListTile _buildSection(BuildContext context, String title) {
+    return ListTile(
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  ListTile _buildOsConfig(BuildContext context) {
+    return ListTile(
+      title: Text(
+        "Innstillinger for ${Platform.operatingSystem} app",
+        style: Theme.of(context).textTheme.bodyText2,
+      ),
+      subtitle: Text("Endre innstillinger i operativsystemet"),
+      trailing: Icon(Icons.open_in_new),
+      onTap: () async {
+        await openAppSettings();
+      },
+    );
+  }
+
+  ListTile _buildAboutPage(BuildContext context) {
+    return ListTile(
+      title: Text(
+        "Om SarSys",
+        style: Theme.of(context).textTheme.bodyText2,
+      ),
+      trailing: Icon(Icons.keyboard_arrow_right),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+          return AboutScreen();
+        }));
+      },
+    );
   }
 
   ListTile _buildGotoAffiliationConfig() {

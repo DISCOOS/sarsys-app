@@ -11,7 +11,10 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/user/presentation/widget/passcode_popup.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -191,8 +194,10 @@ class _OperationsPageState extends State<OperationsPage> {
         builder: (context, snapshot) {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.bloc<OperationBloc>().selected == operation;
-          final isAuthorized = context.bloc<UserBloc>().isAuthorized(operation);
           final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
+          final personnel = isCurrent ? context.bloc<PersonnelBloc>().findUser().firstOrNull : null;
+          final hasJoined = personnel != null;
+          final isAuthorized = hasJoined || context.bloc<UserBloc>().isAuthorized(operation);
           return Card(
             child: Column(
               key: ObjectKey(operation.uuid),
@@ -224,18 +229,23 @@ class _OperationsPageState extends State<OperationsPage> {
                         child: ButtonBar(
                           alignment: MainAxisAlignment.start,
                           children: <Widget>[
-                            FlatButton(
-                              child: Text(
+                            FlatButton.icon(
+                              icon: Icon(isAuthorized
+                                  ? hasJoined
+                                      ? toPersonnelStatusIcon(PersonnelStatus.leaving)
+                                      : isAuthorized ? toPersonnelStatusIcon(PersonnelStatus.enroute) : Icons.lock_open
+                                  : Icons.lock_open),
+                              label: Text(
                                 isAuthorized
-                                    ? (isCurrent ? 'FORLAT' : 'DELTA')
-                                    : hasRoles ? 'LÅS OPP' : 'INGEN TILGANG',
+                                    ? (hasJoined ? 'SJEKK UT' : 'DELTA')
+                                    : hasRoles ? hasJoined ? 'LÅS OPP' : 'LÅS OPP' : 'INGEN TILGANG',
                                 style: TextStyle(fontSize: 14.0),
                               ),
                               padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               onPressed: isAuthorized || hasRoles
                                   ? () async {
-                                      if (isCurrent) {
+                                      if (hasJoined) {
                                         await leaveOperation();
                                       } else if (isAuthorized) {
                                         await _joinAndReroute(operation);

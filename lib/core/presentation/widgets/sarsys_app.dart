@@ -1,5 +1,15 @@
 import 'dart:async';
 
+import 'package:catcher/core/catcher.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:provider/provider.dart';
+
 import 'package:SarSys/core/data/services/provider.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -39,16 +49,6 @@ import 'package:SarSys/features/operation/presentation/screens/command_screen.da
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/core/extensions.dart';
-import 'package:catcher/core/catcher.dart';
-import 'package:flutter/cupertino.dart';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:provider/provider.dart';
 
 class SarSysApp extends StatefulWidget {
   final PageStorageBucket bucket;
@@ -516,7 +516,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
-      bool isUnset = operationBloc.isUnselected;
+      bool isUnset = operationBloc.isUnselected || personnelBloc.findUser().isEmpty;
       child = _toScreen(
         RouteSettings(
           name: isUnset ? 'incidents' : state[RouteWriter.FIELD_NAME],

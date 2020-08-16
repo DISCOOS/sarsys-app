@@ -268,7 +268,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   RaisedButton _buildCheckInAction(BuildContext context) {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
-      icon: Icon(Icons.playlist_add_check),
+      icon: Icon(Icons.assignment_turned_in),
       label: Text('Sjekk inn'),
       onPressed: personnel != null ? () => checkInPersonnel(personnel) : null,
     );

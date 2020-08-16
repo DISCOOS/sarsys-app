@@ -82,7 +82,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         } else if (state.shouldUnload(ouuid) && repo.isReady) {
           _unloading = true;
           await unload();
-          print(_unloading);
         }
       }
     } catch (error, stackTrace) {

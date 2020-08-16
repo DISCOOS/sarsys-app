@@ -108,7 +108,7 @@ IconData toPersonnelStatusIcon(PersonnelStatus status) {
     case PersonnelStatus.enroute:
       return Icons.directions_run;
     case PersonnelStatus.onscene:
-      return Icons.playlist_add_check;
+      return Icons.assignment_turned_in;
     case PersonnelStatus.leaving:
       return Icons.directions_walk;
     case PersonnelStatus.retired:

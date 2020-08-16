@@ -69,7 +69,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
 
   Position _ensurePosition() => widget.position?.isNotEmpty != true
       ? Position.fromPoint(
-            LocationService().current.geometry,
+            LocationService().current?.geometry,
             source: PositionSource.manual,
           ) ??
           Position.now(

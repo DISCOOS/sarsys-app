@@ -1,3 +1,5 @@
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -34,7 +36,7 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
     final User user = userBloc.user;
-    final isUnset = context.bloc<OperationBloc>().isUnselected;
+    final isUnset = context.bloc<OperationBloc>().isUnselected || context.bloc<PersonnelBloc>().findUser().isEmpty;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -195,8 +197,8 @@ class _AppDrawerState extends State<AppDrawer> {
       trailing: isUnset
           ? null
           : RaisedButton.icon(
-              icon: Icon(Icons.assignment_turned_in),
-              label: Text("Forlat"),
+              icon: Icon(toPersonnelStatusIcon(PersonnelStatus.leaving)),
+              label: Text("SJEKK UT"),
               onPressed: () {
                 Navigator.pop(context);
                 leaveOperation();
