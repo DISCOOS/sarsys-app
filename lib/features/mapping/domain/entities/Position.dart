@@ -137,7 +137,7 @@ class Position extends ValueObject<Map<String, dynamic>> {
     );
   }
 
-  LatLng toLatLng() => LatLng(lat, lon);
+  LatLng toLatLng() => LatLng(lat ?? 0.0, lon ?? 0.0);
 
   /// Factory constructor for creating a new `Position`  instance
   factory Position.fromJson(Map<String, dynamic> json) => _$PositionFromJson(json);

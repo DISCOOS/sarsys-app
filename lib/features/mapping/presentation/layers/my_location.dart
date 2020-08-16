@@ -21,11 +21,12 @@ class MyLocationOptions extends LayerOptions {
     this.size = 30.0,
     this.opacity = 0.6,
     this.showTail = true,
-    this.track = const [],
     this.milliSeconds = 500,
     this.color = Colors.green,
     Stream<Null> rebuild,
-  }) : super(rebuild: rebuild) {
+    Iterable<Position> track = const [],
+  })  : track = List<Position>.from(track),
+        super(rebuild: rebuild) {
     assert(tickerProvider != null, 'tickerProvider can not be null');
     assert(locationUpdates != null, 'locationUpdates can not be null');
   }
@@ -34,7 +35,7 @@ class MyLocationOptions extends LayerOptions {
   final double bearing;
   final double opacity;
   final int milliSeconds;
-  final Iterable<Position> track;
+  final List<Position> track;
   final TickerProvider tickerProvider;
   final StreamSink<Null> locationUpdates;
 
@@ -59,11 +60,12 @@ class MyLocationOptions extends LayerOptions {
   }
 
   /// Move icon to given point
-  void animatedMove(LatLng point, {double bearing, void onMove(LatLng p)}) {
+  void animatedMove(Position position, {double bearing, void onMove(LatLng p)}) {
     if (isAnimating) return;
 
-    next = point;
     previous = this.point;
+    track.add(position);
+    next = position.toLatLng();
 
     // Create some tweens. These serve to split up the transition from one location to another.
     // In our case, we want to split the transition be<tween> previous position and the destination.
@@ -78,21 +80,35 @@ class MyLocationOptions extends LayerOptions {
     Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
     _controller.addListener(() {
-      this.point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
-      if (onMove != null) onMove(this.point);
-      locationUpdates.add(null);
+      point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
+      _moveNext(point, position);
+      if (onMove != null) {
+        onMove(this.point);
+      }
     });
 
     animation.addStatusListener((status) {
       if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
-        _finish(point);
+        _moveEnd(position);
       }
     });
     _controller.forward();
   }
 
-  void _finish(LatLng point) {
-    this.point = point;
+  void _moveNext(LatLng next, Position end) {
+    point = next;
+    track.removeLast();
+    track.add(end.copyWith(
+      lat: next.latitude,
+      lon: next.longitude,
+    ));
+    locationUpdates.add(null);
+  }
+
+  void _moveEnd(Position position) {
+    point = position.toLatLng();
+    track.add(position);
+    locationUpdates.add(null);
     cancel();
   }
 }

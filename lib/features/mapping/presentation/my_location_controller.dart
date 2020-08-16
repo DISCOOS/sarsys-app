@@ -119,58 +119,63 @@ class MyLocationController {
   bool _updateLocation(Position position, bool goto) {
     bool hasMoved = false;
     bool wasLocated = isLocated;
+    bool moveMap = goto || _locked;
     if (position != null && mapController.ready) {
+      final point = position?.toLatLng();
       final wasChangeInAccuracy = (_options?.accuracy != position?.acc);
       _options?.accuracy = position?.acc;
-      final point = _toLatLng(position);
-      // Full refresh of map needed?
-      if (goto || _locked) {
+      // Should move position?
+      if (moveMap || _isMoved(point)) {
         hasMoved = true;
         if (onLocationChanged != null) {
           onLocationChanged(point, goto, _locked);
         }
-        if (goto || _locked) {
-          if (tickerProvider != null) {
+        if (isAnimated()) {
+          // Move map to position?
+          if (moveMap) {
             mapController.animatedMove(
               point,
               mapController.zoom ?? Defaults.zoom,
               tickerProvider,
             );
-            _options.animatedMove(point, onMove: (point) {
-              // Synchronize map control state with my location animation
-              if (onTrackingChanged != null) {
-                onTrackingChanged(isLocated, _locked);
-              }
-            });
-          } else {
-            _options?.point = point;
-            mapController.move(point, mapController.zoom ?? Defaults.zoom);
           }
-        }
-      } else if (_isMoved(point)) {
-        if (onLocationChanged != null) {
-          onLocationChanged(point, false, isLocked);
-        }
-        if (tickerProvider == null) {
-          _options?.point = point;
-          _updateController.add(null);
-        } else {
-          _options.animatedMove(point, onMove: (point) {
+          _options.animatedMove(position, onMove: (point) {
             // Synchronize map control state with my location animation
             if (onTrackingChanged != null) {
               onTrackingChanged(isLocated, _locked);
             }
           });
+        } else {
+          if (moveMap) {
+            mapController.move(
+              point,
+              mapController.zoom ?? Defaults.zoom,
+            );
+          }
         }
-      } else if (wasChangeInAccuracy) {
-        _options?.point = point;
-        _updateController.add(null);
+      }
+      if (hasMoved || wasChangeInAccuracy) {
+        _progress(
+          position,
+          // Only if move is not animated
+          moved: hasMoved && isAnimated(),
+        );
       }
     }
     if (onTrackingChanged != null && wasLocated != isLocated) {
       onTrackingChanged(isLocated, _locked);
     }
     return hasMoved;
+  }
+
+  bool isAnimated() => tickerProvider == null;
+
+  void _progress(Position position, {@required bool moved}) {
+    _options?.point = position.toLatLng();
+    if (moved) {
+      _options?.track?.add(position);
+    }
+    _updateController.add(null);
   }
 
   bool _isMoved(LatLng position) {
@@ -229,13 +234,12 @@ class MyLocationController {
 
   MyLocationOptions build({bool withTail}) {
     // Duplicates are overwritten
-    final history = List<Position>.from(_service.positions);
     final point = _toLatLng(_service.current);
     _options?.cancel();
     _options = MyLocationOptions(
       point,
       opacity: 0.5,
-      track: history,
+      track: _service.positions,
       accuracy: service.current?.acc,
       tickerProvider: tickerProvider,
       locationUpdates: _updateController,

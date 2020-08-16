@@ -223,7 +223,8 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  String _toUrl() => isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
+  String _toUrl({bool override = false}) =>
+      override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
 
   bg.Authorization _toAuthorization() {
     return _token != null
@@ -410,7 +411,7 @@ class BackgroundGeolocationService implements LocationService {
     if (!_disposed) {
       _notify(
         HttpServiceEvent(
-          _toUrl(),
+          _toUrl(override: true),
           _options,
           event.status,
           event.responseText,
