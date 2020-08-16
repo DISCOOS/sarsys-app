@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -97,5 +98,21 @@ String translateOperationalFunction(OperationalFunctionType function) {
       return "Mannskap";
     default:
       return enumName(function);
+  }
+}
+
+IconData toPersonnelStatusIcon(PersonnelStatus status) {
+  switch (status) {
+    case PersonnelStatus.alerted:
+      return Icons.warning;
+    case PersonnelStatus.enroute:
+      return Icons.directions_run;
+    case PersonnelStatus.onscene:
+      return Icons.playlist_add_check;
+    case PersonnelStatus.leaving:
+      return Icons.directions_walk;
+    case PersonnelStatus.retired:
+    default:
+      return Icons.home;
   }
 }

@@ -194,13 +194,20 @@ class UserStatusPageState extends State<UserStatusPage> {
                     _buildRetireAction(context),
                   ]);
               break;
+            default:
+              status = Text(
+                'profile: ${context.bloc<ActivityBloc>().profile}',
+              );
           }
 
           return Column(
             children: [
               Padding(
                 padding: const EdgeInsets.all(14.0),
-                child: status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
+                child: StreamBuilder<Object>(
+                  stream: service.stream,
+                  builder: (context, _) => status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
+                ),
               ),
               if (context.bloc<ActivityBloc>().isTrackable) _buildLocationBuffer(),
             ],
@@ -224,15 +231,8 @@ class UserStatusPageState extends State<UserStatusPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    _buildActivityStatus(context),
-                    _buildStandbyStatus(context),
-                  ],
-                ),
-                SizedBox(height: 8.0),
+                _buildStandbyStatus(context),
+                Divider(),
                 Row(
                   children: [
                     ConstrainedBox(
@@ -346,22 +346,48 @@ class UserStatusPageState extends State<UserStatusPage> {
     );
   }
 
-  Text _buildStandbyStatus(BuildContext context) {
+  Widget _buildStandbyStatus(BuildContext context) {
     final operation = context.bloc<OperationBloc>().selected;
     final personnel = context.bloc<PersonnelBloc>().findUser();
     final affiliation = context.bloc<AffiliationBloc>().findUserAffiliation();
     final status = personnel.isNotEmpty == true
         ? translatePersonnelStatus(personnel.first.status)
         : translateAffiliationStandbyStatus(affiliation?.status ?? AffiliationStandbyStatus.unavailable);
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildOperationName(operation, context),
+        Spacer(),
+        _buildActivityStatus(context),
+        Spacer(),
+        Chip(
+          elevation: 2,
+          avatar: Icon(
+            toPersonnelStatusIcon(
+              personnel.first.status,
+            ),
+            size: 16.0,
+          ),
+          label: Text('$status'),
+          labelPadding: EdgeInsets.only(right: 4.0),
+          labelStyle: Theme.of(context).textTheme.caption,
+        ),
+      ],
+    );
+  }
+
+  Text _buildOperationName(Operation operation, BuildContext context) {
     return Text.rich(
       TextSpan(
         text: '${operation == null ? 'Ingen aksjon' : '${translateOperationType(operation.type)}'}',
         style: Theme.of(context).textTheme.subtitle2,
         children: [
-          TextSpan(
-            text: '${operation?.name == null ? '' : ' ${operation.name}'}, er ${status.toLowerCase()}',
-            style: Theme.of(context).textTheme.caption,
-          )
+          if (operation?.name != null)
+            TextSpan(
+              text: ' ${operation.name}',
+              style: Theme.of(context).textTheme.caption,
+            )
         ],
       ),
     );
