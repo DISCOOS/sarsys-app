@@ -136,7 +136,7 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
           return response.body;
         }
         throw TrackingServiceException(
-          'Failed to fetch personnel for operation $ouuid',
+          'Failed to fetch trackings for operation $ouuid',
           response: response,
           stackTrace: StackTrace.current,
         );
