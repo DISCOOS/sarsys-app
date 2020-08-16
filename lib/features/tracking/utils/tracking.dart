@@ -293,7 +293,7 @@ class TrackingUtils {
   }
 
   static Track _newTrack(Source source, Position position) {
-    final positions = position == null ? [] : [position];
+    final positions = position == null ? <Position>[] : <Position>[position];
     final track = TrackModel(
       id: source.uuid,
       positions: positions,
