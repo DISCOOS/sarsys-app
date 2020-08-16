@@ -115,84 +115,34 @@ class UserStatusPageState extends State<UserStatusPage> {
           final service = LocationService();
           switch (snapshot.data) {
             case ActivityProfile.PRIVATE:
-              status = _buildStatus(context,
-                  child: CoordinateWidget(
-                    isDense: false,
-                    withIcons: false,
-                    withNavigation: false,
-                    onMessage: widget.onMessage,
-                    accuracy: service.current.acc,
-                    point: service.current.geometry,
-                    onGoto: (point) => jumpToPoint(context, center: point),
-                  ),
-                  buttons: [
-                    _buildMapAction(context, service),
-                    _buildJoinAction(context),
-                  ]);
+              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+                _buildMapAction(context, service),
+                _buildJoinAction(context),
+              ]);
               break;
             case ActivityProfile.ALERTED:
-              status = _buildStatus(context,
-                  child: CoordinateWidget(
-                    isDense: false,
-                    withIcons: false,
-                    withNavigation: false,
-                    onMessage: widget.onMessage,
-                    accuracy: service.current?.acc,
-                    point: service.current?.geometry,
-                    onGoto: (point) => jumpToPoint(context, center: point),
-                  ),
-                  buttons: [
-                    _buildMapAction(context, service),
-                    _buildEnrouteAction(context),
-                  ]);
+              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+                _buildMapAction(context, service),
+                _buildEnrouteAction(context),
+              ]);
               break;
             case ActivityProfile.ENROUTE:
-              status = _buildStatus(context,
-                  child: CoordinateWidget(
-                    isDense: false,
-                    withIcons: false,
-                    withNavigation: false,
-                    onMessage: widget.onMessage,
-                    accuracy: service.current.acc,
-                    point: service.current?.geometry,
-                    onGoto: (point) => jumpToPoint(context, center: point),
-                  ),
-                  buttons: [
-                    _buildMapAction(context, service),
-                    _buildCheckInAction(context),
-                  ]);
+              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+                _buildMapAction(context, service),
+                _buildCheckInAction(context),
+              ]);
               break;
             case ActivityProfile.ONSCENE:
-              status = _buildStatus(context,
-                  child: CoordinateWidget(
-                    isDense: false,
-                    withIcons: false,
-                    withNavigation: false,
-                    onMessage: widget.onMessage,
-                    accuracy: service.current.acc,
-                    point: service.current.geometry,
-                    onGoto: (point) => jumpToPoint(context, center: point),
-                  ),
-                  buttons: [
-                    _buildMapAction(context, service),
-                    _buildCheckOutAction(context),
-                  ]);
+              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+                _buildMapAction(context, service),
+                _buildCheckOutAction(context),
+              ]);
               break;
             case ActivityProfile.LEAVING:
-              status = _buildStatus(context,
-                  child: CoordinateWidget(
-                    isDense: false,
-                    withIcons: false,
-                    withNavigation: false,
-                    onMessage: widget.onMessage,
-                    accuracy: service.current.acc,
-                    point: service.current.geometry,
-                    onGoto: (point) => jumpToPoint(context, center: point),
-                  ),
-                  buttons: [
-                    _buildMapAction(context, service),
-                    _buildRetireAction(context),
-                  ]);
+              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+                _buildMapAction(context, service),
+                _buildRetireAction(context),
+              ]);
               break;
             default:
               status = Text(
@@ -213,6 +163,18 @@ class UserStatusPageState extends State<UserStatusPage> {
             ],
           );
         });
+  }
+
+  CoordinateWidget _buildCoordinateWidget(LocationService service, BuildContext context) {
+    return CoordinateWidget(
+      isDense: false,
+      withIcons: false,
+      withNavigation: false,
+      onMessage: widget.onMessage,
+      accuracy: service.current?.acc,
+      point: service.current?.geometry,
+      onGoto: (point) => jumpToPoint(context, center: point),
+    );
   }
 
   Widget _buildStatus(
