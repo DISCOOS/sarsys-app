@@ -1,3 +1,6 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -5,8 +8,6 @@ import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 
 import 'harness.dart';
 

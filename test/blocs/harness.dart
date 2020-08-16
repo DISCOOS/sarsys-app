@@ -22,12 +22,6 @@ import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
 import 'package:SarSys/features/unit/data/repositories/unit_repository_impl.dart';
-import 'package:SarSys/mock/affiliation_service_mock.dart';
-import 'package:SarSys/mock/department_service_mock.dart';
-import 'package:SarSys/mock/division_service_mock.dart';
-import 'package:SarSys/mock/operation_service_mock.dart';
-import 'package:SarSys/mock/organisation_service_mock.dart';
-import 'package:SarSys/mock/person_service_mock.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
@@ -42,13 +36,6 @@ import 'package:SarSys/features/operation/data/repositories/incident_repository_
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/features/settings/data/repositories/app_config_repository_impl.dart';
-import 'package:SarSys/mock/app_config_service_mock.dart';
-import 'package:SarSys/mock/device_service_mock.dart';
-import 'package:SarSys/mock/incident_service_mock.dart';
-import 'package:SarSys/mock/personnel_service_mock.dart';
-import 'package:SarSys/mock/tracking_service_mock.dart';
-import 'package:SarSys/mock/unit_service_mock.dart';
-import 'package:SarSys/mock/user_service_mock.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
@@ -57,6 +44,20 @@ import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
+
+import '../mock/affiliation_service_mock.dart';
+import '../mock/department_service_mock.dart';
+import '../mock/division_service_mock.dart';
+import '../mock/operation_service_mock.dart';
+import '../mock/organisation_service_mock.dart';
+import '../mock/person_service_mock.dart';
+import '../mock/app_config_service_mock.dart';
+import '../mock/device_service_mock.dart';
+import '../mock/incident_service_mock.dart';
+import '../mock/personnel_service_mock.dart';
+import '../mock/tracking_service_mock.dart';
+import '../mock/unit_service_mock.dart';
+import '../mock/user_service_mock.dart';
 
 const MethodChannel udidChannel = MethodChannel('flutter_udid');
 const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');

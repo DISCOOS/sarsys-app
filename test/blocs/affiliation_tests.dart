@@ -1,3 +1,9 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:uuid/uuid.dart';
+import 'package:async/async.dart';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -6,11 +12,6 @@ import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:uuid/uuid.dart';
-import 'package:async/async.dart';
 
 import 'harness.dart';
 

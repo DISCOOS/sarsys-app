@@ -1,6 +1,6 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/mock/device_service_mock.dart';
+import '../mock/device_service_mock.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
