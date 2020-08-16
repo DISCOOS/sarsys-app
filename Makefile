@@ -26,7 +26,8 @@ ios_certificate = "XKXT735ZZ4"
 .SILENT: \
 	doctor toolchain configure test build install clean \
 	models \
-	android-configure android-build android-install android-release-internal android-clean \
+	android-configure android-build android-build-without-tests \
+	android-install android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 
 doctor:
@@ -153,7 +154,9 @@ models:
 build: models test android-build ios-build
 	echo "[✓] Flutter build complete."
 
-android-build: test
+android-build: test android-build-without-tests
+
+android-build-without-tests:
 	test ! -f "$(storeFile)" && \
 		{ echo "Android upload key $(storeFile) does not exist > run 'make android-init'";  exit 0; }; \
 	echo "Building Android app bundle..."; \

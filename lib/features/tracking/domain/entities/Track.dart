@@ -1,4 +1,3 @@
-
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:meta/meta.dart';
