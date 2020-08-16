@@ -297,20 +297,22 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  Row _buildPasscodes(Operation operation) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          flex: 2,
-          child: _buildValueTile("${operation.passcodes?.commander}", label: "Kode for aksjonsledelse"),
-        ),
-        SizedBox(width: OperationPage.SPACING),
-        Expanded(
-          flex: 2,
-          child: _buildValueTile("${operation.passcodes?.personnel}", label: "Kode for mannskap"),
-        ),
-      ],
-    );
+  Widget _buildPasscodes(Operation operation) {
+    return isCommander
+        ? Row(
+            children: <Widget>[
+              Expanded(
+                flex: 2,
+                child: _buildValueTile("${operation.passcodes?.commander}", label: "Kode for aksjonsledelse"),
+              ),
+              SizedBox(width: OperationPage.SPACING),
+              Expanded(
+                flex: 2,
+                child: _buildValueTile("${operation.passcodes?.personnel}", label: "Kode for mannskap"),
+              ),
+            ],
+          )
+        : _buildValueTile("${operation.passcodes?.personnel}", label: "Kode for mannskap");
   }
 
   Widget _buildValueTile(
@@ -323,25 +325,34 @@ class _OperationPageState extends State<OperationPage> {
     GestureTapCallback onValueTap,
     GestureTapCallback onValueLongPress,
   }) {
-    Widget tile = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
-        if (label != null && label.isNotEmpty) Spacer(),
-        Wrap(
-          children: [
-            Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
-            if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle, overflow: TextOverflow.ellipsis),
-          ],
-        ),
-        if (emptyAsNull(subtitle) != null)
-          Text(
-            subtitle,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
-          )
-      ],
+    Widget tile = GestureDetector(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
+          if (label != null && label.isNotEmpty) Spacer(),
+          Wrap(
+            children: [
+              Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
+              if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+          if (emptyAsNull(subtitle) != null)
+            Text(
+              subtitle,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 14, color: Colors.grey),
+            )
+        ],
+      ),
+      onLongPress: () {
+        copy(
+          value,
+          widget.onMessage,
+          message: '"$value" kopiert til utklippstavlen',
+        );
+      },
     );
 
     // Value detector?
