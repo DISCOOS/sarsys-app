@@ -88,8 +88,8 @@ class DeviceMessage {
   });
   final Map<String, dynamic> data;
   String get type => data.elementAt('type');
-  String get uuid => data.elementAt('data/uuid');
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
+  String get uuid => data.elementAt('uuid');
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('patches');
 }
 
 @ChopperApi(baseUrl: '/devices')

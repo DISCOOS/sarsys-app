@@ -70,22 +70,19 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   void _processRepoState(StorageTransition<Device> transition) async {
     try {
-      if (hasSubscriptions && transition.to.isRemote) {
-        switch (transition.to.status) {
-          case StorageStatus.created:
-            final device = transition.to.value;
-            if (_shouldSetName(device)) {
-              dispatch(UpdateDevice(device.copyWith(
-                number: userBloc.user.phone,
-                alias: userBloc.user.shortName,
-                networkId: userBloc.user.userId,
-              )));
-            }
-            break;
-          case StorageStatus.updated:
-            break;
-          case StorageStatus.deleted:
-            break;
+      if (hasSubscriptions) {
+        final device = transition.to.value;
+        if (_shouldSetName(device, transition.to.status)) {
+          dispatch(UpdateDevice(device.copyWith(
+            number: userBloc.user.phone,
+            alias: userBloc.user.shortName,
+            networkId: userBloc.user.userId,
+          )));
+        } else if (transition.to.isRemote) {
+          dispatch(
+            // Catch up with remote state
+            _DeviceMessage(device, transition.from?.value),
+          );
         }
       }
     } catch (error, stackTrace) {
@@ -132,7 +129,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   /// Check if device is this application
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
 
-  bool _shouldSetName(Device device) => device.name == null && isThisApp(device);
+  /// Check if device name should be updated
+  bool _shouldSetName(Device device, StorageStatus status) =>
+      device.name == null && isThisApp(device) && status != StorageStatus.deleted;
 
   /// Get [OperationBloc]
   final UserBloc userBloc;
@@ -249,6 +248,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       yield await _update(command);
     } else if (command is DeleteDevice) {
       yield await _delete(command);
+    } else if (command is _DeviceMessage) {
+      yield await _process(command);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
     } else {
@@ -293,6 +294,16 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     return toOK(
       command,
       DeviceDeleted(device),
+      result: device,
+    );
+  }
+
+  Future<DeviceState> _process(_DeviceMessage command) async {
+    _assertData(command.data);
+    final device = command.data;
+    return toOK(
+      command,
+      DeviceUpdated(device, command.previous),
       result: device,
     );
   }
@@ -359,6 +370,18 @@ class UnloadDevices extends DeviceCommand<void, Iterable<Device>> {
 
   @override
   String toString() => '$runtimeType {}';
+}
+
+class _DeviceMessage extends DeviceCommand<Device, Device> {
+  _DeviceMessage(
+    Device device,
+    this.previous,
+  ) : super(device);
+
+  final Device previous;
+
+  @override
+  String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
 /// ---------------------
