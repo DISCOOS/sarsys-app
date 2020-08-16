@@ -19,6 +19,11 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+/// Methods for idempotent [Tracking] operations
+///
+/// Handles round-trip updates from server by
+/// not adding same [Source], [Track] or
+/// [Position] twice.
 class TrackingUtils {
   /// Create tracking reference
   static AggregateRef<Tracking> newRef({String tuuid}) => AggregateRef.fromType<Tracking>(
@@ -244,11 +249,7 @@ class TrackingUtils {
         attached.update(
           source.uuid,
           // Only append position if unique
-          (track) => track.positions.contains(position)
-              ? track
-              : track.cloneWith(
-                  positions: [...track.positions, position],
-                ),
+          (track) => addUnique(track, position),
           ifAbsent: () => _attach(tracks, source),
         );
       } else {
@@ -259,6 +260,23 @@ class TrackingUtils {
     return attached.values.toList();
   }
 
+  static Track addUnique(TrackModel track, Position position) {
+    final positions = _addUnique(track.positions, position);
+    return track.cloneWith(
+      positions: positions,
+    );
+  }
+
+  static Iterable<Position> _addUnique(List<Position> positions, Position position) {
+    final found = positions.firstWhere((p) => p.geometry == position.geometry, orElse: () => null);
+    if (found != null) {
+      final idx = positions.indexOf(found);
+      final replaced = positions.toList()..replaceRange(idx, idx + 1, [position]);
+      return replaced;
+    }
+    return [...positions, position];
+  }
+
   static Track _attach(Iterable<TrackModel> tracks, Source source) {
     final existing = find(tracks, source.uuid);
     final position = toPosition(source);
@@ -267,30 +285,22 @@ class TrackingUtils {
             source,
             position,
           )
-        : _cloneTrack(
-            existing,
-            position,
+        : existing.cloneWith(
+            status: TrackStatus.attached,
+            positions: _addUnique(existing.positions, position),
           );
     return track;
   }
 
-  static Track _cloneTrack(Track existing, Position position) {
-    return existing.cloneWith(
-      status: TrackStatus.attached,
-      positions: List.from(existing.positions)
-        ..addAll(
-          position == null ? [] : [position],
-        ),
-    );
-  }
-
   static Track _newTrack(Source source, Position position) {
-    return TrackModel(
+    final positions = position == null ? [] : [position];
+    final track = TrackModel(
       id: source.uuid,
+      positions: positions,
       status: TrackStatus.attached,
-      positions: position == null ? [] : [position],
       source: SourceModel.fromJson(source.toJson()),
     );
+    return track;
   }
 
   /// Detach [tracks] with [Track.source] matching [suuids]

@@ -594,9 +594,7 @@ class _TrackSimulation {
           final positions = track.positions.toList();
           final position = _toPosition(track.source);
           if (!positions.contains(position)) {
-            return track.cloneWith(
-              positions: positions..add(position),
-            );
+            return TrackingUtils.addUnique(track, position);
           }
           return track;
         });
