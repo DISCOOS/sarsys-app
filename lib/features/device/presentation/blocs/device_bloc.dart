@@ -434,7 +434,7 @@ class DeviceUpdated extends DeviceState<Device> {
   final Device previous;
   DeviceUpdated(Device device, this.previous) : super(device);
 
-  bool isStatusChanged() => data.status != previous.status;
+  bool isStatusChanged() => data.status != previous?.status;
   bool isLocationChanged() => data.position != previous?.position;
 
   @override
