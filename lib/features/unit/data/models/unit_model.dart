@@ -18,7 +18,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
     @required UnitStatus status,
     @required String callsign,
     String phone,
-    this.personnels = const [],
+    List<String> personnels = const [],
     AggregateRef<Tracking> tracking,
   }) : super(
           uuid: uuid,
@@ -30,8 +30,6 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
           callsign: callsign,
           personnels: personnels,
         );
-
-  final List<String> personnels;
 
   /// Factory constructor for creating a new `Unit` instance from json data
   factory UnitModel.fromJson(Map<String, dynamic> json) => _$UnitModelFromJson(json);

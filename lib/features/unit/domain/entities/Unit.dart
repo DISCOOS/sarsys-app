@@ -12,15 +12,16 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
     @required this.status,
     @required this.callsign,
     this.phone,
-    this.personnels = const [],
+    List<String> personnels = const <String>[],
     AggregateRef<Tracking> tracking,
-  }) : super(uuid, tracking, fields: [
+  })  : personnels = personnels ?? const <String>[],
+        super(uuid, tracking, fields: [
           type,
           number,
           status,
           callsign,
           phone,
-          personnels,
+          personnels ?? const <String>[],
         ]);
 
   final int number;
