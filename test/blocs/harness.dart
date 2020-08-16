@@ -729,8 +729,7 @@ class BlocTestHarness implements BlocDelegate {
   void onEvent(Bloc bloc, Object event) {
     events.update(bloc, (events) => events..add(event), ifAbsent: () => [event]);
     if (_debug) {
-      print('onError(${bloc.runtimeType})');
-      print(event);
+      _printError('onError(${bloc.runtimeType})', event, StackTrace.current);
     }
   }
 
@@ -740,9 +739,10 @@ class BlocTestHarness implements BlocDelegate {
   }
 
   void _printError(String message, Object error, StackTrace stackTrace) {
-    print(message);
-    print(error);
-    print(stackTrace);
+    print('------ERROR-------');
+    print('message: $message');
+    print('error: $error');
+    print('stackTrace: $stackTrace');
   }
 }
 
