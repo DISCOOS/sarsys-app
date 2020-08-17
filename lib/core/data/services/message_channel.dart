@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:SarSys/core/data/services/service.dart';
@@ -11,6 +12,25 @@ import 'package:web_socket_channel/io.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class MessageChannel extends Service {
+  static const int closedByApp = 4000;
+  static const int closeAppReopening = 4001;
+  static const Map<int, String> closeCodeNames = const {
+    WebSocketStatus.normalClosure: 'normalClosure',
+    WebSocketStatus.abnormalClosure: 'abnormalClosure',
+    WebSocketStatus.goingAway: 'goingAway',
+    WebSocketStatus.internalServerError: 'internalServerError',
+    WebSocketStatus.invalidFramePayloadData: 'invalidFramePayloadData',
+    WebSocketStatus.messageTooBig: 'messageTooBig',
+    WebSocketStatus.missingMandatoryExtension: 'missingMandatoryExtension',
+    WebSocketStatus.noStatusReceived: 'noStatusReceived',
+    WebSocketStatus.policyViolation: 'policyViolation',
+    WebSocketStatus.protocolError: 'protocolError',
+    WebSocketStatus.reserved1004: 'reserved1004',
+    WebSocketStatus.reserved1015: 'reserved1015',
+    closedByApp: 'closedByApp',
+    closeAppReopening: 'closeAppReopening',
+  };
+
   AuthToken _token;
   IOWebSocketChannel _channel;
   StreamSubscription _channelSubscription;
@@ -97,13 +117,19 @@ class MessageChannel extends Service {
   void _onError(Object error, StackTrace stackTrace) {
     print(error);
     print(stackTrace);
-    close();
+    _close(
+      reason: _channel.closeReason ?? '$error',
+      code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
+    );
   }
 
   void _onDone() {
     print('MessageChannel::done');
     if (!_isClosed) {
-      close();
+      _close(
+        reason: _channel.closeReason ?? 'Done event received',
+        code: _channel.closeCode ?? WebSocketStatus.normalClosure,
+      );
       if (!_token.isExpired) {
         open(url: _url, token: _token);
       }
@@ -114,7 +140,10 @@ class MessageChannel extends Service {
     @required String url,
     @required AuthToken token,
   }) {
-    close();
+    _close(
+      reason: 'App re-opened',
+      code: closeAppReopening,
+    );
     _url = url;
     _token = token;
     _channel = IOWebSocketChannel.connect(url, headers: {
@@ -133,12 +162,23 @@ class MessageChannel extends Service {
   bool _isClosed = false;
 
   void close() {
+    _close(
+      reason: 'Closed by app',
+      code: closedByApp,
+    );
+  }
+
+  void _close({int code, String reason}) {
     _isClosed = true;
     if (_channel != null) {
       _channel?.sink?.close();
       _channelSubscription?.cancel();
       _channel = null;
       _channelSubscription = null;
+      _stats = _stats.update(
+        code: code,
+        reason: reason,
+      );
       debugPrint('Closed message channel');
     }
   }
@@ -147,35 +187,74 @@ class MessageChannel extends Service {
 class MessageChannelStatistics {
   MessageChannelStatistics({
     int opened = 0,
-    int inboundCount = 0,
     DateTime started,
-  })  : _opened = opened,
-        _inboundCount = inboundCount,
-        _fromDate = started;
+    int inboundCount = 0,
+    Map<int, Map<String, int>> codes = const {},
+  })  : _codes = codes,
+        _opened = opened,
+        _fromDate = started,
+        _inboundCount = inboundCount;
 
   final int _opened;
   final int _inboundCount;
   final DateTime _fromDate;
+  final Map<int, Map<String, int>> _codes;
 
   int get opened => _opened;
   int get inboundCount => _inboundCount;
+  Map<int, Map<String, int>> get codes => Map.unmodifiable(_codes);
   double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
 
   MessageChannelStatistics update({
+    int code,
     int inbound,
+    String reason,
     bool opened = false,
-  }) =>
-      MessageChannelStatistics(
-        started: _fromDate,
-        inboundCount: inboundCount ?? _inboundCount,
-        opened: opened ? _opened + 1 : _opened,
+  }) {
+    assert(
+      (code == null && reason == null) || (code != null && reason != null),
+      "arguments 'code' and 'reason' must both be null or set",
+    );
+    final codes = Map<int, Map<String, int>>.from(_codes ?? {});
+    if (code != null) {
+      codes.update(
+        code,
+        (reasons) => Map.from(reasons ?? <String, int>{})..update(reason, (count) => count + 1, ifAbsent: () => 1),
+        ifAbsent: () => {reason: 1},
       );
+    }
+    return MessageChannelStatistics(
+      started: _fromDate,
+      codes: codes,
+      opened: opened ? _opened + 1 : _opened,
+      inboundCount: inboundCount ?? _inboundCount,
+    );
+  }
 
   @override
   String toString() => '$runtimeType{'
+      'codes: $_codes,'
       'opened: $opened, '
       'inboundRate: $inboundRate,'
       'inboundCount: $inboundCount, '
       'from: ${_fromDate.toIso8601String()},'
       '}';
+
+  List<Map<String, dynamic>> toCloseReasonAsJson() => codes.entries
+      .map((code) => {
+            'code': code.key,
+            'name': MessageChannel.closeCodeNames[code.key],
+            'reasons': code.value.entries
+                .map((reason) => {
+                      'message': reason.key,
+                      'count': reason.value,
+                    })
+                .toList(),
+          })
+      .toList();
+
+  String toCloseReasonAsString() {
+    JsonEncoder encoder = new JsonEncoder.withIndent('    ');
+    return encoder.convert(toCloseReasonAsJson());
+  }
 }

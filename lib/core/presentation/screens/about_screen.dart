@@ -1,12 +1,13 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:package_info/package_info.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/data/services/provider.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:package_info/package_info.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AboutScreen extends StatefulWidget {
   @override
@@ -68,31 +69,124 @@ class _AboutScreenState extends State<AboutScreen> {
           subtitle: Text(Defaults.baseRestUrl),
         ),
         GestureDetector(
-          child: ListTile(
-            title: Text("Websocket API"),
-            subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.opened} '
-                '${channel.stats.opened > 1 ? 'ganger' : 'gang'})'),
-            trailing: context.service<MessageChannel>().isOpen
-                ? Icon(Icons.check_circle, color: Colors.green)
-                : Icon(Icons.warning, color: Colors.orange),
-          ),
-          onLongPress: () async {
-            final answer = await prompt(
-              context,
-              'Koble opp på nytt',
-              'Vil du koble opp web-socket på nytt?',
-            );
-            if (answer) {
-              channel.close();
-              channel.open(
-                url: channel.url,
-                token: context.bloc<UserBloc>().repo.token,
-              );
-              setState(() {});
-            }
+          child: _buildChannelStatusTile(channel, context),
+          onTap: () async {
+            await _showStatistics(context, channel);
+            setState(() {});
           },
+          onLongPress: () => _openChannel(context, channel, setState),
         ),
       ],
     );
+  }
+
+  ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) {
+    return ListTile(
+      title: Text("Websocket API"),
+      subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.opened} '
+          '${channel.stats.opened > 1 ? 'ganger' : 'gang'})'),
+      trailing: context.service<MessageChannel>().isOpen
+          ? Icon(Icons.check_circle, color: Colors.green)
+          : Icon(Icons.warning, color: Colors.orange),
+    );
+  }
+
+  Future _showStatistics(BuildContext context, MessageChannel channel) => showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return StatefulBuilder(builder: (context, setState) {
+            final closeCodes = channel.stats.toCloseReasonAsJson();
+            return Scaffold(
+              appBar: AppBar(
+                title: Text('Statistikk'),
+                leading: IconButton(
+                  icon: Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.refresh),
+                    onPressed: () => _openChannel(context, channel, setState),
+                  )
+                ],
+              ),
+              body: Column(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildChannelStatusTile(channel, context),
+                  ListTile(
+                    title: Text('Meldinger prosessert'),
+                    subtitle: Text(
+                      '${channel.stats.inboundCount} ${channel.stats.inboundCount > 1 ? 'meldinger' : 'melding'}',
+                    ),
+                  ),
+                  _buildSection(context, 'Årsakskoder', subtitle: closeCodes.isEmpty ? Text('Ingen') : null),
+                  if (closeCodes.isNotEmpty)
+                    ...closeCodes.map((json) => ListTile(
+                        title: Text('${json['code']} (${json['name']})'),
+                        subtitle: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...(json['reasons'] as List).map(
+                              (reason) => Text.rich(
+                                TextSpan(
+                                  text: 'count',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  children: [
+                                    TextSpan(
+                                      text: ': ${reason['count']}, ',
+                                      style: TextStyle(fontWeight: FontWeight.normal),
+                                    ),
+                                    TextSpan(
+                                      text: 'message',
+                                    ),
+                                    TextSpan(
+                                      text: ': ${reason['message']}',
+                                      style: TextStyle(fontWeight: FontWeight.normal),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ))),
+                ],
+              ),
+            );
+          });
+        },
+      );
+
+  ListTile _buildSection(BuildContext context, String title, {Widget subtitle}) {
+    return ListTile(
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.subtitle2.copyWith(fontWeight: FontWeight.bold),
+      ),
+      subtitle: subtitle,
+    );
+  }
+
+  Future _openChannel(
+    BuildContext context,
+    MessageChannel channel,
+    StateSetter setState,
+  ) async {
+    final answer = await prompt(
+      context,
+      'Koble opp på nytt',
+      'Vil du koble opp web-socket på nytt?',
+    );
+    if (answer) {
+      channel.close();
+      channel.open(
+        url: channel.url,
+        token: context.bloc<UserBloc>().repo.token,
+      );
+      setState(() {});
+    }
   }
 }
