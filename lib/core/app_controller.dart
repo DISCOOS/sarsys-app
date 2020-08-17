@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -565,6 +566,13 @@ class AppController {
     }
   }
 
+  /// List of [AppControllerState]s with [User] data
+  List<AppControllerState> get userStates => const [
+        AppControllerState.Initialized,
+        AppControllerState.Local,
+        AppControllerState.Ready,
+      ];
+
   void _onUserState(UserState state) {
     if (state.isPending()) {
       return;
@@ -574,11 +582,7 @@ class AppController {
     // 2) Initialized -> Ready User (authenticated), blocks are ready to receive commands
     // 3) Local -> Ready
     // 4) Ready -> Local
-    if (const [
-      AppControllerState.Initialized,
-      AppControllerState.Local,
-      AppControllerState.Ready,
-    ].contains(_state)) {
+    if (userStates.contains(_state)) {
       final isReady = state.isAuthenticated() || state.isUnlocked();
       var next = isReady ? AppControllerState.Ready : AppControllerState.Local;
       if (next != _state) {
@@ -587,29 +591,50 @@ class AppController {
       }
     }
     if (isReady) {
-      final token = bloc<UserBloc>().repo.token;
-      // Establish message channel
-      _channel.open(
-        token: token,
-        url: '${Defaults.baseWsUrl}/api/messages/connect',
+      _configureServicesOnRefresh();
+    } else {
+      _disposeServices(state);
+    }
+  }
+
+  StreamSubscription _tokenRefreshSubscription;
+  void _configureServicesOnRefresh() {
+    if (_tokenRefreshSubscription == null) {
+      _tokenRefreshSubscription = registerStreamSubscription(
+        // Configure services again after token refresh
+        bloc<UserBloc>().repo.onRefresh.listen(_configureServices),
       );
-      // Ensure that token is updated
-      LocationService(
-        options: bloc<ActivityBloc>().profile.options,
-      ).configure(
-        token: token,
-        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
-      );
-    } else if (LocationService.exists) {
-      if (state.isUnset() && SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode) {
-        // Close message channel
-        _channel.close();
-        // Delete positions from shared devices
-        LocationService().clear();
-      }
-      // An authenticated user is required
+    }
+    _configureServices(bloc<UserBloc>().repo.token);
+  }
+
+  void _configureServices(AuthToken token) {
+    _channel.open(
+      token: token,
+      appId: bloc<AppConfigBloc>().config.udid,
+      onExpired: () => bloc<UserBloc>().repo.refresh(),
+      url: '${Defaults.baseWsUrl}/api/messages/connect',
+    );
+    // Ensure that token is updated
+    LocationService(
+      options: bloc<ActivityBloc>().profile.options,
+    ).configure(
+      token: token,
+      duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+    );
+  }
+
+  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode;
+
+  void _disposeServices(UserState state) {
+    // Did user share device with other users?
+    if (LocationService.exists && state.isUnset() && isShared) {
+      LocationService().clear();
       LocationService().dispose();
     }
+    _channel?.close();
+    _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = null;
   }
 
   void _onDeviceState(DeviceState state) {

@@ -94,8 +94,9 @@ void runAppWithCatcher(Widget app, AppController controller) {
   );
 
   var exceptions = [
-    // Silence map tile cache host lookup
-    "SocketException: Failed host lookup",
+    // Silence connection errors
+    "ClientException",
+    "SocketException",
     // Silence flutter_cache_manager exceptions
     "Could not instantiate image codec",
     "Couldn't download or retrieve file",
@@ -108,8 +109,8 @@ void runAppWithCatcher(Widget app, AppController controller) {
     "OS Error: No such file or directory",
     "Connection closed while receiving data",
     "Connection closed before full header was received",
-    "SocketException: OS Error: Connection timed out",
-    "SocketException: OS Error: Software caused connection abort",
+    "OS Error: Connection timed out",
+    "OS Error: Software caused connection abort",
     "HandshakeException: Connection terminated during handshake",
   ];
 

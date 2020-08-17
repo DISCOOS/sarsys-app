@@ -421,6 +421,12 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
+
+  @override
+  Future<void> close() {
+    repo.dispose();
+    return super.close();
+  }
 }
 
 /// ---------------------

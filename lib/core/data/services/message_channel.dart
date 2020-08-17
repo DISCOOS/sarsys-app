@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
@@ -31,14 +32,23 @@ class MessageChannel extends Service {
     closeAppReopening: 'closeAppReopening',
   };
 
-  AuthToken _token;
   IOWebSocketChannel _channel;
   StreamSubscription _channelSubscription;
-  MessageChannelStatistics _stats = MessageChannelStatistics();
+  MessageChannelState _stats = MessageChannelState();
+  StreamController<MessageChannelState> _statsController = StreamController.broadcast();
 
   /// Get web-service url
   String get url => _url;
   String _url;
+
+  /// Get current app id
+  String get appId => _appId;
+  String _appId;
+
+  /// Get current [AuthToken]
+  AuthToken get token => _token;
+  AuthToken _token;
+  VoidCallback _onExpired;
 
   /// Registered event routes from [Type] to handlers
   final Map<String, Set<Function>> _routes = {};
@@ -46,8 +56,11 @@ class MessageChannel extends Service {
   /// Check if channel is open
   bool get isOpen => !_isClosed;
 
-  /// Get [MessageChannelStatistics]
-  MessageChannelStatistics get stats => _stats;
+  /// Get [MessageChannelState]
+  MessageChannelState get state => _stats;
+
+  /// Get stream os [MessageChannelState] changes
+  Stream<MessageChannelState> get onChanged => _statsController.stream;
 
   /// Subscribe to event with given handler
   ValueChanged<Map<String, dynamic>> subscribe(String type, ValueChanged<Map<String, dynamic>> handler) {
@@ -102,6 +115,7 @@ class MessageChannel extends Service {
           }
         });
         _stats = _stats.update(inbound: 1);
+        _statsController.add(_stats);
       }
     } catch (e, stackTrace) {
       Catcher.reportCheckedError(
@@ -115,8 +129,8 @@ class MessageChannel extends Service {
   Iterable<Function> _toHandlers(String type) => _routes[type] ?? [];
 
   void _onError(Object error, StackTrace stackTrace) {
-    print(error);
-    print(stackTrace);
+    debugPrint(error);
+    debugPrint(stackTrace.toString());
     _close(
       reason: _channel.closeReason ?? '$error',
       code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
@@ -130,15 +144,24 @@ class MessageChannel extends Service {
         reason: _channel.closeReason ?? 'Done event received',
         code: _channel.closeCode ?? WebSocketStatus.normalClosure,
       );
-      if (!_token.isExpired) {
-        open(url: _url, token: _token);
+      if (_token.isExpired && _onExpired != null) {
+        _onExpired();
+      } else if (_token.isValid) {
+        open(
+          url: _url,
+          token: _token,
+          appId: _appId,
+          onExpired: _onExpired,
+        );
       }
     }
   }
 
   void open({
     @required String url,
+    @required String appId,
     @required AuthToken token,
+    VoidCallback onExpired,
   }) {
     _close(
       reason: 'App re-opened',
@@ -146,16 +169,25 @@ class MessageChannel extends Service {
     );
     _url = url;
     _token = token;
-    _channel = IOWebSocketChannel.connect(url, headers: {
-      'Authorization': 'Bearer ${token.accessToken}',
-    });
+    _appId = appId;
+    _onExpired = onExpired ?? _onExpired;
+    _channel = IOWebSocketChannel.connect(
+      url,
+      headers: {
+        'x-app-id': '$appId',
+        'Authorization': 'Bearer ${token.accessToken}',
+      },
+      pingInterval: Duration(seconds: 60),
+    );
     _channelSubscription = _channel.stream.listen(
       _onData,
-      onError: _onError,
       onDone: _onDone,
+      onError: _onError,
     );
     _isClosed = false;
     _stats = _stats.update(opened: true);
+    _statsController ??= StreamController.broadcast();
+    _statsController.add(_stats);
     debugPrint('Opened message channel');
   }
 
@@ -177,23 +209,26 @@ class MessageChannel extends Service {
       _channelSubscription = null;
       _stats = _stats.update(
         code: code,
-        reason: reason,
+        reason: emptyAsNull(reason) ?? 'None',
       );
+      _statsController.add(_stats);
+      _statsController.close();
+      _statsController = null;
       debugPrint('Closed message channel');
     }
   }
 }
 
-class MessageChannelStatistics {
-  MessageChannelStatistics({
+class MessageChannelState {
+  MessageChannelState({
     int opened = 0,
     DateTime started,
     int inboundCount = 0,
     Map<int, Map<String, int>> codes = const {},
-  })  : _codes = codes,
-        _opened = opened,
-        _fromDate = started,
-        _inboundCount = inboundCount;
+  })  : _codes = codes ?? {},
+        _opened = opened ?? 0,
+        _inboundCount = inboundCount ?? 0,
+        _fromDate = started ?? DateTime.now();
 
   final int _opened;
   final int _inboundCount;
@@ -205,7 +240,7 @@ class MessageChannelStatistics {
   Map<int, Map<String, int>> get codes => Map.unmodifiable(_codes);
   double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
 
-  MessageChannelStatistics update({
+  MessageChannelState update({
     int code,
     int inbound,
     String reason,
@@ -223,11 +258,11 @@ class MessageChannelStatistics {
         ifAbsent: () => {reason: 1},
       );
     }
-    return MessageChannelStatistics(
-      started: _fromDate,
+    return MessageChannelState(
       codes: codes,
+      started: _fromDate,
       opened: opened ? _opened + 1 : _opened,
-      inboundCount: inboundCount ?? _inboundCount,
+      inboundCount: _inboundCount + (inbound ?? 0),
     );
   }
 

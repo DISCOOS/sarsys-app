@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
@@ -40,6 +41,10 @@ class UserRepository implements Repository {
 
   /// User is authenticated (token might be invalid)
   bool get isAuthenticated => user != null;
+
+  /// Listen for refresh of token
+  Stream<AuthToken> get onRefresh => _controller.stream;
+  StreamController<AuthToken> _controller = StreamController.broadcast();
 
   /// Check if user has token
   User get(String userId) => isReady && _isNotNull(userId) ? _users?.get(userId) : null;
@@ -409,8 +414,10 @@ class UserRepository implements Repository {
     final response = await service.refresh(token);
     if (response.is200) {
       final token = response.body;
+      final user = await _toUser(token, lock: lock);
+      _controller.add(token);
       return ServiceResponse.ok<User>(
-        body: await _toUser(token, lock: lock),
+        body: user,
       );
     }
     return response.copyWith<User>(
@@ -461,6 +468,10 @@ class UserRepository implements Repository {
       await Storage.deleteUserId();
     }
     return Future.value();
+  }
+
+  void dispose() {
+    _controller?.close();
   }
 }
 

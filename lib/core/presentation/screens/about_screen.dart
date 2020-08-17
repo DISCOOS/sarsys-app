@@ -1,3 +1,4 @@
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
@@ -69,9 +70,13 @@ class _AboutScreenState extends State<AboutScreen> {
           subtitle: Text(Defaults.baseRestUrl),
         ),
         GestureDetector(
-          child: _buildChannelStatusTile(channel, context),
+          child: StreamBuilder(
+              stream: channel.onChanged,
+              builder: (context, snapshot) {
+                return _buildChannelStatusTile(channel, context);
+              }),
           onTap: () async {
-            await _showStatistics(context, channel);
+            await _showChannelStatistics(context, channel);
             setState(() {});
           },
           onLongPress: () => _openChannel(context, channel, setState),
@@ -80,23 +85,21 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) {
-    return ListTile(
-      title: Text("Websocket API"),
-      subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.stats.opened} '
-          '${channel.stats.opened > 1 ? 'ganger' : 'gang'})'),
-      trailing: context.service<MessageChannel>().isOpen
-          ? Icon(Icons.check_circle, color: Colors.green)
-          : Icon(Icons.warning, color: Colors.orange),
-    );
-  }
+  ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) => ListTile(
+        title: Text("Websocket API"),
+        subtitle: Text('${Defaults.baseWsUrl} (oppkoblet ${channel.state.opened} '
+            '${channel.state.opened > 1 ? 'ganger' : 'gang'})'),
+        trailing: context.service<MessageChannel>().isOpen
+            ? Icon(Icons.check_circle, color: Colors.green)
+            : Icon(Icons.warning, color: Colors.orange),
+      );
 
-  Future _showStatistics(BuildContext context, MessageChannel channel) => showDialog(
+  Future _showChannelStatistics(BuildContext context, MessageChannel channel) => showDialog(
         context: context,
         builder: (BuildContext context) {
           // return object of type Dialog
           return StatefulBuilder(builder: (context, setState) {
-            final closeCodes = channel.stats.toCloseReasonAsJson();
+            final closeCodes = channel.state.toCloseReasonAsJson();
             return Scaffold(
               appBar: AppBar(
                 title: Text('Statistikk'),
@@ -111,50 +114,64 @@ class _AboutScreenState extends State<AboutScreen> {
                   )
                 ],
               ),
-              body: Column(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildChannelStatusTile(channel, context),
-                  ListTile(
-                    title: Text('Meldinger prosessert'),
-                    subtitle: Text(
-                      '${channel.stats.inboundCount} ${channel.stats.inboundCount > 1 ? 'meldinger' : 'melding'}',
-                    ),
-                  ),
-                  _buildSection(context, 'Årsakskoder', subtitle: closeCodes.isEmpty ? Text('Ingen') : null),
-                  if (closeCodes.isNotEmpty)
-                    ...closeCodes.map((json) => ListTile(
-                        title: Text('${json['code']} (${json['name']})'),
-                        subtitle: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...(json['reasons'] as List).map(
-                              (reason) => Text.rich(
-                                TextSpan(
-                                  text: 'count',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                  children: [
-                                    TextSpan(
-                                      text: ': ${reason['count']}, ',
-                                      style: TextStyle(fontWeight: FontWeight.normal),
+              body: StreamBuilder<MessageChannelState>(
+                  stream: channel.onChanged,
+                  initialData: channel.state,
+                  builder: (context, snapshot) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildChannelStatusTile(channel, context),
+                        ListTile(
+                          title: Text("Token status"),
+                          subtitle: Text(
+                            'Token is ${channel.token.isExpired ? 'expired' : 'valid'}',
+                          ),
+                        ),
+                        ListTile(
+                          title: Text('Meldinger prosessert'),
+                          subtitle: Text(
+                            '${channel.state.inboundCount} ${channel.state.inboundCount > 1 ? 'meldinger' : 'melding'}',
+                          ),
+                        ),
+                        _buildSection(context, 'Årsakskoder', subtitle: closeCodes.isEmpty ? Text('Ingen') : null),
+                        if (closeCodes.isNotEmpty)
+                          ...closeCodes.map(
+                            (json) => ListTile(
+                              title: Text('${json['code']} (${json['name']})'),
+                              subtitle: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ...(json['reasons'] as List).map(
+                                    (reason) => Text.rich(
+                                      TextSpan(
+                                        text: 'count',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        children: [
+                                          TextSpan(
+                                            text: ': ${reason['count']}, ',
+                                            style: TextStyle(fontWeight: FontWeight.normal),
+                                          ),
+                                          TextSpan(
+                                            text: 'message',
+                                          ),
+                                          TextSpan(
+                                            text: ': ${reason['message']}',
+                                            style: TextStyle(fontWeight: FontWeight.normal),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    TextSpan(
-                                      text: 'message',
-                                    ),
-                                    TextSpan(
-                                      text: ': ${reason['message']}',
-                                      style: TextStyle(fontWeight: FontWeight.normal),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ))),
-                ],
-              ),
+                          ),
+                      ],
+                    );
+                  }),
             );
           });
         },
@@ -182,10 +199,16 @@ class _AboutScreenState extends State<AboutScreen> {
     );
     if (answer) {
       channel.close();
-      channel.open(
-        url: channel.url,
-        token: context.bloc<UserBloc>().repo.token,
-      );
+      if (context.bloc<UserBloc>().repo.isTokenExpired) {
+        await context.bloc<UserBloc>().repo.refresh();
+      }
+      if (!channel.isOpen) {
+        channel.open(
+          url: channel.url,
+          token: context.bloc<UserBloc>().repo.token,
+          appId: context.bloc<AppConfigBloc>().config.udid,
+        );
+      }
       setState(() {});
     }
   }

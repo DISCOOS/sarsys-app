@@ -131,9 +131,9 @@ Map<K, V> sortMapValues<K, V, T>(Map<K, V> map, [T mapper(V value), int compare(
   return sortedMap;
 }
 
-isEmptyOrNull(value) => emptyAsNull(value) == null;
+bool isEmptyOrNull(value) => emptyAsNull(value) == null;
 
-emptyAsNull(value) => value is String
+T emptyAsNull<T>(T value) => value is String
     ? (value.isNotEmpty == true ? value : null)
     : (value is Iterable ? (value.isNotEmpty == true ? value : null) : value);
 
