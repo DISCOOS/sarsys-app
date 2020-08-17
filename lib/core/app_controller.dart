@@ -654,8 +654,8 @@ class AppController {
     bus.unsubscribeAll();
     channel.unsubscribeAll();
 
-    // Close message channel to backend
-    channel.close();
+    // Dispose message channel
+    channel.dispose();
 
     // Notify blocs not ready, will show splash screen
     _controller.add(_state = AppControllerState.Empty);

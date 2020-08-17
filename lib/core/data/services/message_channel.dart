@@ -64,6 +64,7 @@ class MessageChannel extends Service {
 
   /// Subscribe to event with given handler
   ValueChanged<Map<String, dynamic>> subscribe(String type, ValueChanged<Map<String, dynamic>> handler) {
+    _assertState();
     _routes.update(
       '$type',
       (handlers) => handlers..add(handler),
@@ -74,6 +75,7 @@ class MessageChannel extends Service {
 
   /// Subscribe to event with given handler
   ValueChanged<Map<String, dynamic>> subscribeAll(ValueChanged<Map<String, dynamic>> handler, List<String> types) {
+    _assertState();
     for (var type in types) {
       _routes.update(
         '$type',
@@ -86,6 +88,7 @@ class MessageChannel extends Service {
 
   /// Unsubscribe given event handler
   void unsubscribe(String type, ValueChanged handler) {
+    _assertState();
     final handlers = _routes['$type'] ?? {};
     handlers.remove(handler);
     if (handlers.isEmpty) {
@@ -95,6 +98,7 @@ class MessageChannel extends Service {
 
   /// Unsubscribe all event handlers
   void unsubscribeAll({List<String> types = const []}) {
+    _assertState();
     if (types.isEmpty) {
       _routes.clear();
     } else {
@@ -163,6 +167,7 @@ class MessageChannel extends Service {
     @required AuthToken token,
     VoidCallback onExpired,
   }) {
+    _assertState();
     _close(
       reason: 'App re-opened',
       code: closeAppReopening,
@@ -186,7 +191,6 @@ class MessageChannel extends Service {
     );
     _isClosed = false;
     _stats = _stats.update(opened: true);
-    _statsController ??= StreamController.broadcast();
     _statsController.add(_stats);
     debugPrint('Opened message channel');
   }
@@ -194,6 +198,7 @@ class MessageChannel extends Service {
   bool _isClosed = false;
 
   void close() {
+    _assertState();
     _close(
       reason: 'Closed by app',
       code: closedByApp,
@@ -212,10 +217,23 @@ class MessageChannel extends Service {
         reason: emptyAsNull(reason) ?? 'None',
       );
       _statsController.add(_stats);
-      _statsController.close();
-      _statsController = null;
       debugPrint('Closed message channel');
     }
+  }
+
+  void _assertState() {
+    if (_statsController == null) {
+      throw StateError('$runtimeType is disposed');
+    }
+  }
+
+  void dispose() {
+    _close(
+      code: closedByApp,
+      reason: "Disposed",
+    );
+    _statsController.close();
+    _statsController = null;
   }
 }
 
