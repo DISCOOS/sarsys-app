@@ -233,7 +233,6 @@ class MessageChannel extends Service {
       reason: "Disposed",
     );
     _statsController.close();
-    _statsController = null;
   }
 }
 

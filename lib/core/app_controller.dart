@@ -189,14 +189,12 @@ class AppController {
         toServiceProvider<BaseMapService>(),
         toServiceProvider<NavigationService>(),
         toServiceProvider<ConnectivityService>(),
-        // Services that are initialized after build
+        // Services that are initialized after each build
         ServiceProvider<LocationService>(
           create: (_) => LocationService(),
-          lazy: true,
         ),
         ServiceProvider<MessageChannel>(
           create: (_) => _channel,
-          lazy: true,
         ),
       ];
 
