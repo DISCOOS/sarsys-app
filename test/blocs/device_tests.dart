@@ -1,5 +1,6 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:flutter/foundation.dart';
 import '../mock/device_service_mock.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,10 +32,20 @@ void main() async {
       final device2 = harness.deviceService.add();
 
       // Act
-      List<Device> devices = await harness.deviceBloc.load();
+      final cached = await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      final fetched = harness.deviceBloc.repo.values;
 
       // Assert
-      expect(devices.length, 2, reason: "SHOULD contain two devices");
+      expect(cached.length, 0, reason: "Cached SHOULD contain no devices");
+      expect(fetched.length, 2, reason: "Fetched SHOULD contain two devices");
       expect(
         harness.deviceBloc.repo.containsKey(device1.uuid),
         isTrue,
@@ -76,6 +87,14 @@ void main() async {
       await _prepare(harness);
       final device = harness.deviceService.add(type: DeviceType.app);
       await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
@@ -100,6 +119,14 @@ void main() async {
       await _prepare(harness);
       final device = harness.deviceService.add(type: DeviceType.app);
       await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
@@ -123,6 +150,14 @@ void main() async {
       await _prepare(harness);
       harness.deviceService.add(type: DeviceType.app);
       await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
@@ -139,36 +174,58 @@ void main() async {
       await _prepare(harness);
       final device = harness.deviceService.add(type: DeviceType.app);
       await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
       await harness.deviceBloc.unload();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesUnloaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
       await harness.deviceBloc.load();
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DevicesLoaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
       expect(harness.deviceBloc.repo.containsKey(device.uuid), isTrue, reason: "SHOULD contain device ${device.uuid}");
-      expectThroughInOrder(harness.deviceBloc, [isA<DevicesUnloaded>(), isA<DevicesLoaded>()]);
     });
 
     test('SHOULD reload when user is switched', () async {
       // Arrange
-      harness.connectivity.cellular();
-      await _testShouldReloadWhenUserIsSwitched(harness);
+      await _testShouldReloadWhenUserIsSwitched(harness, offline: false);
     });
 
     test('SHOULD unload when user is logged out', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _testShouldUnloadWhenUserIsLoggedOut(harness);
+      await _testShouldUnloadWhenUserIsLoggedOut(harness, offline: false);
     });
   });
 
   group('WHEN deviceBloc is OFFLINE', () {
     test('SHOULD load as EMPTY', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       harness.deviceService.add();
       harness.deviceService.add();
 
@@ -182,12 +239,20 @@ void main() async {
 
     test('SHOULD create device with state CREATED', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       final device = DeviceBuilder.create();
 
       // Act
       await harness.deviceBloc.create(device);
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DeviceCreated>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
       expectStorageStatus(
@@ -196,13 +261,12 @@ void main() async {
         remote: false,
       );
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one operation");
-      expectThrough(harness.deviceBloc, isA<DeviceCreated>());
     });
 
     test('SHOULD update device with state CREATED', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       final device1 = DeviceBuilder.create();
       final device2 = DeviceBuilder.create();
       await harness.deviceBloc.create(device1);
@@ -210,7 +274,17 @@ void main() async {
       expect(harness.deviceBloc.repo.length, 2, reason: "SHOULD contain two devices");
 
       // Act
-      await harness.deviceBloc.update(device2.copyWith(type: DeviceType.tetra));
+      await harness.deviceBloc.update(
+        device2.copyWith(type: DeviceType.tetra),
+      );
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DeviceUpdated>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
       expectStorageStatus(
@@ -220,29 +294,35 @@ void main() async {
       );
       expect(harness.deviceBloc.repo[device1.uuid].type, equals(DeviceType.app), reason: "SHOULD be type App");
       expect(harness.deviceBloc.repo[device2.uuid].type, equals(DeviceType.tetra), reason: "SHOULD be type tetra");
-      expectThrough(harness.deviceBloc, isA<DeviceUpdated>());
     });
 
     test('SHOULD delete local device', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       final device = DeviceBuilder.create();
       await harness.deviceBloc.create(device);
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
 
       // Act
       await harness.deviceBloc.delete(device.uuid);
+      await expectThroughLater(
+        harness.deviceBloc,
+        emits(isA<DeviceDeleted>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
       expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expectThrough(harness.deviceBloc, isA<DeviceDeleted>());
     });
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       final device = DeviceBuilder.create();
       await harness.deviceBloc.create(device);
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
@@ -257,8 +337,8 @@ void main() async {
 
     test('SHOULD be empty after reload', () async {
       // Arrange
-      harness.connectivity.offline();
       await _prepare(harness);
+      harness.connectivity.offline();
       final device = DeviceBuilder.create();
       await harness.deviceBloc.create(device);
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
@@ -274,14 +354,16 @@ void main() async {
 
     test('SHOULD unload when user is logged out', () async {
       // Arrange
-      harness.connectivity.offline();
-      await _testShouldUnloadWhenUserIsLoggedOut(harness);
+      await _testShouldUnloadWhenUserIsLoggedOut(harness, offline: true);
     });
   });
 }
 
-Future _testShouldUnloadWhenUserIsLoggedOut(BlocTestHarness harness) async {
+Future _testShouldUnloadWhenUserIsLoggedOut(BlocTestHarness harness, {@required bool offline}) async {
   await _prepare(harness);
+  if (offline) {
+    harness.connectivity.offline();
+  }
   final device = DeviceBuilder.create(type: DeviceType.app);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
@@ -302,8 +384,11 @@ Future _testShouldUnloadWhenUserIsLoggedOut(BlocTestHarness harness) async {
   );
 }
 
-Future _testShouldReloadWhenUserIsSwitched(BlocTestHarness harness) async {
+Future _testShouldReloadWhenUserIsSwitched(BlocTestHarness harness, {@required bool offline}) async {
   await _prepare(harness);
+  if (offline) {
+    harness.connectivity.offline();
+  }
   final device = DeviceBuilder.create(type: DeviceType.app);
   await harness.deviceBloc.create(device);
   expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
@@ -333,6 +418,13 @@ Future _prepare(BlocTestHarness harness) async {
   // A user must be authenticated
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 
-  // Prepare DeviceBloc
-  return await expectThroughLater(harness.deviceBloc, emits(isA<DevicesLoaded>()));
+  // Wait for block to load
+  return expectThroughLater(
+    harness.deviceBloc,
+    emits(isA<DevicesLoaded>().having(
+      (event) => event.isRemote,
+      'Should be remote',
+      isTrue,
+    )),
+  );
 }

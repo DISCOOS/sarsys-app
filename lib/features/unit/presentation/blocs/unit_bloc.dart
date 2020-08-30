@@ -5,7 +5,6 @@ import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -67,11 +66,12 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   ///
   void _processIncidentState(OperationState state) async {
     try {
-      if (hasSubscriptions) {
-        if (state.shouldLoad(_unloading ? null : ouuid)) {
-          _unloading = false;
-          await dispatch(LoadUnits((state.data as Operation).uuid));
-          if (state is OperationCreated) {
+      if (isOpen) {
+        if (state.shouldLoad(ouuid)) {
+          await dispatch(LoadUnits(
+            (state.data as Operation).uuid,
+          ));
+          if (isReady && (state is OperationCreated)) {
             if (state.units.isNotEmpty) {
               createUnits(
                 bloc: this,
@@ -79,8 +79,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
               );
             }
           }
-        } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          _unloading = true;
+        } else if (isReady && state.shouldUnload(ouuid)) {
           await unload();
         }
       }
@@ -93,9 +92,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       onError(error, stackTrace);
     }
   }
-
-  /// Ensures that load is scheduled before unload has returned
-  bool _unloading = false;
 
   void _processPersonnelDeleted(PersonnelState state) {
     try {
@@ -134,17 +130,14 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get [UnitService]
   UnitService get service => repo.service;
 
-  /// [Incident] that manages given [units]
-  String get ouuid => repo.ouuid;
-
-  /// Check if [Incident.uuid] is set
-  bool get isSet => repo.ouuid != null;
-
-  /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.ouuid == null;
-
   /// Get units
   Map<String, Unit> get units => repo.map;
+
+  /// Check if this bloc is ready
+  bool get isReady => repo.isReady;
+
+  /// [Operation] that manages given [devices]
+  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
 
   @override
   UnitState get initialState => UnitsEmpty();
@@ -243,7 +236,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     _assertState();
     return dispatch<Unit>(
       CreateUnit(
-        ouuid ?? operationBloc.selected.uuid,
         unit.copyWith(
           // Units should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -285,35 +277,58 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   @override
   Stream<UnitState> execute(UnitCommand command) async* {
     if (command is LoadUnits) {
-      yield await _load(command);
+      yield* _load(command);
     } else if (command is CreateUnit) {
-      yield await _create(command);
+      yield* _create(command);
     } else if (command is UpdateUnit) {
-      yield await _update(command);
+      yield* _update(command);
     } else if (command is DeleteUnit) {
-      yield await _delete(command);
+      yield* _delete(command);
     } else if (command is UnloadUnits) {
       yield await _unload(command);
     } else if (command is _ProcessPersonnelDeleted) {
       yield await _process(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
   }
 
-  Future<UnitState> _load(LoadUnits command) async {
-    var units = await repo.load(command.data);
-    return toOK(
+  Stream<UnitState> _load(LoadUnits command) async* {
+    // Fetch cached and handle
+    // response from remote when ready
+    final onRemote = Completer<Iterable<Unit>>();
+    var units = await repo.load(
+      command.data,
+      onRemote: onRemote,
+    );
+    yield toOK(
       command,
       UnitsLoaded(repo.keys),
       result: units,
     );
+
+    // Notify when states was fetched from remote storage
+    onComplete(
+      [onRemote.future],
+      toState: (_) => UnitsLoaded(
+        repo.keys,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<UnitState> _create(CreateUnit command) async {
+  Stream<UnitState> _create(CreateUnit command) async* {
     _assertData(command.data);
-    var unit = await repo.create(command.ouuid, command.data);
-    return toOK(
+    final unit = await repo.apply(command.data);
+    yield toOK(
       command,
       UnitCreated(
         unit,
@@ -322,26 +337,73 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       ),
       result: unit,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(unit.uuid)],
+      toState: (_) => UnitCreated(
+        units[unit.uuid],
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<UnitState> _update(UpdateUnit command) async {
+  Stream<UnitState> _update(UpdateUnit command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final unit = await repo.update(command.data);
-    return toOK(
+    final unit = await repo.apply(command.data);
+
+    yield toOK(
       command,
       UnitUpdated(unit, previous),
       result: unit,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(unit.uuid)],
+      toState: (_) => UnitUpdated(
+        units[unit.uuid],
+        previous,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<UnitState> _delete(DeleteUnit command) async {
+  Stream<UnitState> _delete(DeleteUnit command) async* {
     _assertData(command.data);
     final unit = await repo.delete(command.data.uuid);
-    return toOK(
+    yield toOK(
       command,
       UnitDeleted(unit),
       result: unit,
+    );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(unit.uuid, require: false)],
+      toState: (_) => UnitDeleted(
+        unit,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
     );
   }
 
@@ -356,7 +418,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   Future<UnitState> _process(_ProcessPersonnelDeleted command) async {
     final previous = repo[command.data.uuid];
-    final state = repo.replace(command.data.uuid, command.data);
+    final state = repo.patch(command.data);
     return toOK(
       command,
       UnitUpdated(state.value, previous),
@@ -392,20 +454,17 @@ class LoadUnits extends UnitCommand<String, List<Unit>> {
 }
 
 class CreateUnit extends UnitCommand<Unit, Unit> {
-  final String ouuid;
   final Position position;
   final List<Device> devices;
 
   CreateUnit(
-    this.ouuid,
     Unit data, {
     this.position,
     this.devices,
-  }) : super(data, [ouuid, position, devices]);
+  }) : super(data, [position, devices]);
 
   @override
   String toString() => '$runtimeType {'
-      'ouuid: $ouuid, '
       'unit: $data, '
       'position: $position, '
       'devices: $devices}';
@@ -440,6 +499,15 @@ class _ProcessPersonnelDeleted extends UnitCommand<Unit, Unit> {
   String toString() => '$runtimeType {unit: $data, personnel: $puuid}';
 }
 
+class _StateChange extends UnitCommand<UnitState, Unit> {
+  _StateChange(
+    UnitState state,
+  ) : super(state);
+
+  @override
+  String toString() => '$runtimeType {state: $data}';
+}
+
 /// ---------------------
 /// Normal States
 /// ---------------------
@@ -449,7 +517,11 @@ abstract class UnitState<T> extends BlocEvent<T> {
     Object data, {
     StackTrace stackTrace,
     props = const [],
-  }) : super(data, stackTrace: stackTrace, props: props);
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   bool isError() => this is UnitBlocError;
   bool isEmpty() => this is UnitsEmpty;
@@ -468,14 +540,17 @@ class UnitsEmpty extends UnitState<Null> {
   UnitsEmpty() : super(null);
 
   @override
-  String toString() => 'UnitsEmpty';
+  String toString() => '$runtimeType';
 }
 
 class UnitsLoaded extends UnitState<List<String>> {
-  UnitsLoaded(List<String> data) : super(data);
+  UnitsLoaded(
+    List<String> data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'UnitsLoaded {units: $data}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 class UnitCreated extends UnitState<Unit> {
@@ -485,36 +560,51 @@ class UnitCreated extends UnitState<Unit> {
     Unit data, {
     this.position,
     this.devices,
-  }) : super(data, props: [position, devices]);
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [position, devices]);
 
   @override
-  String toString() => 'UnitCreated {unit: $data, '
-      'position: $position, devices: $devices}';
+  String toString() => '$runtimeType {'
+      'unit: $data, '
+      'position: $position, '
+      'devices: $devices,'
+      'isRemote: $isRemote'
+      '}';
 }
 
 class UnitUpdated extends UnitState<Unit> {
   final Unit previous;
-  UnitUpdated(Unit data, this.previous) : super(data);
+  UnitUpdated(
+    Unit data,
+    this.previous, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [previous]);
 
   @override
   bool isStatusChanged() => data.status != previous.status;
 
   @override
-  String toString() => 'UnitUpdated {unit: $data, previous: $previous}';
+  String toString() => '$runtimeType {unit: $data, previous: $previous, isRemote: $isRemote}';
 }
 
 class UnitDeleted extends UnitState<Unit> {
-  UnitDeleted(Unit data) : super(data);
+  UnitDeleted(
+    Unit data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'UnitDeleted {unit: $data}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 class UnitsUnloaded extends UnitState<List<Unit>> {
-  UnitsUnloaded(List<Unit> units) : super(units);
+  UnitsUnloaded(
+    List<Unit> units, {
+    bool isRemote = false,
+  }) : super(units, isRemote: isRemote);
 
   @override
-  String toString() => 'UnitsUnloaded {units: $data}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 /// ---------------------

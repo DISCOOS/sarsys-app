@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -35,19 +37,10 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   });
 
   /// GET ../personnels
-  Future<List<Personnel>> load(String ouuid);
-
-  /// Create [personnel]
-  Future<Personnel> create(String ouuid, Personnel personnel);
-
-  /// Update [personnel]
-  Future<Personnel> update(Personnel personnel);
-
-  /// PUT ../devices/{deviceId}
-  Future<Personnel> patch(Personnel personnel);
-
-  /// Delete [Personnel] with given [uuid]
-  Future<Personnel> delete(String uuid);
+  Future<List<Personnel>> load(
+    String ouuid, {
+    Completer<Iterable<Personnel>> onRemote,
+  });
 }
 
 class PersonnelServiceException implements Exception {

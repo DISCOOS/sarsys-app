@@ -1,4 +1,6 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -9,10 +11,8 @@ import 'package:SarSys/features/personnel/domain/repositories/personnel_reposito
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:flutter/foundation.dart';
 
 class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personnel, PersonnelService>
     implements PersonnelRepository {
@@ -50,8 +50,11 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     return state.value.uuid;
   }
 
-  /// Ensure that box for given [Incident.uuid] is open
-  Future<void> _ensure(String ouuid) async {
+  /// Create [Personnel] from json
+  Personnel fromJson(Map<String, dynamic> json) => PersonnelModel.fromJson(json);
+
+  /// Open repository for given [Incident.uuid]
+  Future<Iterable<Personnel>> open(String ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -62,6 +65,7 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
       );
       _ouuid = ouuid;
     }
+    return values;
   }
 
   /// Get [Personnel] count
@@ -88,70 +92,17 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
           .where((personnel) => personnel.userId == userId);
 
   /// GET ../personnels
-  Future<List<Personnel>> load(String ouuid) async {
-    await _ensure(ouuid);
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll(ouuid);
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((personnel) => personnel.uuid),
-          );
-
-          response.body.forEach(
-            (personnel) => put(
-              StorageState.created(
-                personnel,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw PersonnelServiceException(
-          'Failed to fetch personnel for operation $ouuid',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Personnel>> load(
+    String ouuid, {
+    Completer<Iterable<Personnel>> onRemote,
+  }) async {
+    await open(ouuid);
+    scheduleLoad(
+      () => service.fetchAll(ouuid),
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
-  }
-
-  /// Create [personnel]
-  Future<Personnel> create(String ouuid, Personnel personnel) async {
-    await _ensure(ouuid);
-    return apply(
-      StorageState.created(personnel),
-    );
-  }
-
-  /// Update [personnel]
-  Future<Personnel> update(Personnel personnel) async {
-    checkState();
-    return apply(
-      StorageState.updated(personnel),
-    );
-  }
-
-  /// PUT ../devices/{deviceId}
-  Future<Personnel> patch(Personnel personnel) async {
-    checkState();
-    final old = this[personnel.uuid];
-    final newJson = JsonUtils.patch(old, personnel);
-    return update(
-      PersonnelModel.fromJson(newJson..addAll({'uuid': personnel.uuid})),
-    );
-  }
-
-  /// Delete [Personnel] with given [uuid]
-  Future<Personnel> delete(String uuid) async {
-    checkState();
-    return apply(
-      StorageState.deleted(get(uuid)),
-    );
   }
 
   /// Unload all devices for given [ouuid]

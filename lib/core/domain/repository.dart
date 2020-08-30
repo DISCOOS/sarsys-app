@@ -43,6 +43,29 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Get stream of state changes
   Stream<StorageTransition<T>> get onChanged => _controller.stream;
 
+  /// Get future that returns when
+  /// [StorageState] for given [key]
+  /// changes to remote. If already
+  /// remote the future returns directly.
+  ///
+  /// If [require] is [true] the future
+  /// will not return until state for
+  /// given [uuid] exist remotely.
+  Future<StorageState<T>> onRemote(K key, {bool require = true}) {
+    final current = getState(key);
+    if (current?.isRemote == true || !require && current == null) {
+      return Future.value(current);
+    }
+    return onChanged
+        .where((event) => event.isRemote)
+        .where((event) => toKey(event.to) == key)
+        .map((event) => event.to)
+        .firstWhere(
+          (state) => state != null,
+          orElse: () => null,
+        );
+  }
+
   /// Check if repository is empty
   ///
   /// If [isReady] is [true], then [isNotEmpty] is always [false]
@@ -139,6 +162,20 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   @mustCallSuper
   bool get isReady => _isReady();
 
+  /// Get key [K] from state [T]
+  K toKey(StorageState<T> state);
+
+  /// Create value of type [T] from json
+  T fromJson(Map<String, dynamic> json);
+
+  /// Get references to dependent aggregates
+  ///
+  /// Override this to prevent '404 Not Found'
+  /// returned by service because dependency
+  /// was not found in backend.
+  @visibleForOverriding
+  Iterable<AggregateRef> toRefs(T value) => value?.props?.whereType<AggregateRef>() ?? [];
+
   /// Asserts that repository is operational.
   /// Should be called before methods is called.
   /// If not ready an [RepositoryNotReadyException] is thrown
@@ -150,14 +187,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       throw RepositoryIsDisposedException(this);
     }
   }
-
-  /// Get references to dependent aggregates
-  ///
-  /// Override this to prevent '404 Not Found'
-  /// returned by service because dependency
-  /// was not found in backend.
-  @visibleForOverriding
-  Iterable<AggregateRef> toRefs(T value) => value?.props?.whereType<AggregateRef>() ?? [];
 
   /// Is called before create, update and delete to
   /// prevent '404 Not Found' returned by service
@@ -183,8 +212,310 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return false;
   }
 
-  /// Get key [K] from state [T]
-  K toKey(StorageState<T> state);
+  /// Get boc
+  static String toBoxName<T>({String postfix, Type runtimeType}) =>
+      ['${runtimeType ?? typeOf<T>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
+
+  /// Queue of [scheduleLoad] processed in FIFO manner.
+  ///
+  /// This queue ensures that each [load] is
+  /// processed in order waiting for it to complete or
+  /// fail. This prevents concurrent writes which will
+  /// result in an unexpected behaviour due to race
+  /// conditions.
+  final _loadQueue = ListQueue<_LoadRequest>();
+
+  /// Get local values and schedule a deferred load request
+  @protected
+  Iterable<T> scheduleLoad(
+    AsyncValueGetter<ServiceResponse<Iterable<T>>> request, {
+    bool fail = false,
+    int maxAttempts = 3,
+    bool shouldEvict = true,
+    Completer<Iterable<T>> onResult,
+  }) {
+    if (_shouldProcessLoadQueue()) {
+      // Process LATER but BEFORE any asynchronous
+      // events like Future, Timer or DOM Event
+      scheduleMicrotask(_processLoadQueue);
+    }
+    _loadQueue.add(_LoadRequest<T>(
+      fail: fail,
+      attempts: 0,
+      request: request,
+      onResult: onResult,
+      shouldEvict: shouldEvict,
+      maxAttempts: maxAttempts,
+    ));
+    return values;
+  }
+
+  bool _isProcessingLoad = false;
+  bool _shouldProcessLoadQueue() => _loadQueue.isEmpty || _isProcessingLoad != true && _loadQueue.isNotEmpty;
+
+  /// Process [_LoadRequest]s in
+  /// FIFO-manner until
+  /// [_loadQueue] is empty.
+  Future _processLoadQueue() async {
+    try {
+      _isProcessingLoad = true;
+      while (_loadQueue.isNotEmpty) {
+        final next = _loadQueue.first;
+        // Stop processing when offline
+        if (!await _processLoad(next)) {
+          break;
+        }
+        _loadQueue.removeFirst();
+      }
+    } finally {
+      _isProcessingLoad = false;
+    }
+  }
+
+  Future<bool> _processLoad(_LoadRequest command) async {
+    var isComplete = false;
+    if (command.attempts >= command.maxAttempts) {
+      if (command.fail) {
+        _onLoadError(
+          'Deferred load of ${command.request} failed after ${command.maxAttempts} attempts',
+          StackTrace.current,
+          command.onResult,
+        );
+      } else {
+        command.onResult?.complete(values);
+      }
+      // Giving up
+      isComplete = true;
+    } else if (connectivity.isOnline) {
+      isComplete = await _executeRequest(
+        command,
+      );
+    } else {
+      // Try again later
+      _listenForOnline();
+    }
+    return isComplete;
+  }
+
+  /// Execute request. Returns [true]
+  /// if executed, [false] otherwise.
+  Future<bool> _executeRequest(_LoadRequest<T> command) async {
+    var isComplete = true;
+    try {
+      var response = await command.request();
+      if (isReady && (response.is200 || response.is206)) {
+        _onLoadDone(command, response);
+      } else if (response.isErrorCode) {
+        _onLoadError(
+          response,
+          response.stackTrace,
+          command.onResult,
+        );
+      } else {
+        // When not ready or
+        // 300 http status code
+        command.onResult?.complete(values);
+      }
+      return true;
+    } on SocketException {
+      // Assume offline
+      _listenForOnline();
+      isComplete = false;
+    } catch (error, stackTrace) {
+      _onLoadError(
+        error,
+        stackTrace,
+        command.onResult,
+      );
+    }
+    return isComplete;
+  }
+
+  void _onLoadDone(
+    _LoadRequest<T> command,
+    ServiceResponse<Iterable<T>> response,
+  ) {
+    final states = response.body.map((value) {
+      final state = StorageState.created(
+        value,
+        isRemote: true,
+      );
+      final key = toKey(state);
+      if (containsKey(key)) {
+        return getState(key).replace(
+          state.value,
+          isRemote: true,
+        );
+      }
+      return state;
+    });
+    if (command.shouldEvict) {
+      evict(
+        retainKeys: states.map(toKey),
+      );
+    }
+    states.forEach(
+      (state) => put(_patch(state)),
+    );
+    command.onResult?.complete(response.body);
+  }
+
+  void _onLoadError(
+    error,
+    StackTrace stackTrace,
+    Completer<Iterable<T>> onResult,
+  ) {
+    onError(
+      error,
+      stackTrace,
+    );
+    onResult?.completeError(
+      error,
+      stackTrace,
+    );
+  }
+
+  /// Patch [value] with existing
+  /// in repository and replace
+  /// current state
+  StorageState<T> patch(T value, {bool isRemote = false}) {
+    checkState();
+    final next = StorageState<T>(
+      value: value,
+      isRemote: isRemote,
+      status: StorageStatus.created,
+    );
+    return put(_patch(next)) ? next : null;
+  }
+
+  /// Replace [value] with existing in repository
+  StorageState<T> replace(T value, {bool isRemote = false}) {
+    checkState();
+    final next = StorageState<T>(
+      value: value,
+      isRemote: isRemote,
+      status: StorageStatus.created,
+    );
+    return put(next) ? next : null;
+  }
+
+  /// Remove [value] from repository
+  StorageState<T> remove(T value, {bool isRemote = false}) {
+    checkState();
+    final next = StorageState<T>(
+      value: value,
+      isRemote: isRemote,
+      status: StorageStatus.deleted,
+    );
+    return put(next) ? next : null;
+  }
+
+  /// Patch [next] state with existing in repository
+  StorageState<T> _patch(StorageState next) {
+    final key = toKey(next);
+    final current = _states.get(key);
+    if (current != null) {
+      final patches = JsonUtils.diff(current.value, next.value);
+      if (patches.isNotEmpty) {
+        next = current.patch(
+          fromJson(JsonUtils.apply(
+            current.value,
+            patches,
+          )),
+          isRemote: next.isRemote,
+        );
+      } else {
+        // Vale not changed, use current
+        next = current.patch(
+          next.value,
+          isRemote: next.isRemote,
+        );
+      }
+    }
+    return next;
+  }
+
+  /// Put [state] to repository.
+  /// this will overwrite existing
+  /// state. Returns [true] if
+  /// state exists afterwards,
+  /// [false] otherwise.
+  bool put(StorageState<T> state) {
+    checkState();
+    final key = toKey(state);
+//    print(state);
+//    print('>> ${state.value}');
+    final current = _states.get(key);
+    if (shouldDelete(next: state, current: current)) {
+      _states.delete(key);
+      // Can not logically exist anymore, remove it!
+      _backlog.remove(key);
+    } else {
+      _states.put(key, state);
+    }
+    if (!_disposed) {
+      _controller.add(StorageTransition<T>(
+        from: current,
+        to: state,
+      ));
+    }
+    return containsKey(key);
+  }
+
+  /// Check if [StorageState.value] of given [state]
+  /// is equal to value in current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isValueEqual(StorageState<T> state) {
+    final current = get(toKey(state));
+    return current != null && current == state.value;
+  }
+
+  /// Check if [StorageState.status] of given [state]
+  /// is equal to value in current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isStatusEqual(StorageState<T> state) {
+    final current = getState(toKey(state));
+    return current != null && current.status == state.status;
+  }
+
+  /// Apply [value] an push to backend
+  Future<T> apply(T value) async {
+    checkState();
+    final next = StorageState<T>(
+      value: value,
+      isRemote: false,
+      status: StorageStatus.created,
+    );
+    return push(_patch(
+      next,
+    ));
+  }
+
+  /// Delete current value
+  Future<T> delete(K key) async {
+    checkState();
+    return push(
+      StorageState.deleted(this[key]),
+    );
+  }
+
+  /// Apply [state] and push to backend
+  @visibleForOverriding
+  FutureOr<T> push(StorageState<T> state) {
+    checkState();
+    final next = validate(state);
+    final hasValueChanged = !isValueEqual(next);
+    final hasStatusChanged = !isStatusEqual(next);
+    final exists = put(next);
+    if (exists && (next.isLocal || hasValueChanged || hasStatusChanged)) {
+      return schedulePush(next);
+    }
+    return next.value;
+  }
 
   /// Should reset to remote states in backend
   ///
@@ -248,44 +579,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return _states.values;
   }
 
-  /// Get boc
-  static String toBoxName<T>({String postfix, Type runtimeType}) =>
-      ['${runtimeType ?? typeOf<T>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
-
-  /// Apply [next] and [commit] to remote
-  @visibleForOverriding
-  FutureOr<T> apply(StorageState<T> state) async {
-    checkState();
-    final next = validate(state);
-    final hasValueChanged = !isValueEqual(next);
-    final hasStatusChanged = !isStatusEqual(next);
-    final exists = put(next);
-    if (exists && (hasValueChanged || hasStatusChanged)) {
-      return schedule(next);
-    }
-    return next.value;
-  }
-
-  /// Check if [StorageState.value] of given [state]
-  /// is equal to value in current state if exists.
-  ///
-  /// Returns false if current state does not exists
-  ///
-  bool isValueEqual(StorageState<T> state) {
-    final current = get(toKey(state));
-    return current != null && current == state.value;
-  }
-
-  /// Check if [StorageState.status] of given [state]
-  /// is equal to value in current state if exists.
-  ///
-  /// Returns false if current state does not exists
-  ///
-  bool isStatusEqual(StorageState<T> state) {
-    final current = getState(toKey(state));
-    return current != null && current.status == state.status;
-  }
-
   /// Queue of [StorageState] processed in FIFO manner.
   ///
   /// This queue ensures that each [StorageState] is
@@ -302,13 +595,14 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   ///
   /// Errors from backend are handled
   /// automatically by appropriate actions.
-  Future<T> schedule(StorageState<T> next) async {
+  @protected
+  T schedulePush(StorageState<T> next) {
     if (next.isLocal) {
       if (_shouldSchedule()) {
-        if (_pushQueue.isEmpty) {
+        if (_shouldProcessPushQueue()) {
           // Process LATER but BEFORE any asynchronous
           // events like Future, Timer or DOM Event
-          scheduleMicrotask(_process);
+          scheduleMicrotask(_processPushQueue);
         }
         _pushQueue.add(next);
         return next.value;
@@ -318,33 +612,39 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return next.value;
   }
 
+  bool _shouldProcessPushQueue() => _pushQueue.isEmpty;
+
   /// Process [StorageState] in FIFO-manner
   /// until [_pushQueue] is empty.
-  Future _process() async {
+  Future _processPushQueue() async {
     while (_pushQueue.isNotEmpty) {
       final next = _pushQueue.first;
       final exists = await _waitForDeps(next);
-      try {
-        if (exists && _isReady()) {
-          final result = await _push(
-            next,
-          );
-          if (_isReady()) {
-            put(result);
-          }
-        }
-      } on SocketException {
-        // Timeout - try again later
-        _offline(next);
-      } on Exception catch (error, stackTrace) {
-        put(next.failed(error));
-        onError(error, stackTrace);
-      }
+      await _processPush(exists, next);
       _pushQueue.removeFirst();
       if (!exists) {
         // Try again later
         _pushQueue.add(next);
       }
+    }
+  }
+
+  Future _processPush(bool exists, StorageState next) async {
+    try {
+      if (exists && _isReady()) {
+        final result = await _push(
+          next,
+        );
+        if (_isReady()) {
+          put(result);
+        }
+      }
+    } on SocketException {
+      // Timeout - try again later
+      _offline(next);
+    } on Exception catch (error, stackTrace) {
+      put(next.failed(error));
+      onError(error, stackTrace);
     }
   }
 
@@ -369,19 +669,23 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool _shouldSchedule() => connectivity.isOnline && !_inTransaction;
 
   /// Subscription for handling  offline -> online
-  StreamSubscription<ConnectivityStatus> _pending;
+  StreamSubscription<ConnectivityStatus> _onlineSubscription;
 
   T _offline(StorageState<T> state) {
     final key = toKey(state);
     _backlog.add(key);
-    if (_pending == null) {
-      _pending = connectivity.whenOnline.listen(
+    _listenForOnline();
+    return state.value;
+  }
+
+  void _listenForOnline() {
+    if (_onlineSubscription == null) {
+      _onlineSubscription = connectivity.whenOnline.listen(
         _online,
         onError: onError,
         cancelOnError: false,
       );
     }
-    return state.value;
   }
 
   Timer _timer;
@@ -389,12 +693,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Current number of retries.
   /// Is reset on each offline -> online transition
   int get retries => _retries;
-  int _retries;
+  int _retries = 0;
 
   Future<List<K>> _online(ConnectivityStatus status) async {
-    _pending?.cancel();
-    _retries = 0;
     final pushed = <K>[];
+
+    _onlineSubscription?.cancel();
+
     while (_backlog.isNotEmpty) {
       final key = _backlog.first;
       final state = getState(key);
@@ -408,24 +713,40 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         }
         _backlog.remove(key);
       } on SocketException {
+        // Assume offline
         _retryOnline(status);
+        return pushed;
       } on Exception catch (error, stackTrace) {
         _backlog.remove(key);
         put(state.failed(error));
         onError(error, stackTrace);
       }
     }
-    if (_backlog.isEmpty) {
+
+    // Always complete pending writes
+    // before reads to prevent local
+    // out-of-order repository updates
+    await _processLoadQueue();
+
+    // Only stop timer and reset
+    // exponential backoff counter
+    // when all pending work is done
+    if (!isPending) {
+      _retries = 0;
       _timer?.cancel();
     }
+
     return pushed;
   }
+
+  /// Check if load or push is pending
+  bool get isPending => _loadQueue.isEmpty && _backlog.isEmpty;
 
   void _retryOnline(ConnectivityStatus status) {
     if (_shouldSchedule()) {
       _timer?.cancel();
       _timer = Timer(
-        toNextTimeout(_retries, const Duration(seconds: 10)),
+        toNextTimeout(_retries++, const Duration(seconds: 10)),
         () {
           if (_shouldSchedule()) {
             _online(status);
@@ -451,17 +772,17 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         case StorageStatus.created:
           return StorageState.created(
             await onCreate(state),
-            remote: true,
+            isRemote: true,
           );
         case StorageStatus.updated:
           return StorageState.updated(
             await onUpdate(state),
-            remote: true,
+            isRemote: true,
           );
         case StorageStatus.deleted:
           return StorageState.deleted(
             await onDelete(state),
-            remote: true,
+            isRemote: true,
           );
       }
       throw RepositoryException('Unable to process $state');
@@ -498,27 +819,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     throw RepositoryIllegalStateException(previous, state);
   }
 
-  /// Commit [state] to repository
-  bool put(StorageState<T> state) {
-    checkState();
-    final key = toKey(state);
-    final current = _states.get(key);
-    if (shouldDelete(next: state, current: current)) {
-      _states.delete(key);
-      // Can not logically exist anymore, remove it!
-      _backlog.remove(key);
-    } else {
-      _states.put(key, state);
-    }
-    if (!_disposed) {
-      _controller.add(StorageTransition<T>(
-        from: current,
-        to: state,
-      ));
-    }
-    return containsKey(key);
-  }
-
   /// Test if given transition should
   /// delete value from repository.
   ///
@@ -532,24 +832,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       current != null
           ? current.isDeleted && next.isRemote || current.isCreated && current.isLocal && next.isDeleted
           : false;
-
-  /// Replace [state] in repository for given [key]-[value] pair
-  StorageState<T> replace(K key, T value, {bool remote}) {
-    final current = _assertExist(key, value: value);
-    final next = current.replace(value, remote: remote);
-    put(next);
-    return next;
-  }
-
-  StorageState _assertExist(K key, {T value}) {
-    final state = _states.get(key);
-    if (state == null) {
-      throw RepositoryStateNotExistsException(
-        StorageState.created(value),
-      );
-    }
-    return state;
-  }
 
   /// Reset all states to remote state
   Future<Iterable<T>> reset() {
@@ -570,7 +852,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Iterable<T> evict({
     bool remote = true,
     bool local = false,
-    Iterable<String> retainKeys = const [],
+    Iterable<K> retainKeys = const [],
   }) {
     if (remote && local) {
       return clear();
@@ -618,9 +900,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     _disposed = true;
     _controller.close();
     _timer?.cancel();
-    _pending?.cancel();
+    _onlineSubscription?.cancel();
     _timer = null;
-    _pending = null;
+    _onlineSubscription = null;
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );
@@ -636,6 +918,33 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool get hasSubscriptions => _subscriptions.isNotEmpty;
   void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
         subscription,
+      );
+}
+
+@Immutable()
+class _LoadRequest<T> {
+  const _LoadRequest({
+    @required this.fail,
+    @required this.request,
+    @required this.attempts,
+    @required this.onResult,
+    @required this.maxAttempts,
+    @required this.shouldEvict,
+  });
+  final bool fail;
+  final int attempts;
+  final int maxAttempts;
+  final bool shouldEvict;
+  final Completer<Iterable<T>> onResult;
+  final Future<ServiceResponse<Iterable<T>>> Function() request;
+
+  _LoadRequest<T> retry() => _LoadRequest<T>(
+        fail: fail,
+        request: request,
+        onResult: onResult,
+        attempts: attempts + 1,
+        shouldEvict: shouldEvict,
+        maxAttempts: maxAttempts,
       );
 }
 
@@ -717,6 +1026,16 @@ class RepositoryException implements Exception {
   }
 }
 
+class RepositoryTimeoutException implements Exception {
+  final String message;
+  final StackTrace stackTrace;
+  RepositoryTimeoutException(this.message, {this.stackTrace});
+  @override
+  String toString() {
+    return '$runtimeType: {message: $message, stackTrace: $stackTrace}';
+  }
+}
+
 class RepositoryIllegalStateValueException extends RepositoryException {
   final String reason;
   final StorageState state;
@@ -761,4 +1080,18 @@ class RepositoryIllegalStateException extends RepositoryException {
     this.previous,
     this.next,
   ) : super('is in illegal state ${previous.status}, next ${next.status} not allowed');
+}
+
+class RepositoryServiceException extends RepositoryException {
+  RepositoryServiceException(
+    Object error, {
+    this.response,
+    StackTrace stackTrace,
+  }) : super(error, stackTrace: stackTrace);
+  final ServiceResponse response;
+
+  @override
+  String toString() {
+    return '$runtimeType { $message, response: $response, stackTrace: $stackTrace}';
+  }
 }

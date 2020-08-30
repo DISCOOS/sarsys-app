@@ -21,13 +21,14 @@ ios_certificate = "XKXT735ZZ4"
 .PHONY: \
 	doctor toolchain configure test build install clean \
 	models \
-	android-configure android-build android-install android-release-internal android-clean \
+	android-configure android-build android-install android-build-without-tests \
+	android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 .SILENT: \
 	doctor toolchain configure test build install clean \
 	models \
-	android-configure android-build android-build-without-tests \
-	android-install android-release-internal android-clean \
+	android-configure android-build android-install android-build-without-tests \
+	android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 
 doctor:

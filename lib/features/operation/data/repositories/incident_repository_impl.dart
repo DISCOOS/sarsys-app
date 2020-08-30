@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:flutter/foundation.dart';
 
@@ -27,66 +28,31 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
     return state?.value?.uuid;
   }
 
+  /// Create [Incident] from json
+  Incident fromJson(Map<String, dynamic> json) => IncidentModel.fromJson(json);
+
   /// Load incidents
-  Future<List<Incident>> load({bool force = true}) async {
+  Future<List<Incident>> load({
+    bool force = true,
+    Completer<Iterable<Incident>> onRemote,
+  }) async {
     await prepare(
       force: force ?? false,
     );
-    return _load();
-  }
-
-  /// Update [incident]
-  Future<Incident> create(Incident incident) async {
-    await prepare();
-    return apply(
-      StorageState.created(incident),
-    );
-  }
-
-  /// Update [incident]
-  Future<Incident> update(Incident incident) async {
-    await prepare();
-    return apply(
-      StorageState.updated(incident),
-    );
-  }
-
-  /// Delete [Incident] with given [uuid]
-  Future<Incident> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+    return _load(
+      onRemote: onRemote,
     );
   }
 
   /// GET ../incidents
-  Future<List<Incident>> _load() async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((incident) => incident.uuid),
-          );
-          response.body.forEach(
-            (incident) => put(
-              StorageState.created(
-                incident,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw IncidentServiceException(
-          'Failed to load incidents',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Incident>> _load({
+    Completer<Iterable<Incident>> onRemote,
+  }) async {
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
   }
 

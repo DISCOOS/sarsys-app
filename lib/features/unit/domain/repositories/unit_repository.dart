@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/services/service.dart';
 
 import 'package:SarSys/core/domain/repository.dart';
@@ -32,19 +34,10 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit,
   int nextAvailableNumber(UnitType type, {bool reuse = true});
 
   /// GET ../units
-  Future<List<Unit>> load(String ouuid);
-
-  /// Create [unit]
-  Future<Unit> create(String ouuid, Unit unit);
-
-  /// Update [unit]
-  Future<Unit> update(Unit unit);
-
-  /// PUT ../devices/{deviceId}
-  Future<Unit> patch(Unit unit);
-
-  /// Delete [Unit] with given [uuid]
-  Future<Unit> delete(String uuid);
+  Future<List<Unit>> load(
+    String ouuid, {
+    Completer<Iterable<Unit>> onRemote,
+  });
 }
 
 class UnitServiceException implements Exception {

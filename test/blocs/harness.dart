@@ -719,7 +719,11 @@ class BlocTestHarness implements BlocDelegate {
 
   @override
   void onError(Bloc bloc, Object error, StackTrace stackTrace) {
-    errors.update(bloc, (errors) => errors..add(error), ifAbsent: () => [error]);
+    errors.update(
+      bloc,
+      (errors) => errors..add(error),
+      ifAbsent: () => [error],
+    );
     _printError('onError(${bloc.runtimeType})', error, stackTrace);
   }
 
@@ -892,20 +896,28 @@ Future expectStorageStatusLater(
   StorageStatus expected, {
   @required bool remote,
   dynamic key,
+  Duration timeout = const Duration(milliseconds: 100),
 }) async {
-  await expectLater(
-    repo.onChanged,
-    emitsThrough(
-      isA<StorageTransition>().having(
-        (transition) =>
-            transition.from?.value is Aggregate &&
-            (transition.from?.value as Aggregate)?.uuid == uuid &&
-            (remote ? transition.isRemote : transition.isLocal),
-        'is ${remote ? 'remote' : 'local'}',
-        isTrue,
+  StackTrace stackTrace = StackTrace.current;
+  if (repo.states[uuid]?.isRemote != true) {
+    await expectLater(
+      repo.onChanged,
+      emitsThrough(
+        isA<StorageTransition>().having(
+          (transition) =>
+              transition.from?.value is Aggregate &&
+              (transition.from?.value as Aggregate)?.uuid == uuid &&
+              (remote ? transition.isRemote : transition.isLocal),
+          'is ${remote ? 'remote' : 'local'}',
+          isTrue,
+        ),
       ),
-    ),
-  );
+    ).timeout(timeout).catchError((e) {
+      print('Storage status $expected:$remote not received');
+      print('Stacktrace: $stackTrace');
+      throw e;
+    });
+  }
   expect(
     repo.getState(key ?? uuid)?.status,
     equals(expected == StorageStatus.deleted && remote ? isNull : expected),

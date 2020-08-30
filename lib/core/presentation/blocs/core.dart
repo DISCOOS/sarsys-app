@@ -46,15 +46,29 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     return command.callback.future;
   }
 
+  /// Dispatch commands in
+  /// sequence and return
+  /// future list of type [T]
+  Future<List<T>> dispatchAll<T>(List<C> commands) async {
+    final results = <T>[];
+    for (var command in commands) {
+      results.add(
+        await dispatch(command),
+      );
+    }
+    return results;
+  }
+
   /// Process [BlocCommand] in FIFO-manner until [_dispatchQueue] is empty
   void _process() async {
-    while (_dispatchQueue.isNotEmpty) {
+    while (_isOpen && _dispatchQueue.isNotEmpty) {
       // Dispatch next command and wait for result
-      final command = _dispatchQueue.first;
-      super.add(command);
+      super.add(_dispatchQueue.first);
       // Only remove after execution is completed
       _dispatchQueue.removeFirst();
     }
+    // In case close was called
+    _dispatchQueue.clear();
   }
 
   /// Queue of [BlocCommand]s processed in FIFO manner.
@@ -89,6 +103,27 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     }
   }
 
+  void onComplete<T>(
+    Iterable<Future<T>> list, {
+    @required C Function(S state) toCommand,
+    @required S Function(Iterable<T> results) toState,
+    @required S Function(Object error, StackTrace stackTrace) toError,
+  }) async {
+    try {
+      final results = await Future.wait<T>(list);
+      if (isOpen) {
+        dispatch(toCommand(toState(
+          results,
+        )));
+      }
+    } catch (e, stackTrace) {
+      final state = toError(e, stackTrace);
+      if (state != null) {
+        dispatch(toCommand(state));
+      }
+    }
+  }
+
   /// Complete request and
   /// return given state
   ///
@@ -105,13 +140,18 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// return response as error
   ///
   @protected
-  S toError(C command, Object error) {
+  S toError(
+    C command,
+    Object error, {
+    StackTrace stackTrace,
+  }) {
     final object = error is Error
         ? error
         : createError(
             error,
-            stackTrace: StackTrace.current,
+            stackTrace: stackTrace ?? StackTrace.current,
           );
+
     command.callback.completeError(
       object.data,
       object.stackTrace ?? StackTrace.current,
@@ -135,6 +175,9 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   @visibleForOverriding
   Error createError(Object error, {StackTrace stackTrace});
 
+  bool get isOpen => _isOpen;
+  bool _isOpen = true;
+
   @override
   @mustCallSuper
   Future<void> close() {
@@ -142,6 +185,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
       (subscription) => subscription.cancel(),
     );
     _subscriptions.clear();
+    _isOpen = false;
     return super.close();
   }
 }

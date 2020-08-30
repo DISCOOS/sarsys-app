@@ -30,7 +30,7 @@ FutureOr<T> waitThroughStateWithData<S, T>(
     if (act != null) {
       value = await act(value);
     }
-  } on Exception {
+  } on TimeoutException {
     if (fail) {
       throw TimeoutException("Failed to wait for $T", timeout);
     }
@@ -63,7 +63,7 @@ Future<T> waitThoughtEvents<T>(
     if (act != null) {
       return await act();
     }
-  } on Exception {
+  } on TimeoutException {
     if (fail) {
       throw TimeoutException("Failed wait for $expected", timeout);
     }

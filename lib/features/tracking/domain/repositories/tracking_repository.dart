@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:flutter/foundation.dart';
@@ -68,19 +70,10 @@ abstract class TrackingRepository extends ConnectionAwareRepository<String, Trac
   });
 
   /// GET ../units
-  Future<List<Tracking>> load(String ouuid);
-
-  /// Create [Tracking]
-  Future<Tracking> create(String ouuid, Tracking tracking);
-
-  /// Update [Tracking]
-  Future<Tracking> update(Tracking tracking);
-
-  /// Patch [Tracking]
-  Future<Tracking> patch(Tracking tracking);
-
-  /// Delete [Tracking] with given [uuid]
-  Future<Tracking> delete(String uuid);
+  Future<List<Tracking>> load(
+    String ouuid, {
+    Completer<Iterable<Tracking>> onRemote,
+  });
 }
 
 class TrackingServiceException implements Exception {

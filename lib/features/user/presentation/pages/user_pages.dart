@@ -327,7 +327,7 @@ class UserStatusPageState extends State<UserStatusPage> {
           elevation: 2,
           avatar: Icon(
             toPersonnelStatusIcon(
-              personnel.first.status,
+              personnel.firstOrNull?.status,
             ),
             size: 16.0,
           ),
@@ -427,6 +427,7 @@ class UserUnitPageState extends State<UserUnitPage> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
+        context.bloc<UnitBloc>().load();
         context.bloc<PersonnelBloc>().load();
       },
       child: StreamBuilder(
@@ -437,10 +438,19 @@ class UserUnitPageState extends State<UserUnitPage> {
               if (state is UnitUpdated && state.data.uuid == widget.unit.uuid) {
                 _unit = state.data;
               }
-              return SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                child: _unit == null ? Center(child: Text('Ikke tilordnet lag')) : _build(context),
-              );
+              return _unit == null
+                  ? Center(child: Text('Ikke tilordnet lag'))
+                  : SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _build(context),
+                        ],
+                      ),
+                    );
             }
             return Container();
           }),

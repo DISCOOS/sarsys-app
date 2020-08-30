@@ -7,10 +7,10 @@ import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
-import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -63,15 +63,15 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   void _processOperationState(OperationState state) async {
     try {
-      if (hasSubscriptions) {
-        if (state.shouldLoad(_unloading ? null : ouuid)) {
-          _unloading = false;
-          await dispatch(LoadPersonnels(state.data.uuid));
-          if (state.isSelected()) {
+      if (isOpen) {
+        if (state.shouldLoad(ouuid)) {
+          await dispatch(LoadPersonnels(
+            state.data.uuid,
+          ));
+          if (isReady && state.isSelected()) {
             await mobilizeUser();
           }
-        } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          _unloading = true;
+        } else if (isReady && state.shouldUnload(ouuid)) {
           await unload();
         }
       }
@@ -84,9 +84,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       onError(error, stackTrace);
     }
   }
-
-  /// Ensures that load is scheduled before unload has returned
-  bool _unloading = false;
 
   /// Process [PersonnelMessage] events
   ///
@@ -119,10 +116,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         findUser(
           userId: state.to.value.uuid,
           exclude: [],
-        ).map((personnel) => personnel.withPerson(state.from.value)).forEach((personnel) => repo.replace(
-              personnel.uuid,
-              personnel,
-            ));
+        ).map((personnel) => personnel.withPerson(state.from.value)).forEach(
+              (personnel) => repo.replace(personnel),
+            );
       }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
@@ -152,14 +148,11 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Get [PersonnelService]
   PersonnelService get service => repo.service;
 
-  /// [Incident] that manages given [devices]
-  String get ouuid => repo.ouuid;
-
-  /// Check if [Incident.uuid] is not set
-  bool get isUnset => repo.ouuid == null;
-
   /// Check if bloc is ready
-  bool get isReady => repo.isReady;
+  bool get isReady => operationBloc.isSelected && repo.isReady;
+
+  /// Get uuid of [Operation] that manages personnels in [repo]
+  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
 
   @override
   PersonnelState get initialState => PersonnelsEmpty();
@@ -199,8 +192,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   void _assertState() {
     if (operationBloc.isUnselected) {
       throw PersonnelBlocException(
-        "No incident selected. "
-        "Ensure that 'IncidentBloc.select(String id)' is called before 'PersonnelBloc.load()'",
+        "No operation selected. "
+        "Ensure that 'OperationBloc.select(String id)' is called before 'PersonnelBloc.load()'",
         state,
       );
     }
@@ -220,7 +213,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Future<List<Personnel>> load() async {
     _assertState();
     return dispatch<List<Personnel>>(
-      LoadPersonnels(ouuid ?? operationBloc.selected.uuid),
+      LoadPersonnels(ouuid),
     );
   }
 
@@ -273,7 +266,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     _assertData(personnel);
     return dispatch<Personnel>(
       CreatePersonnel(
-        ouuid ?? operationBloc.selected.uuid,
+        ouuid,
         personnel.copyWith(
           // Personnels should contain a tracking reference when
           // they are created. [TrackingBloc] will use this
@@ -313,41 +306,98 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   @override
   Stream<PersonnelState> execute(PersonnelCommand command) async* {
     if (command is LoadPersonnels) {
-      yield await _load(command);
+      yield* _load(command);
     } else if (command is CreatePersonnel) {
-      yield await _create(command);
+      yield* _create(command);
     } else if (command is UpdatePersonnel) {
-      yield await _update(command);
+      yield* _update(command);
     } else if (command is DeletePersonnel) {
-      yield await _delete(command);
+      yield* _delete(command);
     } else if (command is UnloadPersonnels) {
       yield await _unload(command);
     } else if (command is _InternalMessage) {
       yield await _process(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
   }
 
-  Future<PersonnelState> _load(LoadPersonnels command) async {
-    var personnels = await repo.load(command.data);
+  Stream<PersonnelState> _load(LoadPersonnels command) async* {
+    // Fetch cached and handle
+    // response from remote when ready
+    final onRemote = Completer<Iterable<Personnel>>();
+    var personnels = await repo.load(
+      command.data,
+      onRemote: onRemote,
+    );
+
     if (personnels.isNotEmpty) {
-      try {
-        await affiliationBloc.fetch(
-          personnels.map((p) => p.affiliation.uuid),
-        );
-      } on Exception catch (e) {
-        print(e);
-      }
+      // Only wait for cached only.
+      // Remote states are published by
+      // AffiliationsLoaded later which
+      // this method is not dependent on
+      await affiliationBloc.fetch(
+        personnels.map((p) => p.affiliation.uuid),
+      );
     }
-    return toOK(
+    yield toOK(
       command,
       PersonnelsLoaded(repo.keys),
       result: personnels,
     );
+
+    // Notify when states was fetched from remote storage
+    onComplete(
+      [onRemote.future],
+      toState: (_) => PersonnelsLoaded(
+        repo.keys,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<PersonnelState> _create(CreatePersonnel command) async {
+  Stream<PersonnelState> _create(CreatePersonnel command) async* {
+    Affiliation affiliation = await _ensureAffiliation(command);
+    final person = affiliationBloc.persons[affiliation.person.uuid];
+    final personnel = await repo.apply(
+      // Update with current person
+      command.data.withPerson(person),
+    );
+    yield toOK(
+      command,
+      PersonnelCreated(personnel),
+      result: personnel,
+    );
+
+    // Notify when all states are remote
+    onComplete(
+      [
+        affiliationBloc.repo.onRemote(affiliation.uuid),
+        affiliationBloc.persons.onRemote(person.uuid),
+        repo.onRemote(personnel.uuid),
+      ],
+      toState: (_) => PersonnelCreated(
+        personnel,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
+  }
+
+  Future<Affiliation> _ensureAffiliation(CreatePersonnel command) async {
     final auuid = _assertData(command.data);
     if (!affiliationBloc.repo.containsKey(auuid)) {
       var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
@@ -355,43 +405,63 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         await affiliationBloc.temporary(
           command.data,
           affiliation.copyWith(
-            person: command.data.person.toRef(),
+            person: command.data.person?.toRef(),
           ),
         );
       }
     }
-    final affiliation = affiliationBloc.repo[auuid];
-    final person = affiliationBloc.persons[affiliation.person.uuid];
-    final personnel = await repo.create(
-      command.ouuid,
-      // Update with current person
-      command.data.withPerson(person),
-    );
-    return toOK(
-      command,
-      PersonnelCreated(personnel),
-      result: personnel,
-    );
+    return affiliationBloc.repo[auuid];
   }
 
-  Future<PersonnelState> _update(UpdatePersonnel command) async {
+  Stream<PersonnelState> _update(UpdatePersonnel command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final personnel = await repo.update(command.data);
-    return toOK(
+    final personnel = await repo.apply(command.data);
+    yield toOK(
       command,
       PersonnelUpdated(personnel, previous),
       result: personnel,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(personnel.uuid)],
+      toState: (_) => PersonnelUpdated(
+        personnel,
+        previous,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<PersonnelState> _delete(DeletePersonnel command) async {
+  Stream<PersonnelState> _delete(DeletePersonnel command) async* {
     _assertData(command.data);
     final personnel = await repo.delete(command.data.uuid);
-    return toOK(
+    yield toOK(
       command,
       PersonnelDeleted(personnel),
       result: personnel,
+    );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(personnel.uuid, require: false)],
+      toState: (_) => PersonnelDeleted(
+        personnel,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
     );
   }
 
@@ -409,11 +479,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       case PersonnelMessageType.PersonnelChanged:
         if (repo.containsKey(event.data.uuid)) {
           final current = repo[event.data.uuid];
-          final next = current.mergeWith(event.data.json);
-          repo.replace(
-            event.data.uuid,
-            next,
-          );
+          final next = PersonnelModel.fromJson(event.data.json);
+          repo.patch(next);
           return PersonnelUpdated(next, current);
         }
         break;
@@ -484,6 +551,15 @@ class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   String toString() => 'UnloadPersonnels {ouuid: $data}';
 }
 
+class _StateChange extends PersonnelCommand<PersonnelState, Personnel> {
+  _StateChange(
+    PersonnelState state,
+  ) : super(state);
+
+  @override
+  String toString() => '$runtimeType {state: $data}';
+}
+
 /// ---------------------
 /// Normal States
 /// ---------------------
@@ -493,7 +569,11 @@ abstract class PersonnelState<T> extends BlocEvent<T> {
     T data, {
     StackTrace stackTrace,
     props = const [],
-  }) : super(data, props: props, stackTrace: stackTrace);
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   bool isError() => this is PersonnelBlocError;
   bool isEmpty() => this is PersonnelsEmpty;
@@ -516,25 +596,35 @@ class PersonnelsEmpty extends PersonnelState<Null> {
 }
 
 class PersonnelsLoaded extends PersonnelState<List<String>> {
-  PersonnelsLoaded(List<String> data) : super(data);
+  PersonnelsLoaded(
+    List<String> data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'PersonnelsLoaded {data: $data}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 class PersonnelCreated extends PersonnelState<Personnel> {
-  PersonnelCreated(Personnel data) : super(data);
+  PersonnelCreated(
+    Personnel data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
   bool isTracked() => data.tracking?.uuid != null;
 
   @override
-  String toString() => 'PersonnelCreated {data: $data}';
+  String toString() => 'PersonnelCreated {data: $data, isRemote: $isRemote}';
 }
 
 class PersonnelUpdated extends PersonnelState<Personnel> {
   final Personnel previous;
-  PersonnelUpdated(Personnel data, this.previous) : super(data);
+  PersonnelUpdated(
+    Personnel data,
+    this.previous, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [previous]);
 
   @override
   bool isTracked() => data.tracking?.uuid != null;
@@ -543,14 +633,17 @@ class PersonnelUpdated extends PersonnelState<Personnel> {
   bool isStatusChanged() => data.status != previous.status;
 
   @override
-  String toString() => 'PersonnelUpdated {data: $data, previous: $previous}';
+  String toString() => 'PersonnelUpdated {data: $data, previous: $previous, isRemote: $isRemote}';
 }
 
 class PersonnelDeleted extends PersonnelState<Personnel> {
-  PersonnelDeleted(Personnel data) : super(data);
+  PersonnelDeleted(
+    Personnel data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'PersonnelDeleted {data: $data}';
+  String toString() => 'PersonnelDeleted {data: $data, isRemote: $isRemote}';
 }
 
 class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {

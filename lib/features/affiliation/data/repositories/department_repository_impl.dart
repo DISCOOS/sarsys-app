@@ -1,10 +1,12 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -27,66 +29,31 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
     return state?.value?.uuid;
   }
 
+  /// Create [Department] from json
+  Department fromJson(Map<String, dynamic> json) => DepartmentModel.fromJson(json);
+
   /// Load departments
-  Future<List<Department>> load({bool force = true}) async {
+  Future<List<Department>> load({
+    bool force = true,
+    Completer<Iterable<Department>> onRemote,
+  }) async {
     await prepare(
       force: force ?? false,
     );
-    return _load();
-  }
-
-  /// Update [department]
-  Future<Department> create(Department department) async {
-    await prepare();
-    return apply(
-      StorageState.created(department),
-    );
-  }
-
-  /// Update [department]
-  Future<Department> update(Department department) async {
-    await prepare();
-    return apply(
-      StorageState.updated(department),
-    );
-  }
-
-  /// Delete [Department] with given [uuid]
-  Future<Department> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+    return _load(
+      onResult: onRemote,
     );
   }
 
   /// GET ../departments
-  Future<List<Department>> _load() async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((department) => department.uuid),
-          );
-          response.body.forEach(
-            (department) => put(
-              StorageState.created(
-                department,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw DepartmentServiceException(
-          'Failed to load departments',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Department>> _load({
+    Completer<Iterable<Department>> onResult,
+  }) async {
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onResult,
+    );
     return values;
   }
 

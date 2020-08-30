@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
@@ -29,6 +30,9 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     return state?.value?.uuid;
   }
 
+  /// Create [Person] from json
+  Person fromJson(Map<String, dynamic> json) => PersonModel.fromJson(json);
+
   /// Find Person with given userId
   Person findUser(String userId) =>
       userId == null ? null : find(where: (person) => person.userId == userId).firstOrNull;
@@ -45,7 +49,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
       put(
         StorageState.created(
           element,
-          remote: true,
+          isRemote: true,
         ),
       );
     });
@@ -54,60 +58,33 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
 
   @override
   Future<Iterable<Person>> fetch({
-    Iterable<String> uuids,
     bool replace = false,
+    Iterable<String> uuids,
+    Completer<Iterable<Person>> onRemote,
   }) async {
     await prepare();
     return _fetch(
       uuids,
       replace: replace,
-    );
-  }
-
-  @override
-  Future<Person> create(Person person) async {
-    await prepare();
-    return apply(
-      StorageState.created(person),
-    );
-  }
-
-  @override
-  Future<Person> update(Person person) async {
-    await prepare();
-    return apply(
-      StorageState.updated(person),
-    );
-  }
-
-  @override
-  Future<Person> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+      onRemote: onRemote,
     );
   }
 
   Future<List<Person>> _fetch(
     Iterable<String> uuids, {
     bool replace = false,
+    Completer<Iterable<Person>> onRemote,
   }) async {
-    if (connectivity.isOnline) {
-      try {
+    scheduleLoad(
+      () async {
         final values = <Person>[];
         final errors = <ServiceResponse>[];
-        for (var uuid in (uuids ?? [])) {
+        for (var uuid in uuids) {
           // Do not attempt to load local values
           final state = getState(uuid);
           if (state == null || state?.shouldLoad == true) {
             final response = await service.get(uuid);
             if (response.is200) {
-              put(
-                StorageState.created(
-                  response.body,
-                  remote: true,
-                ),
-              );
               values.add(response.body);
             } else {
               errors.add(response);
@@ -116,28 +93,21 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
             values.add(state.value);
           }
         }
-        if (replace) {
-          evict(
-            retainKeys: values.map((person) => person.uuid),
-          );
-        }
         if (errors.isNotEmpty) {
-          throw PersonServiceException(
-            'Failed to load persons',
-            response: ServiceResponse<List<Person>>(
-              body: values,
-              error: errors,
-              reasonPhrase: 'Partial failure',
-              statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
-            ),
-            stackTrace: StackTrace.current,
+          return ServiceResponse<List<Person>>(
+            body: values,
+            error: errors,
+            statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
+            reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
           );
         }
-        return values;
-      } on SocketException {
-        // Assume offline
-      }
-    }
+        return ServiceResponse.ok<List<Person>>(
+          body: values,
+        );
+      },
+      onResult: onRemote,
+      shouldEvict: replace,
+    );
     return values;
   }
 

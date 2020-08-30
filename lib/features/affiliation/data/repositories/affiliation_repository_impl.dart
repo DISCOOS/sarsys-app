@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
@@ -52,18 +53,21 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     return state?.value?.uuid;
   }
 
+  /// Create [Affiliation] from json
+  Affiliation fromJson(Map<String, dynamic> json) => AffiliationModel.fromJson(json);
+
   @override
-  Future<int> init({List<Affiliation> affiliations}) async {
+  Future<List<Affiliation>> init({List<Affiliation> affiliations}) async {
     await prepare();
     (affiliations ?? []).forEach((element) {
       put(
         StorageState.created(
           element,
-          remote: true,
+          isRemote: true,
         ),
       );
     });
-    return length;
+    return values;
   }
 
   @override
@@ -92,36 +96,12 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     );
   }
 
-  @override
-  Future<Affiliation> create(Affiliation affiliation) async {
-    await prepare();
-    return apply(
-      StorageState.created(affiliation),
-    );
-  }
-
-  @override
-  Future<Affiliation> update(Affiliation affiliation) async {
-    await prepare();
-    return apply(
-      StorageState.updated(affiliation),
-    );
-  }
-
-  @override
-  Future<Affiliation> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
-    );
-  }
-
   Future<List<Affiliation>> _fetch(
     List<String> uuids, {
     bool replace = false,
   }) async {
-    if (connectivity.isOnline) {
-      try {
+    scheduleLoad(
+      () async {
         final values = <Affiliation>[];
         final errors = <ServiceResponse>[];
         for (var uuid in uuids) {
@@ -130,12 +110,6 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
           if (state == null || state?.shouldLoad == true) {
             final response = await service.get(uuid);
             if (response.is200) {
-              put(
-                StorageState.created(
-                  response.body,
-                  remote: true,
-                ),
-              );
               values.add(response.body);
             } else {
               errors.add(response);
@@ -144,28 +118,20 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
             values.add(state.value);
           }
         }
-        if (replace) {
-          evict(
-            retainKeys: values.map((affiliation) => affiliation.uuid),
-          );
-        }
         if (errors.isNotEmpty) {
-          throw AffiliationServiceException(
-            'Failed to load affiliations',
-            response: ServiceResponse<List<Affiliation>>(
-              body: values,
-              error: errors,
-              statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
-              reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
-            ),
-            stackTrace: StackTrace.current,
+          return ServiceResponse<List<Affiliation>>(
+            body: values,
+            error: errors,
+            statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
+            reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
           );
         }
-        return values;
-      } on SocketException {
-        // Assume offline
-      }
-    }
+        return ServiceResponse.ok<List<Affiliation>>(
+          body: values,
+        );
+      },
+      shouldEvict: replace,
+    );
     return values;
   }
 
@@ -182,7 +148,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
             put(
               StorageState.created(
                 element,
-                remote: true,
+                isRemote: true,
               ),
             );
           });

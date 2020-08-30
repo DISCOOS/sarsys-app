@@ -95,6 +95,8 @@ class ServiceResponse<T> extends Equatable {
           stackTrace,
         ]);
 
+  bool get isErrorCode => (statusCode ?? 0) >= 400;
+
   ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
     return ServiceResponse<T>(
       page: page,
@@ -182,13 +184,25 @@ class ServiceResponse<T> extends Equatable {
   bool get is201 => statusCode == HttpStatus.created;
   bool get is202 => statusCode == HttpStatus.accepted;
   bool get is204 => statusCode == HttpStatus.noContent;
+  bool get is206 => statusCode == HttpStatus.partialContent;
   bool get is400 => statusCode == HttpStatus.badRequest;
   bool get is401 => statusCode == HttpStatus.unauthorized;
   bool get is403 => statusCode == HttpStatus.forbidden;
   bool get is404 => statusCode == HttpStatus.notFound;
-  bool get is406 => statusCode == HttpStatus.partialContent;
   bool get is409 => statusCode == HttpStatus.conflict;
   bool get is500 => statusCode == HttpStatus.internalServerError;
+}
+
+class ServiceException implements Exception {
+  ServiceException(this.error, {this.response, this.stackTrace});
+  final Object error;
+  final StackTrace stackTrace;
+  final ServiceResponse response;
+
+  @override
+  String toString() {
+    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
+  }
 }
 
 class PagedList<T> {

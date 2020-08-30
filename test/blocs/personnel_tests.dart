@@ -47,10 +47,21 @@ void main() async {
       final personnel2 = harness.personnelService.add(operation.uuid, auuid: affiliation2.uuid);
 
       // Act
-      List<Personnel> personnel = await harness.personnelBloc.load();
+      List<Personnel> cached = await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      final fetched = harness.personnelBloc.repo.values;
 
       // Assert
-      expect(personnel.length, 3, reason: "SHOULD contain three personnels");
+      expect(cached.length, 1, reason: "SHOULD contain one personnel");
+      expect(cached.first.person.userId, harness.userId, reason: "SHOULD be onboarded user");
+      expect(fetched.length, 3, reason: "SHOULD contain three personnels");
       expect(
         harness.personnelBloc.repo.containsKey(personnel1.uuid),
         isTrue,
@@ -180,7 +191,6 @@ void main() async {
         reason: "SHOULD HAVE NO status",
       );
       expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
-      expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
       expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expectThrough(harness.personnelBloc, isA<PersonnelDeleted>());
     });
@@ -192,14 +202,29 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be local',
+          isTrue,
+        )),
+      );
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsUnloaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
       expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.personnelBloc.isUnset, isTrue, reason: "SHOULD BE unset");
       expectThrough(harness.personnelBloc, isA<PersonnelsUnloaded>());
     });
 
@@ -210,18 +235,43 @@ void main() async {
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be local',
+          isTrue,
+        )),
+      );
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
       await harness.personnelBloc.unload();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsUnloaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
       await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
 
       // Assert
-      expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
-      expect(harness.personnelBloc.repo.containsKey(personnel.uuid), isTrue,
-          reason: "SHOULD contain personnel ${personnel.uuid}");
-      expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
+      expect(
+        harness.personnelBloc.repo.containsKey(personnel.uuid),
+        isTrue,
+        reason: "SHOULD contain personnel ${personnel.uuid}",
+      );
     });
 
     test('SHOULD load when operation is selected', () async {
@@ -616,7 +666,6 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
 
   // Await PersonnelBloc
   await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
-  expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
 
   return operation;

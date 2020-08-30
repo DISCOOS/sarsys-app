@@ -89,14 +89,14 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// Get [TrackingService]
   TrackingService get service => repo.service;
 
-  /// [Operation] that manages given [devices]
-  String get ouuid => repo.ouuid;
+  /// Check if this bloc is ready
+  bool get isReady => repo.isReady;
 
   /// Check if [Operation.uuid] is not set
   bool get isUnset => repo.ouuid == null;
 
-  /// Check if repository is offline
-  bool get isOffline => repo.isOffline;
+  /// [Operation] that manages given [devices]
+  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
 
   @override
   TrackingState get initialState => TrackingsEmpty();
@@ -107,12 +107,12 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   void _processOperationState(OperationState state) async {
     try {
-      if (hasSubscriptions) {
-        if (state.shouldLoad(_unloading ? null : ouuid)) {
-          _unloading = false;
-          dispatch(LoadTrackings(state.data.uuid));
-        } else if (state.shouldUnload(ouuid) && repo.isReady) {
-          _unloading = true;
+      if (isOpen) {
+        if (state.shouldLoad(ouuid)) {
+          dispatch(
+            LoadTrackings(state.data.uuid),
+          );
+        } else if (isReady && state.shouldUnload(ouuid)) {
           await unload();
         }
       }
@@ -125,9 +125,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       onError(error, stackTrace);
     }
   }
-
-  /// Ensures that load is scheduled before unload has returned
-  bool _unloading = false;
 
   /// Process [DeviceState] events.
   ///
@@ -451,14 +448,11 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     }
   }
 
-  /// Use current ouuid if exists or selected ouuid from IncidentBloc if exists
-  String _ensureIuuid() => ouuid ?? operationBloc.selected?.uuid;
-
   /// Load [trackings] from [service]
   Future<List<Tracking>> load() async {
     _assertState();
     return dispatch<List<Tracking>>(
-      LoadTrackings(_ensureIuuid()),
+      LoadTrackings(ouuid),
     );
   }
 
@@ -637,44 +631,97 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   @override
   Stream<TrackingState> execute(TrackingCommand command) async* {
     if (command is LoadTrackings) {
-      yield await _load(command);
+      yield* _load(command);
     } else if (command is UpdateTracking) {
-      yield await _update(command);
+      yield* _update(command);
     } else if (command is DeleteTracking) {
-      yield await _delete(command);
+      yield* _delete(command);
     } else if (command is UnloadTrackings) {
       yield await _unload(command);
     } else if (command is _HandleMessage) {
       yield* _process(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
   }
 
-  Future<TrackingState> _load(LoadTrackings command) async {
-    var trackings = await repo.load(command.data);
-    return toOK(
+  Stream<TrackingState> _load(LoadTrackings command) async* {
+    // Fetch cached and handle
+    // response from remote when ready
+    final onRemote = Completer<Iterable<Tracking>>();
+    final trackings = await repo.load(
+      command.data,
+      onRemote: onRemote,
+    );
+    yield toOK(
       command,
       TrackingsLoaded(repo.keys),
       result: trackings,
     );
+
+    // Notify when states was fetched from remote storage
+    onComplete(
+      [onRemote.future],
+      toState: (_) => TrackingsLoaded(
+        repo.keys,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<TrackingState> _update(UpdateTracking command) async {
-    final tracking = await repo.update(command.data);
-    return toOK(
+  Stream<TrackingState> _update(UpdateTracking command) async* {
+    final tracking = await repo.apply(command.data);
+    yield toOK(
       command,
       TrackingUpdated(tracking),
       result: tracking,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(tracking.uuid)],
+      toState: (_) => TrackingUpdated(
+        repo[tracking.uuid],
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<TrackingState> _delete(DeleteTracking command) async {
+  Stream<TrackingState> _delete(DeleteTracking command) async* {
     final tracking = await repo.delete(command.data.uuid);
-    return toOK(
+    yield toOK(
       command,
       TrackingDeleted(tracking),
       result: tracking,
+    );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(tracking.uuid, require: false)],
+      toState: (_) => TrackingDeleted(
+        tracking,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
     );
   }
 
@@ -688,71 +735,32 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   Stream<TrackingState> _process(_HandleMessage event) async* {
-    if (!repo.isReady) return;
-    final remote = !event.internal;
-    switch (event.data.type) {
-      case TrackingMessageType.created:
-        var next;
-        final current = repo.states[event.data.uuid];
-        if (current == null) {
-          // Not found
-          next = TrackingModel.fromJson(event.data.json);
-          repo.put(
-            StorageState.created(next, remote: remote),
-          );
-        } else {
-          next = _merge(current, event);
-          if (current.isLocal) {
-            // Replace local value
-            repo.replace(event.data.uuid, next, remote: remote);
-          } else {
-            // Commit remote state
-            repo.put(StorageState.created(next, remote: remote));
+    if (isReady) {
+      final remote = !event.internal;
+      switch (event.data.type) {
+        case TrackingMessageType.created:
+        case TrackingMessageType.updated:
+          final next = repo[event.data.uuid] ?? TrackingModel.fromJson(event.data.json);
+          final tracking = repo.patch(next, isRemote: remote).value;
+          yield TrackingCreated(tracking);
+          break;
+        case TrackingMessageType.deleted:
+          final tracking = repo[event.data.uuid];
+          if (tracking != null) {
+            final next = TrackingUtils.close(tracking);
+            repo.remove(next, isRemote: remote);
+            yield TrackingDeleted(next);
           }
-        }
-        yield TrackingCreated(next);
-        break;
-      case TrackingMessageType.updated:
-        final current = repo.states[event.data.uuid];
-        if (current != null) {
-          Tracking next = _merge(current, event);
-          if (current.isLocal) {
-            // Replace local value
-            repo.replace(event.data.uuid, next, remote: !event.internal);
-          } else {
-            // Commit remote state
-            repo.put(StorageState.updated(next, remote: remote));
-          }
-          yield TrackingUpdated(next);
-        }
-        break;
-      case TrackingMessageType.deleted:
-        final tracking = repo[event.data.uuid];
-        if (tracking != null) {
-          final next = TrackingUtils.close(tracking);
-          repo.put(
-            StorageState.deleted(next, remote: remote),
+          break;
+        default:
+          throw TrackingBlocException(
+            "Tracking message not recognized",
+            state,
+            command: event,
+            stackTrace: StackTrace.current,
           );
-          yield TrackingDeleted(next);
-        }
-        break;
-      default:
-        throw TrackingBlocException(
-          "Tracking message not recognized",
-          state,
-          command: event,
-          stackTrace: StackTrace.current,
-        );
+      }
     }
-  }
-
-  Tracking _merge(StorageState<Tracking> current, _HandleMessage event) {
-    final json = JsonUtils.patch(
-      current.value,
-      TrackingModel.fromJson(event.data.json),
-    );
-    final next = TrackingModel.fromJson(json);
-    return next;
   }
 
   Tracking _assertExists(String tuuid) {
@@ -790,14 +798,28 @@ class LoadTrackings extends TrackingCommand<String, List<Tracking>> {
   LoadTrackings(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadTrackings {ouuid: $data}';
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
 class UpdateTracking extends TrackingCommand<Tracking, Tracking> {
   UpdateTracking(Tracking data) : super(data);
 
   @override
-  String toString() => 'UpdateTracking {data: $data}';
+  String toString() => '$runtimeType {data: $data}';
+}
+
+class DeleteTracking extends TrackingCommand<Tracking, void> {
+  DeleteTracking(Tracking data) : super(data);
+
+  @override
+  String toString() => '$runtimeType {data: $data}';
+}
+
+class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
+  UnloadTrackings(String ouuid) : super(ouuid);
+
+  @override
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
 /// Command for processing a [TrackingMessage]. Each [TrackingMessage]
@@ -807,21 +829,16 @@ class _HandleMessage extends TrackingCommand<TrackingMessage, void> {
   _HandleMessage(TrackingMessage data, {@required this.internal}) : super(data);
 
   @override
-  String toString() => '_HandleMessage {message: $data, local: $internal}';
+  String toString() => '$runtimeType {message: $data, local: $internal}';
 }
 
-class DeleteTracking extends TrackingCommand<Tracking, void> {
-  DeleteTracking(Tracking data) : super(data);
+class _StateChange extends TrackingCommand<TrackingState, Tracking> {
+  _StateChange(
+    TrackingState state,
+  ) : super(state);
 
   @override
-  String toString() => 'DeleteTracking {data: $data}';
-}
-
-class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
-  UnloadTrackings(String ouuid) : super(ouuid);
-
-  @override
-  String toString() => 'UnloadTrackings {ouuid: $data}';
+  String toString() => '$runtimeType {state: $data}';
 }
 
 /// ---------------------
@@ -829,9 +846,14 @@ class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
 /// ---------------------
 abstract class TrackingState<T> extends BlocEvent<T> {
   TrackingState(
-    Object error, {
+    Object data, {
     StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
+    props = const [],
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   isEmpty() => this is TrackingsEmpty;
   isLoaded() => this is TrackingsLoaded;
@@ -846,42 +868,54 @@ class TrackingsEmpty extends TrackingState<Null> {
   TrackingsEmpty() : super(null);
 
   @override
-  String toString() => 'TrackingsEmpty';
+  String toString() => '$runtimeType';
 }
 
 class TrackingsLoaded extends TrackingState<List<String>> {
-  TrackingsLoaded(List<String> data) : super(data);
+  TrackingsLoaded(
+    List<String> data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'TrackingLoaded {trackings: $data}';
+  String toString() => '$runtimeType {trackings: $data, isRemote: $isRemote}';
 }
 
 class TrackingCreated extends TrackingState<Tracking> {
-  TrackingCreated(Tracking data) : super(data);
+  TrackingCreated(
+    Tracking data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'TrackingCreated {tracking: $data}';
+  String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';
 }
 
 class TrackingUpdated extends TrackingState<Tracking> {
-  TrackingUpdated(Tracking data) : super(data);
+  TrackingUpdated(
+    Tracking data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'TrackingUpdated {tracking: $data}';
+  String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';
 }
 
 class TrackingDeleted extends TrackingState<Tracking> {
-  TrackingDeleted(Tracking data) : super(data);
+  TrackingDeleted(
+    Tracking data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'TrackingDeleted {tracking: $data}';
+  String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';
 }
 
 class TrackingsUnloaded extends TrackingState<List<Tracking>> {
   TrackingsUnloaded(List<Tracking> tracks) : super(tracks);
 
   @override
-  String toString() => 'TrackingCleared {trackings: $data}';
+  String toString() => '$runtimeType {trackings: $data}';
 }
 
 /// ---------------------

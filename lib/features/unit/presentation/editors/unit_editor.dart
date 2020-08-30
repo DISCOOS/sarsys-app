@@ -506,7 +506,7 @@ class _UnitEditorState extends State<UnitEditor> {
               maxChips: 15,
               initialValue: _personnels,
               onChanged: (personnels) {
-                _personnels = List<String>.from(personnels.map((p) => p.uuid));
+                _personnels = List<String>.from(personnels);
               },
               decoration: InputDecoration(
                 labelText: "Mannskap",

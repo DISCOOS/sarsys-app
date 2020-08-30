@@ -219,6 +219,8 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
       yield* _unload(command);
     } else if (command is UnselectOperation) {
       yield await _unselect(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
@@ -228,9 +230,18 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     // Get currently selected uuid
     final ouuid = _ouuid;
 
+    // Fetch cached and handle
+    // response from remote when ready
+    final onIncidents = Completer<Iterable<Incident>>();
+    final onOperations = Completer<Iterable<Operation>>();
+
     // Execute commands
-    await incidents.load();
-    final operations = await repo.load();
+    await incidents.load(
+      onRemote: onIncidents,
+    );
+    final operations = await repo.load(
+      onRemote: onOperations,
+    );
 
     // Unselect and reselect
     final unselected = await _unset(clear: true);
@@ -244,7 +255,10 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     // Complete request
     final loaded = toOK(
       command,
-      OperationsLoaded(operations),
+      OperationsLoaded(
+        repo.keys,
+        incidents: incidents.keys,
+      ),
       result: operations,
     );
     // Notify listeners
@@ -255,13 +269,32 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     if (selected != null) {
       yield selected;
     }
+
+    // Notify when states was fetched from remote storage
+    onComplete(
+      [
+        onIncidents.future,
+        onOperations.future,
+      ],
+      toState: (_) => OperationsLoaded(
+        repo.keys,
+        isRemote: true,
+        incidents: incidents.keys,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<OperationState> _create(CreateOperation command) async* {
     _assertData(command);
     // Execute commands
-    await incidents.create(command.incident);
-    final operation = await repo.create(command.data);
+    await incidents.apply(command.incident);
+    final operation = await repo.apply(command.data);
     final unselected = command.selected ? await _unset(clear: true) : null;
     final selected = command.selected ? await _set(operation) : null;
     // Complete request
@@ -282,14 +315,29 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     if (selected != null) {
       yield selected;
     }
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(operation.uuid)],
+      toState: (_) => OperationCreated(
+        operation,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<OperationState> _update(UpdateOperation command) async* {
     _assertUuid(command.data);
     // Execute command
-    final operation = await repo.update(command.data);
+    final operation = await repo.apply(command.data);
     if (command.incident != null) {
-      await incidents.update(command.incident);
+      await incidents.apply(command.incident);
     }
     final select = command.selected && command.data.uuid != _ouuid;
     final unselected = select ? await _unset(clear: true) : null;
@@ -317,6 +365,24 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
         yield selected;
       }
     }
+
+    // Notify when all states are remote
+    onComplete(
+      [
+        repo.onRemote(operation.uuid),
+        incidents.onRemote(operation.incident.uuid),
+      ],
+      toState: (_) => OperationUpdated(
+        operation,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<OperationState> _delete(DeleteOperation command) async* {
@@ -341,6 +407,21 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
       yield unselected;
     }
     yield deleted;
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(operation.uuid, require: false)],
+      toState: (_) => OperationDeleted(
+        operation,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<OperationState> _unload(UnloadOperations command) async* {
@@ -528,6 +609,15 @@ class UnloadOperations extends OperationCommand<void, List<Operation>> {
   String toString() => '$runtimeType {}';
 }
 
+class _StateChange extends OperationCommand<OperationState, Operation> {
+  _StateChange(
+    OperationState state,
+  ) : super(state);
+
+  @override
+  String toString() => '$runtimeType {state: $data}';
+}
+
 /// ---------------------
 /// Normal States
 /// ---------------------
@@ -536,7 +626,11 @@ abstract class OperationState<T> extends BlocEvent<T> {
     T data, {
     props = const [],
     StackTrace stackTrace,
-  }) : super(data, props: props, stackTrace: stackTrace);
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   bool isEmpty() => this is OperationsEmpty;
   bool isLoaded() => this is OperationsLoaded;
@@ -595,11 +689,21 @@ class OperationUnselected extends OperationState<Operation> {
   String toString() => '$runtimeType {operation: $data}';
 }
 
-class OperationsLoaded extends OperationState<Iterable<Operation>> {
-  OperationsLoaded(Iterable<Operation> data) : super(data);
+class OperationsLoaded extends OperationState<Iterable<String>> {
+  OperationsLoaded(
+    Iterable<String> data, {
+    this.incidents,
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [incidents]);
+
+  final List<String> incidents;
 
   @override
-  String toString() => '$runtimeType {operations: $data}';
+  String toString() => '$runtimeType {'
+      'operations: $data, '
+      'isRemote: $isRemote, '
+      'incidents: $incidents, '
+      '}';
 }
 
 class OperationCreated extends OperationState<Operation> {
@@ -607,14 +711,20 @@ class OperationCreated extends OperationState<Operation> {
   final Incident incident;
   final List<String> units;
   OperationCreated(
-    Operation operation, {
-    this.selected = true,
+    Operation data, {
     this.units,
     this.incident,
-  }) : super(operation, props: [selected, incident, units]);
+    this.selected = true,
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [selected, incident, units]);
 
   @override
-  String toString() => '$runtimeType {operation: $data, selected: $selected, units: $units}';
+  String toString() => '$runtimeType '
+      '{operation: $data, '
+      'selected: $selected, '
+      'units: $units, '
+      'isRemote: $isRemote'
+      '}';
 }
 
 class OperationUpdated extends OperationState<Operation> {
@@ -622,12 +732,18 @@ class OperationUpdated extends OperationState<Operation> {
   final Incident incident;
   OperationUpdated(
     Operation data, {
-    this.selected = true,
     this.incident,
-  }) : super(data, props: [selected]);
+    this.selected = true,
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote, props: [incident, selected]);
 
   @override
-  String toString() => '$runtimeType {operation: $data, selected: $selected, incident: $incident}';
+  String toString() => '$runtimeType {'
+      'operation: $data, '
+      'selected: $selected, '
+      'incident: $incident, '
+      'isRemote: $isRemote'
+      '}';
 }
 
 class OperationSelected extends OperationState<Operation> {
@@ -638,10 +754,13 @@ class OperationSelected extends OperationState<Operation> {
 }
 
 class OperationDeleted extends OperationState<Operation> {
-  OperationDeleted(Operation data) : super(data);
+  OperationDeleted(
+    Operation data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {operation: $data}';
+  String toString() => '$runtimeType {operation: $data, isRemote: $isRemote}';
 }
 
 class OperationsUnloaded extends OperationState<Iterable<Operation>> {
@@ -667,7 +786,6 @@ class OperationBlocError extends OperationState<Object> {
 /// ---------------------
 /// Exceptions
 /// ---------------------
-
 class OperationBlocException implements Exception {
   OperationBlocException(this.error, this.state, {this.command, this.stackTrace});
   final Object error;

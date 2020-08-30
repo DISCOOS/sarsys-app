@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
@@ -12,16 +14,10 @@ abstract class IncidentRepository implements ConnectionAwareRepository<String, I
   }
 
   /// Load incidents
-  Future<List<Incident>> load({bool force = true});
-
-  /// Update [incident]
-  Future<Incident> create(Incident incident);
-
-  /// Update [incident]
-  Future<Incident> update(Incident incident);
-
-  /// Delete [Incident] with given [uuid]
-  Future<Incident> delete(String uuid);
+  Future<List<Incident>> load({
+    bool force = true,
+    Completer<Iterable<Incident>> onRemote,
+  });
 }
 
 class IncidentServiceException implements Exception {

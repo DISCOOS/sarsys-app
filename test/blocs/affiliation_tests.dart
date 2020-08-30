@@ -78,16 +78,6 @@ void main() async {
 
         // Act
         await _authenticate(harness);
-        await expectLater(
-          harness.affiliationBloc.repo.onChanged,
-          emitsThrough(
-            isA<StorageTransition>().having(
-              (transition) => transition.isRemote,
-              'is remote',
-              isTrue,
-            ),
-          ),
-        );
 
         // Assert service calls
         verify(harness.personService.create(any)).called(1);
@@ -179,7 +169,14 @@ void main() async {
 
       // Act
       await harness.affiliationBloc.load();
-
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
       // Assert numbers
       expect(harness.affiliationBloc.orgs.length, 2, reason: "SHOULD contain 2 organisations");
       expect(harness.affiliationBloc.divs.length, 2, reason: "SHOULD contain 2 divisions");
@@ -262,6 +259,14 @@ void main() async {
 
       // Act
       await harness.affiliationBloc.load();
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
 
       // Assert interactions
       verifyZeroInteractions(harness.organisationService);
@@ -326,20 +331,34 @@ Future _authenticate(
     username: UNTRUSTED,
     password: PASSWORD,
   );
+  expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
   expect(harness.user.userId, equals(harness.userId));
   expect(harness.user.division, equals(harness.division));
   expect(harness.user.department, equals(harness.department));
 
-  // Wait for UserAuthenticated event
-  // Wait until organisations are loaded
+  // Wait until user is onboarded remotely
   await expectThroughLater(
     harness.affiliationBloc,
-    emits(isA<UserOnboarded>()),
+    emits(isA<UserOnboarded>().having(
+      (event) => event.isRemote,
+      'Should be remote',
+      isTrue,
+    )),
   );
+  await expectStorageStatusLater(
+    harness.affiliationBloc.persons.values.first.uuid,
+    harness.affiliationBloc.persons,
+    StorageStatus.created,
+    remote: true,
+  );
+  await expectStorageStatusLater(
+    harness.affiliationBloc.repo.values.first.uuid,
+    harness.affiliationBloc.repo,
+    StorageStatus.created,
+    remote: true,
+  );
+
   if (reset) {
     clearInteractions(harness.organisationService);
   }
-
-  // A user must be authenticated
-  expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
 }

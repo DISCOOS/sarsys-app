@@ -305,7 +305,7 @@ Future _testAppConfigShouldInitializeWithDefaultValues(
   );
   expectThroughInOrder(
     harness.configBloc,
-    [isA<AppConfigInitialized>().having((event) => event.local, "Should have local=$local ", local)],
+    [isA<AppConfigInitialized>().having((event) => event.isLocal, "Should have local=$local ", local)],
   );
 }
 

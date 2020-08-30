@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
@@ -12,16 +14,10 @@ abstract class DivisionRepository implements ConnectionAwareRepository<String, D
   }
 
   /// Load incidents
-  Future<List<Division>> load({bool force = true});
-
-  /// Update [incident]
-  Future<Division> create(Division incident);
-
-  /// Update [incident]
-  Future<Division> update(Division incident);
-
-  /// Delete [Division] with given [uuid]
-  Future<Division> delete(String uuid);
+  Future<List<Division>> load({
+    bool force = true,
+    Completer<Iterable<Division>> onRemote,
+  });
 }
 
 class DivisionServiceException implements Exception {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -62,7 +63,6 @@ void main() async {
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
-      await Future.delayed(Duration(milliseconds: 1));
 
       final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
@@ -70,9 +70,8 @@ void main() async {
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
       final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
-      await Future.delayed(Duration(milliseconds: 1));
 
-      // Act and assert
+      // Assert
       expect(harness.trackingBloc.devices(pt1.uuid), equals([d1]), reason: "SHOULD contain d1");
       expect(harness.trackingBloc.devices(pt2.uuid), equals([d2]), reason: "SHOULD contain d2");
       expect(harness.trackingBloc.devices(pt3.uuid), equals([d3]), reason: "SHOULD contain d3");
@@ -607,6 +606,10 @@ void main() async {
       final operation = await _prepare(harness);
       harness.trackingService.add(operation.uuid);
       await harness.trackingBloc.load();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsLoaded>()),
+      );
       expectTrackingCount(harness, 1);
 
       // Act
@@ -624,11 +627,23 @@ void main() async {
       final operation = await _prepare(harness);
       final tracking = harness.trackingService.add(operation.uuid);
       await harness.trackingBloc.load();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsLoaded>()),
+      );
       expectTrackingCount(harness, 1);
 
       // Act
       await harness.trackingBloc.unload();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsUnloaded>()),
+      );
       await harness.trackingBloc.load();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsLoaded>()),
+      );
 
       // Assert
       expect(harness.trackingBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
@@ -1159,7 +1174,15 @@ void main() async {
 
       // Act
       await harness.trackingBloc.unload();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsUnloaded>()),
+      );
       await harness.trackingBloc.load();
+      await expectThroughLater(
+        harness.trackingBloc,
+        emits(isA<TrackingsLoaded>()),
+      );
 
       // Assert
       expect(harness.trackingBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
@@ -1219,7 +1242,14 @@ FutureOr<Tracking> _attachDeviceToTrackable(BlocTestHarness harness, Trackable t
       harness.trackingBloc,
       map: (state) => state.data,
       test: (state) => trackable.tracking.uuid == state.data.uuid,
-      act: (t) async => await harness.trackingBloc.attach(t.uuid, devices: [device]),
+      act: (t) async {
+        await harness.trackingBloc.attach(t.uuid, devices: [device]);
+        await waitForEventMatching<TrackingUpdated>(
+          harness.trackingBloc,
+          (event) => event.data.uuid == t.uuid,
+        );
+        return harness.trackingBloc.repo[t.uuid];
+      },
     );
 
 Future<Tracking> _shouldUpdateTrackingDirectly<T extends Trackable>(
@@ -1295,6 +1325,10 @@ Future<Tracking> _shouldAttachToTrackingDirectly<T extends Trackable>(
 
   // Act
   final t2 = await harness.trackingBloc.attach(t1.uuid, position: p2, devices: [d2]);
+  await expectDataIsNotEmpty<TrackingUpdated>(
+    harness,
+    isRemote: harness.isOnline,
+  );
 
   // Assert
   expect(t2.position.geometry, equals(p2.geometry), reason: "SHOULD be position p2");
@@ -1392,6 +1426,10 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
   final p3 = Position.now(lat: 1, lon: 1, source: PositionSource.manual);
   final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available, position: p3));
   final t2 = await harness.trackingBloc.attach(t1.uuid, devices: [d3]);
+  await expectDataIsNotEmpty<TrackingUpdated>(
+    harness,
+    isRemote: harness.isOnline,
+  );
   expect(t2.history.length, 3, reason: "SHOULD be length 3");
   expect(t2.sources.length, 3, reason: "SHOULD be length 3");
   expect(t2.sources.map((e) => e.uuid), contains(d3.uuid), reason: "SHOULD NOT contain uuid of d3");
@@ -1402,9 +1440,11 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
   await harness.deviceBloc.delete(d3.uuid);
 
   // Assert
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()));
+  await expectDataIsNotEmpty<TrackingUpdated>(
+    harness,
+    isRemote: harness.isOnline,
+  );
   final t3 = harness.trackingBloc.repo[t2.uuid];
-
   expect(t3.status, equals(TrackingStatus.tracking), reason: "SHOULD be status tracking");
   // Last position is recalculated on delete
   // which adds a new position to history,
@@ -1657,9 +1697,12 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable>(
 
   // Act
   final updated = await harness.trackingBloc.attach(automatic.value.uuid, devices: [device]);
+  await expectDataIsNotEmpty<TrackingUpdated>(
+    harness,
+    isRemote: harness.isOnline,
+  );
 
   // Assert
-  expectThrough(harness.trackingBloc, emits(isA<TrackingUpdated>()), close: false);
   expect(
     updated.sources.map((source) => source.uuid),
     contains(device.uuid),
@@ -1842,7 +1885,16 @@ Future _shouldLoadTrackings(BlocTestHarness harness) async {
   final tracking2 = harness.trackingService.add(operation.uuid);
 
   // Act
-  List<Tracking> trackings = await harness.trackingBloc.load();
+  await harness.trackingBloc.load();
+  await expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<TrackingsLoaded>().having(
+      (event) => harness.isOnline ? event.isRemote : event.isLocal,
+      'Should be remote',
+      isTrue,
+    )),
+  );
+  final fetched = harness.trackingBloc.repo.values;
 
   // Assert
   if (harness.isOffline) {
@@ -1858,7 +1910,8 @@ Future _shouldLoadTrackings(BlocTestHarness harness) async {
       reason: "SHOULD NOT contain tracking ${tracking2.uuid}",
     );
   } else {
-    expect(trackings.length, 2, reason: "SHOULD contain two trackings");
+    // Mobilized user + two trackings added above
+    expect(fetched.length, 3, reason: "SHOULD contain three trackings");
     expect(
       harness.trackingBloc.repo.containsKey(tracking1.uuid),
       isTrue,
@@ -1977,6 +2030,11 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness) async {
 Future<Tracking> _ensurePersonnelWithTracking(BlocTestHarness harness, Operation operation, Tracking tracking) async {
   harness.trackingService.put(operation.uuid, tracking);
   await harness.trackingBloc.load();
+  await expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<TrackingsLoaded>()),
+  );
+
   expectTrackingCount(harness, harness.isOnline ? 1 : 0);
   if (harness.isOffline) {
     // Create any tracking for any trackable
@@ -2080,6 +2138,10 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   final tracking = TrackingBuilder.create();
   harness.trackingService.put(operation.uuid, tracking);
   await harness.trackingBloc.load();
+  await expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<TrackingsLoaded>()),
+  );
   expectTrackingCount(harness, harness.isOnline ? 1 : 0);
 
   // Act
@@ -2127,14 +2189,12 @@ Future<Operation> _prepare(BlocTestHarness harness) async {
   // Prepare PersonnelBloc
   _print(harness, '_prepare...personnel[was:${harness.personnelBloc.state}]');
   await expectThroughLaterIfNot<PersonnelsLoaded>(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
-  expect(harness.personnelBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
   _print(harness, '_prepare...personnel.ok[is:${harness.personnelBloc.state}]');
 
   // Prepare UnitBloc
   _print(harness, '_prepare...unit[was:${harness.unitBloc.state}]');
   await expectThroughLaterIfNot<UnitsLoaded>(harness.unitBloc, emits(isA<UnitsLoaded>()));
-  expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
   _print(harness, '_prepare...unit.ok[is:${harness.unitBloc.state}]');
 
@@ -2155,4 +2215,63 @@ void _print(BlocTestHarness harness, String message) {
   if (_debug) {
     print(message);
   }
+}
+
+Future<void> expectLocalIsEmpty<T extends TrackingState>(BlocTestHarness harness) {
+  return expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
+      },
+      'Should be remote and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> waitForEventMatching<T extends BlocEvent>(BaseBloc bloc, bool Function(T event) matches) {
+  return expectThroughLater(
+      bloc,
+      emits(
+        isA<T>().having(
+          matches,
+          'Should match',
+          isTrue,
+        ),
+      ));
+}
+
+Future<void> expectDataIsEmpty<T extends TrackingState>(
+  BlocTestHarness harness, {
+  @required bool isRemote,
+}) {
+  return expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote == isRemote &&
+            (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
+      },
+      'Should be ${isRemote ? 'remote' : 'local'} and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> expectDataIsNotEmpty<T extends TrackingState>(
+  BlocTestHarness harness, {
+  @required bool isRemote,
+}) {
+  return expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote == isRemote &&
+            (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+      },
+      'Should be ${isRemote ? 'remote' : 'local'} and not empty',
+      isTrue,
+    )),
+  );
 }

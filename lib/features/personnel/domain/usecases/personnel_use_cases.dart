@@ -147,7 +147,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   }
 
   Personnel _findPersonnel(PersonnelParams params, Affiliation affiliation) =>
-      params.bloc.repo.find(where: (p) => p.person.uuid == affiliation.person.uuid).firstOrNull;
+      params.bloc.repo.find(where: (p) => p.person?.uuid == affiliation.person.uuid).firstOrNull;
 
   Iterable<String> _selectables(PersonnelParams params) =>
       params.bloc.repo.values.where((p) => p.status != PersonnelStatus.retired).map((p) => p.affiliation.uuid);

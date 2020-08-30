@@ -51,17 +51,8 @@ abstract class AffiliationRepository implements ConnectionAwareRepository<String
 
   /// Init from local storage, overwrite states
   /// with given affiliations if given. Returns
-  /// number of states after initialisation
-  Future<int> init({List<Affiliation> affiliations});
-
-  /// Create [Affiliation] with existing [Person]
-  Future<Affiliation> create(Affiliation affiliation);
-
-  /// Update [Affiliation]
-  Future<Affiliation> update(Affiliation affiliation);
-
-  /// Delete [Affiliation] with given [uuid]
-  Future<Affiliation> delete(String uuid);
+  /// affiliation after initialisation
+  Future<List<Affiliation>> init({List<Affiliation> affiliations});
 }
 
 class AffiliationServiceException implements Exception {

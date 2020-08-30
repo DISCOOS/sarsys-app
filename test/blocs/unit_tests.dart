@@ -43,10 +43,20 @@ void main() async {
       final unit2 = harness.unitService.add(operation.uuid);
 
       // Act
-      List<Unit> unit = await harness.unitBloc.load();
+      List<Unit> cached = await harness.unitBloc.load();
+      await expectThroughLater(
+        harness.unitBloc,
+        emits(isA<UnitsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      final fetched = harness.unitBloc.repo.values;
 
       // Assert
-      expect(unit.length, 2, reason: "SHOULD contain two unit");
+      expect(cached.length, 0, reason: "SHOULD contain zero units");
+      expect(fetched.length, 2, reason: "SHOULD contain two units");
       expect(
         harness.unitBloc.repo.containsKey(unit1.uuid),
         isTrue,
@@ -57,7 +67,6 @@ void main() async {
         isTrue,
         reason: "SHOULD contain unit ${unit2.uuid}",
       );
-      expectThrough(harness.unitBloc, emits(isA<UnitsLoaded>()));
     });
 
     test('SHOULD create unit and push to backend', () async {
@@ -68,15 +77,15 @@ void main() async {
 
       // Act
       await harness.unitBloc.create(unit);
-
-      // Assert
-      verify(harness.unitService.create(any, any)).called(1);
       await expectStorageStatusLater(
         unit.uuid,
         harness.unitBloc.repo,
         StorageStatus.created,
         remote: true,
       );
+
+      // Assert
+      verify(harness.unitService.create(any, any)).called(1);
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.unitBloc.repo.containsKey(unit.uuid), isTrue, reason: "SHOULD contain unit ${unit.uuid}");
@@ -89,19 +98,23 @@ void main() async {
       final operation = await _prepare(harness, offline: false);
       final unit = harness.unitService.add(operation.uuid);
       await harness.unitBloc.load();
+      await expectDataIsNotEmpty(
+        harness,
+        isRemote: true,
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
       await harness.unitBloc.update(unit.copyWith(status: UnitStatus.deployed));
-
-      // Assert
-      verify(harness.unitService.update(any)).called(1);
       await expectStorageStatusLater(
         unit.uuid,
         harness.unitBloc.repo,
         StorageStatus.updated,
         remote: true,
       );
+
+      // Assert
+      verify(harness.unitService.update(any)).called(1);
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.unitBloc.repo.containsKey(unit.uuid), isTrue, reason: "SHOULD contain unit ${unit.uuid}");
@@ -114,6 +127,10 @@ void main() async {
       final operation = await _prepare(harness, offline: false);
       final unit = harness.unitService.add(operation.uuid);
       await harness.unitBloc.load();
+      await expectDataIsNotEmpty(
+        harness,
+        isRemote: true,
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
@@ -128,7 +145,6 @@ void main() async {
       );
       verify(harness.unitService.delete(any)).called(1);
       expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT BE unset");
       expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expectThrough(harness.unitBloc, isA<UnitDeleted>());
     });
@@ -139,14 +155,17 @@ void main() async {
       final operation = await _prepare(harness, offline: false);
       harness.unitService.add(operation.uuid);
       await harness.unitBloc.load();
+      await expectDataIsNotEmpty(
+        harness,
+        isRemote: true,
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
       await harness.unitBloc.unload();
 
-      // Assert
+      // Assert0
       expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
-      expect(harness.unitBloc.isUnset, isTrue, reason: "SHOULD BE unset");
       expectThrough(harness.unitBloc, isA<UnitsUnloaded>());
     });
 
@@ -156,17 +175,36 @@ void main() async {
       final operation = await _prepare(harness, offline: false);
       final unit = harness.unitService.add(operation.uuid);
       await harness.unitBloc.load();
+      await expectDataIsNotEmpty(
+        harness,
+        isRemote: true,
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
       await harness.unitBloc.unload();
+      await expectThroughLater(
+        harness.unitBloc,
+        emits(isA<UnitsUnloaded>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
+
       await harness.unitBloc.load();
+      await expectThroughLater(
+        harness.unitBloc,
+        emits(isA<UnitsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
 
       // Assert
-      expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expect(harness.unitBloc.repo.containsKey(unit.uuid), isTrue, reason: "SHOULD contain unit ${unit.uuid}");
-      expectThroughInOrder(harness.unitBloc, [isA<UnitsUnloaded>(), isA<UnitsLoaded>()]);
     });
 
     test('SHOULD delete clone when personnel is deleted', () async {
@@ -376,6 +414,10 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
 
   // Act
   await harness.operationsBloc.unload();
+  await expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<OperationsUnloaded>()),
+  );
 
   // Assert
   await expectThroughLater(
@@ -507,15 +549,18 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
     harness.connectivity.cellular();
   }
 
-  // Wait for UserAuthenticated event
-  // Wait until organisations are loaded
+  // Wait for user to onboard
   await expectThroughLater(
     harness.affiliationBloc,
     emits(isA<UserOnboarded>()),
   );
 
   // A user must be authenticated
-  expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
+  expect(
+    harness.userBloc.isAuthenticated,
+    isTrue,
+    reason: "SHOULD be authenticated",
+  );
 
   // Create operation
   final incident = IncidentBuilder.create();
@@ -525,13 +570,54 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
   );
 
   // Prepare OperationBloc
-  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()));
-  expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
+  await expectThroughLater(
+      harness.operationsBloc,
+      emits(
+        isA<OperationSelected>(),
+      ));
+  expect(
+    harness.operationsBloc.isUnselected,
+    isFalse,
+    reason: "SHOULD NOT be unset",
+  );
 
   // Prepare UnitBloc
   await expectThroughLater(harness.unitBloc, emits(isA<UnitsLoaded>()));
-  expect(harness.unitBloc.isUnset, isFalse, reason: "SHOULD NOT be unset");
   expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
 
   return operation;
+}
+
+Future<void> expectDataIsEmpty<T extends UnitState>(
+  BlocTestHarness harness, {
+  @required bool isRemote,
+}) {
+  return expectThroughLater(
+    harness.unitBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote == isRemote &&
+            (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
+      },
+      'Should be ${isRemote ? 'remote' : 'local'} and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> expectDataIsNotEmpty<T extends UnitState>(
+  BlocTestHarness harness, {
+  @required bool isRemote,
+}) {
+  return expectThroughLater(
+    harness.unitBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote == isRemote &&
+            (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+      },
+      'Should be ${isRemote ? 'remote' : 'local'} and not empty',
+      isTrue,
+    )),
+  );
 }

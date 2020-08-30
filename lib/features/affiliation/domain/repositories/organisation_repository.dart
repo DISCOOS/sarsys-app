@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
@@ -12,16 +14,10 @@ abstract class OrganisationRepository implements ConnectionAwareRepository<Strin
   }
 
   /// Load organisations
-  Future<List<Organisation>> load({bool force = true});
-
-  /// Update [Organisation]
-  Future<Organisation> create(Organisation organisation);
-
-  /// Update [Organisation]
-  Future<Organisation> update(Organisation organisation);
-
-  /// Delete [Organisation] with given [uuid]
-  Future<Organisation> delete(String uuid);
+  Future<List<Organisation>> load({
+    bool force = true,
+    Completer<Iterable<Organisation>> onRemote,
+  });
 }
 
 class OrganisationServiceException implements Exception {

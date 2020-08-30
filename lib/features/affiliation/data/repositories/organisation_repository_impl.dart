@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
@@ -28,69 +28,31 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
     return state?.value?.uuid;
   }
 
+  /// Create [Organisation] from json
+  Organisation fromJson(Map<String, dynamic> json) => OrganisationModel.fromJson(json);
+
   /// Load organisations
-  Future<List<Organisation>> load({bool force = true}) async {
+  Future<List<Organisation>> load({
+    bool force = true,
+    Completer<Iterable<Organisation>> onRemote,
+  }) async {
     await prepare(
       force: force ?? false,
     );
-    return _load();
-  }
-
-  /// Update [Organisation]
-  Future<Organisation> create(Organisation organisation) async {
-    await prepare();
-    return apply(
-      StorageState.created(organisation),
-    );
-  }
-
-  /// Update [Organisation]
-  Future<Organisation> update(Organisation organisation) async {
-    await prepare();
-    return apply(
-      StorageState.updated(organisation),
-    );
-  }
-
-  /// Delete [Organisation] with given [uuid]
-  Future<Organisation> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+    return _load(
+      onRemote: onRemote,
     );
   }
 
   /// GET ../organisations
-  Future<List<Organisation>> _load() async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((organisation) => organisation.uuid),
-          );
-          final organisations = await Future.wait(
-            response.body.map((e) => _withFleetMap(e)),
-          );
-          organisations.forEach(
-            (organisation) => put(
-              StorageState.created(
-                organisation,
-                remote: true,
-              ),
-            ),
-          );
-          return organisations;
-        }
-        throw OrganisationServiceException(
-          'Failed to load organisations',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Organisation>> _load({
+    Completer<Iterable<Organisation>> onRemote,
+  }) async {
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
   }
 

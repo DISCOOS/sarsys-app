@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
@@ -12,16 +14,10 @@ abstract class DepartmentRepository implements ConnectionAwareRepository<String,
   }
 
   /// Load incidents
-  Future<List<Department>> load({bool force = true});
-
-  /// Update [incident]
-  Future<Department> create(Department incident);
-
-  /// Update [incident]
-  Future<Department> update(Department incident);
-
-  /// Delete [Department] with given [uuid]
-  Future<Department> delete(String uuid);
+  Future<List<Department>> load({
+    bool force = true,
+    Completer<Iterable<Department>> onRemote,
+  });
 }
 
 class DepartmentServiceException implements Exception {

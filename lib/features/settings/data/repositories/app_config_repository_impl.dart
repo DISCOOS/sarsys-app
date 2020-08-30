@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:flutter/foundation.dart';
@@ -40,45 +39,41 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
   StorageState<AppConfig> get state => getState(version);
 
   @override
+  int toKey(StorageState<AppConfig> state) => version;
+
+  /// Create [AppConfig] from json
+  AppConfig fromJson(Map<String, dynamic> json) => AppConfigModel.fromJson(json);
+
+  @override
   Future<AppConfig> local() async {
     beginTransaction();
-    return apply(
-      await _ensure(force: true),
+    return push(
+      await _open(force: true),
     );
   }
 
   @override
-  Future<AppConfig> init() async => apply(
-        await _ensure(force: true),
-      );
+  Future<AppConfig> init() async {
+    return push(
+      await _open(force: true),
+    );
+  }
 
   @override
-  Future<AppConfig> load() async {
-    final state = await _ensure();
+  Future<AppConfig> load({
+    Completer<Iterable<AppConfig>> onRemote,
+  }) async {
+    final state = await _open();
     if (state.isLocal) {
-      return containsKey(version) ? schedule(state) : apply(state);
+      return containsKey(version) ? schedulePush(state) : push(state);
     }
-    return _load();
-  }
-
-  @override
-  Future<AppConfig> update(AppConfig config) async {
-    checkState();
-    return apply(
-      StorageState.updated(config),
-    );
-  }
-
-  @override
-  Future<AppConfig> delete() async {
-    checkState();
-    return apply(
-      StorageState.deleted(config),
+    return _load(
+      onRemote: onRemote,
     );
   }
 
   /// Ensure that [config] exists
-  Future<StorageState<AppConfig>> _ensure({bool force = false}) async {
+  Future<StorageState<AppConfig>> _open({bool force = false}) async {
     if (force || !isReady) {
       await prepare(force: force);
     }
@@ -124,35 +119,22 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
       })));
   }
 
-  Future<AppConfig> _load() async {
+  Future<AppConfig> _load({
+    Completer<Iterable<AppConfig>> onRemote,
+  }) async {
     final state = getState(version);
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetch(state.value.uuid);
-        if (response.is200) {
-          put(
-            StorageState.created(
-              response.body,
-              remote: true,
-            ),
-          );
-          return response.body;
-        } else if (response.is404) {
-          return schedule(state.replace(state.value, remote: false));
-        }
-        throw AppConfigServiceException(
-          'Failed to load AppConfig $version:${state.value.uuid}',
-          response: response,
+    scheduleLoad(
+      () async {
+        final response = await service.fetch(state.value.uuid);
+        return response.copyWith<Iterable<AppConfig>>(
+          body: [response.body],
         );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+      },
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return state.value;
   }
-
-  @override
-  int toKey(StorageState<AppConfig> state) => version;
 
   @override
   Future<Iterable<AppConfig>> onReset() async => [await _load()];

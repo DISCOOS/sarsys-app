@@ -62,6 +62,15 @@ class JsonUtils {
       oldJson?.toJson() ?? {},
       newJson?.toJson() ?? {},
     )..removeWhere((diff) => !ops.contains(diff['op']));
+    return apply(oldJson, patches, strict: strict);
+  }
+
+  static Map<String, dynamic> apply(
+    JsonObject oldJson,
+    List<Map<String, dynamic>> patches, {
+    bool strict = false,
+    List<String> ops = appendOnly,
+  }) {
     return JsonPatch.apply(oldJson, patches, strict: strict);
   }
 }

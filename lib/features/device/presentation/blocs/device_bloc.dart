@@ -100,7 +100,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
     if (event is ActivityProfileChanged) {
       final device = findThisApp();
-      if (device.trackable != event.data.isTrackable) {
+      if (device != null && device.trackable != event.data.isTrackable) {
         dispatch(
           UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
         );
@@ -147,7 +147,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Find device for this app
   Device findThisApp() {
-    final udid = userBloc.config.udid;
+    final udid = userBloc.config?.udid;
     return repo.find(where: (device) => device.uuid == udid).firstOrNull;
   }
 
@@ -241,60 +241,128 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   @override
   Stream<DeviceState> execute(DeviceCommand command) async* {
     if (command is LoadDevices) {
-      yield await _load(command);
+      yield* _load(command);
     } else if (command is CreateDevice) {
-      yield await _create(command);
+      yield* _create(command);
     } else if (command is UpdateDevice) {
-      yield await _update(command);
+      yield* _update(command);
     } else if (command is DeleteDevice) {
-      yield await _delete(command);
+      yield* _delete(command);
     } else if (command is _DeviceMessage) {
       yield await _process(command);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
   }
 
-  Future<DeviceState> _load(LoadDevices command) async {
-    var devices = await repo.load();
+  Stream<DeviceState> _load(LoadDevices command) async* {
+    // Fetch cached and handle
+    // response from remote when ready
+    final onRemote = Completer<Iterable<Device>>();
+    var devices = await repo.load(
+      onRemote: onRemote,
+    );
 
-    return toOK(
+    yield toOK(
       command,
       DevicesLoaded(repo.keys),
       result: devices,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [onRemote.future],
+      toState: (_) => DevicesLoaded(
+        repo.keys,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<DeviceState> _create(CreateDevice command) async {
+  Stream<DeviceState> _create(CreateDevice command) async* {
     _assertData(command.data);
-    var device = await repo.create(command.data);
-    return toOK(
+    var device = await repo.apply(command.data);
+    yield toOK(
       command,
       DeviceCreated(device),
       result: device,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(device.uuid)],
+      toState: (_) => DeviceCreated(
+        device,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<DeviceState> _update(UpdateDevice command) async {
+  Stream<DeviceState> _update(UpdateDevice command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final device = await repo.update(command.data);
-    return toOK(
+    final device = await repo.apply(command.data);
+    yield toOK(
       command,
       DeviceUpdated(device, previous),
       result: device,
     );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(device.uuid)],
+      toState: (_) => DeviceUpdated(
+        device,
+        previous,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
-  Future<DeviceState> _delete(DeleteDevice command) async {
+  Stream<DeviceState> _delete(DeleteDevice command) async* {
     _assertData(command.data);
     final device = await repo.delete(command.data.uuid);
-    return toOK(
+    yield toOK(
       command,
       DeviceDeleted(device),
       result: device,
+    );
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(device.uuid, require: false)],
+      toState: (_) => DeviceDeleted(
+        device,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
     );
   }
 
@@ -325,8 +393,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   @override
   Future<void> close() async {
-    await repo.dispose();
-    return super.close();
+    super.close();
+    return repo.dispose();
   }
 }
 
@@ -384,6 +452,15 @@ class _DeviceMessage extends DeviceCommand<Device, Device> {
   String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
+class _StateChange extends DeviceCommand<DeviceState, Device> {
+  _StateChange(
+    DeviceState state,
+  ) : super(state);
+
+  @override
+  String toString() => '$runtimeType {state: $data}';
+}
+
 /// ---------------------
 /// Normal States
 /// ---------------------
@@ -392,7 +469,11 @@ abstract class DeviceState<T> extends BlocEvent<T> {
     T data, {
     StackTrace stackTrace,
     props = const [],
-  }) : super(data, props: props, stackTrace: stackTrace);
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   bool isError() => this is DeviceBlocError;
   bool isEmpty() => this is DevicesEmpty;
@@ -417,35 +498,52 @@ class DevicesEmpty extends DeviceState<Null> {
 }
 
 class DevicesLoaded extends DeviceState<List<String>> {
-  DevicesLoaded(List<String> data) : super(data);
+  DevicesLoaded(
+    List<String> data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {devices: $data}';
+  String toString() => '$runtimeType {devices: $data, isRemote: $isRemote}';
 }
 
 class DeviceCreated extends DeviceState<Device> {
-  DeviceCreated(Device device) : super(device);
+  DeviceCreated(
+    Device device, {
+    bool isRemote = false,
+  }) : super(device, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {device: $data}';
+  String toString() => '$runtimeType {device: $data, isRemote: $isRemote}';
 }
 
 class DeviceUpdated extends DeviceState<Device> {
+  DeviceUpdated(
+    Device device,
+    this.previous, {
+    bool isRemote = false,
+  }) : super(
+          device,
+          isRemote: isRemote,
+          props: [previous],
+        );
   final Device previous;
-  DeviceUpdated(Device device, this.previous) : super(device);
 
   bool isStatusChanged() => data.status != previous?.status;
   bool isLocationChanged() => data.position != previous?.position;
 
   @override
-  String toString() => '$runtimeType {device: $data, previous: $previous}';
+  String toString() => '$runtimeType {device: $data, previous: $previous, isRemote: $isRemote}';
 }
 
 class DeviceDeleted extends DeviceState<Device> {
-  DeviceDeleted(Device device) : super(device);
+  DeviceDeleted(
+    Device device, {
+    bool isRemote = false,
+  }) : super(device, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {device: $data}';
+  String toString() => '$runtimeType {device: $data, isRemote: $isRemote}';
 }
 
 class DevicesUnloaded extends DeviceState<Iterable<Device>> {

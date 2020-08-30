@@ -93,12 +93,14 @@ class OperationServiceMock extends Mock implements OperationService {
   Operation add(
     String userId, {
     int since = 0,
-    String uuid,
+    String iuuid,
+    String ouuid,
     String passcode = PASSCODE,
   }) {
     final operation = OperationBuilder.create(
       userId,
-      ouuid: uuid,
+      iuuid: iuuid,
+      ouuid: ouuid,
       since: since,
       passcode: passcode,
     );

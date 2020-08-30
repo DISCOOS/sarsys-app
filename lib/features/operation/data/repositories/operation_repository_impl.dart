@@ -1,10 +1,11 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:SarSys/features/operation/data/models/operation_model.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
-import 'package:flutter/foundation.dart';
-
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
@@ -34,66 +35,31 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
     return state?.value?.uuid;
   }
 
+  /// Create [Operation] from json
+  Operation fromJson(Map<String, dynamic> json) => OperationModel.fromJson(json);
+
   /// Load operations
-  Future<List<Operation>> load({bool force = true}) async {
+  Future<List<Operation>> load({
+    bool force = true,
+    Completer<Iterable<Operation>> onRemote,
+  }) async {
     await prepare(
       force: force ?? false,
     );
-    return _load();
-  }
-
-  /// Update [operation]
-  Future<Operation> create(Operation operation) async {
-    await prepare();
-    return apply(
-      StorageState.created(operation),
-    );
-  }
-
-  /// Update [operation]
-  Future<Operation> update(Operation operation) async {
-    await prepare();
-    return apply(
-      StorageState.updated(operation),
-    );
-  }
-
-  /// Delete [Operation] with given [uuid]
-  Future<Operation> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+    return _load(
+      onRemote: onRemote,
     );
   }
 
   /// GET ../operations
-  Future<List<Operation>> _load() async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((operation) => operation.uuid),
-          );
-          response.body.forEach(
-            (operation) => put(
-              StorageState.created(
-                operation,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw OperationServiceException(
-          'Failed to load operations',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Operation>> _load({
+    Completer<Iterable<Operation>> onRemote,
+  }) async {
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
   }
 

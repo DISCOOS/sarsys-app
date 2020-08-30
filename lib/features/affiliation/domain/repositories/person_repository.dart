@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
@@ -20,23 +22,15 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
 
   /// Load given persons
   Future<Iterable<Person>> fetch({
-    Iterable<String> uuids,
     bool replace = false,
+    Iterable<String> uuids,
+    Completer<Iterable<Person>> onRemote,
   });
 
   /// Init from local storage, overwrite states
   /// with given persons if given. Returns
   /// number of states after initialisation
   Future<int> init({List<Person> persons});
-
-  /// Update [Person]
-  Future<Person> create(Person person);
-
-  /// Update [Person]
-  Future<Person> update(Person person);
-
-  /// Delete [Person] with given [uuid]
-  Future<Person> delete(String uuid);
 
   /// Check if state transitioned into a
   /// [PersonConflictCode.duplicate_user_id]
@@ -48,14 +42,10 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
       );
 }
 
-class PersonServiceException implements Exception {
-  PersonServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
-  }
+class PersonServiceException extends ServiceException {
+  PersonServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(error, response: response, stackTrace: stackTrace);
 }

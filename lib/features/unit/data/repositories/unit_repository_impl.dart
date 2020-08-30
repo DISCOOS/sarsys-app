@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -41,8 +41,11 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
     return state.value.uuid;
   }
 
-  /// Ensure that box for given [Incident.uuid] is open
-  Future<Iterable<StorageState<Unit>>> _ensure(String ouuid) async {
+  /// Create [Unit] from json
+  Unit fromJson(Map<String, dynamic> json) => UnitModel.fromJson(json);
+
+  /// Open repository for given [Operation.uuid] is open
+  Future<Iterable<Unit>> open(String ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -53,7 +56,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
         postfix: ouuid,
       );
     }
-    return Future.value(states.values);
+    return values;
   }
 
   /// Get [Unit] count
@@ -105,70 +108,18 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
     return count(exclude: [], type: type) + 1;
   }
 
-  /// GET ../units
-  Future<List<Unit>> load(String ouuid) async {
-    await _ensure(ouuid);
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll(ouuid);
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((unit) => unit.uuid),
-          );
-          response.body.forEach(
-            (unit) => put(
-              StorageState.created(
-                unit,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw UnitServiceException(
-          'Failed to fetch units for operation $ouuid',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  @override
+  Future<List<Unit>> load(
+    String ouuid, {
+    Completer<Iterable<Unit>> onRemote,
+  }) async {
+    await open(ouuid);
+    scheduleLoad(
+      () => service.fetchAll(ouuid),
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
-  }
-
-  /// Create [unit]
-  Future<Unit> create(String ouuid, Unit unit) async {
-    await _ensure(ouuid);
-    return apply(
-      StorageState.created(unit),
-    );
-  }
-
-  /// Update [unit]
-  Future<Unit> update(Unit unit) async {
-    checkState();
-    return apply(
-      StorageState.updated(unit),
-    );
-  }
-
-  /// PUT ../devices/{deviceId}
-  Future<Unit> patch(Unit unit) async {
-    checkState();
-    final old = this[unit.uuid];
-    final newJson = JsonUtils.patch(old, unit);
-    return update(
-      UnitModel.fromJson(newJson..addAll({'uuid': unit.uuid})),
-    );
-  }
-
-  /// Delete [Unit] with given [uuid]
-  Future<Unit> delete(String uuid) async {
-    checkState();
-    return apply(
-      StorageState.deleted(get(uuid)),
-    );
   }
 
   /// Unload all devices for given [ouuid]

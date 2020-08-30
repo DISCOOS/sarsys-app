@@ -133,7 +133,7 @@ class MessageChannel extends Service {
   Iterable<Function> _toHandlers(String type) => _routes[type] ?? [];
 
   void _onError(Object error, StackTrace stackTrace) {
-    debugPrint(error);
+    debugPrint('$error');
     debugPrint(stackTrace.toString());
     _close(
       reason: _channel.closeReason ?? '$error',

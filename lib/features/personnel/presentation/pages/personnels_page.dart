@@ -8,12 +8,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:grouped_list/grouped_list.dart';
 
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/presentation/pages/affiliations_page.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -212,7 +214,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               ),
             SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
             Chip(
-              label: Text("${personnel.name}"),
+              label: Text(personnel.name),
               backgroundColor: Colors.grey[100],
 //              avatar: AffiliationAvatar(
 //                size: 6.0,
@@ -337,10 +339,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ),
       );
 
-  Unit _toUnit(Personnel personnel) => context.bloc<TrackingBloc>().unitBloc.units.values.firstWhere(
-        (unit) => unit.personnels?.contains(personnel) == true,
-        orElse: () => null,
-      );
+  Unit _toUnit(Personnel personnel) => context.bloc<UnitBloc>().findUnitsWithPersonnel(personnel.uuid).firstOrNull;
 
   Widget _buildCreateUnitAction(Personnel personnel) => Tooltip(
         message: "Opprett enhet med mannskap",

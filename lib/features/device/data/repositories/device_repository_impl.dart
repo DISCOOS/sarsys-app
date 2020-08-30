@@ -1,17 +1,16 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:json_patch/json_patch.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
-import 'package:SarSys/core/domain/models/core.dart';
-import 'package:flutter/foundation.dart';
-
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:json_patch/json_patch.dart';
 
 class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, DeviceService>
     implements DeviceRepository {
@@ -36,67 +35,20 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
     return state.value.uuid;
   }
 
-  /// Load all devices for given [Incident.uuid]
-  Future<List<Device>> load() async {
+  /// Create [Device] from json
+  Device fromJson(Map<String, dynamic> json) => DeviceModel.fromJson(json);
+
+  /// Load all devices
+  Future<List<Device>> load({
+    Completer<Iterable<Device>> onRemote,
+  }) async {
     await prepare();
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((device) => device.uuid),
-          );
-          response.body.forEach(
-            (incident) => put(
-              StorageState.created(
-                incident,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw DeviceServiceException(
-          'Failed to fetch devices',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
-  }
-
-  /// Create [device]
-  Future<Device> create(Device device) async {
-    await prepare();
-    return apply(
-      StorageState.created(device),
-    );
-  }
-
-  /// Update [device]
-  Future<Device> update(Device device) async {
-    checkState();
-    return apply(
-      StorageState.updated(device),
-    );
-  }
-
-  /// PUT ../devices/{deviceId}
-  Future<Device> patch(Device device) async {
-    checkState();
-    DeviceModel next = _patch(device);
-    return update(next);
-  }
-
-  /// Delete [Device] with given [uuid]
-  Future<Device> delete(String uuid) async {
-    checkState();
-    return apply(
-      StorageState.deleted(get(uuid)),
-    );
   }
 
   @override
@@ -158,15 +110,6 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
     );
   }
 
-  DeviceModel _patch(Device device) {
-    final old = this[device.uuid];
-    final newJson = JsonUtils.patch(old, device);
-    final updated = DeviceModel.fromJson(
-      newJson..addAll({'uuid': device.uuid}),
-    );
-    return updated;
-  }
-
   ///
   /// Handles messages pushed from server
   ///
@@ -182,13 +125,13 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
             message.patches,
             strict: false,
           ));
-          state = previous.isRemote ? StorageState.updated(next, remote: true) : previous.replace(next);
+          state = previous.isRemote ? StorageState.updated(next, isRemote: true) : previous.replace(next);
           put(state);
         } else if (message.type == 'DeviceCreated') {
           final next = DeviceModel.fromJson(
             JsonPatch.apply({}, message.patches, strict: false),
           );
-          state = StorageState.created(next, remote: true);
+          state = StorageState.created(next, isRemote: true);
           put(state);
         }
       } on Exception catch (error, stackTrace) {

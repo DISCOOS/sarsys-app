@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/division_repository.dart';
@@ -27,66 +28,32 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
     return state?.value?.uuid;
   }
 
+  /// Create [Division] from json
+  Division fromJson(Map<String, dynamic> json) => DivisionModel.fromJson(json);
+
   /// Load divisions
-  Future<List<Division>> load({bool force = true}) async {
+  @override
+  Future<List<Division>> load({
+    bool force = true,
+    Completer<Iterable<Division>> onRemote,
+  }) async {
     await prepare(
       force: force ?? false,
     );
-    return _load();
-  }
-
-  /// Update [division]
-  Future<Division> create(Division division) async {
-    await prepare();
-    return apply(
-      StorageState.created(division),
-    );
-  }
-
-  /// Update [division]
-  Future<Division> update(Division division) async {
-    await prepare();
-    return apply(
-      StorageState.updated(division),
-    );
-  }
-
-  /// Delete [Division] with given [uuid]
-  Future<Division> delete(String uuid) async {
-    await prepare();
-    return apply(
-      StorageState.deleted(get(uuid)),
+    return _load(
+      onRemote: onRemote,
     );
   }
 
   /// GET ../divisions
-  Future<List<Division>> _load() async {
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll();
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((division) => division.uuid),
-          );
-          response.body.forEach(
-            (division) => put(
-              StorageState.created(
-                division,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw DivisionServiceException(
-          'Failed to load divisions',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Division>> _load({
+    Completer<Iterable<Division>> onRemote,
+  }) async {
+    scheduleLoad(
+      service.fetchAll,
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
@@ -20,16 +22,10 @@ abstract class OperationRepository implements ConnectionAwareRepository<String, 
   }
 
   /// Load incidents
-  Future<List<Operation>> load({bool force = true});
-
-  /// Update [operation]
-  Future<Operation> create(Operation operation);
-
-  /// Update [operation]
-  Future<Operation> update(Operation operation);
-
-  /// Delete [Operation] with given [uuid]
-  Future<Operation> delete(String uuid);
+  Future<List<Operation>> load({
+    bool force = true,
+    Completer<Iterable<Operation>> onRemote,
+  });
 }
 
 class OperationServiceException implements Exception {

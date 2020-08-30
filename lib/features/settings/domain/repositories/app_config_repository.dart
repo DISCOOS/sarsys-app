@@ -26,13 +26,9 @@ abstract class AppConfigRepository implements ConnectionAwareRepository<int, App
   Future<AppConfig> local();
 
   /// Load from [AppConfig] from [service].
-  Future<AppConfig> load();
-
-  /// Push [config] to [service]
-  Future<AppConfig> update(AppConfig config);
-
-  /// Delete [config] from [service]
-  Future<AppConfig> delete();
+  Future<AppConfig> load({
+    Completer<Iterable<AppConfig>> onRemote,
+  });
 }
 
 class AppConfigServiceException extends RepositoryException {

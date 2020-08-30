@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -509,113 +510,138 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       yield* _update(command);
     } else if (command is UnloadAffiliations) {
       yield* _unload(command);
+    } else if (command is _StateChange) {
+      yield command.data;
     } else {
       yield toUnsupported(command);
     }
   }
 
   Stream<AffiliationState> _load(LoadAffiliations command) async* {
+    // Wait on cached values
     await orgs.load();
     await divs.load();
     await deps.load();
 
     // Load from local storage
-    await repo.init();
+    final affiliations = await repo.init();
 
-    final exists = await _fetchPersons(
-      repo.values.where((e) => e.person?.uuid != null).map((e) => e.person.uuid),
-    );
-
-    final loaded = toOK(
+    // Fetch persons without blocking
+    yield* _fetchPersonsAsync(
+      affiliations,
       command,
-      AffiliationsLoaded(
+      (Iterable<Person> exists, bool isRemote) => AffiliationsLoaded(
         orgs: orgs.keys,
-        divs: orgs.keys,
-        deps: orgs.keys,
-        persons: exists,
+        divs: divs.keys,
+        deps: deps.keys,
+        isRemote: isRemote,
         affiliations: repo.keys,
+        persons: exists.map((p) => p.uuid),
       ),
-      result: repo.values,
     );
-    yield loaded;
   }
 
   Stream<AffiliationState> _fetch(FetchAffiliations command) async* {
-    // Load from backend
-    await repo.fetch(command.data);
+    // Fetch from backend
+    final affiliations = await repo.fetch(command.data);
 
-    // Get persons that should exist
-    final expected = command.data.where((uuid) => repo.containsKey(uuid)).map(
-          (uuid) => repo[uuid].person.uuid,
-        );
-
-    final exists = await _fetchPersons(expected);
-
-    final loaded = toOK(
+    // Fetch persons without blocking
+    yield* _fetchPersonsAsync(
+      affiliations,
       command,
-      AffiliationsFetched(
-        affiliations: repo.keys,
-        persons: exists,
+      (Iterable<Person> exists, bool isRemote) => AffiliationsFetched(
+        isRemote: isRemote,
+        persons: exists.map((p) => p.uuid),
+        affiliations: affiliations.map((a) => a.uuid),
       ),
-      result: repo.values,
     );
-    yield loaded;
   }
 
   Stream<AffiliationState> _search(SearchAffiliations command) async* {
-    // Load from backend
+    // Search for affiliations in backend
     final affiliations = await repo.search(
       command.data,
       limit: command.limit,
       offset: command.offset,
     );
 
-    final exists = await _fetchPersons(
-      affiliations.map((a) => a.person.uuid),
-    );
-
-    final loaded = toOK(
+    // Fetch persons without blocking
+    yield* _fetchPersonsAsync(
+      affiliations,
       command,
-      AffiliationsFetched(
-        affiliations: repo.keys,
-        persons: exists,
+      (Iterable<Person> exists, bool isRemote) => AffiliationsFetched(
+        isRemote: isRemote,
+        persons: exists.map((p) => p.uuid),
+        affiliations: affiliations.map((a) => a.uuid),
       ),
-      result: repo.values,
     );
-    yield loaded;
   }
 
-  Future<Iterable<String>> _fetchPersons(Iterable<String> puuids) async {
-    try {
-      await persons.fetch(
-        uuids: puuids,
-      );
-    } on PersonServiceException catch (e) {
-      if (!(e.response.is404 || e.response.is406)) {
-        rethrow;
-      }
-      // Remove affiliations with persons not found
-      repo.values
-          .where((affiliation) => !persons.containsKey(affiliation.person.uuid))
-          .forEach((affiliation) => repo.delete(affiliation.uuid));
-    }
-    return puuids.where((puuid) => persons.containsKey(puuid));
+  Stream<T> _fetchPersonsAsync<T extends AffiliationState>(
+    List<Affiliation> affiliations,
+    AffiliationCommand command,
+    AffiliationState Function(Iterable<Person> exists, bool isRemote) toState,
+  ) async* {
+    final onPersons = Completer<Iterable<Person>>();
+    final cached = await persons.fetch(
+      onRemote: onPersons,
+      uuids: affiliations.map((a) => a.person.uuid),
+    );
+
+    yield toOK(
+      command,
+      toState(cached, false),
+      result: affiliations,
+    );
+
+    // Notify whn persons are fetched from remote storage
+    onComplete<Iterable<Person>>(
+      [onPersons.future],
+      toState: (results) => toState(results.first, true),
+      toCommand: (state) => _StateChange(state),
+      toError: (Object error, StackTrace stackTrace) {
+        if (!onFetchPersonsError(error)) {
+          // Do not call sink.addError since
+          // toOK has already invoked
+          // command.callback
+          return toError(
+            command,
+            error,
+            stackTrace: stackTrace,
+          );
+        }
+        return null;
+      },
+    );
   }
+
+  bool onFetchPersonsError(Object error) {
+    // Remove affiliations with persons not found
+    final shouldRemove = error is ServiceResponse && (error.is404 || error.is206);
+    if (shouldRemove) {
+      _removeMissingPersons();
+    }
+    return shouldRemove;
+  }
+
+  void _removeMissingPersons() => repo.values
+      .where((affiliation) => !persons.containsKey(affiliation.person.uuid))
+      .forEach((affiliation) => repo.delete(affiliation.uuid));
 
   Stream<AffiliationState> _onboard(OnboardUser command) async* {
     _assertOnboarding(command);
     var person = persons.findUser(command.data);
     if (person == null) {
-      person = await persons.create(PersonModel.fromUser(
+      person = await persons.apply(PersonModel.fromUser(
         users.repo[command.data],
         temporary: command.affiliation.isUnorganized,
       ));
     }
-    final affiliation = await repo.create(command.affiliation.copyWith(
+    final affiliation = await repo.apply(command.affiliation.copyWith(
       person: AggregateRef.fromType<PersonModel>(person.uuid),
     ));
 
-    final loaded = toOK(
+    final created = toOK(
       command,
       UserOnboarded(
         person: person,
@@ -624,24 +650,44 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ),
       result: affiliation,
     );
-    yield loaded;
+    yield created;
+
+    // Notify when all states are remote
+    onComplete(
+      [
+        persons.onRemote(person.uuid),
+        repo.onRemote(affiliation.uuid),
+      ],
+      toState: (_) => UserOnboarded(
+        isRemote: true,
+        person: person,
+        userId: command.data,
+        affiliation: affiliation,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<AffiliationState> _temporary(CreateTemporaryAffiliation command) async* {
     _assertTemporary(command);
     var person = persons.findUser(command.data.userId);
     if (person == null) {
-      person = await persons.create(PersonModel.fromPersonnel(
+      person = await persons.apply(PersonModel.fromPersonnel(
         command.data,
         temporary: true,
       ));
     }
-    final affiliation = await repo.create(command.affiliation.copyWith(
+    final affiliation = await repo.apply(command.affiliation.copyWith(
       person: person.toRef(),
       type: command.affiliation.type ?? AffiliationType.volunteer,
       status: command.affiliation.status ?? AffiliationStandbyStatus.available,
     ));
-    final loaded = toOK(
+    final created = toOK(
       command,
       PersonnelAffiliated(
         personnel: command.data,
@@ -649,17 +695,51 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ),
       result: affiliation,
     );
-    yield loaded;
+    yield created;
+
+    // Notify when all states are remote
+    onComplete(
+      [
+        persons.onRemote(person.uuid),
+        repo.onRemote(affiliation.uuid),
+      ],
+      toState: (_) => PersonnelAffiliated(
+        isRemote: true,
+        personnel: command.data,
+        affiliation: affiliation,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<AffiliationState> _update(UpdateAffiliation command) async* {
-    final affiliation = await repo.update(command.data);
+    final affiliation = await repo.apply(command.data);
     final updated = toOK(
       command,
       AffiliationUpdated(affiliation),
       result: affiliation,
     );
     yield updated;
+
+    // Notify when all states are remote
+    onComplete(
+      [repo.onRemote(affiliation.uuid)],
+      toState: (_) => AffiliationUpdated(
+        affiliation,
+        isRemote: true,
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (error, stackTrace) => toError(
+        command,
+        error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   Stream<AffiliationState> _unload(UnloadAffiliations command) async* {
@@ -801,6 +881,15 @@ class UnloadAffiliations extends AffiliationCommand<void, List<Affiliation>> {
   String toString() => '$runtimeType {}';
 }
 
+class _StateChange extends AffiliationCommand<AffiliationState, Affiliation> {
+  _StateChange(
+    AffiliationState state,
+  ) : super(state);
+
+  @override
+  String toString() => '$runtimeType {state: $data}';
+}
+
 /// ---------------------
 /// Normal States
 /// ---------------------
@@ -809,7 +898,11 @@ abstract class AffiliationState<T> extends BlocEvent<T> {
     T data, {
     props = const [],
     StackTrace stackTrace,
-  }) : super(data, props: props, stackTrace: stackTrace);
+    this.isRemote = false,
+  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 
   bool isEmpty() => this is AffiliationsEmpty;
   bool isLoaded() => this is AffiliationsLoaded;
@@ -830,8 +923,9 @@ class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
     this.deps,
     this.divs,
     this.persons,
+    bool isRemote = false,
     Iterable<String> affiliations,
-  }) : super(affiliations);
+  }) : super(affiliations, isRemote: isRemote);
 
   final Iterable<String> orgs;
   final Iterable<String> deps;
@@ -844,6 +938,7 @@ class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
       'divs: $divs, '
       'deps: $deps, '
       'persons: $persons, '
+      'isRemote: $isRemote, '
       'affiliations: $data'
       '}';
 }
@@ -851,14 +946,16 @@ class AffiliationsLoaded extends AffiliationState<Iterable<String>> {
 class AffiliationsFetched extends AffiliationState<Iterable<String>> {
   AffiliationsFetched({
     this.persons,
+    bool isRemote = false,
     Iterable<String> affiliations,
-  }) : super(affiliations);
+  }) : super(affiliations, isRemote: isRemote);
 
   final Iterable<String> persons;
 
   @override
   String toString() => '$runtimeType {'
       'persons: $persons, '
+      'isRemote: $isRemote, '
       'affiliations: $data'
       '}';
 }
@@ -867,8 +964,9 @@ class UserOnboarded extends AffiliationState<Affiliation> {
   UserOnboarded({
     this.userId,
     this.person,
+    bool isRemote = false,
     Affiliation affiliation,
-  }) : super(affiliation);
+  }) : super(affiliation, isRemote: isRemote);
 
   final String userId;
   final Person person;
@@ -877,30 +975,36 @@ class UserOnboarded extends AffiliationState<Affiliation> {
   String toString() => '$runtimeType {'
       'userId: $userId, '
       'person: $person, '
-      'affiliation: $data'
+      'affiliation: $data,'
+      'isRemote: $isRemote '
       '}';
 }
 
 class PersonnelAffiliated extends AffiliationState<Affiliation> {
   PersonnelAffiliated({
     this.personnel,
+    bool isRemote = false,
     Affiliation affiliation,
-  }) : super(affiliation);
+  }) : super(affiliation, isRemote: isRemote);
 
   final Personnel personnel;
 
   @override
   String toString() => '$runtimeType {'
       'personnel: $personnel, '
+      'isRemote: $isRemote, '
       'affiliation: $data'
       '}';
 }
 
 class AffiliationUpdated extends AffiliationState<Affiliation> {
-  AffiliationUpdated(Affiliation affiliation) : super(affiliation);
+  AffiliationUpdated(
+    Affiliation affiliation, {
+    bool isRemote = false,
+  }) : super(affiliation, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {affiliation: $data}';
+  String toString() => '$runtimeType {affiliation: $data, isRemote: $isRemote}';
 }
 
 class AffiliationsUnloaded extends AffiliationState<Iterable<String>> {

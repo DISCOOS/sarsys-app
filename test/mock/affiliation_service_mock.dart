@@ -101,7 +101,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         affiliation.uuid,
         StorageState.created(
           affiliation,
-          remote: true,
+          isRemote: true,
         ),
       );
     }
@@ -169,7 +169,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     if (_throttle != null) {
       return Future.delayed(_throttle);
     }
-    Future.value();
+    return Future.value();
   }
 
   static Duration _throttle;

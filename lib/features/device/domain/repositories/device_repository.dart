@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -14,20 +16,10 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   @override
   bool get isReady;
 
-  /// Load all devices for given [Incident.uuid]
-  Future<List<Device>> load();
-
-  /// Create [device]
-  Future<Device> create(Device device);
-
-  /// Update [device]
-  Future<Device> update(Device device);
-
-  /// PUT ../devices/{deviceId}
-  Future<Device> patch(Device device);
-
-  /// Delete [Device] with given [uuid]
-  Future<Device> delete(String uuid);
+  /// Load all devices
+  Future<List<Device>> load({
+    Completer<Iterable<Device>> onRemote,
+  });
 }
 
 class DeviceServiceException implements Exception {

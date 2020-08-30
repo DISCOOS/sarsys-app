@@ -1,13 +1,12 @@
-import 'dart:io';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Track.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
-import 'package:flutter/foundation.dart';
-
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
@@ -46,8 +45,11 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
     return state.value.uuid;
   }
 
-  /// Ensure that box for given [Incident.uuid] is open
-  Future<void> _ensure(String ouuid) async {
+  /// Create [Tracking] from json
+  Tracking fromJson(Map<String, dynamic> json) => TrackingModel.fromJson(json);
+
+  /// Open repository for given [Incident.uuid]
+  Future<Iterable<Tracking>> open(String ouuid) async {
     if (isEmptyOrNull(ouuid)) {
       throw ArgumentError('Operation uuid can not be empty or null');
     }
@@ -58,6 +60,7 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
       );
       _ouuid = ouuid;
     }
+    return values;
   }
 
   /// Test if source [suuid] is being tracked
@@ -115,74 +118,17 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
 
   /// Load [Tracking] instances for given [ouuid]
   @override
-  Future<List<Tracking>> load(String ouuid) async {
-    await _ensure(ouuid);
-    if (connectivity.isOnline) {
-      try {
-        var response = await service.fetchAll(ouuid);
-        if (response.is200) {
-          evict(
-            retainKeys: response.body.map((tracking) => tracking.uuid),
-          );
-
-          response.body.forEach(
-            (unit) => put(
-              StorageState.created(
-                unit,
-                remote: true,
-              ),
-            ),
-          );
-          return response.body;
-        }
-        throw TrackingServiceException(
-          'Failed to fetch trackings for operation $ouuid',
-          response: response,
-          stackTrace: StackTrace.current,
-        );
-      } on SocketException {
-        // Assume offline
-      }
-    }
+  Future<List<Tracking>> load(
+    String ouuid, {
+    Completer<Iterable<Tracking>> onRemote,
+  }) async {
+    await open(ouuid);
+    scheduleLoad(
+      () => service.fetchAll(ouuid),
+      shouldEvict: true,
+      onResult: onRemote,
+    );
     return values;
-  }
-
-  /// Create [Tracking] for given [ouuid]
-  @override
-  Future<Tracking> create(String ouuid, Tracking tracking) async {
-    await _ensure(ouuid);
-    return apply(
-      StorageState.created(tracking),
-    );
-  }
-
-  /// Update [Tracking]
-  @override
-  Future<Tracking> update(Tracking unit) async {
-    checkState();
-    return apply(
-      StorageState.updated(unit),
-    );
-  }
-
-  /// Patch [Tracking]
-  @override
-  Future<Tracking> patch(Tracking tracking) async {
-    checkState();
-    final old = this[tracking.uuid];
-    final newJson = JsonUtils.patch(old, tracking);
-    return update(
-      TrackingModel.fromJson(newJson..addAll({'uuid': tracking.uuid})),
-    );
-  }
-
-  /// Delete [Tracking] with given [uuid]
-  @override
-  Future<Tracking> delete(String uuid) async {
-    checkState();
-    return apply(
-      StorageState.deleted(get(uuid)),
-    );
   }
 
   /// Unload all [Tracking]s for given [ouuid]

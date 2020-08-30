@@ -5,6 +5,7 @@ import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../mock/incident_service_mock.dart';
 import '../mock/operation_service_mock.dart';
@@ -79,20 +80,25 @@ void main() async {
     test('SHOULD load operations', () async {
       // Arrange
       await _authenticate(harness);
+      final iuuid = Uuid().v4();
       harness.connectivity.cellular();
-      harness.operationService.add(harness.userBloc.userId);
-      harness.operationService.add(harness.userBloc.userId);
+      harness.incidentService.add(uuid: iuuid);
+      harness.operationService.add(harness.userBloc.userId, iuuid: iuuid);
+      harness.operationService.add(harness.userBloc.userId, iuuid: iuuid);
 
       // Act
-      List<Operation> operations = await harness.operationsBloc.load();
+      final localOperations = await harness.operationsBloc.load();
+      final localIncidents = harness.operationsBloc.incidents.values;
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
+      final remoteOperations = harness.operationsBloc.repo.values;
+      final remoteIncidents = harness.operationsBloc.incidents.values;
 
       // Assert
-      expect(operations.length, 2, reason: "SHOULD contain two operations");
+      expect(localIncidents.length, 0, reason: "SHOULD contain zero incidents");
+      expect(localOperations.length, 0, reason: "SHOULD contain zero operations");
+      expect(remoteIncidents.length, 1, reason: "SHOULD contain one incident");
+      expect(remoteOperations.length, 2, reason: "SHOULD contain two operations");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD NOT be in SELECTED state");
-      await expectThroughLater(
-        harness.operationsBloc,
-        emits(isA<OperationsLoaded>()),
-      );
     });
 
     test('SHOULD selected first operation', () async {
@@ -101,7 +107,9 @@ void main() async {
       harness.connectivity.cellular();
       harness.operationService.add(harness.userBloc.userId);
       harness.operationService.add(harness.userBloc.userId);
-      List<Operation> operations = await harness.operationsBloc.load();
+      await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
+      final operations = harness.operationsBloc.repo.values;
 
       // Act
       await harness.operationsBloc.select(operations.first.uuid);
@@ -109,7 +117,7 @@ void main() async {
       // Assert
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operations.first.uuid), reason: "SHOULD select first");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationsLoaded>(), isA<OperationSelected>()]);
+      expectThroughInOrder(harness.operationsBloc, [isA<OperationSelected>()]);
     });
 
     test('SHOULD selected last operation', () async {
@@ -118,7 +126,9 @@ void main() async {
       harness.connectivity.cellular();
       harness.operationService.add(harness.userBloc.userId);
       harness.operationService.add(harness.userBloc.userId);
-      List<Operation> operations = await harness.operationsBloc.load();
+      await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
+      final operations = harness.operationsBloc.repo.values;
 
       // Act
       await harness.operationsBloc.select(operations.last.uuid);
@@ -139,8 +149,9 @@ void main() async {
 
       // Act
       await harness.operationsBloc.create(operation, incident: incident);
+      await expectRemoteIsNotEmpty<OperationCreated>(harness);
 
-      // Assert
+      // Assert local state
       verify(harness.operationService.create(any)).called(1);
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
@@ -151,19 +162,22 @@ void main() async {
         isTrue,
         reason: "SHOULD contain incident",
       );
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationCreated>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD update operation and push to backend', () async {
       // Arrange
       await _authenticate(harness);
       harness.connectivity.cellular();
-      final operation = harness.operationService.add(harness.userBloc.userId);
+      final incident = harness.incidentService.add();
+      final operation = harness.operationService.add(harness.userBloc.userId, iuuid: incident.uuid);
       await harness.operationsBloc.load();
-      expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
+      final operations = harness.operationsBloc.repo.values;
+      expect(operations.length, 1, reason: "SHOULD contain one operation");
 
       // Act
       final changed = await harness.operationsBloc.update(operation.copyWith(name: "Changed"));
+      await expectRemoteIsNotEmpty<OperationUpdated>(harness);
 
       // Assert
       verify(harness.operationService.update(any)).called(1);
@@ -171,7 +185,6 @@ void main() async {
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD be in SELECTED state");
       expect(harness.operationsBloc.selected.uuid, equals(operation.uuid), reason: "SHOULD select created");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUpdated>(), isA<OperationSelected>()]);
     });
 
     test('SHOULD delete operation and push to backend', () async {
@@ -180,19 +193,21 @@ void main() async {
       harness.connectivity.cellular();
       final operation = harness.operationService.add(harness.userBloc.userId);
       await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
+
       await harness.operationsBloc.select(operation.uuid);
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.selected?.uuid, operation.uuid, reason: "SHOULD BE selected");
 
       // Act
       await harness.operationsBloc.delete(operation.uuid);
+      await expectRemoteIsNotEmpty<OperationDeleted>(harness);
 
       // Assert
       verify(harness.operationService.delete(any)).called(1);
       expect(harness.operationsBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationDeleted>()]);
     });
 
     test('SHOULD BE empty and UNSET after unload', () async {
@@ -201,18 +216,19 @@ void main() async {
       harness.connectivity.cellular();
       final operation = harness.operationService.add(harness.userBloc.userId);
       await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
       await harness.operationsBloc.select(operation.uuid);
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.selected?.uuid, operation.uuid, reason: "SHOULD BE selected");
 
       // Act
       await harness.operationsBloc.unload();
+      await expectLocalIsNotEmpty<OperationsUnloaded>(harness);
 
       // Assert
       expect(harness.operationsBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.selected?.uuid, isNull, reason: "SHOULD BE unset");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationUnselected>(), isA<OperationsUnloaded>()]);
     });
 
     test('SHOULD reload one operation after unload', () async {
@@ -221,18 +237,20 @@ void main() async {
       harness.connectivity.cellular();
       final operation = harness.operationService.add(harness.userBloc.userId);
       await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
       await harness.operationsBloc.select(operation.uuid);
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
       expect(harness.operationsBloc.selected?.uuid, operation.uuid, reason: "SHOULD BE selected");
 
       // Act
       await harness.operationsBloc.unload();
+      await expectLocalIsNotEmpty<OperationsUnloaded>(harness);
       await harness.operationsBloc.load();
+      await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
 
       // Assert
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
-      expectThroughInOrder(harness.operationsBloc, [isA<OperationsUnloaded>(), isA<OperationsLoaded>()]);
     });
   });
 
@@ -429,6 +447,58 @@ void main() async {
   });
 }
 
+Future<void> expectLocalIsEmpty<T extends OperationState>(BlocTestHarness harness) {
+  return expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
+      },
+      'Should be remote and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> expectLocalIsNotEmpty<T extends OperationState>(BlocTestHarness harness) {
+  return expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isLocal && (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+      },
+      'Should be remote and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> expectRemoteIsEmpty<T extends OperationState>(BlocTestHarness harness) {
+  return expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote && (event.data is Iterable ? (event.data as Iterable).isEmpty : event.data == null);
+      },
+      'Should be remote and not empty',
+      isTrue,
+    )),
+  );
+}
+
+Future<void> expectRemoteIsNotEmpty<T extends OperationState>(BlocTestHarness harness) {
+  return expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<T>().having(
+      (event) {
+        return event.isRemote && (event.data is Iterable ? (event.data as Iterable).isNotEmpty : event.data != null);
+      },
+      'Should be remote and not empty',
+      isTrue,
+    )),
+  );
+}
+
 // Authenticate user
 // Since 'authenticate = false' is passed
 // to Harness to allow for testing of
@@ -440,12 +510,19 @@ Future _authenticate(BlocTestHarness harness, {bool reset = true}) async {
   // Wait for UserOnboarded event
   await expectThroughLater(
     harness.affiliationBloc,
-    emits(isA<UserOnboarded>()),
+    emits(isA<UserOnboarded>().having(
+      (event) => event.isRemote,
+      'Should be remote',
+      isTrue,
+    )),
   );
-  // Wait until operations are loaded
   await expectThroughLater(
     harness.operationsBloc,
-    emits(isA<OperationsLoaded>()),
+    emits(isA<OperationsLoaded>().having(
+      (event) => event.isRemote,
+      'Should be remote',
+      isTrue,
+    )),
   );
   if (reset) {
     clearInteractions(harness.operationService);

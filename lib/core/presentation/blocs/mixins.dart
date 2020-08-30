@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/domain/repository.dart';
 
 /// ConnectionAwareRepo

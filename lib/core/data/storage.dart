@@ -249,33 +249,33 @@ class StorageState<T> {
   StorageState({
     @required this.value,
     @required this.status,
-    @required bool remote,
+    @required bool isRemote,
     this.error,
-  }) : _remote = remote;
+  }) : _isRemote = isRemote;
   final T value;
-  final bool _remote;
+  final bool _isRemote;
   final Object error;
   final StorageStatus status;
 
-  bool get isLocal => !_remote;
-  bool get isRemote => _remote;
+  bool get isLocal => !_isRemote;
+  bool get isRemote => _isRemote;
 
-  factory StorageState.created(T value, {bool remote = false, Object error}) => StorageState<T>(
+  factory StorageState.created(T value, {bool isRemote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.created,
-        remote: remote,
+        isRemote: isRemote,
         error: error,
       );
-  factory StorageState.updated(T value, {bool remote = false, Object error}) => StorageState<T>(
+  factory StorageState.updated(T value, {bool isRemote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.updated,
-        remote: remote,
+        isRemote: isRemote,
         error: error,
       );
-  factory StorageState.deleted(T value, {bool remote = false, Object error}) => StorageState<T>(
+  factory StorageState.deleted(T value, {bool isRemote = false, Object error}) => StorageState<T>(
         value: value,
         status: StorageStatus.deleted,
-        remote: remote,
+        isRemote: isRemote,
         error: error,
       );
 
@@ -290,25 +290,39 @@ class StorageState<T> {
   StorageState<T> failed(Object error) => StorageState<T>(
         value: value,
         status: status,
-        remote: _remote,
+        isRemote: _isRemote,
         error: error,
       );
 
   StorageState<T> remote(T value) => StorageState<T>(
         value: value,
         status: status,
-        remote: true,
+        isRemote: true,
         error: null,
       );
 
-  StorageState<T> replace(T value, {bool remote}) {
+  StorageState<T> patch(T value, {@required bool isRemote}) {
     switch (status) {
       case StorageStatus.created:
-        return StorageState.created(value, remote: remote ?? _remote, error: error);
+        return StorageState(
+          value: value,
+          error: error,
+          isRemote: isRemote,
+          status: _isRemote ? StorageStatus.updated : StorageStatus.created,
+        );
+      default:
+        return replace(value, isRemote: isRemote);
+    }
+  }
+
+  StorageState<T> replace(T value, {bool isRemote}) {
+    switch (status) {
+      case StorageStatus.created:
+        return StorageState.created(value, isRemote: isRemote ?? _isRemote, error: error);
       case StorageStatus.updated:
-        return StorageState.updated(value, remote: remote ?? _remote, error: error);
+        return StorageState.updated(value, isRemote: isRemote ?? _isRemote, error: error);
       case StorageStatus.deleted:
-        return StorageState.deleted(value, remote: remote ?? _remote, error: error);
+        return StorageState.deleted(value, isRemote: isRemote ?? _isRemote, error: error);
       default:
         throw StorageStateException('Unknown state $status');
     }
@@ -318,7 +332,7 @@ class StorageState<T> {
 
   @override
   String toString() {
-    return '$runtimeType {value: ${_toValueAsString()}, remote: $_remote, status: $status}';
+    return '$runtimeType {value: ${_toValueAsString()}, isRemote: $_isRemote, status: $status}';
   }
 
   String _toValueAsString() => '${value?.runtimeType} ${value is Aggregate ? '{${(value as Aggregate).uuid}}' : ''}';
@@ -395,7 +409,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       value: value,
       status: _toStatus(json['status'] as String),
       error: error ?? (json['error'] != null ? json['error'] : null),
-      remote: json['remote'] != null ? json['remote'] as bool : false,
+      isRemote: json['remote'] != null ? json['remote'] as bool : false,
     );
   }
 
@@ -420,7 +434,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       'value': value,
       'state': enumName(state.status),
       'error': state.isError ? '${state.error}' : null,
-      'remote': state?._remote != null ? state._remote : null,
+      'remote': state?._isRemote != null ? state._isRemote : null,
     });
   }
 }
