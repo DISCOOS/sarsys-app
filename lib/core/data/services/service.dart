@@ -87,12 +87,13 @@ class ServiceResponse<T> extends Equatable {
     this.statusCode,
     this.reasonPhrase,
   }) : super([
+          body,
+          page,
+          error,
+          conflict,
+          stackTrace,
           statusCode,
           reasonPhrase,
-          body,
-          conflict,
-          error,
-          stackTrace,
         ]);
 
   bool get isErrorCode => (statusCode ?? 0) >= 400;
@@ -168,14 +169,14 @@ class ServiceResponse<T> extends Equatable {
   }
 
   static ServiceResponse<T> internalServerError<T>({
-    message: 'Internal server error',
     Object error,
     StackTrace stackTrace,
+    message: 'Internal server error',
   }) {
     return ServiceResponse<T>(
+      error: error,
       statusCode: 500,
       reasonPhrase: message,
-      error: error,
       stackTrace: stackTrace,
     );
   }
@@ -191,6 +192,19 @@ class ServiceResponse<T> extends Equatable {
   bool get is404 => statusCode == HttpStatus.notFound;
   bool get is409 => statusCode == HttpStatus.conflict;
   bool get is500 => statusCode == HttpStatus.internalServerError;
+
+  @override
+  String toString() {
+    return 'ServiceResponse{\n'
+        'body: $body, \n'
+        'error: $error, \n'
+        'statusCode: $statusCode, \n'
+        'page: $page, \n'
+        'conflict: $conflict, \n'
+        'reasonPhrase: $reasonPhrase, \n'
+        'stackTrace: $stackTrace\n'
+        '}';
+  }
 }
 
 class ServiceException implements Exception {

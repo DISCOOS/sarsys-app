@@ -123,15 +123,15 @@ class UserIdentityService extends UserService {
         );
       }
       return ServiceResponse.internalServerError(
-        message: "Failed to login",
         error: e,
         stackTrace: stackTrace,
+        message: "Failed to login",
       );
     } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
-        message: "Failed to login",
         error: e,
         stackTrace: stackTrace,
+        message: "Failed to login",
       );
     }
   }
@@ -258,9 +258,9 @@ class UserCredentialsService extends UserService {
       );
     } on Exception catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
-        message: "Failed to login",
         error: e,
         stackTrace: stackTrace,
+        message: "Failed to login",
       );
     }
   }
