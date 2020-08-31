@@ -97,6 +97,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       withResetAction: false,
       repo: context.bloc<AppConfigBloc>().repo,
       subtitle: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -105,6 +107,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Hendelser",
       repo: context.bloc<OperationBloc>().incidents,
       subtitle: (StorageState<Incident> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -113,6 +117,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Aksjoner",
       repo: context.bloc<OperationBloc>().repo,
       subtitle: (StorageState<Operation> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -121,6 +127,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Enheter",
       repo: context.bloc<UnitBloc>().repo,
       subtitle: (StorageState<Unit> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -129,6 +137,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Personer",
       repo: context.bloc<AffiliationBloc>().persons,
       subtitle: (StorageState<Person> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -137,6 +147,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Tilhørigheter",
       repo: context.bloc<AffiliationBloc>().repo,
       subtitle: (StorageState<Affiliation> state) => '${state?.value}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -145,6 +157,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Mannskaper",
       repo: context.bloc<PersonnelBloc>().repo,
       subtitle: (StorageState<Personnel> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -153,6 +167,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Apparater",
       repo: context.bloc<DeviceBloc>().repo,
       subtitle: (StorageState<Device> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -161,6 +177,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Sporinger",
       repo: context.bloc<TrackingBloc>().repo,
       subtitle: (StorageState<Tracking> state) => '${enumName(state?.value?.status)}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -169,6 +187,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Organisasjoner",
       repo: context.bloc<AffiliationBloc>().orgs,
       subtitle: (StorageState<Organisation> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -177,6 +197,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Distrikter",
       repo: context.bloc<AffiliationBloc>().divs,
       subtitle: (StorageState<Division> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -185,6 +207,8 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Avdelinger",
       repo: context.bloc<AffiliationBloc>().deps,
       subtitle: (StorageState<Department> state) => '${state?.value?.name}',
+      onReset: () => setState(() {}),
+      onCommit: () => setState(() {}),
     );
   }
 
@@ -239,10 +263,14 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
     @required this.title,
     @required this.subtitle,
     @required this.repo,
+    this.onReset,
+    this.onCommit,
     this.withResetAction = true,
     this.withCommitAction = true,
   });
   final String title;
+  final VoidCallback onReset;
+  final VoidCallback onCommit;
   final String Function(StorageState<T> state) subtitle;
   final ConnectionAwareRepository<dynamic, T, Service> repo;
 
@@ -302,6 +330,9 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
       icon: Icons.clear_all,
       onTap: () {
         repo.reset();
+        if (onReset != null) {
+          onReset();
+        }
       },
     );
   }
@@ -311,7 +342,12 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
       caption: 'PUBLISER',
       color: Theme.of(context).buttonColor,
       icon: Icons.publish,
-      onTap: () => repo.commit(),
+      onTap: () {
+        if (onCommit != null) {
+          onCommit();
+        }
+        repo.commit();
+      },
     );
   }
 }
