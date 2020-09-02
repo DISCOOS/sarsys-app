@@ -220,7 +220,8 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
       .toList();
 
   @override
-  Future<Iterable<Tracking>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
+  Future<Iterable<Tracking>> onReset({Iterable<Tracking> previous}) =>
+      _ouuid != null ? load(_ouuid) : Future.value(previous);
 
   /// Tracking are created in the backend,
   /// just return current value

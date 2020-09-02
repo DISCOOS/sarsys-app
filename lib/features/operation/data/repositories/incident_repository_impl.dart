@@ -57,7 +57,7 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
   }
 
   @override
-  Future<Iterable<Incident>> onReset() async => await _load();
+  Future<Iterable<Incident>> onReset({Iterable<Incident> previous}) async => await _load();
 
   @override
   Future<Incident> onCreate(StorageState<Incident> state) async {

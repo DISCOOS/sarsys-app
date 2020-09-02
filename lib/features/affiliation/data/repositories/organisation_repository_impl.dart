@@ -57,7 +57,7 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
   }
 
   @override
-  Future<Iterable<Organisation>> onReset() async => await _load();
+  Future<Iterable<Organisation>> onReset({Iterable<Organisation> previous = const []}) async => await _load();
 
   @override
   Future<Organisation> onCreate(StorageState<Organisation> state) async {

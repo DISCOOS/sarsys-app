@@ -112,8 +112,8 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
   }
 
   @override
-  Future<Iterable<Person>> onReset() async => await _fetch(
-        values.map((a) => a.uuid).toList(),
+  Future<Iterable<Person>> onReset({Iterable<Person> previous = const []}) async => await _fetch(
+        previous.map((a) => a.uuid).toList(),
         replace: true,
       );
 
@@ -143,7 +143,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     } else if (response.is204) {
       return state.value;
     } else if (response.is409) {
-      return MergeStrategy(this)(
+      return MergePersonStrategy(this)(
         state,
         response.error as ConflictModel,
       );
@@ -161,7 +161,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     if (response.is204) {
       return state.value;
     } else if (response.is409) {
-      return MergeStrategy(this)(
+      return MergePersonStrategy(this)(
         state,
         response.error as ConflictModel,
       );

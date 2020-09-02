@@ -58,7 +58,7 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
   }
 
   @override
-  Future<Iterable<Division>> onReset() async => await _load();
+  Future<Iterable<Division>> onReset({Iterable<Division> previous = const []}) async => await _load();
 
   @override
   Future<Division> onCreate(StorageState<Division> state) async {

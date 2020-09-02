@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
@@ -136,8 +137,15 @@ class UserIdentityService extends UserService {
     }
   }
 
+  Completer<ServiceResponse<AuthToken>> _refreshCompleter;
+
   @override
   Future<ServiceResponse<AuthToken>> refresh(AuthToken token) async {
+    // Refresh is pending?
+    if (_refreshCompleter != null) {
+      return _refreshCompleter.future;
+    }
+    _refreshCompleter = Completer<ServiceResponse<AuthToken>>();
     try {
       final response = await _appAuth.token(
         TokenRequest(
@@ -148,7 +156,7 @@ class UserIdentityService extends UserService {
           refreshToken: token.refreshToken,
         ),
       );
-      return ServiceResponse.ok<AuthToken>(
+      _refreshCompleter.complete(ServiceResponse.ok<AuthToken>(
         body: AuthToken(
           clientId: _clientId,
           idToken: response.idToken,
@@ -156,25 +164,26 @@ class UserIdentityService extends UserService {
           refreshToken: response.refreshToken,
           accessTokenExpiration: response.accessTokenExpirationDateTime,
         ),
-      );
+      ));
     } on PlatformException catch (e, stackTrace) {
       if (USER_ERRORS.contains(e.code)) {
-        return ServiceResponse.unauthorized(
+        _refreshCompleter.complete(ServiceResponse.unauthorized(
           message: "Unauthorized",
-        );
+        ));
       }
-      return ServiceResponse.internalServerError(
+      _refreshCompleter.complete(ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
         stackTrace: stackTrace,
-      );
+      ));
     } on Exception catch (e, stackTrace) {
-      return ServiceResponse.internalServerError(
+      _refreshCompleter.complete(ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
         stackTrace: stackTrace,
-      );
+      ));
     }
+    return _refreshCompleter.future;
   }
 
   /// Delete token from secure storage

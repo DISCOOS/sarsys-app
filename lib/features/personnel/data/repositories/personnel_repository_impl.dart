@@ -112,7 +112,8 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
   }
 
   @override
-  Future<Iterable<Personnel>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
+  Future<Iterable<Personnel>> onReset({Iterable<Personnel> previous}) =>
+      _ouuid != null ? load(_ouuid) : Future.value(previous);
 
   @override
   Future<Personnel> onCreate(StorageState<Personnel> state) async {

@@ -204,7 +204,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     final state = dependencies
         .where((dep) => dep.containsKey(ref.uuid))
         .map((dep) => dep.getState(ref.uuid))
-        .where((state) => state.value.runtimeType == ref.type)
+        .where((state) => state?.value?.runtimeType == ref.type)
         .firstOrNull;
     if (state != null) {
       return state.isCreated && state.isLocal;
@@ -220,9 +220,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   ///
   /// This queue ensures that each [load] is
   /// processed in order waiting for it to complete or
-  /// fail. This prevents concurrent writes which will
-  /// result in an unexpected behaviour due to race
-  /// conditions.
+  /// fail.
   final _loadQueue = ListQueue<_LoadRequest>();
 
   /// Get local values and schedule a deferred load request
@@ -239,6 +237,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       // events like Future, Timer or DOM Event
       scheduleMicrotask(_processLoadQueue);
     }
+    // Replace current
+    _loadQueue.clear();
     _loadQueue.add(_LoadRequest<T>(
       fail: fail,
       attempts: 0,
@@ -272,6 +272,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     }
   }
 
+  // Can NEVER throw!
+  // Catch all exceptions and errors
+  // and handle them inside this
+  // method. If it throws, the load
+  // processing loop will exit before
+  // queue is empty and never resume
   Future<bool> _processLoad(_LoadRequest command) async {
     var isComplete = false;
     if (command.attempts >= command.maxAttempts) {
@@ -287,7 +293,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       // Giving up
       isComplete = true;
     } else if (connectivity.isOnline) {
-      isComplete = await _executeRequest(
+      isComplete = await _executeLoad(
         command,
       );
     } else {
@@ -297,9 +303,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return isComplete;
   }
 
-  /// Execute request. Returns [true]
-  /// if executed, [false] otherwise.
-  Future<bool> _executeRequest(_LoadRequest<T> command) async {
+  // Can NEVER throw!
+  // Catch all exceptions and errors
+  // and handle them inside this
+  // method. If it throws, the load
+  // processing loop will exit before
+  // queue is empty and never resume
+  Future<bool> _executeLoad(_LoadRequest<T> command) async {
     var isComplete = true;
     try {
       var response = await command.request();
@@ -336,18 +346,10 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     ServiceResponse<Iterable<T>> response,
   ) {
     final states = response.body.map((value) {
-      final state = StorageState.created(
+      return StorageState.updated(
         value,
         isRemote: true,
       );
-      final key = toKey(state);
-      if (containsKey(key)) {
-        return getState(key).replace(
-          state.value,
-          isRemote: true,
-        );
-      }
-      return state;
     });
     if (command.shouldEvict) {
       evict(
@@ -380,21 +382,34 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// current state
   StorageState<T> patch(T value, {bool isRemote = false}) {
     checkState();
-    final next = StorageState<T>(
-      value: value,
-      isRemote: isRemote,
-      status: StorageStatus.created,
+    StorageState next = _toState(
+      value,
+      isRemote,
     );
     return put(_patch(next)) ? next : null;
+  }
+
+  StorageState _toState(value, bool isRemote) {
+    final state = StorageState<T>.created(
+      value,
+      isRemote: isRemote,
+    );
+    final key = toKey(state);
+    final next = key == null
+        ? state
+        : getState(key).apply(
+            value,
+            isRemote: isRemote,
+          );
+    return next;
   }
 
   /// Replace [value] with existing in repository
   StorageState<T> replace(T value, {bool isRemote = false}) {
     checkState();
-    final next = StorageState<T>(
-      value: value,
-      isRemote: isRemote,
-      status: StorageStatus.created,
+    StorageState next = _toState(
+      value,
+      isRemote,
     );
     return put(next) ? next : null;
   }
@@ -417,7 +432,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     if (current != null) {
       final patches = JsonUtils.diff(current.value, next.value);
       if (patches.isNotEmpty) {
-        next = current.patch(
+        next = current.apply(
           fromJson(JsonUtils.apply(
             current.value,
             patches,
@@ -426,7 +441,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         );
       } else {
         // Vale not changed, use current
-        next = current.patch(
+        next = current.apply(
           next.value,
           isRemote: next.isRemote,
         );
@@ -485,10 +500,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Apply [value] an push to backend
   Future<T> apply(T value) async {
     checkState();
-    final next = StorageState<T>(
-      value: value,
-      isRemote: false,
-      status: StorageStatus.created,
+    StorageState next = _toState(
+      value,
+      false,
     );
     return push(_patch(
       next,
@@ -521,7 +535,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   ///
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
-  Future<Iterable<T>> onReset();
+  Future<Iterable<T>> onReset({Iterable<T> previous});
 
   /// Should create state in backend
   ///
@@ -566,7 +580,10 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         await _states?.compact();
       }
       _states = await Hive.openBox(
-        toBoxName(postfix: postfix, runtimeType: runtimeType),
+        toBoxName(
+          postfix: postfix,
+          runtimeType: runtimeType,
+        ),
         encryptionKey: await Storage.hiveKey<T>(),
       );
       // Add local states to backlog
@@ -619,30 +636,43 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Future _processPushQueue() async {
     while (_pushQueue.isNotEmpty) {
       final next = _pushQueue.first;
-      final exists = await _waitForDeps(next);
-      await _processPush(exists, next);
-      _pushQueue.removeFirst();
-      if (!exists) {
-        // Try again later
-        _pushQueue.add(next);
+      try {
+        final exists = await _waitForDeps(next);
+        if (exists) {
+          await _processPush(next);
+          _pushQueue.removeFirst();
+        }
+      } catch (error, stackTrace) {
+        // Give up!
+        _pushQueue.removeFirst();
+        put(next.failed(error));
+        onError(error, stackTrace);
       }
     }
   }
 
-  Future _processPush(bool exists, StorageState next) async {
+  // Can NEVER throw!
+  // Catch all exceptions and errors
+  // and handle them inside this
+  // method. If it throws, the push
+  // processing loop will exit before
+  // queue is empty and never resume
+  Future _processPush(StorageState next) async {
     try {
-      if (exists && _isReady()) {
+      if (_isReady()) {
         final result = await _push(
           next,
         );
         if (_isReady()) {
-          put(result);
+          put(
+            _patch(result),
+          );
         }
       }
     } on SocketException {
       // Timeout - try again later
       _offline(next);
-    } on Exception catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       put(next.failed(error));
       onError(error, stackTrace);
     }
@@ -716,7 +746,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         // Assume offline
         _retryOnline(status);
         return pushed;
-      } on Exception catch (error, stackTrace) {
+      } catch (error, stackTrace) {
         _backlog.remove(key);
         put(state.failed(error));
         onError(error, stackTrace);
@@ -835,8 +865,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 
   /// Reset all states to remote state
   Future<Iterable<T>> reset() {
-    clear();
-    return onReset();
+    final previous = clear();
+    return onReset(previous: previous);
   }
 
   /// Clear all states from local storage
@@ -1003,17 +1033,28 @@ class MergeStrategy<S, T extends Aggregate, U extends Service> {
     );
   }
 
+  /// Default is last writer wins by forwarding to [repository.onUpdate]
   Future<T> onExists(ConflictModel conflict, StorageState<T> state) {
-    // TODO: Manual merge required, default to last writer wins with "mine" now
     return repository.onUpdate(state);
   }
 
-  Future<T> onMerge(ConflictModel conflict, StorageState<T> state) => throw UnimplementedError(
-        "Reconciling conflict type 'merge' not implemented",
+  /// Default is to replace local value with remote value
+  Future<T> onMerge(ConflictModel conflict, StorageState<T> state) => Future.value(
+        repository
+            .replace(
+              repository.fromJson(
+                JsonUtils.apply(
+                  repository.fromJson(conflict.base),
+                  conflict.yours,
+                ),
+              ),
+              isRemote: true,
+            )
+            .value,
       );
-  Future<T> onDeleted(ConflictModel conflict, StorageState<T> state) => throw UnimplementedError(
-        "Reconciling conflict type 'deleted' not implemented",
-      );
+
+  /// Delete conflicts are not handled as conflicts, returns current state value
+  Future<T> onDeleted(ConflictModel conflict, StorageState<T> state) => Future.value(state.value);
 }
 
 class RepositoryException implements Exception {

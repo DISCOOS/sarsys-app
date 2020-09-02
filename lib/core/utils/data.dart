@@ -196,4 +196,12 @@ class Pair<L, R> {
   Pair._(this.left, this.right);
 
   factory Pair.of(L left, R right) => Pair._(left, right);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Pair && runtimeType == other.runtimeType && left == other.left && right == other.right;
+
+  @override
+  int get hashCode => left.hashCode ^ right.hashCode;
 }

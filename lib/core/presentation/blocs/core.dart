@@ -30,12 +30,94 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         subscription,
       );
 
+  final Map<Type, Set<Function>> _handlers = {};
+
+  /// Subscribe to event with given handler.
+  ///
+  /// Decisions made in event handlers
+  /// must be based on stable states to prevent
+  /// unexpected behaviour due to race
+  /// conditions with pending commands.
+  ///
+  /// This method ensures that all commands
+  /// are processed before any events are
+  /// processed using an internal queue.
+  ///
+  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
+    _handlers.update(
+      typeOf<T>(),
+      (handlers) => handlers
+        ..add(
+          _subscribe<T>(handler),
+        ),
+      ifAbsent: () => {
+        _subscribe<T>(handler),
+      },
+    );
+    return handler;
+  }
+
+  BlocHandlerCallback<T> _subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) =>
+      bus.subscribe<T>((Bloc bloc, T event) {
+        if (_dispatchQueue.isEmpty) {
+          handler(bloc, event);
+        } else {
+          // Multiple handlers can
+          // subscribe to same event
+          // type. Don't add duplicates.
+          final pair = Pair.of(bloc, event);
+          if (!_eventQueue.contains(pair)) {
+            _eventQueue.add(pair);
+          }
+        }
+      });
+
+  /// List of queues of [BlocEvent]s processed in FIFO manner.
+  ///
+  /// Decisions made in event handlers
+  /// must be based on stable states to prevent
+  /// unexpected behaviour due to race
+  /// conditions with pending commands.
+  ///
+  /// This queue ensures that all commands
+  /// are processed before any events are
+  /// processed.
+  ///
+  final _eventQueue = ListQueue<Pair<Bloc, BlocEvent>>();
+
+  /// Process [BlocEvent] in FIFO-manner
+  /// until [_eventQueue] is empty. Any error
+  /// will stop events processing.
+  void _processEventQueue() async {
+    try {
+      while (_isOpen && _dispatchQueue.isNotEmpty) {
+        final pair = _eventQueue.first;
+        _toHandlers(pair.right).forEach((handler) {
+          handler(pair.left, pair.left);
+        });
+        _eventQueue.removeFirst();
+      }
+    } on Exception catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+    }
+    if (!_isOpen) {
+      _eventQueue.clear();
+    }
+  }
+
+  /// Get all handlers for given event
+  Iterable<Function> _toHandlers(BlocEvent event) => _handlers[event.runtimeType] ?? [];
+
   @override
   void add(C command) {
     if (_dispatchQueue.isEmpty) {
       // Process LATER but BEFORE any asynchronous
       // events like Future, Timer or DOM Event
-      scheduleMicrotask(_process);
+      scheduleMicrotask(_processDispatchQueue);
     }
     _dispatchQueue.add(command);
   }
@@ -59,18 +141,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     return results;
   }
 
-  /// Process [BlocCommand] in FIFO-manner until [_dispatchQueue] is empty
-  void _process() async {
-    while (_isOpen && _dispatchQueue.isNotEmpty) {
-      // Dispatch next command and wait for result
-      super.add(_dispatchQueue.first);
-      // Only remove after execution is completed
-      _dispatchQueue.removeFirst();
-    }
-    // In case close was called
-    _dispatchQueue.clear();
-  }
-
   /// Queue of [BlocCommand]s processed in FIFO manner.
   ///
   /// This queue ensures that each command is processed
@@ -78,6 +148,23 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// prevents concurrent writes which will result in
   /// an unexpected behaviour due to race conditions.
   final _dispatchQueue = ListQueue<C>();
+
+  /// Process [BlocCommand] in FIFO-manner
+  /// until [_dispatchQueue] is empty
+  void _processDispatchQueue() async {
+    while (_isOpen && _dispatchQueue.isNotEmpty) {
+      // Dispatch next command and wait for result
+      super.add(_dispatchQueue.first);
+      // Only remove after execution is completed
+      _dispatchQueue.removeFirst();
+    }
+    if (_isOpen) {
+      _processEventQueue();
+    } else {
+      _eventQueue.clear();
+      _dispatchQueue.clear();
+    }
+  }
 
   @override
   @protected
@@ -152,10 +239,12 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
             stackTrace: stackTrace ?? StackTrace.current,
           );
 
-    command.callback.completeError(
-      object.data,
-      object.stackTrace ?? StackTrace.current,
-    );
+    if (!command.callback.isCompleted) {
+      command.callback.completeError(
+        object.data,
+        object.stackTrace ?? StackTrace.current,
+      );
+    }
     return object;
   }
 
@@ -190,7 +279,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 }
 
-typedef BlocHandlerCallback<T> = void Function<T extends BlocEvent>(Bloc bloc, T event);
+typedef BlocHandlerCallback<T extends BlocEvent> = void Function(Bloc bloc, T event);
 
 /// [BlocEvent] bus implementation
 class BlocEventBus {
@@ -217,7 +306,7 @@ class BlocEventBus {
     return handler;
   }
 
-  /// Subscribe to event with given handler
+  /// Subscribe to event of given [types] with given [handler]
   BlocHandlerCallback subscribeAll(BlocHandlerCallback handler, List<Type> types) {
     for (var type in types) {
       _routes.update(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
+import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
@@ -40,6 +41,11 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       _processUserState,
     ));
 
+    registerStreamSubscription(userBloc.configBloc.listen(
+      // Load devices on change
+      _processConfigState,
+    ));
+
     registerStreamSubscription(repo.onChanged.listen(
       // Notify when repository state has changed
       _processRepoState,
@@ -51,7 +57,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   void _processUserState(UserState state) {
     try {
-      if (hasSubscriptions) {
+      if (isOpen) {
         if (state.shouldLoad() && !repo.isReady) {
           dispatch(LoadDevices());
         } else if (state.shouldUnload() && repo.isReady) {
@@ -68,9 +74,33 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     }
   }
 
+  void _processConfigState(AppConfigState state) {
+    try {
+      if (isOpen) {
+        if (_shouldLoad(state)) {
+          dispatch(LoadDevices());
+        } else if (_shouldUnload(state)) {
+          dispatch(UnloadDevices());
+        }
+      }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
+    }
+  }
+
+  bool _shouldLoad(AppConfigState state) =>
+      userBloc.isAuthenticated && state.isRemote && (state.isInitialized() || state.isUpdated());
+
+  bool _shouldUnload(AppConfigState state) => (state.isEmpty() || state.isDeleted()) && repo.isReady;
+
   void _processRepoState(StorageTransition<Device> transition) async {
     try {
-      if (hasSubscriptions) {
+      if (isOpen) {
         final device = transition.to.value;
         if (_shouldSetName(device, transition.to.status)) {
           dispatch(UpdateDevice(device.copyWith(
@@ -104,23 +134,27 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         dispatch(
           UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
         );
+        _trackDevicePositionChanged(device);
       }
-      _locationChanged?.cancel();
-      _locationChanged = LocationService().stream.listen((p) {
-        // Update device position for this app
-        // a-priori of message from backend
-        final current = repo[device.uuid];
-        final next = device.copyWith(position: p);
-        final patches = JsonUtils.diff(current, next);
-        service.publish(DeviceMessage(data: {
-          'type': 'DevicePositionChanged',
-          'data': {
-            'uuid': device.uuid,
-            'patches': patches,
-          }
-        }));
-      });
     }
+  }
+
+  void _trackDevicePositionChanged(Device device) {
+    _locationChanged?.cancel();
+    _locationChanged = LocationService().stream.listen((p) {
+      // Update device position for this app
+      // a-priori of message from backend
+      final current = repo[device.uuid];
+      final next = device.copyWith(position: p);
+      final patches = JsonUtils.diff(current, next);
+      service.publish(DeviceMessage(data: {
+        'type': 'DevicePositionChanged',
+        'data': {
+          'uuid': device.uuid,
+          'patches': patches,
+        }
+      }));
+    });
   }
 
   /// All repositories
@@ -131,7 +165,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   /// Check if device name should be updated
   bool _shouldSetName(Device device, StorageStatus status) =>
-      device.name == null && isThisApp(device) && status != StorageStatus.deleted;
+      userBloc.isAuthenticated && device.name == null && isThisApp(device) && status != StorageStatus.deleted;
 
   /// Get [OperationBloc]
   final UserBloc userBloc;

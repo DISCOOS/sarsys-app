@@ -167,8 +167,8 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }
 
   @override
-  Future<Iterable<Affiliation>> onReset() async => await _fetch(
-        values.map((a) => a.uuid).toList(),
+  Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) async => await _fetch(
+        previous.map((a) => a.uuid).toList(),
         replace: true,
       );
 

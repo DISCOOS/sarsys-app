@@ -296,11 +296,11 @@ abstract class AppConfigState<T> extends BlocEvent {
   bool get isLocal => !isRemote;
 
   isEmpty() => this is AppConfigEmpty;
-  isInitialized() => this is AppConfigInitialized;
   isLoaded() => this is AppConfigLoaded;
   isUpdated() => this is AppConfigUpdated;
   isDeleted() => this is AppConfigDeleted;
   isError() => this is AppConfigBlocError;
+  isInitialized() => this is AppConfigInitialized;
 }
 
 class AppConfigEmpty extends AppConfigState<Null> {

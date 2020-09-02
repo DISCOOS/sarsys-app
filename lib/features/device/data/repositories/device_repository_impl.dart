@@ -52,7 +52,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
   }
 
   @override
-  Future<Iterable<Device>> onReset() async => await load();
+  Future<Iterable<Device>> onReset({Iterable<Device> previous}) async => await load();
 
   @override
   Future<Device> onCreate(StorageState<Device> state) async {
@@ -114,7 +114,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
   /// Handles messages pushed from server
   ///
   void _processDeviceMessage(DeviceMessage message) {
-    if (hasSubscriptions) {
+    if (isReady) {
       var state;
       try {
         // Merge with local changes?

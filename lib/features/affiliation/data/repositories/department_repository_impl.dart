@@ -58,7 +58,7 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
   }
 
   @override
-  Future<Iterable<Department>> onReset() async => await _load();
+  Future<Iterable<Department>> onReset({Iterable<Department> previous = const []}) async => await _load();
 
   @override
   Future<Department> onCreate(StorageState<Department> state) async {

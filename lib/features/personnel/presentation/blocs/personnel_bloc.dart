@@ -41,13 +41,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     assert(operationBloc != null, "operationBloc can not be null");
     assert(affiliationBloc != null, "affiliationBloc can not be null");
 
-    registerStreamSubscription(operationBloc.listen(
-      // Load and unload personnels as needed
-      _processOperationState,
-    ));
+    // Load and unload personnels as needed
+    subscribe<OperationSelected>(_processOperationState);
+    subscribe<OperationUnselected>(_processOperationState);
 
+    // Update from messages pushed from backend
     registerStreamSubscription(service.messages.listen(
-      // Update from messages pushed from backend
       _processPersonnelMessage,
     ));
 
@@ -61,27 +60,18 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processOperationState(OperationState state) async {
-    try {
-      if (isOpen) {
-        if (state.shouldLoad(ouuid)) {
-          await dispatch(LoadPersonnels(
-            state.data.uuid,
-          ));
-          if (isReady && state.isSelected()) {
-            await mobilizeUser();
-          }
-        } else if (isReady && state.shouldUnload(ouuid)) {
-          await unload();
+  void _processOperationState(Bloc bloc, OperationState state) async {
+    if (isOpen) {
+      if (state.shouldLoad(ouuid)) {
+        await dispatch(LoadPersonnels(
+          state.data.uuid,
+        ));
+        if (isReady && state.isSelected()) {
+          await mobilizeUser();
         }
+      } else if (isReady && state.shouldUnload(ouuid)) {
+        await unload();
       }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
     }
   }
 
@@ -149,7 +139,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   PersonnelService get service => repo.service;
 
   /// Check if bloc is ready
-  bool get isReady => operationBloc.isSelected && repo.isReady;
+  bool get isReady => repo.isReady;
 
   /// Get uuid of [Operation] that manages personnels in [repo]
   String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;

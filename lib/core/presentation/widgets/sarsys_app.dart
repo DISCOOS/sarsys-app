@@ -102,7 +102,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     readPageStorageBucket(widget.bucket, context: context);
     _cancelAll();
     _listenForBlocRebuilds();
-    _listenForIncidentsLoaded();
+    _listenForOperationsLoaded();
   }
 
   /// Initialize blocs and restart app after blocs are rebuilt
@@ -120,10 +120,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           // SarSysAppState instance
           Phoenix.rebirth(context);
         } else if (widget.controller.shouldAuthenticate(state)) {
-          // When user is authenticated
-          // IncidentBloc will load
-          // incidents from repository
-          _listenForIncidentsLoaded();
+          // When user is authenticated,
+          // OperationBloc will load
+          // operations from repository
+          _listenForOperationsLoaded();
 
           // Prompt user to login
           NavigationService().pushReplacementNamed(LoginScreen.ROUTE);
@@ -132,8 +132,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     ));
   }
 
-  /// Reselect incident if previous selected on first [OperationsLoaded]
-  void _listenForIncidentsLoaded() {
+  /// Reselect [Operation] if previous selected on first [OperationsLoaded]
+  void _listenForOperationsLoaded() {
     final subscription = widget.controller
         .bloc<OperationBloc>()
         .firstWhere((state) => state.isLoaded())

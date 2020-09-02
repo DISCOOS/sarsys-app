@@ -301,14 +301,22 @@ class StorageState<T> {
         error: null,
       );
 
-  StorageState<T> patch(T value, {@required bool isRemote}) {
+  StorageState<T> apply(T value, {@required bool isRemote}) {
     switch (status) {
       case StorageStatus.created:
         return StorageState(
           value: value,
           error: error,
-          isRemote: isRemote,
-          status: _isRemote ? StorageStatus.updated : StorageStatus.created,
+          isRemote: isRemote ?? _isRemote,
+          status: _isRemote
+              // If current is remote,
+              // value MUST HAVE status
+              // 'updated'
+              ? StorageStatus.updated
+              // If current is local,
+              // value SHOULD not
+              // change stats
+              : status,
         );
       default:
         return replace(value, isRemote: isRemote);
@@ -332,7 +340,7 @@ class StorageState<T> {
 
   @override
   String toString() {
-    return '$runtimeType {value: ${_toValueAsString()}, isRemote: $_isRemote, status: $status}';
+    return '$runtimeType {status: $status, isRemote: $_isRemote, value: ${_toValueAsString()}}';
   }
 
   String _toValueAsString() => '${value?.runtimeType} ${value is Aggregate ? '{${(value as Aggregate).uuid}}' : ''}';
@@ -414,10 +422,11 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
   }
 
   StorageStatus _toStatus(String name) {
-    return StorageStatus.values.firstWhere(
+    final status = StorageStatus.values.firstWhere(
       (value) => enumName(value) == name,
       orElse: () => StorageStatus.created,
     );
+    return status;
   }
 
   @override
@@ -432,7 +441,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     }
     writer.writeMap({
       'value': value,
-      'state': enumName(state.status),
+      'status': enumName(state.status),
       'error': state.isError ? '${state.error}' : null,
       'remote': state?._isRemote != null ? state._isRemote : null,
     });

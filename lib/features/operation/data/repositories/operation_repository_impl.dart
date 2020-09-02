@@ -64,7 +64,7 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
   }
 
   @override
-  Future<Iterable<Operation>> onReset() async => await _load();
+  Future<Iterable<Operation>> onReset({Iterable<Operation> previous}) async => await _load();
 
   @override
   Future<Operation> onCreate(StorageState<Operation> state) async {

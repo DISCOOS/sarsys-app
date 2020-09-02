@@ -137,7 +137,7 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
   }
 
   @override
-  Future<Iterable<AppConfig>> onReset() async => [await _load()];
+  Future<Iterable<AppConfig>> onReset({Iterable<AppConfig> previous}) async => [await _load()];
 
   @override
   Future<AppConfig> onCreate(StorageState<AppConfig> state) async {

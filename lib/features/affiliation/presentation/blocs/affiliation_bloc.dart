@@ -118,11 +118,11 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   void _processUserState(UserState state) async {
     try {
-      if (hasSubscriptions) {
+      if (isOpen) {
         if (state.shouldLoad() && !repo.isReady) {
           // Wait for load before onboarding user
           await dispatch(LoadAffiliations());
-          onboard();
+          await onboard();
         } else if (state.shouldUnload() && repo.isReady) {
           dispatch(UnloadAffiliations());
         }

@@ -622,7 +622,7 @@ class AppController {
     );
   }
 
-  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>().config.securityMode;
+  bool get isShared => SecurityMode.shared == bloc<AppConfigBloc>().config?.securityMode;
 
   void _disposeServices(UserState state) {
     // Did user share device with other users?

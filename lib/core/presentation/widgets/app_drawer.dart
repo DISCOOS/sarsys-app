@@ -36,7 +36,7 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
     final User user = userBloc.user;
-    final isUnset = context.bloc<OperationBloc>().isUnselected || context.bloc<PersonnelBloc>().findUser().isEmpty;
+    final isPrivate = context.bloc<PersonnelBloc>().findUser().isEmpty;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
@@ -47,16 +47,16 @@ class _AppDrawerState extends State<AppDrawer> {
           Divider(),
           _buildMapAction(context),
           Divider(),
-          _buildOperationHeader(isUnset, context),
+          _buildOperationHeader(isPrivate, context),
           _buildUserProfilePageAction(context),
-          _buildUserUnitPageAction(isUnset, context),
-          _buildUserOperationPageAction(isUnset, context),
-          _buildUserHistoryAction(isUnset, context),
+          _buildUserUnitPageAction(isPrivate, context),
+          _buildUserOperationPageAction(isPrivate, context),
+          _buildUserHistoryAction(isPrivate, context),
           Divider(),
-          _buildCommandHeader(isUnset, context),
-//          _buildMissionsPageAction(isUnset, context),
-          _buildUnitsPageAction(isUnset, context),
-          _buildPersonnelsPageAction(isUnset, context),
+          _buildCommandHeader(isPrivate, context),
+//          _buildMissionsPageAction(isPrivate, context),
+          _buildUnitsPageAction(isPrivate, context),
+          _buildPersonnelsPageAction(isPrivate, context),
           _buildDevicesPageAction(context),
           Divider(),
           _buildSettingsAction(context),
@@ -100,9 +100,9 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildUserHistoryAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserHistoryAction(bool isPrivate, BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       leading: const Icon(Icons.history),
       title: Text('Min historikk', style: TextStyle(fontSize: 14)),
       onTap: () {
@@ -121,9 +121,9 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildUserUnitPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserUnitPageAction(bool isPrivate, BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       leading: const Icon(Icons.supervised_user_circle),
       title: Text('Min enhet', style: TextStyle(fontSize: 14)),
       onTap: () {
@@ -132,9 +132,9 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildUserOperationPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildUserOperationPageAction(bool isPrivate, BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       leading: const Icon(Icons.warning),
       title: Text('Min aksjon', style: TextStyle(fontSize: 14)),
       onTap: () {
@@ -153,9 +153,9 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildPersonnelsPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildPersonnelsPageAction(bool isPrivate, BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       leading: const Icon(Icons.person),
       title: Text('Mannskap', style: TextStyle(fontSize: 14)),
       onTap: () {
@@ -164,9 +164,9 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildUnitsPageAction(bool isUnset, BuildContext context) {
+  ListTile _buildUnitsPageAction(bool isPrivate, BuildContext context) {
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       leading: const Icon(Icons.people),
       title: Text('Enheter', style: TextStyle(fontSize: 14)),
       onTap: () {
@@ -175,7 +175,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildOperationHeader(bool isUnset, BuildContext context) {
+  ListTile _buildOperationHeader(bool isPrivate, BuildContext context) {
     final selected = context.bloc<OperationBloc>().selected;
     final labels = selected == null
         ? ['Ingen aksjon valgt']
@@ -185,7 +185,7 @@ class _AppDrawerState extends State<AppDrawer> {
           ];
 
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       title: Wrap(
         children: labels
             .map((label) => Text(
@@ -194,7 +194,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 ))
             .toList(),
       ),
-      trailing: isUnset
+      trailing: isPrivate
           ? null
           : RaisedButton.icon(
               icon: Icon(toPersonnelStatusIcon(PersonnelStatus.leaving)),
@@ -207,11 +207,11 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildCommandHeader(bool isUnset, BuildContext context) {
+  ListTile _buildCommandHeader(bool isPrivate, BuildContext context) {
     final labels = ['Aksjonsledelse'];
 
     return ListTile(
-      enabled: !isUnset,
+      enabled: !isPrivate,
       title: Wrap(
         children: labels
             .map((label) => Text(

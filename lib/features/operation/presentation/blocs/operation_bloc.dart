@@ -64,7 +64,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   void _processUserState(UserState state) {
     try {
-      if (hasSubscriptions) {
+      if (isOpen) {
         if (state.shouldLoad() && !repo.isReady) {
           dispatch(LoadOperations());
         } else if (state.shouldUnload() && repo.isReady) {
@@ -228,7 +228,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   Stream<OperationState> _load(LoadOperations command) async* {
     // Get currently selected uuid
-    final ouuid = _ouuid;
+    String ouuid = await _readSelected();
 
     // Fetch cached and handle
     // response from remote when ready
@@ -244,13 +244,12 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     );
 
     // Unselect and reselect
-    final unselected = await _unset(clear: true);
-    final selected = await _set(
-      operations.firstWhere(
-        (operation) => ouuid == operation.uuid,
-        orElse: () => null,
-      ),
+    final operation = operations.firstWhere(
+      (operation) => ouuid == operation.uuid,
+      orElse: () => null,
     );
+    final unselected = await _unset(selected: operation);
+    final selected = await _set(operation);
 
     // Complete request
     final loaded = toOK(
@@ -265,10 +264,10 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     if (unselected != null) {
       yield unselected;
     }
-    yield loaded;
     if (selected != null) {
       yield selected;
     }
+    yield loaded;
 
     // Notify when states was fetched from remote storage
     onComplete(
@@ -290,12 +289,21 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     );
   }
 
+  Future<String> _readSelected() async {
+    _ouuid = _ouuid ??
+        await Storage.readUserValue(
+          userBloc.user,
+          suffix: SELECTED_KEY_SUFFIX,
+        );
+    return _ouuid;
+  }
+
   Stream<OperationState> _create(CreateOperation command) async* {
     _assertData(command);
     // Execute commands
     await incidents.apply(command.incident);
     final operation = await repo.apply(command.data);
-    final unselected = command.selected ? await _unset(clear: true) : null;
+    final unselected = command.selected ? await _unset() : null;
     final selected = command.selected ? await _set(operation) : null;
     // Complete request
     final created = toOK(
@@ -340,7 +348,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
       await incidents.apply(command.incident);
     }
     final select = command.selected && command.data.uuid != _ouuid;
-    final unselected = select ? await _unset(clear: true) : null;
+    final unselected = select ? await _unset() : null;
     final selected = select ? await _set(operation) : null;
     final selectionChanged = unselected != selected;
     // Complete request
@@ -386,16 +394,10 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Stream<OperationState> _delete(DeleteOperation command) async* {
-    final selected = this.selected;
     // Execute command
     var operation = await repo.delete(command.data);
     // Unselect if was selected
-    final unselected = command.data == _ouuid
-        ? await _unset(
-            selected: selected,
-            clear: true,
-          )
-        : null;
+    final unselected = command.data == _ouuid ? await _unset() : null;
     // Complete request
     final deleted = toOK(
       command,
@@ -425,15 +427,11 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Stream<OperationState> _unload(UnloadOperations command) async* {
-    final selected = this.selected;
     // Execute commands
     await incidents.close();
     List<Operation> operations = await repo.close();
     // Complete request
-    final unselected = await _unset(
-      selected: selected,
-      clear: false,
-    );
+    final unselected = await _unset();
     final unloaded = toOK(
       command,
       OperationsUnloaded(operations),
@@ -448,7 +446,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Stream<OperationState> _select(SelectOperation command) async* {
     if (repo.containsKey(command.data)) {
       final operation = repo[command.data];
-      final unselected = command.data != _ouuid ? await _unset(clear: true) : null;
+      final unselected = await _unset(selected: operation);
       final selected = toOK(
         command,
         await _set(repo[command.data]),
@@ -476,23 +474,22 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     }
   }
 
-  Future<OperationSelected> _set(Operation data) async {
-    _ouuid = data?.uuid;
-    if (_ouuid != null) {
+  Future<OperationSelected> _set(Operation operation) async {
+    OperationSelected selected;
+    if (_ouuid != operation?.uuid) {
+      _ouuid = operation?.uuid;
       await Storage.writeUserValue(
         userBloc.user,
         suffix: SELECTED_KEY_SUFFIX,
         value: _ouuid,
       );
-      return OperationSelected(data);
+      selected = OperationSelected(operation);
     }
-    return null;
+    return selected;
   }
 
   Future<OperationState> _unselect(OperationCommand command) async {
-    final unselected = await _unset(
-      clear: true,
-    );
+    final unselected = await _unset();
     if (unselected != null) {
       return toOK(
         command,
@@ -507,19 +504,21 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Future<OperationState> _unset({
-    @required bool clear,
     Operation selected,
   }) async {
-    final operation = _ouuid == null ? null : repo[_ouuid] ?? selected;
-    _ouuid = null;
-
-    if (clear) {
-      await Storage.secure.delete(
-        key: SELECTED_KEY_SUFFIX,
+    OperationUnselected unselected;
+    if (selected?.uuid != _ouuid) {
+      await Storage.deleteUserValue(
+        userBloc.user,
+        suffix: SELECTED_KEY_SUFFIX,
       );
+      final operation = repo[_ouuid];
+      if (operation != null) {
+        unselected = OperationUnselected(operation);
+      }
     }
-
-    return operation != null ? OperationUnselected(operation) : null;
+    _ouuid = null;
+    return unselected;
   }
 
   @override
@@ -639,10 +638,7 @@ abstract class OperationState<T> extends BlocEvent<T> {
   bool isDeleted() => this is OperationDeleted;
   bool isError() => this is OperationBlocError;
   bool isUnselected() => this is OperationUnselected;
-  bool isSelected() =>
-//      this is OperationCreated && (this as OperationCreated).selected ||
-//      this is OperationUpdated && (this as OperationUpdated).selected ||
-      this is OperationSelected;
+  bool isSelected() => this is OperationSelected;
 
   /// Check if data referencing [Operation.uuid] should be loaded
   /// This method will return true if

@@ -129,7 +129,7 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
   }
 
   @override
-  Future<Iterable<Unit>> onReset() => _ouuid != null ? load(_ouuid) : Future.value(values);
+  Future<Iterable<Unit>> onReset({Iterable<Unit> previous}) => _ouuid != null ? load(_ouuid) : Future.value(previous);
 
   @override
   Future<Unit> onCreate(StorageState<Unit> state) async {
