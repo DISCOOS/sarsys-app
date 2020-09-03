@@ -35,13 +35,12 @@ dependencies:
   http: ^0.12.0+2
   path: ^1.6.2
   path_provider: ^1.1.0
-  protobuf: ^0.13.11
+  protobuf: ^1.0.1
   web_socket_channel: ^1.0.12
   rxdart: ^0.23.0
   json_annotation: ^3.0.1
   bloc: ^3.0.0
   flutter_bloc: ^3.2.0
-  hydrated_bloc: ^3.0.0
   equatable: ^0.2.3
   jaguar_jwt: ^2.1.6
   flutter_form_builder: ^3.13.1
@@ -75,8 +74,8 @@ dependencies:
   flutter_udid: ^1.0.1
   simple_gravatar: ^1.0.5
   json_patch: ^2.0.0
-  cached_network_image: 2.2.0+1
-  flutter_cache_manager: 1.4.1
+  cached_network_image: ^2.3.1
+  flutter_cache_manager: ^1.4.1
   flutter_phoenix: ^0.1.0
   chopper: ^3.0.2
   debounce_throttle: ^1.1.0
