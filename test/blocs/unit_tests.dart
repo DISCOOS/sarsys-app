@@ -332,7 +332,7 @@ void main() async {
       expectThrough(harness.unitBloc, isA<UnitsUnloaded>());
     });
 
-    test('SHOULD be empty after reload', () async {
+    test('SHOULD NOT be contain after reload', () async {
       // Arrange
       await _prepare(harness, offline: true);
       final unit = UnitBuilder.create();
@@ -340,12 +340,11 @@ void main() async {
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
-      await harness.unitBloc.unload();
       await harness.unitBloc.load();
 
       // Assert
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
-      expectThroughInOrder(harness.unitBloc, [isA<UnitsUnloaded>(), isA<UnitsLoaded>()]);
+      expectThroughInOrder(harness.unitBloc, [isA<UnitsLoaded>()]);
     });
 
     test('SHOULD delete clone when personnel is deleted', () async {

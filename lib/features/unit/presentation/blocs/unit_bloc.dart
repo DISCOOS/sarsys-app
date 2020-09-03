@@ -45,16 +45,14 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
 
-    registerStreamSubscription(operationBloc.listen(
-      // 1) Load and unloads units as needed
-      // 2) Creates units from templates if give in IncidentCreated
-      _processIncidentState,
-    ));
+    // Load and unload personnels as needed
+    subscribe<OperationUpdated>(_processOperationState);
+    subscribe<OperationSelected>(_processOperationState);
+    subscribe<OperationUnselected>(_processOperationState);
+    subscribe<OperationDeleted>(_processOperationState);
 
-    registerStreamSubscription(bus.events.where((e) => e is PersonnelDeleted).map((e) => e as PersonnelDeleted).listen(
-          // 1) Remove reference to personnel
-          _processPersonnelDeleted,
-        ));
+    // Remove reference to personnel
+    subscribe<PersonnelDeleted>(_processPersonnelDeleted);
   }
 
   /// All repositories
@@ -64,57 +62,37 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processIncidentState(OperationState state) async {
-    try {
-      if (isOpen) {
-        if (state.shouldLoad(ouuid)) {
-          await dispatch(LoadUnits(
-            (state.data as Operation).uuid,
-          ));
-          if (isReady && (state is OperationCreated)) {
-            if (state.units.isNotEmpty) {
-              createUnits(
-                bloc: this,
-                templates: state.units,
-              );
-            }
-          }
-        } else if (isReady && state.shouldUnload(ouuid)) {
-          await unload();
+  void _processOperationState(Bloc bloc, OperationState state) async {
+    // Only process local events
+    if (isOpen && state.isLocal) {
+      final unselected = (bloc as OperationBloc).isUnselected;
+      if (state.shouldLoad(ouuid)) {
+        await dispatch(LoadUnits(
+          (state.data as Operation).uuid,
+        ));
+        // Could change during load
+        if ((bloc as OperationBloc).isSelected && (state is OperationCreated && state.units.isNotEmpty)) {
+          createUnits(
+            bloc: this,
+            templates: state.units,
+          );
         }
+      } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
+        await unload();
       }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
     }
   }
 
-  void _processPersonnelDeleted(PersonnelState state) {
-    try {
-      if (state.isDeleted()) {
-        final event = state as PersonnelDeleted;
-        final puuid = event.data.uuid;
-        final units = repo.findPersonnel(puuid);
-        if (units.isNotEmpty) {
-          for (var unit in units) {
-            dispatch(_ProcessPersonnelDeleted(
-              puuid: puuid,
-              data: unit.copyWith(personnels: unit.personnels.toList()..remove(puuid)),
-            ));
-          }
-        }
+  void _processPersonnelDeleted(Bloc bloc, PersonnelDeleted state) {
+    final puuid = state.data.uuid;
+    final units = repo.findPersonnel(puuid);
+    if (units.isNotEmpty) {
+      for (var unit in units) {
+        dispatch(_Process(
+          puuid: puuid,
+          data: unit.copyWith(personnels: unit.personnels.toList()..remove(puuid)),
+        ));
       }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
     }
   }
 
@@ -286,7 +264,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
       yield* _delete(command);
     } else if (command is UnloadUnits) {
       yield await _unload(command);
-    } else if (command is _ProcessPersonnelDeleted) {
+    } else if (command is _Process) {
       yield await _process(command);
     } else if (command is _StateChange) {
       yield command.data;
@@ -416,7 +394,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
     );
   }
 
-  Future<UnitState> _process(_ProcessPersonnelDeleted command) async {
+  Future<UnitState> _process(_Process command) async {
     final previous = repo[command.data.uuid];
     final state = repo.patch(command.data);
     return toOK(
@@ -491,9 +469,9 @@ class UnloadUnits extends UnitCommand<String, List<Unit>> {
   String toString() => '$runtimeType {ouuid: $data}';
 }
 
-class _ProcessPersonnelDeleted extends UnitCommand<Unit, Unit> {
+class _Process extends UnitCommand<Unit, Unit> {
   final String puuid;
-  _ProcessPersonnelDeleted({Unit data, this.puuid}) : super(data, [puuid]);
+  _Process({Unit data, this.puuid}) : super(data, [puuid]);
 
   @override
   String toString() => '$runtimeType {unit: $data, personnel: $puuid}';

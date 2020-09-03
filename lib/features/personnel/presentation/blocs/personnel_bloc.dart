@@ -42,8 +42,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     assert(affiliationBloc != null, "affiliationBloc can not be null");
 
     // Load and unload personnels as needed
+    subscribe<OperationUpdated>(_processOperationState);
     subscribe<OperationSelected>(_processOperationState);
     subscribe<OperationUnselected>(_processOperationState);
+    subscribe<OperationDeleted>(_processOperationState);
 
     // Update from messages pushed from backend
     registerStreamSubscription(service.messages.listen(
@@ -60,16 +62,19 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processOperationState(Bloc bloc, OperationState state) async {
-    if (isOpen) {
+  void _processOperationState(BaseBloc bloc, OperationState state) async {
+    // Only process local events
+    if (isOpen && state.isLocal) {
+      final unselected = (bloc as OperationBloc).isUnselected;
       if (state.shouldLoad(ouuid)) {
         await dispatch(LoadPersonnels(
           state.data.uuid,
         ));
-        if (isReady && state.isSelected()) {
+        // Could change during load
+        if ((bloc as OperationBloc).isSelected && state.isSelected()) {
           await mobilizeUser();
         }
-      } else if (isReady && state.shouldUnload(ouuid)) {
+      } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
         await unload();
       }
     }

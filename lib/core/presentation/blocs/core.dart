@@ -43,6 +43,9 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// are processed before any events are
   /// processed using an internal queue.
   ///
+  /// Unhandled exceptions in handles are
+  /// forwarded to [BlocDelegate.onError].
+  ///
   BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     _handlers.update(
       typeOf<T>(),
@@ -57,10 +60,47 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     return handler;
   }
 
+  /// Subscribe to events of given [types] with given [handler]
+  ///
+  /// Decisions made in event handlers
+  /// must be based on stable states to prevent
+  /// unexpected behaviour due to race
+  /// conditions with pending commands.
+  ///
+  /// This method ensures that all commands
+  /// are processed before any events are
+  /// processed using an internal queue.
+  ///
+  /// Unhandled exceptions in handles are
+  /// forwarded to [BlocDelegate.onError].
+  ///
+  void subscribeAll(BlocHandlerCallback handler, List<Type> types) {
+    types.forEach((type) {
+      _handlers.update(
+        type,
+        (handlers) => handlers
+          ..add(
+            _subscribe(handler),
+          ),
+        ifAbsent: () => {
+          _subscribe(handler),
+        },
+      );
+    });
+  }
+
   BlocHandlerCallback<T> _subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) =>
       bus.subscribe<T>((Bloc bloc, T event) {
         if (_dispatchQueue.isEmpty) {
-          handler(bloc, event);
+          try {
+            handler(bloc, event);
+          } catch (error, stackTrace) {
+            BlocSupervisor.delegate.onError(
+              this,
+              error,
+              stackTrace,
+            );
+          }
         } else {
           // Multiple handlers can
           // subscribe to same event
@@ -97,7 +137,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         });
         _eventQueue.removeFirst();
       }
-    } on Exception catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
         this,
         error,
@@ -279,7 +319,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 }
 
-typedef BlocHandlerCallback<T extends BlocEvent> = void Function(Bloc bloc, T event);
+typedef BlocHandlerCallback<T extends BlocEvent> = void Function(BaseBloc bloc, T event);
 
 /// [BlocEvent] bus implementation
 class BlocEventBus {

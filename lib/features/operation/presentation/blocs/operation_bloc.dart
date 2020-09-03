@@ -394,10 +394,10 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Stream<OperationState> _delete(DeleteOperation command) async* {
-    // Execute command
-    var operation = await repo.delete(command.data);
     // Unselect if was selected
     final unselected = command.data == _ouuid ? await _unset() : null;
+    // Execute command
+    var operation = await repo.delete(command.data);
     // Complete request
     final deleted = toOK(
       command,
@@ -427,11 +427,14 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Stream<OperationState> _unload(UnloadOperations command) async* {
+    // Unselect if selected
+    final unselected = await _unset();
+
     // Execute commands
     await incidents.close();
     List<Operation> operations = await repo.close();
+
     // Complete request
-    final unselected = await _unset();
     final unloaded = toOK(
       command,
       OperationsUnloaded(operations),
@@ -508,14 +511,14 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }) async {
     OperationUnselected unselected;
     if (selected?.uuid != _ouuid) {
-      await Storage.deleteUserValue(
-        userBloc.user,
-        suffix: SELECTED_KEY_SUFFIX,
-      );
       final operation = repo[_ouuid];
       if (operation != null) {
         unselected = OperationUnselected(operation);
       }
+      await Storage.deleteUserValue(
+        userBloc.user,
+        suffix: SELECTED_KEY_SUFFIX,
+      );
     }
     _ouuid = null;
     return unselected;
@@ -649,7 +652,8 @@ abstract class OperationState<T> extends BlocEvent<T> {
           {List<OperationStatus> include: const [
             OperationStatus.completed,
           ]}) =>
-      (isSelected() && (data as Operation).uuid != ouuid) &&
+      isSelected() &&
+      (data as Operation).uuid != ouuid &&
       !include.contains(
         (data as Operation).status,
       );

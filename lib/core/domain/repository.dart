@@ -161,6 +161,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Check if repository is operational
   @mustCallSuper
   bool get isReady => _isReady();
+  bool get isNotReady => !_isReady();
 
   /// Get key [K] from state [T]
   K toKey(StorageState<T> state);
@@ -395,12 +396,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       isRemote: isRemote,
     );
     final key = toKey(state);
-    final next = key == null
-        ? state
-        : getState(key).apply(
+    final next = containsKey(key)
+        ? getState(key).apply(
             value,
             isRemote: isRemote,
-          );
+          )
+        : state;
     return next;
   }
 

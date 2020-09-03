@@ -42,25 +42,30 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     assert(personnelBloc != null, "personnelBloc can not be null");
     assert(deviceBloc != null, "deviceBloc can not be null");
 
-    registerStreamSubscription(
-      // Load and unload trackings as needed
-      operationBloc.listen(_processOperationState),
-    );
+    // Load and unload trackings as needed
+    subscribe<OperationUpdated>(_processOperationState);
+    subscribe<OperationSelected>(_processOperationState);
+    subscribe<OperationUnselected>(_processOperationState);
+    subscribe<OperationDeleted>(_processOperationState);
+
     registerStreamSubscription(
       // Updates tracking for unit
       // apriori to changes made in backend.
       unitBloc.listen(_processUnitState),
     );
+
     registerStreamSubscription(
       // Updates tracking for personnel
       // apriori to changes made in backend.
       personnelBloc.listen(_processPersonnelState),
     );
+
     registerStreamSubscription(
       // Updates tracking for device
       // apriori to changes made in backend.
       deviceBloc.listen(_processDeviceState),
     );
+
     registerStreamSubscription(
       // Update from messages pushed from backend
       service.messages.listen(_processMessage),
@@ -104,7 +109,19 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   /// Invokes [load] and [unload] as needed.
   ///
-  void _processOperationState(OperationState state) async {
+  void _processOperationState(BaseBloc bloc, OperationState state) async {
+    // Only process local events
+    if (isOpen && state.isLocal) {
+      final unselected = (bloc as OperationBloc).isUnselected;
+      if (state.shouldLoad(ouuid)) {
+        dispatch(
+          LoadTrackings(state.data.uuid),
+        );
+      } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
+        await unload();
+      }
+    }
+
     try {
       if (isOpen) {
         if (state.shouldLoad(ouuid)) {

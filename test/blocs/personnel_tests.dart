@@ -228,7 +228,7 @@ void main() async {
       expectThrough(harness.personnelBloc, isA<PersonnelsUnloaded>());
     });
 
-    test('SHOULD reload one personnel after unload', () async {
+    test('SHOULD NOT be empty after reload', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
       final person = harness.personService.add();
@@ -246,15 +246,6 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
-      await harness.personnelBloc.unload();
-      await expectThroughLater(
-        harness.personnelBloc,
-        emits(isA<PersonnelsUnloaded>().having(
-          (event) => event.isLocal,
-          'Should be local',
-          isTrue,
-        )),
-      );
       await harness.personnelBloc.load();
       await expectThroughLater(
         harness.personnelBloc,
@@ -402,7 +393,7 @@ void main() async {
       expectThrough(harness.personnelBloc, isA<PersonnelsUnloaded>());
     });
 
-    test('SHOULD be empty after reload', () async {
+    test('SHOULD NOT be empty after reload', () async {
       // Arrange
       await _prepare(harness, offline: true);
       final personnel = PersonnelBuilder.create();
@@ -410,12 +401,11 @@ void main() async {
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
       // Act
-      await harness.personnelBloc.unload();
       await harness.personnelBloc.load();
 
       // Assert
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
-      expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()]);
+      expectThroughInOrder(harness.personnelBloc, [isA<PersonnelsLoaded>()]);
     });
 
     test('SHOULD load when operation is selected', () async {
