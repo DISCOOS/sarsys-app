@@ -11,13 +11,11 @@ import 'package:SarSys/core/utils/data.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
   BaseBloc({@required this.bus}) : super() {
-    // Publish own events to bus?
-    if (bus != null) {
-      _subscriptions.add(listen(
-        (state) => bus.publish(this, state),
-        onError: (e, stackTrace) => BlocSupervisor.delegate.onError(this, e, stackTrace),
-      ));
-    }
+    assert(bus != null, "bus can not be null");
+    _subscriptions.add(listen(
+      (state) => bus.publish(this, state),
+      onError: (e, stackTrace) => BlocSupervisor.delegate.onError(this, e, stackTrace),
+    ));
   }
 
   /// Get [BlocEventBus]

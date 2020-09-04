@@ -12,11 +12,12 @@ import 'package:flutter/foundation.dart';
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
   ActivityBloc({@required BlocEventBus bus}) : super(bus: bus) {
     assert(bus != null, "bus can not be null");
-    bus.subscribe<AppConfigUpdated>(_processConfig);
-    bus.subscribe<PersonnelsLoaded>(_processPersonnel);
-    bus.subscribe<PersonnelCreated>(_processPersonnel);
-    bus.subscribe<PersonnelUpdated>(_processPersonnel);
-    bus.subscribe<PersonnelsUnloaded>(_processPersonnel);
+    subscribe<AppConfigUpdated>(_processConfig);
+    subscribe<PersonnelsLoaded>(_processPersonnel);
+    subscribe<PersonnelCreated>(_processPersonnel);
+    subscribe<PersonnelUpdated>(_processPersonnel);
+    subscribe<PersonnelDeleted>(_processPersonnel);
+    subscribe<PersonnelsUnloaded>(_processPersonnel);
   }
 
   Stream<ActivityProfile> get onChanged =>
@@ -122,7 +123,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
   }
 
-  void _processPersonnel<T extends BlocEvent>(Bloc bloc, T event) {
+  void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
     final config = (bloc as PersonnelBloc).operationBloc.userBloc.config;
     if (event is PersonnelsLoaded) {
       final working = (bloc as PersonnelBloc).findUser();
