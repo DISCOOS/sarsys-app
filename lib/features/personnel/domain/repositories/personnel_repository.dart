@@ -43,14 +43,14 @@ abstract class PersonnelRepository implements ConnectionAwareRepository<String, 
   });
 }
 
-class PersonnelServiceException implements Exception {
-  PersonnelServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'PersonnelServiceException: $error, response: $response, stackTrace: $stackTrace';
-  }
+class PersonnelServiceException extends ServiceException {
+  PersonnelServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

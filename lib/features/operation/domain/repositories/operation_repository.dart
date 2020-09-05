@@ -28,14 +28,14 @@ abstract class OperationRepository implements ConnectionAwareRepository<String, 
   });
 }
 
-class OperationServiceException implements Exception {
-  OperationServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
-  }
+class OperationServiceException extends ServiceException {
+  OperationServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

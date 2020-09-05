@@ -20,17 +20,17 @@ TrackingModel _$TrackingModelFromJson(Map json) {
     effort: json['effort'] == null
         ? null
         : Duration(microseconds: json['effort'] as int),
-    sources: (json['sources'] as List)
-        ?.map((e) => e == null
-            ? null
-            : SourceModel.fromJson((e as Map)?.map(
-                (k, e) => MapEntry(k as String, e),
-              )))
-        ?.toList(),
     tracks: (json['tracks'] as List)
         ?.map((e) => e == null
             ? null
             : TrackModel.fromJson((e as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )))
+        ?.toList(),
+    sources: (json['sources'] as List)
+        ?.map((e) => e == null
+            ? null
+            : SourceModel.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),

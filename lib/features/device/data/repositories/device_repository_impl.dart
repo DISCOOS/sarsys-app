@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:json_patch/json_patch.dart';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -59,11 +58,6 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DeviceServiceException(
       'Failed to create Device ${state.value}',
@@ -79,11 +73,6 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DeviceServiceException(
       'Failed to update Device ${state.value}',
@@ -97,11 +86,6 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DeviceServiceException(
       'Failed to delete Device ${state.value}',

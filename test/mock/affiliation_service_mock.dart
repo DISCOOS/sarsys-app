@@ -1,5 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
+import 'package:mockito/mockito.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
@@ -7,12 +12,11 @@ import 'package:SarSys/features/affiliation/data/repositories/affiliation_reposi
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
-import 'package:mockito/mockito.dart';
-import 'package:uuid/uuid.dart';
+import 'package:SarSys/core/extensions.dart';
 
 import 'package:SarSys/core/data/services/service.dart';
+
+import 'person_service_mock.dart';
 
 class AffiliationBuilder {
   static Affiliation create({
@@ -22,8 +26,8 @@ class AffiliationBuilder {
     String divuuid,
     String depuuid,
     bool active = true,
-    AffiliationType type,
-    AffiliationStandbyStatus status,
+    AffiliationType type = AffiliationType.volunteer,
+    AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
   }) {
     return AffiliationModel.fromJson(
       createAsJson(
@@ -63,9 +67,13 @@ class AffiliationBuilder {
 }
 
 class AffiliationServiceMock extends Mock implements AffiliationService {
-  AffiliationServiceMock(this.states);
-  final Map<String, Affiliation> affiliationRepo = {};
+  AffiliationServiceMock(
+    this.states,
+    this.persons,
+  );
+  final PersonServiceMock persons;
   final Box<StorageState<Affiliation>> states;
+  final Map<String, Affiliation> affiliationRepo = {};
 
   Future<Affiliation> add({
     String uuid,
@@ -113,19 +121,24 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     return affiliationRepo.remove(uuid);
   }
 
-  static Future<AffiliationService> build() async {
+  Future<void> dispose() {
+    return states.close();
+  }
+
+  static Future<AffiliationService> build(PersonServiceMock persons) async {
     final box = await Hive.openBox<StorageState<Affiliation>>(
       ConnectionAwareRepository.toBoxName<AffiliationRepositoryImpl>(),
     );
-    final AffiliationServiceMock mock = AffiliationServiceMock(box);
+    final AffiliationServiceMock mock = AffiliationServiceMock(box, persons);
     final affiliationRepo = mock.affiliationRepo;
 
     when(mock.get(any)).thenAnswer((_) async {
       await _doThrottle();
       final uuid = _.positionalArguments[0];
       if (affiliationRepo.containsKey(uuid)) {
+        Affiliation affiliation = _withPerson(affiliationRepo, uuid, persons);
         return ServiceResponse.ok(
-          body: affiliationRepo[uuid],
+          body: affiliation,
         );
       }
       return ServiceResponse.notFound(
@@ -134,17 +147,18 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     });
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
-      final affiliation = _.positionalArguments[0] as Affiliation;
+      final affiliation = _toAffiliation(_);
       affiliationRepo[affiliation.uuid] = affiliation;
       return ServiceResponse.created();
     });
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();
-      final Affiliation affiliation = _.positionalArguments[0];
+      final Affiliation affiliation = _toAffiliation(_);
       if (affiliationRepo.containsKey(affiliation.uuid)) {
-        affiliationRepo[affiliation.uuid] = affiliation;
+        final uuid = affiliation.uuid;
+        affiliationRepo[uuid] = affiliation;
         return ServiceResponse.ok(
-          body: affiliation,
+          body: _withPerson(affiliationRepo, uuid, persons),
         );
       }
       return ServiceResponse.notFound(
@@ -163,6 +177,26 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
       );
     });
     return mock;
+  }
+
+  static Affiliation _withPerson(Map<String, Affiliation> affiliationRepo, uuid, PersonServiceMock persons) {
+    final affiliation = affiliationRepo[uuid];
+    final person = affiliation.person?.uuid == null ? null : persons.personRepo[affiliation.person.uuid];
+    return affiliation.copyWith(person: person);
+  }
+
+  static Affiliation _toAffiliation(Invocation method) {
+    final affiliation = method.positionalArguments[0] as Affiliation;
+    final json = affiliation.toJson();
+    assert(
+      json.mapAt<String, dynamic>('person').length == 1,
+      "Aggregate reference 'person' contains more then one value",
+    );
+    assert(
+      json.mapAt<String, dynamic>('person').keys.first == 'uuid',
+      "Aggregate reference 'person' does not contain value 'uuid'",
+    );
+    return affiliation;
   }
 
   static Future _doThrottle() async {

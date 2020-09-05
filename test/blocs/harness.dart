@@ -275,6 +275,12 @@ class BlocTestHarness implements BlocDelegate {
         await _affiliationBloc?.close()?.catchError(
               (e, stackTrace) => _printError('tearDown > _affiliationBloc.close() failed', e, stackTrace),
             );
+        await _personService?.dispose()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _personService.dispose() failed', e, stackTrace),
+            );
+        await _affiliationService?.dispose()?.catchError(
+              (e, stackTrace) => _printError('tearDown > _affiliationService.dispose() failed', e, stackTrace),
+            );
       }
       if (_withOperationBloc) {
         await _operationsBloc?.close()?.catchError(
@@ -538,8 +544,8 @@ class BlocTestHarness implements BlocDelegate {
     _organisationService = OrganisationServiceMock.build();
     _divisionService = DivisionServiceMock.build();
     _departmentService = DepartmentServiceMock.build();
-    _personService = PersonServiceMock.build();
-    _affiliationService = await AffiliationServiceMock.build();
+    _personService = await PersonServiceMock.build();
+    _affiliationService = await AffiliationServiceMock.build(_personService);
     _affiliationBloc = AffiliationBloc(
       repo: AffiliationRepositoryImpl(
         affiliationService,

@@ -1,17 +1,20 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:async/async.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 
+import '../mock/affiliation_service_mock.dart';
 import '../mock/incident_service_mock.dart';
 import '../mock/personnel_service_mock.dart';
 import '../mock/operation_service_mock.dart';
@@ -39,8 +42,8 @@ void main() async {
     test('SHOULD load personnel', () async {
       // Arrange
       Operation operation = await _prepare(harness, offline: false);
-      final person1 = harness.personService.add();
-      final person2 = harness.personService.add();
+      final person1 = await harness.personService.add();
+      final person2 = await harness.personService.add();
       final affiliation1 = await harness.affiliationService.add(puuid: person1.uuid);
       final affiliation2 = await harness.affiliationService.add(puuid: person2.uuid);
       final personnel1 = harness.personnelService.add(operation.uuid, auuid: affiliation1.uuid);
@@ -87,10 +90,10 @@ void main() async {
         harness.personnelBloc.repo.onChanged,
       ]);
 
-      final events = [];
+      final aggregates = [];
       group.listen((transition) {
         if (transition.isRemote) {
-          events.add(transition.to.value);
+          aggregates.add(transition.to.value);
         }
       });
 
@@ -101,11 +104,21 @@ void main() async {
 
       // Act
       await harness.personnelBloc.create(personnel);
-      await expectStorageStatusLater(
-        personnel.uuid,
-        harness.personnelBloc.repo,
-        StorageStatus.created,
-        remote: true,
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<PersonnelAffiliated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelCreated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
       );
 
       // Assert service calls
@@ -115,8 +128,8 @@ void main() async {
 
       // Assert execution order
       expect(
-          events,
-          orderedEquals([
+          aggregates,
+          unorderedEquals([
             // From onboarding
             isA<Personnel>(),
             // From creation
@@ -141,7 +154,7 @@ void main() async {
     test('SHOULD update operation and push to backend', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
-      final person = harness.personService.add();
+      final person = await harness.personService.add();
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
@@ -165,10 +178,113 @@ void main() async {
       expectThrough(harness.personnelBloc, isA<PersonnelUpdated>());
     });
 
+    test('SHOULD update person on load', () async {
+      // Arrange
+      await _prepare(harness, offline: false);
+      await harness.personnelBloc.load();
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+      final person = harness.affiliationBloc.persons.values.first;
+      final fname = "fupdated";
+      final lname = "lupdated";
+      expect(harness.personnelBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+
+      // Act
+      final updated = await harness.personService.put(
+        person.copyWith(fname: fname, lname: lname),
+        storage: false,
+      );
+      await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
+
+      expect(harness.affiliationBloc.persons.values.first, updated, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
+      expect(harness.personnelBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
+    });
+
+    test('SHOULD replace person on conflict', () async {
+      // Arrange - person in backend only
+      await _prepare(harness, offline: false);
+      await harness.personnelBloc.load();
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      final existing = await harness.personService.add(userId: "existing", storage: false);
+      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+
+      // Act
+      final puuid = Uuid().v4();
+      final auuid = Uuid().v4();
+      final personnel = PersonnelBuilder.create(userId: "existing", auuid: auuid);
+      await harness.personnelBloc.create(personnel);
+      await expectThroughLater(
+        harness.personnelBloc,
+        emits(isA<PersonnelCreated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      await harness.affiliationBloc.temporary(
+        personnel,
+        AffiliationBuilder.create(uuid: auuid, puuid: puuid),
+      );
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<PersonnelAffiliated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert
+      expect(harness.affiliationBloc.persons.length, 2, reason: "SHOULD contain 2 persons");
+      expect(harness.affiliationBloc.repo.length, 2, reason: "SHOULD contain 2 affiliations");
+      expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain 2 personnels");
+
+      expect(
+        harness.affiliationBloc.persons.find(where: (p) => p.userId == existing.userId).firstOrNull,
+        equals(existing),
+        reason: "SHOULD be equal",
+      );
+      expect(
+        harness.affiliationBloc.repo.find(where: (a) => a.person.userId == existing.userId).firstOrNull?.person,
+        equals(existing),
+        reason: "SHOULD be equal",
+      );
+      expect(
+        harness.personnelBloc.repo.find(where: (p) => p.person.userId == existing.userId).firstOrNull?.person,
+        equals(existing),
+        reason: "SHOULD be equal",
+      );
+    });
+
     test('SHOULD delete personnel and push to backend', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
-      final person = harness.personService.add();
+      final person = await harness.personService.add();
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
@@ -198,7 +314,7 @@ void main() async {
     test('SHOULD BE empty after unload', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
-      final person = harness.personService.add();
+      final person = await harness.personService.add();
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
@@ -231,7 +347,7 @@ void main() async {
     test('SHOULD NOT be empty after reload', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
-      final person = harness.personService.add();
+      final person = await harness.personService.add();
       final affiliation = await harness.affiliationService.add(puuid: person.uuid);
       final personnel = harness.personnelService.add(operation.uuid, auuid: affiliation.uuid);
       await harness.personnelBloc.load();
@@ -633,7 +749,11 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
   // Wait for UserOnboarded
   await expectThroughLater(
     harness.affiliationBloc,
-    emits(isA<UserOnboarded>()),
+    emits(isA<UserOnboarded>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
   );
 
   // A user must be authenticated

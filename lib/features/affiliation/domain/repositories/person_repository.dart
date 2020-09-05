@@ -20,6 +20,11 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
   /// Find persons matching given query
   Iterable<Person> find({bool where(Person person)});
 
+  /// Init from local storage, overwrite states
+  /// with given persons if given. Returns
+  /// number of states after initialisation
+  Future<int> init({List<Person> persons});
+
   /// Load given persons
   Future<Iterable<Person>> fetch({
     bool replace = false,
@@ -27,17 +32,12 @@ abstract class PersonRepository implements ConnectionAwareRepository<String, Per
     Completer<Iterable<Person>> onRemote,
   });
 
-  /// Init from local storage, overwrite states
-  /// with given persons if given. Returns
-  /// number of states after initialisation
-  Future<int> init({List<Person> persons});
-
   /// Check if state transitioned into a
   /// [PersonConflictCode.duplicate_user_id]
   /// conflict
-  static bool isDuplicateUser(StorageTransition<Person> event) =>
-      event.isConflict &&
-      event.conflict.isCode(
+  static bool isDuplicateUser(StorageTransition<Person> transition) =>
+      transition.isConflict &&
+      transition.conflict.isCode(
         PersonConflictCode.duplicate_user_id,
       );
 }

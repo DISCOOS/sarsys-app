@@ -122,11 +122,6 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergePersonStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonServiceException(
       'Failed to create Person ${state.value}',
@@ -142,11 +137,6 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergePersonStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonServiceException(
       'Failed to update Person ${state.value}',
@@ -160,16 +150,19 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergePersonStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonServiceException(
       'Failed to delete Person ${state.value}',
       response: response,
       stackTrace: StackTrace.current,
+    );
+  }
+
+  @override
+  Future<StorageState<Person>> onResolve(StorageState<Person> state, ServiceResponse response) {
+    return MergePersonStrategy(this)(
+      state,
+      response.conflict,
     );
   }
 }
@@ -178,13 +171,10 @@ class MergePersonStrategy extends MergeStrategy<String, Person, PersonService> {
   MergePersonStrategy(PersonRepository repository) : super(repository);
 
   @override
-  Future<Person> onExists(ConflictModel conflict, StorageState<Person> state) async {
+  Future<StorageState<Person>> onExists(ConflictModel conflict, StorageState<Person> state) async {
     if (state.isCreated && conflict.isCode(PersonConflictCode.duplicate_user_id)) {
-      // Notify change listeners
-      // that given person exists
-      final next = state.failed(conflict);
-      repository.put(next);
-      return next.value;
+      // Notify change listeners that given person already exists
+      return state.failed(conflict);
     }
     return super.onExists(conflict, state);
   }

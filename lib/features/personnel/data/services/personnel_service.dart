@@ -25,7 +25,6 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
         ouuid,
         offset,
         limit,
-        expand: ['person'],
       ),
     );
   }

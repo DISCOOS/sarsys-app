@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_udid/flutter_udid.dart';
@@ -144,11 +143,6 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AppConfigServiceException(
       'Failed to create AppConfig ${state.value}',
@@ -164,11 +158,6 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
       return state.value;
     } else if (response.is404) {
       return onCreate(state);
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AppConfigServiceException(
       'Failed to update AppConfig ${state.value}',
@@ -180,11 +169,6 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AppConfigServiceException(
       'Failed to delete AppConfig ${state.value}',

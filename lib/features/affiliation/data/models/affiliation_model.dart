@@ -21,8 +21,8 @@ class AffiliationModel extends Affiliation {
     this.div,
     this.dep,
     this.org,
-    this.person,
     bool active,
+    this.person,
     AffiliationType type,
     AffiliationStandbyStatus status,
   }) : super(
@@ -37,6 +37,14 @@ class AffiliationModel extends Affiliation {
         );
 
   @override
+  @JsonKey(
+    // Person is read only with 'expand=person'
+    toJson: fromPersonRef,
+  )
+  final PersonModel person;
+  static dynamic fromPersonRef(Person person) => person.toRef().toJson();
+
+  @override
   @JsonKey(fromJson: toOrgRef)
   final AggregateRef<OrganisationModel> org;
 
@@ -48,10 +56,6 @@ class AffiliationModel extends Affiliation {
   @JsonKey(fromJson: toDepRef)
   final AggregateRef<DepartmentModel> dep;
 
-  @override
-  @JsonKey(fromJson: toPersonRef)
-  final AggregateRef<PersonModel> person;
-
   /// Factory constructor for creating a new `Affiliation` instance
   factory AffiliationModel.fromJson(Map<String, dynamic> json) => _$AffiliationModelFromJson(json);
 
@@ -62,9 +66,9 @@ class AffiliationModel extends Affiliation {
   Affiliation copyWith({
     String uuid,
     bool active,
+    Person person,
     AffiliationType type,
     AggregateRef<Division> div,
-    AggregateRef<Person> person,
     AggregateRef<Department> dep,
     AggregateRef<Organisation> org,
     AffiliationStandbyStatus status,
@@ -74,11 +78,25 @@ class AffiliationModel extends Affiliation {
         type: type ?? this.type,
         status: status ?? this.status,
         active: active ?? this.active,
+        person: person ?? this.person,
         div: div?.cast<DivisionModel>() ?? this.div,
         dep: dep?.cast<DepartmentModel>() ?? this.dep,
         org: org?.cast<OrganisationModel>() ?? this.org,
-        person: person?.cast<PersonModel>() ?? this.person,
       );
+
+  @override
+  Affiliation withPerson(Person person, {bool keep = true}) {
+    return AffiliationModel(
+      div: div,
+      dep: dep,
+      org: org,
+      uuid: uuid,
+      type: type,
+      status: status,
+      active: active,
+      person: person ?? (keep ? this.person : null),
+    );
+  }
 
   @override
   AggregateRef<AffiliationModel> toRef() => uuid != null ? AggregateRef.fromType<AffiliationModel>(uuid) : null;

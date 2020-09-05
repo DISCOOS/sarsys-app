@@ -76,16 +76,16 @@ abstract class TrackingRepository extends ConnectionAwareRepository<String, Trac
   });
 }
 
-class TrackingServiceException implements Exception {
-  TrackingServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'TrackingServiceException: $error, response: $response, stackTrace: $stackTrace';
-  }
+class TrackingServiceException extends ServiceException {
+  TrackingServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }
 
 class TrackingSourceAlreadyTrackedException extends RepositoryIllegalStateValueException {

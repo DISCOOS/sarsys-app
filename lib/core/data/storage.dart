@@ -280,12 +280,15 @@ class StorageState<T> {
       );
 
   bool get isError => error != null;
+  bool get isConflict => error is ConflictModel;
 
   bool get isCreated => StorageStatus.created == status;
   bool get isChanged => StorageStatus.updated == status;
   bool get isDeleted => StorageStatus.deleted == status;
 
   bool get shouldLoad => !(isCreated && isLocal);
+
+  ConflictModel get conflict => isConflict ? error as ConflictModel : null;
 
   StorageState<T> failed(Object error) => StorageState<T>(
         value: value,
@@ -301,12 +304,12 @@ class StorageState<T> {
         error: null,
       );
 
-  StorageState<T> apply(T value, {@required bool isRemote}) {
+  StorageState<T> apply(T value, {@required bool isRemote, Object error}) {
     switch (status) {
       case StorageStatus.created:
         return StorageState(
           value: value,
-          error: error,
+          error: error ?? this.error,
           isRemote: isRemote ?? _isRemote,
           status: _isRemote
               // If current is remote,
@@ -356,7 +359,7 @@ class StorageTransition<T> {
   bool get isRemote => to?.isRemote ?? false;
   bool get isChanged => to?.isChanged ?? false;
   bool get isDeleted => to?.isDeleted ?? false;
-  bool get isConflict => to?.error is ConflictModel;
+  bool get isConflict => to?.isConflict ?? false;
 
   ConflictModel get conflict => isConflict ? to.error as ConflictModel : null;
 }

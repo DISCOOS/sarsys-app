@@ -85,7 +85,15 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
       unit: unit?.cast<UnitModel>() ?? this.unit,
-      person: _copyPerson(person?.uuid, fname, lname, phone, email, userId),
+      person: _copyPerson(
+        person?.uuid,
+        fname,
+        lname,
+        phone,
+        email,
+        userId,
+        person?.temporary,
+      ),
       status: status ?? this.status,
       function: function ?? this.function,
       tracking: tracking ?? this.tracking,
@@ -100,6 +108,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     String phone,
     String email,
     String userId,
+    bool temporary,
   ) {
     return (person ?? PersonModel(uuid: uuid)).copyWith(
       uuid: uuid ?? person?.uuid,
@@ -108,11 +117,12 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       phone: phone ?? this.phone,
       email: email ?? this.email,
       userId: userId ?? this.userId,
+      temporary: temporary ?? this.person?.temporary,
     );
   }
 
   @override
-  Personnel withPerson(Person person) {
+  Personnel withPerson(Person person, {bool keep = true}) {
     return PersonnelModel(
       uuid: this.uuid,
       unit: unit,
@@ -120,14 +130,17 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: function,
       tracking: tracking,
       affiliation: affiliation,
-      person: _copyPerson(
-        person.uuid,
-        person.fname,
-        person.lname,
-        person.phone,
-        person.email,
-        person.userId,
-      ),
+      person: person != null
+          ? _copyPerson(
+              person.uuid,
+              person.fname,
+              person.lname,
+              person.phone,
+              person.email,
+              person.userId,
+              person.temporary,
+            )
+          : keep ? this.person : null,
     );
   }
 }

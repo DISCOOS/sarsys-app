@@ -12,8 +12,12 @@ AffiliationModel _$AffiliationModelFromJson(Map json) {
     div: toDivRef(json['div']),
     dep: toDepRef(json['dep']),
     org: toOrgRef(json['org']),
-    person: toPersonRef(json['person']),
     active: json['active'] as bool,
+    person: json['person'] == null
+        ? null
+        : PersonModel.fromJson((json['person'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     type: _$enumDecodeNullable(_$AffiliationTypeEnumMap, json['type']),
     status:
         _$enumDecodeNullable(_$AffiliationStandbyStatusEnumMap, json['status']),
@@ -33,10 +37,10 @@ Map<String, dynamic> _$AffiliationModelToJson(AffiliationModel instance) {
   writeNotNull('type', _$AffiliationTypeEnumMap[instance.type]);
   writeNotNull('status', _$AffiliationStandbyStatusEnumMap[instance.status]);
   writeNotNull('active', instance.active);
+  writeNotNull('person', AffiliationModel.fromPersonRef(instance.person));
   writeNotNull('org', instance.org?.toJson());
   writeNotNull('div', instance.div?.toJson());
   writeNotNull('dep', instance.dep?.toJson());
-  writeNotNull('person', instance.person?.toJson());
   return val;
 }
 

@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/division_repository.dart';
@@ -57,28 +58,30 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   Affiliation fromJson(Map<String, dynamic> json) => AffiliationModel.fromJson(json);
 
   @override
-  Future<List<Affiliation>> init({List<Affiliation> affiliations}) async {
-    await prepare();
-    (affiliations ?? []).forEach((element) {
-      put(
-        StorageState.created(
-          element,
-          isRemote: true,
-        ),
-      );
-    });
-    return values;
+  Future<List<Affiliation>> load({
+    bool force = true,
+    Completer<Iterable<Affiliation>> onRemote,
+  }) async {
+    await prepare(
+      force: force,
+    );
+    return _fetch(
+      keys,
+      onRemote: onRemote,
+    );
   }
 
   @override
   Future<List<Affiliation>> fetch(
     List<String> uuids, {
     bool replace = false,
+    Completer<Iterable<Affiliation>> onRemote,
   }) async {
     await prepare();
     return _fetch(
       uuids,
       replace: replace,
+      onRemote: onRemote,
     );
   }
 
@@ -99,6 +102,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   Future<List<Affiliation>> _fetch(
     List<String> uuids, {
     bool replace = false,
+    Completer<Iterable<Affiliation>> onRemote,
   }) async {
     scheduleLoad(
       () async {
@@ -130,9 +134,10 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
           body: values,
         );
       },
+      onResult: onRemote,
       shouldEvict: replace,
     );
-    return values;
+    return uuids.map((uuid) => get(uuid)).toList();
   }
 
   Future<List<Affiliation>> _search(
@@ -167,7 +172,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }
 
   @override
-  Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) async => await _fetch(
+  Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) => _fetch(
         previous.map((a) => a.uuid).toList(),
         replace: true,
       );
@@ -177,11 +182,6 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AffiliationServiceException(
       'Failed to create Affiliation ${state.value}',
@@ -197,11 +197,6 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AffiliationServiceException(
       'Failed to update Affiliation ${state.value}',
@@ -215,11 +210,6 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw AffiliationServiceException(
       'Failed to delete Affiliation ${state.value}',

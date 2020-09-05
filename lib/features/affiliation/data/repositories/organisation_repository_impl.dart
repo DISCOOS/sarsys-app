@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
@@ -64,11 +63,6 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
     var response = await service.create(state.value);
     if (response.is201) {
       return await _withFleetMap(state.value);
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OrganisationServiceException(
       'Failed to create Organisation ${state.value}',
@@ -83,11 +77,6 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
       return _withFleetMap(response.body);
     } else if (response.is204) {
       return _withFleetMap(state.value);
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OrganisationServiceException(
       'Failed to update Organisation ${state.value}',
@@ -100,11 +89,6 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return _withFleetMap(state.value);
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OrganisationServiceException(
       'Failed to delete Organisation ${state.value}',

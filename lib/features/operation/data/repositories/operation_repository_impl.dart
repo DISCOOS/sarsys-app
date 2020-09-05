@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -71,11 +69,6 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OperationServiceException(
       'Failed to create Operation ${state.value}',
@@ -90,11 +83,6 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OperationServiceException(
       'Failed to update Operation ${state.value}',
@@ -107,28 +95,11 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw OperationServiceException(
       'Failed to delete Operation ${state.value}',
       response: response,
       stackTrace: StackTrace.current,
     );
-  }
-}
-
-class OperationServiceException implements Exception {
-  OperationServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'OperationServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

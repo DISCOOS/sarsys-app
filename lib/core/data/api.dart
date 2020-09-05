@@ -211,6 +211,10 @@ class Api {
     StackTrace stackTrace,
   }) {
     final resolved = body ?? response.body;
+    final conflict = response.statusCode == HttpStatus.conflict
+        // Chopper will return body with conflict json in response.error
+        ? ConflictModel.fromJson(jsonDecode(response.error))
+        : null;
     return ServiceResponse<T>(
       conflict: conflict,
       stackTrace: stackTrace,
@@ -218,9 +222,7 @@ class Api {
       reasonPhrase: '${response.base.reasonPhrase}',
       page: resolved is PagedList ? resolved.page : null,
       body: resolved is PagedList ? resolved.items : resolved,
-      error: response.statusCode == HttpStatus.conflict
-          ? ConflictModel.fromJson(jsonDecode(response.error))
-          : response.error,
+      error: response.statusCode == HttpStatus.conflict ? conflict.error : response.error,
     );
   }
 }

@@ -34,7 +34,7 @@ class JsonUtils {
   }) {
     assert(
       !(retain?.isNotEmpty == true && remove?.isNotEmpty == true),
-      'only use retain or remove',
+      'Only use retain or remove',
     );
     final json = value.toJson();
     if (retain?.isNotEmpty == true) {

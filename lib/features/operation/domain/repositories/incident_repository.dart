@@ -20,11 +20,16 @@ abstract class IncidentRepository implements ConnectionAwareRepository<String, I
   });
 }
 
-class IncidentServiceException implements Exception {
-  IncidentServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
+class IncidentServiceException extends ServiceException {
+  IncidentServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 
   @override
   String toString() {

@@ -16,13 +16,21 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
 
   Future<ServiceResponse<List<Affiliation>>> search(String filter, int offset, int limit) async {
     return Api.from<PagedList<Affiliation>, List<Affiliation>>(
-      await delegate.search(filter, offset: offset, limit: limit),
+      await delegate.search(
+        filter,
+        offset: offset,
+        limit: limit,
+        expand: const ['person'],
+      ),
     );
   }
 
   Future<ServiceResponse<Affiliation>> get(String uuid) async {
     return Api.from<Affiliation, Affiliation>(
-      await delegate.get(uuid: uuid),
+      await delegate.get(
+        uuid: uuid,
+        expand: const ['person'],
+      ),
     );
   }
 
@@ -61,6 +69,7 @@ abstract class AffiliationServiceImpl extends ChopperService {
   @Get(path: '{uuid}')
   Future<Response<Affiliation>> get({
     @Path('uuid') String uuid,
+    @Query('expand') List<String> expand = const [],
   });
 
   @Get()
@@ -68,6 +77,7 @@ abstract class AffiliationServiceImpl extends ChopperService {
     @Query('filter') String filter, {
     @Query('offset') int offset = 0,
     @Query('limit') int limit = 20,
+    @Query('expand') List<String> expand = const [],
   });
 
   @Post()

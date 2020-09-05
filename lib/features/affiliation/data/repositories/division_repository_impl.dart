@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -65,11 +64,6 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DivisionServiceException(
       'Failed to create Division ${state.value}',
@@ -84,11 +78,6 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DivisionServiceException(
       'Failed to update Division ${state.value}',
@@ -101,11 +90,6 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DivisionServiceException(
       'Failed to delete Division ${state.value}',

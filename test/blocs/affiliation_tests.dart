@@ -86,7 +86,7 @@ void main() async {
         // Assert execution order
         expect(
             events,
-            orderedEquals([
+            unorderedEquals([
               // From onboarding
               isA<Organisation>(),
               isA<Division>(),
@@ -306,11 +306,14 @@ Future _seed(
         .firstOrNull,
     isNotNull,
   );
-  final p2 = harness.personService.add(userId: Uuid().v4());
+  final p2 = await harness.personService.add(
+    userId: Uuid().v4(),
+    storage: !offline,
+  );
   await harness.affiliationService.add(
     // Add remotely only
-    storage: !offline,
     puuid: p2.uuid,
+    storage: !offline,
     orguuid: org2.uuid,
     divuuid: div2.uuid,
     depuuid: dep2.uuid,

@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
@@ -53,9 +53,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     ));
 
     registerStreamSubscription(affiliationBloc.persons.onChanged.listen(
-      // Handle person changes
-      _processPersonChanged,
+      // Handle
+      _processPersonConflicts,
     ));
+
+    // Keep personnel in sync with person
+    repo.onValue(
+      onGet: (value) => value.withPerson(affiliationBloc.persons[value.person?.uuid]),
+    );
   }
 
   /// Process [OperationState] events
@@ -97,23 +102,15 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     }
   }
 
-  void _processPersonChanged(StorageTransition<Person> state) {
+  void _processPersonConflicts(StorageTransition<Person> event) {
     try {
-      if (PersonRepository.isDuplicateUser(state)) {
-        // Find current person usages and replace with existing user
-        final duplicate = state.to.value.uuid;
-        final existing = state.conflict.base;
-        findUser(
-          userId: duplicate,
-          exclude: [],
-        ).map((personnel) => personnel.mergeWith({"person": existing})).forEach(update);
-      } else {
-        findUser(
-          userId: state.to.value.uuid,
-          exclude: [],
-        ).map((personnel) => personnel.withPerson(state.from.value)).forEach(
-              (personnel) => repo.replace(personnel),
-            );
+      if (PersonRepository.isDuplicateUser(event)) {
+        // Find current person usages and replace them with existing user
+        final duplicate = event.from.value.uuid;
+        final existing = PersonModel.fromJson(event.conflict.base);
+        find(
+          where: (personnel) => personnel.person.uuid == duplicate,
+        ).map((personnel) => personnel.withPerson(existing)).forEach(update);
       }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
@@ -158,6 +155,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Check if given [Personnel.uuid] is current user
   bool isUser(String uuid) => repo[uuid]?.userId == operationBloc.userBloc.userId;
+
+  /// Find [Personnel]s matching given query
+  Iterable<Personnel> find({bool where(Personnel personnel)}) => repo.find(where: where);
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> findUser({
@@ -322,17 +322,13 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Stream<PersonnelState> _load(LoadPersonnels command) async* {
     // Fetch cached and handle
     // response from remote when ready
-    final onRemote = Completer<Iterable<Personnel>>();
+    final onPersonnels = Completer<Iterable<Personnel>>();
     var personnels = await repo.load(
       command.data,
-      onRemote: onRemote,
+      onRemote: onPersonnels,
     );
 
     if (personnels.isNotEmpty) {
-      // Only wait for cached only.
-      // Remote states are published by
-      // AffiliationsLoaded later which
-      // this method is not dependent on
       await affiliationBloc.fetch(
         personnels.map((p) => p.affiliation.uuid),
       );
@@ -340,13 +336,16 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     yield toOK(
       command,
       PersonnelsLoaded(repo.keys),
-      result: personnels,
+      result: personnels.map(_withPerson).toList(),
     );
 
     // Notify when states was fetched from remote storage
     onComplete(
-      [onRemote.future],
-      toState: (_) => PersonnelsLoaded(
+      [
+        onPersonnels.future,
+        if (personnels.isNotEmpty) onAffiliationState<AffiliationsFetched>(),
+      ],
+      toState: (results) => PersonnelsLoaded(
         repo.keys,
         isRemote: true,
       ),
@@ -358,6 +357,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       ),
     );
   }
+
+  Future<AffiliationState> onAffiliationState<T extends AffiliationState>({bool isRemote = true}) =>
+      affiliationBloc.where((s) => s.isRemote == isRemote && s is T).first;
 
   Stream<PersonnelState> _create(CreatePersonnel command) async* {
     Affiliation affiliation = await _ensureAffiliation(command);
@@ -397,13 +399,14 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     if (!affiliationBloc.repo.containsKey(auuid)) {
       var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
       if (!affiliation.isAffiliate) {
-        await affiliationBloc.temporary(
+        affiliation = await affiliationBloc.temporary(
           command.data,
           affiliation.copyWith(
-            person: command.data.person?.toRef(),
+            person: command.data.person,
           ),
         );
       }
+      return affiliation;
     }
     return affiliationBloc.repo[auuid];
   }
@@ -488,6 +491,11 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
+
+  Personnel _withPerson(Personnel personnel) {
+    final puuid = personnel.person?.uuid;
+    return puuid == null ? personnel : personnel.withPerson(affiliationBloc.persons[puuid]);
+  }
 
   @override
   Future<void> close() async {

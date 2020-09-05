@@ -51,20 +51,42 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// If [require] is [true] the future
   /// will not return until state for
   /// given [uuid] exist remotely.
-  Future<StorageState<T>> onRemote(K key, {bool require = true}) {
+  ///
+  /// Will throw [RepositoryRemoteException]
+  /// if state transitions to error and
+  /// [fail] is [true], otherwise future
+  /// completes with error state.
+  ///
+  Future<StorageState<T>> onRemote(
+    K key, {
+    bool fail = false,
+    bool require = true,
+  }) async {
     final current = getState(key);
     if (current?.isRemote == true || !require && current == null) {
       return Future.value(current);
     }
-    return onChanged
-        .where((event) => event.isRemote)
-        .where((event) => toKey(event.to) == key)
-        .map((event) => event.to)
+    final transition = await onChanged
+        .where((transition) => transition.isRemote || transition.isError)
+        .where((transition) => toKey(transition.to) == key)
         .firstWhere(
-          (state) => state != null,
+          (transition) => transition.isError || transition.to != null,
           orElse: () => null,
         );
+    final state = transition.to;
+    if (fail && transition.isError) {
+      throw RepositoryRemoteException(
+        'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
+        state: state,
+        stackTrace: StackTrace.current,
+      );
+    }
+    return state;
   }
+
+  /// Invoked before each [get].
+  void onValue({T onGet(T value)}) => _onGet = onGet;
+  T Function(T value) _onGet;
 
   /// Check if repository is empty
   ///
@@ -134,23 +156,26 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Iterable<StorageState<T>> get errors => isReady ? _states.values.where((state) => state.isError) : [];
 
   /// Get all states as unmodifiable map
-  Map<K, StorageState<T>> get states => Map.unmodifiable(isReady ? _states?.toMap() : {});
+  Map<K, StorageState<T>> get states => Map.unmodifiable(
+        isReady
+            ? _states.toMap().map((key, value) => MapEntry(
+                key,
+                _StorageState<T>(
+                  (value) => _onGet == null ? value : _onGet(value),
+                  value,
+                )))
+            : <K, StorageState<T>>{},
+      );
   Box<StorageState<T>> _states;
 
   /// Get all (key,value)-pairs as unmodifiable map
-  Map<K, T> get map => Map.unmodifiable(isReady
-      ? Map.fromIterables(
-          _states?.keys,
-          _states?.values?.map(
-            (s) => s.value,
-          ))
-      : {});
+  Map<K, T> get map => Map.unmodifiable(isReady ? Map.fromIterables(keys, values) : <K, T>{});
 
   /// Get all keys as unmodifiable list
   Iterable<K> get keys => List.unmodifiable(isReady ? _states?.keys : []);
 
   /// Get all values as unmodifiable list
-  Iterable<T> get values => List.unmodifiable(isReady ? _states?.values?.map((state) => state.value) : []);
+  Iterable<T> get values => List.unmodifiable(isReady ? states.values.map((state) => state.value) : <T>[]);
 
   /// Check if key exists
   bool containsKey(K key) => isReady ? _states.keys.contains(key) : false;
@@ -429,6 +454,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Patch [next] state with existing in repository
   StorageState<T> _patch(StorageState next) {
     final key = toKey(next);
+    assert(key != null, "key in $next not found");
     final current = _states.get(key);
     if (current != null) {
       final patches = JsonUtils.diff(current.value, next.value);
@@ -438,12 +464,14 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
             current.value,
             patches,
           )),
+          error: next.error,
           isRemote: next.isRemote,
         );
       } else {
         // Vale not changed, use current
         next = current.apply(
           next.value,
+          error: next.error,
           isRemote: next.isRemote,
         );
       }
@@ -459,8 +487,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool put(StorageState<T> state) {
     checkState();
     final key = toKey(state);
-//    print(state);
-//    print('>> ${state.value}');
     final current = _states.get(key);
     if (shouldDelete(next: state, current: current)) {
       _states.delete(key);
@@ -558,6 +584,17 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Any other [Exception] will be forwarded to [onError]
   @visibleForOverriding
   Future<T> onDelete(StorageState<T> state);
+
+  /// Should resolve conflict
+  ///
+  /// Any [Exception] will be forwarded to [onError]
+  @visibleForOverriding
+  Future<StorageState<T>> onResolve(StorageState<T> state, ServiceResponse response) {
+    return MergeStrategy(this)(
+      state,
+      response.conflict,
+    );
+  }
 
   /// Should handle errors
   @mustCallSuper
@@ -799,24 +836,31 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Push state to remote
   FutureOr<StorageState<T>> _push(StorageState<T> state) async {
     if (state.isLocal) {
-      switch (state.status) {
-        case StorageStatus.created:
-          return StorageState.created(
-            await onCreate(state),
-            isRemote: true,
-          );
-        case StorageStatus.updated:
-          return StorageState.updated(
-            await onUpdate(state),
-            isRemote: true,
-          );
-        case StorageStatus.deleted:
-          return StorageState.deleted(
-            await onDelete(state),
-            isRemote: true,
-          );
+      try {
+        switch (state.status) {
+          case StorageStatus.created:
+            return StorageState.created(
+              await onCreate(state),
+              isRemote: true,
+            );
+          case StorageStatus.updated:
+            return StorageState.updated(
+              await onUpdate(state),
+              isRemote: true,
+            );
+          case StorageStatus.deleted:
+            return StorageState.deleted(
+              await onDelete(state),
+              isRemote: true,
+            );
+        }
+        throw RepositoryException('Unable to process $state');
+      } on ServiceException catch (e) {
+        if (e.is409) {
+          return onResolve(state, e.response);
+        }
+        rethrow;
       }
-      throw RepositoryException('Unable to process $state');
     }
     return state;
   }
@@ -953,6 +997,23 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 }
 
 @Immutable()
+class _StorageState<T> extends StorageState<T> {
+  _StorageState(
+    this.onGet,
+    StorageState<T> state,
+  ) : super(
+          value: state.value,
+          error: state.error,
+          status: state.status,
+          isRemote: state.isRemote,
+        );
+
+  final T Function(T value) onGet;
+
+  T get value => onGet(super.value);
+}
+
+@Immutable()
 class _LoadRequest<T> {
   const _LoadRequest({
     @required this.fail,
@@ -1011,13 +1072,13 @@ class MergeStrategy<S, T extends Aggregate, U extends Service> {
   MergeStrategy(this.repository);
   final ConnectionAwareRepository<S, T, U> repository;
 
-  Future<T> call(
+  Future<StorageState<T>> call(
     StorageState<T> state,
     ConflictModel conflict,
   ) =>
       reconcile(state, conflict);
 
-  Future<T> reconcile(
+  Future<StorageState<T>> reconcile(
     StorageState<T> state,
     ConflictModel conflict,
   ) async {
@@ -1035,47 +1096,61 @@ class MergeStrategy<S, T extends Aggregate, U extends Service> {
   }
 
   /// Default is last writer wins by forwarding to [repository.onUpdate]
-  Future<T> onExists(ConflictModel conflict, StorageState<T> state) {
-    return repository.onUpdate(state);
+  Future<StorageState<T>> onExists(ConflictModel conflict, StorageState<T> state) async {
+    await repository.onUpdate(state);
+    return state;
   }
 
   /// Default is to replace local value with remote value
-  Future<T> onMerge(ConflictModel conflict, StorageState<T> state) => Future.value(
-        repository
-            .replace(
-              repository.fromJson(
-                JsonUtils.apply(
-                  repository.fromJson(conflict.base),
-                  conflict.yours,
-                ),
-              ),
-              isRemote: true,
-            )
-            .value,
-      );
+  Future<StorageState<T>> onMerge(ConflictModel conflict, StorageState<T> state) {
+    return Future.value(repository.replace(
+      repository.fromJson(
+        JsonUtils.apply(
+          repository.fromJson(conflict.base),
+          conflict.yours,
+        ),
+      ),
+      isRemote: true,
+    ));
+  }
 
-  /// Delete conflicts are not handled as conflicts, returns current state value
-  Future<T> onDeleted(ConflictModel conflict, StorageState<T> state) => Future.value(state.value);
+  /// Delete conflicts are not
+  /// handled as conflicts, returns
+  /// current state value
+  Future<StorageState<T>> onDeleted(ConflictModel conflict, StorageState<T> state) => Future.value(state);
 }
 
 class RepositoryException implements Exception {
   final String message;
+  final StorageState state;
   final StackTrace stackTrace;
-  RepositoryException(this.message, {this.stackTrace});
+  RepositoryException(this.message, {this.state, this.stackTrace});
   @override
   String toString() {
-    return '$runtimeType: {message: $message, stackTrace: $stackTrace}';
+    return '$runtimeType: {message: $message, state: $state, stackTrace: $stackTrace}';
   }
 }
 
-class RepositoryTimeoutException implements Exception {
+class RepositoryRemoteException extends RepositoryException {
   final String message;
   final StackTrace stackTrace;
-  RepositoryTimeoutException(this.message, {this.stackTrace});
-  @override
-  String toString() {
-    return '$runtimeType: {message: $message, stackTrace: $stackTrace}';
-  }
+  RepositoryRemoteException(this.message, {StorageState state, this.stackTrace})
+      : super(
+          message,
+          state: state,
+          stackTrace: stackTrace,
+        );
+}
+
+class RepositoryTimeoutException extends RepositoryException {
+  final String message;
+  final StackTrace stackTrace;
+  RepositoryTimeoutException(this.message, {StorageState state, this.stackTrace})
+      : super(
+          message,
+          state: state,
+          stackTrace: stackTrace,
+        );
 }
 
 class RepositoryIllegalStateValueException extends RepositoryException {
@@ -1122,18 +1197,4 @@ class RepositoryIllegalStateException extends RepositoryException {
     this.previous,
     this.next,
   ) : super('is in illegal state ${previous.status}, next ${next.status} not allowed');
-}
-
-class RepositoryServiceException extends RepositoryException {
-  RepositoryServiceException(
-    Object error, {
-    this.response,
-    StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType { $message, response: $response, stackTrace: $stackTrace}';
-  }
 }

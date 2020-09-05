@@ -20,14 +20,14 @@ abstract class OrganisationRepository implements ConnectionAwareRepository<Strin
   });
 }
 
-class OrganisationServiceException implements Exception {
-  OrganisationServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
-  }
+class OrganisationServiceException extends ServiceException {
+  OrganisationServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

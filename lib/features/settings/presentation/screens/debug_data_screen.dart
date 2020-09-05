@@ -146,7 +146,10 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Affiliation>(
       title: "Tilhørigheter",
       repo: context.bloc<AffiliationBloc>().repo,
-      subtitle: (StorageState<Affiliation> state) => '${state?.value}',
+      subtitle: (StorageState<Affiliation> state) => '${context.bloc<AffiliationBloc>().toName(
+            state?.value,
+            empty: translateAffiliationType(AffiliationType.volunteer),
+          )}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );

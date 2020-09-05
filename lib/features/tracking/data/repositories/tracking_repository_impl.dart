@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Track.dart';
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -252,17 +251,5 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
       response: response,
       stackTrace: StackTrace.current,
     );
-  }
-}
-
-class TrackingServiceException implements Exception {
-  TrackingServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'TrackingServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
-import 'package:SarSys/core/data/services/service.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -136,11 +134,6 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
     var response = await service.create(_ouuid, state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw UnitServiceException(
       'Failed to create Unit ${state.value}',
@@ -156,11 +149,6 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw UnitServiceException(
       'Failed to update Unit ${state.value}',
@@ -174,28 +162,11 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw UnitServiceException(
       'Failed to delete Unit ${state.value}',
       response: response,
       stackTrace: StackTrace.current,
     );
-  }
-}
-
-class UnitServiceException implements Exception {
-  UnitServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'UnitServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

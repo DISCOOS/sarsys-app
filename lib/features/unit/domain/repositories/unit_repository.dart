@@ -40,14 +40,14 @@ abstract class UnitRepository implements ConnectionAwareRepository<String, Unit,
   });
 }
 
-class UnitServiceException implements Exception {
-  UnitServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'UnitServiceException: $error, response: $response, stackTrace: $stackTrace';
-  }
+class UnitServiceException extends ServiceException {
+  UnitServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

@@ -17,20 +17,23 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   final definitionType = AffiliationServiceImpl;
 
   @override
-  Future<Response<Affiliation>> get({String uuid}) {
+  Future<Response<Affiliation>> get(
+      {String uuid, List<String> expand = const []}) {
     final $url = '/affiliations/$uuid';
-    final $request = Request('GET', $url, client.baseUrl);
+    final $params = <String, dynamic>{'expand': expand};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<Affiliation, Affiliation>($request);
   }
 
   @override
   Future<Response<PagedList<Affiliation>>> search(String filter,
-      {int offset = 0, int limit = 20}) {
+      {int offset = 0, int limit = 20, List<String> expand = const []}) {
     final $url = '/affiliations';
     final $params = <String, dynamic>{
       'filter': filter,
       'offset': offset,
-      'limit': limit
+      'limit': limit,
+      'expand': expand
     };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<PagedList<Affiliation>, Affiliation>($request);

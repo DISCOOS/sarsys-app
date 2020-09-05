@@ -35,7 +35,6 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
           return ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             shrinkWrap: true,
-            itemExtent: 72.0,
             itemCount: states.length,
             itemBuilder: (context, index) {
               return _buildTile(context, states[index]);

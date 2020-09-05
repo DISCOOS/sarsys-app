@@ -46,7 +46,7 @@ import 'package:uuid/uuid.dart';
 ///
 /// Instead, PII is only fetched in context of
 /// an operation using the 'expand' query parameter
-/// supported by 'GET /api/operations/{uuid}/personnels'.
+/// supported by 'GET /api/affiliations'.
 ///
 /// New users are onboarded based on claims in
 /// access-tokens. Users without any
@@ -87,6 +87,13 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       // Handle
       _processPersonConflicts,
     ));
+
+    // Keep affiliation in sync with person
+    repo.onValue(
+      onGet: (value) => value.copyWith(
+        person: persons[value.person?.uuid],
+      ),
+    );
   }
 
   /// All repositories
@@ -142,12 +149,14 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       if (PersonRepository.isDuplicateUser(event)) {
         // Find current person usages and replace then with existing user
         final duplicate = event.from.value.uuid;
-        final existing = event.conflict.base.elementAt<String>('uuid');
+        final existing = PersonModel.fromJson(event.conflict.base);
         find(
           where: (affiliation) => affiliation.person.uuid == duplicate,
-        ).map((affiliation) => affiliation.copyWith(person: affiliation.person.cast(uuid: existing))).forEach(update);
+        ).map((affiliation) => affiliation.withPerson(existing)).forEach(update);
         // Remove duplicate person
         persons.delete(duplicate);
+        // Patch existing with current state
+        persons.patch(existing);
       }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
@@ -240,12 +249,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final dep = findUserDepartment(userId: userId);
     final affiliation = AffiliationModel(
       uuid: Uuid().v4(),
+      person: person,
       type: defaultType,
       org: org?.toRef(),
       div: div?.toRef(),
       dep: dep?.toRef(),
       status: defaultStatus,
-      person: person?.toRef(),
     );
     return ensure || !affiliation.isEmpty ? affiliation : null;
   }
@@ -518,42 +527,116 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   Stream<AffiliationState> _load(LoadAffiliations command) async* {
-    // Wait on cached values
-    await orgs.load();
-    await divs.load();
-    await deps.load();
+    // Read local values
+    await persons.init();
 
-    // Load from local storage
-    final affiliations = await repo.init();
+    final onOrgs = Completer<Iterable<Organisation>>();
+    await orgs.load(onRemote: onOrgs);
 
-    // Fetch persons without blocking
-    yield* _fetchPersonsAsync(
-      affiliations,
+    final onDivs = Completer<Iterable<Division>>();
+    await divs.load(onRemote: onDivs);
+
+    final onDeps = Completer<Iterable<Department>>();
+    await deps.load(onRemote: onDeps);
+
+    final onAffiliations = Completer<Iterable<Affiliation>>();
+    final cached = await repo.load(
+      onRemote: onAffiliations,
+    );
+
+    yield toOK(
       command,
-      (Iterable<Person> exists, bool isRemote) => AffiliationsLoaded(
+      AffiliationsLoaded(
         orgs: orgs.keys,
         divs: divs.keys,
         deps: deps.keys,
-        isRemote: isRemote,
+        isRemote: false,
         affiliations: repo.keys,
-        persons: exists.map((p) => p.uuid),
+        persons: _toPersons(cached, isRemote: false),
       ),
+      result: cached,
+    );
+
+    // Notify when orgs, divs, deps
+    // and affiliations are fetched
+    // from remote storage
+    onComplete(
+      [
+        onOrgs.future,
+        onDivs.future,
+        onDeps.future,
+        onAffiliations.future,
+      ],
+      toState: (_) => AffiliationsLoaded(
+        orgs: orgs.keys,
+        divs: divs.keys,
+        deps: deps.keys,
+        isRemote: true,
+        affiliations: repo.keys,
+        persons: _toPersons(repo.values, isRemote: true),
+      ),
+      toCommand: (state) => _StateChange(state),
+      toError: (Object error, StackTrace stackTrace) {
+        if (!onFetchPersonsError(error)) {
+          // Do not call sink.addError
+          // since toOK has already
+          // invoked command.callback
+          return toError(
+            command,
+            error,
+            stackTrace: stackTrace,
+          );
+        }
+        return null;
+      },
     );
   }
 
   Stream<AffiliationState> _fetch(FetchAffiliations command) async* {
-    // Fetch from backend
-    final affiliations = await repo.fetch(command.data);
+    final uuids = command.data;
+    final onRemote = Completer<Iterable<Affiliation>>();
+    final cached = await repo.fetch(
+      uuids,
+      onRemote: onRemote,
+    );
 
-    // Fetch persons without blocking
-    yield* _fetchPersonsAsync(
-      affiliations,
+    yield toOK(
       command,
-      (Iterable<Person> exists, bool isRemote) => AffiliationsFetched(
-        isRemote: isRemote,
-        persons: exists.map((p) => p.uuid),
-        affiliations: affiliations.map((a) => a.uuid),
+      AffiliationsFetched(
+        isRemote: false,
+        affiliations: command.data,
+        persons: _toPersons(cached, isRemote: false),
       ),
+      result: cached,
+    );
+
+    // Notify when affiliations are fetched from remote storage
+    onComplete<Iterable<Affiliation>>(
+      [onRemote.future],
+      toState: (results) {
+        return AffiliationsFetched(
+          isRemote: true,
+          affiliations: results.firstOrNull?.map((a) => a.uuid) ?? <String>[],
+          persons: _toPersons(
+            results.firstOrNull ?? <Affiliation>[],
+            isRemote: true,
+          ),
+        );
+      },
+      toCommand: (state) => _StateChange(state),
+      toError: (Object error, StackTrace stackTrace) {
+        if (!onFetchPersonsError(error)) {
+          // Do not call sink.addError
+          // since toOK has already
+          // invoked command.callback
+          return toError(
+            command,
+            error,
+            stackTrace: stackTrace,
+          );
+        }
+        return null;
+      },
     );
   }
 
@@ -565,53 +648,14 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       offset: command.offset,
     );
 
-    // Fetch persons without blocking
-    yield* _fetchPersonsAsync(
-      affiliations,
-      command,
-      (Iterable<Person> exists, bool isRemote) => AffiliationsFetched(
-        isRemote: isRemote,
-        persons: exists.map((p) => p.uuid),
-        affiliations: affiliations.map((a) => a.uuid),
-      ),
-    );
-  }
-
-  Stream<T> _fetchPersonsAsync<T extends AffiliationState>(
-    List<Affiliation> affiliations,
-    AffiliationCommand command,
-    AffiliationState Function(Iterable<Person> exists, bool isRemote) toState,
-  ) async* {
-    final onPersons = Completer<Iterable<Person>>();
-    final cached = await persons.fetch(
-      onRemote: onPersons,
-      uuids: affiliations.map((a) => a.person.uuid),
-    );
-
     yield toOK(
       command,
-      toState(cached, false),
+      AffiliationsFetched(
+        isRemote: true,
+        affiliations: affiliations.map((a) => a.uuid),
+        persons: _toPersons(affiliations, isRemote: true),
+      ),
       result: affiliations,
-    );
-
-    // Notify whn persons are fetched from remote storage
-    onComplete<Iterable<Person>>(
-      [onPersons.future],
-      toState: (results) => toState(results.first, true),
-      toCommand: (state) => _StateChange(state),
-      toError: (Object error, StackTrace stackTrace) {
-        if (!onFetchPersonsError(error)) {
-          // Do not call sink.addError since
-          // toOK has already invoked
-          // command.callback
-          return toError(
-            command,
-            error,
-            stackTrace: stackTrace,
-          );
-        }
-        return null;
-      },
     );
   }
 
@@ -625,7 +669,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   void _removeMissingPersons() => repo.values
-      .where((affiliation) => !persons.containsKey(affiliation.person.uuid))
+      .where((affiliation) => !persons.containsKey(affiliation.person?.uuid))
       .forEach((affiliation) => repo.delete(affiliation.uuid));
 
   Stream<AffiliationState> _onboard(OnboardUser command) async* {
@@ -638,7 +682,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ));
     }
     final affiliation = await repo.apply(command.affiliation.copyWith(
-      person: AggregateRef.fromType<PersonModel>(person.uuid),
+      person: person,
     ));
 
     final created = toOK(
@@ -683,7 +727,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       ));
     }
     final affiliation = await repo.apply(command.affiliation.copyWith(
-      person: person.toRef(),
+      person: person,
       type: command.affiliation.type ?? AffiliationType.volunteer,
       status: command.affiliation.status ?? AffiliationStandbyStatus.available,
     ));
@@ -807,6 +851,23 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       );
     }
   }
+
+  Iterable<String> _toPersons(
+    List<Affiliation> values, {
+    @required bool isRemote,
+  }) {
+    final updated = values.where((a) => a.person != null).map((a) => _toPerson(a, isRemote: isRemote)).toList();
+    return updated;
+  }
+
+  String _toPerson(
+    Affiliation affiliation, {
+    @required bool isRemote,
+  }) {
+    assert(affiliation.person != null, "Person can not be null");
+    persons.replace(affiliation.person, isRemote: isRemote);
+    return affiliation.person.uuid;
+  }
 }
 
 /// ---------------------
@@ -906,6 +967,9 @@ abstract class AffiliationState<T> extends BlocEvent<T> {
 
   bool isEmpty() => this is AffiliationsEmpty;
   bool isLoaded() => this is AffiliationsLoaded;
+  bool isFetched() => this is AffiliationsFetched;
+  bool isOnboarded() => this is UserOnboarded;
+  bool isAffiliated() => this is PersonnelAffiliated;
   bool isUnloaded() => this is AffiliationsUnloaded;
   bool isError() => this is AffiliationBlocError;
 }

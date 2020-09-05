@@ -20,14 +20,14 @@ abstract class DepartmentRepository implements ConnectionAwareRepository<String,
   });
 }
 
-class DepartmentServiceException implements Exception {
-  DepartmentServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
-  }
+class DepartmentServiceException extends ServiceException {
+  DepartmentServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

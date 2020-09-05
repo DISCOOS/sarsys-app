@@ -1,12 +1,10 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -64,11 +62,6 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw IncidentServiceException(
       'Failed to create Incident ${state.value}',
@@ -83,11 +76,6 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw IncidentServiceException(
       'Failed to update Incident ${state.value}',
@@ -100,28 +88,11 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw IncidentServiceException(
       'Failed to delete Incident ${state.value}',
       response: response,
       stackTrace: StackTrace.current,
     );
-  }
-}
-
-class IncidentServiceException implements Exception {
-  IncidentServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'IncidentServiceException: $error, response: $response, stackTrace: $stackTrace';
   }
 }

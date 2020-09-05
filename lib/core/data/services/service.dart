@@ -192,6 +192,7 @@ class ServiceResponse<T> extends Equatable {
   bool get is404 => statusCode == HttpStatus.notFound;
   bool get is409 => statusCode == HttpStatus.conflict;
   bool get is500 => statusCode == HttpStatus.internalServerError;
+  bool get is503 => statusCode == HttpStatus.serviceUnavailable;
 
   @override
   String toString() {
@@ -212,6 +213,21 @@ class ServiceException implements Exception {
   final Object error;
   final StackTrace stackTrace;
   final ServiceResponse response;
+
+  bool get is200 => response.is200;
+  bool get is201 => response.is201;
+  bool get is202 => response.is202;
+  bool get is204 => response.is204;
+  bool get is206 => response.is206;
+  bool get is400 => response.is400;
+  bool get is401 => response.is401;
+  bool get is403 => response.is403;
+  bool get is404 => response.is404;
+  bool get is409 => response.is409;
+  bool get is500 => response.is500;
+  bool get is503 => response.is503;
+
+  ConflictModel get conflict => response.conflict;
 
   @override
   String toString() {

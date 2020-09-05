@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
@@ -120,11 +119,6 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     var response = await service.create(_ouuid, state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonnelServiceException(
       'Failed to create Personnel ${state.value}',
@@ -140,11 +134,6 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonnelServiceException(
       'Failed to update Personnel ${state.value}',
@@ -158,11 +147,6 @@ class PersonnelRepositoryImpl extends ConnectionAwareRepository<String, Personne
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw PersonnelServiceException(
       'Failed to delete Personnel ${state.value}',

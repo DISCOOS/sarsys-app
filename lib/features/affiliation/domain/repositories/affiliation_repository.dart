@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -35,10 +37,19 @@ abstract class AffiliationRepository implements ConnectionAwareRepository<String
   /// Find [Affiliation]s matching given query
   Iterable<Affiliation> find({bool where(Affiliation affiliation)});
 
+  /// Init from local storage, overwrite states
+  /// with given affiliations if given. Returns
+  /// affiliation after initialisation
+  Future<List<Affiliation>> load({
+    bool force = true,
+    Completer<Iterable<Affiliation>> onRemote,
+  });
+
   /// Fetch given affiliations
   Future<List<Affiliation>> fetch(
     List<String> uuids, {
     bool replace = false,
+    Completer<Iterable<Affiliation>> onRemote,
   });
 
   /// Search for affiliations matching given [filter]
@@ -48,21 +59,16 @@ abstract class AffiliationRepository implements ConnectionAwareRepository<String
     int limit,
     int offset,
   });
-
-  /// Init from local storage, overwrite states
-  /// with given affiliations if given. Returns
-  /// affiliation after initialisation
-  Future<List<Affiliation>> init({List<Affiliation> affiliations});
 }
 
-class AffiliationServiceException implements Exception {
-  AffiliationServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
-  }
+class AffiliationServiceException extends ServiceException {
+  AffiliationServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

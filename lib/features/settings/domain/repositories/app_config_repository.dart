@@ -31,16 +31,14 @@ abstract class AppConfigRepository implements ConnectionAwareRepository<int, App
   });
 }
 
-class AppConfigServiceException extends RepositoryException {
+class AppConfigServiceException extends ServiceException {
   AppConfigServiceException(
     Object error, {
-    this.response,
+    ServiceResponse response,
     StackTrace stackTrace,
-  }) : super(error, stackTrace: stackTrace);
-  final ServiceResponse response;
-
-  @override
-  String toString() {
-    return 'AppConfigServiceException { $message, response: $response, stackTrace: $stackTrace}';
-  }
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 }

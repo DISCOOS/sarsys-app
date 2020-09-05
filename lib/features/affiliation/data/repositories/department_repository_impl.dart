@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
@@ -65,11 +64,6 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
     var response = await service.create(state.value);
     if (response.is201) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DepartmentServiceException(
       'Failed to create Department ${state.value}',
@@ -84,11 +78,6 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
       return response.body;
     } else if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DepartmentServiceException(
       'Failed to update Department ${state.value}',
@@ -101,11 +90,6 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
     var response = await service.delete(state.value.uuid);
     if (response.is204) {
       return state.value;
-    } else if (response.is409) {
-      return MergeStrategy(this)(
-        state,
-        response.error as ConflictModel,
-      );
     }
     throw DepartmentServiceException(
       'Failed to delete Department ${state.value}',

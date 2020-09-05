@@ -33,7 +33,7 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
           active,
         ]);
 
-  final AggregateRef<Person> person;
+  final Person person;
   final AggregateRef<Organisation> org;
   final AggregateRef<Division> div;
   final AggregateRef<Department> dep;
@@ -75,13 +75,15 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
   Affiliation copyWith({
     String uuid,
     bool active,
+    Person person,
     AffiliationType type,
     AggregateRef<Division> div,
-    AggregateRef<Person> person,
     AggregateRef<Department> dep,
     AggregateRef<Organisation> org,
     AffiliationStandbyStatus status,
   });
+
+  Affiliation withPerson(Person person, {bool keep = true});
 }
 
 enum AffiliationType {

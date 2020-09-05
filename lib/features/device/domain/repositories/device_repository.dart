@@ -22,11 +22,16 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   });
 }
 
-class DeviceServiceException implements Exception {
-  DeviceServiceException(this.error, {this.response, this.stackTrace});
-  final Object error;
-  final StackTrace stackTrace;
-  final ServiceResponse response;
+class DeviceServiceException extends ServiceException {
+  DeviceServiceException(
+    Object error, {
+    ServiceResponse response,
+    StackTrace stackTrace,
+  }) : super(
+          error,
+          response: response,
+          stackTrace: stackTrace,
+        );
 
   @override
   String toString() {

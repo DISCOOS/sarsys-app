@@ -64,7 +64,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     AggregateRef<Affiliation> affiliation,
   });
 
-  Personnel withPerson(Person person);
+  Personnel withPerson(Person person, {bool keep = true});
 }
 
 enum PersonnelStatus { alerted, enroute, onscene, leaving, retired }
