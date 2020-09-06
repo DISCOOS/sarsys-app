@@ -488,7 +488,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _scheduleInitLocation(ValueChanged<LatLng> callback) {
     if (_locationRequest == null) {
       _locationRequest = _locationController.configure();
-      _locationRequest.then(callback);
+      _locationRequest.then((point) {
+        if (mounted) {
+          callback(point);
+        }
+      });
     }
   }
 
@@ -627,24 +631,26 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   List<LayerOptions> _setLayerOptions() {
-    final tool = _mapToolController?.of<MeasureTool>();
-    _layerOptions
-      ..clear()
-      ..addAll([
-        _buildBaseMapLayer(),
-        if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
-        if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
-        if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
-        if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
-        if (_searchMatch != null) _buildMatchOptions(_searchMatch),
-        if (widget.withControlsLocateMe && _locationController?.isReady == true)
-          _locationController.build(
-            withTail: _useLayers.contains(LAYER_TRACKING),
-          ),
-        if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
-        if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
-        if (tool != null && tool.active()) MeasureLayerOptions(tool),
-      ]);
+    if (mounted) {
+      final tool = _mapToolController?.of<MeasureTool>();
+      _layerOptions
+        ..clear()
+        ..addAll([
+          _buildBaseMapLayer(),
+          if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
+          if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
+          if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
+          if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
+          if (_searchMatch != null) _buildMatchOptions(_searchMatch),
+          if (widget.withControlsLocateMe && _locationController?.isReady == true)
+            _locationController.build(
+              withTail: _useLayers.contains(LAYER_TRACKING),
+            ),
+          if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
+          if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
+          if (tool != null && tool.active()) MeasureLayerOptions(tool),
+        ]);
+    }
     return _layerOptions;
   }
 
