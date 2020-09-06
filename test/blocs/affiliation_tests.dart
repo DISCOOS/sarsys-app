@@ -152,7 +152,7 @@ void main() async {
         );
 
         // Act
-        await _authenticate(harness);
+        await _authenticate(harness, exists: true);
 
         // Assert
         await expectThroughLater(harness.affiliationBloc, emits(isA<UserOnboarded>()));
@@ -329,6 +329,7 @@ Future _seed(
 Future _authenticate(
   BlocTestHarness harness, {
   bool reset = true,
+  bool exists = false,
 }) async {
   await harness.userBloc.login(
     username: UNTRUSTED,
@@ -348,19 +349,20 @@ Future _authenticate(
       isTrue,
     )),
   );
-  await expectStorageStatusLater(
-    harness.affiliationBloc.persons.values.first.uuid,
-    harness.affiliationBloc.persons,
-    StorageStatus.created,
-    remote: true,
-  );
-  await expectStorageStatusLater(
-    harness.affiliationBloc.repo.values.first.uuid,
-    harness.affiliationBloc.repo,
-    StorageStatus.created,
-    remote: true,
-  );
-
+  if (!exists) {
+    await expectStorageStatusLater(
+      harness.affiliationBloc.persons.values.first.uuid,
+      harness.affiliationBloc.persons,
+      StorageStatus.created,
+      remote: true,
+    );
+    await expectStorageStatusLater(
+      harness.affiliationBloc.repo.values.first.uuid,
+      harness.affiliationBloc.repo,
+      StorageStatus.created,
+      remote: true,
+    );
+  }
   if (reset) {
     clearInteractions(harness.organisationService);
   }

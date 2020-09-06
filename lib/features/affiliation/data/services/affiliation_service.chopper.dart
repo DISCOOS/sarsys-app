@@ -17,8 +17,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   final definitionType = AffiliationServiceImpl;
 
   @override
-  Future<Response<Affiliation>> get(
-      {String uuid, List<String> expand = const []}) {
+  Future<Response<Affiliation>> get({String uuid, String expand}) {
     final $url = '/affiliations/$uuid';
     final $params = <String, dynamic>{'expand': expand};
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
@@ -26,15 +25,17 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Affiliation>>> search(String filter,
-      {int offset = 0, int limit = 20, List<String> expand = const []}) {
+  Future<Response<PagedList<Affiliation>>> getAll(String uuids, {String expand, int limit = 20, int offset = 0}) {
     final $url = '/affiliations';
-    final $params = <String, dynamic>{
-      'filter': filter,
-      'offset': offset,
-      'limit': limit,
-      'expand': expand
-    };
+    final $params = <String, dynamic>{'uuids': uuids, 'expand': expand, 'limit': limit, 'offset': offset};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<Affiliation>, Affiliation>($request);
+  }
+
+  @override
+  Future<Response<PagedList<Affiliation>>> search(String filter, {String expand, int limit = 20, int offset = 0}) {
+    final $url = '/affiliations';
+    final $params = <String, dynamic>{'filter': filter, 'expand': expand, 'limit': limit, 'offset': offset};
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<PagedList<Affiliation>, Affiliation>($request);
   }

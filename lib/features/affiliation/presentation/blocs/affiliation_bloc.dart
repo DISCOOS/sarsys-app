@@ -856,7 +856,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     List<Affiliation> values, {
     @required bool isRemote,
   }) {
-    final updated = values.where((a) => a.person != null).map((a) => _toPerson(a, isRemote: isRemote)).toList();
+    final updated = values.whereNotNull((a) => a.person).map((a) => _toPerson(a, isRemote: isRemote)).toList();
     return updated;
   }
 

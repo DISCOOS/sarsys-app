@@ -148,7 +148,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
             },
             groupBy: (personnel) {
               final affiliation = _toAffiliation(personnel);
-              final org = affiliationBloc.orgs[affiliation.org?.uuid];
+              final org = affiliationBloc.orgs[affiliation?.org?.uuid];
               return AffiliationGroupEntry(
                 prefix: org?.prefix ?? '0',
                 name: affiliationBloc

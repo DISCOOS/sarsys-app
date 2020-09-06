@@ -59,7 +59,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
     // Keep personnel in sync with person
     repo.onValue(
-      onGet: (value) => value.withPerson(affiliationBloc.persons[value.person?.uuid]),
+      onGet: (value) {
+        final affiliation = affiliationBloc.repo[value.affiliation?.uuid];
+        return value.withPerson(affiliation?.person);
+      },
     );
   }
 
@@ -109,7 +112,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         final duplicate = event.from.value.uuid;
         final existing = PersonModel.fromJson(event.conflict.base);
         find(
-          where: (personnel) => personnel.person.uuid == duplicate,
+          where: (personnel) => personnel.person?.uuid == duplicate,
         ).map((personnel) => personnel.withPerson(existing)).forEach(update);
       }
     } catch (error, stackTrace) {

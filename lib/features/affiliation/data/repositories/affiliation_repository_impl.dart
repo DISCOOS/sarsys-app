@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
@@ -11,8 +13,8 @@ import 'package:SarSys/features/affiliation/domain/repositories/division_reposit
 import 'package:SarSys/features/affiliation/domain/repositories/organisation_repository.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:flutter/foundation.dart';
 
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -67,6 +69,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     );
     return _fetch(
       keys,
+      replace: true,
       onRemote: onRemote,
     );
   }
@@ -106,38 +109,25 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
   }) async {
     scheduleLoad(
       () async {
-        final values = <Affiliation>[];
-        final errors = <ServiceResponse>[];
-        for (var uuid in uuids) {
-          // Do not attempt to load local values
-          final state = getState(uuid);
-          if (state == null || state?.shouldLoad == true) {
-            final response = await service.get(uuid);
-            if (response.is200) {
-              values.add(response.body);
-            } else {
-              errors.add(response);
-            }
-          } else {
-            values.add(state.value);
-          }
-        }
-        if (errors.isNotEmpty) {
-          return ServiceResponse<List<Affiliation>>(
-            body: values,
-            error: errors,
-            statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
-            reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
+        // Keep local values! Will be
+        // overwritten by remote values
+        // if exists. If replace = true,
+        // this will remove local values
+        // with remote state.
+        final next = states.values.where((state) => state.isLocal).map((state) => state.value).toList();
+        final response = await service.getAll(uuids);
+        if (response.is200) {
+          next.addAll(response.body);
+          return ServiceResponse.ok<List<Affiliation>>(
+            body: next,
           );
         }
-        return ServiceResponse.ok<List<Affiliation>>(
-          body: values,
-        );
+        return response;
       },
       onResult: onRemote,
       shouldEvict: replace,
     );
-    return uuids.map((uuid) => get(uuid)).toList();
+    return uuids.map((uuid) => get(uuid)).whereNotNull().toList();
   }
 
   Future<List<Affiliation>> _search(
@@ -173,7 +163,7 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
 
   @override
   Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) => _fetch(
-        previous.map((a) => a.uuid).toList(),
+        (previous ?? values).map((a) => a.uuid).toList(),
         replace: true,
       );
 

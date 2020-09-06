@@ -158,14 +158,14 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Get all states as unmodifiable map
   Map<K, StorageState<T>> get states => Map.unmodifiable(
         isReady
-            ? _states.toMap().map((key, value) => MapEntry(
-                key,
-                _StorageState<T>(
-                  (value) => _onGet == null ? value : _onGet(value),
-                  value,
-                )))
+            ? _states.toMap().map((key, value) => MapEntry(key, _StorageState<T>(_toValue, value)))
             : <K, StorageState<T>>{},
       );
+
+  T _toValue(T value) {
+    return _onGet == null ? value : _onGet(value);
+  }
+
   Box<StorageState<T>> _states;
 
   /// Get all (key,value)-pairs as unmodifiable map
@@ -596,6 +596,14 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     );
   }
 
+  /// Should handle missing dependency.
+  ///
+  /// Default handling is to return current state.
+  ///
+  /// Any [Exception] will be forwarded to [onError]
+  @visibleForOverriding
+  Future<StorageState<T>> onNotFound(StorageState<T> state, ServiceResponse response) => Future.value(state);
+
   /// Should handle errors
   @mustCallSuper
   @visibleForOverriding
@@ -858,6 +866,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       } on ServiceException catch (e) {
         if (e.is409) {
           return onResolve(state, e.response);
+        } else if (e.is404) {
+          return onNotFound(state, e.response);
         }
         rethrow;
       }

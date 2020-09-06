@@ -145,6 +145,17 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         message: "Affiliation not found: $uuid",
       );
     });
+    when(mock.getAll(any)).thenAnswer((_) async {
+      await _doThrottle();
+      final uuids = List<String>.from(_.positionalArguments[0]);
+      final affiliations = uuids
+          .where((uuid) => affiliationRepo.containsKey(uuid))
+          .map((uuid) => _withPerson(affiliationRepo, uuid, persons))
+          .toList();
+      return ServiceResponse.ok(
+        body: affiliations,
+      );
+    });
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
       final affiliation = _toAffiliation(_);

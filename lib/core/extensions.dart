@@ -35,4 +35,17 @@ extension MapX on Map {
 
 extension IterableX<T> on Iterable<T> {
   T get firstOrNull => this.isNotEmpty ? this.first : null;
+  Iterable<T> whereNotNull([dynamic map(T element)]) =>
+      where((element) => map == null ? element != null : map(element) != null);
+
+  Iterable<T> toPage({int offset = 0, int limit = 20}) {
+    if (offset < 0 || limit < 0) {
+      throw ArgumentError('Offset and limit can not be negative');
+    } else if (offset > length) {
+      throw ArgumentError('Index out of bounds: offset $offset > length $length');
+    } else if (offset == 0 && limit == 0) {
+      return toList();
+    }
+    return skip(offset).take(limit);
+  }
 }

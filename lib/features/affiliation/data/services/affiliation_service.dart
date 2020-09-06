@@ -1,8 +1,11 @@
 import 'dart:async';
+
+import 'package:chopper/chopper.dart';
+
 import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:chopper/chopper.dart';
+import 'package:SarSys/core/extensions.dart';
 
 part 'affiliation_service.chopper.dart';
 
@@ -20,7 +23,7 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
         filter,
         offset: offset,
         limit: limit,
-        expand: const ['person'],
+        expand: 'person',
       ),
     );
   }
@@ -29,9 +32,39 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
     return Api.from<Affiliation, Affiliation>(
       await delegate.get(
         uuid: uuid,
-        expand: const ['person'],
+        expand: 'person',
       ),
     );
+  }
+
+  Future<ServiceResponse<List<Affiliation>>> _fetch(List<String> uuids, int offset, int limit) async {
+    return Api.from<PagedList<Affiliation>, List<Affiliation>>(
+      await delegate.getAll(
+        // Limit query string length
+        uuids?.toPage(offset: offset, limit: limit)?.join(','),
+        expand: 'person',
+        offset: 0,
+        limit: limit,
+      ),
+    );
+  }
+
+  Future<ServiceResponse<List<Affiliation>>> getAll(List<String> uuids) async {
+    var offset = 0;
+    final limit = 20;
+    final body = <Affiliation>[];
+    // This method limits the length of each query
+    var response = await _fetch(uuids, offset, limit);
+    while (response.is200) {
+      body.addAll(response.body);
+      offset += limit;
+      if (offset < uuids.length) {
+        response = await _fetch(uuids, offset, limit);
+      } else {
+        return ServiceResponse.ok(body: body);
+      }
+    }
+    return response;
   }
 
   Future<ServiceResponse<Affiliation>> create(Affiliation affiliation) async {
@@ -69,15 +102,23 @@ abstract class AffiliationServiceImpl extends ChopperService {
   @Get(path: '{uuid}')
   Future<Response<Affiliation>> get({
     @Path('uuid') String uuid,
-    @Query('expand') List<String> expand = const [],
+    @Query('expand') String expand,
+  });
+
+  @Get()
+  Future<Response<PagedList<Affiliation>>> getAll(
+    @Query('uuids') String uuids, {
+    @Query('expand') String expand,
+    @Query('limit') int limit = 20,
+    @Query('offset') int offset = 0,
   });
 
   @Get()
   Future<Response<PagedList<Affiliation>>> search(
     @Query('filter') String filter, {
-    @Query('offset') int offset = 0,
+    @Query('expand') String expand,
     @Query('limit') int limit = 20,
-    @Query('expand') List<String> expand = const [],
+    @Query('offset') int offset = 0,
   });
 
   @Post()

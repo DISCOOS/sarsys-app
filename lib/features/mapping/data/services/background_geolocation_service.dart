@@ -188,7 +188,7 @@ class BackgroundGeolocationService implements LocationService {
     _duuid = duuid ?? _duuid;
     _token = token ?? _token;
     _share = share ?? _share;
-    debugPrint(_toUrl());
+    debugPrint('bg.url: ${_toUrl()}');
     return bg.Config(
       batchSync: true,
       maxBatchSize: 10,
