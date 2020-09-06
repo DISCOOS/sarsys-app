@@ -6,12 +6,15 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
   ActivityBloc({@required BlocEventBus bus}) : super(bus: bus) {
     assert(bus != null, "bus can not be null");
+    subscribe<UserUnset>(_processAuth);
+    subscribe<UserAuthenticated>(_processAuth);
     subscribe<AppConfigUpdated>(_processConfig);
     subscribe<PersonnelsLoaded>(_processPersonnel);
     subscribe<PersonnelCreated>(_processPersonnel);
@@ -110,16 +113,18 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       LocationService.exists ? (LocationService().options ?? _profile.options) : _profile.options;
 
   void _apply(AppConfig config, LocationOptions options) {
-    final service = LocationService(options: options);
-    if (_isConfigChanged(config, options)) {
-      service.configure(
-        share: isTrackable,
-        options: _toOptions(
-          config,
-          defaultAccuracy: options.accuracy,
-          debug: service.options?.debug ?? kDebugMode,
-        ),
-      );
+    if (_isReady) {
+      final service = LocationService(options: options);
+      if (_isConfigChanged(config, options)) {
+        service.configure(
+          share: isTrackable,
+          options: _toOptions(
+            config,
+            defaultAccuracy: options.accuracy,
+            debug: service.options?.debug ?? kDebugMode,
+          ),
+        );
+      }
     }
   }
 
@@ -164,6 +169,12 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     dispatch(
       ChangeActivityProfile(_profile, config),
     );
+  }
+
+  var _isReady = false;
+
+  void _processAuth(BaseBloc bloc, UserState state) {
+    _isReady = state.shouldLoad();
   }
 }
 

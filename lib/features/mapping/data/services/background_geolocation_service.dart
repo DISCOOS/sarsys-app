@@ -118,7 +118,7 @@ class BackgroundGeolocationService implements LocationService {
 
   @override
   set token(AuthToken token) {
-    if (_isReady.value) {
+    if (_isReady.value && _isConfigChanged(token: token)) {
       bg.BackgroundGeolocation.setConfig(
         _toConfig(token: token),
       );
@@ -149,34 +149,44 @@ class BackgroundGeolocationService implements LocationService {
           );
       if (shouldConfigure) {
         _options = options ?? _options;
-        bg.BackgroundGeolocation.ready(_toConfig(
+        var state = await bg.BackgroundGeolocation.state;
+        final config = _toConfig(
           duuid: duuid,
           token: token,
           share: share,
           debug: debug,
-        )).then((bg.State state) async {
-          if (!state.enabled) {
-            await bg.BackgroundGeolocation.start();
-          }
-          // Only first time
-          if (!isReady.value) {
-            _positions = await backlog();
-            await bg.BackgroundGeolocation.setOdometer(_odometer);
-            _subscribe();
-          }
-          _notify(ConfigureEvent(
-            _duuid,
-            _options,
-          ));
-          if (!wasSharing && isSharing) {
-            await push();
-          }
-        });
+        );
+        if (state.isFirstBoot) {
+          state = await bg.BackgroundGeolocation.ready(config);
+        } else {
+          state = await bg.BackgroundGeolocation.setConfig(config);
+        }
+        await _onConfigured(state, wasSharing);
       }
     } else {
       await dispose();
     }
     return _status;
+  }
+
+  Future _onConfigured(bg.State state, bool wasSharing) async {
+    if (!state.enabled) {
+      await bg.BackgroundGeolocation.start();
+    }
+    // Only first time
+    if (!isReady.value) {
+      _positions = await backlog();
+      await bg.BackgroundGeolocation.setOdometer(_odometer);
+      _subscribe();
+    }
+    if (!wasSharing && isSharing) {
+      await push();
+    }
+    _notify(ConfigureEvent(
+      _duuid,
+      _options,
+    ));
+    return Future.value();
   }
 
   bg.Config _toConfig({
