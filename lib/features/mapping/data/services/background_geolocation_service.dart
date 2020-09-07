@@ -33,6 +33,8 @@ class BackgroundGeolocationService implements LocationService {
   static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
+  Future _configuring;
+
   @override
   LocationOptions get options => _options;
   LocationOptions _options;
@@ -134,6 +136,7 @@ class BackgroundGeolocationService implements LocationService {
     bool force = false,
     LocationOptions options,
   }) async {
+    // Get current status
     _status = await Permission.locationWhenInUse.status;
 
     if ([PermissionStatus.granted].contains(_status)) {
@@ -149,17 +152,23 @@ class BackgroundGeolocationService implements LocationService {
           );
       if (shouldConfigure) {
         _options = options ?? _options;
-        var state = await bg.BackgroundGeolocation.state;
+        // Wait for previous to complete or check plugin
+        var state = await (_configuring ?? bg.BackgroundGeolocation.state);
         final config = _toConfig(
           duuid: duuid,
           token: token,
           share: share,
           debug: debug,
         );
-        if (state.isFirstBoot) {
-          state = await bg.BackgroundGeolocation.ready(config);
-        } else {
-          state = await bg.BackgroundGeolocation.setConfig(config);
+        try {
+          if (state.isFirstBoot) {
+            _configuring = bg.BackgroundGeolocation.ready(config);
+          } else {
+            _configuring = bg.BackgroundGeolocation.setConfig(config);
+          }
+          state = await _configuring;
+        } finally {
+          _configuring = null;
         }
         await _onConfigured(state, wasSharing);
       }
