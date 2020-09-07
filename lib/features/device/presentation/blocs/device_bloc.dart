@@ -27,7 +27,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         UpdatableBloc<Device>,
         DeletableBloc<Device>,
         UnloadableBloc<Iterable<Device>>,
-        ConnectionAwareBloc {
+        ConnectionAwareBloc<String, Device> {
   ///
   /// Default constructor
   ///
@@ -173,11 +173,14 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   /// Get [DeviceRepository]
   final DeviceRepository repo;
 
+  /// Get all [Device]s
+  Iterable<Device> get values => repo.values;
+
+  /// Get [Device] from [uuid]
+  Device operator [](String uuid) => repo[uuid];
+
   /// Get [DeviceService]
   DeviceService get service => repo.service;
-
-  /// Get devices
-  Map<String, Device> get devices => repo.map;
 
   /// Find device for this app
   Device findThisApp() {
@@ -212,7 +215,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     }
   }
 
-  /// Fetch [devices] from [service]
+  /// Fetch [map] from [service]
   @override
   Future<Iterable<Device>> load() async {
     _assertState();
@@ -264,7 +267,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     );
   }
 
-  /// Unload [devices] from local storage
+  /// Unload [map] from local storage
   @override
   Future<Iterable<Device>> unload() {
     return dispatch<Iterable<Device>>(

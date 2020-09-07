@@ -107,7 +107,6 @@ class DevicesPageState extends State<DevicesPage> {
 
   List<Device> _filteredDevices() => context
       .bloc<DeviceBloc>()
-      .devices
       .values
       .where((device) =>
           _filter.contains(device.type) &&

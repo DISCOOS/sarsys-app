@@ -24,7 +24,7 @@ import 'package:flutter/foundation.dart';
 typedef void TrackingCallback(VoidCallback fn);
 
 class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBlocError>
-    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>>, ConnectionAwareBloc {
+    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>>, ConnectionAwareBloc<String, Tracking> {
   ///
   /// Default constructor
   ///
@@ -89,6 +89,12 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
 
   /// Get [TrackingRepository]
   final TrackingRepository repo;
+
+  /// Get all [Tracking]s
+  Iterable<Tracking> get values => repo.values;
+
+  /// Get [Tracking] from [uuid]
+  Tracking operator [](String uuid) => repo[uuid];
 
   /// Get [TrackingService]
   TrackingService get service => repo.service;
@@ -436,8 +442,8 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       repo.containsKey(tuuid) && !exclude.contains(repo[tuuid].status)
           ? repo[tuuid]
               .sources
-              .where((source) => deviceBloc.devices.containsKey(source.uuid))
-              .map((source) => deviceBloc.devices[source.uuid])
+              .where((source) => deviceBloc.repo.containsKey(source.uuid))
+              .map((source) => deviceBloc.repo[source.uuid])
               .toList()
           : [];
 

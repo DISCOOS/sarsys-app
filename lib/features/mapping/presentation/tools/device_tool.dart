@@ -34,7 +34,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   }) : _active = active;
 
   @override
-  Iterable<Device> get targets => bloc.deviceBloc.devices.values;
+  Iterable<Device> get targets => bloc.deviceBloc.values;
 
   @override
   void doProcessTap(BuildContext context, List<Device> units) {

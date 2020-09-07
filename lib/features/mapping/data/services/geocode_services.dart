@@ -377,10 +377,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in unit
           _prepare(unit.searchable).contains(match) ||
           // Search in devices tracked with this unit
-          controller
-              .bloc<TrackingBloc>()
-              .devices(unit.tracking.uuid)
-              .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
+          controller.bloc<TrackingBloc>().devices(unit.tracking.uuid).any((device) => _prepare(device).contains(match)))
       .map((unit) => AddressLookup(
             query: query,
             point: controller.bloc<TrackingBloc>().trackings[unit.tracking.uuid].position?.geometry,
@@ -401,10 +398,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           // Search in personnel
           _prepare(p.searchable).contains(match) ||
           // Search in devices tracked with this personnel
-          controller
-              .bloc<TrackingBloc>()
-              .devices(p.tracking.uuid)
-              .any((id) => _prepare(controller.bloc<DeviceBloc>().devices[id]).contains(match)))
+          controller.bloc<TrackingBloc>().devices(p.tracking.uuid).any((device) => _prepare(device).contains(match)))
       .map((p) => AddressLookup(
             query: query,
             point: controller.bloc<TrackingBloc>().find(p).firstOrNull?.position?.geometry,
@@ -416,7 +410,7 @@ class ObjectGeocoderService with GeocodeSearchQuery implements GeocodeService {
           ));
 
   Iterable<AddressLookup> _findDevices(RegExp match, String query) =>
-      controller.bloc<DeviceBloc>().devices.values.where((p) => _prepare(p).contains(match)).map((p) => AddressLookup(
+      controller.bloc<DeviceBloc>().values.where((p) => _prepare(p).contains(match)).map((p) => AddressLookup(
             query: query,
             point: p.position?.geometry,
             title: p.name,

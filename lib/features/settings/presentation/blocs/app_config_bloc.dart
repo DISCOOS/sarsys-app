@@ -13,7 +13,11 @@ import 'package:flutter/foundation.dart';
 typedef void AppConfigCallback(VoidCallback fn);
 
 class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfigBlocError>
-    with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig>, ConnectionAwareBloc {
+    with
+        InitableBloc<AppConfig>,
+        LoadableBloc<AppConfig>,
+        UpdatableBloc<AppConfig>,
+        ConnectionAwareBloc<int, AppConfig> {
   AppConfigBloc(this.repo, BlocEventBus bus) : super(bus: bus);
   final AppConfigRepository repo;
 
@@ -30,6 +34,12 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
 
   /// Get config
   AppConfig get config => repo.config;
+
+  /// Get all [AppConfig]s
+  Iterable<AppConfig> get values => repo.values;
+
+  /// Get [AppConfig] from [uuid]
+  AppConfig operator [](int uuid) => repo[uuid];
 
   /// Initialize config from [service]
   @override

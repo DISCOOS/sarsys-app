@@ -32,7 +32,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         UpdatableBloc<Unit>,
         DeletableBloc<Unit>,
         UnloadableBloc<List<Unit>>,
-        ConnectionAwareBloc {
+        ConnectionAwareBloc<String, Unit> {
   ///
   /// Default constructor
   ///
@@ -105,6 +105,9 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get [Unit] from [uuid]
   Unit operator [](String uuid) => repo[uuid];
 
+  /// Get all [Unit]s
+  Iterable<Unit> get values => repo.values;
+
   /// Get [UnitService]
   UnitService get service => repo.service;
 
@@ -114,7 +117,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Check if this bloc is ready
   bool get isReady => repo.isReady;
 
-  /// [Operation] that manages given [devices]
+  /// [Operation] that manages given [map]
   String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
 
   @override

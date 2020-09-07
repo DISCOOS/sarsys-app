@@ -64,6 +64,10 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     );
     if (result == null) return dartz.Left(false);
 
+    // Issue #77: This will prevent 409 Conflicts
+    // Should wait on load if pending.
+    await params.context.bloc<AffiliationBloc>().onLoadedAsync();
+
     // Will create affiliation if not exists
     final affiliation = params.affiliation ??
         await params.context.bloc<AffiliationBloc>().temporary(
@@ -107,6 +111,10 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     // Register new personnel?
     if (params.data == null) {
+      // Issue #77: This will prevent 409 Conflicts
+      // Should wait on load if pending.
+      await params.context.bloc<AffiliationBloc>().onLoadedAsync();
+
       // Only show selectable affiliations
       final existing = _selectables(params);
       final affiliation = await selectOrCreateAffiliation(

@@ -105,10 +105,10 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   int get length => isReady ? _states.length : 0;
 
   /// Check if repository is online
-  get isOnline => _shouldSchedule();
+  bool get isOnline => _shouldSchedule();
 
   /// Check if repository is offline
-  get isOffline => connectivity.isOffline;
+  bool get isOffline => connectivity.isOffline;
 
   /// Find [T]s matching given query
   Iterable<T> find({bool where(T aggregate)}) => isReady ? values.where(where) : [];
@@ -142,7 +142,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   T get(K key) => getState(key)?.value;
 
   /// Get state from [key]
-  StorageState<T> getState(K key) => isReady && _isNotNull(key) ? _states?.get(key) : null;
+  StorageState<T> getState(K key) =>
+      isReady && _isNotNull(key) && containsKey(key) ? _StorageState<T>(_toValue, _states?.get(key)) : null;
   bool _isNotNull(K key) => key != null;
 
   /// Get backlog of states pending push to a backend API
@@ -226,6 +227,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return false;
   }
 
+  /// Check if reference exists local only
   bool _isRefLocal(AggregateRef ref) {
     final state = dependencies
         .where((dep) => dep.containsKey(ref.uuid))
@@ -241,6 +243,80 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Get boc
   static String toBoxName<T>({String postfix, Type runtimeType}) =>
       ['${runtimeType ?? typeOf<T>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
+
+  /// Check if repository
+  /// is loading data from
+  /// [service].
+  bool get isLoading => _isProcessingLoad || _loadQueue.isNotEmpty;
+
+  Completer<Iterable<T>> _onLoaded;
+
+  /// Wait on future completed when
+  /// loading is finished. If offline
+  /// or not loading this future
+  /// completes directly.
+  ///
+  /// Set [waitForOnline] to
+  /// [true] to wait until
+  /// connectivity is resumed.
+  ///
+  /// Set [waitFor] to limit the
+  /// amount of time to wait until
+  /// [values] are returned
+  /// regardless of [isLoading].
+  ///
+  /// Setting [fail] to [true] throws
+  /// a [RepositoryTimeoutException]
+  /// if [waitForOnline] is [false]
+  /// and repository [isOffline], or
+  /// if [waitFor] is given and
+  /// loading does not complete with
+  /// duration given by [waitFor].
+  ///
+  Future<Iterable<T>> onLoadedAsync({
+    Duration waitFor,
+    bool fail = false,
+    bool waitForOnline = false,
+  }) {
+    if (_onLoaded?.isCompleted == false) {
+      return _onLoaded.future;
+    }
+
+    _onLoaded = Completer<Iterable<T>>();
+    _awaitLoaded(
+      _onLoaded,
+      waitFor,
+      waitForOnline,
+      fail,
+    );
+    return _onLoaded.future;
+  }
+
+  void _awaitLoaded(Completer<Iterable<T>> completer, Duration waitFor, bool waitForOnline, bool fail) async {
+    // Only wait if loading with connectivity
+    // online, or wait for online is requested
+    if (_shouldWait(waitForOnline)) {
+      await Future.delayed(waitFor ?? Duration(milliseconds: 50));
+    }
+
+    if (_shouldWait(waitForOnline)) {
+      if (fail) {
+        completer.completeError(
+          RepositoryTimeoutException(
+            "Waiting on $runtimeType to complete async loads failed",
+          ),
+          StackTrace.current,
+        );
+      } else {
+        _awaitLoaded(completer, waitFor, waitForOnline, fail);
+      }
+    } else if (!completer.isCompleted) {
+      assert(!_shouldWait(waitForOnline), "Should not be loading when online");
+      completer.complete(values);
+    }
+  }
+
+  bool _shouldWait(bool waitForOnline) => isLoading && (isOnline || isOffline && waitForOnline);
 
   /// Queue of [scheduleLoad] processed in FIFO manner.
   ///
@@ -455,7 +531,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   StorageState<T> _patch(StorageState next) {
     final key = toKey(next);
     assert(key != null, "key in $next not found");
-    final current = _states.get(key);
+    final current = getState(key);
     if (current != null) {
       final patches = JsonUtils.diff(current.value, next.value);
       if (patches.isNotEmpty) {
@@ -487,7 +563,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool put(StorageState<T> state) {
     checkState();
     final key = toKey(state);
-    final current = _states.get(key);
+    final current = getState(key);
     if (shouldDelete(next: state, current: current)) {
       _states.delete(key);
       // Can not logically exist anymore, remove it!
@@ -524,7 +600,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return current != null && current.status == state.status;
   }
 
-  /// Apply [value] an push to backend
+  /// Apply [value] an push to [service]
   Future<T> apply(T value) async {
     checkState();
     StorageState next = _toState(
@@ -544,7 +620,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     );
   }
 
-  /// Apply [state] and push to backend
+  /// Apply [state] and push to [service]
   @visibleForOverriding
   FutureOr<T> push(StorageState<T> state) {
     checkState();
@@ -558,27 +634,27 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return next.value;
   }
 
-  /// Should reset to remote states in backend
+  /// Should reset to remote states in [service]
   ///
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
   Future<Iterable<T>> onReset({Iterable<T> previous});
 
-  /// Should create state in backend
+  /// Should create state in [service]
   ///
   /// [SocketException] will push the state to [backlog]
   /// Any other [Exception] will be forwarded to [onError]
   @visibleForOverriding
   Future<T> onCreate(StorageState<T> state);
 
-  /// Should update state in backend
+  /// Should update state in [service]
   ///
   /// [SocketException] will push the state to [backlog]
   /// Any other [Exception] will be forwarded to [onError]
   @visibleForOverriding
   Future<T> onUpdate(StorageState<T> state);
 
-  /// Should delete state in backend
+  /// Should delete state in [service]
   ///
   /// [SocketException] will push the state to [backlog]
   /// Any other [Exception] will be forwarded to [onError]
@@ -639,7 +715,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
           _states.values.where((state) => state.isCreated).map((state) => toKey(state)),
         );
     }
-    return _states.values;
+    // Get mapped states
+    return states.values;
   }
 
   /// Queue of [StorageState] processed in FIFO manner.
@@ -651,12 +728,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// conditions.
   final _pushQueue = ListQueue<StorageState<T>>();
 
-  /// Schedule push state to backend
+  /// Schedule push state to [service]
   ///
   /// This method will return before any
-  /// result is received from the backend.
+  /// result is received from the [service].
   ///
-  /// Errors from backend are handled
+  /// Errors from [service] are handled
   /// automatically by appropriate actions.
   @protected
   T schedulePush(StorageState<T> next) {
@@ -878,7 +955,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   @protected
   StorageState<T> validate(StorageState<T> state) {
     final key = toKey(state);
-    final previous = isReady ? _states.get(key) : null;
+    final previous = isReady ? getState(key) : null;
     switch (state.status) {
       case StorageStatus.created:
         // Not allowed to create same value twice remotely
@@ -946,13 +1023,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     if (_isReady()) {
       final keys = [];
       _states.keys.where((key) => !retainKeys.contains(key)).forEach((key) {
-        final state = _states.get(key);
+        final state = getState(key);
         if (remote && state.isRemote) {
           keys.add(key);
-          evicted.add(_states.get(key).value);
+          evicted.add(state.value);
         } else if (local && state.isLocal) {
           keys.add(key);
-          evicted.add(_states.get(key).value);
+          evicted.add(state.value);
         }
       });
       _states.deleteAll(keys);
@@ -1107,8 +1184,10 @@ class MergeStrategy<S, T extends Aggregate, U extends Service> {
 
   /// Default is last writer wins by forwarding to [repository.onUpdate]
   Future<StorageState<T>> onExists(ConflictModel conflict, StorageState<T> state) async {
-    await repository.onUpdate(state);
-    return state;
+    return StorageState.updated(
+      await repository.onUpdate(state),
+      isRemote: true,
+    );
   }
 
   /// Default is to replace local value with remote value

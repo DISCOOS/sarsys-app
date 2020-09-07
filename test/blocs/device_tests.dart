@@ -17,7 +17,7 @@ void main() async {
   test(
     'Device bloc should be EMPTY and UNSET',
     () async {
-      expect(harness.deviceBloc.devices.length, 0, reason: "SHOULD BE empty");
+      expect(harness.deviceBloc.repo.length, 0, reason: "SHOULD BE empty");
       expect(harness.deviceBloc.initialState, isA<DevicesEmpty>(), reason: "Unexpected device state");
       expect(harness.deviceBloc, emits(isA<DevicesEmpty>()));
     },

@@ -60,7 +60,7 @@ class DeviceLayer extends MapPlugin {
   Widget _build(BuildContext context, Size size, DeviceLayerOptions options, MapState map) {
     final bounds = map.getBounds();
     final ids = options.bloc.asDeviceIds();
-    final devices = options.bloc.deviceBloc.devices.values.where(
+    final devices = options.bloc.deviceBloc.values.where(
       (device) => bounds.contains(toLatLng(device.position?.geometry)),
     );
     return devices.isEmpty

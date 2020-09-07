@@ -31,7 +31,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         UpdatableBloc<Personnel>,
         DeletableBloc<Personnel>,
         UnloadableBloc<List<Personnel>>,
-        ConnectionAwareBloc {
+        ConnectionAwareBloc<String, Personnel> {
   ///
   /// Default constructor
   ///
@@ -134,6 +134,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Get [PersonnelRepository]
   final PersonnelRepository repo;
 
+  /// Get all [Personnel]s
+  Iterable<Personnel> get values => repo.values;
+
   /// All repositories
   Iterable<ConnectionAwareRepository> get repos => [repo];
 
@@ -187,7 +190,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }) =>
       repo.count(exclude: exclude);
 
-  void _assertState() {
+  Future _assertState({bool waitOnLoaded = true}) {
     if (operationBloc.isUnselected) {
       throw PersonnelBlocException(
         "No operation selected. "
@@ -195,6 +198,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         state,
       );
     }
+    if (waitOnLoaded) {
+      // Issue #77: This will prevent 409 Conflicts
+      // Should wait on load if pending.
+      return onLoadedAsync();
+    }
+    return Future.value();
   }
 
   String _assertData(Personnel personnel) {
@@ -209,7 +218,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Fetch personnel from [service]
   Future<List<Personnel>> load() async {
-    _assertState();
+    await _assertState(waitOnLoaded: false);
     return dispatch<List<Personnel>>(
       LoadPersonnels(ouuid),
     );
@@ -217,50 +226,48 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Mobilize authenticated user for
   Future<Personnel> mobilizeUser() async {
-    _assertState();
+    await _assertState();
+    var personnel;
     final user = affiliationBloc.users.user;
-    if (user == null) {
-      throw StateError("No user authenticated");
+    if (user != null) {
+      var personnels = findUser(
+        userId: user.userId,
+        exclude: const [],
+      );
+      // Choose mobilized personnels over retired
+      final existing = personnels.firstWhere(
+        (p) => p.status != PersonnelStatus.retired,
+        orElse: () => personnels.firstOrNull,
+      );
+      if (existing == null) {
+        final affiliation = affiliationBloc.findUserAffiliation();
+        personnel = await create(PersonnelModel(
+          uuid: Uuid().v4(),
+          person: PersonModel(
+            uuid: affiliation.person?.uuid,
+            userId: user.userId,
+            fname: user.fname,
+            lname: user.lname,
+            phone: user.phone,
+            email: user.email,
+            temporary: affiliation.isUnorganized,
+          ),
+          status: PersonnelStatus.alerted,
+          affiliation: affiliation.toRef(),
+          tracking: TrackingUtils.newRef(),
+        ));
+      } else if (existing.status == PersonnelStatus.retired) {
+        personnel = update(existing.copyWith(
+          status: PersonnelStatus.alerted,
+        ));
+      }
     }
-    var personnels = findUser(
-      userId: user.userId,
-      exclude: const [],
-    );
-    // Choose mobilized personnels over retired
-    final existing = personnels.firstWhere(
-      (p) => p.status != PersonnelStatus.retired,
-      orElse: () => personnels.firstOrNull,
-    );
-    if (existing == null) {
-      final affiliation = affiliationBloc.findUserAffiliation();
-      final personnel = await create(PersonnelModel(
-        uuid: Uuid().v4(),
-        person: PersonModel(
-          uuid: affiliation.person?.uuid,
-          userId: user.userId,
-          fname: user.fname,
-          lname: user.lname,
-          phone: user.phone,
-          email: user.email,
-          temporary: affiliation.isUnorganized,
-        ),
-        status: PersonnelStatus.alerted,
-        affiliation: affiliation.toRef(),
-        tracking: TrackingUtils.newRef(),
-      ));
-      return personnel;
-    } else if (existing.status == PersonnelStatus.retired) {
-      return update(existing.copyWith(
-        status: PersonnelStatus.alerted,
-      ));
-    }
-    // Already mobilized
-    return existing;
+    return personnel;
   }
 
   /// Create given personnel
-  Future<Personnel> create(Personnel personnel) {
-    _assertState();
+  Future<Personnel> create(Personnel personnel) async {
+    await _assertState();
     _assertData(personnel);
     return dispatch<Personnel>(
       CreatePersonnel(
@@ -279,16 +286,16 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   /// Update given personnel
-  Future<Personnel> update(Personnel personnel) {
-    _assertState();
+  Future<Personnel> update(Personnel personnel) async {
+    await _assertState();
     return dispatch<Personnel>(
       UpdatePersonnel(personnel),
     );
   }
 
   /// Delete given personnel
-  Future<Personnel> delete(String uuid) {
-    _assertState();
+  Future<Personnel> delete(String uuid) async {
+    await _assertState();
     return dispatch<Personnel>(
       DeletePersonnel(repo[uuid]),
     );
@@ -381,7 +388,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     onComplete(
       [
         affiliationBloc.repo.onRemote(affiliation.uuid),
-        affiliationBloc.persons.onRemote(person.uuid),
         repo.onRemote(personnel.uuid),
       ],
       toState: (_) => PersonnelCreated(
@@ -399,6 +405,10 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   Future<Affiliation> _ensureAffiliation(CreatePersonnel command) async {
     final auuid = _assertData(command.data);
+
+    // Issue #77: Wait for loading to complete if online
+    await onLoadedAsync();
+
     if (!affiliationBloc.repo.containsKey(auuid)) {
       var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
       if (!affiliation.isAffiliate) {
@@ -518,7 +528,7 @@ class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   LoadPersonnels(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'LoadPersonnels {ouuid: $data}';
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
 class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
@@ -526,35 +536,35 @@ class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
   CreatePersonnel(this.ouuid, Personnel data) : super(data);
 
   @override
-  String toString() => 'CreatePersonnel {ouuid: $ouuid, personnel: $data}';
+  String toString() => '$runtimeType {ouuid: $ouuid, personnel: $data}';
 }
 
 class UpdatePersonnel extends PersonnelCommand<Personnel, Personnel> {
   UpdatePersonnel(Personnel data) : super(data);
 
   @override
-  String toString() => 'UpdatePersonnel {personnel: $data}';
+  String toString() => '$runtimeType {personnel: $data}';
 }
 
 class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
   DeletePersonnel(Personnel data) : super(data);
 
   @override
-  String toString() => 'DeletePersonnel {personnel: $data}';
+  String toString() => '$runtimeType {personnel: $data}';
 }
 
 class _InternalMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessage> {
   _InternalMessage(PersonnelMessage data) : super(data);
 
   @override
-  String toString() => '_InternalMessage {message: $data}';
+  String toString() => '$runtimeType {message: $data}';
 }
 
 class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   UnloadPersonnels(String ouuid) : super(ouuid);
 
   @override
-  String toString() => 'UnloadPersonnels {ouuid: $data}';
+  String toString() => '$runtimeType {ouuid: $data}';
 }
 
 class _StateChange extends PersonnelCommand<PersonnelState, Personnel> {
@@ -598,7 +608,7 @@ class PersonnelsEmpty extends PersonnelState<Null> {
   PersonnelsEmpty() : super(null);
 
   @override
-  String toString() => 'PersonnelsEmpty';
+  String toString() => '$runtimeType';
 }
 
 class PersonnelsLoaded extends PersonnelState<List<String>> {
@@ -621,7 +631,7 @@ class PersonnelCreated extends PersonnelState<Personnel> {
   bool isTracked() => data.tracking?.uuid != null;
 
   @override
-  String toString() => 'PersonnelCreated {data: $data, isRemote: $isRemote}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 class PersonnelUpdated extends PersonnelState<Personnel> {
@@ -639,7 +649,7 @@ class PersonnelUpdated extends PersonnelState<Personnel> {
   bool isStatusChanged() => data.status != previous.status;
 
   @override
-  String toString() => 'PersonnelUpdated {data: $data, previous: $previous, isRemote: $isRemote}';
+  String toString() => '$runtimeType {data: $data, previous: $previous, isRemote: $isRemote}';
 }
 
 class PersonnelDeleted extends PersonnelState<Personnel> {
@@ -649,14 +659,14 @@ class PersonnelDeleted extends PersonnelState<Personnel> {
   }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => 'PersonnelDeleted {data: $data, isRemote: $isRemote}';
+  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
 }
 
 class PersonnelsUnloaded extends PersonnelState<List<Personnel>> {
   PersonnelsUnloaded(List<Personnel> personnel) : super(personnel);
 
   @override
-  String toString() => 'PersonnelsUnloaded {data: $data}';
+  String toString() => '$runtimeType {data: $data}';
 }
 
 /// ---------------------

@@ -477,7 +477,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : DeviceScreen(device: device);
   }
 
-  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().devices;
+  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().repo.map;
 
   Widget _toHome() {
     Widget child;

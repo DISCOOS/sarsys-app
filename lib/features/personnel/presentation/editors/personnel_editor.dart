@@ -553,7 +553,6 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
       var pattern = query.toLowerCase();
       return context
           .bloc<DeviceBloc>()
-          .devices
           .values
           .where((device) =>
               // Add locally removed devices
@@ -671,7 +670,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Personnel _updatePersonnel(Affiliation affiliation) =>
       widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
-            affiliation: affiliation.toRef(),
+            affiliation: affiliation?.toRef(),
             fname: _formKey.currentState.value['fname'],
             lname: _formKey.currentState.value['lname'],
             phone: _formKey.currentState.value['phone'],

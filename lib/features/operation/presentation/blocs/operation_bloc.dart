@@ -21,7 +21,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
         UpdatableBloc<Operation>,
         DeletableBloc<Operation>,
         UnloadableBloc<List<Operation>>,
-        ConnectionAwareBloc {
+        ConnectionAwareBloc<String, Operation> {
   ///
   /// Default constructor
   ///
@@ -53,6 +53,12 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
   /// Get [OperationRepository]
   final OperationRepository repo;
+
+  /// Get all [Operation]s
+  Iterable<Operation> get values => repo.values;
+
+  /// Get [Operation] from [uuid]
+  Operation operator [](String uuid) => repo[uuid];
 
   /// All repositories
   Iterable<ConnectionAwareRepository> get repos => [incidents, repo];

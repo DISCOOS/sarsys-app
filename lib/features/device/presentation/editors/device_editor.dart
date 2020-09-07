@@ -180,7 +180,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       validators: [
         FormBuilderValidators.required(errorText: 'Påkrevd'),
         (number) {
-          Device device = context.bloc<DeviceBloc>().devices.values.firstWhere(
+          Device device = context.bloc<DeviceBloc>().values.firstWhere(
                 (Device device) => isSameNumber(device, number),
                 orElse: () => null,
               );
@@ -291,7 +291,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       valueTransformer: (value) => emptyAsNull(value),
       validators: [
         (alias) {
-          Device device = context.bloc<DeviceBloc>().devices.values.firstWhere(
+          Device device = context.bloc<DeviceBloc>().values.firstWhere(
                 (Device device) => _isSameAlias(device, alias),
                 orElse: () => null,
               );

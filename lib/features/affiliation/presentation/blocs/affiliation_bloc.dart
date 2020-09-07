@@ -57,7 +57,7 @@ import 'package:uuid/uuid.dart';
 /// for each account, leading to Person duplicates
 ///
 class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, AffiliationBlocError>
-    with LoadableBloc<List<Affiliation>>, UnloadableBloc<List<Affiliation>>, ConnectionAwareBloc {
+    with LoadableBloc<List<Affiliation>>, UnloadableBloc<List<Affiliation>>, ConnectionAwareBloc<String, Affiliation> {
   ///
   /// Default constructor
   ///
@@ -87,13 +87,6 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       // Handle
       _processPersonConflicts,
     ));
-
-    // Keep affiliation in sync with person
-    repo.onValue(
-      onGet: (value) => value.copyWith(
-        person: persons[value.person?.uuid],
-      ),
-    );
   }
 
   /// All repositories
@@ -116,6 +109,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   /// Get [PersonRepository]
   PersonRepository get persons => repo.persons;
+
+  /// Get all [Affiliation]s
+  Iterable<Affiliation> get values => repo.values;
+
+  /// Get [Affiliation] from [uuid]
+  Affiliation operator [](String uuid) => repo[uuid];
 
   /// Get [AffiliationRepository]
   final AffiliationRepository repo;
@@ -444,7 +443,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     AffiliationType type = AffiliationType.member,
     AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
   }) async {
-    _assertState('onboard');
+    await _assertState('onboard');
     final affiliation = findUserAffiliation(userId: userId);
     if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
@@ -477,7 +476,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     Personnel personnel,
     Affiliation affiliation,
   ) async {
-    _assertState('temporary');
+    await _assertState('temporary');
     final current = findPersonnelAffiliation(personnel);
     if (!repo.containsKey(current.uuid)) {
       AffiliationUtils.assertRef(personnel);
@@ -491,8 +490,8 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     return current;
   }
 
-  Future<Affiliation> update(Affiliation affiliation) {
-    _assertState('update');
+  Future<Affiliation> update(Affiliation affiliation) async {
+    await _assertState('update');
     return dispatch(
       UpdateAffiliation(affiliation),
     );
@@ -843,19 +842,26 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     return command;
   }
 
-  void _assertState(String action) {
+  Future _assertState(String action, {bool waitOnLoaded = true}) {
     if (!repo.isReady) {
       throw AffiliationBlocError(
         "Bloc not ready. "
         "Ensure 'AffiliationBloc.load()' before '$action'",
       );
     }
+    if (waitOnLoaded) {
+      // Issue #77: This will prevent 409 Conflicts
+      // Should wait on load if pending.
+      return onLoadedAsync();
+    }
+    return Future.value();
   }
 
   Iterable<String> _toPersons(
     List<Affiliation> values, {
     @required bool isRemote,
   }) {
+    final flag = true;
     final updated = values.whereNotNull((a) => a.person).map((a) => _toPerson(a, isRemote: isRemote)).toList();
     return updated;
   }
