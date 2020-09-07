@@ -53,7 +53,6 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
     return Container(
       height: constraints.maxHeight,
-      color: Color.fromRGBO(168, 168, 168, 0.6),
       child: OperationsPage(filter: _filter),
     );
   }
@@ -199,6 +198,7 @@ class _OperationsPageState extends State<OperationsPage> {
           final hasJoined = personnel != null;
           final isAuthorized = hasJoined || context.bloc<UserBloc>().isAuthorized(operation);
           return Card(
+            elevation: 4.0,
             child: Column(
               key: ObjectKey(operation.uuid),
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -7,6 +7,7 @@ import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
@@ -24,19 +25,28 @@ typedef void UserCallback(VoidCallback fn);
 
 class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     with LoadableBloc<User>, UnloadableBloc<List<User>> {
-  UserBloc(this.repo, this.configBloc, BlocEventBus bus) : super(bus: bus);
+  UserBloc(this.repo, this.configBloc, BlocEventBus bus) : super(bus: bus) {
+    // Notify when token changes
+    registerStreamSubscription(repo.onRefresh.listen((token) {
+      dispatch(_NotifyAuthTokenRefreshed(token));
+    }));
+  }
 
   final UserRepository repo;
   final AppConfigBloc configBloc;
   final LinkedHashMap<String, UserAuthorized> _authorized = LinkedHashMap();
 
-  UserService get service1 => repo.service;
-
   @override
   UserUnset get initialState => UserUnset();
 
-  /// Authenticated use
+  /// [UserService] instance
+  UserService get service => repo.service;
+
+  /// Authenticated user
   User get user => repo.user;
+
+  /// Token for authenticated user
+  AuthToken get token => repo.token;
 
   /// Id of authenticated use
   String get userId => repo.user?.userId;
@@ -192,6 +202,8 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       yield await _unload(command);
     } else if (command is AuthorizeUser) {
       yield _authorize(command);
+    } else if (command is _NotifyAuthTokenRefreshed) {
+      yield _notify(command);
     } else {
       yield toUnsupported(command);
     }
@@ -288,6 +300,14 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
       command,
       UserUnset(),
       result: users,
+    );
+  }
+
+  UserState _notify(_NotifyAuthTokenRefreshed command) {
+    return toOK(
+      command,
+      AuthTokenRefreshed(command.data),
+      result: command.data,
     );
   }
 
@@ -440,7 +460,7 @@ class LoadUser extends UserCommand<String, User> {
   LoadUser({String userId}) : super(null);
 
   @override
-  String toString() => 'LoadUser {userId: $data}';
+  String toString() => '$runtimeType {userId: $data}';
 }
 
 class SecureUser extends UserCommand<String, Security> {
@@ -448,21 +468,21 @@ class SecureUser extends UserCommand<String, Security> {
   SecureUser(String pin, {this.locked}) : super(pin);
 
   @override
-  String toString() => 'SecureUser {pin: $data, locked: $locked}';
+  String toString() => '$runtimeType {pin: $data, locked: $locked}';
 }
 
 class LockUser extends UserCommand<void, Security> {
   LockUser() : super(null);
 
   @override
-  String toString() => 'LockUser';
+  String toString() => '$runtimeType';
 }
 
 class UnlockUser extends UserCommand<String, Security> {
   UnlockUser(String pin) : super(pin);
 
   @override
-  String toString() => 'UnlockUser {pin: $data}';
+  String toString() => '$runtimeType {pin: $data}';
 }
 
 class LoginUser extends UserCommand<String, User> {
@@ -481,7 +501,7 @@ class LoginUser extends UserCommand<String, User> {
         ]);
 
   @override
-  String toString() => 'LoginUser {username: $data, password: $data}';
+  String toString() => '$runtimeType {username: $data, password: $data, idpHint: $idpHint}';
 }
 
 class AuthorizeUser extends UserCommand<Operation, bool> {
@@ -489,21 +509,28 @@ class AuthorizeUser extends UserCommand<Operation, bool> {
   AuthorizeUser(Operation data, this.passcode) : super(data, [passcode]);
 
   @override
-  String toString() => 'AuthorizeUser';
+  String toString() => '$runtimeType';
 }
 
 class LogoutUser extends UserCommand<bool, User> {
   LogoutUser({bool delete = false}) : super(delete);
 
   @override
-  String toString() => 'LogoutUser {data: $data}';
+  String toString() => 'runtimeType {data: $data}';
 }
 
 class UnloadUsers extends UserCommand<void, List<User>> {
   UnloadUsers() : super(null);
 
   @override
-  String toString() => 'UnloadUsers {}';
+  String toString() => '$runtimeType {}';
+}
+
+class _NotifyAuthTokenRefreshed extends UserCommand<AuthToken, AuthToken> {
+  _NotifyAuthTokenRefreshed(AuthToken token) : super(token);
+
+  @override
+  String toString() => '$runtimeType {}';
 }
 
 /// ---------------------
@@ -511,7 +538,7 @@ class UnloadUsers extends UserCommand<void, List<User>> {
 /// ---------------------
 abstract class UserState<T> extends BlocEvent<T> {
   UserState(
-    Object data, {
+    T data, {
     StackTrace stackTrace,
     props = const [],
   }) : super(data, props: props, stackTrace: stackTrace);
@@ -526,6 +553,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isAuthorized() => this is UserAuthorized;
   bool isUnauthorized() => this is UserUnauthorized;
   bool isForbidden() => this is UserForbidden;
+  bool isTokenChanged() => this is AuthTokenRefreshed;
   bool isOffline() => this is UserBlocIsOffline;
   bool isError() => this is UserBlocError;
 
@@ -536,37 +564,37 @@ abstract class UserState<T> extends BlocEvent<T> {
 class UserUnset extends UserState<void> {
   UserUnset() : super(null);
   @override
-  String toString() => 'UserUnset';
+  String toString() => '$runtimeType';
 }
 
 class UserLocked extends UserState<Security> {
   UserLocked(Security data) : super(data);
   @override
-  String toString() => 'UserLocked  {security: $data}';
+  String toString() => '$runtimeType {security: $data}';
 }
 
 class UserUnlocking extends UserState<String> {
   UserUnlocking(String pin) : super(pin);
   @override
-  String toString() => 'UserUnlocking {pin: $data}';
+  String toString() => '$runtimeType {pin: $data}';
 }
 
 class UserUnlocked extends UserState<Security> {
   UserUnlocked(Security data) : super(data);
   @override
-  String toString() => 'UserUnlocked  {security: $data}';
+  String toString() => '$runtimeType  {security: $data}';
 }
 
 class UserAuthenticating extends UserState<String> {
   UserAuthenticating(String username) : super(username);
   @override
-  String toString() => 'UserAuthenticating {username: $data}';
+  String toString() => '$runtimeType {username: $data}';
 }
 
 class UserAuthenticated extends UserState<User> {
   UserAuthenticated(User user) : super(user);
   @override
-  String toString() => 'UserAuthenticated {userid: ${data.userId}}';
+  String toString() => '$runtimeType {userid: ${data.userId}}';
 }
 
 class UserAuthorized extends UserState<User> {
@@ -580,7 +608,13 @@ class UserAuthorized extends UserState<User> {
     this.personnel,
   ) : super(user, props: [operation, command, personnel]);
   @override
-  String toString() => 'UserAuthorized';
+  String toString() => '$runtimeType {user: $data, command: $command, personnel: $personnel}';
+}
+
+class AuthTokenRefreshed extends UserState<AuthToken> {
+  AuthTokenRefreshed(AuthToken user) : super(user);
+  @override
+  String toString() => '$runtimeType {userId: ${data.userId}}';
 }
 
 /// ---------------------
