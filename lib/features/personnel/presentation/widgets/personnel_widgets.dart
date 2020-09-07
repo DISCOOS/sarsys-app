@@ -98,6 +98,7 @@ class PersonnelWidget extends StatelessWidget {
             children: <Widget>[
               GestureDetector(
                   child: Chip(
+                    elevation: 4.0,
                     label: Text(
                       'Mannskap er opprettet manuelt',
                       textAlign: TextAlign.end,

@@ -91,7 +91,11 @@ void main() async {
       // Assert
       verify(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
-      expectThroughInOrder(harness.userBloc, [isA<UserAuthenticating>(), isA<UserAuthenticated>()]);
+      expectThroughInOrder(harness.userBloc, [
+        isA<UserAuthenticating>(),
+        isA<UserAuthenticated>(),
+        isA<AuthTokenRefreshed>(),
+      ]);
     });
 
     test('User SHOULD BE secured using PIN', () async {

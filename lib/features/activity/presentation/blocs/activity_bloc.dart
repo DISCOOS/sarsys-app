@@ -1,3 +1,4 @@
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
@@ -15,6 +16,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     assert(bus != null, "bus can not be null");
     subscribe<UserUnset>(_processAuth);
     subscribe<UserAuthenticated>(_processAuth);
+    subscribe<DevicesLoaded>(_processDevice);
     subscribe<AppConfigUpdated>(_processConfig);
     subscribe<PersonnelsLoaded>(_processPersonnel);
     subscribe<PersonnelCreated>(_processPersonnel);
@@ -23,8 +25,27 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     subscribe<PersonnelsUnloaded>(_processPersonnel);
   }
 
+  @override
+  ActivityInitialized get initialState => ActivityInitialized(ActivityProfile.PRIVATE);
+
+  /// Get stream of [ActivityProfile] changes
   Stream<ActivityProfile> get onChanged =>
       where((event) => event.data is ActivityProfile).map((event) => event.data as ActivityProfile);
+
+  /// Check if bloc is ready
+  bool get isReady => _isReady;
+  var _isReady = false;
+
+  /// Check if current profile allows tracking
+  bool get isTrackable => _profile?.isTrackable ?? false;
+
+  /// Get current [ActivityProfile]
+  ActivityProfile get profile => _profile;
+  ActivityProfile _profile = ActivityProfile.PRIVATE;
+
+  /// Get current [LocationOptions]
+  LocationOptions get options =>
+      LocationService.exists ? (LocationService().options ?? _profile.options) : _profile.options;
 
   LocationOptions _toOptions(
     AppConfig config, {
@@ -62,69 +83,28 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         options?.locationAllowSharing != (config.locationAllowSharing ?? options.locationAllowSharing);
   }
 
-  /// Get current [ActivityProfile]
-  ActivityProfile get profile => _profile;
-  ActivityProfile _profile = ActivityProfile.PRIVATE;
+  void _processAuth(BaseBloc bloc, UserState state) {
+    _isReady = state.shouldLoad();
+  }
 
-  @override
-  ActivityInitialized get initialState => ActivityInitialized(ActivityProfile.PRIVATE);
-
-  @override
-  Stream<ActivityState> execute(ActivityCommand command) async* {
-    if (command is ChangeActivityProfile) {
-      yield await _change(command);
-    } else {
-      yield toUnsupported(command);
+  void _processDevice(BaseBloc bloc, DeviceState state) {
+    if (state.isLoaded()) {
+      LocationService(
+        options: options,
+      ).configure(
+        duuid: (bloc as DeviceBloc).findThisApp()?.uuid,
+        options: options,
+      );
     }
   }
-
-  @override
-  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
-        error,
-        stackTrace: stackTrace ?? StackTrace.current,
-      );
-
-  Future<ActivityState> _change(ChangeActivityProfile command) async {
-    _profile = command.data;
-    _apply(
-      command.config,
-      _profile.options,
-    );
-    return toOK(
-      command,
-      ActivityProfileChanged(command.data),
-      result: command.data,
-    );
-  }
-
-  bool get isTrackable => _profile?.isTrackable ?? false;
 
   void _processConfig<T extends BlocEvent>(Bloc bloc, T event) {
     if (event.data is AppConfig) {
       final config = event.data as AppConfig;
       _apply(
         config,
-        currentOptions,
+        options,
       );
-    }
-  }
-
-  LocationOptions get currentOptions =>
-      LocationService.exists ? (LocationService().options ?? _profile.options) : _profile.options;
-
-  void _apply(AppConfig config, LocationOptions options) {
-    if (_isReady) {
-      final service = LocationService(options: options);
-      if (_isConfigChanged(config, options)) {
-        service.configure(
-          share: isTrackable,
-          options: _toOptions(
-            config,
-            defaultAccuracy: options.accuracy,
-            debug: service.options?.debug ?? kDebugMode,
-          ),
-        );
-      }
     }
   }
 
@@ -133,21 +113,21 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     if (event is PersonnelsLoaded) {
       final working = (bloc as PersonnelBloc).findUser();
       if (working.isNotEmpty) {
-        _onUser(working.first.status, config);
+        _onUserChanged(working.first.status, config);
       } else {
-        _onUser(PersonnelStatus.retired, config);
+        _onUserChanged(PersonnelStatus.retired, config);
       }
     } else if (event.data is Personnel) {
       final personnel = event.data as Personnel;
       if ((bloc as PersonnelBloc).isUser(personnel.uuid)) {
-        _onUser(personnel.status, config);
+        _onUserChanged(personnel.status, config);
       }
     } else if (event is PersonnelsUnloaded) {
-      _onUser(PersonnelStatus.retired, config);
+      _onUserChanged(PersonnelStatus.retired, config);
     }
   }
 
-  void _onUser(PersonnelStatus status, AppConfig config) {
+  void _onUserChanged(PersonnelStatus status, AppConfig config) {
     switch (status) {
       case PersonnelStatus.alerted:
         _profile = ActivityProfile.ALERTED;
@@ -171,10 +151,48 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     );
   }
 
-  var _isReady = false;
+  @override
+  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
+        error,
+        stackTrace: stackTrace ?? StackTrace.current,
+      );
 
-  void _processAuth(BaseBloc bloc, UserState state) {
-    _isReady = state.shouldLoad();
+  @override
+  Stream<ActivityState> execute(ActivityCommand command) async* {
+    if (command is ChangeActivityProfile) {
+      yield await _change(command);
+    } else {
+      yield toUnsupported(command);
+    }
+  }
+
+  Future<ActivityState> _change(ChangeActivityProfile command) async {
+    _profile = command.data;
+    _apply(
+      command.config,
+      _profile.options,
+    );
+    return toOK(
+      command,
+      ActivityProfileChanged(command.data),
+      result: command.data,
+    );
+  }
+
+  void _apply(AppConfig config, LocationOptions options) {
+    if (_isReady) {
+      final service = LocationService(options: options);
+      if (_isConfigChanged(config, options)) {
+        service.configure(
+          share: isTrackable,
+          options: _toOptions(
+            config,
+            defaultAccuracy: options.accuracy,
+            debug: service.options?.debug ?? kDebugMode,
+          ),
+        );
+      }
+    }
   }
 }
 
