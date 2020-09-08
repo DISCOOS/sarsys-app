@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
@@ -130,9 +131,9 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future<PermissionStatus> configure({
     bool share,
+    bool debug,
     String duuid,
     AuthToken token,
-    bool debug = false,
     bool force = false,
     LocationOptions options,
   }) async {
@@ -259,7 +260,7 @@ class BackgroundGeolocationService implements LocationService {
         : null;
   }
 
-  int get _logLevel => kDebugMode ? bg.Config.LOG_LEVEL_OFF : bg.Config.LOG_LEVEL_INFO;
+  int get _logLevel => (_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO;
   int get _persistMode => canStore ? bg.Config.PERSIST_MODE_LOCATION : bg.Config.PERSIST_MODE_NONE;
 
   int _toAccuracy(LocationAccuracy accuracy) {
@@ -310,9 +311,8 @@ class BackgroundGeolocationService implements LocationService {
         pushed.addAll(await bg.BackgroundGeolocation.sync());
         _notify(PushEvent(pushed.map(_fromJson)));
       } on Exception catch (e, stackTrace) {
+        _notify(ErrorEvent(_options, e, stackTrace));
         if (_shouldReport(e)) {
-          _notify(ErrorEvent(_options, e, stackTrace));
-
           Catcher.reportCheckedError(
             "Failed to push backlog error: $e",
             StackTrace.current,
@@ -361,7 +361,7 @@ class BackgroundGeolocationService implements LocationService {
     AuthToken token,
     LocationOptions options,
   }) {
-    return _options?.debug != (debug ?? kDebugMode) ||
+    return _options?.debug != (debug ?? options.debug ?? kDebugMode) ||
         _options?.accuracy != options.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
@@ -436,6 +436,13 @@ class BackgroundGeolocationService implements LocationService {
           event.responseText,
         ),
       );
+      // Retry later on conflict
+      if (event.status == HttpStatus.conflict) {
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => push(),
+        );
+      }
     }
   }
 
@@ -522,5 +529,10 @@ class BackgroundGeolocationService implements LocationService {
         '"timestamp": "<%= timestamp %>",'
         '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>}'
         '}}';
+  }
+
+  /// Send log to given [address]
+  static void emailLog(String address) {
+    bg.Logger.emailLog(address).catchError(Catcher.reportCheckedError);
   }
 }

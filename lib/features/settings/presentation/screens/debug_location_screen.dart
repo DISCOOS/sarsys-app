@@ -87,6 +87,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
                         recipients: ['support@discoos.org'],
                       );
                       await FlutterEmailSender.send(email);
+                      LocationService.emailLog('support@discoos.org');
                     },
                   ),
                 ],

@@ -110,9 +110,9 @@ class GeolocatorService implements LocationService {
   @override
   Future<PermissionStatus> configure({
     bool share,
+    bool debug,
     String duuid,
     AuthToken token,
-    bool debug = false,
     bool force = false,
     LocationOptions options,
   }) async {

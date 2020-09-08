@@ -97,13 +97,12 @@ abstract class LocationService extends Service {
   /// Use [duuid] to change which id positions are publish with
   /// Use [token] to change which authorisation token to publish positions with
   /// Use [share] to control pushing positions with id [duuid]
-  /// Use [debug] to enable debugging
   /// Use [force] to force reconfiguration of service
   Future<PermissionStatus> configure({
     bool share,
+    bool debug,
     String duuid,
     AuthToken token,
-    bool debug = false,
     bool force = false,
     LocationOptions options,
   });
@@ -171,6 +170,11 @@ abstract class LocationService extends Service {
       );
     }
     return _singleton;
+  }
+
+  /// Send log to given [address]
+  static void emailLog(String address) {
+    BackgroundGeolocationService.emailLog(address);
   }
 }
 
