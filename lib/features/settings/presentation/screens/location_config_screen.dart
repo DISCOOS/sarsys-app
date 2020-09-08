@@ -1,6 +1,7 @@
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/features/settings/presentation/screens/debug_location_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,11 +19,15 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   final _displacement = TextEditingController();
   final _interval = TextEditingController();
 
+  bool _debug;
+  bool _manual;
+
   AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _debug ??= (LocationService().options?.debug ?? kDebugMode);
     _interval.text = "${bloc.config.locationFastestInterval ~/ 1000}";
     _displacement.text = "${bloc.config.locationSmallestDisplacement}";
   }
@@ -64,6 +69,17 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 _buildLocationAllowSharingField(),
                 Divider(),
                 _buildLocationDebugField(),
+                ListTile(
+                  enabled: _debug,
+                  title: Text('Feilsøking'),
+                  subtitle: Text('Feilsøke problemer med posisjon og sporing'),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () async {
+                    Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+                      return DebugLocationScreen();
+                    }));
+                  },
+                ),
               ],
             ),
           ],
@@ -188,8 +204,6 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
     );
   }
 
-  bool _debug = kDebugMode;
-
   Widget _buildLocationAllowSharingField() {
     return SwitchListTile(
       value: context.bloc<AppConfigBloc>().config.locationAllowSharing,
@@ -237,7 +251,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               child: FutureBuilder<SharedPreferences>(
                   future: SharedPreferences.getInstance(),
                   builder: (context, snapshot) {
-                    _debug = snapshot.hasData ? snapshot.data.getBool('location_debug') ?? false : _debug;
+                    _debug = snapshot.hasData ? snapshot.data.getBool('location_debug') ?? _debug : _debug;
                     return Switch(
                       value: _debug,
                       onChanged: (value) async {

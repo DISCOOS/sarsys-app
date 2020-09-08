@@ -197,7 +197,7 @@ class LocationOptions {
   /// - forceAndroidLocationManager: false
   /// - timeInterval: 0
   const LocationOptions({
-    this.debug = false,
+    this.debug = kDebugMode ?? false,
     this.locationAlways,
     this.locationWhenInUse,
     this.forceAndroidLocationManager,

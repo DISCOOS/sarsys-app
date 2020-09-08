@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/app_controller.dart';
-import 'package:SarSys/features/settings/presentation/screens/debug_screen.dart';
 import 'package:SarSys/core/presentation/screens/about_screen.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
+import 'debug_data_screen.dart';
 import 'operation_config_screen.dart';
 import 'location_config_screen.dart';
 import 'map_config_screen.dart';
@@ -97,7 +97,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       Divider(),
       _buildSection(context, "System"),
       _buildAboutPage(context),
-      _buildGotoDebugScreen(),
+      _buildGotoDebugDataScreen(),
       _buildOsConfig(context),
       _buildFactoryReset(),
     ];
@@ -232,14 +232,14 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  ListTile _buildGotoDebugScreen() {
+  ListTile _buildGotoDebugDataScreen() {
     return ListTile(
-      title: Text("Feilsøking"),
-      subtitle: Text('Data, posisjon og sporing'),
-      trailing: Icon(Icons.keyboard_arrow_right),
-      onTap: () {
+      title: Text('Lokale data'),
+      subtitle: Text('Feilsøke data lagret lokalt'),
+      trailing: const Icon(Icons.keyboard_arrow_right),
+      onTap: () async {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-          return DebugScreen();
+          return DebugDataScreen();
         }));
       },
     );
