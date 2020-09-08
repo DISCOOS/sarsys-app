@@ -144,7 +144,8 @@ test:
 	echo "Testing UnitBloc..."
 	flutter test test/blocs/unit_tests.dart
 	echo "Testing TrackingBloc..."
-	flutter test test/blocs/tracking_tests.dart
+	flutter test test//utils/tracking_utils_tests.dart
+#	flutter test test/blocs/tracking_tests.dart
 	echo "[✓] Flutter tests complete."
 
 models:
