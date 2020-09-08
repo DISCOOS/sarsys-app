@@ -108,7 +108,7 @@ class GeolocatorService implements LocationService {
   }
 
   @override
-  Future<PermissionStatus> configure({
+  Future<LocationOptions> configure({
     bool share,
     bool debug,
     String duuid,
@@ -116,18 +116,17 @@ class GeolocatorService implements LocationService {
     bool force = false,
     LocationOptions options,
   }) async {
+    if (force || _isConfigChanged(_options)) {
+      _notify(
+        ConfigureEvent(duuid, _options),
+      );
+      _subscribe(_options);
+    }
     _status = await Permission.locationWhenInUse.status;
-    if ([PermissionStatus.granted].contains(_status)) {
-      if (force || _isConfigChanged(_options)) {
-        _notify(
-          ConfigureEvent(duuid, _options),
-        );
-        _subscribe(_options);
-      }
-    } else {
+    if (_status != PermissionStatus.granted) {
       await dispose();
     }
-    return _status;
+    return _options;
   }
 
   @override

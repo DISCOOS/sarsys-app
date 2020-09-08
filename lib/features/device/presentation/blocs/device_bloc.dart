@@ -41,11 +41,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       _processUserState,
     ));
 
-    registerStreamSubscription(userBloc.configBloc.listen(
-      // Load devices on change
-      _processConfigState,
-    ));
-
     registerStreamSubscription(repo.onChanged.listen(
       // Notify when repository state has changed
       _processRepoState,
@@ -73,30 +68,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       onError(error, stackTrace);
     }
   }
-
-  void _processConfigState(AppConfigState state) {
-    try {
-      if (isOpen) {
-        if (_shouldLoad(state)) {
-          dispatch(LoadDevices());
-        } else if (_shouldUnload(state)) {
-          dispatch(UnloadDevices());
-        }
-      }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
-    }
-  }
-
-  bool _shouldLoad(AppConfigState state) =>
-      userBloc.isAuthenticated && state.isRemote && (state.isInitialized() || state.isUpdated());
-
-  bool _shouldUnload(AppConfigState state) => (state.isEmpty() || state.isDeleted()) && repo.isReady;
 
   void _processRepoState(StorageTransition<Device> transition) async {
     try {

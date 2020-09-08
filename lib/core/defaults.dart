@@ -18,8 +18,8 @@ class Defaults {
   static const bool locationStoreLocally = true;
   static const bool locationAllowSharing = true;
   static const String locationAccuracy = "automatic";
-  static const int locationFastestInterval = 1000;
-  static const int locationSmallestDisplacement = 0;
+  static const int locationFastestInterval = 0;
+  static const int locationSmallestDisplacement = 3;
   static const bool keepScreenOn = false;
   static const bool callsignReuse = true;
   static const List<String> idpHints = const ['rodekors'];

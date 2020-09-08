@@ -136,7 +136,7 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   @override
-  Future<PermissionStatus> configure({
+  Future<LocationOptions> configure({
     bool share,
     bool debug,
     String duuid,
@@ -144,56 +144,53 @@ class BackgroundGeolocationService implements LocationService {
     bool force = false,
     LocationOptions options,
   }) async {
-    // Get current status
-    _status = await Permission.locationWhenInUse.status;
-
-    if ([PermissionStatus.granted].contains(_status)) {
-      try {
-        final wasSharing = isSharing;
-        final shouldForce = (force || !isReady.value);
-        final shouldConfigure = shouldForce ||
-            _isConfigChanged(
-              duuid: duuid,
-              token: token,
-              debug: debug,
-              share: share,
-              options: options ?? _options,
-            );
-        if (shouldConfigure) {
-          _options = options ?? _options;
-          // Wait for previous to complete or check plugin
-          var state = await (_configuring ?? bg.BackgroundGeolocation.state);
-          final config = _toConfig(
+    try {
+      final wasSharing = isSharing;
+      final shouldForce = (force || !isReady.value);
+      final shouldConfigure = shouldForce ||
+          _isConfigChanged(
             duuid: duuid,
             token: token,
-            share: share,
             debug: debug,
+            share: share,
+            options: options ?? _options,
           );
-          try {
-            if (state.isFirstBoot) {
-              _configuring = bg.BackgroundGeolocation.ready(config);
-            } else {
-              _configuring = bg.BackgroundGeolocation.setConfig(config);
-            }
-            state = await _configuring;
-          } finally {
-            _configuring = null;
+      if (shouldConfigure) {
+        _options = options ?? _options;
+        // Wait for previous to complete or check plugin
+        var state = await (_configuring ?? bg.BackgroundGeolocation.state);
+        final config = _toConfig(
+          duuid: duuid,
+          token: token,
+          share: share,
+          debug: debug,
+        );
+        try {
+          if (state.isFirstBoot) {
+            _configuring = bg.BackgroundGeolocation.ready(config);
+          } else {
+            _configuring = bg.BackgroundGeolocation.setConfig(config);
           }
-          await _onConfigured(state, wasSharing);
+          state = await _configuring;
+        } finally {
+          _configuring = null;
         }
-      } catch (e, stackTrace) {
-        _notify(
-          ErrorEvent(_options, e, stackTrace),
-        );
-        Catcher.reportCheckedError(
-          "Failed to configure BackgroundLocation: $e",
-          stackTrace,
-        );
+        await _onConfigured(state, wasSharing);
       }
-    } else {
+    } catch (e, stackTrace) {
+      _notify(
+        ErrorEvent(_options, e, stackTrace),
+      );
+      Catcher.reportCheckedError(
+        "Failed to configure BackgroundLocation: $e",
+        stackTrace,
+      );
+    }
+    _status = await Permission.locationWhenInUse.status;
+    if (_status != PermissionStatus.granted) {
       await dispose();
     }
-    return _status;
+    return _options;
   }
 
   Future _onConfigured(bg.State state, bool wasSharing) async {

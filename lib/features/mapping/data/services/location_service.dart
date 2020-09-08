@@ -98,7 +98,7 @@ abstract class LocationService extends Service {
   /// Use [token] to change which authorisation token to publish positions with
   /// Use [share] to control pushing positions with id [duuid]
   /// Use [force] to force reconfiguration of service
-  Future<PermissionStatus> configure({
+  Future<LocationOptions> configure({
     bool share,
     bool debug,
     String duuid,

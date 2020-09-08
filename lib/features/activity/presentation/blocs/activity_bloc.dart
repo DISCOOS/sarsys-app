@@ -99,7 +99,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   }
 
   void _processConfig<T extends BlocEvent>(Bloc bloc, T event) {
-    if (event.data is AppConfig) {
+    if (event.data is AppConfig && (event as AppConfigState).isLocal) {
       final config = event.data as AppConfig;
       _apply(
         config,
@@ -117,7 +117,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       } else {
         _onUserChanged(PersonnelStatus.retired, config);
       }
-    } else if (event.data is Personnel) {
+    } else if (event.data is Personnel && event.isLocal) {
       final personnel = event.data as Personnel;
       if ((bloc as PersonnelBloc).isUser(personnel.uuid)) {
         _onUserChanged(personnel.status, config);
@@ -128,6 +128,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   }
 
   void _onUserChanged(PersonnelStatus status, AppConfig config) {
+    final previous = _profile;
     switch (status) {
       case PersonnelStatus.alerted:
         _profile = ActivityProfile.ALERTED;
@@ -146,9 +147,11 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         _profile = ActivityProfile.PRIVATE;
         break;
     }
-    dispatch(
-      ChangeActivityProfile(_profile, config),
-    );
+    if (previous != _profile) {
+      dispatch(
+        ChangeActivityProfile(_profile, config),
+      );
+    }
   }
 
   @override

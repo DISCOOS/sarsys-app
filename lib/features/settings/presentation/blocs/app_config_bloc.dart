@@ -189,7 +189,10 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
     );
     yield toOK(
       event,
-      AppConfigUpdated(config),
+      AppConfigUpdated(
+        config,
+        isLocal: true,
+      ),
       result: config,
     );
 
