@@ -5,6 +5,7 @@ import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
@@ -285,9 +286,12 @@ class LocationBufferWidget extends StatefulWidget {
 
 class _LocationBufferWidgetState extends State<LocationBufferWidget> {
   var state = 0;
-  AppConfig get config => context.bloc<AppConfigBloc>().config;
-  bool get locationAllowSharing => config.locationAllowSharing;
-  bool get isLocationStoreLocally => config.locationStoreLocally;
+  LocationOptions get options => LocationService().options;
+  bool get locationAllowSharing => options.locationAllowSharing;
+  bool get isLocationStoreLocally => options.locationStoreLocally;
+
+  Future<SharedPreferences> get future => _prefs ??= SharedPreferences.getInstance();
+  Future<SharedPreferences> _prefs;
 
   @override
   Widget build(BuildContext context) {
@@ -296,62 +300,75 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
     final size = SizeConfig.screenMin - 60;
     return ConstrainedBox(
       constraints: BoxConstraints.tightFor(width: size),
-      child: Column(
-        children: <Widget>[
-          ConstrainedBox(
-            constraints: BoxConstraints.tightFor(width: size, height: size - 36),
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: _buildStatus(service),
+      child: FutureBuilder<SharedPreferences>(
+          future: future,
+          builder: (context, snapshot) {
+            final manual = snapshot.hasData
+                // Read from shared preferences
+                ? (snapshot.data.getBool(LocationService.pref_location_manual) ?? false)
+                : false;
+
+            return Column(
+              children: <Widget>[
+                ConstrainedBox(
+                  constraints: BoxConstraints.tightFor(width: size, height: size - 36),
+                  child: Stack(
+                    children: [
+                      Align(
+                        alignment: Alignment.center,
+                        child: _buildStatus(service),
+                      ),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: _buildDeleteButton(context, service),
+                      ),
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: _buildRefreshButton(service),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: _buildSettingsButton(context, service),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: _buildSyncButton(service),
+                      ),
+                    ],
+                  ),
                 ),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: _buildDeleteButton(context, service),
+                Divider(),
+                SwitchListTile(
+                  value: locationAllowSharing,
+                  secondary: Icon(Icons.cloud_upload),
+                  title: Text('Del'),
+                  subtitle: Text('Kan bli lagret i aksjonen'),
+                  onChanged: manual
+                      ? (value) {
+                          context.bloc<AppConfigBloc>().updateWith(
+                                locationAllowSharing: value,
+                              );
+                          setState(() {});
+                        }
+                      : null,
                 ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: _buildRefreshButton(service),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: _buildSettingsButton(context, service),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: _buildSyncButton(service),
+                SwitchListTile(
+                  value: isLocationStoreLocally,
+                  secondary: Icon(Icons.storage),
+                  title: Text('Bufre'),
+                  subtitle: Text('Lagres lokalt når du er uten nett'),
+                  onChanged: manual
+                      ? (value) {
+                          context.bloc<AppConfigBloc>().updateWith(
+                                locationStoreLocally: value,
+                              );
+                          setState(() {});
+                        }
+                      : null,
                 ),
               ],
-            ),
-          ),
-          Divider(),
-          SwitchListTile(
-            value: locationAllowSharing,
-            secondary: Icon(Icons.cloud_upload),
-            title: Text('Del'),
-            subtitle: Text('Kan bli lagret i aksjonen'),
-            onChanged: (value) {
-              context.bloc<AppConfigBloc>().updateWith(
-                    locationAllowSharing: value,
-                  );
-              setState(() {});
-            },
-          ),
-          SwitchListTile(
-            value: isLocationStoreLocally,
-            secondary: Icon(Icons.storage),
-            title: Text('Bufre'),
-            subtitle: Text('Lagres lokalt når du er uten nett'),
-            onChanged: (value) {
-              context.bloc<AppConfigBloc>().updateWith(
-                    locationStoreLocally: value,
-                  );
-              setState(() {});
-            },
-          ),
-        ],
-      ),
+            );
+          }),
     );
   }
 
@@ -372,10 +389,13 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
         Icons.settings,
       ),
       tooltip: 'Endre innstillinger',
-      onPressed: () => showDialog(
-        context: context,
-        builder: (context) => LocationConfigScreen(),
-      ),
+      onPressed: () async {
+        await showDialog(
+          context: context,
+          builder: (context) => LocationConfigScreen(),
+        );
+        setState(() {});
+      },
     );
   }
 

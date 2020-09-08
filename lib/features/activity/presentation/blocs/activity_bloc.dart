@@ -10,6 +10,7 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
   ActivityBloc({@required BlocEventBus bus}) : super(bus: bus) {
@@ -44,8 +45,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   ActivityProfile _profile = ActivityProfile.PRIVATE;
 
   /// Get current [LocationOptions]
-  LocationOptions get options =>
-      LocationService.exists ? (LocationService().options ?? _profile.options) : _profile.options;
+  LocationOptions get options => _profile.options;
 
   LocationOptions _toOptions(
     AppConfig config, {
@@ -72,17 +72,6 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     return accuracy;
   }
 
-  bool _isConfigChanged(AppConfig config, LocationOptions options) {
-    return options?.locationAlways != (config.locationAlways ?? options.locationAlways) ||
-        options?.accuracy != config.toLocationAccuracy(defaultValue: options.accuracy) ||
-        options?.timeInterval != (config.locationFastestInterval ?? options.timeInterval) ||
-        options?.locationWhenInUse != (config.locationWhenInUse ?? options.locationWhenInUse) ||
-        options?.distanceFilter != (config.locationSmallestDisplacement ?? options.distanceFilter) ||
-        options?.activityRecognition != (config.activityRecognition ?? options.activityRecognition) ||
-        options?.locationStoreLocally != (config.locationStoreLocally ?? options.locationStoreLocally) ||
-        options?.locationAllowSharing != (config.locationAllowSharing ?? options.locationAllowSharing);
-  }
-
   void _processAuth(BaseBloc bloc, UserState state) {
     _isReady = state.shouldLoad();
   }
@@ -98,14 +87,26 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
   }
 
-  void _processConfig<T extends BlocEvent>(Bloc bloc, T event) {
+  void _processConfig<T extends BlocEvent>(Bloc bloc, T event) async {
     if (event.data is AppConfig && (event as AppConfigState).isLocal) {
       final config = event.data as AppConfig;
       _apply(
         config,
         options,
+        await isManual,
       );
     }
+  }
+
+  Future<LocationOptions> apply(
+    AppConfig config,
+    LocationOptions options, {
+    @required bool manual,
+  }) async {
+    assert(manual != null, "manual must be given");
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool(LocationService.pref_location_manual, manual);
+    return _apply(config, options, manual);
   }
 
   void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
@@ -147,7 +148,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         _profile = ActivityProfile.PRIVATE;
         break;
     }
-    if (previous != _profile) {
+    if (true || previous != _profile) {
       dispatch(
         ChangeActivityProfile(_profile, config),
       );
@@ -170,10 +171,12 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   }
 
   Future<ActivityState> _change(ChangeActivityProfile command) async {
+    bool manual = await isManual;
     _profile = command.data;
     _apply(
       command.config,
       _profile.options,
+      manual,
     );
     return toOK(
       command,
@@ -182,20 +185,27 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     );
   }
 
-  void _apply(AppConfig config, LocationOptions options) {
+  Future<bool> get isManual async {
+    final prefs = await SharedPreferences.getInstance();
+    final manual = prefs.getBool(LocationService.pref_location_manual);
+    return manual ?? false;
+  }
+
+  LocationOptions _apply(AppConfig config, LocationOptions options, bool manual) {
+    final service = LocationService(options: options);
     if (_isReady) {
-      final service = LocationService(options: options);
-      if (_isConfigChanged(config, options)) {
-        service.configure(
-          share: isTrackable,
-          options: _toOptions(
-            config,
-            defaultAccuracy: options.accuracy,
-            debug: service.options?.debug ?? kDebugMode,
-          ),
-        );
-      }
+      service.configure(
+        share: isTrackable,
+        options: manual
+            ? _toOptions(
+                config,
+                defaultAccuracy: options.accuracy,
+                debug: service.options?.debug ?? kDebugMode,
+              )
+            : options,
+      );
     }
+    return service.options;
   }
 }
 

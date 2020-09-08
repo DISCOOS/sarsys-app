@@ -1,3 +1,4 @@
+import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -27,10 +28,22 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _debug ??= (LocationService().options?.debug ?? kDebugMode);
-    _interval.text = "${bloc.config.locationFastestInterval ~/ 1000}";
-    _displacement.text = "${bloc.config.locationSmallestDisplacement}";
+    _manual ??= false;
+    _debug ??= (options?.debug ?? kDebugMode);
+    _interval.text = "${timeInterval ~/ 1000}";
+    _displacement.text = "$distanceFilter";
   }
+
+  LocationOptions get options => context.bloc<ActivityBloc>().options;
+  int get timeInterval => _manual ? bloc.config.locationFastestInterval : options.timeInterval;
+
+  int get distanceFilter => _manual ? bloc.config.locationSmallestDisplacement : options.distanceFilter;
+
+  bool get locationStoreLocally =>
+      _manual ? context.bloc<AppConfigBloc>().config.locationStoreLocally : options.locationStoreLocally;
+
+  bool get locationAllowSharing =>
+      _manual ? context.bloc<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
 
   @override
   void dispose() {
@@ -57,33 +70,87 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            ListView(
-              shrinkWrap: true,
-              physics: ClampingScrollPhysics(),
-              children: <Widget>[
-                _buildLocationAccuracyField(),
-                _buildLocationFastestIntervalField(),
-                _buildLocationSmallestDisplacementField(),
-                Divider(),
-                _buildLocationStoreLocallyField(),
-                _buildLocationAllowSharingField(),
-                Divider(),
-                _buildLocationDebugField(),
-                ListTile(
-                  enabled: _debug,
-                  title: Text('Feilsøking'),
-                  subtitle: Text('Feilsøke problemer med posisjon og sporing'),
-                  trailing: const Icon(Icons.open_in_new),
-                  onTap: () async {
-                    Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-                      return DebugLocationScreen();
-                    }));
-                  },
-                ),
-              ],
-            ),
+            FutureBuilder<SharedPreferences>(
+                future: future,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    _debug = snapshot.data.getBool(LocationService.pref_location_debug) ?? _debug;
+                    _manual = snapshot.data.getBool(LocationService.pref_location_manual) ?? _manual;
+                  }
+                  _interval.text = "${timeInterval ~/ 1000}";
+                  _displacement.text = "$distanceFilter";
+
+                  return ListView(
+                    shrinkWrap: true,
+                    physics: ClampingScrollPhysics(),
+                    children: <Widget>[
+                      _buildManualOverride(),
+                      Divider(),
+                      _buildLocationAccuracyField(),
+                      _buildLocationFastestIntervalField(),
+                      _buildLocationSmallestDisplacementField(),
+                      Divider(),
+                      _buildLocationStoreLocallyField(),
+                      _buildLocationAllowSharingField(),
+                      Divider(),
+                      _buildLocationDebugField(),
+                      ListTile(
+                        enabled: _debug,
+                        title: Text('Feilsøking'),
+                        subtitle: Text('Feilsøke problemer med posisjon og sporing'),
+                        trailing: const Icon(Icons.keyboard_arrow_right),
+                        onTap: () async {
+                          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+                            return DebugLocationScreen();
+                          }));
+                        },
+                      ),
+                    ],
+                  );
+                }),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildManualOverride() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: ListTile(
+              title: Text("Manuelle innstillinger"),
+              subtitle: Text("Overstyr automatiske innstillingene"),
+            ),
+          ),
+          Flexible(
+              child: FutureBuilder<SharedPreferences>(
+                  future: future,
+                  builder: (context, snapshot) {
+                    _manual = snapshot.hasData
+                        ? snapshot.data.getBool(LocationService.pref_location_manual) ?? _manual
+                        : _manual;
+                    return Switch(
+                      value: _manual,
+                      onChanged: (value) async {
+                        if (snapshot.hasData) {
+                          await context.bloc<ActivityBloc>().apply(
+                                bloc.config,
+                                options,
+                                manual: value,
+                              );
+                        }
+                        setState(() => _manual = value);
+                      },
+                    );
+                  })),
+        ],
       ),
     );
   }
@@ -112,12 +179,17 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                         child: Text("${LocationService.toAccuracyName(value)}", textAlign: TextAlign.center),
                       ))
                   .toList(),
-              onChanged: (value) async {
-                await bloc.updateWith(
-                  locationAccuracy: enumName(value),
-                );
-                setState(() {});
-              },
+              onChanged: _manual
+                  ? (value) async {
+                      await bloc.updateWith(
+                        locationAccuracy: enumName(value),
+                      );
+                      setState(() {});
+                    }
+                  : null,
+              hint: Text(
+                LocationService.toAccuracyName(options.accuracy),
+              ),
               value: bloc.config?.toLocationAccuracy(),
             ),
           ),
@@ -144,6 +216,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           Flexible(
             child: TextField(
               maxLength: 2,
+              enabled: _manual,
               controller: _displacement,
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
@@ -151,13 +224,15 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 WhitelistingTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
-              onChanged: (value) {
-                if (value.isNotEmpty) {
-                  bloc.updateWith(
-                    locationSmallestDisplacement: int.parse(value ?? 0),
-                  );
-                }
-              },
+              onChanged: _manual
+                  ? (value) {
+                      if (value.isNotEmpty) {
+                        bloc.updateWith(
+                          locationSmallestDisplacement: int.parse(value ?? 0),
+                        );
+                      }
+                    }
+                  : null,
             ),
           ),
         ],
@@ -183,6 +258,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           Flexible(
             child: TextField(
               maxLength: 2,
+              enabled: _manual,
               controller: _interval,
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
@@ -190,13 +266,15 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 WhitelistingTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
-              onChanged: (value) {
-                if (value.isNotEmpty) {
-                  bloc.updateWith(
-                    locationFastestInterval: int.parse(value ?? 0) * 1000,
-                  );
-                }
-              },
+              onChanged: _manual
+                  ? (value) {
+                      if (value.isNotEmpty) {
+                        bloc.updateWith(
+                          locationFastestInterval: int.parse(value ?? 0) * 1000,
+                        );
+                      }
+                    }
+                  : null,
             ),
           ),
         ],
@@ -206,29 +284,33 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
 
   Widget _buildLocationAllowSharingField() {
     return SwitchListTile(
-      value: context.bloc<AppConfigBloc>().config.locationAllowSharing,
+      value: locationAllowSharing,
       title: Text('Del posisjoner'),
       subtitle: Text('Posisjonen kan bli lagret i aksjonen'),
-      onChanged: (value) {
-        context.bloc<AppConfigBloc>().updateWith(
-              locationAllowSharing: value,
-            );
-        setState(() {});
-      },
+      onChanged: _manual
+          ? (value) {
+              context.bloc<AppConfigBloc>().updateWith(
+                    locationAllowSharing: value,
+                  );
+              setState(() {});
+            }
+          : null,
     );
   }
 
   Widget _buildLocationStoreLocallyField() {
     return SwitchListTile(
-      value: context.bloc<AppConfigBloc>().config.locationStoreLocally,
+      value: locationStoreLocally,
       title: Text('Bufre posisjoner'),
       subtitle: Text('Lagres lokalt når du er uten nett'),
-      onChanged: (value) {
-        context.bloc<AppConfigBloc>().updateWith(
-              locationStoreLocally: value,
-            );
-        setState(() {});
-      },
+      onChanged: _manual
+          ? (value) {
+              context.bloc<AppConfigBloc>().updateWith(
+                    locationStoreLocally: value,
+                  );
+              setState(() {});
+            }
+          : null,
     );
   }
 
@@ -249,14 +331,16 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
           ),
           Flexible(
               child: FutureBuilder<SharedPreferences>(
-                  future: SharedPreferences.getInstance(),
+                  future: future,
                   builder: (context, snapshot) {
-                    _debug = snapshot.hasData ? snapshot.data.getBool('location_debug') ?? _debug : _debug;
+                    _debug = snapshot.hasData
+                        ? snapshot.data.getBool(LocationService.pref_location_debug) ?? _debug
+                        : _debug;
                     return Switch(
                       value: _debug,
                       onChanged: (value) async {
                         if (snapshot.hasData) {
-                          await snapshot.data.setBool('location_debug', value);
+                          await snapshot.data.setBool(LocationService.pref_location_debug, value);
                           await LocationService().configure(
                             debug: value,
                           );
@@ -269,4 +353,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
       ),
     );
   }
+
+  Future<SharedPreferences> get future => _prefs ??= SharedPreferences.getInstance();
+  Future<SharedPreferences> _prefs;
 }

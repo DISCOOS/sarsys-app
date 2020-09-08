@@ -155,6 +155,8 @@ abstract class LocationService extends Service {
   static LocationService _singleton;
   static LocationService get instance => _singleton;
   static bool get exists => _singleton?.disposed == false;
+  static const String pref_location_debug = 'location_debug';
+  static const String pref_location_manual = 'location_manual';
 
   factory LocationService({
     LocationOptions options,
