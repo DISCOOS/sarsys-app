@@ -122,9 +122,16 @@ class BackgroundGeolocationService implements LocationService {
   @override
   set token(AuthToken token) {
     if (_isReady.value && _isConfigChanged(token: token)) {
-      bg.BackgroundGeolocation.setConfig(
-        _toConfig(token: token),
-      );
+      final config = _toConfig(token: token);
+      if (_configuring == null) {
+        bg.BackgroundGeolocation.setConfig(config);
+      } else {
+        _configuring.then((_) {
+          if (_isConfigChanged(token: token)) {
+            bg.BackgroundGeolocation.setConfig(config);
+          }
+        });
+      }
     }
   }
 
@@ -141,37 +148,47 @@ class BackgroundGeolocationService implements LocationService {
     _status = await Permission.locationWhenInUse.status;
 
     if ([PermissionStatus.granted].contains(_status)) {
-      final wasSharing = isSharing;
-      final shouldForce = (force || !isReady.value);
-      final shouldConfigure = shouldForce ||
-          _isConfigChanged(
+      try {
+        final wasSharing = isSharing;
+        final shouldForce = (force || !isReady.value);
+        final shouldConfigure = shouldForce ||
+            _isConfigChanged(
+              duuid: duuid,
+              token: token,
+              debug: debug,
+              share: share,
+              options: options ?? _options,
+            );
+        if (shouldConfigure) {
+          _options = options ?? _options;
+          // Wait for previous to complete or check plugin
+          var state = await (_configuring ?? bg.BackgroundGeolocation.state);
+          final config = _toConfig(
             duuid: duuid,
             token: token,
-            debug: debug,
             share: share,
-            options: options ?? _options,
+            debug: debug,
           );
-      if (shouldConfigure) {
-        _options = options ?? _options;
-        // Wait for previous to complete or check plugin
-        var state = await (_configuring ?? bg.BackgroundGeolocation.state);
-        final config = _toConfig(
-          duuid: duuid,
-          token: token,
-          share: share,
-          debug: debug,
-        );
-        try {
-          if (state.isFirstBoot) {
-            _configuring = bg.BackgroundGeolocation.ready(config);
-          } else {
-            _configuring = bg.BackgroundGeolocation.setConfig(config);
+          try {
+            if (state.isFirstBoot) {
+              _configuring = bg.BackgroundGeolocation.ready(config);
+            } else {
+              _configuring = bg.BackgroundGeolocation.setConfig(config);
+            }
+            state = await _configuring;
+          } finally {
+            _configuring = null;
           }
-          state = await _configuring;
-        } finally {
-          _configuring = null;
+          await _onConfigured(state, wasSharing);
         }
-        await _onConfigured(state, wasSharing);
+      } catch (e, stackTrace) {
+        _notify(
+          ErrorEvent(_options, e, stackTrace),
+        );
+        Catcher.reportCheckedError(
+          "Failed to configure BackgroundLocation: $e",
+          stackTrace,
+        );
       }
     } else {
       await dispose();
@@ -225,6 +242,8 @@ class BackgroundGeolocationService implements LocationService {
       persistMode: _persistMode,
       httpRootProperty: '.',
       httpTimeout: 60000,
+      heartbeatInterval: 60,
+      preventSuspend: isSharing,
       authorization: _toAuthorization(),
       locationTemplate: _toLocationTemplate(),
       showsBackgroundLocationIndicator: true,
@@ -288,7 +307,7 @@ class BackgroundGeolocationService implements LocationService {
     if (_isReady.value) {
       try {
         await bg.BackgroundGeolocation.getCurrentPosition();
-      } on Exception catch (e, stackTrace) {
+      } catch (e, stackTrace) {
         _notify(
           ErrorEvent(_options, e, stackTrace),
         );
@@ -310,7 +329,7 @@ class BackgroundGeolocationService implements LocationService {
       try {
         pushed.addAll(await bg.BackgroundGeolocation.sync());
         _notify(PushEvent(pushed.map(_fromJson)));
-      } on Exception catch (e, stackTrace) {
+      } catch (e, stackTrace) {
         _notify(ErrorEvent(_options, e, stackTrace));
         if (_shouldReport(e)) {
           Catcher.reportCheckedError(
@@ -377,22 +396,40 @@ class BackgroundGeolocationService implements LocationService {
 
   void _subscribe() async {
     if (!_isReady.value) {
-      // Process for location changes
-      bg.BackgroundGeolocation.onLocation(
-        _onLocation,
-        _onError,
-      );
+      // Process heartbeat events
+      bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
+
+      // Process for location, motion and activity changes
+      bg.BackgroundGeolocation.onLocation(_onLocation, _onError);
+      bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
+      bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
 
       // Process http service events
       bg.BackgroundGeolocation.onHttp(_onHttp);
-      bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
+
+      // Process authorization events
       bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
-      bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+
       _notify(
         SubscribeEvent(_options),
       );
+
       _isReady.value = true;
+
       await update();
+    }
+  }
+
+  void _onHeartbeat(bg.HeartbeatEvent event) {
+    if (!_disposed) {
+      final location = event.location;
+      _odometer = location.odometer;
+      _current = _toPosition(location);
+      _positionController.add(_current);
+      _notify(PositionEvent(
+        _current,
+        heartbeat: true,
+      ));
     }
   }
 
@@ -401,12 +438,18 @@ class BackgroundGeolocationService implements LocationService {
       _odometer = location.odometer;
       _current = _toPosition(location);
       _positionController.add(_current);
-      _notify(PositionEvent(_current));
+      _notify(PositionEvent(
+        _current,
+        sample: location.sample,
+      ));
     }
   }
 
   void _onMoveChange(bg.Location location) {
     if (!_disposed) {
+      _odometer = location.odometer;
+      _current = _toPosition(location);
+      _positionController.add(_current);
       _notify(
         MoveChangeEvent(
           _toPosition(location),
@@ -485,7 +528,7 @@ class BackgroundGeolocationService implements LocationService {
       _events.removeLast();
     }
     _events.insert(0, event);
-    if (event is PositionEvent) {
+    if (event is PositionEvent && !(event.sample || event.heartbeat)) {
       _positions.add(event.position);
     }
     _eventController.add(event);

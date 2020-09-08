@@ -336,15 +336,24 @@ class ConfigureEvent extends LocationEvent {
 }
 
 class PositionEvent extends LocationEvent {
-  PositionEvent(this.position, {this.historic = false}) : super(StackTrace.current);
+  PositionEvent(
+    this.position, {
+    this.sample = false,
+    this.historic = false,
+    this.heartbeat = false,
+  }) : super(StackTrace.current);
   final Position position;
+  final bool sample;
   final bool historic;
+  final bool heartbeat;
 
   @override
   String toString() {
     return '$runtimeType\n'
         'When: ${timestamp.toIso8601String()},\n'
+        'Sample: $sample,\n'
         'Historic: $historic,\n'
+        'Heartbeat: $heartbeat,\n'
         'Position: {\n'
         '   lat: ${position.lat}\n'
         '   lon: ${position.lon}\n'
