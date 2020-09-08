@@ -141,8 +141,8 @@ class BackgroundGeolocationService implements LocationService {
 
     if ([PermissionStatus.granted].contains(_status)) {
       final wasSharing = isSharing;
-      final shouldConfigure = !isReady.value ||
-          force ||
+      final shouldForce = (force || !isReady.value);
+      final shouldConfigure = shouldForce ||
           _isConfigChanged(
             duuid: duuid,
             token: token,
@@ -259,7 +259,7 @@ class BackgroundGeolocationService implements LocationService {
         : null;
   }
 
-  int get _logLevel => kDebugMode ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO;
+  int get _logLevel => kDebugMode ? bg.Config.LOG_LEVEL_OFF : bg.Config.LOG_LEVEL_INFO;
   int get _persistMode => canStore ? bg.Config.PERSIST_MODE_LOCATION : bg.Config.PERSIST_MODE_NONE;
 
   int _toAccuracy(LocationAccuracy accuracy) {

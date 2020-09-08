@@ -49,9 +49,7 @@ class MyLocationController {
   Position get current => _service.current;
 
   Future<LatLng> configure() async {
-    return _handle(
-      await _service.configure(),
-    );
+    return _handle(_service.status);
   }
 
   bool _disposed = false;
@@ -210,9 +208,6 @@ class MyLocationController {
     }
     try {
       var status = _service.status;
-      if (!_service.isReady.value) {
-        status = await _service.configure();
-      }
       if (_service.isReady.value) {
         final options = build();
         _subscribe();
@@ -224,6 +219,10 @@ class MyLocationController {
         await Future.delayed(Duration(milliseconds: 100));
         final point = await _handle(status);
         completer.complete(point);
+      } else if (!_service.isReady.value) {
+        _service.isReady.addListener(
+          () => _onReady(completer),
+        );
       } else {
         completer.complete(options?.point);
       }
