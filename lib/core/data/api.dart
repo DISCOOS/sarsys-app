@@ -2,6 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:chopper/chopper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -24,10 +29,6 @@ import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
@@ -35,7 +36,6 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:http/io_client.dart';
 
 class Api {
   Api({

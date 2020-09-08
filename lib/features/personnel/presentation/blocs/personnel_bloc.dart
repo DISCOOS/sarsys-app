@@ -18,6 +18,7 @@ import 'package:SarSys/features/personnel/domain/repositories/personnel_reposito
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
@@ -198,10 +199,19 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         state,
       );
     }
+    if (!operationBloc.userBloc.isAuthenticated) {
+      throw PersonnelBlocException(
+        "Not user found",
+        state,
+      );
+    }
     if (waitOnLoaded) {
       // Issue #77: This will prevent 409 Conflicts
       // Should wait on load if pending.
-      return onLoadedAsync();
+      return Future.wait([
+        onLoadedAsync(),
+        affiliationBloc.onLoadedAsync(),
+      ]);
     }
     return Future.value();
   }
@@ -227,42 +237,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   /// Mobilize authenticated user for
   Future<Personnel> mobilizeUser() async {
     await _assertState();
-    var personnel;
-    final user = affiliationBloc.users.user;
-    if (user != null) {
-      var personnels = findUser(
-        userId: user.userId,
-        exclude: const [],
-      );
-      // Choose mobilized personnels over retired
-      final existing = personnels.firstWhere(
-        (p) => p.status != PersonnelStatus.retired,
-        orElse: () => personnels.firstOrNull,
-      );
-      if (existing == null) {
-        final affiliation = affiliationBloc.findUserAffiliation();
-        personnel = await create(PersonnelModel(
-          uuid: Uuid().v4(),
-          person: PersonModel(
-            uuid: affiliation.person?.uuid,
-            userId: user.userId,
-            fname: user.fname,
-            lname: user.lname,
-            phone: user.phone,
-            email: user.email,
-            temporary: affiliation.isUnorganized,
-          ),
-          status: PersonnelStatus.alerted,
-          affiliation: affiliation.toRef(),
-          tracking: TrackingUtils.newRef(),
-        ));
-      } else if (existing.status == PersonnelStatus.retired) {
-        personnel = update(existing.copyWith(
-          status: PersonnelStatus.alerted,
-        ));
-      }
-    }
-    return personnel;
+    return dispatch<Personnel>(
+      MobilizeUser(ouuid, affiliationBloc.users.user),
+    );
   }
 
   /// Create given personnel
@@ -312,6 +289,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Stream<PersonnelState> execute(PersonnelCommand command) async* {
     if (command is LoadPersonnels) {
       yield* _load(command);
+    } else if (command is MobilizeUser) {
+      yield* _mobilize(command);
     } else if (command is CreatePersonnel) {
       yield* _create(command);
     } else if (command is UpdatePersonnel) {
@@ -370,6 +349,52 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   Future<AffiliationState> onAffiliationState<T extends AffiliationState>({bool isRemote = true}) =>
       affiliationBloc.where((s) => s.isRemote == isRemote && s is T).first;
+
+  Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
+    _assertState();
+    final user = command.user;
+    if (user != null) {
+      var personnels = findUser(
+        userId: user.userId,
+        exclude: const [],
+      );
+      // Choose mobilized personnels over retired
+      final existing = personnels.firstWhere(
+        (p) => p.status != PersonnelStatus.retired,
+        orElse: () => personnels.firstOrNull,
+      );
+      if (existing == null) {
+        final affiliation = affiliationBloc.findUserAffiliation();
+        yield* _create(CreatePersonnel(
+            command.data,
+            PersonnelModel(
+              uuid: Uuid().v4(),
+              person: PersonModel(
+                uuid: affiliation.person?.uuid,
+                userId: user.userId,
+                fname: user.fname,
+                lname: user.lname,
+                phone: user.phone,
+                email: user.email,
+                temporary: affiliation.isUnorganized,
+              ),
+              status: PersonnelStatus.alerted,
+              affiliation: affiliation.toRef(),
+              tracking: TrackingUtils.newRef(),
+            )));
+      } else if (existing.status == PersonnelStatus.retired) {
+        yield* _update(UpdatePersonnel(existing.copyWith(
+          status: PersonnelStatus.alerted,
+        )));
+      } else {
+        yield toOK(
+          command,
+          state,
+          result: existing,
+        );
+      }
+    }
+  }
 
   Stream<PersonnelState> _create(CreatePersonnel command) async* {
     Affiliation affiliation = await _ensureAffiliation(command);
@@ -531,6 +556,14 @@ class LoadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   String toString() => '$runtimeType {ouuid: $data}';
 }
 
+class MobilizeUser extends PersonnelCommand<String, Personnel> {
+  MobilizeUser(String ouuid, this.user) : super(ouuid);
+  final User user;
+
+  @override
+  String toString() => '$runtimeType {ouuid: $data, user: $user}';
+}
+
 class CreatePersonnel extends PersonnelCommand<Personnel, Personnel> {
   final String ouuid;
   CreatePersonnel(this.ouuid, Personnel data) : super(data);
@@ -593,6 +626,7 @@ abstract class PersonnelState<T> extends BlocEvent<T> {
 
   bool isError() => this is PersonnelBlocError;
   bool isEmpty() => this is PersonnelsEmpty;
+  bool isMobilized() => this is UserMobilized;
   bool isLoaded() => this is PersonnelsLoaded;
   bool isCreated() => this is PersonnelCreated;
   bool isUpdated() => this is PersonnelUpdated;
@@ -618,7 +652,7 @@ class PersonnelsLoaded extends PersonnelState<List<String>> {
   }) : super(data, isRemote: isRemote);
 
   @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
+  String toString() => '$runtimeType {personnels: $data, isRemote: $isRemote}';
 }
 
 class PersonnelCreated extends PersonnelState<Personnel> {
@@ -631,7 +665,23 @@ class PersonnelCreated extends PersonnelState<Personnel> {
   bool isTracked() => data.tracking?.uuid != null;
 
   @override
-  String toString() => '$runtimeType {data: $data, isRemote: $isRemote}';
+  String toString() => '$runtimeType {personnel: $data, isRemote: $isRemote}';
+}
+
+class UserMobilized extends PersonnelState<Personnel> {
+  UserMobilized(
+    this.user,
+    Personnel data, {
+    bool isRemote = false,
+  }) : super(data, isRemote: isRemote);
+
+  final User user;
+
+  @override
+  bool isTracked() => data.tracking?.uuid != null;
+
+  @override
+  String toString() => '$runtimeType {personnel: $data, user: $user, isRemote: $isRemote}';
 }
 
 class PersonnelUpdated extends PersonnelState<Personnel> {

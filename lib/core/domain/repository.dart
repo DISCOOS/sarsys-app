@@ -530,7 +530,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Patch [next] state with existing in repository
   StorageState<T> _patch(StorageState next) {
     final key = toKey(next);
-    assert(key != null, "key in $next not found");
     final current = getState(key);
     if (current != null) {
       final patches = JsonUtils.diff(current.value, next.value);
