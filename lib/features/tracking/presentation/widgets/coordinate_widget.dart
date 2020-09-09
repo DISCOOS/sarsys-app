@@ -7,6 +7,7 @@ import 'package:SarSys/core/utils/ui.dart';
 class CoordinateWidget extends StatelessWidget {
   const CoordinateWidget({
     Key key,
+    this.timestamp,
     this.point,
     this.onGoto,
     this.accuracy,
@@ -21,6 +22,7 @@ class CoordinateWidget extends StatelessWidget {
   final bool isDense;
   final bool withIcons;
   final double accuracy;
+  final DateTime timestamp;
   final bool withNavigation;
   final VoidCallback onComplete;
   final MessageCallback onMessage;
@@ -29,8 +31,9 @@ class CoordinateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAccuracy = accuracy != null;
+    final hasTimestamp = timestamp != null;
     final hasAction = withNavigation && point != null;
-    return hasAction || hasAccuracy
+    return hasAction || hasTimestamp || hasAccuracy
         ? Row(
             mainAxisSize: isDense ? MainAxisSize.min : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -48,9 +51,16 @@ class CoordinateWidget extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      if (hasAccuracy) _buildAccuracy(context),
+                      Column(
+                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hasAccuracy) _buildAccuracy(context),
+                          if (hasAccuracy) SizedBox(height: 24),
+                          if (hasTimestamp) _buildTimestamp(context),
+                        ],
+                      ),
                       if (hasAccuracy) SizedBox(height: isDense ? 8.0 : 16.0),
                       if (hasAction) _buildNavigateAction(context),
                     ],
@@ -72,6 +82,19 @@ class CoordinateWidget extends StatelessWidget {
           TextSpan(text: '±${accuracy.toStringAsFixed(1)}', style: Theme.of(context).textTheme.bodyText2, children: [
             TextSpan(text: ' m', style: Theme.of(context).textTheme.caption),
           ]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimestamp(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text('ALDER', style: Theme.of(context).textTheme.caption),
+        Text.rich(
+          TextSpan(text: '${formatSince(timestamp)}'),
         ),
       ],
     );
