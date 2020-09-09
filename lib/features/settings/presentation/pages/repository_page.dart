@@ -9,12 +9,14 @@ class RepositoryPage<T extends Aggregate> extends StatefulWidget {
   final bool withActions;
   final ConnectionAwareRepository repository;
   final bool Function(StorageState<T> state) where;
-  final String Function(StorageState<T> state) subtitle;
+  final String Function(StorageState<T> state) subject;
+  final String Function(StorageState<T> state) content;
 
   RepositoryPage({
     Key key,
     this.where,
-    this.subtitle,
+    this.subject,
+    this.content,
     this.repository,
     this.withActions = true,
   }) : super(key: key);
@@ -51,16 +53,17 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
   Widget _buildTile(BuildContext context, StorageState<T> state) {
     final key = widget.repository.toKey(state);
     return ListTile(
-      title: Text(widget.subtitle(state)),
+      title: SelectableText(widget.subject(state)),
       subtitle: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Key $key'),
-          Text('Status ${enumName(state.status)}, '
+          SelectableText('Key $key'),
+          if (widget.content != null) SelectableText('${widget.content(state)}'),
+          SelectableText('Status ${enumName(state.status)}, '
               'last change was ${state.isLocal ? 'local' : 'remote'},'),
-          if (state.isError) Text('Last error: ${state.error}'),
+          if (state.isError) SelectableText('Last error: ${state.error}'),
         ],
       ),
     );

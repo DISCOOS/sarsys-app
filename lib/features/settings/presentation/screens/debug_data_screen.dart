@@ -96,7 +96,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
       title: "Innstillinger",
       withResetAction: false,
       repo: context.bloc<AppConfigBloc>().repo,
-      subtitle: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
+      subject: (StorageState<AppConfig> state) => 'Unik app-id: ${state?.value?.udid}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -106,7 +106,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Incident>(
       title: "Hendelser",
       repo: context.bloc<OperationBloc>().incidents,
-      subtitle: (StorageState<Incident> state) => '${state?.value?.name}',
+      subject: (StorageState<Incident> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -116,7 +116,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Operation>(
       title: "Aksjoner",
       repo: context.bloc<OperationBloc>().repo,
-      subtitle: (StorageState<Operation> state) => '${state?.value?.name}',
+      subject: (StorageState<Operation> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -126,7 +126,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Unit>(
       title: "Enheter",
       repo: context.bloc<UnitBloc>().repo,
-      subtitle: (StorageState<Unit> state) => '${state?.value?.name}',
+      subject: (StorageState<Unit> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -136,7 +136,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Person>(
       title: "Personer",
       repo: context.bloc<AffiliationBloc>().persons,
-      subtitle: (StorageState<Person> state) => '${state?.value?.name}',
+      subject: (StorageState<Person> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -146,10 +146,11 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Affiliation>(
       title: "Tilhørigheter",
       repo: context.bloc<AffiliationBloc>().repo,
-      subtitle: (StorageState<Affiliation> state) => '${context.bloc<AffiliationBloc>().toName(
+      subject: (StorageState<Affiliation> state) => '${context.bloc<AffiliationBloc>().toName(
             state?.value,
             empty: translateAffiliationType(AffiliationType.volunteer),
           )}',
+      content: (StorageState<Affiliation> state) => '${emptyAsNull(state?.value?.person?.name) ?? '<Ingen navn>'}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -159,7 +160,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Personnel>(
       title: "Mannskaper",
       repo: context.bloc<PersonnelBloc>().repo,
-      subtitle: (StorageState<Personnel> state) => '${state?.value?.name}',
+      subject: (StorageState<Personnel> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -169,7 +170,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Device>(
       title: "Apparater",
       repo: context.bloc<DeviceBloc>().repo,
-      subtitle: (StorageState<Device> state) => '${state?.value?.name}',
+      subject: (StorageState<Device> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -179,7 +180,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Tracking>(
       title: "Sporinger",
       repo: context.bloc<TrackingBloc>().repo,
-      subtitle: (StorageState<Tracking> state) => '${enumName(state?.value?.status)}',
+      subject: (StorageState<Tracking> state) => '${enumName(state?.value?.status)}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -189,7 +190,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Organisation>(
       title: "Organisasjoner",
       repo: context.bloc<AffiliationBloc>().orgs,
-      subtitle: (StorageState<Organisation> state) => '${state?.value?.name}',
+      subject: (StorageState<Organisation> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -199,7 +200,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Division>(
       title: "Distrikter",
       repo: context.bloc<AffiliationBloc>().divs,
-      subtitle: (StorageState<Division> state) => '${state?.value?.name}',
+      subject: (StorageState<Division> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -209,7 +210,7 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Department>(
       title: "Avdelinger",
       repo: context.bloc<AffiliationBloc>().deps,
-      subtitle: (StorageState<Department> state) => '${state?.value?.name}',
+      subject: (StorageState<Department> state) => '${state?.value?.name}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );
@@ -263,9 +264,10 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   final bool withResetAction;
 
   const RepositoryTile({
-    @required this.title,
-    @required this.subtitle,
     @required this.repo,
+    @required this.title,
+    @required this.subject,
+    this.content,
     this.onReset,
     this.onCommit,
     this.withResetAction = true,
@@ -274,7 +276,8 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   final String title;
   final VoidCallback onReset;
   final VoidCallback onCommit;
-  final String Function(StorageState<T> state) subtitle;
+  final String Function(StorageState<T> state) subject;
+  final String Function(StorageState<T> state) content;
   final ConnectionAwareRepository<dynamic, T, Service> repo;
 
   @override
@@ -283,14 +286,27 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
       child: StreamBuilder<Object>(
           stream: repo.onChanged,
           builder: (context, snapshot) {
+            var local = 0;
+            var remote = 0;
+            if (snapshot.hasData) {
+              repo.states.values.forEach((state) {
+                if (state.isLocal) {
+                  local++;
+                } else {
+                  remote++;
+                }
+              });
+            }
             return _buildRepoActions(context,
                 child: ListTile(
                   key: PageStorageKey<ConnectionAwareRepository>(repo),
                   leading: const Icon(Icons.storage),
-                  title: Text(title),
+                  title: SelectableText(title),
                   subtitle: repo.isEmpty
-                      ? Text('Ingen elementer')
-                      : Text("Elementer: ${repo.length}, feil: ${repo.errors.length}"),
+                      ? SelectableText('Ingen elementer')
+                      : SelectableText(
+                          "Totalt ${repo.length} ($remote publisert, $local venter, ${repo.errors.length} feil)",
+                        ),
                 ));
           }),
       onTap: () => Navigator.push(
@@ -303,7 +319,8 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
             ),
             body: RepositoryPage<T>(
               repository: repo,
-              subtitle: subtitle,
+              subject: subject,
+              content: content,
             ),
           ),
         ),

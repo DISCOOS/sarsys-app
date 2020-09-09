@@ -141,9 +141,8 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                       onChanged: (value) async {
                         if (snapshot.hasData) {
                           await context.bloc<ActivityBloc>().apply(
-                                bloc.config,
-                                options,
                                 manual: value,
+                                config: bloc.config,
                               );
                         }
                         setState(() => _manual = value);
