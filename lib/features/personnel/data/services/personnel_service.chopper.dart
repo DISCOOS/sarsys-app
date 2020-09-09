@@ -27,7 +27,7 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
   @override
   Future<Response<PagedList<Personnel>>> fetchAll(
       dynamic ouuid, int offset, int limit,
-      {List<String> expand = const []}) {
+      {String expand}) {
     final $url = '/operations/$ouuid/personnels';
     final $params = <String, dynamic>{
       'offset': offset,

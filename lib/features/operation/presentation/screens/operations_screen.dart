@@ -14,7 +14,6 @@ import 'package:SarSys/features/user/presentation/widget/passcode_popup.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
-import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -194,9 +193,8 @@ class _OperationsPageState extends State<OperationsPage> {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.bloc<OperationBloc>().selected == operation;
           final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
-          final personnel = isCurrent ? context.bloc<PersonnelBloc>().findUser().firstOrNull : null;
-          final hasJoined = personnel != null;
-          final isAuthorized = hasJoined || context.bloc<UserBloc>().isAuthorized(operation);
+          final isMobilized = isCurrent && context.bloc<PersonnelBloc>().isUserMobilized();
+          final isAuthorized = isMobilized || context.bloc<UserBloc>().isAuthorized(operation);
           return Card(
             elevation: 4.0,
             child: Column(
@@ -231,21 +229,21 @@ class _OperationsPageState extends State<OperationsPage> {
                           children: <Widget>[
                             FlatButton.icon(
                               icon: Icon(isAuthorized
-                                  ? hasJoined
+                                  ? isMobilized
                                       ? toPersonnelStatusIcon(PersonnelStatus.leaving)
                                       : isAuthorized ? toPersonnelStatusIcon(PersonnelStatus.enroute) : Icons.lock_open
                                   : Icons.lock_open),
                               label: Text(
                                 isAuthorized
-                                    ? (hasJoined ? 'SJEKK UT' : 'DELTA')
-                                    : hasRoles ? hasJoined ? 'LÅS OPP' : 'LÅS OPP' : 'INGEN TILGANG',
+                                    ? (isMobilized ? 'SJEKK UT' : 'DELTA')
+                                    : hasRoles ? isMobilized ? 'LÅS OPP' : 'LÅS OPP' : 'INGEN TILGANG',
                                 style: TextStyle(fontSize: 14.0),
                               ),
                               padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               onPressed: isAuthorized || hasRoles
                                   ? () async {
-                                      if (hasJoined) {
+                                      if (isMobilized) {
                                         await leaveOperation();
                                       } else if (isAuthorized) {
                                         await _joinAndReroute(operation);

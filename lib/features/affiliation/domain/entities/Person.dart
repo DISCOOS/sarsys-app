@@ -28,7 +28,7 @@ abstract class Person extends Aggregate<Map<String, dynamic>> {
   String userId;
   bool temporary;
 
-  String get name => "${fname ?? ''} ${lname ?? ''}";
+  String get name => "${fname ?? ''} ${lname ?? ''}".trim();
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
   String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
 

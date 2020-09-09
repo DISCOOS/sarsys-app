@@ -221,7 +221,7 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     GeocodeType type,
     int radius = 20,
   }) async {
-    if (kDebugMode) print(request);
+    if (kDebugMode) debugPrint(request);
     final response = await client.get(
       Uri.encodeFull(request),
       headers: {

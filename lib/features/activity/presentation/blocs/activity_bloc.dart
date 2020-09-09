@@ -1,3 +1,4 @@
+import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -7,6 +8,8 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -33,6 +36,14 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   Stream<ActivityProfile> get onChanged =>
       where((event) => event.data is ActivityProfile).map((event) => event.data as ActivityProfile);
 
+  /// Get trackable [Device]
+  Device get trackable => _device;
+  Device _device;
+
+  /// Get applied [AppConfig]
+  AppConfig get applied => _config;
+  AppConfig _config;
+
   /// Check if bloc is ready
   bool get isReady => _isReady;
   var _isReady = false;
@@ -44,8 +55,201 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   ActivityProfile get profile => _profile;
   ActivityProfile _profile = ActivityProfile.PRIVATE;
 
+  /// Get location service
+  LocationService get service =>
+      LocationService.exists ? LocationService() : LocationService(options: _profile.options);
+
   /// Get current [LocationOptions]
-  LocationOptions get options => _profile.options;
+  LocationOptions get options => service.options;
+
+  AuthToken _token;
+
+  void _processAuth(BaseBloc bloc, UserState state) {
+    _isReady = state.shouldLoad();
+    _token = (bloc as UserBloc).token;
+  }
+
+  void _processDevice(BaseBloc bloc, DeviceState state) async {
+    if (state.isLoaded()) {
+      final found = (bloc as DeviceBloc).findThisApp();
+      if (found != _device) {
+        dispatch(
+          ConfigureLocationService(options, await isManual, _device = found),
+        );
+      }
+    }
+  }
+
+  void _processConfig<T extends BlocEvent>(Bloc bloc, T event) async {
+    if (event.data is AppConfig) {
+      _config = event.data;
+      final next = _toOptions(
+        _config,
+        debug: options?.debug ?? kDebugMode,
+        defaultAccuracy: null,
+      );
+      final manual = await isManual;
+      if (options != next && manual) {
+        dispatch(
+          ConfigureLocationService(next, manual, _device),
+        );
+      }
+    }
+  }
+
+  void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
+    final config = (bloc as PersonnelBloc).operationBloc.userBloc.config;
+    if (event is PersonnelsLoaded) {
+      final working = (bloc as PersonnelBloc).findUser();
+      if (working.isNotEmpty) {
+        _onUserChanged(working.first.status, config);
+      } else {
+        _onUserChanged(PersonnelStatus.retired, config);
+      }
+    } else if (event.data is Personnel) {
+      final personnel = event.data as Personnel;
+      if ((bloc as PersonnelBloc).isUser(personnel.uuid)) {
+        _onUserChanged(personnel.status, config);
+      }
+    } else if (event is PersonnelsUnloaded) {
+      _onUserChanged(PersonnelStatus.retired, config);
+    }
+  }
+
+  void _onUserChanged(PersonnelStatus status, AppConfig config) async {
+    var next;
+    switch (status) {
+      case PersonnelStatus.alerted:
+        next = ActivityProfile.ALERTED;
+        break;
+      case PersonnelStatus.enroute:
+        next = ActivityProfile.ENROUTE;
+        break;
+      case PersonnelStatus.onscene:
+        next = ActivityProfile.ONSCENE;
+        break;
+      case PersonnelStatus.leaving:
+        next = ActivityProfile.LEAVING;
+        break;
+      case PersonnelStatus.retired:
+      default:
+        next = ActivityProfile.PRIVATE;
+        break;
+    }
+    await apply(
+      profile: next,
+      config: config,
+      manual: await isManual,
+    );
+  }
+
+  Future<bool> get isManual async {
+    final prefs = await SharedPreferences.getInstance();
+    final manual = prefs.getBool(LocationService.pref_location_manual);
+    return manual ?? false;
+  }
+
+  Future<LocationOptions> apply({
+    bool manual,
+    AppConfig config,
+    ActivityProfile profile,
+  }) async {
+    if (profile != null) {
+      _profile = profile;
+    }
+
+    // Set manual flag if given
+    if (manual != null) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool(LocationService.pref_location_manual, manual);
+    }
+    manual = await isManual;
+
+    // Get next options to apply
+    final next = manual
+        ? _toOptions(
+            _config = config,
+            debug: profile?.options ?? options?.debug ?? kDebugMode,
+            defaultAccuracy: profile?.options?.accuracy ?? options.accuracy,
+          )
+        // Override current if
+        : profile?.options ?? options;
+
+    dispatch(
+      profile == null
+          ? ConfigureLocationService(next, manual, _device)
+          : ChangeActivityProfile(profile, manual, _device, next),
+    );
+
+    return next;
+  }
+
+  @override
+  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
+        error,
+        stackTrace: stackTrace ?? StackTrace.current,
+      );
+
+  @override
+  Stream<ActivityState> execute(ActivityCommand command) async* {
+    if (command is ChangeActivityProfile) {
+      yield await _change(command);
+    } else if (command is ConfigureLocationService) {
+      yield await _configure(command);
+    } else {
+      yield toUnsupported(command);
+    }
+  }
+
+  Future<ActivityState> _change(ChangeActivityProfile command) async {
+    final options = await _apply(
+      command.options,
+      command.device,
+    );
+    return toOK(
+      command,
+      ActivityProfileChanged(
+        command.data,
+        command.manual,
+        command.device,
+        options,
+      ),
+      result: command.data,
+    );
+  }
+
+  Future<ActivityState> _configure(ConfigureLocationService command) async {
+    final options = await _apply(
+      command.data,
+      command.device,
+    );
+    return toOK(
+      command,
+      LocationServiceConfigured(
+        _profile,
+        command.manual,
+        command.device,
+        options,
+      ),
+      result: command.data,
+    );
+  }
+
+  Future<LocationOptions> _apply(LocationOptions options, Device device) async {
+    final isChanged = service.options != options ||
+        service.token != _token && _token?.isValid == true ||
+        service.duuid != device?.uuid;
+
+    if (_isReady && isChanged) {
+      return await service.configure(
+        options: options,
+        share: isTrackable,
+        duuid: device?.uuid,
+        token: _token,
+      );
+    }
+    return service.options;
+  }
 
   LocationOptions _toOptions(
     AppConfig config, {
@@ -71,142 +275,6 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
     return accuracy;
   }
-
-  void _processAuth(BaseBloc bloc, UserState state) {
-    _isReady = state.shouldLoad();
-  }
-
-  void _processDevice(BaseBloc bloc, DeviceState state) {
-    if (state.isLoaded()) {
-      LocationService(
-        options: options,
-      ).configure(
-        duuid: (bloc as DeviceBloc).findThisApp()?.uuid,
-        options: options,
-      );
-    }
-  }
-
-  void _processConfig<T extends BlocEvent>(Bloc bloc, T event) async {
-    if (event.data is AppConfig && (event as AppConfigState).isLocal) {
-      final config = event.data as AppConfig;
-      _apply(
-        config,
-        options,
-        await isManual,
-      );
-    }
-  }
-
-  Future<LocationOptions> apply(
-    AppConfig config,
-    LocationOptions options, {
-    @required bool manual,
-  }) async {
-    assert(manual != null, "manual must be given");
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setBool(LocationService.pref_location_manual, manual);
-    return _apply(config, options, manual);
-  }
-
-  void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
-    final config = (bloc as PersonnelBloc).operationBloc.userBloc.config;
-    if (event is PersonnelsLoaded) {
-      final working = (bloc as PersonnelBloc).findUser();
-      if (working.isNotEmpty) {
-        _onUserChanged(working.first.status, config);
-      } else {
-        _onUserChanged(PersonnelStatus.retired, config);
-      }
-    } else if (event.data is Personnel && event.isLocal) {
-      final personnel = event.data as Personnel;
-      if ((bloc as PersonnelBloc).isUser(personnel.uuid)) {
-        _onUserChanged(personnel.status, config);
-      }
-    } else if (event is PersonnelsUnloaded) {
-      _onUserChanged(PersonnelStatus.retired, config);
-    }
-  }
-
-  void _onUserChanged(PersonnelStatus status, AppConfig config) {
-    final previous = _profile;
-    switch (status) {
-      case PersonnelStatus.alerted:
-        _profile = ActivityProfile.ALERTED;
-        break;
-      case PersonnelStatus.enroute:
-        _profile = ActivityProfile.ENROUTE;
-        break;
-      case PersonnelStatus.onscene:
-        _profile = ActivityProfile.ONSCENE;
-        break;
-      case PersonnelStatus.leaving:
-        _profile = ActivityProfile.LEAVING;
-        break;
-      case PersonnelStatus.retired:
-      default:
-        _profile = ActivityProfile.PRIVATE;
-        break;
-    }
-    if (true || previous != _profile) {
-      dispatch(
-        ChangeActivityProfile(_profile, config),
-      );
-    }
-  }
-
-  @override
-  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
-        error,
-        stackTrace: stackTrace ?? StackTrace.current,
-      );
-
-  @override
-  Stream<ActivityState> execute(ActivityCommand command) async* {
-    if (command is ChangeActivityProfile) {
-      yield await _change(command);
-    } else {
-      yield toUnsupported(command);
-    }
-  }
-
-  Future<ActivityState> _change(ChangeActivityProfile command) async {
-    bool manual = await isManual;
-    _profile = command.data;
-    _apply(
-      command.config,
-      _profile.options,
-      manual,
-    );
-    return toOK(
-      command,
-      ActivityProfileChanged(command.data),
-      result: command.data,
-    );
-  }
-
-  Future<bool> get isManual async {
-    final prefs = await SharedPreferences.getInstance();
-    final manual = prefs.getBool(LocationService.pref_location_manual);
-    return manual ?? false;
-  }
-
-  LocationOptions _apply(AppConfig config, LocationOptions options, bool manual) {
-    final service = LocationService(options: options);
-    if (_isReady) {
-      service.configure(
-        share: isTrackable,
-        options: manual
-            ? _toOptions(
-                config,
-                defaultAccuracy: options.accuracy,
-                debug: service.options?.debug ?? kDebugMode,
-              )
-            : options,
-      );
-    }
-    return service.options;
-  }
 }
 
 /// ---------------------
@@ -218,12 +286,42 @@ abstract class ActivityCommand<S, T> extends BlocCommand<S, T> {
 }
 
 class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityProfile> {
-  ChangeActivityProfile(ActivityProfile data, this.config) : super(data);
+  ChangeActivityProfile(
+    ActivityProfile profile,
+    this.manual,
+    this.device,
+    this.options,
+  ) : super(profile, [manual, device, options]);
 
-  final AppConfig config;
+  final bool manual;
+  final Device device;
+  final LocationOptions options;
 
   @override
-  String toString() => '$runtimeType {profile: $data}';
+  String toString() => '$runtimeType {'
+      'profile: $data, '
+      'manual: $manual, '
+      'device: $device, '
+      'options: $options'
+      '}';
+}
+
+class ConfigureLocationService extends ActivityCommand<LocationOptions, LocationOptions> {
+  ConfigureLocationService(
+    LocationOptions options,
+    this.manual,
+    this.device,
+  ) : super(options);
+
+  final bool manual;
+  final Device device;
+
+  @override
+  String toString() => '$runtimeType {'
+      'manual: $manual, '
+      'options: $data, '
+      'device: $device'
+      '}';
 }
 
 /// ---------------------
@@ -247,11 +345,50 @@ class ActivityInitialized extends ActivityState<ActivityProfile> {
   String toString() => '$runtimeType';
 }
 
-class ActivityProfileChanged extends ActivityState<ActivityProfile> {
-  ActivityProfileChanged(ActivityProfile profile) : super(profile);
+class LocationServiceConfigured extends ActivityState<ActivityProfile> {
+  LocationServiceConfigured(
+    ActivityProfile profile,
+    this.manual,
+    this.device,
+    this.options,
+  ) : super(
+          profile,
+          props: [manual, options, device],
+        );
+
+  final bool manual;
+  final Device device;
+  final LocationOptions options;
 
   @override
-  String toString() => '$runtimeType, {profile: $data}';
+  String toString() => '$runtimeType, {'
+      'profile: $data, '
+      'manual: $manual, '
+      'device: $device, '
+      'options: $options}';
+}
+
+class ActivityProfileChanged extends ActivityState<ActivityProfile> {
+  ActivityProfileChanged(
+    ActivityProfile profile,
+    this.manual,
+    this.device,
+    this.options,
+  ) : super(
+          profile,
+          props: [manual, options, device],
+        );
+
+  final bool manual;
+  final Device device;
+  final LocationOptions options;
+
+  @override
+  String toString() => '$runtimeType, {'
+      'profile: $data, '
+      'manual: $manual, '
+      'device: $device, '
+      'options: $options}';
 }
 
 /// ---------------------

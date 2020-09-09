@@ -57,14 +57,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       // Handle
       _processPersonConflicts,
     ));
-
-    // Keep personnel in sync with person
-    repo.onValue(
-      onGet: (value) {
-        final affiliation = affiliationBloc.repo[value.affiliation?.uuid];
-        return value.withPerson(affiliation?.person);
-      },
-    );
   }
 
   /// Process [OperationState] events
@@ -165,6 +157,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Find [Personnel]s matching given query
   Iterable<Personnel> find({bool where(Personnel personnel)}) => repo.find(where: where);
+
+  /// Check if user is mobilized
+  bool isUserMobilized() => findUser().firstOrNull?.isMobilized == true;
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> findUser({
@@ -328,16 +323,18 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       result: personnels.map(_withPerson).toList(),
     );
 
-    // Notify when states was fetched from remote storage
+    // Notify when all states was fetched from remote storage
     onComplete(
       [
         onPersonnels.future,
         if (personnels.isNotEmpty) onAffiliationState<AffiliationsFetched>(),
       ],
-      toState: (results) => PersonnelsLoaded(
-        repo.keys,
-        isRemote: true,
-      ),
+      toState: (results) {
+        return PersonnelsLoaded(
+          repo.keys,
+          isRemote: true,
+        );
+      },
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
         command,
@@ -382,7 +379,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
               affiliation: affiliation.toRef(),
               tracking: TrackingUtils.newRef(),
             )));
-      } else if (existing.status == PersonnelStatus.retired) {
+      } else if (existing.isMobilized != true) {
         yield* _update(UpdatePersonnel(existing.copyWith(
           status: PersonnelStatus.alerted,
         )));
@@ -626,14 +623,15 @@ abstract class PersonnelState<T> extends BlocEvent<T> {
 
   bool isError() => this is PersonnelBlocError;
   bool isEmpty() => this is PersonnelsEmpty;
-  bool isMobilized() => this is UserMobilized;
   bool isLoaded() => this is PersonnelsLoaded;
   bool isCreated() => this is PersonnelCreated;
   bool isUpdated() => this is PersonnelUpdated;
   bool isDeleted() => this is PersonnelDeleted;
+  bool isUserMobilized() => this is UserMobilized;
   bool isUnloaded() => this is PersonnelsUnloaded;
 
   bool isStatusChanged() => false;
+  bool isMobilized() => (data is Personnel) ? (data as Personnel).isMobilized : false;
   bool isTracked() => (data is Personnel) ? (data as Personnel).tracking?.uuid != null : false;
   bool isRetired() => (data is Personnel) ? (data as Personnel).status == PersonnelStatus.retired : false;
 }

@@ -173,43 +173,45 @@ void main() async {
       expectThrough(harness.personnelBloc, isA<PersonnelUpdated>());
     });
 
-    test('SHOULD update person on load', () async {
-      // Arrange
-      await _prepare(harness, offline: false);
-      await harness.personnelBloc.load();
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
-      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
-      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
-      final person = harness.affiliationBloc.persons.values.first;
-      final fname = "fupdated";
-      final lname = "lupdated";
-      expect(harness.personnelBloc.repo.values.first.person, person, reason: "SHOULD be equal");
-      expect(harness.affiliationBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+    // TODO: Better handling of person-data
 
-      // Act
-      final updated = await harness.personService.put(
-        person.copyWith(fname: fname, lname: lname),
-        storage: false,
-      );
-      await harness.personnelBloc.load();
-      await expectThroughLater(
-        harness.personnelBloc,
-        emits(isA<PersonnelsLoaded>().having(
-          (event) => event.isRemote,
-          'Should be remote',
-          isTrue,
-        )),
-      );
-
-      // Assert
-      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
-      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
-      expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
-
-      expect(harness.affiliationBloc.persons.values.first, updated, reason: "SHOULD be equal");
-      expect(harness.affiliationBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
-      expect(harness.personnelBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
-    });
+    // test('SHOULD update person on load', () async {
+    //   // Arrange
+    //   await _prepare(harness, offline: false);
+    //   await harness.personnelBloc.load();
+    //   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
+    //   expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+    //   expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+    //   final person = harness.affiliationBloc.persons.values.first;
+    //   final fname = "fupdated";
+    //   final lname = "lupdated";
+    //   expect(harness.personnelBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+    //   expect(harness.affiliationBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+    //
+    //   // Act
+    //   final updated = await harness.personService.put(
+    //     person.copyWith(fname: fname, lname: lname),
+    //     storage: false,
+    //   );
+    //   await harness.personnelBloc.load();
+    //   await expectThroughLater(
+    //     harness.personnelBloc,
+    //     emits(isA<PersonnelsLoaded>().having(
+    //       (event) => event.isRemote,
+    //       'Should be remote',
+    //       isTrue,
+    //     )),
+    //   );
+    //
+    //   // Assert
+    //   expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+    //   expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+    //   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain 1 personnel");
+    //
+    //   expect(harness.affiliationBloc.persons.values.first, updated, reason: "SHOULD be equal");
+    //   expect(harness.affiliationBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
+    //   expect(harness.personnelBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
+    // });
 
     // test('SHOULD replace person on conflict', () async {
     //   // Arrange - person in backend only

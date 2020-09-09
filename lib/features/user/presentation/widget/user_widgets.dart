@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:SarSys/core/size_config.dart';
-import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

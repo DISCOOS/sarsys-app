@@ -56,8 +56,6 @@ class BaseMapService extends Service {
     Set<BaseMap> baseMaps = {};
     final baseDirs = await _resolveDirs();
 
-    if (kDebugMode) print(baseDirs);
-
     // Search roots
     for (Directory baseDir in baseDirs) {
       // Skip "emulated" and "self" directories
@@ -66,7 +64,6 @@ class BaseMapService extends Service {
         for (FileSystemEntity maps in _search(root, (e) => _isMaps(e), recursive: false)) {
           // Search for map tiles metadata
           for (FileSystemEntity metadata in _search(maps, (e) => _isMetaData(e), recursive: true)) {
-            if (kDebugMode) print(metadata);
             try {
               final map = BaseMap.fromJson(
                 json.decode(File(metadata.path).readAsStringSync()),
@@ -79,7 +76,7 @@ class BaseMapService extends Service {
               );
             } on FormatException catch (e) {
               // Never mind, just don't import.
-              print("formatexception $e");
+              print("$e");
             }
           }
         }

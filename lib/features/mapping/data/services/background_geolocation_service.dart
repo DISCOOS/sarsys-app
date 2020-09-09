@@ -34,7 +34,7 @@ class BackgroundGeolocationService implements LocationService {
   static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
-  Future _configuring;
+  Future<bg.State> _configuring;
 
   @override
   LocationOptions get options => _options;
@@ -87,7 +87,6 @@ class BackgroundGeolocationService implements LocationService {
     _notify(ClearEvent(current));
   }
 
-  AuthToken _token;
   PermissionStatus _status = PermissionStatus.undetermined;
 
   StreamController<Position> _positionController = StreamController.broadcast();
@@ -118,19 +117,15 @@ class BackgroundGeolocationService implements LocationService {
 
   @override
   AuthToken get token => _token;
+  AuthToken _token;
 
   @override
   set token(AuthToken token) {
-    if (_isReady.value && _isConfigChanged(token: token)) {
-      final config = _toConfig(token: token);
-      if (_configuring == null) {
+    if (_isConfigChanged(token: token)) {
+      _token = token;
+      if (_isReady.value) {
+        final config = _toConfig(token: token);
         bg.BackgroundGeolocation.setConfig(config);
-      } else {
-        _configuring.then((_) {
-          if (_isConfigChanged(token: token)) {
-            bg.BackgroundGeolocation.setConfig(config);
-          }
-        });
       }
     }
   }
@@ -201,8 +196,9 @@ class BackgroundGeolocationService implements LocationService {
     if (!isReady.value) {
       _positions = await backlog();
       await bg.BackgroundGeolocation.setOdometer(_odometer);
-      _subscribe();
     }
+    _subscribe();
+
     if (!wasSharing && isSharing) {
       await push();
     }
@@ -392,29 +388,30 @@ class BackgroundGeolocationService implements LocationService {
   }
 
   void _subscribe() async {
-    if (!_isReady.value) {
-      // Process heartbeat events
-      bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
+    // Remove old listeners before registering again
+    await bg.BackgroundGeolocation.removeListeners();
 
-      // Process for location, motion and activity changes
-      bg.BackgroundGeolocation.onLocation(_onLocation, _onError);
-      bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
-      bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+    // Process heartbeat events
+    bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
 
-      // Process http service events
-      bg.BackgroundGeolocation.onHttp(_onHttp);
+    // Process for location, motion and activity changes
+    bg.BackgroundGeolocation.onLocation(_onLocation, _onError);
+    bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
+    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
 
-      // Process authorization events
-      bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
+    // Process http service events
+    bg.BackgroundGeolocation.onHttp(_onHttp);
 
-      _notify(
-        SubscribeEvent(_options),
-      );
+    // Process authorization events
+    bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
 
-      _isReady.value = true;
+    _notify(
+      SubscribeEvent(_options),
+    );
 
-      await update();
-    }
+    _isReady.value = true;
+
+    await update();
   }
 
   void _onHeartbeat(bg.HeartbeatEvent event) {

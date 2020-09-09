@@ -138,7 +138,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
         )));
       }
       // Re-mobilize personnel?
-      if (personnel.status == PersonnelStatus.retired) {
+      if (personnel.isMobilized != true) {
         return dartz.right(await params.bloc.update(personnel.copyWith(
           status: PersonnelStatus.alerted,
         )));
@@ -207,8 +207,8 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     final personnel = await params.bloc.update(result.data);
     await params.context.bloc<AffiliationBloc>().update(result.affiliation);
 
-    // Only update tracking if not retired
-    if (PersonnelStatus.retired != personnel.status) {
+    // Only update tracking if mobilized
+    if (personnel.isMobilized) {
       await params.context.bloc<TrackingBloc>().replace(
             personnel.tracking.uuid,
             devices: result.devices,

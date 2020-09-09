@@ -171,6 +171,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       withIcons: false,
       withNavigation: false,
       onMessage: widget.onMessage,
+      timestamp: service.current.timestamp,
       accuracy: service.current?.acc,
       point: service.current?.geometry,
       onGoto: (point) => jumpToPoint(context, center: point),
@@ -229,7 +230,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildJoinAction(BuildContext context) => RaisedButton.icon(
         icon: Icon(Icons.list),
-        label: Text('Velg aksjon'),
+        label: Text('AKSJONER'),
         onPressed: () => showDialog<Personnel>(
           context: context,
           builder: (BuildContext context) {
@@ -240,7 +241,7 @@ class UserStatusPageState extends State<UserStatusPage> {
                   icon: Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text("Velg aksjon", textAlign: TextAlign.start),
+                title: Text("VELG AKSJON", textAlign: TextAlign.start),
               ),
               body: OperationsPage(
                 filter: OperationsPage.DEFAULT_FILTER,
@@ -252,7 +253,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
         icon: Icon(Icons.map),
-        label: Text('Vis i kart'),
+        label: Text('VIS I KART'),
         onPressed: () => jumpToPoint(context, center: service.current.geometry),
       );
 
@@ -260,7 +261,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.directions_run),
-      label: Text('På vei'),
+      label: Text('PÅ VEI'),
       onPressed: personnel != null ? () => ingressPersonnel(personnel) : null,
     );
   }
@@ -269,7 +270,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.assignment_turned_in),
-      label: Text('Sjekk inn'),
+      label: Text('SJEKK INN'),
       onPressed: personnel != null ? () => checkInPersonnel(personnel) : null,
     );
   }
@@ -278,7 +279,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.directions_walk),
-      label: Text('Sjekk ut'),
+      label: Text('SJEKK UT'),
       onPressed: personnel != null ? () => checkOutPersonnel(personnel) : null,
     );
   }
@@ -287,7 +288,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.home),
-      label: Text('Hjemme'),
+      label: Text('HJEMME'),
       onPressed: personnel != null ? () => retirePersonnel(personnel) : null,
     );
   }

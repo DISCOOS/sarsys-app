@@ -282,6 +282,45 @@ class LocationOptions {
         locationAllowSharing: locationAllowSharing ?? this.locationAllowSharing ?? Defaults.locationAllowSharing,
       );
 
+  bool equals(AppConfig config) =>
+      locationAlways == config.locationAlways &&
+      locationWhenInUse == config.locationWhenInUse &&
+      activityRecognition == config.activityRecognition &&
+      locationStoreLocally == config.locationStoreLocally &&
+      locationAllowSharing == config.locationAllowSharing &&
+      accuracy == config.toLocationAccuracy() &&
+      distanceFilter == config.locationSmallestDisplacement &&
+      timeInterval == config.locationFastestInterval;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocationOptions &&
+          runtimeType == other.runtimeType &&
+          debug == other.debug &&
+          locationAlways == other.locationAlways &&
+          locationWhenInUse == other.locationWhenInUse &&
+          activityRecognition == other.activityRecognition &&
+          locationStoreLocally == other.locationStoreLocally &&
+          locationAllowSharing == other.locationAllowSharing &&
+          accuracy == other.accuracy &&
+          distanceFilter == other.distanceFilter &&
+          forceAndroidLocationManager == other.forceAndroidLocationManager &&
+          timeInterval == other.timeInterval;
+
+  @override
+  int get hashCode =>
+      debug.hashCode ^
+      locationAlways.hashCode ^
+      locationWhenInUse.hashCode ^
+      activityRecognition.hashCode ^
+      locationStoreLocally.hashCode ^
+      locationAllowSharing.hashCode ^
+      accuracy.hashCode ^
+      distanceFilter.hashCode ^
+      forceAndroidLocationManager.hashCode ^
+      timeInterval.hashCode;
+
   @override
   String toString() => 'Options: {\n'
       '   debug: $debug\n'

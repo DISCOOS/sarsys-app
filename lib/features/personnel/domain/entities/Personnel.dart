@@ -41,6 +41,12 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
   String get initials => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}${lname?.substring(0, 1)?.toUpperCase() ?? ''}";
 
+  /// Check if personnel is mobilized
+  bool get isMobilized => !const [
+        PersonnelStatus.leaving,
+        PersonnelStatus.retired,
+      ].contains(status);
+
   /// Get searchable string
   String get searchable => props
       .map((prop) => prop is PersonnelStatus ? translatePersonnelStatus(prop) : prop)

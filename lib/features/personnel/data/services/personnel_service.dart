@@ -25,6 +25,7 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
         ouuid,
         offset,
         limit,
+        expand: 'person',
       ),
     );
   }
@@ -85,7 +86,7 @@ abstract class PersonnelServiceImpl extends ChopperService {
     @Path() ouuid,
     @Query('offset') int offset,
     @Query('limit') int limit, {
-    @Query('expand') List<String> expand = const [],
+    @Query('expand') String expand,
   });
 
   @Patch(path: 'personnels/{uuid}')

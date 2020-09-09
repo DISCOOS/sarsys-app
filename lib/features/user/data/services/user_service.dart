@@ -128,7 +128,7 @@ class UserIdentityService extends UserService {
         stackTrace: stackTrace,
         message: "Failed to login",
       );
-    } on Exception catch (e, stackTrace) {
+    } catch (e, stackTrace) {
       return ServiceResponse.internalServerError(
         error: e,
         stackTrace: stackTrace,
@@ -176,7 +176,7 @@ class UserIdentityService extends UserService {
         error: e,
         stackTrace: stackTrace,
       ));
-    } on Exception catch (e, stackTrace) {
+    } catch (e, stackTrace) {
       _refreshCompleter.complete(ServiceResponse.internalServerError(
         message: "Failed to refresh token",
         error: e,
