@@ -9,7 +9,6 @@ import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
-import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';

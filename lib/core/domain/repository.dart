@@ -600,7 +600,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   }
 
   /// Apply [value] an push to [service]
-  Future<T> apply(T value) async {
+  T apply(T value) {
     checkState();
     StorageState next = _toState(
       value,
@@ -621,7 +621,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 
   /// Apply [state] and push to [service]
   @visibleForOverriding
-  FutureOr<T> push(StorageState<T> state) {
+  T push(StorageState<T> state) {
     checkState();
     final next = validate(state);
     final hasValueChanged = !isValueEqual(next);

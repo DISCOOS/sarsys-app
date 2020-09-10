@@ -675,12 +675,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     _assertOnboarding(command);
     var person = persons.findUser(command.data);
     if (person == null) {
-      person = await persons.apply(PersonModel.fromUser(
+      person = persons.apply(PersonModel.fromUser(
         users.repo[command.data],
         temporary: command.affiliation.isUnorganized,
       ));
     }
-    final affiliation = await repo.apply(command.affiliation.copyWith(
+    final affiliation = repo.apply(command.affiliation.copyWith(
       person: person,
     ));
 
@@ -720,12 +720,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     _assertTemporary(command);
     var person = persons.findUser(command.data.userId);
     if (person == null) {
-      person = await persons.apply(PersonModel.fromPersonnel(
+      person = persons.apply(PersonModel.fromPersonnel(
         command.data,
         temporary: true,
       ));
     }
-    final affiliation = await repo.apply(command.affiliation.copyWith(
+    final affiliation = repo.apply(command.affiliation.copyWith(
       person: person,
       type: command.affiliation.type ?? AffiliationType.volunteer,
       status: command.affiliation.status ?? AffiliationStandbyStatus.available,
@@ -761,7 +761,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   Stream<AffiliationState> _update(UpdateAffiliation command) async* {
-    final affiliation = await repo.apply(command.data);
+    final affiliation = repo.apply(command.data);
     final updated = toOK(
       command,
       AffiliationUpdated(affiliation),

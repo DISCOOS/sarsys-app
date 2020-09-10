@@ -308,7 +308,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   Stream<UnitState> _create(CreateUnit command) async* {
     _assertData(command.data);
-    final unit = await repo.apply(command.data);
+    final unit = repo.apply(command.data);
     yield toOK(
       command,
       UnitCreated(
@@ -338,7 +338,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   Stream<UnitState> _update(UpdateUnit command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final unit = await repo.apply(command.data);
+    final unit = repo.apply(command.data);
 
     yield toOK(
       command,

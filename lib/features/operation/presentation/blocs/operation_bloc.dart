@@ -307,8 +307,8 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Stream<OperationState> _create(CreateOperation command) async* {
     _assertData(command);
     // Execute commands
-    await incidents.apply(command.incident);
-    final operation = await repo.apply(command.data);
+    incidents.apply(command.incident);
+    final operation = repo.apply(command.data);
     final unselected = command.selected ? await _unset() : null;
     final selected = command.selected ? await _set(operation) : null;
     // Complete request
@@ -349,9 +349,9 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Stream<OperationState> _update(UpdateOperation command) async* {
     _assertUuid(command.data);
     // Execute command
-    final operation = await repo.apply(command.data);
+    final operation = repo.apply(command.data);
     if (command.incident != null) {
-      await incidents.apply(command.incident);
+      incidents.apply(command.incident);
     }
     final select = command.selected && command.data.uuid != _ouuid;
     final unselected = select ? await _unset() : null;

@@ -298,7 +298,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Stream<DeviceState> _create(CreateDevice command) async* {
     _assertData(command.data);
-    var device = await repo.apply(command.data);
+    var device = repo.apply(command.data);
     yield toOK(
       command,
       DeviceCreated(device),
@@ -324,7 +324,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Stream<DeviceState> _update(UpdateDevice command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final device = await repo.apply(command.data);
+    final device = repo.apply(command.data);
     yield toOK(
       command,
       DeviceUpdated(device, previous),

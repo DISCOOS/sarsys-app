@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/BaseMap.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';

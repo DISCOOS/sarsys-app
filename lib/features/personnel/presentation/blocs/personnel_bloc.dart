@@ -396,7 +396,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Stream<PersonnelState> _create(CreatePersonnel command) async* {
     Affiliation affiliation = await _ensureAffiliation(command);
     final person = affiliationBloc.persons[affiliation.person.uuid];
-    final personnel = await repo.apply(
+    final personnel = repo.apply(
       // Update with current person
       command.data.withPerson(person),
     );
@@ -449,7 +449,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Stream<PersonnelState> _update(UpdatePersonnel command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    final personnel = await repo.apply(command.data);
+    final personnel = repo.apply(command.data);
     yield toOK(
       command,
       PersonnelUpdated(personnel, previous),

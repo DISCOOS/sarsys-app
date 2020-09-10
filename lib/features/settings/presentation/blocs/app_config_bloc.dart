@@ -184,7 +184,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   }
 
   Stream<AppConfigState> _update(UpdateAppConfig event) async* {
-    final config = await repo.apply(
+    final config = repo.apply(
       event.data,
     );
     yield toOK(

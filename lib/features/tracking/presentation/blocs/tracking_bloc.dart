@@ -700,7 +700,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   Stream<TrackingState> _update(UpdateTracking command) async* {
-    final tracking = await repo.apply(command.data);
+    final tracking = repo.apply(command.data);
     yield toOK(
       command,
       TrackingUpdated(tracking),
