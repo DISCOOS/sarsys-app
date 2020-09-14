@@ -724,7 +724,11 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   Stream<TrackingState> _delete(DeleteTracking command) async* {
-    final tracking = await repo.delete(command.data.uuid);
+    final onRemote = Completer<Tracking>();
+    final tracking = repo.delete(
+      command.data.uuid,
+      onResult: onRemote,
+    );
     yield toOK(
       command,
       TrackingDeleted(tracking),
@@ -733,7 +737,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(tracking.uuid, require: false)],
+      [onRemote.future],
       toState: (_) => TrackingDeleted(
         tracking,
         isRemote: true,

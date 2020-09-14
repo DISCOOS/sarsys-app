@@ -71,10 +71,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         await dispatch(LoadPersonnels(
           state.data.uuid,
         ));
-        // Could change during load
-        if ((bloc as OperationBloc).isSelected && state.isSelected()) {
-          await mobilizeUser();
-        }
+        await mobilizeUser();
       } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
         await unload();
       }
@@ -186,29 +183,15 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }) =>
       repo.count(exclude: exclude);
 
-  Future _assertState({bool waitOnLoaded = true}) {
-    if (operationBloc.isUnselected) {
-      throw PersonnelBlocException(
-        "No operation selected. "
-        "Ensure that 'OperationBloc.select(String id)' is called before 'PersonnelBloc.load()'",
-        state,
-      );
-    }
-    if (!operationBloc.userBloc.isAuthenticated) {
-      throw PersonnelBlocException(
-        "Not user found",
-        state,
-      );
-    }
+  Future<void> _assertState({bool waitOnLoaded = true}) async {
     if (waitOnLoaded) {
       // Issue #77: This will prevent 409 Conflicts
       // Should wait on load if pending.
-      return Future.wait([
+      await Future.wait([
         onLoadedAsync(),
         affiliationBloc.onLoadedAsync(),
       ]);
     }
-    return Future.value();
   }
 
   String _assertData(Personnel personnel) {
@@ -474,8 +457,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   Stream<PersonnelState> _delete(DeletePersonnel command) async* {
+    final onRemote = Completer<Personnel>();
     _assertData(command.data);
-    final personnel = await repo.delete(command.data.uuid);
+    final personnel = repo.delete(
+      command.data.uuid,
+      onResult: onRemote,
+    );
     yield toOK(
       command,
       PersonnelDeleted(personnel),
@@ -484,7 +471,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(personnel.uuid, require: false)],
+      [onRemote.future],
       toState: (_) => PersonnelDeleted(
         personnel,
         isRemote: true,
@@ -498,12 +485,12 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     );
   }
 
-  Future<PersonnelState> _unload(UnloadPersonnels command) async {
+  Future<PersonnelState> _unload(PersonnelCommand command, {dynamic result}) async {
     final personnels = await repo.close();
     return toOK(
       command,
       PersonnelsUnloaded(personnels),
-      result: personnels,
+      result: result ?? personnels,
     );
   }
 
@@ -534,8 +521,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   @override
   Future<void> close() async {
-    super.close();
     await repo.dispose();
+    return super.close();
   }
 }
 

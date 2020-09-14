@@ -89,7 +89,7 @@ void main() async {
 
   group('AppConfig SHOULD transition state', () {
     test(
-      'from created to pushed on init 1',
+      'from local to remote on init when online',
       () async {
         // Arrange
         harness.connectivity.offline();
@@ -123,6 +123,12 @@ void main() async {
 
         // Act
         final keys = await harness.configBloc.repo.commit();
+
+        // Assert
+        await expectLater(
+          toStatusChanges(harness.configBloc.repo.onChanged),
+          emits(StorageStatus.created),
+        );
 
         // Assert
         expect(keys.length, 1, reason: "SHOULD contain 1 key");

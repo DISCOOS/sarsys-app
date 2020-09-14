@@ -64,7 +64,20 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
   }) async {
     final state = await _open();
     if (state.isLocal) {
-      return containsKey(version) ? schedulePush(state) : push(state);
+      final onPush = Completer<AppConfig>();
+      onPush.future.then(
+        (value) => onRemote.complete([value]),
+        onError: onRemote.completeError,
+      );
+      return containsKey(version)
+          ? schedulePush(
+              toKey(state),
+              onResult: onPush,
+            )
+          : push(
+              state,
+              onResult: onPush,
+            );
     }
     return _load(
       onRemote: onRemote,

@@ -6,10 +6,12 @@ import 'dart:math';
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
+import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
@@ -32,6 +34,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     @required this.connectivity,
     this.dependencies = const [],
   });
+
   final U service;
   final ConnectivityService connectivity;
   final Iterable<ConnectionAwareRepository> dependencies;
@@ -73,15 +76,18 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
           (transition) => transition.isError || transition.to != null,
           orElse: () => null,
         );
-    final state = transition.to;
-    if (fail && transition.isError) {
-      throw RepositoryRemoteException(
-        'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
-        state: state,
-        stackTrace: StackTrace.current,
-      );
+    if (transition != null) {
+      final state = transition.to;
+      if (fail && transition.isError) {
+        throw RepositoryRemoteException(
+          'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
+          state: state,
+          stackTrace: StackTrace.current,
+        );
+      }
+      return state;
     }
-    return state;
+    return Future.value();
   }
 
   /// Invoked before each [get].
@@ -105,38 +111,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   int get length => isReady ? _states.length : 0;
 
   /// Check if repository is online
-  bool get isOnline => _shouldSchedule();
+  bool get isOnline => _shouldSchedulePush();
 
   /// Check if repository is offline
   bool get isOffline => connectivity.isOffline;
 
   /// Find [T]s matching given query
   Iterable<T> find({bool where(T aggregate)}) => isReady ? values.where(where) : [];
-
-  bool _inTransaction = false;
-  bool get inTransaction => _inTransaction;
-
-  /// When in transaction, all
-  /// changes are applied locally.
-  ///
-  /// Calling [commit] will schedule changes
-  void beginTransaction() => _inTransaction = true;
-
-  /// Commit local states to backend
-  ///
-  /// This will set [inTransaction] to false.
-  ///
-  /// Returns list of committed states.
-  ///
-  Future<List<K>> commit() async {
-    _inTransaction = false;
-    states.forEach((key, state) {
-      if (state.isLocal) {
-        _offline(state);
-      }
-    });
-    return _shouldSchedule() ? _online(connectivity.status) : <K>[];
-  }
 
   /// Get value from [key]
   T get(K key) => getState(key)?.value;
@@ -189,6 +170,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool get isReady => _isReady();
   bool get isNotReady => !_isReady();
 
+  /// Check if load or push requests are pending
+  bool get isPending => _loadQueue.isEmpty && _pushQueue.isEmpty;
+
   /// Get key [K] from state [T]
   K toKey(StorageState<T> state);
 
@@ -219,8 +203,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// prevent '404 Not Found' returned by service
   /// because dependency was not found in backend.
   @protected
-  bool shouldWait(StorageState<T> state) {
-    if (state.isLocal) {
+  bool shouldWait(K key) {
+    final state = getState(key);
+    if (state?.isLocal == true) {
       final refs = toRefs(state.value);
       return refs.any(_isRefLocal);
     }
@@ -244,10 +229,20 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   static String toBoxName<T>({String postfix, Type runtimeType}) =>
       ['${runtimeType ?? typeOf<T>()}', postfix].where((part) => !isEmptyOrNull(part)).join('_');
 
-  /// Check if repository
-  /// is loading data from
-  /// [service].
-  bool get isLoading => _isProcessingLoad || _loadQueue.isNotEmpty;
+  /// Check if given error should move queue to idle state
+  bool _shouldStop(Object error, StackTrace stackTrace) {
+    final idle = error is SocketException || error is ClientException || error is TimeoutException || isOffline;
+    if (idle) {
+      _popWhenOnline();
+    } else {
+      onError(error, stackTrace);
+    }
+    return idle;
+  }
+
+  /// Check if repository is
+  /// loading data from [service].
+  bool get isLoading => _loadQueue.isNotEmpty;
 
   Completer<Iterable<T>> _onLoaded;
 
@@ -321,9 +316,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Queue of [scheduleLoad] processed in FIFO manner.
   ///
   /// This queue ensures that each [load] is
-  /// processed in order waiting for it to complete or
-  /// fail.
-  final _loadQueue = ListQueue<_LoadRequest>();
+  /// processed in order waiting for it to
+  /// complete or fail.
+  StreamRequestQueue<Iterable<T>> _loadQueue;
 
   /// Get local values and schedule a deferred load request
   @protected
@@ -334,148 +329,60 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     bool shouldEvict = true,
     Completer<Iterable<T>> onResult,
   }) {
-    if (_shouldProcessLoadQueue()) {
-      // Process LATER but BEFORE any asynchronous
-      // events like Future, Timer or DOM Event
-      scheduleMicrotask(_processLoadQueue);
+    // Replace current if not executed yet
+    _loadQueue
+      ..clear()
+      ..add(StreamRequest<Iterable<T>>(
+        fail: fail,
+        onResult: onResult,
+        execute: () => _executeLoad(
+          request,
+          shouldEvict,
+        ),
+        maxAttempts: maxAttempts,
+        fallback: () => Future.value(values),
+      ));
+
+    if (isOffline) {
+      _loadQueue.stop();
+      _pushQueue.stop();
+      _popWhenOnline();
     }
-    // Replace current
-    _loadQueue.clear();
-    _loadQueue.add(_LoadRequest<T>(
-      fail: fail,
-      attempts: 0,
-      request: request,
-      onResult: onResult,
-      shouldEvict: shouldEvict,
-      maxAttempts: maxAttempts,
-    ));
+
     return values;
   }
 
-  bool _isProcessingLoad = false;
-  bool _shouldProcessLoadQueue() => _loadQueue.isEmpty || _isProcessingLoad != true && _loadQueue.isNotEmpty;
-
-  /// Process [_LoadRequest]s in
-  /// FIFO-manner until
-  /// [_loadQueue] is empty.
-  Future _processLoadQueue() async {
-    try {
-      _isProcessingLoad = true;
-      while (_loadQueue.isNotEmpty) {
-        final next = _loadQueue.first;
-        // Stop processing when offline
-        if (!await _processLoad(next)) {
-          break;
-        }
-        _loadQueue.removeFirst();
-      }
-    } finally {
-      _isProcessingLoad = false;
-    }
-  }
-
-  // Can NEVER throw!
-  // Catch all exceptions and errors
-  // and handle them inside this
-  // method. If it throws, the load
-  // processing loop will exit before
-  // queue is empty and never resume
-  Future<bool> _processLoad(_LoadRequest command) async {
-    var isComplete = false;
-    if (command.attempts >= command.maxAttempts) {
-      if (command.fail) {
-        _onLoadError(
-          'Deferred load of ${command.request} failed after ${command.maxAttempts} attempts',
-          StackTrace.current,
-          command.onResult,
+  Future<StreamResult<Iterable<T>>> _executeLoad(
+    AsyncValueGetter<ServiceResponse<Iterable<T>>> request,
+    bool shouldEvict,
+  ) async {
+    var response = await request();
+    if (isReady && (response.is200 || response.is206)) {
+      final states = response.body.map((value) {
+        return StorageState.updated(
+          value,
+          isRemote: true,
         );
-      } else {
-        command.onResult?.complete(values);
+      });
+      if (shouldEvict) {
+        evict(
+          retainKeys: states.map(toKey),
+        );
       }
-      // Giving up
-      isComplete = true;
-    } else if (connectivity.isOnline) {
-      isComplete = await _executeLoad(
-        command,
+      states.forEach(
+        (state) => put(_patch(state)),
       );
-    } else {
-      // Try again later
-      _listenForOnline();
-    }
-    return isComplete;
-  }
-
-  // Can NEVER throw!
-  // Catch all exceptions and errors
-  // and handle them inside this
-  // method. If it throws, the load
-  // processing loop will exit before
-  // queue is empty and never resume
-  Future<bool> _executeLoad(_LoadRequest<T> command) async {
-    var isComplete = true;
-    try {
-      var response = await command.request();
-      if (isReady && (response.is200 || response.is206)) {
-        _onLoadDone(command, response);
-      } else if (response.isErrorCode) {
-        _onLoadError(
+    } else if (response.isErrorCode) {
+      return StreamResult<Iterable<T>>(
+        error: RepositoryServiceException(
+          'Failed to load $request',
           response,
-          response.stackTrace,
-          command.onResult,
-        );
-      } else {
-        // When not ready or
-        // 300 http status code
-        command.onResult?.complete(values);
-      }
-      return true;
-    } on SocketException {
-      // Assume offline
-      _listenForOnline();
-      isComplete = false;
-    } catch (error, stackTrace) {
-      _onLoadError(
-        error,
-        stackTrace,
-        command.onResult,
+        ),
+        stackTrace: response.stackTrace,
       );
     }
-    return isComplete;
-  }
-
-  void _onLoadDone(
-    _LoadRequest<T> command,
-    ServiceResponse<Iterable<T>> response,
-  ) {
-    final states = response.body.map((value) {
-      return StorageState.updated(
-        value,
-        isRemote: true,
-      );
-    });
-    if (command.shouldEvict) {
-      evict(
-        retainKeys: states.map(toKey),
-      );
-    }
-    states.forEach(
-      (state) => put(_patch(state)),
-    );
-    command.onResult?.complete(response.body);
-  }
-
-  void _onLoadError(
-    error,
-    StackTrace stackTrace,
-    Completer<Iterable<T>> onResult,
-  ) {
-    onError(
-      error,
-      stackTrace,
-    );
-    onResult?.completeError(
-      error,
-      stackTrace,
+    return StreamResult<Iterable<T>>(
+      value: values,
     );
   }
 
@@ -567,6 +474,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       _states.delete(key);
       // Can not logically exist anymore, remove it!
       _backlog.remove(key);
+      _pushQueue.remove(key.toString());
     } else {
       _states.put(key, state);
     }
@@ -600,35 +508,49 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   }
 
   /// Apply [value] an push to [service]
-  T apply(T value) {
+  T apply(
+    T value, {
+    Completer<T> onResult,
+  }) {
     checkState();
     StorageState next = _toState(
       value,
       false,
     );
-    return push(_patch(
-      next,
-    ));
+    return push(
+      _patch(next),
+      onResult: onResult,
+    );
   }
 
   /// Delete current value
-  Future<T> delete(K key) async {
+  T delete(
+    K key, {
+    Completer<T> onResult,
+  }) {
     checkState();
     return push(
       StorageState.deleted(this[key]),
+      onResult: onResult,
     );
   }
 
   /// Apply [state] and push to [service]
   @visibleForOverriding
-  T push(StorageState<T> state) {
+  T push(
+    StorageState<T> state, {
+    Completer<T> onResult,
+  }) {
     checkState();
     final next = validate(state);
     final hasValueChanged = !isValueEqual(next);
     final hasStatusChanged = !isStatusEqual(next);
     final exists = put(next);
     if (exists && (next.isLocal || hasValueChanged || hasStatusChanged)) {
-      return schedulePush(next);
+      return schedulePush(
+        toKey(next),
+        onResult: onResult,
+      );
     }
     return next.value;
   }
@@ -682,12 +604,11 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Should handle errors
   @mustCallSuper
   @visibleForOverriding
-  void onError(
-    Object error,
-    StackTrace stackTrace,
-  ) {
-    RepositorySupervisor.delegate.onError(this, error, stackTrace);
-  }
+  void onError(Object error, StackTrace stackTrace) => RepositorySupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
 
   /// Reads [states] from storage
   @visibleForOverriding
@@ -697,6 +618,18 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     bool compact = false,
   }) async {
     if (force || _states == null) {
+      // Create if not exists
+      _pushQueue ??= StreamRequestQueue<T>(
+        onError: _shouldStop,
+      );
+      _loadQueue ??= StreamRequestQueue<Iterable<T>>(
+        onError: _shouldStop,
+      );
+
+      // Clear scheduled requests
+      _pushQueue.clear();
+      _loadQueue.clear();
+
       if (compact) {
         await _states?.compact();
       }
@@ -713,9 +646,42 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         ..addAll(
           _states.values.where((state) => state.isCreated).map((state) => toKey(state)),
         );
+      _pop();
     }
     // Get mapped states
     return states.values;
+  }
+
+  /// Check if in a transaction.
+  ///
+  /// If [true] repository will
+  /// not schedule and process
+  /// push requests until [commit]
+  /// is called.
+  ///
+  bool get inTransaction => _inTransaction;
+  bool _inTransaction = false;
+
+  /// When in transaction, all
+  /// changes are applied locally.
+  ///
+  /// Calling [commit] will schedule changes
+  void beginTransaction() => _inTransaction = true;
+
+  /// Commit local states to backend
+  ///
+  /// This will set [inTransaction] to false.
+  ///
+  /// Returns list of keys to committed states.
+  ///
+  Future<List<K>> commit() async {
+    _inTransaction = false;
+    states.forEach((key, state) {
+      if (state.isLocal) {
+        _stash(state);
+      }
+    });
+    return _pop();
   }
 
   /// Queue of [StorageState] processed in FIFO manner.
@@ -725,7 +691,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// fail. This prevents concurrent writes which will
   /// result in an unexpected behaviour due to race
   /// conditions.
-  final _pushQueue = ListQueue<StorageState<T>>();
+  StreamRequestQueue<T> _pushQueue;
 
   /// Schedule push state to [service]
   ///
@@ -735,72 +701,57 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// Errors from [service] are handled
   /// automatically by appropriate actions.
   @protected
-  T schedulePush(StorageState<T> next) {
-    if (next.isLocal) {
-      if (_shouldSchedule()) {
-        if (_shouldProcessPushQueue()) {
-          // Process LATER but BEFORE any asynchronous
-          // events like Future, Timer or DOM Event
-          scheduleMicrotask(_processPushQueue);
-        }
-        _pushQueue.add(next);
-        return next.value;
+  T schedulePush(
+    K key, {
+    Completer<T> onResult,
+  }) {
+    final state = getState(key);
+    if (state?.isLocal == true) {
+      if (_shouldSchedulePush()) {
+        // Replace current if not executed yet
+        _pushQueue.add(StreamRequest<T>(
+          fail: false,
+          onResult: onResult,
+          fallback: () => Future.value(state.value),
+          execute: () => _isReady() ? _executePush(key) : state.value,
+        ));
+        return state?.value;
       }
-      return _offline(next);
+      return _stash(state);
     }
-    return next.value;
+    return state?.value;
   }
 
-  bool _shouldProcessPushQueue() => _pushQueue.isEmpty;
-
-  /// Process [StorageState] in FIFO-manner
-  /// until [_pushQueue] is empty.
-  Future _processPushQueue() async {
-    while (_pushQueue.isNotEmpty) {
-      final next = _pushQueue.first;
-      try {
-        final exists = await _waitForDeps(next);
-        if (exists) {
-          await _processPush(next);
-          _pushQueue.removeFirst();
-        }
-      } catch (error, stackTrace) {
-        // Give up!
-        _pushQueue.removeFirst();
-        put(next.failed(error));
-        onError(error, stackTrace);
-      }
-    }
-  }
-
-  // Can NEVER throw!
-  // Catch all exceptions and errors
-  // and handle them inside this
-  // method. If it throws, the push
-  // processing loop will exit before
-  // queue is empty and never resume
-  Future _processPush(StorageState next) async {
+  Future<StreamResult<T>> _executePush(K key) async {
     try {
       if (_isReady()) {
-        final result = await _push(
-          next,
-        );
-        if (_isReady()) {
-          put(
-            _patch(result),
+        final exists = await _waitForDeps(key);
+        if (exists && containsKey(key)) {
+          final result = await _push(
+            getState(key),
+          );
+          if (_isReady()) {
+            put(_patch(
+              result,
+            ));
+          }
+          return StreamResult(
+            // If patch deleted state, use result before patch
+            value: containsKey(key) ? get(key) : result.value,
           );
         }
       }
-    } on SocketException {
-      // Timeout - try again later
-      _offline(next);
-    } catch (error, stackTrace) {
-      put(next.failed(error));
-      onError(error, stackTrace);
+      return StreamResult.none<T>();
+    } catch (error) {
+      final state = getState(key);
+      if (state != null) {
+        put(state.failed(error));
+      }
+      rethrow;
     }
   }
 
-  bool _isReady() => _states?.isOpen == true;
+  bool _isReady() => _states?.isOpen == true && _disposed == false;
 
   /// Check if dependencies exists remotely
   /// and [waitFor] given time. If dependencies
@@ -809,99 +760,92 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   /// The method returns [true] if dependencies
   /// exists, [false] otherwise.
   Future<bool> _waitForDeps(
-    StorageState next, {
+    K key, {
     Duration waitFor = const Duration(milliseconds: 10),
   }) async {
-    if (shouldWait(next)) {
+    if (shouldWait(key)) {
       await Future.delayed(waitFor);
     }
-    return !shouldWait(next);
+    return !shouldWait(key);
   }
 
-  bool _shouldSchedule() => connectivity.isOnline && !_inTransaction;
+  bool _shouldSchedulePush() => connectivity.isOnline && !_inTransaction;
 
   /// Subscription for handling  offline -> online
   StreamSubscription<ConnectivityStatus> _onlineSubscription;
-
-  T _offline(StorageState<T> state) {
-    final key = toKey(state);
-    _backlog.add(key);
-    _listenForOnline();
-    return state.value;
-  }
-
-  void _listenForOnline() {
-    if (_onlineSubscription == null) {
-      _onlineSubscription = connectivity.whenOnline.listen(
-        _online,
-        onError: onError,
-        cancelOnError: false,
-      );
-    }
-  }
-
-  Timer _timer;
 
   /// Current number of retries.
   /// Is reset on each offline -> online transition
   int get retries => _retries;
   int _retries = 0;
 
-  Future<List<K>> _online(ConnectivityStatus status) async {
-    final pushed = <K>[];
-
-    _onlineSubscription?.cancel();
-
-    while (_backlog.isNotEmpty) {
-      final key = _backlog.first;
-      final state = getState(key);
-      try {
-        if (state != null) {
-          final result = await _push(
-            state,
-          );
-          put(result);
-          pushed.add(key);
-        }
-        _backlog.remove(key);
-      } on SocketException {
-        // Assume offline
-        _retryOnline(status);
-        return pushed;
-      } catch (error, stackTrace) {
-        _backlog.remove(key);
-        put(state.failed(error));
-        onError(error, stackTrace);
-      }
-    }
-
-    // Always complete pending writes
-    // before reads to prevent local
-    // out-of-order repository updates
-    await _processLoadQueue();
-
-    // Only stop timer and reset
-    // exponential backoff counter
-    // when all pending work is done
-    if (!isPending) {
-      _retries = 0;
-      _timer?.cancel();
-    }
-
-    return pushed;
+  T _stash(StorageState<T> state) {
+    final key = toKey(state);
+    _backlog.add(key);
+    _popWhenOnline();
+    return state.value;
   }
 
-  /// Check if load or push is pending
-  bool get isPending => _loadQueue.isEmpty && _backlog.isEmpty;
+  void _popWhenOnline() {
+    if (_onlineSubscription == null) {
+      _onlineSubscription = connectivity.whenOnline.listen(
+        (_) => _pop(),
+        onError: onError,
+        cancelOnError: false,
+      );
+    }
+  }
 
-  void _retryOnline(ConnectivityStatus status) {
-    if (_shouldSchedule()) {
+  Future<List<K>> _pop() async {
+    final scheduled = <K>[];
+
+    if (_shouldSchedulePush()) {
+      if (_backlog.isNotEmpty) {
+        // Cancel processing
+        await _loadQueue.stop();
+        await _pushQueue.stop();
+
+        // Keys will be added back
+        // if schedule fails
+        final keys = _backlog.toList();
+        _backlog.clear();
+
+        for (var key in keys) {
+          schedulePush(key);
+          scheduled.add(key);
+        }
+
+        // Always complete pending writes
+        // before reads to prevent local
+        // out-of-order repository updates
+        await _pushQueue.process();
+        await _loadQueue.process();
+      }
+
+      // Only stop timer and reset
+      // exponential backoff counter
+      // when all pending work is done
+      if (!isPending) {
+        _retries = 0;
+        _timer?.cancel();
+      }
+    } else {
+      _retryPop();
+    }
+
+    return scheduled;
+  }
+
+  Timer _timer;
+
+  void _retryPop() {
+    if (_shouldSchedulePush()) {
       _timer?.cancel();
       _timer = Timer(
         toNextTimeout(_retries++, const Duration(seconds: 10)),
         () {
-          if (_shouldSchedule()) {
-            _online(status);
+          if (_shouldSchedulePush()) {
+            _pop();
           }
         },
       );
@@ -1045,6 +989,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Future<List<T>> close() async {
     final Iterable<T> elements = values.toList();
     if (_isReady()) {
+      await _loadQueue.cancel();
+      await _pushQueue.cancel();
       await _states.close();
     }
     _states = null;
@@ -1057,7 +1003,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   ///
   /// After this point it can
   /// not used again.
-  Future dispose() async {
+  Future<void> dispose() async {
     _disposed = true;
     _controller.close();
     _timer?.cancel();
@@ -1069,9 +1015,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     );
     _subscriptions.clear();
     if (_isReady()) {
-      return _states.close();
+      await close();
     }
-    return Future.value();
   }
 
   /// Subscriptions released on [close]
@@ -1097,33 +1042,6 @@ class _StorageState<T> extends StorageState<T> {
   final T Function(T value) onGet;
 
   T get value => onGet(super.value);
-}
-
-@Immutable()
-class _LoadRequest<T> {
-  const _LoadRequest({
-    @required this.fail,
-    @required this.request,
-    @required this.attempts,
-    @required this.onResult,
-    @required this.maxAttempts,
-    @required this.shouldEvict,
-  });
-  final bool fail;
-  final int attempts;
-  final int maxAttempts;
-  final bool shouldEvict;
-  final Completer<Iterable<T>> onResult;
-  final Future<ServiceResponse<Iterable<T>>> Function() request;
-
-  _LoadRequest<T> retry() => _LoadRequest<T>(
-        fail: fail,
-        request: request,
-        onResult: onResult,
-        attempts: attempts + 1,
-        shouldEvict: shouldEvict,
-        maxAttempts: maxAttempts,
-      );
 }
 
 class RepositoryDelegate {
@@ -1217,6 +1135,21 @@ class RepositoryException implements Exception {
   String toString() {
     return '$runtimeType: {message: $message, state: $state, stackTrace: $stackTrace}';
   }
+}
+
+class RepositoryServiceException implements Exception {
+  final String message;
+  final StorageState state;
+  final StackTrace stackTrace;
+  final ServiceResponse response;
+  RepositoryServiceException(this.message, this.response, {this.state, this.stackTrace});
+  @override
+  String toString() => '$runtimeType: {'
+      'message: $message, '
+      'response: $response, '
+      'state: $state, '
+      'stackTrace: $stackTrace'
+      '}';
 }
 
 class RepositoryRemoteException extends RepositoryException {

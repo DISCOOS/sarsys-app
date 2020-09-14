@@ -809,12 +809,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   @override
   Future<void> close() async {
-    super.close();
     await deps.dispose();
     await divs.dispose();
     await orgs.dispose();
     await persons.dispose();
-    return repo.dispose();
+    await repo.dispose();
+    return super.close();
   }
 
   @override

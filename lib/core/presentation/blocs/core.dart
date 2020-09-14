@@ -126,12 +126,12 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// Process [BlocEvent] in FIFO-manner
   /// until [_eventQueue] is empty. Any error
   /// will stop events processing.
-  void _processEventQueue() async {
+  Future<void> _processEventQueue() async {
     try {
-      while (_isOpen && _dispatchQueue.isNotEmpty) {
+      while (_eventQueue.isNotEmpty) {
         final pair = _eventQueue.first;
         _toHandlers(pair.right).forEach((handler) {
-          handler(pair.left, pair.left);
+          handler(pair.left, pair.right);
         });
         _eventQueue.removeFirst();
       }
@@ -144,25 +144,35 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     }
     if (!_isOpen) {
       _eventQueue.clear();
+      _dispatchQueue.clear();
     }
+    return Future.value();
   }
 
   /// Get all handlers for given event
   Iterable<Function> _toHandlers(BlocEvent event) => _handlers[event.runtimeType] ?? [];
 
+  /// Queue of [BlocCommand]s processed in FIFO manner.
+  ///
+  /// This queue ensures that all commands are processed
+  /// in order waiting for it to complete of fail before
+  /// any events are forwarded to handlers. This prevents
+  /// concurrent writes which will result in an unexpected
+  /// behaviour due to race conditions.
+  ///
+  final _dispatchQueue = ListQueue<C>();
+
   @override
   void add(C command) {
-    if (_dispatchQueue.isEmpty) {
-      // Process LATER but BEFORE any asynchronous
-      // events like Future, Timer or DOM Event
-      scheduleMicrotask(_processDispatchQueue);
-    }
     _dispatchQueue.add(command);
+    super.add(command);
   }
 
   /// Dispatch command and return future of value [T]
   Future<T> dispatch<T>(C command) {
-    add(command);
+    if (isOpen) {
+      add(command);
+    }
     return command.callback.future;
   }
 
@@ -179,31 +189,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     return results;
   }
 
-  /// Queue of [BlocCommand]s processed in FIFO manner.
-  ///
-  /// This queue ensures that each command is processed
-  /// in order waiting for it to complete of fail. This
-  /// prevents concurrent writes which will result in
-  /// an unexpected behaviour due to race conditions.
-  final _dispatchQueue = ListQueue<C>();
-
-  /// Process [BlocCommand] in FIFO-manner
-  /// until [_dispatchQueue] is empty
-  void _processDispatchQueue() async {
-    while (_isOpen && _dispatchQueue.isNotEmpty) {
-      // Dispatch next command and wait for result
-      super.add(_dispatchQueue.first);
-      // Only remove after execution is completed
-      _dispatchQueue.removeFirst();
-    }
-    if (_isOpen) {
-      _processEventQueue();
-    } else {
-      _eventQueue.clear();
-      _dispatchQueue.clear();
-    }
-  }
-
   @override
   @protected
   Stream<S> mapEventToState(C command) async* {
@@ -217,6 +202,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
           ),
         );
       });
+      await _pop(command);
     } on Exception catch (error, stackTrace) {
       yield toError(
         command,
@@ -226,6 +212,15 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         ),
       );
     }
+  }
+
+  Future<void> _pop(C command) async {
+    if (_isOpen) {
+      _dispatchQueue.remove(command);
+    } else {
+      _dispatchQueue.clear();
+    }
+    return _processEventQueue();
   }
 
   void onComplete<T>(
@@ -242,9 +237,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         )));
       }
     } catch (e, stackTrace) {
-      final state = toError(e, stackTrace);
-      if (state != null) {
-        dispatch(toCommand(state));
+      if (isOpen) {
+        final state = toError(e, stackTrace);
+        if (state != null) {
+          dispatch(toCommand(state));
+        }
       }
     }
   }
@@ -254,10 +251,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   ///
   @protected
   S toOK(C event, S state, {Object result}) {
-    if (result != null)
+    if (result != null) {
       event.callback.complete(result);
-    else
+    } else {
       event.callback.complete();
+    }
     return state;
   }
 
@@ -283,6 +281,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         object.stackTrace ?? StackTrace.current,
       );
     }
+    _pop(command);
     return object;
   }
 
@@ -302,12 +301,14 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   @visibleForOverriding
   Error createError(Object error, {StackTrace stackTrace});
 
+  bool get isClosed => !isOpen;
   bool get isOpen => _isOpen;
   bool _isOpen = true;
 
   @override
   @mustCallSuper
-  Future<void> close() {
+  Future<void> close() async {
+    await _processEventQueue();
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );

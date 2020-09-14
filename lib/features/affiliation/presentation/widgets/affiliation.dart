@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -187,7 +185,7 @@ class AffiliationFormState extends State<AffiliationForm> {
       builder: (context, ouuid, _) {
         final duuid = _update(DIV_FIELD, _ensureDiv(ouuid));
         final divisions = _buildDivItems(toOrg(ouuid));
-        scheduleMicrotask(() => _div.value = duuid);
+        // scheduleMicrotask(() => _div.value = duuid);
         return editable & divisions.isNotEmpty
             ? buildDropDownField<String>(
                 attribute: DIV_FIELD,
@@ -219,7 +217,7 @@ class AffiliationFormState extends State<AffiliationForm> {
         builder: (context, divuuid, _) {
           final depuuid = _update(DEP_FIELD, _ensureDep(divuuid));
           final departments = _buildDepItems(toDiv(divuuid));
-          scheduleMicrotask(() => _dep = depuuid);
+          // scheduleMicrotask(() => _dep = depuuid);
           return editable && departments.isNotEmpty
               ? buildDropDownField<String>(
                   attribute: DEP_FIELD,

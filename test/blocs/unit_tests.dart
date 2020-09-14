@@ -1,3 +1,4 @@
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -322,6 +323,14 @@ void main() async {
       await _prepare(harness, offline: true);
       final unit = UnitBuilder.create();
       await harness.unitBloc.create(unit);
+      await expectThroughLater(
+        harness.unitBloc,
+        emits(isA<UnitCreated>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
@@ -337,6 +346,14 @@ void main() async {
       await _prepare(harness, offline: true);
       final unit = UnitBuilder.create();
       await harness.unitBloc.create(unit);
+      await expectThroughLater(
+        harness.unitBloc,
+        emits(isA<UnitCreated>().having(
+          (event) => event.isLocal,
+          'Should be local',
+          isTrue,
+        )),
+      );
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
       // Act
@@ -380,16 +397,45 @@ void main() async {
 }
 
 Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness, {@required bool offline}) async {
+  // Arrange
   await _prepare(harness, offline: offline);
   final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<PersonnelCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   final p2 = await harness.personnelBloc.create(PersonnelBuilder.create());
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<PersonnelCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   final unit = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1.uuid, p2.uuid]));
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
 
   // Act
   final updated = await harness.personnelBloc.delete(p2.uuid);
   await expectThroughLater(
     harness.unitBloc,
-    emits(isA<UnitUpdated>()),
+    emits(isA<UnitUpdated>().having(
+      (event) => event.isLocal,
+      'Should be local',
+      isTrue,
+    )),
   );
 
   // Assert
@@ -408,6 +454,14 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
   await _prepare(harness, offline: offline);
   final unit = UnitBuilder.create();
   await harness.unitBloc.create(unit);
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
   expect(harness.unitBloc.ouuid, isNotNull, reason: "SHOULD NOT be null");
 
@@ -436,6 +490,14 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@requi
   final operation = await _prepare(harness, offline: offline);
   final unit = UnitBuilder.create();
   await harness.unitBloc.create(unit);
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
   // Act
@@ -461,6 +523,15 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@requ
   final operation = await _prepare(harness, offline: offline);
   final unit = UnitBuilder.create();
   await harness.unitBloc.create(unit);
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
+
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
   // Act
@@ -489,6 +560,14 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@requir
   final operation = await _prepare(harness, offline: offline);
   final unit = UnitBuilder.create();
   await harness.unitBloc.create(unit);
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
   // Act
@@ -512,6 +591,22 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
   await _prepare(harness, offline: offline);
   final unit = UnitBuilder.create();
   await harness.unitBloc.create(unit);
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
   // Act
@@ -519,6 +614,14 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
   final operation2 = await harness.operationsBloc.create(
     OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
     incident: incident,
+  );
+  await expectThroughLater(
+    harness.operationsBloc,
+    emits(isA<OperationCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
   );
 
   // Assert
@@ -551,7 +654,11 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
   // Wait for user to onboard
   await expectThroughLater(
     harness.affiliationBloc,
-    emits(isA<UserOnboarded>()),
+    emits(isA<UserOnboarded>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
   );
 
   // A user must be authenticated
@@ -569,11 +676,7 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
   );
 
   // Prepare OperationBloc
-  await expectThroughLater(
-      harness.operationsBloc,
-      emits(
-        isA<OperationSelected>(),
-      ));
+  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()));
   expect(
     harness.operationsBloc.isUnselected,
     isFalse,
@@ -582,7 +685,52 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
 
   // Prepare UnitBloc
   await expectThroughLater(harness.unitBloc, emits(isA<UnitsLoaded>()));
-  expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
+  expect(
+    harness.unitBloc.ouuid,
+    operation.uuid,
+    reason: "SHOULD depend on operation ${operation.uuid}",
+  );
+
+  // Await User to be mobilized
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<PersonnelCreated>().having(
+      (event) => event.isRemote,
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
+  // Verify only user exists
+  expect(
+    harness.personnelBloc.findUser(userId: harness.userBloc.userId),
+    isNotEmpty,
+    reason: "User SHOULD BE mobilized",
+  );
+  expect(
+    harness.personnelBloc.repo.length,
+    equals(1),
+    reason: "Only user SHOULD BE mobilized",
+  );
+  expect(
+    harness.affiliationBloc.findUserAffiliation(userId: harness.userBloc.userId),
+    isNotNull,
+    reason: "User SHOULD HAVE affiliation",
+  );
+  expect(
+    harness.affiliationBloc.repo.length,
+    equals(1),
+    reason: "Only user SHOULD BE affiliated",
+  );
+  expect(
+    harness.affiliationBloc.persons.findUser(harness.userBloc.userId),
+    isNotNull,
+    reason: "User SHOULD BE a person",
+  );
+  expect(
+    harness.affiliationBloc.persons.length,
+    equals(1),
+    reason: "Only user SHOULD BE a person",
+  );
 
   return operation;
 }

@@ -400,10 +400,14 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   }
 
   Stream<OperationState> _delete(DeleteOperation command) async* {
+    final onRemote = Completer<Operation>();
     // Unselect if was selected
     final unselected = command.data == _ouuid ? await _unset() : null;
     // Execute command
-    var operation = await repo.delete(command.data);
+    var operation = repo.delete(
+      command.data,
+      onResult: onRemote,
+    );
     // Complete request
     final deleted = toOK(
       command,
@@ -418,7 +422,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(operation.uuid, require: false)],
+      [onRemote.future],
       toState: (_) => OperationDeleted(
         operation,
         isRemote: true,

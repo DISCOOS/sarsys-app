@@ -365,7 +365,11 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
   Stream<UnitState> _delete(DeleteUnit command) async* {
     _assertData(command.data);
-    final unit = await repo.delete(command.data.uuid);
+    final onRemote = Completer<Unit>();
+    final unit = repo.delete(
+      command.data.uuid,
+      onResult: onRemote,
+    );
     yield toOK(
       command,
       UnitDeleted(unit),
@@ -374,7 +378,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(unit.uuid, require: false)],
+      [onRemote.future],
       toState: (_) => UnitDeleted(
         unit,
         isRemote: true,

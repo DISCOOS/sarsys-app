@@ -204,4 +204,9 @@ class Pair<L, R> {
 
   @override
   int get hashCode => left.hashCode ^ right.hashCode;
+
+  @override
+  String toString() {
+    return '{${left.runtimeType}, ${right.runtimeType}}';
+  }
 }

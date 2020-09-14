@@ -267,7 +267,7 @@ class BlocTestHarness implements BlocDelegate {
             );
       }
       if (_withUserBloc) {
-        await _userBloc?.close()?.catchError(
+        await _userBloc?.close()?.timeout(Duration(seconds: 1))?.catchError(
               (e, stackTrace) => _printError('tearDown > _userBloc.close() failed', e, stackTrace),
             );
       }
@@ -308,7 +308,7 @@ class BlocTestHarness implements BlocDelegate {
             );
         _trackingService?.reset();
       }
-      events.clear();
+      history.clear();
       errors.clear();
       bus.unsubscribeAll();
       _connectivity?.dispose();
@@ -733,19 +733,23 @@ class BlocTestHarness implements BlocDelegate {
     _printError('onError(${bloc.runtimeType})', error, stackTrace);
   }
 
-  final events = <Bloc, List<Object>>{};
+  final history = <Pair<Bloc, Object>>[];
 
   @override
   void onEvent(Bloc bloc, Object event) {
-    events.update(bloc, (events) => events..add(event), ifAbsent: () => [event]);
-    if (_debug) {
-      _printError('onError(${bloc.runtimeType})', event, StackTrace.current);
-    }
+    history.add(Pair.of(bloc, event));
+    _print('------COMMAND-------');
+    _print('bloc: ${bloc.runtimeType}');
+    _print('command: ${event.runtimeType}');
   }
 
   @override
   void onTransition(Bloc bloc, Transition transition) {
-    // TODO: implement onTransition
+    history.add(Pair.of(bloc, transition.nextState));
+    _print('------TRANSITION-------');
+    _print('bloc: ${bloc.runtimeType}');
+    _print('transition.event: ${transition.event.runtimeType}');
+    _print('transition.nextState: ${transition.nextState.runtimeType}');
   }
 
   void _printError(String message, Object error, StackTrace stackTrace) {

@@ -350,7 +350,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   Stream<DeviceState> _delete(DeleteDevice command) async* {
     _assertData(command.data);
-    final device = await repo.delete(command.data.uuid);
+    final device = repo.delete(command.data.uuid);
     yield toOK(
       command,
       DeviceDeleted(device),
@@ -400,8 +400,8 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   @override
   Future<void> close() async {
-    super.close();
-    return repo.dispose();
+    await repo.dispose();
+    return super.close();
   }
 }
 

@@ -213,7 +213,11 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   }
 
   Stream<AppConfigState> _delete(DeleteAppConfig event) async* {
-    var config = await repo.delete(repo.version);
+    final onRemote = Completer<AppConfig>();
+    var config = repo.delete(
+      repo.version,
+      onResult: onRemote,
+    );
     yield toOK(
       event,
       AppConfigDeleted(config),
@@ -221,7 +225,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
     );
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(config.version, require: false)],
+      [onRemote.future],
       toState: (_) => AppConfigDeleted(
         config,
         isLocal: false,

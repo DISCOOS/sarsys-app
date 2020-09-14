@@ -102,20 +102,22 @@ void main() async {
       // Act
       await harness.personnelBloc.create(personnel);
       await expectThroughLater(
-        harness.affiliationBloc,
-        emits(isA<PersonnelAffiliated>().having(
-          (event) => event.isRemote,
-          'Should be remote',
-          isTrue,
-        )),
-      );
-      await expectThroughLater(
-        harness.personnelBloc,
-        emits(isA<PersonnelCreated>().having(
-          (event) => event.isRemote,
-          'Should be remote',
-          isTrue,
-        )),
+        StreamGroup.merge([
+          harness.affiliationBloc,
+          harness.personnelBloc,
+        ]),
+        emitsInAnyOrder([
+          isA<PersonnelAffiliated>().having(
+            (event) => event.isRemote,
+            'Should be remote',
+            isTrue,
+          ),
+          isA<PersonnelCreated>().having(
+            (event) => event.isRemote,
+            'Should be remote',
+            isTrue,
+          ),
+        ]),
       );
 
       // Assert service calls
@@ -352,7 +354,7 @@ void main() async {
         harness.personnelBloc,
         emits(isA<PersonnelsLoaded>().having(
           (event) => event.isRemote,
-          'Should be local',
+          'Should be remote',
           isTrue,
         )),
       );
@@ -719,7 +721,10 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
   // Assert
   await expectThroughInOrderLater(
     harness.personnelBloc,
-    [isA<PersonnelsUnloaded>(), isA<PersonnelsLoaded>()],
+    [
+      isA<PersonnelsUnloaded>(),
+      isA<PersonnelsLoaded>(),
+    ],
   );
   expect(harness.personnelBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
   expect(harness.personnelBloc.repo.length, 0, reason: "SHOULD BE empty");
@@ -754,7 +759,11 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
   );
 
   // A user must be authenticated
-  expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
+  expect(
+    harness.userBloc.isAuthenticated,
+    isTrue,
+    reason: "SHOULD be authenticated",
+  );
 
   if (!create) {
     return Future.value();
@@ -769,11 +778,19 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
 
   // Await OperationBloc
   await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()));
-  expect(harness.operationsBloc.isUnselected, isFalse, reason: "SHOULD NOT be unset");
+  expect(
+    harness.operationsBloc.isUnselected,
+    isFalse,
+    reason: "SHOULD NOT be unset",
+  );
 
   // Await PersonnelBloc
   await expectThroughLater(harness.personnelBloc, emits(isA<PersonnelsLoaded>()));
-  expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD depend on operation ${operation.uuid}");
+  expect(
+    harness.personnelBloc.ouuid,
+    operation.uuid,
+    reason: "SHOULD depend on operation ${operation.uuid}",
+  );
 
   // Await User to be mobilized
   await expectThroughLater(
@@ -783,6 +800,37 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
       'Should be ${offline ? 'local' : 'remote'}',
       !offline,
     )),
+  );
+  // Verify only user exists
+  expect(
+    harness.personnelBloc.findUser(userId: harness.userBloc.userId),
+    isNotEmpty,
+    reason: "User SHOULD BE mobilized",
+  );
+  expect(
+    harness.personnelBloc.repo.length,
+    equals(1),
+    reason: "Only user SHOULD BE mobilized",
+  );
+  expect(
+    harness.affiliationBloc.findUserAffiliation(userId: harness.userBloc.userId),
+    isNotNull,
+    reason: "User SHOULD HAVE affiliation",
+  );
+  expect(
+    harness.affiliationBloc.repo.length,
+    equals(1),
+    reason: "Only user SHOULD BE affiliated",
+  );
+  expect(
+    harness.affiliationBloc.persons.findUser(harness.userBloc.userId),
+    isNotNull,
+    reason: "User SHOULD BE a person",
+  );
+  expect(
+    harness.affiliationBloc.persons.length,
+    equals(1),
+    reason: "Only user SHOULD BE a person",
   );
 
   return operation;
