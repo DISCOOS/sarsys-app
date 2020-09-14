@@ -225,7 +225,7 @@ class BackgroundGeolocationService implements LocationService {
       autoSync: isSharing,
       autoSyncThreshold: 5,
       startOnBoot: isSharing,
-      stopOnTerminate: isSharing,
+      stopOnTerminate: !isSharing,
       url: _toUrl(),
       method: 'POST',
       logMaxDays: 3,
