@@ -151,7 +151,10 @@ class BackgroundGeolocationService implements LocationService {
             options: options ?? _options,
           );
       if (shouldConfigure) {
-        _options = options ?? _options;
+        // Ensure debug flag is updated if given
+        _options = (options ?? _options).copyWith(
+          debug: debug ?? _options.debug,
+        );
         // Wait for previous to complete or check plugin
         var state = await (_configuring ?? bg.BackgroundGeolocation.state);
         final config = _toConfig(
@@ -242,7 +245,7 @@ class BackgroundGeolocationService implements LocationService {
       showsBackgroundLocationIndicator: true,
       // We handle permissions our self
       disableLocationAuthorizationAlert: true,
-      debug: debug ?? _options.debug ?? kDebugMode,
+      debug: (debug ?? _options.debug ?? kDebugMode),
       locationUpdateInterval: _options.timeInterval,
       desiredAccuracy: _toAccuracy(_options.accuracy),
       distanceFilter: _options.distanceFilter.toDouble(),
