@@ -249,6 +249,7 @@ class BackgroundGeolocationService implements LocationService {
       fastestLocationUpdateInterval: _options.timeInterval,
       disableMotionActivityUpdates: !_options.activityRecognition,
       notification: bg.Notification(
+        sticky: true,
         title: "SARSys",
         text: "Sporing er ${isSharing ? 'aktiv' : 'inaktiv'}",
       ),
