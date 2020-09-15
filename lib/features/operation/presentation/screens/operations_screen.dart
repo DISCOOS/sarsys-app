@@ -177,7 +177,7 @@ class _OperationsPageState extends State<OperationsPage> {
         .where((operation) => widget.query == null || _prepare(operation).contains(widget.query.toLowerCase()))
         .toList()
           ..sort(
-            (o1, o2) => incidents[o2.incident.uuid].occurred.compareTo(incidents[o1.incident.uuid].occurred),
+            (o1, o2) => incidents[o2.incident.uuid]?.occurred?.compareTo(incidents[o1.incident.uuid]?.occurred) ?? 0,
           );
   }
 
