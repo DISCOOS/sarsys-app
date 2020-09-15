@@ -25,9 +25,11 @@ class _$IncidentServiceImpl extends IncidentServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Incident>>> fetch() {
+  Future<Response<PagedList<Incident>>> fetch(
+      {int offset = 0, int limit = 20}) {
     final $url = '/incidents';
-    final $request = Request('GET', $url, client.baseUrl);
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
     return client.send<PagedList<Incident>, Incident>($request);
   }
 

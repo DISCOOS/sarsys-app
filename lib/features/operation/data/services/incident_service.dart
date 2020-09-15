@@ -16,7 +16,10 @@ class IncidentService with ServiceFetchAll<Incident> implements ServiceDelegate<
 
   Future<ServiceResponse<List<Incident>>> fetch(int offset, int limit) async {
     return Api.from<PagedList<Incident>, List<Incident>>(
-      await delegate.fetch(),
+      await delegate.fetch(
+        offset: offset,
+        limit: limit,
+      ),
     );
   }
 
@@ -58,7 +61,10 @@ abstract class IncidentServiceImpl extends ChopperService {
   );
 
   @Get()
-  Future<Response<PagedList<Incident>>> fetch();
+  Future<Response<PagedList<Incident>>> fetch({
+    @Query('offset') int offset = 0,
+    @Query('limit') int limit = 20,
+  });
 
   @Patch(path: '{uuid}')
   Future<Response<Incident>> update(
