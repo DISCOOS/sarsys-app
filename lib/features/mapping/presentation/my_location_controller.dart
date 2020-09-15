@@ -17,25 +17,6 @@ typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
 class MyLocationController {
-  final TickerProvider tickerProvider;
-  final MapWidgetController mapController;
-  final TrackingCallback onTrackingChanged;
-  final LocationCallback onLocationChanged;
-  final PermissionController permissionController;
-
-  bool _locked = false;
-  LocationService _service;
-  MyLocationOptions _options;
-  StreamSubscription _positionSubscription;
-  StreamController<Null> _updateController = StreamController.broadcast();
-
-  bool get isLocked => _locked;
-  LocationService get service => _service;
-  MyLocationOptions get options => _options;
-  bool get isReady => _service.isReady.value && _options != null;
-  bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
-  bool get isLocated => mapController.ready && (isLocked || _service?.current?.toLatLng() == mapController?.center);
-
   MyLocationController({
     @required this.mapController,
     @required this.permissionController,
@@ -43,13 +24,29 @@ class MyLocationController {
     this.onTrackingChanged,
     this.onLocationChanged,
   })  : assert(mapController != null, "mapController must not be null"),
-        assert(permissionController != null, "permissionController must not be null"),
-        _service = LocationService();
+        assert(permissionController != null, "permissionController must not be null");
 
-  Position get current => _service.current;
+  final TickerProvider tickerProvider;
+  final MapWidgetController mapController;
+  final TrackingCallback onTrackingChanged;
+  final LocationCallback onLocationChanged;
+  final PermissionController permissionController;
+
+  bool _locked = false;
+  MyLocationOptions _options;
+  StreamSubscription _positionSubscription;
+  StreamController<Null> _updateController = StreamController.broadcast();
+
+  bool get isLocked => _locked;
+  Position get current => service?.current;
+  MyLocationOptions get options => _options;
+  bool get isReady => service?.isReady == true && _options != null;
+  LocationService get service => LocationService.exists ? LocationService() : null;
+  bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
+  bool get isLocated => mapController.ready && (isLocked || service?.current?.toLatLng() == mapController?.center);
 
   Future<LatLng> configure() async {
-    return _handle(_service.status);
+    return _handle(Completer<LatLng>());
   }
 
   bool _disposed = false;
@@ -71,14 +68,15 @@ class MyLocationController {
       var wasLocked = _locked;
       var wasLocated = isLocated;
       _locked = locked;
-      _updateLocation(_service.current, isReady);
+      service.update();
+      _updateLocation(service.current, isReady);
       if (wasLocated != isLocated || wasLocked != _locked) {
         if (onTrackingChanged != null) {
           onTrackingChanged(isLocated, _locked);
         }
       }
     } else {
-      _handle(_service.status);
+      _handle(Completer<LatLng>());
     }
     return isLocated;
   }
@@ -96,7 +94,7 @@ class MyLocationController {
 
   void _subscribe() {
     if (_positionSubscription == null) {
-      _positionSubscription = _service.stream.listen(
+      _positionSubscription = service.stream.listen(
         (position) => _updateLocation(position, false),
       );
       if (Platform.isIOS) {
@@ -166,7 +164,7 @@ class MyLocationController {
     return hasMoved;
   }
 
-  bool isAnimated() => tickerProvider == null;
+  bool isAnimated() => tickerProvider != null;
 
   void _progress(Position position, {@required bool moved}) {
     _options?.point = position.toLatLng();
@@ -184,61 +182,74 @@ class MyLocationController {
         (mapController.center.longitude - position.longitude).abs() > 0.0001;
   }
 
-  Future<LatLng> _handle(PermissionStatus status) async {
-    final completer = Completer<LatLng>();
+  Future<LatLng> _handle(Completer<LatLng> completer) async {
+    final status = await service.status;
     if (status.isGranted) {
-      _onReady(completer);
+      _onGranted(completer);
     } else {
       // Wait for result to prevent concurrent attempts
       await permissionController.handle(
         status,
-        permissionController.locationWhenInUseRequest.copyWith(
-          onReady: () => _onReady(completer),
+        permissionController.locationRequest.copyWith(
+          onReady: () => _onGranted(completer),
         ),
       );
     }
     return completer.future;
   }
 
-  void _onReady(Completer<LatLng> completer) async {
+  void _onGranted(Completer<LatLng> completer) async {
     if (_disposed) {
       return completer.complete(
-        _toLatLng(_service.current),
+        _toLatLng(service.current),
       );
     }
     try {
-      var status = _service.status;
-      if (_service.isReady.value) {
-        final options = build();
-        _subscribe();
-        if (isLocated && !permissionController.resolving) {
-          onTrackingChanged(isLocated, _locked);
-        }
-        completer.complete(options.point);
-      } else if (status != PermissionStatus.granted) {
-        await Future.delayed(Duration(milliseconds: 100));
-        final point = await _handle(status);
-        completer.complete(point);
-      } else if (!_service.isReady.value) {
-        _service.isReady.addListener(
-          () => _onReady(completer),
-        );
+      if (service.isReady) {
+        _onReady(completer);
       } else {
-        completer.complete(options?.point);
+        final status = await service.status;
+        if (status != PermissionStatus.granted) {
+          // Wait before retrying
+          await Future.delayed(
+            const Duration(milliseconds: 100),
+            () => _handle(completer),
+          );
+        } else if (!service.isReady) {
+          service.onEvent.where((event) => event is ConfigureEvent).first.then(
+            (_) {
+              return _onReady(completer);
+            },
+          );
+        } else {
+          completer.complete(options?.point);
+        }
       }
     } on Exception catch (e, stackTrace) {
       completer.completeError(e, stackTrace);
     }
   }
 
+  void _onReady(Completer<LatLng> completer) {
+    final options = build();
+    _subscribe();
+    if (isLocated) {
+      onTrackingChanged(isLocated, _locked);
+    }
+    if (onLocationChanged != null) {
+      onLocationChanged(options.point, isLocated, _locked);
+    }
+    completer.complete(options.point);
+  }
+
   MyLocationOptions build({bool withTail}) {
     // Duplicates are overwritten
-    final point = _toLatLng(_service.current);
+    final point = _toLatLng(service.current);
     _options?.cancel();
     _options = MyLocationOptions(
       point,
       opacity: 0.5,
-      track: _service.positions,
+      track: service.positions,
       accuracy: service.current?.acc,
       tickerProvider: tickerProvider,
       locationUpdates: _updateController,

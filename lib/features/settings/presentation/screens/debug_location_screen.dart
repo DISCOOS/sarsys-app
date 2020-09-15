@@ -94,7 +94,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
               ),
             ),
             StreamBuilder<LocationEvent>(
-                stream: _service.onChanged,
+                stream: _service.onEvent,
                 builder: (context, snapshot) {
                   final now = DateTime.now();
                   return ListView.separated(
@@ -105,6 +105,7 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
                       final LocationEvent event = _service[index];
                       final duration = now.difference(_service[index].timestamp);
                       return ListTile(
+                        key: ObjectKey(event),
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[

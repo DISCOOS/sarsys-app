@@ -51,17 +51,16 @@ abstract class LocationService extends Service {
   Activity get activity;
 
   /// Get permission status
-  PermissionStatus get status;
+  Future<PermissionStatus> get status;
 
-  /// Get [ValueNotifier] for
-  /// detecting when service is ready
-  ValueNotifier<bool> get isReady;
+  /// Check if service is ready
+  bool get isReady;
 
   /// Get stream of positions
   Stream<Position> get stream;
 
   /// Get stream of events
-  Stream<LocationEvent> get onChanged;
+  Stream<LocationEvent> get onEvent;
 
   /// Get all events registered @
   /// since last application start
@@ -86,7 +85,6 @@ abstract class LocationService extends Service {
   /// Get authentication token required
   /// to publish positions to backend
   AuthToken get token;
-  set token(AuthToken token);
 
   /// Get event from index
   LocationEvent operator [](int index);
@@ -437,6 +435,27 @@ class MoveChangeEvent extends LocationEvent {
       'When: ${timestamp.toIso8601String()},\n'
       'IsMoving: ${position.isMoving},\n'
       'Position: $position';
+}
+
+class ProviderChangeEvent extends LocationEvent {
+  ProviderChangeEvent({
+    this.status,
+    this.gps,
+    this.network,
+    this.enabled,
+  }) : super(StackTrace.current);
+  final bool gps;
+  final bool network;
+  final bool enabled;
+  final String status;
+
+  @override
+  String toString() => '$runtimeType\n'
+      'When: ${timestamp.toIso8601String()},\n'
+      'Status: $status,\n'
+      'Enabled: $enabled,\n'
+      'GPS: $gps,\n'
+      'Network: $network';
 }
 
 class ActivityChangeEvent extends LocationEvent {

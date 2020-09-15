@@ -80,6 +80,22 @@ class PermissionController {
         ),
       );
 
+  /// Get [Permission.location] request
+  PermissionRequest get locationRequest => PermissionRequest(
+        platforms: ALL_OS,
+        permission: Permission.location,
+        title: "Stedstjenester",
+        rationale: "Du må akseptere deling av lokasjon med appen for å se hvor du er og lagre spor under aksjoner.",
+        disabledMessage: "Stedstjenester er avslått.",
+        deniedMessage: "Lokalisering er ikke tillatt.",
+        deniedBefore: "Du har tidligere avslått deling av posisjon.",
+        consequence: "Du kan ikke vise hvor du er i kartet eller lagre sporet ditt automatisk.",
+        settingTarget: PermissionRequest.SETTINGS_APPLICATION,
+        update: (bool value) => _updateAppConfig(
+          locationWhenInUse: value,
+        ),
+      );
+
   /// Get [Permission.locationWhenInUseRequest] request
   PermissionRequest get locationWhenInUseRequest => PermissionRequest(
         platforms: ALL_OS,

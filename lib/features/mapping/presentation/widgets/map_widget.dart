@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/material.dart';
@@ -476,11 +477,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
       _scheduleInitLocation((_) {
         _setLayerOptions();
-        final following = _readState(STATE_FOLLOWING, defaultValue: false);
-        if (following) {
-          _locationController.goto(locked: true);
-          _updateLocationToolState(force: true);
-        }
+        _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
+          final following = _readState(STATE_FOLLOWING, defaultValue: false);
+          if (following) {
+            _locationController.goto(locked: true);
+            _updateLocationToolState(force: true);
+          }
+          _setLayerOptions();
+        });
       });
     }
   }
@@ -650,6 +654,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
           if (tool != null && tool.active()) MeasureLayerOptions(tool),
         ]);
+      setState(() => {});
     }
     return _layerOptions;
   }

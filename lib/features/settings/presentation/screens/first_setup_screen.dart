@@ -45,7 +45,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   };
 
   // Minimum requirements
-  bool get isComplete => isLocationWhenInUseGranted && (isStorageGranted || !Platform.isAndroid);
+  bool get isComplete =>
+      (isLocationWhenInUseGranted || isLocationAlwaysGranted) && (isStorageGranted || !Platform.isAndroid);
 
   bool get isStorageGranted => _isStorageGranted || (_permissionsKey?.currentState?.isStorageGranted ?? false);
   bool _isStorageGranted = false;

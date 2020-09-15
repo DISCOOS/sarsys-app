@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/core/data/streams.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -34,8 +35,6 @@ class BackgroundGeolocationService implements LocationService {
   static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
-  Future<bg.State> _configuring;
-
   @override
   LocationOptions get options => _options;
   LocationOptions _options;
@@ -48,7 +47,7 @@ class BackgroundGeolocationService implements LocationService {
   bool get canStore => (_options?.locationStoreLocally ?? Defaults.locationStoreLocally);
 
   @override
-  bool get isStoring => isReady.value && canStore;
+  bool get isStoring => isReady && canStore;
 
   @override
   bool get canShare =>
@@ -72,6 +71,66 @@ class BackgroundGeolocationService implements LocationService {
   double _odometer = 0;
 
   @override
+  Future<PermissionStatus> get status async {
+    _status = await Permission.location.status;
+    return _status;
+  }
+
+  PermissionStatus _status = PermissionStatus.undetermined;
+
+  StreamController<Position> _positionController = StreamController.broadcast();
+  StreamController<LocationEvent> _eventController = StreamController.broadcast();
+
+  @override
+  Position get current => _current;
+  Position _current;
+
+  @override
+  bool get isReady => _state?.enabled ?? false;
+  bg.State _state;
+
+  @override
+  Stream<Position> get stream => _positionController.stream;
+
+  @override
+  Stream<LocationEvent> get onEvent => _eventController.stream;
+
+  @override
+  Iterable<LocationEvent> get events => List.unmodifiable(_events);
+
+  @override
+  LocationEvent operator [](int index) => _events[index];
+
+  @override
+  AuthToken get token => _token;
+  AuthToken _token;
+
+  final _queue = StreamRequestQueue<LocationOptions>();
+
+  void _subscribe() {
+    if (!isReady) {
+      // Process heartbeat events
+      bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
+
+      // Process for location, motion and activity changes
+      bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
+      bg.BackgroundGeolocation.onLocation(_onLocation, _onError);
+      bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
+      bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+
+      // Process http service events
+      bg.BackgroundGeolocation.onHttp(_onHttp);
+
+      // Process authorization events
+      bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
+
+      _notify(
+        SubscribeEvent(_options),
+      );
+    }
+  }
+
+  @override
   Future<Iterable<Position>> backlog() async {
     final locations = await bg.BackgroundGeolocation.locations;
     return locations.map(_fromJson).toList();
@@ -87,49 +146,6 @@ class BackgroundGeolocationService implements LocationService {
     _notify(ClearEvent(current));
   }
 
-  PermissionStatus _status = PermissionStatus.undetermined;
-
-  StreamController<Position> _positionController = StreamController.broadcast();
-  StreamController<LocationEvent> _eventController = StreamController.broadcast();
-
-  @override
-  Position get current => _current;
-  Position _current;
-
-  @override
-  PermissionStatus get status => _status;
-
-  @override
-  ValueNotifier<bool> get isReady => _isReady;
-  final _isReady = ValueNotifier(false);
-
-  @override
-  Stream<Position> get stream => _positionController.stream;
-
-  @override
-  Stream<LocationEvent> get onChanged => _eventController.stream;
-
-  @override
-  Iterable<LocationEvent> get events => List.unmodifiable(_events);
-
-  @override
-  LocationEvent operator [](int index) => _events[index];
-
-  @override
-  AuthToken get token => _token;
-  AuthToken _token;
-
-  @override
-  set token(AuthToken token) {
-    if (_isConfigChanged(token: token)) {
-      _token = token;
-      if (_isReady.value) {
-        final config = _toConfig(token: token);
-        bg.BackgroundGeolocation.setConfig(config);
-      }
-    }
-  }
-
   @override
   Future<LocationOptions> configure({
     bool share,
@@ -139,9 +155,15 @@ class BackgroundGeolocationService implements LocationService {
     bool force = false,
     LocationOptions options,
   }) async {
+    _status = await Permission.location.status;
+    if (_status != PermissionStatus.granted) {
+      return _options;
+    }
+
+    final completer = Completer<LocationOptions>();
     try {
       final wasSharing = isSharing;
-      final shouldForce = (force || !isReady.value);
+      final shouldForce = (force || !isReady);
       final shouldConfigure = shouldForce ||
           _isConfigChanged(
             duuid: duuid,
@@ -151,65 +173,79 @@ class BackgroundGeolocationService implements LocationService {
             options: options ?? _options,
           );
       if (shouldConfigure) {
-        // Ensure debug flag is updated if given
-        _options = (options ?? _options).copyWith(
-          debug: debug ?? _options.debug,
-        );
-        // Wait for previous to complete or check plugin
-        var state = await (_configuring ?? bg.BackgroundGeolocation.state);
-        final config = _toConfig(
-          duuid: duuid,
-          token: token,
-          share: share,
-          debug: debug,
-        );
-        try {
+        // NO bg api methods MUST BE
+        // called before subscriptions
+        // are registered.
+        _subscribe();
+
+        // Prevents concurrent configure
+        _queue.add(StreamRequest<LocationOptions>(execute: () async {
+          // Ensure debug flag is updated if given
+          _options = (options ?? _options).copyWith(
+            debug: debug ?? _options.debug,
+          );
+          // Wait for previous to complete or check plugin
+          var state = await bg.BackgroundGeolocation.state;
+          final config = _toConfig(
+            duuid: duuid,
+            token: token,
+            share: share,
+            debug: debug,
+          );
           if (state.isFirstBoot) {
-            _configuring = bg.BackgroundGeolocation.ready(config);
+            bg.BackgroundGeolocation.ready(config).then(
+              (_) => _onConfigured(completer, wasSharing),
+            );
           } else {
-            _configuring = bg.BackgroundGeolocation.setConfig(config);
+            bg.BackgroundGeolocation.setConfig(config).then(
+              (_) => _onConfigured(completer, wasSharing),
+            );
           }
-          state = await _configuring;
-        } finally {
-          _configuring = null;
-        }
-        await _onConfigured(state, wasSharing);
+          return StreamResult(
+            value: await completer.future,
+          );
+        }));
+      } else {
+        completer.complete(_options);
       }
     } catch (e, stackTrace) {
       _notify(
         ErrorEvent(_options, e, stackTrace),
       );
-      Catcher.reportCheckedError(
+      completer.completeError(
         "Failed to configure BackgroundLocation: $e",
         stackTrace,
       );
     }
-    _status = await Permission.locationWhenInUse.status;
-    if (_status != PermissionStatus.granted) {
-      await dispose();
-    }
-    return _options;
+    return completer.future;
   }
 
-  Future _onConfigured(bg.State state, bool wasSharing) async {
-    if (!state.enabled) {
-      await bg.BackgroundGeolocation.start();
-    }
-    // Only first time
-    if (!isReady.value) {
-      _positions = await backlog();
-      await bg.BackgroundGeolocation.setOdometer(_odometer);
-    }
-    _subscribe();
+  Future<void> _onConfigured(Completer<LocationOptions> completer, bool wasSharing) async {
+    // Set current state
+    _state = await bg.BackgroundGeolocation.state;
 
-    if (!wasSharing && isSharing) {
-      await push();
+    if (isReady) {
+      await update();
+    } else {
+      _state = await bg.BackgroundGeolocation.start();
+      _current = _toPosition(
+        await bg.BackgroundGeolocation.setOdometer(_odometer),
+      );
     }
+
+    // Only set once
+    _positions ??= await backlog();
+
     _notify(ConfigureEvent(
       _duuid,
       _options,
     ));
-    return Future.value();
+
+    completer.complete(_options);
+
+    if (!wasSharing && isSharing) {
+      await push();
+    }
   }
 
   bg.Config _toConfig({
@@ -301,8 +337,9 @@ class BackgroundGeolocationService implements LocationService {
 
   @override
   Future<Position> update() async {
-    if (_isReady.value) {
+    if (isReady) {
       try {
+        await bg.BackgroundGeolocation.changePace(true);
         await bg.BackgroundGeolocation.getCurrentPosition();
       } catch (e, stackTrace) {
         _notify(
@@ -322,12 +359,14 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future<int> push() async {
     final pushed = [];
-    if (_isReady.value) {
+    if (isReady) {
       try {
         pushed.addAll(await bg.BackgroundGeolocation.sync());
         _notify(PushEvent(pushed.map(_fromJson)));
       } catch (e, stackTrace) {
-        _notify(ErrorEvent(_options, e, stackTrace));
+        _notify(
+          ErrorEvent(_options, e, stackTrace),
+        );
         if (_shouldReport(e)) {
           Catcher.reportCheckedError(
             "Failed to push backlog error: $e",
@@ -354,7 +393,9 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future dispose() async {
     if (!_disposed) {
-      _isReady.value = false;
+      if (isReady) {
+        _state = await bg.BackgroundGeolocation.stop();
+      }
       await bg.BackgroundGeolocation.removeListeners();
       _notify(UnsubscribeEvent(_options));
       await _eventController.close();
@@ -391,33 +432,6 @@ class BackgroundGeolocationService implements LocationService {
         _isSharingStateChanged(share);
   }
 
-  void _subscribe() async {
-    // Remove old listeners before registering again
-    await bg.BackgroundGeolocation.removeListeners();
-
-    // Process heartbeat events
-    bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
-
-    // Process for location, motion and activity changes
-    bg.BackgroundGeolocation.onLocation(_onLocation, _onError);
-    bg.BackgroundGeolocation.onMotionChange(_onMoveChange);
-    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
-
-    // Process http service events
-    bg.BackgroundGeolocation.onHttp(_onHttp);
-
-    // Process authorization events
-    bg.BackgroundGeolocation.onAuthorization(_onAuthorization);
-
-    _notify(
-      SubscribeEvent(_options),
-    );
-
-    _isReady.value = true;
-
-    await update();
-  }
-
   void _onHeartbeat(bg.HeartbeatEvent event) {
     if (!_disposed) {
       final location = event.location;
@@ -451,6 +465,27 @@ class BackgroundGeolocationService implements LocationService {
       _notify(
         MoveChangeEvent(
           _toPosition(location),
+        ),
+      );
+    }
+  }
+
+  static const AUTHORIZATION_STATUS = {
+    bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS: 'AUTHORIZATION_STATUS_ALWAYS',
+    bg.ProviderChangeEvent.AUTHORIZATION_STATUS_DENIED: 'AUTHORIZATION_STATUS_DENIED',
+    bg.ProviderChangeEvent.AUTHORIZATION_STATUS_RESTRICTED: 'AUTHORIZATION_STATUS_RESTRICTED',
+    bg.ProviderChangeEvent.AUTHORIZATION_STATUS_WHEN_IN_USE: 'AUTHORIZATION_STATUS_WHEN_IN_USE',
+    bg.ProviderChangeEvent.AUTHORIZATION_STATUS_NOT_DETERMINED: 'AUTHORIZATION_STATUS_NOT_DETERMINED',
+  };
+
+  void _onProviderChange(bg.ProviderChangeEvent event) {
+    if (!_disposed) {
+      _notify(
+        ProviderChangeEvent(
+          gps: event.gps,
+          enabled: event.enabled,
+          network: event.network,
+          status: AUTHORIZATION_STATUS[event.status],
         ),
       );
     }

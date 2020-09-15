@@ -25,7 +25,6 @@ class GeolocatorService implements LocationService {
   static List<LocationEvent> _events = [];
 
   gl.Geolocator _geolocator;
-  PermissionStatus _status = PermissionStatus.undetermined;
 
   Stream<Position> _internalStream;
   StreamSubscription _configSubscription;
@@ -69,17 +68,22 @@ class GeolocatorService implements LocationService {
   Activity get activity => Activity.unknown;
 
   @override
-  PermissionStatus get status => _status;
+  Future<PermissionStatus> get status async {
+    _status = await Permission.location.status;
+    return _status;
+  }
+
+  PermissionStatus _status = PermissionStatus.undetermined;
 
   @override
-  ValueNotifier<bool> get isReady => _isReady;
-  final _isReady = ValueNotifier(false);
+  bool get isReady => _isReady;
+  bool _isReady;
 
   @override
   Stream<Position> get stream => _positionController.stream;
 
   @override
-  Stream<LocationEvent> get onChanged => _eventController.stream;
+  Stream<LocationEvent> get onEvent => _eventController.stream;
 
   @override
   Iterable<LocationEvent> get events => List.unmodifiable(_events);
@@ -122,7 +126,7 @@ class GeolocatorService implements LocationService {
       );
       _subscribe(_options);
     }
-    _status = await Permission.locationWhenInUse.status;
+    _status = await Permission.location.status;
     if (_status != PermissionStatus.granted) {
       await dispose();
     }
@@ -130,8 +134,8 @@ class GeolocatorService implements LocationService {
   }
 
   @override
-  Future<Position> update() async {
-    if (_isReady.value) {
+  Future<Position> update({bool isMoving}) async {
+    if (_isReady) {
       try {
         final last = _current;
         _current = _toPosition(
@@ -211,7 +215,7 @@ class GeolocatorService implements LocationService {
     _locatorSubscription.onDone(_unsubscribe);
     _locatorSubscription.onError(_handleError);
     _notify(SubscribeEvent(options));
-    _isReady.value = true;
+    _isReady = true;
     await update();
   }
 
@@ -238,7 +242,7 @@ class GeolocatorService implements LocationService {
     _internalStream = null;
     _locatorSubscription?.cancel();
     _locatorSubscription = null;
-    _isReady.value = false;
+    _isReady = false;
     _notify(UnsubscribeEvent(_options));
   }
 

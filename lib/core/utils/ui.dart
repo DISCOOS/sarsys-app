@@ -402,11 +402,11 @@ void jumpToMe(
   FitBoundsOptions fitBoundOptions = FIT_BOUNDS_OPTIONS,
 }) async {
   final service = LocationService();
-  var status = service.status;
+  var status = await service.status;
   if (PermissionStatus.undetermined == status) {
     await service.configure();
   }
-  if (service.status != PermissionStatus.granted) {
+  if (status == PermissionStatus.granted) {
     var current = service.current;
     if (current != null) {
       jumpToLatLng(
@@ -444,11 +444,11 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
   var success = await launch("$url=${point.latitude},${point.longitude}");
   if (success == false && Platform.isIOS) {
     final service = LocationService();
-    var status = service.status;
+    var status = await service.status;
     if (PermissionStatus.undetermined == status) {
       await service.configure();
     }
-    if (service.status != PermissionStatus.granted) {
+    if (status == PermissionStatus.granted) {
       var current = service.current;
       if (current != null) {
         success = await launch(

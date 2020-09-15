@@ -429,7 +429,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
   }
 
   Widget _buildStatus(LocationService service) => StreamBuilder<LocationEvent>(
-        stream: service.onChanged,
+        stream: service.onEvent,
         builder: (context, snapshot) {
           return FutureBuilder<Iterable<Position>>(
               future: service.backlog(),
