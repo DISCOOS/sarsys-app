@@ -171,9 +171,9 @@ class UserStatusPageState extends State<UserStatusPage> {
             withIcons: false,
             withNavigation: false,
             onMessage: widget.onMessage,
-            timestamp: service.current.timestamp,
             accuracy: service.current?.acc,
             point: service.current?.geometry,
+            timestamp: service.current?.timestamp,
             onGoto: (point) => jumpToPoint(context, center: point),
           );
         });
