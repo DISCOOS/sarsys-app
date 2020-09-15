@@ -40,12 +40,13 @@ class MyLocationController {
   bool get isLocked => _locked;
   Position get current => service?.current;
   MyLocationOptions get options => _options;
-  bool get isReady => service?.isReady == true && _options != null;
+  bool get isReady => service?.isReady == true && _options != null && _disposed == false;
   LocationService get service => LocationService.exists ? LocationService() : null;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
   bool get isLocated => mapController.ready && (isLocked || service?.current?.toLatLng() == mapController?.center);
 
   Future<LatLng> configure() async {
+    assert(_disposed == false, "Is disposed");
     return _handle(Completer<LatLng>());
   }
 
@@ -114,52 +115,54 @@ class MyLocationController {
 
   bool _updateLocation(Position position, bool goto) {
     bool hasMoved = false;
-    bool wasLocated = isLocated;
-    bool moveMap = goto || _locked;
-    if (position != null && mapController.ready) {
-      final point = position?.toLatLng();
-      final wasChangeInAccuracy = (_options?.accuracy != position?.acc);
-      _options?.accuracy = position?.acc;
-      // Should move position?
-      if (moveMap || _isMoved(point)) {
-        hasMoved = true;
-        if (onLocationChanged != null) {
-          onLocationChanged(point, goto, _locked);
-        }
-        if (isAnimated()) {
-          // Move map to position?
-          if (moveMap) {
-            mapController.animatedMove(
-              point,
-              mapController.zoom ?? Defaults.zoom,
-              tickerProvider,
-            );
+    if (!_disposed) {
+      bool wasLocated = isLocated;
+      bool moveMap = goto || _locked;
+      if (position != null && mapController.ready) {
+        final point = position?.toLatLng();
+        final wasChangeInAccuracy = (_options?.accuracy != position?.acc);
+        _options?.accuracy = position?.acc;
+        // Should move position?
+        if (moveMap || _isMoved(point)) {
+          hasMoved = true;
+          if (onLocationChanged != null) {
+            onLocationChanged(point, goto, _locked);
           }
-          _options.animatedMove(position, onMove: (point) {
-            // Synchronize map control state with my location animation
-            if (onTrackingChanged != null) {
-              onTrackingChanged(isLocated, _locked);
+          if (isAnimated()) {
+            // Move map to position?
+            if (moveMap) {
+              mapController.animatedMove(
+                point,
+                mapController.zoom ?? Defaults.zoom,
+                tickerProvider,
+              );
             }
-          });
-        } else {
-          if (moveMap) {
-            mapController.move(
-              point,
-              mapController.zoom ?? Defaults.zoom,
-            );
+            _options.animatedMove(position, onMove: (point) {
+              // Synchronize map control state with my location animation
+              if (onTrackingChanged != null) {
+                onTrackingChanged(isLocated, _locked);
+              }
+            });
+          } else {
+            if (moveMap) {
+              mapController.move(
+                point,
+                mapController.zoom ?? Defaults.zoom,
+              );
+            }
           }
         }
+        if (hasMoved || wasChangeInAccuracy) {
+          _progress(
+            position,
+            // Only if move is not animated
+            moved: hasMoved && isAnimated(),
+          );
+        }
       }
-      if (hasMoved || wasChangeInAccuracy) {
-        _progress(
-          position,
-          // Only if move is not animated
-          moved: hasMoved && isAnimated(),
-        );
+      if (onTrackingChanged != null && wasLocated != isLocated) {
+        onTrackingChanged(isLocated, _locked);
       }
-    }
-    if (onTrackingChanged != null && wasLocated != isLocated) {
-      onTrackingChanged(isLocated, _locked);
     }
     return hasMoved;
   }

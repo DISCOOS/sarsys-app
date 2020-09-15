@@ -211,6 +211,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   /// Conditionally set during initialization
   Future<LatLng> _locationRequest;
+  final _subscriptions = <StreamSubscription>[];
 
   ValueNotifier<MapControlState> _isLocating = ValueNotifier(MapControlState());
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
@@ -256,6 +257,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _isLocating?.dispose();
     _isMeasuring?.dispose();
     _permissionController?.dispose();
+    _subscriptions.forEach(
+      (subscription) => subscription.cancel(),
+    );
     _isLocating = null;
     _isMeasuring = null;
     _mapController = null;
@@ -477,14 +481,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       );
       _scheduleInitLocation((_) {
         _setLayerOptions();
-        _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
-          final following = _readState(STATE_FOLLOWING, defaultValue: false);
-          if (following) {
-            _locationController.goto(locked: true);
-            _updateLocationToolState(force: true);
-          }
-          _setLayerOptions();
-        });
+        _subscriptions.add(
+          _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
+            final following = _readState(STATE_FOLLOWING, defaultValue: false);
+            if (following) {
+              _locationController.goto(locked: true);
+              _updateLocationToolState(force: true);
+            }
+            _setLayerOptions();
+          }),
+        );
       });
     }
   }
@@ -492,11 +498,11 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _scheduleInitLocation(ValueChanged<LatLng> callback) {
     if (_locationRequest == null) {
       _locationRequest = _locationController.configure();
-      _locationRequest.then((point) {
-        if (mounted) {
+      _subscriptions.add(
+        _locationRequest.asStream().listen((point) {
           callback(point);
-        }
-      });
+        }),
+      );
     }
   }
 
@@ -635,27 +641,25 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   List<LayerOptions> _setLayerOptions() {
-    if (mounted) {
-      final tool = _mapToolController?.of<MeasureTool>();
-      _layerOptions
-        ..clear()
-        ..addAll([
-          _buildBaseMapLayer(),
-          if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
-          if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
-          if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
-          if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
-          if (_searchMatch != null) _buildMatchOptions(_searchMatch),
-          if (widget.withControlsLocateMe && _locationController?.isReady == true)
-            _locationController.build(
-              withTail: _useLayers.contains(LAYER_TRACKING),
-            ),
-          if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
-          if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
-          if (tool != null && tool.active()) MeasureLayerOptions(tool),
-        ]);
-      setState(() => {});
-    }
+    final tool = _mapToolController?.of<MeasureTool>();
+    _layerOptions
+      ..clear()
+      ..addAll([
+        _buildBaseMapLayer(),
+        if (_useLayers.contains(LAYER_DEVICE)) _buildDeviceOptions(),
+        if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
+        if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
+        if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
+        if (_searchMatch != null) _buildMatchOptions(_searchMatch),
+        if (widget.withControlsLocateMe && _locationController?.isReady == true)
+          _locationController.build(
+            withTail: _useLayers.contains(LAYER_TRACKING),
+          ),
+        if (widget.withCoordsPanel && _useLayers.contains(LAYER_COORDS)) CoordinateLayerOptions(),
+        if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
+        if (tool != null && tool.active()) MeasureLayerOptions(tool),
+      ]);
+    setState(() => {});
     return _layerOptions;
   }
 
@@ -980,7 +984,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       toggled: isLocated,
       locked: isLocked,
     );
-    //_setLayerOptions();
   }
 
   void _showLayerSheet(context) {
