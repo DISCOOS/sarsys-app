@@ -154,10 +154,7 @@ class UserStatusPageState extends State<UserStatusPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(14.0),
-                child: StreamBuilder<Object>(
-                  stream: service.stream,
-                  builder: (context, _) => status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
-                ),
+                child: status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
               ),
               if (context.bloc<ActivityBloc>().isTrackable) _buildLocationBuffer(),
             ],
@@ -165,17 +162,21 @@ class UserStatusPageState extends State<UserStatusPage> {
         });
   }
 
-  CoordinateWidget _buildCoordinateWidget(LocationService service, BuildContext context) {
-    return CoordinateWidget(
-      isDense: false,
-      withIcons: false,
-      withNavigation: false,
-      onMessage: widget.onMessage,
-      timestamp: service.current.timestamp,
-      accuracy: service.current?.acc,
-      point: service.current?.geometry,
-      onGoto: (point) => jumpToPoint(context, center: point),
-    );
+  Widget _buildCoordinateWidget(LocationService service, BuildContext context) {
+    return StreamBuilder(
+        stream: service.onEvent,
+        builder: (context, snapshot) {
+          return CoordinateWidget(
+            isDense: false,
+            withIcons: false,
+            withNavigation: false,
+            onMessage: widget.onMessage,
+            timestamp: service.current.timestamp,
+            accuracy: service.current?.acc,
+            point: service.current?.geometry,
+            onGoto: (point) => jumpToPoint(context, center: point),
+          );
+        });
   }
 
   Widget _buildStatus(
@@ -230,7 +231,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildJoinAction(BuildContext context) => RaisedButton.icon(
         icon: Icon(Icons.list),
-        label: Text('AKSJONER'),
+        label: Text('VELG'),
         onPressed: () => showDialog<Personnel>(
           context: context,
           builder: (BuildContext context) {
@@ -253,7 +254,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
         icon: Icon(Icons.map),
-        label: Text('VIS I KART'),
+        label: Text('VIS'),
         onPressed: () => jumpToPoint(context, center: service.current.geometry),
       );
 
