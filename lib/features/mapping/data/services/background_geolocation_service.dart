@@ -107,8 +107,11 @@ class BackgroundGeolocationService implements LocationService {
 
   final _queue = StreamRequestQueue<LocationOptions>();
 
+  bool _isSubscribed = false;
+
   void _subscribe() {
-    if (!isReady) {
+    if (!_isSubscribed) {
+      _isSubscribed = true;
       // Process heartbeat events
       bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
 
@@ -393,16 +396,18 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future dispose() async {
     if (!_disposed) {
+      _disposed = true;
       if (isReady) {
         _state = await bg.BackgroundGeolocation.stop();
       }
       await bg.BackgroundGeolocation.removeListeners();
-      _notify(UnsubscribeEvent(_options));
       await _eventController.close();
       await _positionController.close();
       _eventController = null;
       _positionController = null;
-      _disposed = true;
+      _notify(UnsubscribeEvent(
+        _options,
+      ));
     }
     return Future.value();
   }
