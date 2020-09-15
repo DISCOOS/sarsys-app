@@ -70,19 +70,22 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
 
   void _processRepoState(StorageTransition<Device> transition) async {
     try {
-      if (isOpen) {
+      if (isOpen && !transition.isError) {
         final device = transition.to.value;
-        if (_shouldSetName(device, transition.to.status)) {
-          dispatch(UpdateDevice(device.copyWith(
-            number: userBloc.user.phone,
-            alias: userBloc.user.shortName,
-            networkId: userBloc.user.userId,
-          )));
-        } else if (transition.to.isRemote) {
-          dispatch(
-            // Catch up with remote state
-            _DeviceMessage(device, transition.from?.value),
-          );
+        if (device != null) {
+          final next = transition.to;
+          if (_shouldSetName(device, next.status)) {
+            dispatch(UpdateDevice(device.copyWith(
+              number: userBloc.user.phone,
+              alias: userBloc.user.shortName,
+              networkId: userBloc.user.userId,
+            )));
+          } else if (next.isRemote) {
+            dispatch(
+              // Catch up with remote state
+              _DeviceMessage(device, transition.from?.value),
+            );
+          }
         }
       }
     } catch (error, stackTrace) {
@@ -180,7 +183,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   void _assertData(Device data) {
     if (data?.uuid == null) {
       throw ArgumentError(
-        "Device have no uuid",
+        "Device $data have no uuid",
       );
     }
   }
