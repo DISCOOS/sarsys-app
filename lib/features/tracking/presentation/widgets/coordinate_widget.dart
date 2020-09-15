@@ -3,6 +3,7 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:timer_builder/timer_builder.dart';
 
 class CoordinateWidget extends StatelessWidget {
   const CoordinateWidget({
@@ -93,8 +94,11 @@ class CoordinateWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text('ALDER', style: Theme.of(context).textTheme.caption),
-        Text.rich(
-          TextSpan(text: '${formatSince(timestamp)}'),
+        TimerBuilder.periodic(
+          const Duration(seconds: 1),
+          builder: (context) => Text.rich(
+            TextSpan(text: '${formatSince(timestamp)}'),
+          ),
         ),
       ],
     );

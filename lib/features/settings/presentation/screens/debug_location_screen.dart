@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:timer_builder/timer_builder.dart';
 
 class DebugLocationScreen extends StatefulWidget {
   @override
@@ -96,21 +97,27 @@ class _DebugLocationScreenState extends State<DebugLocationScreen> {
             StreamBuilder<LocationEvent>(
                 stream: _service.onEvent,
                 builder: (context, snapshot) {
-                  final now = DateTime.now();
                   return ListView.separated(
                     shrinkWrap: true,
                     physics: ClampingScrollPhysics(),
                     itemCount: _service.events.length,
                     itemBuilder: (BuildContext context, int index) {
                       final LocationEvent event = _service[index];
-                      final duration = now.difference(_service[index].timestamp);
                       return ListTile(
                         key: ObjectKey(event),
                         title: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             Text('${event.runtimeType}', style: TextStyle(fontWeight: FontWeight.w600)),
-                            Chip(label: Text('${formatDuration(duration, withMillis: true)}')),
+                            TimerBuilder.periodic(
+                              const Duration(seconds: 1),
+                              builder: (context) {
+                                final duration = DateTime.now().difference(_service[index].timestamp);
+                                return Chip(
+                                  label: Text('${formatDuration(duration, withMillis: true)}'),
+                                );
+                              },
+                            ),
                           ],
                         ),
                         subtitle: Text('$event'),
