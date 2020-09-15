@@ -662,7 +662,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         subdomains: _currentBaseMap.subdomains,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
-        maxZoom: useRetinaMode ? _currentBaseMap.maxZoom - 1 : _currentBaseMap.maxZoom,
+        maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
         retinaMode: useRetinaMode,
         errorTileCallback: _tileProvider.onError,
       );
@@ -809,7 +809,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   double _minZoom() => _currentBaseMap?.minZoom ?? Defaults.minZoom;
 
-  double _maxZoom() => _currentBaseMap?.maxZoom ?? Defaults.maxZoom;
+  double _maxZoom() {
+    final zoom = _currentBaseMap?.maxZoom ?? Defaults.maxZoom;
+    return useRetinaMode ? zoom - 1 : zoom;
+  }
 
   POILayerOptions _buildPoiOptions() {
     return widget.operation == null
