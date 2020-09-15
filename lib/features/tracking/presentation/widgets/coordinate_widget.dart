@@ -47,17 +47,17 @@ class CoordinateWidget extends StatelessWidget {
                 flex: 1,
                 fit: FlexFit.tight,
                 child: Padding(
-                  padding: EdgeInsets.only(top: !hasAction ? (isDense ? 8.0 : 13.0) : 0.0),
+                  padding: EdgeInsets.only(top: !hasAction ? (isDense ? 8.0 : 14.0) : 0.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
                       Column(
                         mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (hasAccuracy) _buildAccuracy(context),
-                          if (hasAccuracy) SizedBox(height: 24),
+                          if (hasAccuracy) SizedBox(height: 26),
                           if (hasTimestamp) _buildTimestamp(context),
                         ],
                       ),
