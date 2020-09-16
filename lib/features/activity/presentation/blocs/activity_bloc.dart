@@ -8,7 +8,7 @@ import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -61,11 +61,11 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   /// Get current [LocationOptions]
   LocationOptions get options => service.options;
 
-  AuthToken _token;
+  UserRepository _users;
 
   void _processAuth(BaseBloc bloc, UserState state) {
     _isReady = state.shouldLoad();
-    _token = (bloc as UserBloc).token;
+    _users = (bloc as UserBloc).repo;
   }
 
   void _processDevice(BaseBloc bloc, DeviceState state) async {
@@ -236,7 +236,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   Future<LocationOptions> _apply(LocationOptions options, Device device) async {
     final isChanged = service.options != options ||
-        service.token != _token && _token?.isValid == true ||
+        service.token != _users.token && _users?.isTokenValid == true ||
         service.duuid != device?.uuid;
 
     if (_isReady && isChanged) {
@@ -244,7 +244,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         options: options,
         share: isTrackable,
         duuid: device?.uuid,
-        token: _token,
+        token: _users.token,
       );
     }
     return service.options;

@@ -73,7 +73,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
       if (isOpen) {
         if (state.shouldLoad() && !repo.isReady) {
           dispatch(LoadOperations());
-        } else if (state.shouldUnload() && repo.isReady) {
+        } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
           dispatch(UnloadOperations());
         }
       }

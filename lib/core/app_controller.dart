@@ -217,18 +217,13 @@ class AppController {
     final baseRestUrl = Defaults.baseRestUrl;
     final assetConfig = 'assets/config/app_config.json';
 
-    // ---------------------
-    // Build message channel
-    // ---------------------
-    final channel = MessageChannel();
-
     // --------------
     // Build services
     // --------------
 
     final configService = AppConfigService();
-    final userService = UserIdentityService(client);
     final connectivityService = ConnectivityService();
+    final userService = UserIdentityService(client, connectivityService);
 
     // ------------------
     // Build repositories
@@ -237,7 +232,6 @@ class AppController {
     final userRepo = UserRepository(
       service: userService,
       tokens: authRepo,
-      connectivity: connectivityService,
     );
     final configRepo = AppConfigRepositoryImpl(
       APP_CONFIG_VERSION,
@@ -245,6 +239,11 @@ class AppController {
       service: configService,
       connectivity: connectivityService,
     );
+
+    // ---------------------
+    // Build message channel
+    // ---------------------
+    final channel = MessageChannel(userRepo);
 
     // -----------
     // Build blocs
@@ -574,10 +573,10 @@ class AppController {
     // Handle legal transitions only
     // 1) Initialized -> Local User (not authenticated), blocks are ready to receive commands
     // 2) Initialized -> Ready User (authenticated), blocks are ready to receive commands
-    // 3) Local -> Ready
-    // 4) Ready -> Local
+    // 3) Local -> Ready (when user is authenticated or token is refreshed
+    // 4) Ready -> Local (when token expires or user is logged out
     if (userStates.contains(_state)) {
-      final isReady = state.isAuthenticated() || state.isUnlocked();
+      final isReady = state.isAuthenticated() || state.isUnlocked() || state.isTokenRefreshed();
       var next = isReady ? AppControllerState.Ready : AppControllerState.Local;
       if (next != _state) {
         _state = next;
@@ -593,13 +592,11 @@ class AppController {
 
   void _configureServices(UserState state) {
     _channel.open(
-      token: bloc<UserBloc>().repo.token,
       appId: bloc<AppConfigBloc>().config.udid,
-      onExpired: () => bloc<UserBloc>().repo.refresh(),
       url: '${Defaults.baseWsUrl}/api/messages/connect',
     );
     // Ensure that token is updated
-    if (!LocationService.exists || state.isTokenChanged()) {
+    if (!LocationService.exists || state.isTokenRefreshed()) {
       LocationService(
         options: bloc<ActivityBloc>().profile.options,
       ).configure(
@@ -636,7 +633,9 @@ class AppController {
     _controller.add(_state = AppControllerState.Empty);
 
     // Cancel state change subscriptions on current blocs
-    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.forEach(
+      (subscription) => subscription.cancel(),
+    );
     _subscriptions.clear();
 
     // Dispose current blocs

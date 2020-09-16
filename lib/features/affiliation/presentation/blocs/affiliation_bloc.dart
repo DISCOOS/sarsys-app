@@ -129,7 +129,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
           // Wait for load before onboarding user
           await dispatch(LoadAffiliations());
           await onboard();
-        } else if (state.shouldUnload() && repo.isReady) {
+        } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
           dispatch(UnloadAffiliations());
         }
       }

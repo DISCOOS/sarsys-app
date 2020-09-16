@@ -126,7 +126,7 @@ class _AboutScreenState extends State<AboutScreen> {
                         ListTile(
                           title: Text("Token status"),
                           subtitle: Text(
-                            'Token is ${channel.token.isExpired ? 'expired' : 'valid'}',
+                            'Token is ${channel.isTokenExpired ? 'expired' : 'valid'}',
                           ),
                         ),
                         ListTile(
@@ -205,7 +205,6 @@ class _AboutScreenState extends State<AboutScreen> {
       if (!channel.isOpen) {
         channel.open(
           url: channel.url,
-          token: context.bloc<UserBloc>().repo.token,
           appId: context.bloc<AppConfigBloc>().config.udid,
         );
       }

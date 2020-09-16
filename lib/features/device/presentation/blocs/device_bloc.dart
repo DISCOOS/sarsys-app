@@ -54,7 +54,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
       if (isOpen) {
         if (state.shouldLoad() && !repo.isReady) {
           dispatch(LoadDevices());
-        } else if (state.shouldUnload() && repo.isReady) {
+        } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
           dispatch(UnloadDevices());
         }
       }

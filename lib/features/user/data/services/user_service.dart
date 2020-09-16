@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
@@ -9,6 +10,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
 abstract class UserService {
+  UserService(this.connectivity);
+
+  /// Get [ConnectivityService]
+  final ConnectivityService connectivity;
+
   /// Get domain from username
   static String toDomain(String username) {
     final pattern = RegExp(".*.@(.*)");
@@ -32,7 +38,11 @@ abstract class UserService {
 }
 
 class UserIdentityService extends UserService {
-  UserIdentityService(this.client);
+  UserIdentityService(
+    this.client,
+    ConnectivityService connectivity,
+  ) : super(connectivity);
+
   final http.Client client;
 
   static const String AUTHORIZE_ERROR_CODE = "authorize_failed";
@@ -84,6 +94,11 @@ class UserIdentityService extends UserService {
     String password,
     String idpHint,
   }) async {
+    if (connectivity.isOffline) {
+      return ServiceResponse.badRequest(
+        message: "Login not possible when offline",
+      );
+    }
     try {
       // Select idp hint and prompt values
       final hint = idpHint ?? toIdpHint(username);
@@ -142,6 +157,11 @@ class UserIdentityService extends UserService {
 
   @override
   Future<ServiceResponse<AuthToken>> refresh(AuthToken token) async {
+    if (connectivity.isOffline) {
+      return ServiceResponse.noContent(
+        message: 'Refresh not possible when offline',
+      );
+    }
     // Refresh is pending?
     if (_refreshCompleter != null && _refreshCompleter.isCompleted == false) {
       return _refreshCompleter.future;
@@ -192,6 +212,11 @@ class UserIdentityService extends UserService {
   @override
   Future<ServiceResponse<void>> logout(AuthToken token) async {
     try {
+      if (connectivity.isOffline) {
+        return ServiceResponse.badRequest(
+          message: "Logout not possible when offline",
+        );
+      }
       // Chrome Custom Tab or other external browsers used by
       // AppAuth will cache the session. Some IdPs doesn't support
       // multiple session and will complain that a user is already
@@ -230,7 +255,7 @@ class UserIdentityService extends UserService {
 }
 
 class UserCredentialsService extends UserService {
-  UserCredentialsService(this.url, this.client);
+  UserCredentialsService(this.url, this.client, ConnectivityService connectivity) : super(connectivity);
   final String url;
   final http.Client client;
 

@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
@@ -8,6 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:matcher/matcher.dart';
 import 'package:mockito/mockito.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
+
+import '../blocs/harness.dart';
 
 class UserServiceMock extends Mock implements UserCredentialsService {
   static String get username => _username;
@@ -24,6 +27,9 @@ class UserServiceMock extends Mock implements UserCredentialsService {
 
   static Duration get maxAge => _maxAge;
   static Duration _maxAge = const Duration(minutes: 5);
+
+  ConnectivityService get connectivity => _connectivity;
+  static ConnectivityService _connectivity;
 
   void setCredentials({
     String username,
@@ -61,12 +67,14 @@ class UserServiceMock extends Mock implements UserCredentialsService {
     @required String password,
     @required String division,
     @required String department,
+    @required ConnectivityServiceMock connectivity,
   }) {
     final UserServiceMock mock = UserServiceMock();
     UserServiceMock._username = username;
     UserServiceMock._password = password;
     UserServiceMock._division = division;
     UserServiceMock._department = department;
+    UserServiceMock._connectivity = connectivity;
 
     when(
       mock.login(
@@ -76,6 +84,7 @@ class UserServiceMock extends Mock implements UserCredentialsService {
       ),
     ).thenAnswer((_) async {
       final requestedUserId = _.namedArguments[Symbol('userId')];
+      // ignore: invalid_use_of_protected_member
       if (requestedUserId != null && requestedUserId == _token?.userId && _token.isValid) {
         return ServiceResponse.ok(body: _token);
       } else if (_credentialsMatch(_)) {

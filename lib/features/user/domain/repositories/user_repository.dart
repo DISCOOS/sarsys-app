@@ -19,19 +19,21 @@ class UserRepository implements Repository {
   UserRepository({
     @required this.service,
     @required this.tokens,
-    @required this.connectivity,
     this.compactWhen = 10,
   });
   final int compactWhen;
   final UserService service;
   final AuthTokenRepository tokens;
-  final ConnectivityService connectivity;
 
-  String _userId;
+  /// Get [User.userId] of authenticated user
   String get userId => _userId;
+  String _userId;
 
   /// Get authenticated [user]
   User get user => get(_userId);
+
+  /// Get [ConnectivityService]
+  ConnectivityService get connectivity => service.connectivity;
 
   /// User is online
   bool get isOnline => connectivity.isOnline;
@@ -59,10 +61,15 @@ class UserRepository implements Repository {
   /// Get token for authenticated [user]
   AuthToken get token => isReady ? tokens[_userId] : null;
 
-  /// Check if token is valid
-  bool get isTokenValid => token?.isValid == true;
+  /// Check if token is valid.
+  /// If [isOffline] any token
+  /// is valid, regardless of
+  /// [AuthToken.accessTokenExpiration]
+  // ignore: invalid_use_of_protected_member
+  bool get isTokenValid => isOffline ? token != null : token?.isValid == true;
 
   /// Check if token is expired
+  // ignore: invalid_use_of_protected_member
   bool get isTokenExpired => token?.isExpired == true;
 
   /// Get all cached [User.userId]s
@@ -371,6 +378,7 @@ class UserRepository implements Repository {
     final actualId = userId ?? _userId;
     final actualToken = tokens[actualId];
     if (actualToken != null) {
+      // ignore: invalid_use_of_protected_member
       bool isValid = actualToken.isValid;
       if (isValid || !validate) {
         return actualToken;
@@ -402,6 +410,7 @@ class UserRepository implements Repository {
     // the app again without being forced to
     // refresh or authenticate, which would make
     // the app unusable during a network partition
+    // ignore: invalid_use_of_protected_member
     if (isOnline && (force || token.isExpired)) {
       return await _refresh(token, lock: lock);
     }

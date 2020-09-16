@@ -314,9 +314,8 @@ class BearerTokenInterceptor implements RequestInterceptor {
 
   @override
   FutureOr<Request> onRequest(Request request) async {
-    final token = users.token;
-    if (token != null) {
-      if (token.isExpired) {
+    if (users.isAuthenticated) {
+      if (users.isTokenExpired) {
         await users.refresh();
       }
       return applyHeader(

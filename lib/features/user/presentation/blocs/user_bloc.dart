@@ -550,15 +550,18 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isAuthenticating() => this is UserAuthenticating;
   bool isPending() => isUnlocking() || isAuthenticating();
   bool isAuthenticated() => this is UserAuthenticated;
+  bool isTokenRefreshed() => this is AuthTokenRefreshed;
   bool isAuthorized() => this is UserAuthorized;
   bool isUnauthorized() => this is UserUnauthorized;
   bool isForbidden() => this is UserForbidden;
-  bool isTokenChanged() => this is AuthTokenRefreshed;
   bool isOffline() => this is UserBlocIsOffline;
   bool isError() => this is UserBlocError;
 
-  bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked();
-  bool shouldUnload() => !(shouldLoad() || isPending()) || isUnset();
+  bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked() || isAuthorized() || isTokenRefreshed();
+  bool shouldUnload({
+    bool isOnline = true,
+  }) =>
+      !(shouldLoad() || isPending()) || isUnset() || isOnline && isUnauthorized();
 }
 
 class UserUnset extends UserState<void> {

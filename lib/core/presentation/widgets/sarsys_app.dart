@@ -93,7 +93,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   }
 
   void _cancelAll() {
-    _subscriptions.forEach((subscription) => subscription.cancel());
+    _subscriptions.forEach(
+      (subscription) => subscription.cancel(),
+    );
+    _subscriptions.clear();
   }
 
   @override

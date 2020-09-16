@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
@@ -13,8 +15,12 @@ import 'package:web_socket_channel/io.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class MessageChannel extends Service {
+  MessageChannel(UserRepository users) : _users = users;
+
   static const int closedByApp = 4000;
   static const int closeAppReopening = 4001;
+  static const int closeAppIsOffline = 4002;
+  static const int closeApiUnreachable = 4003;
   static const Map<int, String> closeCodeNames = const {
     WebSocketStatus.normalClosure: 'normalClosure',
     WebSocketStatus.abnormalClosure: 'abnormalClosure',
@@ -30,10 +36,12 @@ class MessageChannel extends Service {
     WebSocketStatus.reserved1015: 'reserved1015',
     closedByApp: 'closedByApp',
     closeAppReopening: 'closeAppReopening',
+    closeAppIsOffline: 'closeAppIsOffline',
+    closeApiUnreachable: 'closeApiUnreachable',
   };
 
   IOWebSocketChannel _channel;
-  StreamSubscription _channelSubscription;
+  List<StreamSubscription> _subscriptions = [];
   MessageChannelState _stats = MessageChannelState();
   StreamController<MessageChannelState> _statsController = StreamController.broadcast();
 
@@ -46,9 +54,16 @@ class MessageChannel extends Service {
   String _appId;
 
   /// Get current [AuthToken]
-  AuthToken get token => _token;
-  AuthToken _token;
-  VoidCallback _onExpired;
+  AuthToken get token => _users.token;
+
+  /// Check if [AuthToken] is valid
+  bool get isTokenValid => _users.isTokenValid;
+
+  /// Check if [AuthToken] is expired
+  bool get isTokenExpired => _users.isTokenExpired;
+
+  /// [UserRepository] for token handling
+  final UserRepository _users;
 
   /// Registered event routes from [Type] to handlers
   final Map<String, Set<Function>> _routes = {};
@@ -133,29 +148,40 @@ class MessageChannel extends Service {
   Iterable<Function> _toHandlers(String type) => _routes[type] ?? [];
 
   void _onError(Object error, StackTrace stackTrace) {
-    debugPrint('$error');
-    debugPrint(stackTrace.toString());
-    _close(
-      reason: _channel.closeReason ?? '$error',
-      code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
-    );
+    if (_users.isOffline) {
+      _close(
+        reason: "App is offline",
+        code: MessageChannel.closeAppIsOffline,
+      );
+    } else if (error is SocketException) {
+      _close(
+        reason: "APi is unreachable",
+        code: MessageChannel.closeApiUnreachable,
+      );
+    } else {
+      debugPrint('$error');
+      debugPrint(stackTrace.toString());
+      _close(
+        reason: _channel.closeReason ?? '$error',
+        code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
+      );
+    }
   }
 
-  void _onDone() {
+  void _onDone() async {
     print('MessageChannel::done');
     if (!_isClosed) {
       _close(
         reason: _channel.closeReason ?? 'Done event received',
         code: _channel.closeCode ?? WebSocketStatus.normalClosure,
       );
-      if (_token.isExpired && _onExpired != null) {
-        _onExpired();
-      } else if (_token.isValid) {
+      if (isTokenExpired) {
+        await _users.refresh();
+      }
+      if (isTokenValid) {
         open(
           url: _url,
-          token: _token,
           appId: _appId,
-          onExpired: _onExpired,
         );
       }
     }
@@ -164,8 +190,6 @@ class MessageChannel extends Service {
   void open({
     @required String url,
     @required String appId,
-    @required AuthToken token,
-    VoidCallback onExpired,
   }) {
     _assertState();
     _close(
@@ -173,9 +197,7 @@ class MessageChannel extends Service {
       code: closeAppReopening,
     );
     _url = url;
-    _token = token;
     _appId = appId;
-    _onExpired = onExpired ?? _onExpired;
     _channel = IOWebSocketChannel.connect(
       url,
       headers: {
@@ -184,11 +206,14 @@ class MessageChannel extends Service {
       },
       pingInterval: Duration(seconds: 60),
     );
-    _channelSubscription = _channel.stream.listen(
+    _subscriptions.add(_channel.stream.listen(
       _onData,
       onDone: _onDone,
       onError: _onError,
-    );
+    ));
+    _subscriptions.add(_users.connectivity.changes.listen(
+      _onConnectivityChange,
+    ));
     _isClosed = false;
     _stats = _stats.update(opened: true);
     _statsController.add(_stats);
@@ -209,9 +234,11 @@ class MessageChannel extends Service {
     _isClosed = true;
     if (_channel != null) {
       _channel?.sink?.close();
-      _channelSubscription?.cancel();
+      _subscriptions.forEach(
+        (subscription) => subscription.cancel(),
+      );
+      _subscriptions.clear();
       _channel = null;
-      _channelSubscription = null;
       _stats = _stats.update(
         code: code,
         reason: emptyAsNull(reason) ?? 'None',
@@ -233,6 +260,20 @@ class MessageChannel extends Service {
       reason: "Disposed",
     );
     _statsController.close();
+  }
+
+  void _onConnectivityChange(ConnectivityStatus status) {
+    if (status == ConnectivityStatus.offline) {
+      _close(
+        reason: "App is offline",
+        code: MessageChannel.closeAppIsOffline,
+      );
+    } else if (_isClosed) {
+      open(
+        url: _url,
+        appId: _appId,
+      );
+    }
   }
 }
 

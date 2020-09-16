@@ -515,12 +515,12 @@ class BlocTestHarness implements BlocDelegate {
       password: _password,
       division: _division,
       department: _department,
+      connectivity: _connectivity,
     );
     _userBloc = UserBloc(
       UserRepository(
         tokens: AuthTokenRepository(),
         service: userService,
-        connectivity: connectivity,
       ),
       configBloc,
       bus,

@@ -260,6 +260,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );
+    _subscriptions.clear();
     _isLocating = null;
     _isMeasuring = null;
     _mapController = null;
