@@ -99,7 +99,7 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
   ///
   void _processDeviceMessage(DeviceMessage message) {
     if (isReady) {
-      var state;
+      StorageState<Device> state;
       try {
         // Merge with local changes?
         if (containsKey(message.uuid)) {

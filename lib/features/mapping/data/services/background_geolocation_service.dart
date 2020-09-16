@@ -181,20 +181,21 @@ class BackgroundGeolocationService implements LocationService {
         // are registered.
         _subscribe();
 
+        // Ensure debug flag is updated if given
+        _options = (options ?? _options).copyWith(
+          debug: debug ?? _options.debug,
+        );
+        final config = _toConfig(
+          duuid: duuid,
+          token: token,
+          share: share,
+          debug: debug,
+        );
+
         // Prevents concurrent configure
-        _queue.add(StreamRequest<LocationOptions>(execute: () async {
-          // Ensure debug flag is updated if given
-          _options = (options ?? _options).copyWith(
-            debug: debug ?? _options.debug,
-          );
+        _queue.only(StreamRequest<LocationOptions>(execute: () async {
           // Wait for previous to complete or check plugin
           var state = await bg.BackgroundGeolocation.state;
-          final config = _toConfig(
-            duuid: duuid,
-            token: token,
-            share: share,
-            debug: debug,
-          );
           if (state.isFirstBoot) {
             bg.BackgroundGeolocation.ready(config).then(
               (_) => _onConfigured(completer, wasSharing),
@@ -342,8 +343,12 @@ class BackgroundGeolocationService implements LocationService {
   Future<Position> update() async {
     if (isReady) {
       try {
-        await bg.BackgroundGeolocation.changePace(true);
-        await bg.BackgroundGeolocation.getCurrentPosition();
+        final state = await bg.BackgroundGeolocation.state;
+        if (state.isMoving) {
+          await bg.BackgroundGeolocation.getCurrentPosition();
+        } else {
+          await bg.BackgroundGeolocation.changePace(true);
+        }
       } catch (e, stackTrace) {
         _notify(
           ErrorEvent(_options, e, stackTrace),

@@ -70,7 +70,7 @@ class UserRepository implements Repository {
 
   /// Check if token is expired
   // ignore: invalid_use_of_protected_member
-  bool get isTokenExpired => token?.isExpired == true;
+  bool get isTokenExpired => isOffline ? false : token?.isExpired == true;
 
   /// Get all cached [User.userId]s
   Iterable<String> get keys => isReady && _users != null ? List.unmodifiable(_users.keys) : null;

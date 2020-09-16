@@ -53,12 +53,16 @@ class StreamRequestQueue<T> {
   /// Check if queue is executing given [request]
   bool isCurrent(StreamRequest<T> request) => _current == request;
 
-  /// Schedule [request] for execution
-  void add(StreamRequest<T> request) {
-    if (contains(request.key)) {
-      throw StateError('Request with key ${request.key} already scheduled for execution');
-    }
+  /// Schedule singleton [request] for execution.
+  /// This will cancel current requests.
+  Future<bool> only(StreamRequest<T> request) async {
+    clear();
+    await cancel();
+    return add(request);
+  }
 
+  /// Schedule [request] for execution
+  bool add(StreamRequest<T> request) {
     // Start processing events
     // until isIdle is true.
     // If already processing
@@ -66,9 +70,15 @@ class StreamRequestQueue<T> {
     // will do nothing
     process(wait: true);
 
-    // Schedule request
-    _requests.add(request);
-    _dispatcher.add(request);
+    final exists = contains(request.key);
+
+    if (!exists) {
+      // Schedule request
+      _requests.add(request);
+      _dispatcher.add(request);
+    }
+
+    return !exists;
   }
 
   /// Remove [StreamRequest] with given [key] from queue.
@@ -99,21 +109,22 @@ class StreamRequestQueue<T> {
       try {
         _prepare();
         while (await _shouldProcess(wait: wait)) {
-          final request = await _queue.peek;
-          if (await _shouldExecute(request, result, ++attempts)) {
-            if (contains(request.key)) {
-              result = await _execute(request);
-            }
-            if (_shouldComplete(request, result)) {
-              attempts = 0;
-              result = null;
-              // Move to next request?
-              if (await _shouldProcess()) {
-                await _queue.next;
-                _requests.remove(request);
-              }
+          _current = await _queue.peek;
+          if (await _shouldExecute(_current, result, ++attempts)) {
+            if (contains(_current.key)) {
+              result = await _execute(_current);
             }
           }
+          if (_shouldComplete(_current, result)) {
+            attempts = 0;
+            result = null;
+            // Move to next request?
+            if (await _shouldProcess()) {
+              await _queue.next;
+              _requests.remove(_current);
+            }
+          }
+          _current = null;
         }
       } finally {
         _dispose();
@@ -165,7 +176,7 @@ class StreamRequestQueue<T> {
       // Removed from queue?
       !contains(request.key) ||
       // Request is completed?
-      result.isComplete ||
+      result?.isComplete == true ||
       // Internal error?
       request.onResult?.isCompleted == true;
 
@@ -175,7 +186,6 @@ class StreamRequestQueue<T> {
   /// Execute given [request]
   Future<StreamResult<T>> _execute(StreamRequest<T> request) async {
     try {
-      _current = request;
       _pending = request.execute();
       final result = await _pending;
       if (result.isOK) {
@@ -198,7 +208,6 @@ class StreamRequestQueue<T> {
       );
       return StreamResult.none();
     } finally {
-      _current = null;
       _pending = null;
     }
   }
@@ -241,7 +250,7 @@ class StreamRequestQueue<T> {
           previous.stackTrace ?? StackTrace.current,
           request.onResult,
         );
-      } else {
+      } else if (request.onResult?.isCompleted == false) {
         request.onResult?.complete(
           request.fallback == null ? null : await request.fallback(),
         );

@@ -46,7 +46,9 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     ));
 
     // Toggle device trackability
-    bus.subscribe<ActivityProfileChanged>(_processActivityChange);
+    bus.subscribe<ActivityProfileChanged>(
+      _processActivityChange,
+    );
   }
 
   void _processUserState(UserState state) {

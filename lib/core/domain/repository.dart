@@ -330,18 +330,16 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     Completer<Iterable<T>> onResult,
   }) {
     // Replace current if not executed yet
-    _loadQueue
-      ..clear()
-      ..add(StreamRequest<Iterable<T>>(
-        fail: fail,
-        onResult: onResult,
-        execute: () => _executeLoad(
-          request,
-          shouldEvict,
-        ),
-        maxAttempts: maxAttempts,
-        fallback: () => Future.value(values),
-      ));
+    _loadQueue.only(StreamRequest<Iterable<T>>(
+      fail: fail,
+      onResult: onResult,
+      execute: () => _executeLoad(
+        request,
+        shouldEvict,
+      ),
+      maxAttempts: maxAttempts,
+      fallback: () => Future.value(values),
+    ));
 
     if (isOffline) {
       _loadQueue.stop();
@@ -370,7 +368,11 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         );
       }
       states.forEach(
-        (state) => put(_patch(state)),
+        (state) {
+          if (toKey(state) != null) {
+            put(_patch(state));
+          }
+        },
       );
     } else if (response.isErrorCode) {
       return StreamResult<Iterable<T>>(
@@ -398,12 +400,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return put(_patch(next)) ? next : null;
   }
 
-  StorageState _toState(value, bool isRemote) {
+  StorageState _toState(T value, bool isRemote) {
     final state = StorageState<T>.created(
       value,
       isRemote: isRemote,
     );
     final key = toKey(state);
+    assert(key != null, "Key can not be null");
     final next = containsKey(key)
         ? getState(key).apply(
             value,
@@ -469,6 +472,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool put(StorageState<T> state) {
     checkState();
     final key = toKey(state);
+    assert(key != null, "Key can not be null");
     final current = getState(key);
     if (shouldDelete(next: state, current: current)) {
       _states.delete(key);
@@ -626,9 +630,9 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         onError: _shouldStop,
       );
 
-      // Clear scheduled requests
-      _pushQueue.clear();
-      _loadQueue.clear();
+      // Cancel queues
+      _pushQueue.cancel();
+      _loadQueue.cancel();
 
       if (compact) {
         await _states?.compact();
