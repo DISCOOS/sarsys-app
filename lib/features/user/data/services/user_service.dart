@@ -121,6 +121,7 @@ class UserIdentityService extends UserService {
       if (USER_ERRORS.contains(e.code)) {
         return ServiceResponse.unauthorized(
           message: "Unauthorized",
+          error: e,
         );
       }
       return ServiceResponse.internalServerError(
@@ -142,7 +143,7 @@ class UserIdentityService extends UserService {
   @override
   Future<ServiceResponse<AuthToken>> refresh(AuthToken token) async {
     // Refresh is pending?
-    if (_refreshCompleter != null) {
+    if (_refreshCompleter != null && _refreshCompleter.isCompleted == false) {
       return _refreshCompleter.future;
     }
     _refreshCompleter = Completer<ServiceResponse<AuthToken>>();
@@ -169,6 +170,7 @@ class UserIdentityService extends UserService {
       if (USER_ERRORS.contains(e.code)) {
         _refreshCompleter.complete(ServiceResponse.unauthorized(
           message: "Unauthorized",
+          error: e,
         ));
       }
       _refreshCompleter.complete(ServiceResponse.internalServerError(
@@ -257,7 +259,7 @@ class UserCredentialsService extends UserService {
           ),
         );
       } else if (response.statusCode == 401) {
-        return ServiceResponse.unauthorized();
+        return ServiceResponse.unauthorized(error: response);
       } else if (response.statusCode == 403) {
         return ServiceResponse.forbidden();
       }

@@ -139,8 +139,9 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> unauthorized<T>({message: 'Unauthorized'}) {
+  static ServiceResponse<T> unauthorized<T>({message: 'Unauthorized', Object error}) {
     return ServiceResponse<T>(
+      error: error,
       statusCode: 401,
       reasonPhrase: message,
     );
