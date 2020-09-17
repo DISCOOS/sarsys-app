@@ -856,6 +856,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         toNextTimeout(_retries++, const Duration(seconds: 10)),
         () {
           if (_shouldSchedulePush()) {
+            debugPrint('_retryPop($_retries)');
             _pop();
           }
         },

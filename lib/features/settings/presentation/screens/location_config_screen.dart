@@ -95,7 +95,6 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                       Divider(),
                       _buildLocationDebugField(),
                       ListTile(
-                        enabled: _debug,
                         title: Text('Feilsøking'),
                         subtitle: Text('Feilsøke problemer med posisjon og sporing'),
                         trailing: const Icon(Icons.keyboard_arrow_right),

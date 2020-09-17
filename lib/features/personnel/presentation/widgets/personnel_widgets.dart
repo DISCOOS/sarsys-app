@@ -65,7 +65,6 @@ class PersonnelWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (withHeader) _buildHeader(context, personnel, theme),
-        if (withHeader) Divider() else SizedBox(height: 8.0),
         if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[

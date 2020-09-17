@@ -70,7 +70,7 @@ class UserStatusPageState extends State<UserStatusPage> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               final state = snapshot.data;
-              if (state.isUpdated() && state.data.uuid == _personnel?.uuid) {
+              if (state.data is Personnel && state.data.uuid == _personnel?.uuid) {
                 _personnel = state.data;
               }
               return SingleChildScrollView(

@@ -4,6 +4,7 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -156,7 +157,62 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Iterable<Personnel> find({bool where(Personnel personnel)}) => repo.find(where: where);
 
   /// Check if user is mobilized
-  bool isUserMobilized() => findUser().firstOrNull?.isMobilized == true;
+  bool isUserMobilized() => findUser().any((p) => p.isMobilized);
+
+  /// Get mobilized user if found.
+  ///
+  /// Otherwise get a suitable
+  /// personnel previously retired
+  /// if found. If more then one
+  /// retired personnel for given
+  /// user was found, select an
+  /// affiliation matching active
+  /// affiliation for current user
+  Personnel findMobilizedUserOrReuse({
+    String userId,
+    bool Function(Personnel personnel) where,
+  }) {
+    final personnels = findUser(
+      where: where,
+      userId: userId,
+      exclude: const [],
+    );
+    final mobilized = personnels.where(
+      (p) => p.status != PersonnelStatus.retired,
+    );
+    final match = affiliationBloc.findUserAffiliation(
+      userId: userId,
+    );
+
+    // Try to match active affiliation
+    // with previous affiliations
+    final candidates = mobilized.isNotEmpty
+        ? [Pair<Personnel, int>.of(mobilized.first, 0)]
+        : personnels.fold(
+            <Pair<Personnel, int>>[],
+            (candidates, p) {
+              var rank = 0;
+              final next = affiliationBloc.repo[p.affiliation?.uuid];
+              if (next != null) {
+                if (next.org?.uuid != match.org?.uuid) rank++;
+                if (next.div?.uuid != match.div?.uuid) rank++;
+                if (next.dep?.uuid != match.dep?.uuid) rank++;
+              }
+              return candidates
+                ..add(
+                  Pair<Personnel, int>.of(p, rank),
+                );
+            },
+          );
+
+    // Choose personnel with highest rank
+    final found = sortList<Pair<Personnel, int>>(
+      candidates,
+      (a, b) => a.right - b.right,
+    ).firstOrNull?.left;
+
+    return found;
+  }
 
   /// Find [Personnel] from [user]
   Iterable<Personnel> findUser({
@@ -317,14 +373,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
     final user = command.user;
     if (user != null) {
-      var personnels = findUser(
+      var found = findMobilizedUserOrReuse(
         userId: user.userId,
-        exclude: const [],
-      );
-      // Choose mobilized personnels over retired
-      var found = personnels.firstWhere(
-        (p) => p.status != PersonnelStatus.retired,
-        orElse: () => personnels.firstOrNull,
       );
       if (found == null) {
         final affiliation = affiliationBloc.findUserAffiliation();

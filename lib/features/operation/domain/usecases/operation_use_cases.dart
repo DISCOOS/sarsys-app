@@ -17,7 +17,6 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/core/utils/ui.dart';
-import 'package:SarSys/core/extensions.dart';
 
 class OperationParams extends BlocParams<OperationBloc, Operation> {
   final Point ipp;
@@ -197,10 +196,9 @@ bool _shouldRegister(
 
 FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait = false}) async {
   // Look for existing personnel
-  final personnel = params.context.bloc<PersonnelBloc>().findUser(
-    userId: user.userId,
-    exclude: const [],
-  ).firstOrNull;
+  final personnel = params.context.bloc<PersonnelBloc>().findMobilizedUserOrReuse(
+        userId: user.userId,
+      );
   // Wait for personnel to be created
   if (wait && personnel == null) {
     return await waitThroughStateWithData<PersonnelState, Personnel>(

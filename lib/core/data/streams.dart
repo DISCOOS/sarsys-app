@@ -289,10 +289,12 @@ class StreamRequestQueue<T> {
     StackTrace stackTrace,
     Completer<T> onResult,
   ) {
-    onResult?.completeError(
-      error,
-      stackTrace,
-    );
+    if (onResult?.isCompleted == false) {
+      onResult.completeError(
+        error,
+        stackTrace,
+      );
+    }
     if (onError != null) {
       final shouldStop = onError(
         error,

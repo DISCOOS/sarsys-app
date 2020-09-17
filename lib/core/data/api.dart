@@ -127,7 +127,7 @@ class Api {
           ),
           interceptors: [
             BearerTokenInterceptor(users),
-            // if (kDebugMode) HttpLoggingInterceptor(),
+            if (kDebugMode) HttpLoggingInterceptor(),
           ],
         );
 

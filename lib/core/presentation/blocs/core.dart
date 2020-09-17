@@ -127,13 +127,10 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// until [_eventQueue] is empty. Any error
   /// will stop events processing.
   void _processEventQueue() {
-    print('$runtimeType:_processEventQueue()');
     try {
       while (_eventQueue.isNotEmpty) {
         final pair = _eventQueue.first;
-        print('$runtimeType:_processEventQueue(while(${pair.runtimeType}))');
         _toHandlers(pair.right).forEach((handler) {
-          print('$runtimeType:_processEventQueue(while(handle(${pair.runtimeType})))');
           handler(pair.left, pair.right);
         });
         _eventQueue.removeFirst();
@@ -217,7 +214,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   }
 
   void _pop(C command) {
-    print('$runtimeType:_pop(${command.runtimeType})');
     if (_isOpen) {
       _dispatchQueue.remove(command);
     } else {

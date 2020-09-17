@@ -294,7 +294,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get Division from User
   Division findUserDivision({String userId}) {
     final user = users.repo[userId] ?? users.user;
-    final name = (user ?? users.user).division?.toLowerCase();
+    final name = user.division?.toLowerCase();
     return divs.values
         .where(
           (division) => division.name.toLowerCase() == name,
