@@ -59,7 +59,11 @@ class UserStatusPageState extends State<UserStatusPage> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        context.bloc<PersonnelBloc>().load();
+        if (_personnel == null) {
+          context.bloc<ActivityBloc>().apply();
+        } else {
+          context.bloc<PersonnelBloc>().load();
+        }
       },
       child: StreamBuilder<PersonnelState>(
           stream: context.bloc<PersonnelBloc>(),
@@ -379,9 +383,9 @@ class UserStatusPageState extends State<UserStatusPage> {
       tracking: tracking,
       personnel: _personnel,
       onMessage: widget.onMessage,
+      devices: context.bloc<TrackingBloc>().devices(tuuid),
       onGoto: (point) => jumpToPoint(context, center: point),
       unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
-      devices: context.bloc<TrackingBloc>().devices(tuuid),
     );
   }
 }
