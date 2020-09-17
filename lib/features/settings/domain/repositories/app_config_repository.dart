@@ -18,7 +18,9 @@ abstract class AppConfigRepository implements ConnectionAwareRepository<int, App
   StorageState<AppConfig> get state => getState(version);
 
   /// Initialize from [assets] and push to remote
-  Future<AppConfig> init();
+  Future<AppConfig> init({
+    Completer<Iterable<AppConfig>> onRemote,
+  });
 
   /// Create local instance from [assets]
   ///

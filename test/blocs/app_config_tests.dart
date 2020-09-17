@@ -293,25 +293,28 @@ Future _testAppConfigShouldInitializeWithDefaultValues(
 
   // Act
   await harness.configBloc.init(local: local);
+  final isRemote = !(offline || local);
+  await expectThroughLater(
+    harness.configBloc,
+    emits(isA<AppConfigInitialized>().having(
+      (event) {
+        return event.isRemote;
+      },
+      'Should be ${isRemote ? 'remote' : 'local'}',
+      isRemote,
+    )),
+  );
 
   // Assert
-  expect(harness.configBloc.repo.config, isNotNull, reason: "AppConfigRepository SHOULD have AppConfig");
-  final isRemote = !(offline || local);
-  if (isRemote) {
-    await expectLater(
-      harness.configBloc.repo.onChanged,
-      emitsThrough(isA<StorageTransition>()),
-    );
-  }
-
   expectStorageStatus(
     harness.configBloc.repo.state,
     StorageStatus.created,
     remote: isRemote,
   );
-  expectThroughInOrder(
-    harness.configBloc,
-    [isA<AppConfigInitialized>().having((event) => event.isLocal, "Should have local=$local ", local)],
+  expect(
+    harness.configBloc.repo.config,
+    isNotNull,
+    reason: "AppConfigRepository SHOULD have AppConfig",
   );
 }
 

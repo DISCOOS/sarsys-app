@@ -143,19 +143,42 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
     }
   }
 
-  Stream<AppConfigState> _init(InitAppConfig event) async* {
-    var config = await (event.isLocal ? repo.local() : repo.init());
+  Stream<AppConfigState> _init(InitAppConfig command) async* {
+    // Fetch cached and handle
+    // response from remote when ready
+    final onRemote = Completer<Iterable<AppConfig>>();
+    var config = await (command.isLocal
+        ? repo.local()
+        : repo.init(
+            onRemote: onRemote,
+          ));
     yield toOK(
-      event,
+      command,
       AppConfigInitialized(
         config,
-        isLocal: event.isLocal,
+        isLocal: true,
       ),
       result: config,
     );
+    if (!command.isLocal) {
+      // Notify when states was fetched from remote storage?
+      onComplete(
+        [onRemote.future],
+        toState: (_) => AppConfigInitialized(
+          config,
+          isLocal: false,
+        ),
+        toCommand: (state) => _StateChange(state),
+        toError: (error, stackTrace) => toError(
+          command,
+          error,
+          stackTrace: stackTrace,
+        ),
+      );
+    }
   }
 
-  Stream<AppConfigState> _load(LoadAppConfig event) async* {
+  Stream<AppConfigState> _load(LoadAppConfig command) async* {
     // Fetch cached and handle
     // response from remote when ready
     final onRemote = Completer<Iterable<AppConfig>>();
@@ -163,8 +186,11 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
       onRemote: onRemote,
     );
     yield toOK(
-      event,
-      AppConfigLoaded(config),
+      command,
+      AppConfigLoaded(
+        config,
+        isLocal: true,
+      ),
       result: config,
     );
     // Notify when states was fetched from remote storage?
@@ -176,19 +202,19 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
       ),
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
-        event,
+        command,
         error,
         stackTrace: stackTrace,
       ),
     );
   }
 
-  Stream<AppConfigState> _update(UpdateAppConfig event) async* {
+  Stream<AppConfigState> _update(UpdateAppConfig command) async* {
     final config = repo.apply(
-      event.data,
+      command.data,
     );
     yield toOK(
-      event,
+      command,
       AppConfigUpdated(
         config,
         isLocal: true,
@@ -205,21 +231,21 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
       ),
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
-        event,
+        command,
         error,
         stackTrace: stackTrace,
       ),
     );
   }
 
-  Stream<AppConfigState> _delete(DeleteAppConfig event) async* {
+  Stream<AppConfigState> _delete(DeleteAppConfig command) async* {
     final onRemote = Completer<AppConfig>();
     var config = repo.delete(
       repo.version,
       onResult: onRemote,
     );
     yield toOK(
-      event,
+      command,
       AppConfigDeleted(config),
       result: config,
     );
@@ -232,7 +258,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
       ),
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
-        event,
+        command,
         error,
         stackTrace: stackTrace,
       ),
@@ -330,7 +356,7 @@ class AppConfigEmpty extends AppConfigState<Null> {
 class AppConfigInitialized extends AppConfigState<AppConfig> {
   AppConfigInitialized(
     AppConfig data, {
-    bool isLocal = false,
+    bool isLocal = true,
   }) : super(data, isRemote: !isLocal);
 
   @override

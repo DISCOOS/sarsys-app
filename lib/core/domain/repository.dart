@@ -231,13 +231,18 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 
   /// Check if given error should move queue to idle state
   bool _shouldStop(Object error, StackTrace stackTrace) {
-    final idle = error is SocketException || error is ClientException || error is TimeoutException || isOffline;
-    if (idle) {
+    final stop = error is SocketException ||
+        error is ClientException ||
+        error is TimeoutException ||
+        error is RepositoryOfflineException ||
+        isOffline;
+
+    if (stop) {
       _popWhenOnline();
     } else {
       onError(error, stackTrace);
     }
-    return idle;
+    return stop;
   }
 
   /// Check if repository is
@@ -354,34 +359,40 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     AsyncValueGetter<ServiceResponse<Iterable<T>>> request,
     bool shouldEvict,
   ) async {
+    if (isOffline) {
+      _popWhenOnline();
+      return StreamResult.stop<Iterable<T>>();
+    }
     var response = await request();
-    if (isReady && (response.is200 || response.is206)) {
-      final states = response.body.map((value) {
-        return StorageState.updated(
-          value,
-          isRemote: true,
+    if (response != null) {
+      if (isReady && (response.is200 || response.is206)) {
+        final states = response.body.map((value) {
+          return StorageState.updated(
+            value,
+            isRemote: true,
+          );
+        });
+        if (shouldEvict) {
+          evict(
+            retainKeys: states.map(toKey),
+          );
+        }
+        states.forEach(
+          (state) {
+            if (toKey(state) != null) {
+              put(_patch(state));
+            }
+          },
         );
-      });
-      if (shouldEvict) {
-        evict(
-          retainKeys: states.map(toKey),
+      } else if (response.isErrorCode) {
+        return StreamResult<Iterable<T>>(
+          error: RepositoryServiceException(
+            'Failed to load $request',
+            response,
+          ),
+          stackTrace: response.stackTrace,
         );
       }
-      states.forEach(
-        (state) {
-          if (toKey(state) != null) {
-            put(_patch(state));
-          }
-        },
-      );
-    } else if (response.isErrorCode) {
-      return StreamResult<Iterable<T>>(
-        error: RepositoryServiceException(
-          'Failed to load $request',
-          response,
-        ),
-        stackTrace: response.stackTrace,
-      );
     }
     return StreamResult<Iterable<T>>(
       value: values,
@@ -804,11 +815,13 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     final scheduled = <K>[];
 
     if (_shouldSchedulePush()) {
-      if (_backlog.isNotEmpty) {
-        // Cancel processing
-        await _loadQueue.stop();
-        await _pushQueue.stop();
+      // Stop async load
+      await _loadQueue.stop();
 
+      // Cancel pending push
+      await _pushQueue.cancel();
+
+      if (_backlog.isNotEmpty) {
         // Keys will be added back
         // if schedule fails
         final keys = _backlog.toList();
@@ -818,21 +831,15 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
           schedulePush(key);
           scheduled.add(key);
         }
-
-        // Always complete pending writes
-        // before reads to prevent local
-        // out-of-order repository updates
-        await _pushQueue.process();
-        await _loadQueue.process();
       }
 
-      // Only stop timer and reset
-      // exponential backoff counter
-      // when all pending work is done
-      if (!isPending) {
-        _retries = 0;
-        _timer?.cancel();
-      }
+      // Start processing requests
+      _loadQueue.start();
+      _pushQueue.start();
+
+      // Reset retry timer
+      _retries = 0;
+      _timer?.cancel();
     } else {
       _retryPop();
     }
@@ -1160,6 +1167,17 @@ class RepositoryRemoteException extends RepositoryException {
   final String message;
   final StackTrace stackTrace;
   RepositoryRemoteException(this.message, {StorageState state, this.stackTrace})
+      : super(
+          message,
+          state: state,
+          stackTrace: stackTrace,
+        );
+}
+
+class RepositoryOfflineException extends RepositoryException {
+  final String message;
+  final StackTrace stackTrace;
+  RepositoryOfflineException(this.message, {StorageState state, this.stackTrace})
       : super(
           message,
           state: state,

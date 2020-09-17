@@ -52,9 +52,17 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
   }
 
   @override
-  Future<AppConfig> init() async {
+  Future<AppConfig> init({
+    Completer<Iterable<AppConfig>> onRemote,
+  }) async {
+    final onPush = Completer<AppConfig>();
+    onPush.future.then(
+      (value) => onRemote.complete([value]),
+      onError: onRemote.completeError,
+    );
     return push(
       await _open(force: true),
+      onResult: onPush,
     );
   }
 
@@ -138,7 +146,7 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
     scheduleLoad(
       () async {
         final response = await service.fetch(state.value.uuid);
-        return response.copyWith<Iterable<AppConfig>>(
+        return response?.copyWith<Iterable<AppConfig>>(
           body: [response.body],
         );
       },

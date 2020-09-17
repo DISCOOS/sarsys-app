@@ -84,10 +84,12 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
           final state = getState(uuid);
           if (state == null || state?.shouldLoad == true) {
             final response = await service.get(uuid);
-            if (response.is200) {
-              values.add(response.body);
-            } else {
-              errors.add(response);
+            if (response != null) {
+              if (response.is200) {
+                values.add(response.body);
+              } else {
+                errors.add(response);
+              }
             }
           } else {
             values.add(state.value);

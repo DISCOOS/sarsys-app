@@ -219,10 +219,19 @@ void main() async {
     test('SHOULD initially load as EMPTY', () async {
       // Arrange
       await _authenticate(harness);
+      await harness.affiliationBloc.load();
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
 
       // One affiliation
-      await _seed(harness, offline: true);
       harness.connectivity.offline();
+      await _seed(harness, offline: true);
       reset(harness.personService);
       reset(harness.divisionService);
       reset(harness.departmentService);
@@ -249,15 +258,58 @@ void main() async {
       expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 1 affiliates");
     });
 
-    test('SHOULD reload for local storage', () async {
+    test('SHOULD fetch from remote when online', () async {
+      // Arrange
+      await _authenticate(harness);
+      harness.connectivity.offline();
+      await _seed(harness, offline: true);
+      await harness.affiliationBloc.load();
+      // Assert async loads
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) {
+            return event.isLocal;
+          },
+          'Should be local',
+          isTrue,
+        )),
+      );
+      expect(harness.affiliationBloc.orgs.length, 0, reason: "SHOULD contain 0 organisations");
+      expect(harness.affiliationBloc.divs.length, 0, reason: "SHOULD contain 0 divisions");
+      expect(harness.affiliationBloc.deps.length, 0, reason: "SHOULD contain 0 departments");
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 persons");
+      expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 1 affiliates");
+
+      // Act
+      harness.connectivity.cellular();
+
+      // Assert async loads
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) {
+            return event.isRemote;
+          },
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert numbers
+      expect(harness.affiliationBloc.orgs.length, 2, reason: "SHOULD contain 2 organisations");
+      expect(harness.affiliationBloc.divs.length, 2, reason: "SHOULD contain 2 divisions");
+      expect(harness.affiliationBloc.deps.length, 2, reason: "SHOULD contain 2 departments");
+
+      // These are created locally during onboarding and are always there
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 persons");
+      expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 1 affiliates");
+    });
+
+    test('SHOULD reload from local storage', () async {
       // Arrange
       await _authenticate(harness);
       await _seed(harness, offline: false);
-      await harness.affiliationBloc.load();
-      harness.connectivity.offline();
-      reset(harness.organisationService);
-
-      // Act
       await harness.affiliationBloc.load();
       await expectThroughLater(
         harness.affiliationBloc,
@@ -267,6 +319,11 @@ void main() async {
           isTrue,
         )),
       );
+      harness.connectivity.offline();
+      reset(harness.organisationService);
+
+      // Act
+      await harness.affiliationBloc.load();
 
       // Assert interactions
       verifyZeroInteractions(harness.organisationService);
@@ -311,7 +368,6 @@ Future _seed(
     storage: !offline,
   );
   await harness.affiliationService.add(
-    // Add remotely only
     puuid: p2.uuid,
     storage: !offline,
     orguuid: org2.uuid,

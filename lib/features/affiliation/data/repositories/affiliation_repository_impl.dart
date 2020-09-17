@@ -116,11 +116,13 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
         // with remote state.
         final next = states.values.where((state) => state.isLocal).map((state) => state.value).toList();
         final response = await service.getAll(uuids);
-        if (response.is200) {
-          next.addAll(response.body);
-          return ServiceResponse.ok<List<Affiliation>>(
-            body: next,
-          );
+        if (response != null) {
+          if (response.is200) {
+            next.addAll(response.body);
+            return ServiceResponse.ok<List<Affiliation>>(
+              body: next,
+            );
+          }
         }
         return response;
       },
