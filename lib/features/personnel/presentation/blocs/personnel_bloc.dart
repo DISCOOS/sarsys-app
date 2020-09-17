@@ -183,17 +183,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }) =>
       repo.count(exclude: exclude);
 
-  Future<void> _assertState({bool waitOnLoaded = true}) async {
-    if (waitOnLoaded) {
-      // Issue #77: This will prevent 409 Conflicts
-      // Should wait on load if pending.
-      await Future.wait([
-        onLoadedAsync(),
-        affiliationBloc.onLoadedAsync(),
-      ]);
-    }
-  }
-
   String _assertData(Personnel personnel) {
     if (personnel?.uuid == null) {
       throw ArgumentError(
@@ -206,7 +195,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Fetch personnel from [service]
   Future<List<Personnel>> load() async {
-    await _assertState(waitOnLoaded: false);
     return dispatch<List<Personnel>>(
       LoadPersonnels(ouuid),
     );
@@ -214,7 +202,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Mobilize authenticated user for
   Future<Personnel> mobilizeUser() async {
-    await _assertState();
     return dispatch<Personnel>(
       MobilizeUser(ouuid, affiliationBloc.users.user),
     );
@@ -222,7 +209,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Create given personnel
   Future<Personnel> create(Personnel personnel) async {
-    await _assertState();
     _assertData(personnel);
     return dispatch<Personnel>(
       CreatePersonnel(
@@ -242,7 +228,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Update given personnel
   Future<Personnel> update(Personnel personnel) async {
-    await _assertState();
     return dispatch<Personnel>(
       UpdatePersonnel(personnel),
     );
@@ -250,7 +235,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   /// Delete given personnel
   Future<Personnel> delete(String uuid) async {
-    await _assertState();
     return dispatch<Personnel>(
       DeletePersonnel(repo[uuid]),
     );
@@ -331,7 +315,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
       affiliationBloc.where((s) => s.isRemote == isRemote && s is T).first;
 
   Stream<PersonnelState> _mobilize(MobilizeUser command) async* {
-    _assertState();
     final user = command.user;
     if (user != null) {
       var personnels = findUser(
@@ -339,40 +322,41 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         exclude: const [],
       );
       // Choose mobilized personnels over retired
-      final existing = personnels.firstWhere(
+      var found = personnels.firstWhere(
         (p) => p.status != PersonnelStatus.retired,
         orElse: () => personnels.firstOrNull,
       );
-      if (existing == null) {
+      if (found == null) {
         final affiliation = affiliationBloc.findUserAffiliation();
+        found = PersonnelModel(
+          uuid: Uuid().v4(),
+          person: PersonModel(
+            uuid: affiliation.person?.uuid,
+            userId: user.userId,
+            fname: user.fname,
+            lname: user.lname,
+            phone: user.phone,
+            email: user.email,
+            temporary: affiliation.isUnorganized,
+          ),
+          status: PersonnelStatus.alerted,
+          affiliation: affiliation.toRef(),
+          tracking: TrackingUtils.newRef(),
+        );
         yield* _create(CreatePersonnel(
-            command.data,
-            PersonnelModel(
-              uuid: Uuid().v4(),
-              person: PersonModel(
-                uuid: affiliation.person?.uuid,
-                userId: user.userId,
-                fname: user.fname,
-                lname: user.lname,
-                phone: user.phone,
-                email: user.email,
-                temporary: affiliation.isUnorganized,
-              ),
-              status: PersonnelStatus.alerted,
-              affiliation: affiliation.toRef(),
-              tracking: TrackingUtils.newRef(),
-            )));
-      } else if (existing.isMobilized != true) {
-        yield* _update(UpdatePersonnel(existing.copyWith(
+          command.data,
+          found,
+        ));
+      } else if (found.isMobilized != true) {
+        yield* _update(UpdatePersonnel(found.copyWith(
           status: PersonnelStatus.alerted,
         )));
-      } else {
-        yield toOK(
-          command,
-          state,
-          result: existing,
-        );
       }
+      yield toOK(
+        command,
+        UserMobilized(user, found),
+        result: found,
+      );
     }
   }
 
@@ -410,10 +394,6 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
 
   Future<Affiliation> _ensureAffiliation(CreatePersonnel command) async {
     final auuid = _assertData(command.data);
-
-    // Issue #77: Wait for loading to complete if online
-    await onLoadedAsync();
-
     if (!affiliationBloc.repo.containsKey(auuid)) {
       var affiliation = affiliationBloc.findPersonnelAffiliation(command.data);
       if (!affiliation.isAffiliate) {
@@ -457,8 +437,8 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   }
 
   Stream<PersonnelState> _delete(DeletePersonnel command) async* {
-    final onRemote = Completer<Personnel>();
     _assertData(command.data);
+    final onRemote = Completer<Personnel>();
     final personnel = repo.delete(
       command.data.uuid,
       onResult: onRemote,

@@ -145,9 +145,7 @@ class _OperationsPageState extends State<OperationsPage> {
           stream: context.bloc<OperationBloc>(),
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
-            var cards = snapshot.connectionState == ConnectionState.active && snapshot.hasData
-                ? _filteredOperations().map((operation) => _buildCard(operation)).toList()
-                : [];
+            var cards = _toCards(snapshot);
             return cards.isEmpty
                 ? toRefreshable(
                     viewportConstraints,
@@ -167,6 +165,10 @@ class _OperationsPageState extends State<OperationsPage> {
       );
     });
   }
+
+  List _toCards(AsyncSnapshot snapshot) => snapshot.connectionState == ConnectionState.active && snapshot.hasData
+      ? _filteredOperations().map((operation) => _buildCard(operation)).toList()
+      : [];
 
   List<Operation> _filteredOperations() {
     final incidents = context.bloc<OperationBloc>().incidents;

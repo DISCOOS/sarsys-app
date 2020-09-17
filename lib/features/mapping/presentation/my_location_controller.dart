@@ -234,15 +234,21 @@ class MyLocationController {
   }
 
   void _onReady(Completer<LatLng> completer) {
-    final options = build();
-    _subscribe();
-    if (isLocated) {
-      onTrackingChanged(isLocated, _locked);
+    if (_disposed) {
+      completer.complete(
+        service.current?.toLatLng(),
+      );
+    } else {
+      final options = build();
+      _subscribe();
+      if (isLocated) {
+        onTrackingChanged(isLocated, _locked);
+      }
+      if (onLocationChanged != null) {
+        onLocationChanged(options.point, isLocated, _locked);
+      }
+      completer.complete(options.point);
     }
-    if (onLocationChanged != null) {
-      onLocationChanged(options.point, isLocated, _locked);
-    }
-    completer.complete(options.point);
   }
 
   MyLocationOptions build({bool withTail}) {

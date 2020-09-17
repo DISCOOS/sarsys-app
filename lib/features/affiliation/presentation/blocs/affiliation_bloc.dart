@@ -842,17 +842,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     return command;
   }
 
-  Future _assertState(String action, {bool waitOnLoaded = true}) {
+  Future _assertState(String action) {
     if (!repo.isReady) {
       throw AffiliationBlocError(
         "Bloc not ready. "
         "Ensure 'AffiliationBloc.load()' before '$action'",
       );
-    }
-    if (waitOnLoaded) {
-      // Issue #77: This will prevent 409 Conflicts
-      // Should wait on load if pending.
-      return onLoadedAsync();
     }
     return Future.value();
   }

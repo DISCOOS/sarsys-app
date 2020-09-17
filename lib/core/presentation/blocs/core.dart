@@ -126,11 +126,14 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// Process [BlocEvent] in FIFO-manner
   /// until [_eventQueue] is empty. Any error
   /// will stop events processing.
-  Future<void> _processEventQueue() async {
+  void _processEventQueue() {
+    print('$runtimeType:_processEventQueue()');
     try {
       while (_eventQueue.isNotEmpty) {
         final pair = _eventQueue.first;
+        print('$runtimeType:_processEventQueue(while(${pair.runtimeType}))');
         _toHandlers(pair.right).forEach((handler) {
+          print('$runtimeType:_processEventQueue(while(handle(${pair.runtimeType})))');
           handler(pair.left, pair.right);
         });
         _eventQueue.removeFirst();
@@ -146,7 +149,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
       _eventQueue.clear();
       _dispatchQueue.clear();
     }
-    return Future.value();
   }
 
   /// Get all handlers for given event
@@ -202,7 +204,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
           ),
         );
       });
-      await _pop(command);
+      _pop(command);
     } on Exception catch (error, stackTrace) {
       yield toError(
         command,
@@ -214,13 +216,16 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     }
   }
 
-  Future<void> _pop(C command) async {
+  void _pop(C command) {
+    print('$runtimeType:_pop(${command.runtimeType})');
     if (_isOpen) {
       _dispatchQueue.remove(command);
     } else {
       _dispatchQueue.clear();
     }
-    return _processEventQueue();
+    if (_dispatchQueue.isEmpty) {
+      _processEventQueue();
+    }
   }
 
   void onComplete<T>(
@@ -308,7 +313,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   @override
   @mustCallSuper
   Future<void> close() async {
-    await _processEventQueue();
+    _processEventQueue();
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );

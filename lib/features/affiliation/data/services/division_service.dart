@@ -18,7 +18,10 @@ class DivisionService with ServiceFetchAll<Division> implements ServiceDelegate<
 
   Future<ServiceResponse<List<Division>>> fetch(int offset, int limit) async {
     return Api.from<PagedList<Division>, List<Division>>(
-      await delegate.fetch(offset: offset, limit: limit),
+      await delegate.fetch(
+        offset: offset,
+        limit: limit,
+      ),
     );
   }
 

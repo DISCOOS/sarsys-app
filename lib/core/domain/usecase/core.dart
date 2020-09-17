@@ -43,16 +43,14 @@ abstract class UseCase<E, T, P> {
   Future<Either<E, T>> call(P params) {
     try {
       if (_push() || concurrent) {
-        final future = execute(params);
-        future.whenComplete(_pop);
-        future.catchError(Catcher.reportCheckedError);
-        return future;
+        return execute(params);
       }
     } catch (error, stackTrace) {
       Catcher.reportCheckedError(error, stackTrace);
+    } finally {
+      _pop();
     }
-    _pop();
-    return null;
+    return Future.value(left<E, T>(null));
   }
 
   Future<Either<E, T>> execute(P params);

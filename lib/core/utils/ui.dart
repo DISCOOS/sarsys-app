@@ -64,7 +64,7 @@ Future<void> alert(BuildContext context, {String title, Widget content}) {
 
 Future<bool> prompt(BuildContext context, String title, String message) async {
   // flutter defined function
-  return showDialog<bool>(
+  final answer = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
       // return object of type Dialog
@@ -88,6 +88,7 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
       );
     },
   );
+  return answer ?? false;
 }
 
 FormBuilderCustomField<T> buildReadOnlyField<T>(

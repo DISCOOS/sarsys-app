@@ -59,7 +59,6 @@ class StreamRequestQueue<T> {
   /// Schedule singleton [request] for execution.
   /// This will cancel current requests.
   Future<bool> only(StreamRequest<T> request) async {
-    clear();
     await cancel();
     return add(request);
   }
@@ -167,10 +166,6 @@ class StreamRequestQueue<T> {
   Future<void> _dispose() async {
     if (!_isDisposing && _queue != null) {
       _isDisposing = true;
-      // Wait for pending result
-      if (_pending != null) {
-        await _pending;
-      }
       if (_requests.isNotEmpty) {
         await _queue.cancel(immediate: true);
       }
@@ -195,13 +190,11 @@ class StreamRequestQueue<T> {
       request?.onResult?.isCompleted == true;
 
   StreamRequest<T> _current;
-  Future<StreamResult<T>> _pending;
 
   /// Execute given [request]
   Future<StreamResult<T>> _execute(StreamRequest<T> request) async {
     try {
-      _pending = request.execute();
-      final result = await _pending;
+      final result = await request.execute();
       if (result.isOK) {
         request.onResult?.complete(
           result.value,
@@ -223,8 +216,6 @@ class StreamRequestQueue<T> {
       return StreamResult(
         value: await request.fallback(),
       );
-    } finally {
-      _pending = null;
     }
   }
 

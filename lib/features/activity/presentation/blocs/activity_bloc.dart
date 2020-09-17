@@ -21,7 +21,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     subscribe<UserAuthenticated>(_processAuth);
     subscribe<DevicesLoaded>(_processDevice);
     subscribe<AppConfigUpdated>(_processConfig);
-    subscribe<PersonnelsLoaded>(_processPersonnel);
+    subscribe<UserMobilized>(_processPersonnel);
     subscribe<PersonnelCreated>(_processPersonnel);
     subscribe<PersonnelUpdated>(_processPersonnel);
     subscribe<PersonnelDeleted>(_processPersonnel);
@@ -98,14 +98,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
     final config = (bloc as PersonnelBloc).operationBloc.userBloc.config;
-    if (event is PersonnelsLoaded) {
-      final working = (bloc as PersonnelBloc).findUser();
-      if (working.isNotEmpty) {
-        _onUserChanged(working.first.status, config);
-      } else {
-        _onUserChanged(PersonnelStatus.retired, config);
-      }
-    } else if (event.data is Personnel) {
+    if (event.data is Personnel) {
       final personnel = event.data as Personnel;
       if ((bloc as PersonnelBloc).isUser(personnel.uuid)) {
         _onUserChanged(personnel.status, config);
@@ -240,7 +233,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         service.duuid != device?.uuid;
 
     if (_isReady && isChanged) {
-      return await service.configure(
+      await service.configure(
         options: options,
         share: isTrackable,
         duuid: device?.uuid,
