@@ -18,6 +18,7 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
+import 'package:timer_builder/timer_builder.dart';
 
 class OperationPage extends StatefulWidget {
   static const HEIGHT = 82.0;
@@ -177,14 +178,13 @@ class _OperationPageState extends State<OperationPage> {
         SizedBox(width: OperationPage.SPACING),
         Expanded(
           flex: 5,
-          child: StreamBuilder<int>(
-              stream: Stream<int>.periodic(Duration(seconds: 1), (x) => x),
-              builder: (context, snapshot) {
-                return _buildValueTile(
-                  "${snapshot.hasData ? formatSince(incident?.occurred) : "-"}",
-                  label: "Innsats",
-                );
-              }),
+          child: TimerBuilder.periodic(
+            const Duration(seconds: 1),
+            builder: (context) => _buildValueTile(
+              "${formatSince(incident?.occurred)}",
+              label: "Innsats",
+            ),
+          ),
         ),
         SizedBox(width: OperationPage.SPACING),
         Expanded(
