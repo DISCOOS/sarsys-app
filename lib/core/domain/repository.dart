@@ -816,10 +816,10 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 
     if (_shouldSchedulePush()) {
       // Stop async load
-      await _loadQueue.stop();
+      _loadQueue.stop();
 
       // Cancel pending push
-      await _pushQueue.cancel();
+      _pushQueue.cancel();
 
       if (_backlog.isNotEmpty) {
         // Keys will be added back
@@ -1001,8 +1001,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Future<List<T>> close() async {
     final Iterable<T> elements = values.toList();
     if (_isReady()) {
-      await _loadQueue.cancel();
-      await _pushQueue.cancel();
+      _loadQueue.cancel();
+      _pushQueue.cancel();
       await _states.close();
     }
     _states = null;
