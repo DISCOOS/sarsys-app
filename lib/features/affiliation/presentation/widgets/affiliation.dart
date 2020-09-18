@@ -130,9 +130,9 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   void _apply(Affiliation affiliation) {
     _affiliation = affiliation;
-    _org.value = _affiliation.org.uuid;
-    _div.value = _affiliation.div.uuid;
-    _dep = _affiliation.dep.uuid;
+    _org.value = _affiliation.org?.uuid;
+    _div.value = _affiliation.div?.uuid;
+    _dep = _affiliation.dep?.uuid;
   }
 
   @override
