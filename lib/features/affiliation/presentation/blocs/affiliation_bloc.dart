@@ -238,9 +238,35 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     final _userId = userId ?? users.userId;
     final person = findUserPerson(userId: _userId);
     if (person != null) {
-      final affiliation = repo.findPerson(person.uuid).firstOrNull;
-      if (affiliation != null) {
-        return affiliation;
+      final affiliations = repo.findPerson(person.uuid);
+      // Try to match active affiliation
+      final candidates = affiliations.isNotEmpty
+          ? [Pair<Affiliation, int>.of(affiliations.first, 0)]
+          : affiliations.fold(
+              <Pair<Affiliation, int>>[],
+              (candidates, a) {
+                var rank = 0;
+                if (a.org?.uuid != null) {
+                  rank++;
+                }
+                if (a.div?.uuid != null) {
+                  rank++;
+                }
+                if (a.dep?.uuid != null) {
+                  rank++;
+                }
+                return candidates
+                  ..add(
+                    Pair<Affiliation, int>.of(a, rank),
+                  );
+              },
+            );
+      if (candidates.isNotEmpty) {
+        // Choose affiliation with highest rank
+        return sortList<Pair<Affiliation, int>>(
+          candidates,
+          (a, b) => a.right - b.right,
+        ).firstOrNull?.left;
       }
     }
     final org = findUserOrganisation(userId: userId);
