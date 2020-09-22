@@ -40,6 +40,7 @@ class MessageChannel extends Service {
     closeApiUnreachable: 'closeApiUnreachable',
   };
 
+  Timer _timer;
   IOWebSocketChannel _channel;
   List<StreamSubscription> _subscriptions = [];
   MessageChannelState _stats = MessageChannelState();
@@ -175,15 +176,6 @@ class MessageChannel extends Service {
         reason: _channel.closeReason ?? 'Done event received',
         code: _channel.closeCode ?? WebSocketStatus.normalClosure,
       );
-      if (isTokenExpired) {
-        await _users.refresh();
-      }
-      if (isTokenValid) {
-        open(
-          url: _url,
-          appId: _appId,
-        );
-      }
     }
   }
 
@@ -217,10 +209,17 @@ class MessageChannel extends Service {
     _isClosed = false;
     _stats = _stats.update(opened: true);
     _statsController.add(_stats);
+    _timer?.cancel();
+    _timer = Timer.periodic(
+      Duration(seconds: 1),
+      (_) => _check(),
+    );
     debugPrint('Opened message channel');
   }
 
+  int _lastCode;
   bool _isClosed = false;
+  bool get isClosedByApp => _lastCode == closedByApp;
 
   void close() {
     _assertState();
@@ -233,6 +232,7 @@ class MessageChannel extends Service {
   void _close({int code, String reason}) {
     _isClosed = true;
     if (_channel != null) {
+      _lastCode = code;
       _channel?.sink?.close();
       _subscriptions.forEach(
         (subscription) => subscription.cancel(),
@@ -246,6 +246,7 @@ class MessageChannel extends Service {
       _statsController.add(_stats);
       debugPrint('Closed message channel');
     }
+    _check();
   }
 
   void _assertState() {
@@ -259,6 +260,7 @@ class MessageChannel extends Service {
       code: closedByApp,
       reason: "Disposed",
     );
+    _timer?.cancel();
     _statsController.close();
   }
 
@@ -268,11 +270,22 @@ class MessageChannel extends Service {
         reason: "App is offline",
         code: MessageChannel.closeAppIsOffline,
       );
-    } else if (_isClosed) {
-      open(
-        url: _url,
-        appId: _appId,
-      );
+    } else {
+      _check();
+    }
+  }
+
+  void _check() async {
+    if (!isClosedByApp && _users.isOnline && _isClosed) {
+      if (isTokenExpired) {
+        await _users.refresh();
+      }
+      if (isTokenValid) {
+        open(
+          url: _url,
+          appId: _appId,
+        );
+      }
     }
   }
 }
