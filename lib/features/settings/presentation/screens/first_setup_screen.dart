@@ -1,7 +1,6 @@
-import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
+import 'package:SarSys/core/presentation/widgets/stepped_page.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
@@ -19,8 +18,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Screen implementing the Self-Select model in Material Design, see
 /// https://material.io/design/communication/onboarding.html#self-select-model
 ///
-/// Code is based on
-/// https://medium.com/aubergine-solutions/create-an-onboarding-page-indicator-in-3-minutes-in-flutter-a2bd97ceeaff
 class FirstSetupScreen extends StatefulWidget {
   static const ROUTE = 'first_setup';
   @override
@@ -28,12 +25,7 @@ class FirstSetupScreen extends StatefulWidget {
 }
 
 class _FirstSetupScreenState extends State<FirstSetupScreen> {
-  final controller = PageController();
   final _permissionsKey = GlobalKey<PermissionSetupState>();
-
-  Timer timer;
-
-  int index = 0;
 
   List<Widget> views;
 
@@ -64,14 +56,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
   bool _isActivityRecognitionGranted = false;
 
   @override
-  void dispose() {
-    controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SizeConfig.init(context);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     views = [
       _buildSettingPage(
         title: 'Bruksmodus',
@@ -113,35 +99,40 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         ),
       ),
     ];
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(0.0),
-            child: Stack(
-              alignment: AlignmentDirectional.topCenter,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: PageView.builder(
-                    pageSnapping: true,
-                    itemCount: views.length,
-                    physics: ClampingScrollPhysics(),
-                    onPageChanged: (int page) {
-                      getChangedPageAndMoveBar(page);
-                    },
-                    controller: controller,
-                    itemBuilder: (context, index) {
-                      return views[index];
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildBottomBar(),
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SteppedScreen(
+      views: views,
+      isComplete: (_) => isComplete,
+      onCancel: (_) async {
+        final answer = await prompt(
+          context,
+          'Bekreftelse',
+          'Dette vil lukke appen. Vil du fortsette?',
+        );
+        if (answer) {
+          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+        }
+      },
+      onComplete: (_) async {
+        // Disable automatic permission prompts (toast are still shown when applicable)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool("checkPermission", false);
+        await context.bloc<AppConfigBloc>().updateWith(
+              firstSetup: true,
+              securityMode: _mode,
+              storage: isStorageGranted,
+              locationAlways: isLocationAlwaysGranted,
+              locationWhenInUse: isLocationWhenInUseGranted,
+              activityRecognition: isActivityRecognitionGranted,
+            );
+        Navigator.pushReplacementNamed(
+          context,
+          LoginScreen.ROUTE,
+        );
+      },
     );
   }
 
@@ -237,93 +228,6 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
-    return BottomAppBar(
-      elevation: 4.0,
-      child: Container(
-        height: 56,
-        child: Stack(
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FlatButton(
-                disabledTextColor: Theme.of(context).bottomAppBarColor,
-                child: Text('FORRIGE'),
-                onPressed: index == 0
-                    ? null
-                    : () => controller.animateToPage(
-                          index = max(0, --index),
-                          curve: Curves.linearToEaseOut,
-                          duration: const Duration(milliseconds: 500),
-                        ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Stack(
-                alignment: AlignmentDirectional.center,
-                children: <Widget>[
-                  Container(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        for (int i = 0; i < views.length; i++)
-                          if (i == index) ...[circleBar(true)] else circleBar(false),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FlatButton(
-                child: Text(index == views.length - 1 ? (isComplete ? 'FERDIG' : 'AVSLUTT') : 'NESTE'),
-                onPressed: () async {
-                  if (index < views.length - 1) {
-                    controller.animateToPage(
-                      index = min(views.length - 1, ++index),
-                      curve: Curves.linearToEaseOut,
-                      duration: const Duration(milliseconds: 500),
-                    );
-                  } else {
-                    if (isComplete) {
-                      // Disable automatic permission prompts (toast are still shown when applicable)
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool("checkPermission", false);
-                      await context.bloc<AppConfigBloc>().updateWith(
-                            firstSetup: true,
-                            securityMode: _mode,
-                            storage: isStorageGranted,
-                            locationAlways: isLocationAlwaysGranted,
-                            locationWhenInUse: isLocationWhenInUseGranted,
-                            activityRecognition: isActivityRecognitionGranted,
-                          );
-                      Navigator.pushReplacementNamed(
-                        context,
-                        LoginScreen.ROUTE,
-                      );
-                    } else {
-                      final answer = await prompt(
-                        context,
-                        'Bekreftelse',
-                        'Dette vil lukke appen. Vil du fortsette?',
-                      );
-                      if (answer) {
-                        SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                      }
-                    }
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSettingPage({
     @required String title,
     @required String explanation,
@@ -376,25 +280,5 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         ),
       ],
     );
-  }
-
-  Widget circleBar(bool isActive) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 150),
-      margin: EdgeInsets.symmetric(horizontal: 8),
-      height: isActive ? 8 : 7,
-      width: isActive ? 8 : 7,
-      decoration: BoxDecoration(
-        color: isActive ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withOpacity(0.2),
-        borderRadius: BorderRadius.all(
-          Radius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  void getChangedPageAndMoveBar(int page) {
-    index = page;
-    setState(() {});
   }
 }

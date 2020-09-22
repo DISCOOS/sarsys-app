@@ -64,8 +64,7 @@ class _AccessCheckerState extends State<AccessChecker> with AutomaticKeepAliveCl
     });
   }
 
-  bool _shouldLogin(UserState state) =>
-      state.isUnset() || state.isLocked() || state.isUnauthorized() || state.isForbidden();
+  bool _shouldLogin(UserState state) => state.isUnset() || state.isLocked() || state.isUnauthorized();
 
   bool _shouldUnlock(UserState state) => state.isLocked();
 

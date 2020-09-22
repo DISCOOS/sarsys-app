@@ -146,7 +146,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    for (int i = 0; i < views.length; i++) if (i == index) ...[circleBar(true)] else circleBar(false),
+                    for (int i = 0; i < views.length; i++)
+                      if (i == index) ...[circleBar(true)] else circleBar(false),
                   ],
                 ),
               ),
