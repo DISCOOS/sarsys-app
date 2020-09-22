@@ -561,7 +561,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool shouldUnload({
     bool isOnline = true,
   }) =>
-      !(shouldLoad() || isPending()) || isUnset() || isOnline && isUnauthorized();
+      !(shouldLoad() || isPending() || isForbidden()) || isUnset() || isOnline && isUnauthorized();
 }
 
 class UserUnset extends UserState<void> {

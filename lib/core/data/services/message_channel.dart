@@ -190,6 +190,7 @@ class MessageChannel extends Service {
     );
     _url = url;
     _appId = appId;
+    _isClosed = false;
     _channel = IOWebSocketChannel.connect(
       url,
       headers: {
@@ -206,7 +207,6 @@ class MessageChannel extends Service {
     _subscriptions.add(_users.connectivity.changes.listen(
       _onConnectivityChange,
     ));
-    _isClosed = false;
     _stats = _stats.update(opened: true);
     _statsController.add(_stats);
     _timer?.cancel();
@@ -230,8 +230,8 @@ class MessageChannel extends Service {
   }
 
   void _close({int code, String reason}) {
-    _isClosed = true;
     if (_channel != null) {
+      _isClosed = true;
       _lastCode = code;
       _channel?.sink?.close();
       _subscriptions.forEach(
@@ -245,8 +245,8 @@ class MessageChannel extends Service {
       );
       _statsController.add(_stats);
       debugPrint('Closed message channel');
+      _check();
     }
-    _check();
   }
 
   void _assertState() {
@@ -276,7 +276,7 @@ class MessageChannel extends Service {
   }
 
   void _check() async {
-    if (!isClosedByApp && _users.isOnline && _isClosed) {
+    if (!isClosedByApp && _users.hasToken && _users.isOnline && _isClosed) {
       if (isTokenExpired) {
         await _users.refresh();
       }

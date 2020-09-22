@@ -72,6 +72,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         await dispatch(LoadPersonnels(
           state.data.uuid,
         ));
+        await onLoadedAsync();
         await mobilizeUser();
       } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
         await unload();

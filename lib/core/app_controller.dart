@@ -576,7 +576,7 @@ class AppController {
     // 3) Local -> Ready (when user is authenticated or token is refreshed
     // 4) Ready -> Local (when token expires or user is logged out
     if (userStates.contains(_state)) {
-      final isReady = state.isAuthenticated() || state.isUnlocked() || state.isTokenRefreshed();
+      final isReady = bloc<UserBloc>().isAuthenticated;
       var next = isReady ? AppControllerState.Ready : AppControllerState.Local;
       if (next != _state) {
         _state = next;
@@ -584,7 +584,9 @@ class AppController {
       }
     }
     if (isReady) {
-      _configureServices(state);
+      if (state.shouldLoad()) {
+        _configureServices(state);
+      }
     } else {
       _disposeServices(state);
     }
