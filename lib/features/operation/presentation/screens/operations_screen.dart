@@ -10,7 +10,7 @@ import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.da
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
-import 'package:SarSys/features/user/presentation/widget/passcode_popup.dart';
+import 'package:SarSys/features/operation/presentation/screens/open_operation_screen.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
@@ -250,7 +250,10 @@ class _OperationsPageState extends State<OperationsPage> {
                                       } else if (isAuthorized) {
                                         await _joinAndReroute(operation);
                                       } else {
-                                        Navigator.push(context, PasscodeRoute(operation));
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => OpenOperationScreen(operation: operation),
+                                        );
                                       }
                                     }
                                   : null,
