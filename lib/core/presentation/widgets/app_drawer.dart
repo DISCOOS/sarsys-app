@@ -1,10 +1,11 @@
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
+import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_gravatar/simple_gravatar.dart';
 
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -17,6 +18,7 @@ import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/data/services/provider.dart';
 
 import 'descriptions.dart';
 
@@ -31,6 +33,8 @@ class _AppDrawerState extends State<AppDrawer> {
     super.didChangeDependencies();
     FocusScope.of(context).requestFocus(FocusNode());
   }
+
+  bool get isOffline => context.service<ConnectivityService>().isOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -66,27 +70,39 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  ListTile _buildLogoutAction(User user, BuildContext context, UserBloc userBloc) {
-    return ListTile(
-      leading: const Icon(Icons.lock),
-      title: Text('Logg av', style: TextStyle(fontSize: 14)),
-      onTap: () async {
-        // As a security precaution, security information
-        // for users from untrusted domains are automatically
-        // deleted. Notify user about this before logging out
-        final answer = await prompt(
-          context,
-          'Bekreftelse',
-          user.isTrusted
-              ? 'Du logges nå ut. Vil du fortsette?'
-              : 'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
-        );
+  Widget _buildLogoutAction(User user, BuildContext context, UserBloc userBloc) {
+    return GestureDetector(
+      child: ListTile(
+        enabled: !isOffline,
+        leading: const Icon(Icons.lock),
+        title: Text('Logg av', style: TextStyle(fontSize: 14)),
+        onTap: isOffline
+            ? null
+            : () async {
+                // As a security precaution, security information
+                // for users from untrusted domains are automatically
+                // deleted. Notify user about this before logging out
+                final answer = await prompt(
+                  context,
+                  'Bekreftelse',
+                  user.isTrusted
+                      ? 'Du logges nå ut. Vil du fortsette?'
+                      : 'Du er innlogget med en bruker som krever at pinkoden slettes ved utlogging. Vil du logge ut?',
+                );
 
-        if (answer) {
-          Navigator.pop(context);
-          await userBloc.logout();
-        }
-      },
+                if (answer) {
+                  Navigator.pop(context);
+                  await userBloc.logout();
+                }
+              },
+      ),
+      onTap: isOffline
+          ? () => alert(
+                context,
+                title: 'Ingen nettverk',
+                content: Text('Du kan kun logge ut når du har nettverk'),
+              )
+          : null,
     );
   }
 

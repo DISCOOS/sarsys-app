@@ -535,7 +535,7 @@ class AppController {
     registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
 
     // Toggles between loading and ready state
-    registerStreamSubscription(bloc<AffiliationBloc>().listen(_onRequiredState));
+    registerStreamSubscription(bloc<AffiliationBloc>().listen(_onModalState));
 
     // Notify that blocs are built and ready for commands
     _setState(AppState.Built);
@@ -576,7 +576,7 @@ class AppController {
     }
   }
 
-  void _onRequiredState(AffiliationState state) async {
+  void _onModalState(AffiliationState state) async {
     if (isAuthenticated) {
       switch (state.runtimeType) {
         case AffiliationsLoaded:
