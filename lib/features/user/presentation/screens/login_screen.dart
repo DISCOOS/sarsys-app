@@ -164,24 +164,16 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                     _buildTitle(context),
                     // Logo
                     Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: SizedBox(
-                        height: 400,
-                        child: _buildRipple(
-                          _buildIcon(),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: SizedBox(
+                          height: 400,
+                          child: _buildRipple(
+                            _buildIcon(),
+                          ),
                         ),
                       ),
-                    )),
-//                      Padding(
-//                        padding: EdgeInsets.all(8),
-//                        child: SizedBox(
-//                          height: 500,
-//                          child: _buildRipple(
-//                            _buildIcon(),
-//                          ),
-//                        ),
-//                      ),
+                    ),
                     Text(
                       'Logger deg inn, vent litt',
                       style: _toStyle(context, 22, FontWeight.bold),

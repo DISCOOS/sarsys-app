@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/streams.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
@@ -39,7 +40,6 @@ import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/operation/data/repositories/operation_repository_impl.dart';
@@ -76,8 +76,7 @@ import 'data/services/provider.dart';
 class AppController {
   AppController._(
     this.client,
-    DemoParams demo,
-  ) : _demo = demo ?? DemoParams.NONE;
+  );
 
   final Client client;
   final AppBlocDelegate delegate = AppBlocDelegate(BlocEventBus());
@@ -88,28 +87,33 @@ class AppController {
   Api get api => _api;
   Api _api;
 
-  /// Demo parameters. Is deprecated.
-  @deprecated
-  DemoParams get demo => _demo;
-  DemoParams _demo;
-
   /// [MessageChannel] instance communicating
   /// with the backend using web-socket
   MessageChannel get channel => _channel;
   MessageChannel _channel;
 
   /// Get current [state] of [AppController]
-  AppControllerState get state => _state;
-  AppControllerState _state = AppControllerState.Empty;
+  AppState get state => _state;
+  AppState _state = AppState.Empty;
 
-  bool get isEmpty => state == AppControllerState.Empty;
-  bool get isBuilt => state.index >= AppControllerState.Built.index;
-  bool get isInitialized => state.index >= AppControllerState.Initialized.index;
-  bool get isLocal => state == AppControllerState.Local;
-  bool get isReady => state == AppControllerState.Ready;
+  bool get isOffline => !isOnline;
+  bool get isOnline => ConnectivityService().isOnline;
 
-  bool shouldInitialize(AppControllerState state) => state == AppControllerState.Built;
-  bool shouldAuthenticate(AppControllerState state) => state == AppControllerState.Local;
+  bool get isEmpty => state == AppState.Empty;
+  bool get isBuilt => state.index >= AppState.Built.index;
+  bool get isConfigured => state.index >= AppState.Configured.index;
+  bool get isAnonymous => state.index <= AppState.Anonymous.index;
+  bool get isAuthenticated => state.index >= AppState.Authenticated.index;
+  bool get isSecured => isAuthenticated && bloc<UserBloc>().isSecured;
+  bool get isLocked => !isSecured || bloc<UserBloc>().isLocked;
+  bool get isLoading => isAuthenticated && !isReady || _state == AppState.Loading;
+  bool get isReady => state == AppState.Ready;
+
+  bool shouldConfigure(AppState state) => state == AppState.Built;
+  bool shouldLogin(AppState state) => state == AppState.Anonymous && !isAuthenticated;
+  bool shouldChangePin(AppState state) => state == AppState.Authenticated && !isSecured;
+  bool shouldUnlock(AppState state) => state == AppState.Authenticated && isAuthenticated && isLocked;
+  bool shouldRoute(AppState state) => state == AppState.Ready && !isLocked;
 
   /// Subscriptions released on [close]
   final List<StreamSubscription> _subscriptions = [];
@@ -121,8 +125,8 @@ class AppController {
     return subscription;
   }
 
-  StreamController<AppControllerState> _controller = StreamController.broadcast();
-  Stream<AppControllerState> get onChange => _controller.stream;
+  StreamController<AppState> _controller = StreamController.broadcast();
+  Stream<AppState> get onChanged => _controller.stream;
 
   /// Get [Bloc] instance of type [T]
   T bloc<T extends Bloc>() => _blocs[typeOf<T>()] as T;
@@ -198,20 +202,15 @@ class AppController {
       ];
 
   /// Create providers for mocking
-  factory AppController.build(
-    Client client, {
-    DemoParams demo = DemoParams.NONE,
-  }) {
+  factory AppController.build(Client client) {
     return _build(
-      AppController._(client, demo),
-      demo: demo,
+      AppController._(client),
       client: client,
     );
   }
 
   static AppController _build(
     AppController controller, {
-    @required DemoParams demo,
     @required Client client,
   }) {
     final baseRestUrl = Defaults.baseRestUrl;
@@ -402,7 +401,6 @@ class AppController {
 
     return controller._set(
       api: api,
-      demo: demo,
       blocs: blocs,
       channel: channel,
       services: [
@@ -428,64 +426,61 @@ class AppController {
   /// Rebuild providers with given demo parameters.
   ///
   /// Returns true if one or more providers was rebuilt
-  Future<bool> _rebuild({
-    bool force = false,
-    DemoParams demo = DemoParams.NONE,
-  }) async {
-    if (force || _demo != demo) {
-      _unset();
-      return _build(
-            this,
-            demo: demo,
-            client: client,
-          ) !=
-          null;
-    }
-    return false;
+  bool _rebuild() {
+    _unset();
+    return _build(this, client: client) != null;
   }
 
   /// Initialize application state
-  Future<AppController> init() async {
-    if (AppControllerState.Built == _state) {
-      await _init();
+  Future<AppController> configure() async {
+    if (isBuilt) {
+      await _configure();
     }
     return this;
   }
 
-  Future _init() async {
-    // If 'current_user_id' in
-    // secure storage exists in bloc
-    // and access token is valid, this
-    // will load incidents for given
-    // user. If any incident matches
-    // 'selected_ouuid' in secure storage
-    // it will be selected as current
-    // incident.
-    await bloc<UserBloc>().load();
+  Future<void> _configure() async {
+    if (!isConfigured) {
+      //
+      // If 'current_user_id' in
+      // secure storage exists in bloc
+      // and access token is valid, this
+      // will load operations for given
+      // user. If any operation matches
+      // 'selected_ouuid' in secure storage
+      // it will be selected as current
+      // operation.
+      //
+      await bloc<UserBloc>().load();
 
-    // Wait for config to become available
-    final config = await waitThroughStateWithData<AppConfigState, AppConfig>(
-      bloc<AppConfigBloc>(),
-      map: (state) => state.data,
-      test: (state) => state.data is AppConfig,
-      timeout: Duration(hours: 1),
-      fail: true,
-    );
+      // Wait for config to become available
+      await waitThroughStateWithData<AppConfigState, AppConfig>(
+        bus,
+        fail: true,
+        map: (state) => state.data,
+        timeout: Duration(minutes: 1),
+        test: (state) => state.data is AppConfig,
+      );
 
-    // Override demo parameter from persisted config
-    _demo = config.toDemoParams();
+      // Allow _onUserChange to transition to next legal state
+      _setState(AppState.Configured);
 
-    // Allow _onUserChange to transition to next legal state
-    _controller.add(_state = AppControllerState.Initialized);
+      // Set app state from user state
+      _onUserState(bloc<UserBloc>().state);
+    }
+  }
 
-    // Set app state from user state
-    _onUserState(bloc<UserBloc>().state);
+  void _setState(AppState state) {
+    if (_state != state) {
+      _controller.add(state);
+      _state = state;
+    }
   }
 
   /// Reset application
   Future<void> reset() async {
     // Notify blocs not ready, will show splash screen.
-    _controller.add(_state = AppControllerState.Empty);
+    _setState(AppState.Empty);
 
     // Initialize logout and delete user
     await bloc<UserBloc>().logout(delete: true);
@@ -497,12 +492,11 @@ class AppController {
     await Storage.destroy(reinitialize: true);
 
     // Rebuild blocs, will show onboarding screen
-    _rebuild(demo: _demo, force: true);
+    _rebuild();
   }
 
   AppController _set({
     @required Api api,
-    @required DemoParams demo,
     @required Iterable<Bloc> blocs,
     @required MessageChannel channel,
     @required Iterable<Service> services,
@@ -521,7 +515,6 @@ class AppController {
       "_services should be empty, forgot to call _unset?",
     );
 
-    _demo = demo;
     _channel = channel;
 
     // Prepare providers
@@ -535,60 +528,67 @@ class AppController {
       _services[service.runtimeType] = service;
     });
 
-    // Rebuild providers when demo parameters changes
-    registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
-
-    // Handle changes in user state
+    // Toggles between Anonymous and Authenticated states
     registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
-    // Notify that providers are ready
-    _controller.add(_state = AppControllerState.Built);
+    // Rebuilds blocs when config is initialized
+    registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
+
+    // Toggles between loading and ready state
+    registerStreamSubscription(bloc<AffiliationBloc>().listen(_onRequiredState));
+
+    // Notify that blocs are built and ready for commands
+    _setState(AppState.Built);
 
     return this;
   }
 
   void _onConfigState(AppConfigState state) async {
-    // Only rebuild when in local or ready state
-    if (const [
-      AppControllerState.Local,
-      AppControllerState.Ready,
-    ].contains(_state)) {
-      if (state.isInitialized() || state.isLoaded() || state.isUpdated()) {
-        _rebuild(demo: (state.data as AppConfig).toDemoParams());
+    if (isConfigured) {
+      // Only rebuild when initialize
+      if (state.isInitialized()) {
+        _rebuild();
       }
     }
   }
-
-  /// List of [AppControllerState]s with [User] data
-  List<AppControllerState> get userStates => const [
-        AppControllerState.Initialized,
-        AppControllerState.Local,
-        AppControllerState.Ready,
-      ];
 
   void _onUserState(UserState state) {
     if (state.isPending()) {
       return;
     }
     // Handle legal transitions only
-    // 1) Initialized -> Local User (not authenticated), blocks are ready to receive commands
-    // 2) Initialized -> Ready User (authenticated), blocks are ready to receive commands
-    // 3) Local -> Ready (when user is authenticated or token is refreshed
-    // 4) Ready -> Local (when token expires or user is logged out
-    if (userStates.contains(_state)) {
-      final isReady = bloc<UserBloc>().isAuthenticated;
-      var next = isReady ? AppControllerState.Ready : AppControllerState.Local;
-      if (next != _state) {
-        _state = next;
-        _controller.add(_state);
-      }
+    // 1) Configured -> Anonymous (not authenticated)
+    // 2) Anonymous -> Authenticated (when user is authenticated or token is refreshed)
+    // 3) Authenticated -> Anonymous (when token expires or user is logged out)
+    if (isConfigured) {
+      _setState(bloc<UserBloc>().isAuthenticated
+          // Application require new pin
+          ? (isReady ? AppState.Ready : AppState.Authenticated)
+          // Application require login
+          : AppState.Anonymous);
     }
-    if (isReady) {
+    if (isAuthenticated) {
       if (state.shouldLoad()) {
         _configureServices(state);
       }
     } else {
       _disposeServices(state);
+    }
+  }
+
+  void _onRequiredState(AffiliationState state) async {
+    if (isAuthenticated) {
+      switch (state.runtimeType) {
+        case AffiliationsLoaded:
+          if (isOnline) {
+            await bloc<AffiliationBloc>().onLoadedAsync();
+          }
+          _setState(AppState.Ready);
+          break;
+        case AffiliationsUnloaded:
+          _setState(AppState.Loading);
+          break;
+      }
     }
   }
 
@@ -632,7 +632,7 @@ class AppController {
     channel.dispose();
 
     // Notify blocs not ready, will show splash screen
-    _controller.add(_state = AppControllerState.Empty);
+    _setState(AppState.Empty);
 
     // Cancel state change subscriptions on current blocs
     _subscriptions.forEach(
@@ -651,13 +651,40 @@ class AppController {
     _services.clear();
   }
 
+  int get securityLockAfter => bloc<AppConfigBloc>()?.config?.securityLockAfter ?? Defaults.securityLockAfter;
+
+  Future<void> setLockTimeout() async {
+    if (bloc<UserBloc>().isReady) {
+      final heartbeat = bloc<UserBloc>().security.heartbeat;
+      if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
+        await bloc<UserBloc>().lock();
+      }
+    }
+  }
+
   void dispose() {
     _unset();
     _controller.close();
   }
+
+  @override
+  String toString() {
+    return '$runtimeType{\n'
+        '  state: $_state,\n'
+        '  isEmpty: $isEmpty,\n'
+        '  isBuilt: $isBuilt,\n'
+        '  isReady: $isReady,\n'
+        '  isLocked: $isLocked,\n'
+        '  isLoading: $isLoading,\n'
+        '  isSecured: $isSecured,\n'
+        '  isAnonymous: $isAnonymous,\n'
+        '  isConfigured: $isConfigured,\n'
+        '  isAuthenticated: $isAuthenticated\n'
+        '}';
+  }
 }
 
-enum AppControllerState {
+enum AppState {
   /// Controller is empty, no blocs available
   Empty,
 
@@ -665,12 +692,32 @@ enum AppControllerState {
   Built,
 
   /// Required blocs (user, config and affiliations) are initialized
-  Initialized,
+  Configured,
 
-  /// Local User (not authenticated), blocks are ready to receive commands
-  Local,
+  /// No user (not authenticated).
+  ///
+  /// > Application should force login
+  ///
+  /// Blocks are ready to receive commands
+  Anonymous,
 
-  /// Ready User (authenticated), blocks are ready to receive commands
+  /// User authenticated
+  ///
+  /// > Application should check if user is secured
+  ///
+  /// Blocks are ready to receive commands
+  Authenticated,
+
+  /// Loading required blocs (user, config and affiliations)
+  ///
+  /// > Application should block user interaction
+  ///
+  /// Blocks are ready to receive commands
+  Loading,
+
+  /// Application is ready for user interaction
+  ///
+  /// Blocks are ready to receive commands
   Ready,
 }
 

@@ -17,6 +17,8 @@ class SteppedScreen extends StatefulWidget {
     @required this.onComplete,
     this.onBack,
     this.onNext,
+    this.hasBack,
+    this.hasNext,
     this.onCancel,
     this.withProgress = true,
     this.withNextAction = true,
@@ -43,6 +45,8 @@ class SteppedScreen extends StatefulWidget {
   final ValueChanged<int> onNext;
   final ValueChanged<int> onCancel;
   final ValueChanged<int> onComplete;
+  final bool Function(int index) hasBack;
+  final bool Function(int index) hasNext;
   final bool Function(int index) isComplete;
 
   @override
@@ -123,12 +127,14 @@ class _SteppedScreenState extends State<SteppedScreen> {
                   onPressed: index == 0
                       ? null
                       : () {
-                          _onBack(index);
-                          controller.animateToPage(
-                            index = max(0, --index),
-                            curve: Curves.linearToEaseOut,
-                            duration: const Duration(milliseconds: 500),
-                          );
+                          if (_hasBack(index)) {
+                            _onBack(index);
+                            controller.animateToPage(
+                              index = max(0, --index),
+                              curve: Curves.linearToEaseOut,
+                              duration: const Duration(milliseconds: 500),
+                            );
+                          }
                         },
                 ),
               ),
@@ -159,7 +165,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                       ? (widget.isComplete(index) ? widget.completeActionText : widget.cancelActionText)
                       : widget.nextActionText),
                   onPressed: () async {
-                    if (index < widget.views.length - 1) {
+                    if (_hasNext(index)) {
                       _onNext(index);
                       controller.animateToPage(
                         index = min(widget.views.length - 1, ++index),
@@ -211,4 +217,8 @@ class _SteppedScreenState extends State<SteppedScreen> {
       widget.onNext(index);
     }
   }
+
+  bool _hasNext(int index) =>
+      index < widget.views.length - 1 && (widget.hasNext == null ? true : widget.hasNext(index));
+  bool _hasBack(int index) => index > 0 && (widget.hasBack == null ? true : widget.hasBack(index));
 }

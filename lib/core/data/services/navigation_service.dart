@@ -16,6 +16,8 @@ class NavigationService extends Service {
 
   AppController get controller => Provider.of<AppController>(context);
 
+  void overlayPop() => Navigator.pop(navigatorKey.currentState.overlay.context);
+
   Future<T> pushReplacementNamed<T extends Object>(
     String path, {
     Object arguments,

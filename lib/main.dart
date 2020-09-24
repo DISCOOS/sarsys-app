@@ -15,6 +15,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:sentry/sentry.dart';
 
+import 'features/settings/domain/entities/AppConfig.dart';
 import 'features/settings/presentation/blocs/app_config_bloc.dart';
 import 'core/page_state.dart';
 
@@ -32,13 +33,10 @@ void main() async {
   BlocSupervisor.delegate = FatalErrorAppBlocDelegate();
 
   // Build and initialize bloc provider
-  final controller = AppController.build(
-    client,
-    demo: DemoParams(false),
-  );
+  final controller = AppController.build(client);
 
   // SarSysApp widget will handle rebuilds
-  controller.init().then((_) {
+  controller.configure().then((_) {
     runAppWithCatcher(
       _createApp(controller, bucket),
       controller,
@@ -72,83 +70,103 @@ Widget _createApp(
   );
 }
 
+Catcher _catcher;
+
 // Convenience method for running apps with Catcher
 void runAppWithCatcher(Widget app, AppController controller) {
   final sentryDns = controller.bloc<AppConfigBloc>().config.sentryDns;
-  final localizationOptions = LocalizationOptions(
-    "nb",
-    notificationReportModeTitle: "En feil har oppstått",
-    notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
-    dialogReportModeTitle: "Feilmelding",
-    dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
-        "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-        "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-    dialogReportModeAccept: "Godta",
-    dialogReportModeCancel: "Avbryt",
-    pageReportModeTitle: "Feilmelding",
-    pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
-        "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
-        "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
-    pageReportModeAccept: "Godta",
-    pageReportModeCancel: "Avbryt",
-  );
-
-  var exceptions = [
-    // Silence connection errors
-    "ClientException",
-    "SocketException",
-    // Silence flutter_cache_manager exceptions
-    "Could not instantiate image codec",
-    "Couldn't download or retrieve file",
-    "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",
-    "HttpException: Invalid statusCode: 500, uri = https://opencache2.statkart.no",
-    "HttpException: Invalid statusCode: 500, uri = https://opencache3.statkart.no",
-    // Silence general map tile fetch failures thrown by FlutterMap
-    "FetchFailure",
-    "FileSystemException: Cannot open file",
-    "OS Error: No such file or directory",
-    "Connection closed while receiving data",
-    "Connection closed before full header was received",
-    "OS Error: Connection timed out",
-    "OS Error: Software caused connection abort",
-    "HandshakeException: Connection terminated during handshake",
-  ];
-
-  final Map<String, ReportMode> explicitReportModesMap = Map.fromIterable(
-    exceptions,
-    key: (e) => e,
-    value: (_) => SilentReportMode(),
-  );
-
-  final Map<String, ReportHandler> explicitExceptionHandlersMap = Map.fromIterable(
-    exceptions,
-    key: (e) => e,
-    value: (_) => ConsoleHandler(),
-  );
 
   // Catch unhandled bloc and repository exceptions
   BlocSupervisor.delegate = controller.delegate;
   RepositorySupervisor.delegate = AppRepositoryDelegate();
 
-  Catcher(
+  _catcher = Catcher(
     app,
-    debugConfig: CatcherOptions(
-      ScreenReportMode(),
-      [SentryHandler(SentryClient(dsn: sentryDns)), ConsoleHandler(enableStackTrace: true)],
-      explicitExceptionReportModesMap: explicitReportModesMap,
-      explicitExceptionHandlersMap: explicitExceptionHandlersMap,
-      localizationOptions: [localizationOptions],
-    ),
-    releaseConfig: CatcherOptions(
-      ScreenReportMode(),
-      [SentryHandler(SentryClient(dsn: sentryDns))],
-      explicitExceptionReportModesMap: explicitReportModesMap,
-      explicitExceptionHandlersMap: explicitExceptionHandlersMap,
-      localizationOptions: [localizationOptions],
-    ),
+    debugConfig: _toCatcherDebugConfig(sentryDns),
+    releaseConfig: _toCatcherReleaseConfig(sentryDns),
     navigatorKey: NavigationService.navigatorKey,
   );
 }
+
+void updateCatcherConfig(AppConfig config) {
+  if (_catcher != null) {
+    _catcher.updateConfig(
+      debugConfig: _toCatcherDebugConfig(config.sentryDns),
+      releaseConfig: _toCatcherReleaseConfig(config.sentryDns),
+    );
+  }
+}
+
+CatcherOptions _toCatcherReleaseConfig(String sentryDns) {
+  return CatcherOptions(
+    ScreenReportMode(),
+    [SentryHandler(SentryClient(dsn: sentryDns))],
+    explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
+    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
+    localizationOptions: [_catcherLocalizationOptions],
+  );
+}
+
+CatcherOptions _toCatcherDebugConfig(String sentryDns) {
+  return CatcherOptions(
+    ScreenReportMode(),
+    [SentryHandler(SentryClient(dsn: sentryDns)), ConsoleHandler(enableStackTrace: true)],
+    explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
+    explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
+    localizationOptions: [_catcherLocalizationOptions],
+  );
+}
+
+final _catcherLocalizationOptions = LocalizationOptions(
+  "nb",
+  notificationReportModeTitle: "En feil har oppstått",
+  notificationReportModeContent: "Klikk her for å sende feilrapport til brukerstøtte",
+  dialogReportModeTitle: "Feilmelding",
+  dialogReportModeDescription: "Oi, en feil har dessverre oppstått. "
+      "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+      "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+  dialogReportModeAccept: "Godta",
+  dialogReportModeCancel: "Avbryt",
+  pageReportModeTitle: "Feilmelding",
+  pageReportModeDescription: "Oi, en feil har dessverre oppstått. "
+      "Jeg har klargjort en rapport som kan sendes til brukerstøtte. "
+      "Klikk på Godta for å sende rapporten eller Avbryt for å avvise.",
+  pageReportModeAccept: "Godta",
+  pageReportModeCancel: "Avbryt",
+);
+
+var _catcherIgnorerExceptions = [
+  // Silence connection errors
+  "ClientException",
+  "SocketException",
+  // Silence flutter_cache_manager exceptions
+  "Could not instantiate image codec",
+  "Couldn't download or retrieve file",
+  "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",
+  "HttpException: Invalid statusCode: 500, uri = https://opencache2.statkart.no",
+  "HttpException: Invalid statusCode: 500, uri = https://opencache3.statkart.no",
+  // Silence general map tile fetch failures thrown by FlutterMap
+  "FetchFailure",
+  "FileSystemException: Cannot open file",
+  "OS Error: No such file or directory",
+  "Connection closed while receiving data",
+  "Connection closed before full header was received",
+  "OS Error: Connection timed out",
+  "OS Error: Software caused connection abort",
+  "HandshakeException: Connection terminated during handshake",
+];
+
+final Map<String, ReportMode> _catcherExplicitReportModesMap = Map.fromIterable(
+  _catcherIgnorerExceptions,
+  key: (e) => e,
+  value: (_) => SilentReportMode(),
+);
+
+final Map<String, ReportHandler> _catcherExplicitExceptionHandlersMap = Map.fromIterable(
+  _catcherIgnorerExceptions,
+  key: (e) => e,
+  value: (_) => ConsoleHandler(),
+);
 
 class AppRepositoryDelegate implements RepositoryDelegate {
   @override

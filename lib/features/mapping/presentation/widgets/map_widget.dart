@@ -161,7 +161,7 @@ class MapWidget extends StatefulWidget {
 }
 
 class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
-  static const STATE = "incident_map";
+  static const STATE = "map_widget";
   static const STATE_FILTERS = "filters";
   static const STATE_ZOOM = "zoom";
   static const STATE_CENTER = "center";
@@ -604,7 +604,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   /// in the widget tree FlutterMap
   /// state will be reused.
   ///
-  /// If [widget.operation] is given,
+  /// If [widget.ouuid] is given,
   /// an ObjectKey based on it is
   /// returned.
   ///
@@ -1104,7 +1104,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     return MapWidgetStateModel(
       zoom: _zoom,
       center: _center,
-      incident: widget.operation?.uuid,
+      ouuid: widget.operation?.uuid,
       baseMap: _currentBaseMap,
       filters: _readLayers().toList(),
       following: _isLocating.value.locked,

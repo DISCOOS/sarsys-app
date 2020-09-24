@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +18,6 @@ import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/page_state.dart';
@@ -44,7 +44,6 @@ import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
-import 'package:SarSys/core/presentation/widgets/access_checker.dart';
 import 'package:SarSys/features/operation/presentation/screens/command_screen.dart';
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
@@ -66,23 +65,32 @@ class SarSysApp extends StatefulWidget {
 }
 
 class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
-  final _checkerKey = UniqueKey();
-
   List<StreamSubscription> _subscriptions = [];
 
-  UserBloc get userBloc => widget.controller.bloc<UserBloc>();
   AppConfigBloc get configBloc => widget.controller.bloc<AppConfigBloc>();
   OperationBloc get operationBloc => widget.controller.bloc<OperationBloc>();
   PersonnelBloc get personnelBloc => widget.controller.bloc<PersonnelBloc>();
-  bool get onboarded => configBloc?.config?.onboarded ?? false;
-  bool get firstSetup => configBloc?.config?.firstSetup ?? false;
+
+  bool get isConfigured => widget.controller.isConfigured;
+  bool get isAnonymous => widget.controller.isAnonymous;
+  bool get isAuthenticated => widget.controller.isAuthenticated;
+  bool get isSecured => widget.controller.isSecured;
+  bool get isLocked => widget.controller.isLocked;
+  bool get isLoading => widget.controller.isLoading;
+
+  bool get isReady => widget.controller.isReady;
+
+  bool get isOnboarded => configBloc?.config?.onboarded ?? false;
+  bool get isFirstSetup => configBloc?.config?.firstSetup ?? false;
+
   int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
-  bool get configured => widget.controller.state.index > AppControllerState.Built.index;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _listenForBlocRebuilds();
+    _listenForOperationsLoaded();
   }
 
   @override
@@ -103,48 +111,68 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     readPageStorageBucket(widget.bucket, context: context);
-    _cancelAll();
-    _listenForBlocRebuilds();
-    _listenForOperationsLoaded();
   }
 
   /// Initialize blocs and restart app after blocs are rebuilt
   void _listenForBlocRebuilds() {
     // Cancelled by _cancelAll
-    _subscriptions.add(widget.controller.onChange.listen(
-      (state) async {
-        if (widget.controller.shouldInitialize(state)) {
-          // Initialize blocs after rebuild
-          await widget.controller.init().catchError(Catcher.reportCheckedError);
-
-          // Restart app to rehydrate with
-          // blocs just built and initiated.
-          // This will invalidate this
-          // SarSysAppState instance
-          Phoenix.rebirth(context);
-        } else if (widget.controller.shouldAuthenticate(state)) {
-          // When user is authenticated,
-          // OperationBloc will load
-          // operations from repository
-          _listenForOperationsLoaded();
-
-          // Prompt user to login
-          NavigationService().pushReplacementNamed(LoginScreen.ROUTE);
-        }
-      },
-    ));
+    _subscriptions.add(
+      widget.controller.onChanged.listen(_handle),
+    );
   }
 
-  /// Reselect [Operation] if previous selected on first [OperationsLoaded]
+  Future _handle(AppState state) async {
+    if (widget.controller.shouldConfigure(state)) {
+      // Configure blocs after rebuild
+      await widget.controller.configure().catchError(Catcher.reportCheckedError);
+
+      // Restart app to rehydrate with
+      // blocs just built and initiated.
+      // This will invalidate this
+      // SarSysAppState instance
+      Phoenix.rebirth(context);
+    } else if (widget.controller.shouldLogin(state)) {
+      _listenForOperationsLoaded();
+
+      // Prompt user to login
+      NavigationService().pushReplacementNamed(
+        LoginScreen.ROUTE,
+      );
+    } else if (widget.controller.shouldChangePin(state)) {
+      _listenForOperationsLoaded();
+
+      // Prompt user to unload
+      NavigationService().pushReplacementNamed(
+        ChangePinScreen.ROUTE,
+      );
+    } else if (widget.controller.shouldUnlock(state)) {
+      _listenForOperationsLoaded();
+
+      // Prompt user to unload
+      NavigationService().pushReplacementNamed(
+        UnlockScreen.ROUTE,
+      );
+    } else if (widget.controller.shouldRoute(state)) {
+      final route = _inferRouteName(
+        defaultName: MapScreen.ROUTE,
+      );
+      NavigationService().pushReplacementNamed(route);
+    }
+  }
+
+  /// Reselect [Operation] if previous selected
+  /// on first [OperationsLoaded].
   void _listenForOperationsLoaded() {
     final subscription = widget.controller
         .bloc<OperationBloc>()
         .firstWhere((state) => state.isLoaded())
         .asStream()
         // User is authenticated (not null)
-        // by convention when IncidentsLoaded
-        // has been published by IncidentBloc
-        .listen((value) => _selectOnLoad(userBloc.user));
+        // by convention when OperationsLoaded
+        // has been published by OperationBloc
+        .listen(
+          (value) => _selectOnLoad(widget.controller.bloc<UserBloc>().user),
+        );
 
     // Cancelled by _cancelAll
     _subscriptions.add(subscription);
@@ -165,7 +193,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       );
       final result = await selectOperation(ouuid);
       if (result.isRight()) {
-        route['incident'] = result.toIterable().firstOrNull;
+        route[UserScreen.ROUTE_OPERATION] = result.toIterable().firstOrNull;
         NavigationService().pushReplacementNamed(
           route.elementAt(RouteWriter.FIELD_NAME) ?? MapScreen.ROUTE,
           arguments: route,
@@ -181,16 +209,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       writePageStorageBucket(widget.bucket);
     } else if (state == AppLifecycleState.resumed) {
       readPageStorageBucket(widget.bucket);
-      await _lockOnTimeout();
-    }
-  }
-
-  Future _lockOnTimeout() async {
-    if (userBloc.isReady) {
-      final heartbeat = userBloc.security.heartbeat;
-      if (heartbeat == null || DateTime.now().difference(heartbeat).inMinutes > securityLockAfter) {
-        await userBloc.lock();
-      }
+      await widget.controller.setLockTimeout();
     }
   }
 
@@ -263,160 +282,191 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         ),
       );
 
+  Widget _toHome() {
+    debugPrint(
+      "SarSysApp._toHome(controller:${widget.controller})",
+    );
+    final route = _inferRouteName();
+    final screen = route != null
+        ? _toScreen(route, persisted: true)
+        : _toPreviousRoute(
+            orElse: _toMapScreen(
+              operation: operationBloc.selected,
+            ),
+          );
+    return PageStorage(
+      child: screen,
+      bucket: widget.bucket,
+    );
+  }
+
   Route _toRoute(RouteSettings settings) {
-    WidgetBuilder builder;
+    String route;
 
     debugPrint(
-      "SarSysApp._toRoute {route: ${settings.name}, configured:$configured, state:${widget.controller.state}}",
+      "SarSysApp._toRoute(route: ${settings.name}, controller: ${widget.controller.state})",
     );
 
-    if (!configured) {
-      builder = _toUnchecked(SplashScreen());
-    } else if (!onboarded) {
-      builder = _toUnchecked(OnboardingScreen());
-    } else if (!firstSetup) {
-      builder = _toUnchecked(FirstSetupScreen());
-    } else if (!userBloc.isAuthenticated) {
-      builder = _toUnchecked(LoginScreen());
-    } else if (!userBloc.isSecured) {
-      builder = _toUnchecked(ChangePinScreen());
-    } else if (userBloc.isLocked) {
-      builder = _toUnchecked(UnlockScreen());
-    } else if (userBloc.isReady) {
-      builder = _toBuilder(
-        settings,
-        _toScreen(settings, false),
-      );
+    route = _inferRouteName(settings: settings);
+
+    final screen = _toScreen(
+      route,
+      persisted: true,
+      arguments: settings.arguments,
+    );
+    return MaterialPageRoute(
+      settings: settings,
+      builder: _buildWithStorage(screen),
+    );
+  }
+
+  String _inferRouteName({RouteSettings settings, String defaultName}) {
+    var route;
+    if (!isConfigured) {
+      route = SplashScreen.ROUTE;
+    } else if (!isOnboarded) {
+      route = OnboardingScreen.ROUTE;
+    } else if (!isFirstSetup) {
+      route = FirstSetupScreen.ROUTE;
+    } else if (!isAuthenticated) {
+      route = LoginScreen.ROUTE;
+    } else if (!isSecured) {
+      route = ChangePinScreen.ROUTE;
+    } else if (isLocked) {
+      route = UnlockScreen.ROUTE;
+    } else if (isLoading) {
+      route = SplashScreen.ROUTE;
+    } else if (isReady) {
+      route = settings?.name ?? defaultName ?? _toPreviousRouteName();
     } else {
       throw StateError("Unexpected application state");
     }
-
-    return MaterialPageRoute(
-      builder: builder,
-      settings: settings,
-    );
+    return route;
   }
 
-  WidgetBuilder _toBuilder(RouteSettings settings, Widget child) {
-    WidgetBuilder builder;
-    switch (settings.name) {
-      case LoginScreen.ROUTE:
-      case OnboardingScreen.ROUTE:
-      case FirstSetupScreen.ROUTE:
-        builder = _toUnchecked(child);
-        break;
-      default:
-        builder = _toChecked(child);
-        break;
-    }
-    return builder;
-  }
+  Widget _toScreen(
+    String name, {
+    Object arguments,
+    bool persisted = false,
+  }) {
+    Widget screen;
 
-  Widget _toScreen(RouteSettings settings, bool persisted) {
-    Widget child;
-    switch (settings.name) {
-      case MapScreen.ROUTE:
-        child = _toMapScreen(
-          settings: settings,
-          operation: widget.controller.bloc<OperationBloc>().selected,
+    switch (name) {
+      case SplashScreen.ROUTE:
+        screen = SplashScreen(
+          message: arguments ?? (isConfigured ? 'Laster data...' : 'Konfigurerer...'),
         );
         break;
       case LoginScreen.ROUTE:
-        child = LoginScreen();
+        screen = LoginScreen(
+          returnTo: _toPreviousRouteName(),
+        );
         break;
-      case ChangePinScreen.ROUTE:
-        child = ChangePinScreen(
+      case UnlockScreen.ROUTE:
+        screen = UnlockScreen(
           popOnClose: toArgument(
-            settings,
+            arguments,
             'popOnClose',
             defaultValue: false,
           ),
+          returnTo: _toPreviousRouteName(),
+        );
+        break;
+      case ChangePinScreen.ROUTE:
+        screen = ChangePinScreen(
+          popOnClose: toArgument(
+            arguments,
+            'popOnClose',
+            defaultValue: false,
+          ),
+          returnTo: _toPreviousRouteName(),
+        );
+        break;
+      case MapScreen.ROUTE:
+        screen = _toMapScreen(
+          arguments: arguments,
+          operation: widget.controller.bloc<OperationBloc>().selected,
         );
         break;
       case UserScreen.ROUTE_OPERATION:
-        child = UserScreen(tabIndex: UserScreen.TAB_OPERATION);
+        screen = UserScreen(tabIndex: UserScreen.TAB_OPERATION);
         break;
       case UnitScreen.ROUTE:
-        child = _toUnitScreen(settings, persisted);
+        screen = _toUnitScreen(arguments, persisted);
         break;
       case CommandScreen.ROUTE_UNIT_LIST:
-        child = CommandScreen(tabIndex: CommandScreen.TAB_UNITS);
+        screen = CommandScreen(tabIndex: CommandScreen.TAB_UNITS);
         break;
       case DeviceScreen.ROUTE:
-        child = _toDeviceScreen(settings, persisted);
+        screen = _toDeviceScreen(arguments, persisted);
         break;
       case CommandScreen.ROUTE_MISSION_LIST:
-        child = CommandScreen(tabIndex: CommandScreen.TAB_MISSIONS);
+        screen = CommandScreen(tabIndex: CommandScreen.TAB_MISSIONS);
         break;
       case CommandScreen.ROUTE_DEVICE_LIST:
-        child = CommandScreen(tabIndex: CommandScreen.TAB_DEVICES);
+        screen = CommandScreen(tabIndex: CommandScreen.TAB_DEVICES);
         break;
       case PersonnelScreen.ROUTE:
-        child = _toPersonnelScreen(settings, persisted);
+        screen = _toPersonnelScreen(arguments, persisted);
         break;
       case CommandScreen.ROUTE_PERSONNEL_LIST:
-        child = CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL);
+        screen = CommandScreen(tabIndex: CommandScreen.TAB_PERSONNEL);
         break;
       case UserScreen.ROUTE_PROFILE:
-        child = UserScreen(tabIndex: UserScreen.TAB_PROFILE);
+        screen = UserScreen(tabIndex: UserScreen.TAB_PROFILE);
         break;
       case UserScreen.ROUTE_UNIT:
-        child = UserScreen(tabIndex: UserScreen.TAB_UNIT);
+        screen = UserScreen(tabIndex: UserScreen.TAB_UNIT);
+        break;
+      case UserScreen.ROUTE_OPERATION:
+        screen = UserScreen(tabIndex: UserScreen.TAB_OPERATION);
         break;
       case UserScreen.ROUTE_HISTORY:
-        child = UserScreen(tabIndex: UserScreen.TAB_HISTORY);
+        screen = UserScreen(tabIndex: UserScreen.TAB_HISTORY);
         break;
       case SettingsScreen.ROUTE:
-        child = SettingsScreen();
+        screen = SettingsScreen();
         break;
       case OnboardingScreen.ROUTE:
-        child = OnboardingScreen();
+        screen = OnboardingScreen();
         break;
       case FirstSetupScreen.ROUTE:
-        child = FirstSetupScreen();
+        screen = FirstSetupScreen();
         break;
       case OperationsScreen.ROUTE:
       default:
-        child = OperationsScreen();
+        screen = OperationsScreen();
         break;
     }
-    return child;
+    return screen;
   }
 
-  T toArgument<T>(RouteSettings settings, String path, {T defaultValue}) {
-    if (settings.arguments is Map) {
-      final arguments = settings.arguments as Map<String, dynamic>;
-      return arguments.hasPath(path) ? arguments.elementAt(path) as T : defaultValue;
+  T toArgument<T>(Object arguments, String path, {T defaultValue}) {
+    if (arguments is Map) {
+      final map = arguments as Map<String, dynamic>;
+      return map.hasPath(path) ? arguments.elementAt<T>(path) : defaultValue;
     }
     return defaultValue;
   }
 
-  WidgetBuilder _toChecked(Widget child) {
-    return _toUnchecked(AccessChecker(
-      key: _checkerKey,
-      child: child,
-      configBloc: widget.controller.bloc<AppConfigBloc>(),
-    ));
-  }
-
-  WidgetBuilder _toUnchecked(Widget child) {
+  WidgetBuilder _buildWithStorage(Widget child) {
     return (context) => PageStorage(
-        // widget.bucket will be uses
-        // instead for of the PageStorageBucket
-        // instance in each ModalRoute,
-        // effectively sharing the bucket
-        // across all pages shown with
-        // modal routes
-        bucket: widget.bucket,
-        child: child);
+          // widget.bucket will be uses
+          // instead for of the PageStorageBucket
+          // instance in each ModalRoute,
+          // effectively sharing the bucket
+          // across all pages shown with
+          // modal routes
+          bucket: widget.bucket,
+          child: child,
+        );
   }
 
-  Widget _toMapScreen({RouteSettings settings, Operation operation}) {
-    final arguments = settings?.arguments;
+  Widget _toMapScreen({Object arguments, Operation operation}) {
     if (arguments is Map) {
       return MapScreen(
         center: arguments["center"],
-        operation: arguments["incident"] ?? operation,
+        operation: arguments["operation"] ?? operation,
         fitBounds: arguments["fitBounds"],
         fitBoundOptions: arguments["fitBoundOptions"],
       );
@@ -426,7 +476,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         widget.navigatorKey.currentState.context,
         MapWidgetState.STATE,
       );
-      if (model?.incident != operation.uuid) {
+      if (model?.ouuid != operation.uuid) {
         final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
         final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
         final fitBounds = LatLngBounds(ipp, meetup);
@@ -439,12 +489,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     return MapScreen();
   }
 
-  Widget _toUnitScreen(RouteSettings settings, bool persisted) {
+  Widget _toUnitScreen(Object arguments, bool persisted) {
     var unit;
-    if (settings?.arguments is Unit) {
-      unit = settings?.arguments;
-    } else if (settings?.arguments is Map) {
-      final Map<String, dynamic> route = Map.from(settings?.arguments);
+    if (arguments is Unit) {
+      unit = arguments;
+    } else if (arguments is Map) {
+      final Map<String, dynamic> route = Map.from(arguments);
       unit = units[route['data']];
     }
     return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
@@ -452,12 +502,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   Map<String, Unit> get units => widget.controller.bloc<UnitBloc>().units;
 
-  Widget _toPersonnelScreen(RouteSettings settings, bool persisted) {
+  Widget _toPersonnelScreen(Object arguments, bool persisted) {
     var personnel;
-    if (settings?.arguments is Personnel) {
-      personnel = settings?.arguments;
-    } else if (settings?.arguments is Map) {
-      final Map<String, dynamic> route = Map.from(settings?.arguments);
+    if (arguments is Personnel) {
+      personnel = arguments;
+    } else if (arguments is Map) {
+      final Map<String, dynamic> route = Map.from(arguments);
       personnel = personnels[route['data']];
     }
     return personnel == null || persisted
@@ -467,12 +517,12 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().repo.map;
 
-  Widget _toDeviceScreen(RouteSettings settings, bool persisted) {
+  Widget _toDeviceScreen(Object arguments, bool persisted) {
     var device;
-    if (settings?.arguments is Device) {
-      device = settings?.arguments;
-    } else if (settings?.arguments is Map) {
-      final Map<String, dynamic> route = Map.from(settings?.arguments);
+    if (arguments is Device) {
+      device = arguments;
+    } else if (arguments is Map) {
+      final Map<String, dynamic> route = Map.from(arguments);
       device = devices[route['data']];
     }
     return device == null || persisted
@@ -482,57 +532,24 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
   Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().repo.map;
 
-  Widget _toHome() {
-    Widget child;
-
-    debugPrint(
-      "SarSysApp._toHome {configured:$configured, state:${widget.controller.state}}",
-    );
-
-    if (!configured) {
-      child = SplashScreen();
-    } else if (!onboarded) {
-      child = OnboardingScreen();
-    } else if (!firstSetup) {
-      child = FirstSetupScreen();
-    } else if (!userBloc.isAuthenticated) {
-      child = LoginScreen();
-    } else if (!userBloc.isSecured) {
-      child = ChangePinScreen();
-    } else if (userBloc.isLocked) {
-      child = UnlockScreen();
-    } else if (userBloc.isReady) {
-      child = _toPreviousRoute(
-          orElse: _toMapScreen(
-        operation: operationBloc.selected,
-      ));
-    } else {
-      throw StateError("Unexpected state");
-    }
-    return PageStorage(
-      child: child,
-      bucket: widget.bucket,
-    );
-  }
-
   Widget _toPreviousRoute({@required Widget orElse}) {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
       bool isUnset = operationBloc.isUnselected || personnelBloc.findUser().isEmpty;
       child = _toScreen(
-        RouteSettings(
-          name: isUnset ? 'incidents' : state[RouteWriter.FIELD_NAME],
-          arguments: isUnset ? null : state,
-        ),
-        true,
+        isUnset ? OperationsScreen.ROUTE : state[RouteWriter.FIELD_NAME],
+        arguments: isUnset ? null : state,
+        persisted: true,
       );
     }
-    child = AccessChecker(
-      key: _checkerKey,
-      child: child ?? orElse,
-      configBloc: configBloc,
-    );
-    return child;
+    return child ?? orElse;
   }
+
+  String _toPreviousRouteName() {
+    var state = getPageState<Map>(context, RouteWriter.STATE);
+    return _toDefaultRouteName(state?.elementAt(RouteWriter.FIELD_NAME));
+  }
+
+  String _toDefaultRouteName(String name) => name ?? OperationsScreen.ROUTE;
 }

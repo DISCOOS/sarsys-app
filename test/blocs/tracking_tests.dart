@@ -1239,7 +1239,7 @@ void main() async {
 
 FutureOr<Tracking> _attachDeviceToTrackable(BlocTestHarness harness, Trackable trackable, Device device) async =>
     await waitThroughStateWithData<TrackingCreated, Tracking>(
-      harness.trackingBloc,
+      harness.trackingBloc.bus,
       map: (state) => state.data,
       test: (state) => trackable.tracking.uuid == state.data.uuid,
       act: (t) async {

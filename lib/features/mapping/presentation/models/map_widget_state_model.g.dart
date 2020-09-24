@@ -8,8 +8,7 @@ part of 'map_widget_state_model.dart';
 
 MapWidgetStateModel _$MapWidgetStateModelFromJson(Map json) {
   return MapWidgetStateModel(
-    center:
-        MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>),
+    center: MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>),
     zoom: (json['zoom'] as num)?.toDouble(),
     baseMap: json['baseMap'] == null
         ? null
@@ -17,7 +16,7 @@ MapWidgetStateModel _$MapWidgetStateModelFromJson(Map json) {
             (k, e) => MapEntry(k as String, e),
           )),
     filters: (json['filters'] as List)?.map((e) => e as String)?.toList(),
-    incident: json['incident'] as String,
+    ouuid: json['ouuid'] as String,
     following: json['following'] as bool,
   );
 }
@@ -36,6 +35,6 @@ Map<String, dynamic> _$MapWidgetStateModelToJson(MapWidgetStateModel instance) {
   writeNotNull('baseMap', instance.baseMap?.toJson());
   writeNotNull('filters', instance.filters);
   writeNotNull('following', instance.following);
-  writeNotNull('incident', instance.incident);
+  writeNotNull('ouuid', instance.ouuid);
   return val;
 }

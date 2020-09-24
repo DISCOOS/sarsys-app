@@ -1,10 +1,41 @@
 import 'package:SarSys/core/size_config.dart';
 import 'package:flutter/material.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
+  static const String ROUTE = 'splash';
+  const SplashScreen({
+    Key key,
+    this.message,
+  }) : super(key: key);
+
+  final String message;
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
+    _animController.repeat();
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
     final rationaleStyle = textTheme.headline6.copyWith(
@@ -41,10 +72,12 @@ class SplashScreen extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: _buildIcon('sar-team-2.png'),
-                            ),
+                            SizedBox(
+                              height: 300,
+                              child: _buildRipple(
+                                _buildIcon('sar-team-2.png'),
+                              ),
+                            )
                           ],
                         ),
                         Column(
@@ -64,7 +97,7 @@ class SplashScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 16.0),
                               child: Center(
                                 child: Text(
-                                  "Konfigurerer",
+                                  widget.message ?? '',
                                   style: statementStyle,
                                   textAlign: TextAlign.center,
                                 ),
@@ -103,10 +136,39 @@ class SplashScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRipple(Widget icon) => AnimatedBuilder(
+        animation: CurvedAnimation(
+          parent: _animController,
+          curve: Curves.elasticOut,
+          reverseCurve: Curves.elasticIn,
+        ),
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              _buildCircle(_iconWidth + (36 * _animController.value)),
+              Align(child: icon),
+            ],
+          );
+        },
+      );
+
+  Widget _buildCircle(double radius) => Container(
+        width: radius,
+        height: radius,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.lightBlue.withOpacity(_animController.value / 3),
+        ),
+      );
+
   Image _buildIcon(String asset) => Image.asset(
         'assets/images/$asset',
-        height: SizeConfig.blockSizeVertical * 30 * (SizeConfig.isPortrait ? 1 : 2.5),
-        width: SizeConfig.blockSizeHorizontal * 60 * (SizeConfig.isPortrait ? 1 : 2.5),
+        height: _iconHeight,
+        width: _iconWidth,
         alignment: Alignment.center,
       );
+
+  double get _iconHeight => SizeConfig.blockSizeVertical * 30 * (SizeConfig.isPortrait ? 1 : 2.5);
+  double get _iconWidth => SizeConfig.blockSizeHorizontal * 60 * (SizeConfig.isPortrait ? 1 : 2.5);
 }

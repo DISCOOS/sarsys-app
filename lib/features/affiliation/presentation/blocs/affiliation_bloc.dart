@@ -129,7 +129,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
           // Wait for load before onboarding user
           await dispatch(LoadAffiliations());
           await onLoadedAsync();
-          await onboard();
+          await onboardUser();
         } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
           dispatch(UnloadAffiliations());
         }
@@ -465,7 +465,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
   /// Onboard current user. If already onboarded
   /// existing [affiliation] is returned.
-  Future<Affiliation> onboard({
+  Future<Affiliation> onboardUser({
     String userId,
     AffiliationType type = AffiliationType.member,
     AffiliationStandbyStatus status = AffiliationStandbyStatus.available,

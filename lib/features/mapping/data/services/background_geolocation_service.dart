@@ -402,6 +402,9 @@ class BackgroundGeolocationService implements LocationService {
   Future dispose() async {
     if (!_disposed) {
       _disposed = true;
+      _notify(UnsubscribeEvent(
+        _options,
+      ));
       if (isReady) {
         _state = await bg.BackgroundGeolocation.stop();
       }
@@ -410,9 +413,6 @@ class BackgroundGeolocationService implements LocationService {
       await _positionController.close();
       _eventController = null;
       _positionController = null;
-      _notify(UnsubscribeEvent(
-        _options,
-      ));
     }
     return Future.value();
   }

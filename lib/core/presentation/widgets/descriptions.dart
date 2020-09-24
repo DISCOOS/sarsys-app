@@ -1,5 +1,6 @@
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
+import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -178,7 +179,7 @@ class UserRolesDescription extends StatelessWidget {
                             style: TextStyle(color: Colors.blue),
                             recognizer: new TapGestureRecognizer()
                               ..onTap = () {
-                                Navigator.popAndPushNamed(context, 'incident');
+                                Navigator.popAndPushNamed(context, UserScreen.ROUTE_OPERATION);
                               },
                             children: [TextSpan(text: '.', style: TextStyle(color: Colors.black))])
                   ]),

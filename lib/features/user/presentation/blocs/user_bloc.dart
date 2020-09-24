@@ -557,7 +557,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isOffline() => this is UserBlocIsOffline;
   bool isError() => this is UserBlocError;
 
-  bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked() || isAuthorized() || isTokenRefreshed();
+  bool shouldLoad() => isAuthenticated() || isAuthorized() || isUnlocked() || isTokenRefreshed();
   bool shouldUnload({
     bool isOnline = true,
   }) =>

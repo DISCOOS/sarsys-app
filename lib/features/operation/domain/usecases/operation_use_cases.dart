@@ -202,7 +202,7 @@ FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait
   // Wait for personnel to be created
   if (wait && personnel == null) {
     return await waitThroughStateWithData<PersonnelState, Personnel>(
-      params.context.bloc<PersonnelBloc>(),
+      params.bus,
       test: (state) => state.isCreated() && (state.data as Personnel).userId == user.userId,
       map: (state) => state.data,
     );

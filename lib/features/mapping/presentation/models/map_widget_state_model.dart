@@ -17,7 +17,7 @@ class MapWidgetStateModel extends Equatable {
     this.zoom = Defaults.zoom,
     this.baseMap,
     this.filters,
-    this.incident,
+    this.ouuid,
     this.following = false,
   }) : super([center, zoom, baseMap, filters]);
   final double zoom;
@@ -26,7 +26,7 @@ class MapWidgetStateModel extends Equatable {
   final BaseMap baseMap;
   final List<String> filters;
   final bool following;
-  final String incident;
+  final String ouuid;
 
   /// Factory constructor for creating a new `MapWidgetStateModel` instance from json data
   factory MapWidgetStateModel.fromJson(Map<String, dynamic> json) => _$MapWidgetStateModelFromJson(json);
@@ -61,7 +61,7 @@ class MapWidgetStateModel extends Equatable {
         zoom: zoom ?? this.zoom,
         baseMap: baseMap ?? this.baseMap,
         filters: filters ?? this.filters,
-        incident: incident ?? this.incident,
+        ouuid: incident ?? this.ouuid,
         following: following ?? this.following,
       );
 }
