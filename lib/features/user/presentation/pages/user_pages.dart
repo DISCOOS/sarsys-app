@@ -1,3 +1,4 @@
+import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';
@@ -55,8 +56,11 @@ class UserStatusPageState extends State<UserStatusPage> {
     _personnel = widget.personnel;
   }
 
+  TextStyle get labelTextStyle => TextStyle(fontSize: SizeConfig.labelFontSize);
+
   @override
   Widget build(BuildContext context) {
+    SizeConfig.init(context);
     return RefreshIndicator(
       onRefresh: () async {
         if (_personnel == null) {
@@ -204,12 +208,12 @@ class UserStatusPageState extends State<UserStatusPage> {
                 Row(
                   children: [
                     ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(width: 200.0),
+                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(40)),
                       child: child,
                     ),
                     Spacer(flex: 1),
                     ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(width: 130.0),
+                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(35)),
                       child: ButtonBarTheme(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -217,7 +221,7 @@ class UserStatusPageState extends State<UserStatusPage> {
                           children: buttons,
                         ),
                         data: ButtonBarThemeData(
-                          buttonMinWidth: 100,
+                          buttonMinWidth: SizeConfig.width(30),
                           alignment: MainAxisAlignment.end,
                           layoutBehavior: ButtonBarLayoutBehavior.constrained,
                         ),
@@ -235,7 +239,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildJoinAction(BuildContext context) => RaisedButton.icon(
         icon: Icon(Icons.list),
-        label: Text('VELG'),
+        label: Text('VELG', style: labelTextStyle),
         onPressed: () => showDialog<Personnel>(
           context: context,
           builder: (BuildContext context) {
@@ -258,7 +262,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
         icon: Icon(Icons.map),
-        label: Text('VIS'),
+        label: Text('VIS', style: labelTextStyle),
         onPressed: () => jumpToPoint(context, center: service.current.geometry),
       );
 
@@ -266,7 +270,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.directions_run),
-      label: Text('PÅ VEI'),
+      label: Text('PÅ VEI', style: labelTextStyle),
       onPressed: personnel != null ? () => ingressPersonnel(personnel) : null,
     );
   }
@@ -275,7 +279,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.assignment_turned_in),
-      label: Text('SJEKK INN'),
+      label: Text('SJEKK INN', style: labelTextStyle),
       onPressed: personnel != null ? () => checkInPersonnel(personnel) : null,
     );
   }

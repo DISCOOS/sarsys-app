@@ -17,6 +17,11 @@ class SizeConfig {
   static double safeBlockHorizontal;
   static double safeBlockVertical;
 
+  static double get labelFontSize => width(3.4);
+  static double width(double percent) => (isPortrait ? safeBlockHorizontal : safeBlockVertical) * percent;
+  static double height(double percent) => (isPortrait ? safeBlockVertical : safeBlockHorizontal) * percent;
+
+  // static double get labelFontSize => safeBlockHorizontal *
   static Orientation get orientation => _mediaQueryData.orientation;
   static bool get isPortrait => Orientation.portrait == orientation;
   static bool get isLandscape => Orientation.landscape == orientation;
