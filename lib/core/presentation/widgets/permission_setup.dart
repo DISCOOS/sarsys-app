@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,9 +38,12 @@ class PermissionSetupState extends State<PermissionSetup> {
   bool _activityRecognitionGranted = false;
   bool get isActivityRecognitionGranted => _activityRecognitionGranted;
 
+  TextStyle get labelTextStyle => TextStyle(fontSize: SizeConfig.labelFontSize);
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     if (_permissions == null) {
       _permissions = PermissionController(
         configBloc: context.bloc<AppConfigBloc>(),
@@ -107,14 +112,25 @@ class PermissionSetupState extends State<PermissionSetup> {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig.init(context);
+    return Platform.isAndroid
+        ? FutureBuilder<AndroidDeviceInfo>(
+            future: DeviceInfoPlugin().androidInfo,
+            builder: (context, snapshot) {
+              final isAndroid10 = snapshot.hasData ? snapshot.data.version.sdkInt > 28 : false;
+              return snapshot.hasData ? _buildPermissions(isAndroid10) : _buildPermissions(false);
+            })
+        : _buildPermissions(true);
+  }
+
+  Padding _buildPermissions(bool isAndroid10) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: ListView(
-        itemExtent: 88,
         children: <Widget>[
-          _buildPermissionLocationWhenInUse(),
-          _buildPermissionLocationAlways(),
-          _buildPermissionActivityRecognition(),
+          if (isAndroid10) _buildPermissionLocationWhenInUse() else _buildPermissionLocation(),
+          if (isAndroid10) _buildPermissionLocationAlways(),
+          if (isAndroid10) _buildPermissionActivityRecognition(),
           if (Platform.isAndroid) _buildPermissionStorage(),
         ],
       ),
@@ -127,6 +143,14 @@ class PermissionSetupState extends State<PermissionSetup> {
         status: _storageStatus,
         request: _permissions.storageRequest,
         onGranted: (value) => _storageGranted = value,
+      );
+
+  ListTile _buildPermissionLocation() => _buildPermissionCheck(
+        title: 'Tilgang til posisjon',
+        reason: 'For å finne deg selv i kartet og til sporing',
+        status: _locationWhenInUseStatus,
+        request: _permissions.locationRequest,
+        onGranted: (value) => _locationWhenInUseGranted = value,
       );
 
   ListTile _buildPermissionLocationWhenInUse() => _buildPermissionCheck(

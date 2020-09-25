@@ -263,7 +263,7 @@ class UserStatusPageState extends State<UserStatusPage> {
   RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
         icon: Icon(Icons.map),
         label: Text('VIS', style: labelTextStyle),
-        onPressed: () => jumpToPoint(context, center: service.current.geometry),
+        onPressed: () => jumpToPoint(context, center: service.current?.geometry),
       );
 
   RaisedButton _buildEnrouteAction(BuildContext context) {
