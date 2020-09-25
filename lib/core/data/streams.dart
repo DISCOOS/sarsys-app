@@ -167,9 +167,9 @@ class StreamRequestQueue<T> {
   Future<void> _dispose() async {
     if (!_isDisposing && _queue != null) {
       _isDisposing = true;
-      if (_requests.isNotEmpty) {
-        await _queue.cancel(immediate: true);
-      }
+      await _queue.cancel(
+        immediate: true,
+      );
       _queue = null;
       _isIdle = true;
       _current = null;
@@ -268,6 +268,8 @@ class StreamRequestQueue<T> {
 
   /// Check if given request should be skipped
   bool _shouldSkip(StreamRequest request, int attempts) =>
+      // Removed form queue?
+      request.onResult?.isCompleted == true ||
       // Removed form queue?
       !_requests.contains(request) ||
       // Maximum attempts reached?
