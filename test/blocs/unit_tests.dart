@@ -341,7 +341,7 @@ void main() async {
       expectThrough(harness.unitBloc, isA<UnitsUnloaded>());
     });
 
-    test('SHOULD NOT be contain after reload', () async {
+    test('SHOULD retain after reload', () async {
       // Arrange
       await _prepare(harness, offline: true);
       final unit = UnitBuilder.create();
@@ -361,7 +361,7 @@ void main() async {
 
       // Assert
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
-      expectThroughInOrder(harness.unitBloc, [isA<UnitsLoaded>()]);
+      expectThrough(harness.unitBloc, isA<UnitsLoaded>());
     });
 
     test('SHOULD delete clone when personnel is deleted', () async {
