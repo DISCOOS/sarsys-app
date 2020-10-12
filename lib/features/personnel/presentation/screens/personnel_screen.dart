@@ -1,12 +1,15 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong/latlong.dart';
+
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
-import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
-import 'package:async/async.dart';
-
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
@@ -15,10 +18,6 @@ import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong/latlong.dart';
 import 'package:SarSys/core/extensions.dart';
 
 class PersonnelScreen extends Screen<_PersonnelScreenState> {
@@ -46,7 +45,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
           routeWriter: false,
         );
 
-  final _controller = MapWidgetController();
+  final MapWidgetController _controller = MapWidgetController();
 
   Personnel _personnel;
   StreamGroup<dynamic> _group;
@@ -113,25 +112,24 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         physics: AlwaysScrollableScrollPhysics(),
         children: [
           StreamBuilder(
-              initialData: _personnel,
-              stream: _group.stream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                if (snapshot.data is Personnel) {
-                  _personnel = snapshot.data;
-                }
-                return _buildMapTile(context, _personnel);
-              }),
-          _buildInfoPanel(context),
+            initialData: _personnel,
+            stream: _group.stream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+              return _build(context);
+            },
+          ),
         ],
       ),
     );
   }
 
-  PersonnelWidget _buildInfoPanel(BuildContext context) => PersonnelWidget(
+  PersonnelWidget _build(BuildContext context) => PersonnelWidget(
+        withMap: true,
         withHeader: false,
         withActions: false,
         personnel: _personnel,
+        controller: _controller,
         unit: context.bloc<UnitBloc>().repo.findPersonnel(_personnel.uuid).firstOrNull,
         tracking: context.bloc<TrackingBloc>().trackings[_personnel.tracking.uuid],
         devices: context.bloc<TrackingBloc>().devices(_personnel.tracking.uuid),
@@ -140,49 +138,6 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
         onDeleted: () => Navigator.pop(context),
         onChanged: (personnel) => setState(() => _personnel = personnel),
       );
-
-  Widget _buildMapTile(BuildContext context, Personnel personnel) {
-    final center = toCenter(context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid]);
-    return Material(
-      elevation: PersonnelScreen.ELEVATION,
-      borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
-      child: Container(
-        height: 240.0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(PersonnelScreen.CORNER),
-          child: GestureDetector(
-            child: MapWidget(
-              key: ObjectKey(personnel.uuid),
-              center: center,
-              zoom: 16.0,
-              interactive: false,
-              withUnits: false,
-              withDevices: false,
-              withPersonnel: true,
-              withRead: true,
-              withWrite: true,
-              withControls: true,
-              withControlsZoom: true,
-              withControlsLayer: true,
-              withControlsBaseMap: true,
-              withControlsOffset: 16.0,
-              showRetired: PersonnelStatus.retired == personnel.status,
-              showLayers: [
-                MapWidgetState.LAYER_POI,
-                MapWidgetState.LAYER_PERSONNEL,
-                MapWidgetState.LAYER_TRACKING,
-                MapWidgetState.LAYER_SCALE,
-              ],
-              mapController: _controller,
-            ),
-            onTap: () => center == null
-                ? Navigator.pushReplacementNamed(context, MapScreen.ROUTE)
-                : jumpToLatLng(context, center: center),
-          ),
-        ),
-      ),
-    );
-  }
 
   LatLng toCenter(Tracking event) {
     final point = event?.position?.geometry;

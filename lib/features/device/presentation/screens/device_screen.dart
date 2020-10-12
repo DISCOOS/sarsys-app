@@ -97,85 +97,46 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    return Container(
-      child: Padding(
-        padding: const EdgeInsets.all(0),
-        child: ListView(
-          padding: const EdgeInsets.all(DeviceScreen.SPACING),
-          physics: AlwaysScrollableScrollPhysics(),
-          children: [
-            if (isCommander || isSelected) _buildMapTile(context, _device),
-            StreamBuilder<Device>(
-              initialData: _device,
-              stream: context.bloc<DeviceBloc>().onChanged(_device),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-                if (snapshot.data is Device) {
-                  _device = snapshot.data;
-                }
-                final unit = context.bloc<TrackingBloc>().units.find(_device);
-                final personnel = context.bloc<TrackingBloc>().personnels.find(_device);
-                return _buildDeviceWidget(unit, personnel, context);
-              },
-            ),
-          ],
-        ),
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.bloc<DeviceBloc>().load();
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(DeviceScreen.SPACING),
+        physics: AlwaysScrollableScrollPhysics(),
+        children: [
+          StreamBuilder<Device>(
+            initialData: _device,
+            stream: context.bloc<DeviceBloc>().onChanged(_device),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+              if (snapshot.data is Device) {
+                _device = snapshot.data;
+              }
+              final unit = context.bloc<TrackingBloc>().units.find(_device);
+              final personnel = context.bloc<TrackingBloc>().personnels.find(_device);
+              return _build(unit, personnel, context);
+            },
+          ),
+        ],
       ),
     );
   }
 
-  DeviceWidget _buildDeviceWidget(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
+  DeviceWidget _build(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
         unit: unit,
         device: _device,
         withHeader: false,
         withActions: false,
         personnel: personnel,
         onMessage: showMessage,
+        controller: _controller,
+        withMap: isCommander || isSelected,
         onDeleted: () => Navigator.pop(context),
         onGoto: (point) => jumpToPoint(context, center: point),
         onChanged: (device) => setState(() => _device = device),
         tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
       );
-
-  Widget _buildMapTile(BuildContext context, Device device) {
-    final center = toCenter(device.position?.geometry);
-    return Material(
-      elevation: DeviceScreen.ELEVATION,
-      borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
-      child: Container(
-        height: 240.0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(DeviceScreen.CORNER),
-          child: GestureDetector(
-            child: MapWidget(
-              key: ObjectKey(device.uuid),
-              center: center,
-              zoom: 16.0,
-              interactive: false,
-              withUnits: false,
-              withDevices: true,
-              withPersonnel: false,
-              withTracking: false,
-              withRead: true,
-              withWrite: true,
-              withControls: true,
-              withControlsZoom: true,
-              withControlsLayer: true,
-              withControlsBaseMap: true,
-              withControlsOffset: 16.0,
-              showLayers: [
-                MapWidgetState.LAYER_POI,
-                MapWidgetState.LAYER_DEVICE,
-                MapWidgetState.LAYER_SCALE,
-              ],
-              mapController: _controller,
-            ),
-            onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
-          ),
-        ),
-      ),
-    );
-  }
 
   LatLng toCenter(Point location) {
     return location != null ? toLatLng(location) : null;

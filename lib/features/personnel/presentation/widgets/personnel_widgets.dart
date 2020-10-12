@@ -1,4 +1,6 @@
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -21,6 +23,27 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:url_launcher/url_launcher.dart';
 
 class PersonnelWidget extends StatelessWidget {
+  PersonnelWidget({
+    Key key,
+    @required this.unit,
+    @required this.personnel,
+    @required this.onMessage,
+    this.tracking,
+    this.devices,
+    this.onGoto,
+    this.onDeleted,
+    this.onChanged,
+    this.onCompleted,
+    this.withMap = false,
+    this.withName = false,
+    this.withHeader = true,
+    this.withActions = true,
+    this.withLocation = true,
+    MapWidgetController controller,
+  })  : this.controller = controller ?? MapWidgetController(),
+        super(key: key);
+
+  final bool withMap;
   final bool withName;
   final bool withHeader;
   final bool withActions;
@@ -34,23 +57,12 @@ class PersonnelWidget extends StatelessWidget {
   final ValueChanged<Point> onGoto;
   final ValueChanged<Personnel> onChanged;
   final ValueChanged<Personnel> onCompleted;
+  final MapWidgetController controller;
 
-  const PersonnelWidget({
-    Key key,
-    @required this.unit,
-    @required this.personnel,
-    @required this.onMessage,
-    this.tracking,
-    this.devices,
-    this.onGoto,
-    this.onDeleted,
-    this.onChanged,
-    this.onCompleted,
-    this.withName = false,
-    this.withHeader = true,
-    this.withActions = true,
-    this.withLocation = true,
-  }) : super(key: key);
+  static const HEIGHT = 82.0;
+  static const CORNER = 4.0;
+  static const SPACING = 8.0;
+  static const ELEVATION = 2.0;
 
   bool isTemporary(BuildContext context) => context.bloc<AffiliationBloc>().isTemporary(
         personnel.affiliation?.uuid,
@@ -65,6 +77,7 @@ class PersonnelWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (withHeader) _buildHeader(context, personnel, theme),
+        if (withMap) _buildMap(context),
         if (isTemporary(context)) _buildTemporaryPersonnelWarning(context),
         if (Orientation.portrait == orientation) _buildPortrait(context) else _buildLandscape(context),
         if (withActions) ...[
@@ -193,6 +206,52 @@ class PersonnelWidget extends StatelessWidget {
             onPressed: () => _onComplete(personnel),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildMap(BuildContext context) {
+    final center = tracking?.position?.toLatLng();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Material(
+        elevation: ELEVATION,
+        borderRadius: BorderRadius.circular(CORNER),
+        child: Container(
+          height: 240.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(CORNER),
+            child: GestureDetector(
+              child: MapWidget(
+                key: ObjectKey(personnel.uuid),
+                center: center,
+                zoom: 16.0,
+                withRead: true,
+                withWrite: true,
+                withUnits: false,
+                withControls: true,
+                interactive: false,
+                withDevices: false,
+                withPersonnel: true,
+                withControlsZoom: true,
+                withControlsLayer: true,
+                withControlsBaseMap: true,
+                withControlsOffset: 16.0,
+                showRetired: PersonnelStatus.retired == personnel.status,
+                showLayers: [
+                  MapWidgetState.LAYER_POI,
+                  MapWidgetState.LAYER_PERSONNEL,
+                  MapWidgetState.LAYER_TRACKING,
+                  MapWidgetState.LAYER_SCALE,
+                ],
+                mapController: controller,
+              ),
+              onTap: () => center == null
+                  ? Navigator.pushReplacementNamed(context, MapScreen.ROUTE)
+                  : jumpToLatLng(context, center: center),
+            ),
+          ),
+        ),
       ),
     );
   }

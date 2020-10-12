@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/core/presentation/widgets/stepped_page.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -90,7 +92,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> with TickerPr
       _buildProgress(),
     ];
     if (isAuthorized) {
-      _joinAndRouteTo();
+      scheduleMicrotask(() => _joinAndRouteTo());
     }
   }
 

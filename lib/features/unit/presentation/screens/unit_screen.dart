@@ -1,10 +1,15 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
+import 'package:latlong/latlong.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
-import 'package:async/async.dart';
-
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
@@ -12,9 +17,6 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UnitScreen extends Screen<_UnitScreenState> {
   static const ROUTE = 'unit';
@@ -35,7 +37,7 @@ class UnitScreen extends Screen<_UnitScreenState> {
 class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProviderStateMixin {
   _UnitScreenState(Unit unit) : super(title: "${unit.name}", withDrawer: false);
 
-  final _controller = MapWidgetController();
+  final MapWidgetController _controller = MapWidgetController();
 
   Unit _unit;
   StreamGroup<dynamic> _group;
@@ -92,21 +94,27 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
 
   @override
   Widget buildBody(BuildContext context, BoxConstraints constraints) {
-    return Container(
-      child: SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.bloc<UnitBloc>().load();
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(UnitScreen.SPACING),
         physics: AlwaysScrollableScrollPhysics(),
-        child: StreamBuilder(
-          initialData: _unit,
-          stream: _group.stream,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return Center(child: Text("Ingen data"));
-            if (snapshot.data is Unit) {
-              _unit = snapshot.data;
-            }
-            final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
-            return _build(context, tracking);
-          },
-        ),
+        children: [
+          StreamBuilder(
+            initialData: _unit,
+            stream: _group.stream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+              if (snapshot.data is Unit) {
+                _unit = snapshot.data;
+              }
+              final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
+              return _build(context, tracking);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -128,6 +136,11 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
         onGoto: (point) => jumpToPoint(context, center: point),
         devices: context.bloc<TrackingBloc>().devices(tracking?.uuid),
       );
+
+  LatLng toCenter(Tracking event) {
+    final point = event?.position?.geometry;
+    return point != null ? toLatLng(point) : null;
+  }
 
   void _onMove(Tracking tracking) {
     if (mounted) {

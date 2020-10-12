@@ -580,8 +580,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         swPanBoundary: _currentBaseMap.bounds?.southWest,
         */
         onTap: (point) => _onTap(point),
-        onLongPress: (point) => _onLongPress(point),
         onPositionChanged: _onPositionChanged,
+        onLongPress: (point) => _onLongPress(point),
         plugins: [
           MyLocation(),
           POILayer(),
@@ -666,15 +666,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
         tms: _currentBaseMap.tms,
+        retinaMode: useRetinaMode,
         tileProvider: _tileProvider,
         urlTemplate: _currentBaseMap.url,
+        tileFadeInStartWhenOverride: 1.0,
         overrideTilesWhenUrlChanges: true,
         subdomains: _currentBaseMap.subdomains,
+        errorTileCallback: _tileProvider.onError,
+        maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
-        maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
-        retinaMode: useRetinaMode,
-        errorTileCallback: _tileProvider.onError,
       );
 
   bool get useRetinaMode =>

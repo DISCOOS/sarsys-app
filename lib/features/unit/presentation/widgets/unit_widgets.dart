@@ -50,7 +50,6 @@ class UnitWidget extends StatelessWidget {
   final ValueChanged<Unit> onCompleted;
   final VoidCallback onDeleted;
   final ActionCallback onMessage;
-
   final MapWidgetController controller;
 
   @override
@@ -169,13 +168,13 @@ class UnitWidget extends StatelessWidget {
                 key: ObjectKey(unit.uuid),
                 center: center,
                 zoom: 16.0,
-                interactive: false,
-                withUnits: true,
-                withDevices: false,
-                withPersonnel: false,
                 withRead: true,
                 withWrite: true,
+                withUnits: true,
+                withDevices: false,
+                interactive: false,
                 withControls: true,
+                withPersonnel: false,
                 withControlsZoom: true,
                 withControlsLayer: true,
                 withControlsBaseMap: true,

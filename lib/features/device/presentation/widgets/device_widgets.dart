@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
@@ -86,36 +87,46 @@ class DeviceChip extends StatelessWidget {
 }
 
 class DeviceWidget extends StatelessWidget {
+  DeviceWidget({
+    Key key,
+    @required this.unit,
+    @required this.device,
+    @required this.tracking,
+    @required this.personnel,
+    @required this.onMessage,
+    this.onGoto,
+    this.onChanged,
+    this.onCompleted,
+    this.onDeleted,
+    this.withMap = true,
+    this.withHeader = true,
+    this.withActions = true,
+    this.withActivity = true,
+    this.organisation,
+    MapWidgetController controller,
+  })  : this.controller = controller ?? MapWidgetController(),
+        super(key: key);
+
   final Unit unit;
-  final Personnel personnel;
+  final bool withMap;
   final Device device;
   final bool withHeader;
   final bool withActions;
   final bool withActivity;
   final Tracking tracking;
+  final Personnel personnel;
   final ActionCallback onMessage;
   final ValueChanged<Point> onGoto;
   final ValueChanged<Device> onChanged;
   final ValueChanged<Device> onCompleted;
   final VoidCallback onDeleted;
   final Organisation organisation;
+  final MapWidgetController controller;
 
-  const DeviceWidget({
-    Key key,
-    @required this.unit,
-    @required this.personnel,
-    @required this.device,
-    @required this.tracking,
-    @required this.onMessage,
-    this.onGoto,
-    this.onChanged,
-    this.onCompleted,
-    this.onDeleted,
-    this.withHeader = true,
-    this.withActions = true,
-    this.withActivity = true,
-    this.organisation,
-  }) : super(key: key);
+  static const HEIGHT = 82.0;
+  static const CORNER = 4.0;
+  static const SPACING = 8.0;
+  static const ELEVATION = 2.0;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +140,7 @@ class DeviceWidget extends StatelessWidget {
         children: <Widget>[
           if (withHeader) _buildHeader(theme, context),
           if (withHeader) Divider() else SizedBox(height: 8.0),
+          if (withMap) _buildMap(context),
           if (Orientation.portrait == orientation) _buildPortrait(context, theme) else _buildLandscape(context, theme),
           if (withActions) ...[
             Divider(),
@@ -154,7 +166,7 @@ class DeviceWidget extends StatelessWidget {
   }
 
   Widget _buildPortrait(BuildContext context, TextTheme theme) => Padding(
-      padding: const EdgeInsets.only(left: 8.0),
+      padding: const EdgeInsets.only(left: 0.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +181,7 @@ class DeviceWidget extends StatelessWidget {
       reminder.removeAt(0);
     }
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0),
+      padding: const EdgeInsets.only(left: 0.0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -228,6 +240,49 @@ class DeviceWidget extends StatelessWidget {
           ],
         ),
       );
+
+  Widget _buildMap(BuildContext context) {
+    final center = tracking?.position?.toLatLng();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Material(
+        elevation: ELEVATION,
+        borderRadius: BorderRadius.circular(CORNER),
+        child: Container(
+          height: 240.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(CORNER),
+            child: GestureDetector(
+              child: MapWidget(
+                key: ObjectKey(device.uuid),
+                center: center,
+                zoom: 16.0,
+                withRead: true,
+                withWrite: true,
+                withUnits: false,
+                withDevices: true,
+                interactive: false,
+                withControls: true,
+                withTracking: false,
+                withPersonnel: false,
+                withControlsZoom: true,
+                withControlsLayer: true,
+                withControlsBaseMap: true,
+                withControlsOffset: 16.0,
+                showLayers: [
+                  MapWidgetState.LAYER_POI,
+                  MapWidgetState.LAYER_DEVICE,
+                  MapWidgetState.LAYER_SCALE,
+                ],
+                mapController: controller,
+              ),
+              onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Column(
         children: [
