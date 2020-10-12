@@ -1,13 +1,13 @@
-import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
-import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 
@@ -674,32 +674,40 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline}) as
     OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
     incident: incident,
   );
-
-  // Prepare OperationBloc
-  await expectThroughLater(harness.operationsBloc, emits(isA<OperationSelected>()));
   expect(
-    harness.operationsBloc.isUnselected,
-    isFalse,
-    reason: "SHOULD NOT be unset",
+    harness.operationsBloc.isSelected,
+    isTrue,
+    reason: "SHOULD be selected",
   );
 
-  // Prepare UnitBloc
-  await expectThroughLater(harness.unitBloc, emits(isA<UnitsLoaded>()));
+  await expectThroughLater(
+    harness.unitBloc,
+    emits(isA<UnitsLoaded>().having(
+      (event) {
+        return event.isRemote;
+      },
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<UserMobilized>().having(
+      (event) {
+        return event.isRemote;
+      },
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
+
+  // Verify that units are loaded
   expect(
     harness.unitBloc.ouuid,
     operation.uuid,
     reason: "SHOULD depend on operation ${operation.uuid}",
   );
 
-  // Await User to be mobilized
-  await expectThroughLater(
-    harness.personnelBloc,
-    emits(isA<PersonnelCreated>().having(
-      (event) => event.isRemote,
-      'Should be ${offline ? 'local' : 'remote'}',
-      !offline,
-    )),
-  );
   // Verify only user exists
   expect(
     harness.personnelBloc.findUser(userId: harness.userBloc.userId),

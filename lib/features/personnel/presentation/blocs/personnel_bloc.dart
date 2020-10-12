@@ -21,7 +21,7 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/foundation.dart' show VoidCallback, required;
 import 'package:uuid/uuid.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
@@ -311,7 +311,13 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     } else if (command is MobilizeUser) {
       yield* _mobilize(command);
     } else if (command is CreatePersonnel) {
-      yield* _create(command);
+      yield* _create(
+        command,
+        (Personnel personnel, bool isRemote) => PersonnelCreated(
+          personnel,
+          isRemote: isRemote,
+        ),
+      );
     } else if (command is UpdatePersonnel) {
       yield* _update(command);
     } else if (command is DeletePersonnel) {
@@ -394,24 +400,39 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
           affiliation: affiliation.toRef(),
           tracking: TrackingUtils.newRef(),
         );
-        yield* _create(CreatePersonnel(
-          command.data,
-          found,
-        ));
+        yield* _create(
+          CreatePersonnel(
+            command.data,
+            found,
+          ),
+          (Personnel personnel, bool isRemote) => UserMobilized(
+            user,
+            personnel,
+            isRemote: isRemote,
+          ),
+        );
       } else if (found.isMobilized != true) {
         yield* _update(UpdatePersonnel(found.copyWith(
           status: PersonnelStatus.alerted,
         )));
+      } else {
+        yield toOK(
+          command,
+          UserMobilized(
+            user,
+            found,
+            isRemote: repo.getState(found.uuid).isRemote,
+          ),
+          result: found,
+        );
       }
-      yield toOK(
-        command,
-        UserMobilized(user, found),
-        result: found,
-      );
     }
   }
 
-  Stream<PersonnelState> _create(CreatePersonnel command) async* {
+  Stream<PersonnelState> _create(
+    CreatePersonnel command,
+    PersonnelState Function(Personnel personnel, bool isRemote) toState,
+  ) async* {
     Affiliation affiliation = await _ensureAffiliation(command);
     final person = affiliationBloc.persons[affiliation.person.uuid];
     final personnel = repo.apply(
@@ -420,7 +441,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
     );
     yield toOK(
       command,
-      PersonnelCreated(personnel),
+      toState(personnel, false),
       result: personnel,
     );
 
@@ -430,9 +451,9 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
         affiliationBloc.repo.onRemote(affiliation.uuid),
         repo.onRemote(personnel.uuid),
       ],
-      toState: (_) => PersonnelCreated(
+      toState: (_) => toState(
         personnel,
-        isRemote: true,
+        true,
       ),
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(

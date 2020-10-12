@@ -668,7 +668,7 @@ Future _testShouldLoadWhenOperationIsSelected(BlocTestHarness harness, {@require
   // Assert state
   await expectLater(
     harness.personnelBloc,
-    emitsThrough(isA<PersonnelCreated>()),
+    emitsThrough(isA<UserMobilized>()),
   );
   expect(harness.personnelBloc.ouuid, operation.uuid, reason: "SHOULD change to ${operation.uuid}");
   expect(harness.personnelBloc.repo.length, 1, reason: "SHOULD contain one personnel");
@@ -795,7 +795,7 @@ Future<Operation> _prepare(BlocTestHarness harness, {@required bool offline, boo
   // Await User to be mobilized
   await expectThroughLater(
     harness.personnelBloc,
-    emits(isA<PersonnelCreated>().having(
+    emits(isA<UserMobilized>().having(
       (event) => event.isRemote,
       'Should be ${offline ? 'local' : 'remote'}',
       !offline,
