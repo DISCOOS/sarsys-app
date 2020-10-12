@@ -311,7 +311,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
 
     final screen = _toScreen(
       route,
-      persisted: true,
+      persisted: false,
       arguments: settings.arguments,
     );
     return MaterialPageRoute(
