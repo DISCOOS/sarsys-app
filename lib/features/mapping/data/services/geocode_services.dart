@@ -219,7 +219,6 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     String title,
     IconData icon,
     GeocodeType type,
-    int radius = 20,
   }) async {
     if (kDebugMode) debugPrint(request);
     final response = await client.get(
@@ -247,7 +246,6 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     String title,
     IconData icon,
     GeocodeType type,
-    int radius = 20,
   }) {
     final Map<String, dynamic> body = json.decode(response.body);
     final addresses = body.containsKey('features')
@@ -272,7 +270,6 @@ class _EnturGeocoderService extends GeocodeService with GeocodeSearchQuery, Geoc
     String title,
     IconData icon,
     GeocodeType type,
-    int radius = 20,
   }) {
     final coords = feature['geometry']['coordinates'];
     final point = Point.fromCoords(

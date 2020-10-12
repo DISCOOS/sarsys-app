@@ -138,12 +138,12 @@ class _CoordinateInputState extends State<CoordinateInput> {
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 8.0),
       ),
       maxLength: 7,
-      autovalidate: true,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
       inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
+        FilteringTextInputFormatter.digitsOnly,
       ],
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       onChanged: (value) => _update(value, _northingController.text),
       validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {
@@ -166,13 +166,13 @@ class _CoordinateInputState extends State<CoordinateInput> {
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
       ),
       maxLength: 7,
-      autovalidate: true,
       focusNode: _northingFocusNode,
       textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
       inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
+        FilteringTextInputFormatter.digitsOnly,
       ],
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       onChanged: (value) => _update(_eastingController.text, value),
       validator: (value) => int.tryParse(value) == null ? "Kun heltall" : null,
       onEditingComplete: () {

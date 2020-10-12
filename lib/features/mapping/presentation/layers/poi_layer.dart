@@ -144,7 +144,7 @@ class POILayer implements MapPlugin {
                 badgeColor: Colors.white70,
                 toAnimate: false,
                 showBadge: params.showBadge,
-                position: BadgePosition.topRight(),
+                position: BadgePosition.topStart(),
                 badgeContent: Text(
                   '${index + 1}',
                   style: TextStyle(fontSize: 10),

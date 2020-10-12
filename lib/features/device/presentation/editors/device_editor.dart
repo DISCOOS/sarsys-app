@@ -171,12 +171,12 @@ class _DeviceEditorState extends State<DeviceEditor> {
           },
         ),
       ),
-      autovalidate: true,
       inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
+        FilteringTextInputFormatter.digitsOnly,
       ],
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       validators: [
         FormBuilderValidators.required(errorText: 'Påkrevd'),
         (number) {

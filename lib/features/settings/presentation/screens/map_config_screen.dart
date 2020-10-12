@@ -87,7 +87,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [
-                WhitelistingTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {
@@ -122,7 +122,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [
-                WhitelistingTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: (value) {

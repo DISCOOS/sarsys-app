@@ -218,11 +218,11 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-      autovalidate: true,
       inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
+        FilteringTextInputFormatter.digitsOnly,
       ],
       keyboardType: TextInputType.number,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       valueTransformer: (value) => int.tryParse(emptyAsNull(value) ?? _defaultNumber()),
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
@@ -275,9 +275,9 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-      autovalidate: true,
       keyboardType: TextInputType.text,
       valueTransformer: (value) => emptyAsNull(value),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       validators: [
         FormBuilderValidators.required(errorText: 'Må fylles inn'),
         _validateCallsign,
@@ -330,12 +330,12 @@ class _UnitEditorState extends State<UnitEditor> {
           ),
         ),
       ),
-      autovalidate: true,
       inputFormatters: [
-        WhitelistingTextInputFormatter.digitsOnly,
+        FilteringTextInputFormatter.digitsOnly,
       ],
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       validators: [
         _validatePhone,
         FormBuilderValidators.numeric(errorText: "Kun talltegn"),

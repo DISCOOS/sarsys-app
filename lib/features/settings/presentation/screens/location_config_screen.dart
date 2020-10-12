@@ -219,7 +219,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [
-                WhitelistingTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: _manual
@@ -261,7 +261,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               inputFormatters: [
-                WhitelistingTextInputFormatter.digitsOnly,
+                FilteringTextInputFormatter.digitsOnly,
               ],
               decoration: InputDecoration(filled: true, counterText: ""),
               onChanged: _manual

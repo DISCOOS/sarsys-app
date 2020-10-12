@@ -115,9 +115,9 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           showUnselectedLabels: true,
           items: [
 //                  BottomNavigationBarItem(title: Text("Oppdrag"), icon: Icon(Icons.assessment)),
-            BottomNavigationBarItem(title: Text("Enheter"), icon: Icon(Icons.people)),
-            BottomNavigationBarItem(title: Text("Mannskap"), icon: Icon(Icons.person)),
-            BottomNavigationBarItem(title: Text("Apparater"), icon: Icon(MdiIcons.cellphoneBasic)),
+            BottomNavigationBarItem(label: "Enheter", icon: Icon(Icons.people)),
+            BottomNavigationBarItem(label: "Mannskap", icon: Icon(Icons.person)),
+            BottomNavigationBarItem(label: "Apparater", icon: Icon(MdiIcons.cellphoneBasic)),
           ],
           onTap: (index) => setState(() {
             writeRoute(
@@ -142,6 +142,8 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         return "Mannskap";
       case CommandScreen.TAB_DEVICES:
         return "Apparater";
+      default:
+        return ifEmpty;
     }
   }
 

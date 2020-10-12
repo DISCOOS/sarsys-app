@@ -466,12 +466,12 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
                 ),
               ),
             ),
-            autovalidate: true,
             inputFormatters: [
-              WhitelistingTextInputFormatter.digitsOnly,
+              FilteringTextInputFormatter.digitsOnly,
             ],
             keyboardType: TextInputType.number,
             valueTransformer: (value) => emptyAsNull(value),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validators: [
               _validatePhone,
               FormBuilderValidators.numeric(errorText: "Kun talltegn"),

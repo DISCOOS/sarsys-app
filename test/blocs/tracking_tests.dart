@@ -32,7 +32,6 @@ import '../mock/unit_service_mock.dart';
 
 import 'harness.dart';
 
-@Timeout(const Duration(seconds: 5))
 void main() async {
   final harness = BlocTestHarness()
     ..withOperationBloc(authenticated: true)
@@ -1786,7 +1785,6 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Personnel>(
     harness,
-    status: TrackingStatus.ready,
     act: () async {
       final next = await harness.personnelBloc.update(
         personnel.copyWith(status: status),
@@ -1822,7 +1820,6 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
   // Act and assert
   await _assertReopensClosedTrackingAutomatically<Unit>(
     harness,
-    status: TrackingStatus.ready,
     act: () async {
       final next = await harness.unitBloc.update(
         unit.copyWith(status: status),
@@ -1928,7 +1925,6 @@ Future _shouldLoadTrackings(BlocTestHarness harness) async {
 
 Future _assertReopensClosedTrackingAutomatically<T extends Trackable>(
   BlocTestHarness harness, {
-  @required TrackingStatus status,
   @required AsyncValueGetter<T> act,
 }) async {
   // Act LOCALLY

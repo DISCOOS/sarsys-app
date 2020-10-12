@@ -122,10 +122,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
                 selectedItemColor: Theme.of(context).colorScheme.primary,
                 type: BottomNavigationBarType.fixed,
                 items: [
-                  BottomNavigationBarItem(title: Text("Min side"), icon: Icon(Icons.account_box)),
-                  BottomNavigationBarItem(title: Text("Min enhet"), icon: Icon(Icons.supervised_user_circle)),
-                  BottomNavigationBarItem(title: Text("Min aksjon"), icon: Icon(Icons.warning)),
-                  BottomNavigationBarItem(title: Text("Min historikk"), icon: Icon(Icons.history)),
+                  BottomNavigationBarItem(label: "Min side", icon: Icon(Icons.account_box)),
+                  BottomNavigationBarItem(label: "Min enhet", icon: Icon(Icons.supervised_user_circle)),
+                  BottomNavigationBarItem(label: "Min aksjon", icon: Icon(Icons.warning)),
+                  BottomNavigationBarItem(label: "Min historikk", icon: Icon(Icons.history)),
                 ],
                 onTap: (index) => setState(() {
                   writeRoute(
