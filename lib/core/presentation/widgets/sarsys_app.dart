@@ -354,7 +354,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (name) {
       case SplashScreen.ROUTE:
         screen = SplashScreen(
-          message: arguments ?? (isConfigured ? 'Laster data...' : 'Konfigurerer...'),
+          message: arguments is String ? arguments : (isConfigured ? 'Laster data...' : 'Konfigurerer...'),
         );
         break;
       case LoginScreen.ROUTE:
