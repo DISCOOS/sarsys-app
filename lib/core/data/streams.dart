@@ -165,11 +165,13 @@ class StreamRequestQueue<T> {
   bool _isDisposing = false;
 
   Future<void> _dispose() async {
-    if (!_isDisposing && _queue != null) {
+    if (!_isDisposing) {
       _isDisposing = true;
-      await _queue.cancel(
-        immediate: true,
-      );
+      if (_requests.isNotEmpty && _queue != null) {
+        await _queue.cancel(
+          immediate: true,
+        );
+      }
       _queue = null;
       _isIdle = true;
       _current = null;

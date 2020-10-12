@@ -172,20 +172,30 @@ void main() async {
         harness.connectivity.cellular();
         await harness.configBloc.load();
         harness.connectivity.offline();
-        await harness.configBloc.updateWith();
+        final config = await harness.configBloc.updateWith(demoRole: 'personnel');
+
         expect(harness.configBloc.repo.state.status, StorageStatus.updated, reason: "SHOULD HAVE updated status");
-        expect(harness.configBloc.repo.state.isRemote, isFalse, reason: "SHOULD HAVE local state");
+        expect(harness.configBloc.repo.state.isLocal, isTrue, reason: "SHOULD HAVE local state");
         expect(harness.configBloc.repo.backlog.length, 1, reason: "SHOULD have a backlog");
 
         // Act
         harness.connectivity.cellular();
 
-        // Assert
         await expectLater(
-          toStatusChanges(harness.configBloc.repo.onChanged),
-          emits(StorageStatus.updated),
+          harness.configBloc.repo.onChanged,
+          emitsThrough(
+            isA<StorageTransition<AppConfig>>().having(
+              (source) {
+                return source.to.isRemote;
+              },
+              "Should change to remote",
+              isTrue,
+            ),
+          ),
         );
-        expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
+
+        // Assert
+        expect(harness.configBloc.repo.config, equals(config), reason: "SHOULD have AppConfig");
         expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
       },
     );
