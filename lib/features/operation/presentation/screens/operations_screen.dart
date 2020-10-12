@@ -247,13 +247,8 @@ class _OperationsPageState extends State<OperationsPage> {
                                   ? () async {
                                       if (isMobilized) {
                                         await leaveOperation();
-                                      } else if (isAuthorized) {
-                                        await _joinAndReroute(operation);
                                       } else {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => OpenOperationScreen(operation: operation),
-                                        );
+                                        await _joinAndReroute(operation);
                                       }
                                     }
                                   : null,
@@ -373,12 +368,10 @@ class _OperationsPageState extends State<OperationsPage> {
     );
   }
 
-  Future _joinAndReroute(Operation operation) async {
-    final result = await joinOperation(operation);
-    if (result.isRight()) {
-      jumpToOperation(context, operation);
-    }
-  }
+  Future _joinAndReroute(Operation operation) => showDialog(
+        context: context,
+        builder: (context) => OpenOperationScreen(operation: operation),
+      );
 }
 
 class OperationSearch extends SearchDelegate<Operation> {

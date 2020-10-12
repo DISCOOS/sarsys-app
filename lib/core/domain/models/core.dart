@@ -27,7 +27,7 @@ class JsonUtils {
     return JsonPatch.diff(o1.toJson(), o2.toJson());
   }
 
-  static Map<String, dynamic> toJson<T extends JsonObject>(
+  static dynamic toJson<T extends JsonObject>(
     T value, {
     List<String> retain = const [],
     List<String> remove = const [],

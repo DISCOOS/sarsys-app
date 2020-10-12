@@ -227,8 +227,8 @@ class Api {
   }
 }
 
-typedef T JsonDecoder<T>(Map<String, dynamic> json);
-typedef Map<String, dynamic> JsonReducer<T>(T value);
+typedef JsonDecoder<T> = T Function(Map<String, dynamic> json);
+typedef JsonReducer<T> = Map<String, dynamic> Function(T value);
 
 class JsonSerializableConverter extends JsonConverter {
   final Map<Type, JsonDecoder> decoders;

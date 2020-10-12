@@ -411,12 +411,12 @@ void main() {
       final t3 = TrackingUtils.toggle(t2, false);
 
       // Assert
-      expect(t3.tracks.length, 2, reason: "SHOULD contain 2 tracks");
-      expect(t3.tracks.first.status, TrackStatus.attached, reason: "SHOULD be attached");
+      expect(t3.tracks.length, 2, reason: 'SHOULD contain 2 tracks');
+      expect(t3.tracks.first.status, TrackStatus.attached, reason: 'SHOULD be attached');
       expect(t3.tracks.last.status, TrackStatus.attached, reason: "SHOULD be attached");
-      expect(t3.sources.length, 2, reason: "SHOULD contain 2 sources");
-      expect(t3.position.geometry, equals(p12), reason: "SHOULD be p12");
-      expect(t3.status, TrackingStatus.tracking, reason: "SHOULD be tracking");
+      expect(t3.sources.length, 2, reason: 'SHOULD contain 2 sources');
+      expect(t3.position.geometry, equals(p12), reason: 'SHOULD be p12');
+      expect(t3.status, TrackingStatus.tracking, reason: 'SHOULD be tracking');
     });
   });
 
