@@ -14,7 +14,8 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
+class ActivityBloc
+    extends BaseBloc<ActivityCommand, ActivityState, ActivityBlocError> {
   ActivityBloc({@required BlocEventBus bus}) : super(bus: bus) {
     assert(bus != null, "bus can not be null");
     subscribe<UserUnset>(_processAuth);
@@ -29,11 +30,13 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   }
 
   @override
-  ActivityInitialized get initialState => ActivityInitialized(ActivityProfile.PRIVATE);
+  ActivityInitialized get initialState =>
+      ActivityInitialized(ActivityProfile.PRIVATE);
 
   /// Get stream of [ActivityProfile] changes
   Stream<ActivityProfile> get onChanged =>
-      where((event) => event.data is ActivityProfile).map((event) => event.data as ActivityProfile);
+      where((event) => event.data is ActivityProfile)
+          .map((event) => event.data as ActivityProfile);
 
   /// Get trackable [Device]
   Device get trackable => _device;
@@ -55,8 +58,9 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   ActivityProfile _profile = ActivityProfile.PRIVATE;
 
   /// Get location service
-  LocationService get service =>
-      LocationService.exists ? LocationService() : LocationService(options: _profile.options);
+  LocationService get service => LocationService.exists
+      ? LocationService()
+      : LocationService(options: _profile.options);
 
   /// Get current [LocationOptions]
   LocationOptions get options => service.options;
@@ -96,7 +100,8 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     }
   }
 
-  void _processPersonnel<T extends PersonnelState>(BaseBloc bloc, PersonnelState event) {
+  void _processPersonnel<T extends PersonnelState>(
+      BaseBloc bloc, PersonnelState event) {
     final config = (bloc as PersonnelBloc).operationBloc.userBloc.config;
     if (event.data is Personnel) {
       final personnel = event.data as Personnel;
@@ -161,7 +166,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     final next = manual
         ? _toOptions(
             _config = config,
-            debug: profile?.options ?? options?.debug ?? kDebugMode,
+            debug: (profile?.options ?? options)?.debug ?? kDebugMode,
             defaultAccuracy: profile?.options?.accuracy ?? options.accuracy,
           )
         // Override current if
@@ -177,7 +182,8 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
   }
 
   @override
-  ActivityBlocError createError(Object error, {StackTrace stackTrace}) => ActivityBlocError(
+  ActivityBlocError createError(Object error, {StackTrace stackTrace}) =>
+      ActivityBlocError(
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
@@ -254,13 +260,18 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
         locationAlways: config.locationAlways ?? false,
         locationWhenInUse: config.locationWhenInUse ?? false,
         activityRecognition: config.activityRecognition ?? false,
-        timeInterval: config.locationFastestInterval ?? Defaults.locationFastestInterval,
-        locationStoreLocally: config.locationStoreLocally ?? Defaults.locationStoreLocally,
-        locationAllowSharing: config.locationAllowSharing ?? Defaults.locationAllowSharing,
-        distanceFilter: config.locationSmallestDisplacement ?? Defaults.locationSmallestDisplacement,
+        timeInterval:
+            config.locationFastestInterval ?? Defaults.locationFastestInterval,
+        locationStoreLocally:
+            config.locationStoreLocally ?? Defaults.locationStoreLocally,
+        locationAllowSharing:
+            config.locationAllowSharing ?? Defaults.locationAllowSharing,
+        distanceFilter: config.locationSmallestDisplacement ??
+            Defaults.locationSmallestDisplacement,
       );
 
-  LocationAccuracy _toAccuracy(AppConfig config, LocationAccuracy defaultAccuracy) {
+  LocationAccuracy _toAccuracy(
+      AppConfig config, LocationAccuracy defaultAccuracy) {
     final accuracy = config.toLocationAccuracy();
     if (accuracy == LocationAccuracy.automatic) {
       return defaultAccuracy;
@@ -277,7 +288,8 @@ abstract class ActivityCommand<S, T> extends BlocCommand<S, T> {
   ActivityCommand(S data, [props = const []]) : super(data, props);
 }
 
-class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityProfile> {
+class ChangeActivityProfile
+    extends ActivityCommand<ActivityProfile, ActivityProfile> {
   ChangeActivityProfile(
     ActivityProfile profile,
     this.manual,
@@ -298,7 +310,8 @@ class ChangeActivityProfile extends ActivityCommand<ActivityProfile, ActivityPro
       '}';
 }
 
-class ConfigureLocationService extends ActivityCommand<LocationOptions, LocationOptions> {
+class ConfigureLocationService
+    extends ActivityCommand<LocationOptions, LocationOptions> {
   ConfigureLocationService(
     LocationOptions options,
     this.manual,
