@@ -228,27 +228,29 @@ class BackgroundGeolocationService implements LocationService {
     // Set current state
     _state = await bg.BackgroundGeolocation.state;
 
-    if (isReady) {
-      await update();
-    } else {
+    if (!isReady) {
       _state = await bg.BackgroundGeolocation.start();
       _current = _toPosition(
         await bg.BackgroundGeolocation.setOdometer(_odometer),
       );
     }
 
-    // Only set once
-    _positions ??= await backlog();
+    if (isReady) {
+      await update();
 
-    _notify(ConfigureEvent(
-      _duuid,
-      _options,
-    ));
+      // Only set once
+      _positions ??= await backlog();
 
-    completer.complete(_options);
+      _notify(ConfigureEvent(
+        _duuid,
+        _options,
+      ));
 
-    if (!wasSharing && isSharing) {
-      await push();
+      completer.complete(_options);
+
+      if (!wasSharing && isSharing) {
+        await push();
+      }
     }
   }
 
@@ -358,8 +360,6 @@ class BackgroundGeolocationService implements LocationService {
           StackTrace.current,
         );
       }
-    } else {
-      await configure();
     }
     return _current;
   }
