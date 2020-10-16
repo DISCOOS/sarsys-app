@@ -189,7 +189,6 @@ class BackgroundGeolocationService implements LocationService {
           duuid: duuid,
           token: token,
           share: share,
-          debug: debug,
         );
 
         // Prevents concurrent configure
@@ -256,7 +255,6 @@ class BackgroundGeolocationService implements LocationService {
 
   bg.Config _toConfig({
     bool share,
-    bool debug,
     String duuid,
     AuthToken token,
   }) {
@@ -265,16 +263,18 @@ class BackgroundGeolocationService implements LocationService {
     _share = share ?? _share;
     debugPrint('bg.url: ${_toUrl()}');
     return bg.Config(
+      reset: true,
+      debug: _debug,
+      url: _toUrl(),
+      method: 'POST',
       batchSync: true,
       maxBatchSize: 10,
       autoSync: isSharing,
       autoSyncThreshold: 5,
       startOnBoot: isSharing,
-      stopOnTerminate: !isSharing,
-      url: _toUrl(),
-      method: 'POST',
       logMaxDays: 3,
       logLevel: _logLevel,
+      stopOnTerminate: !isSharing,
       maxDaysToPersist: 3,
       maxRecordsToPersist: 1000,
       persistMode: _persistMode,
@@ -283,11 +283,10 @@ class BackgroundGeolocationService implements LocationService {
       heartbeatInterval: 60,
       preventSuspend: isSharing,
       authorization: _toAuthorization(),
-      locationTemplate: _toLocationTemplate(),
+      locationTemplate: locationTemplate,
       showsBackgroundLocationIndicator: true,
       // We handle permissions our self
       disableLocationAuthorizationAlert: true,
-      debug: (debug ?? _options.debug ?? kDebugMode),
       locationUpdateInterval: _options.timeInterval,
       desiredAccuracy: _toAccuracy(_options.accuracy),
       distanceFilter: _options.distanceFilter.toDouble(),
@@ -300,6 +299,8 @@ class BackgroundGeolocationService implements LocationService {
       ),
     );
   }
+
+  bool get _debug => _options.debug ?? kDebugMode;
 
   String _toUrl({bool override = false}) =>
       override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
@@ -318,8 +319,10 @@ class BackgroundGeolocationService implements LocationService {
         : null;
   }
 
-  int get _logLevel => (_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO;
   int get _persistMode => canStore ? bg.Config.PERSIST_MODE_LOCATION : bg.Config.PERSIST_MODE_NONE;
+  int get _logLevel => Defaults.debugPrintLocation
+      ? ((_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
+      : bg.Config.LOG_LEVEL_OFF;
 
   int _toAccuracy(LocationAccuracy accuracy) {
     switch (accuracy) {
@@ -602,20 +605,18 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  String _toLocationTemplate() {
-    return '{'
-        '"type": "Feature",'
-        '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]},'
-        '"properties": {'
-        '"source": "device",'
-        '"speed": <%= speed %>,'
-        '"bearing": <%= heading %>,'
-        '"accuracy": <%= accuracy %>,'
-        '"isMoving": <%= is_moving %>,'
-        '"timestamp": "<%= timestamp %>",'
-        '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>}'
-        '}}';
-  }
+  static String locationTemplate = '{'
+      '"type": "Feature",'
+      '"geometry": {"type": "Point", "coordinates": [<%= longitude %>, <%= latitude %>, <%= altitude %>]},'
+      '"properties": {'
+      '"source": "device",'
+      '"speed": <%= speed %>,'
+      '"bearing": <%= heading %>,'
+      '"accuracy": <%= accuracy %>,'
+      '"isMoving": <%= is_moving %>,'
+      '"timestamp": "<%= timestamp %>",'
+      '"activity": {"type": "<%= activity.type %>", "confidence": <%= activity.confidence %>}'
+      '}}';
 
   /// Send log to given [address]
   static void emailLog(String address) {

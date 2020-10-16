@@ -28,8 +28,7 @@ class Defaults {
     minZoom: 3.0,
     maxZoom: 20.0,
     description: "Topografisk",
-    url:
-        "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
+    url: "https://{s}.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}",
     subdomains: ["opencache", "opencache2", "opencache3"],
   );
   static const int securityLockAfter = 2700;
@@ -40,6 +39,7 @@ class Defaults {
   static final LatLng origo = LatLng(59.5, 10.09);
 
   static final bool debugPrintHttp = false;
+  static final bool debugPrintLocation = false;
   static final bool debugPrintCommands = false;
-  static final bool debugPrintTransitions = false;
+  static final bool debugPrintTransitions = true;
 }
