@@ -91,12 +91,13 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           child: SingleChildScrollView(
             child: UnitWidget(
               unit: unit,
+              withMap: false,
               tracking: tracking,
-              devices: bloc.devices(unit.tracking.uuid),
               onMessage: onMessage,
               withActions: user?.isCommander == true,
-              onCompleted: (_) => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),
+              devices: bloc.devices(unit.tracking.uuid),
+              onCompleted: (_) => Navigator.pop(context),
             ),
           ),
         );

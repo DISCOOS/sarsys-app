@@ -60,9 +60,9 @@ class _UnitScreenState extends ScreenState<UnitScreen, String> with TickerProvid
     _group?.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<UnitBloc>().onChanged(widget.unit?.uuid))
-      ..add(context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid));
+      ..add(context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().onChanged(widget?.unit?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().onMoved(widget?.unit?.tracking?.uuid).listen(_onMove);
   }
 
   @override
