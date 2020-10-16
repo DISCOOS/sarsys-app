@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -951,7 +952,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
                   child: GridView.count(
                     shrinkWrap: true,
                     crossAxisCount: landscape ? 4 : 2,
-                    children: _toBaseMapCards(),
+                    children: _toBaseMapCards(context),
                   ),
                 ),
               ),
@@ -960,7 +961,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         });
   }
 
-  List<Widget> _toBaseMapCards() {
+  List<Widget> _toBaseMapCards(BuildContext context) {
     final List<Widget> _cards = [];
 
     for (BaseMap map in _baseMapService.baseMaps) {
@@ -1117,6 +1118,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 class MapWidgetController extends MapControllerImpl {
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
 
+  final StreamRequestQueue<void> _queue = StreamRequestQueue<void>();
+
   AnimationController _controller;
   bool get isAnimating => _controller != null;
 
@@ -1135,38 +1138,43 @@ class MapWidgetController extends MapControllerImpl {
         move(point, zoom);
         progress.value = MapMoveState(point, zoom);
       } else {
-        // Create some tweens. These serve to split up the transition from one location to another.
-        // In our case, we want to split the transition be<tween> our current map center and the destination.
-        final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
-        final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
-        final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
+        _queue.add(StreamRequest(execute: () {
+          // Create some tweens. These serve to split up the transition from one location to another.
+          // In our case, we want to split the transition be<tween> our current map center and the destination.
+          final _latTween = Tween<double>(begin: center.latitude, end: point.latitude);
+          final _lngTween = Tween<double>(begin: center.longitude, end: point.longitude);
+          final _zoomTween = Tween<double>(begin: this.zoom, end: zoom);
 
-        // Create a animation controller that has a duration and a TickerProvider.
-        _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
+          // Create a animation controller that has a duration and a TickerProvider.
+          _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: provider);
 
-        // The animation determines what path the animation will take. You can try different Curves values, although I found
-        // fastOutSlowIn to be my favorite.
-        Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+          // The animation determines what path the animation will take. You can try different Curves values, although I found
+          // fastOutSlowIn to be my favorite.
+          Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
 
-        _controller.addListener(() {
-          final state = MapMoveState(
-            LatLng(
-              _latTween.evaluate(animation),
-              _lngTween.evaluate(animation),
-            ),
-            _zoomTween.evaluate(animation),
+          _controller.addListener(() {
+            final state = MapMoveState(
+              LatLng(
+                _latTween.evaluate(animation),
+                _lngTween.evaluate(animation),
+              ),
+              _zoomTween.evaluate(animation),
+            );
+            move(state.center, state.zoom);
+            progress.value = state;
+            if (onMove != null) onMove(state.center);
+          });
+
+          animation.addStatusListener((status) {
+            if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
+              cancel();
+            }
+          });
+          _controller.forward();
+          return Future.value(
+            StreamResult.none(),
           );
-          move(state.center, state.zoom);
-          progress.value = state;
-          if (onMove != null) onMove(state.center);
-        });
-
-        animation.addStatusListener((status) {
-          if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
-            cancel();
-          }
-        });
-        _controller.forward();
+        }));
       }
     }
   }
