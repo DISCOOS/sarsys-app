@@ -98,7 +98,7 @@ class DeviceWidget extends StatelessWidget {
     this.onChanged,
     this.onCompleted,
     this.onDeleted,
-    this.withMap = true,
+    this.withMap = false,
     this.withHeader = true,
     this.withActions = true,
     this.withActivity = true,

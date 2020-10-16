@@ -449,7 +449,7 @@ class AppBlocDelegate implements BlocDelegate {
     if (kDebugMode && Defaults.debugPrintCommands) {
       debugPrint(
         '--- Command ---\n'
-        'bloc: ${bloc.runtimeType}\n'
+        'bloc:    ${bloc.runtimeType}\n'
         'command: ${command.runtimeType}\n'
         '******************',
       );
@@ -461,10 +461,10 @@ class AppBlocDelegate implements BlocDelegate {
     if (kDebugMode && Defaults.debugPrintTransitions) {
       debugPrint(
         '--- Transition ---\n'
-        'bloc: ${bloc.runtimeType}\n'
+        'bloc:    ${bloc.runtimeType}\n'
         'command: ${transition.event.runtimeType}\n'
         'current: ${_toStateString(transition.currentState)}\n'
-        'next: ${_toStateString(transition.nextState)}\n'
+        'next:    ${_toStateString(transition.nextState)}\n'
         '******************',
       );
     }

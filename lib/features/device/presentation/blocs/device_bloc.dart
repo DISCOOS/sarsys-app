@@ -167,11 +167,11 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   DevicesEmpty get initialState => DevicesEmpty();
 
   /// Stream of changes on given device
-  Stream<Device> onChanged(Device device, {bool skipLocation = true}) => where(
+  Stream<Device> onChanged(Device device, {bool skipPosition = false}) => where(
         (state) =>
             (state is DeviceUpdated &&
                 state.isChanged() &&
-                (!skipLocation || !state.isLocationChanged()) &&
+                (!skipPosition || !state.isLocationChanged()) &&
                 state.data.uuid == device.uuid) ||
             (state is DevicesLoaded && state.data.contains(device.uuid)),
       ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);

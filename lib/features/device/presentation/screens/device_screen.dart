@@ -107,7 +107,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
         children: [
           StreamBuilder<Device>(
             initialData: _device,
-            stream: context.bloc<DeviceBloc>().onChanged(_device),
+            stream: context.bloc<DeviceBloc>().onChanged(_device, skipPosition: true),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return Center(child: Text("Ingen data"));
               if (snapshot.data is Device) {
