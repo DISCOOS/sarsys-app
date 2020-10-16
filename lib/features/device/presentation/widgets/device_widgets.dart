@@ -242,7 +242,7 @@ class DeviceWidget extends StatelessWidget {
       );
 
   Widget _buildMap(BuildContext context) {
-    final center = tracking?.position?.toLatLng();
+    final center = device.position?.toLatLng();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Material(
@@ -257,11 +257,13 @@ class DeviceWidget extends StatelessWidget {
                 key: ObjectKey(device.uuid),
                 center: center,
                 zoom: 16.0,
+                readZoom: true,
                 withRead: true,
                 withWrite: true,
                 withUnits: false,
                 withDevices: true,
                 interactive: false,
+                withScaleBar: true,
                 withControls: true,
                 withTracking: false,
                 withPersonnel: false,

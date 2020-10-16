@@ -167,11 +167,19 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   DevicesEmpty get initialState => DevicesEmpty();
 
   /// Stream of changes on given device
-  Stream<Device> onChanged(Device device) => where(
+  Stream<Device> onChanged(Device device, {bool skipLocation = true}) => where(
         (state) =>
-            (state is DeviceUpdated && state.data.uuid == device.uuid) ||
+            (state is DeviceUpdated &&
+                state.isChanged() &&
+                (!skipLocation || !state.isLocationChanged()) &&
+                state.data.uuid == device.uuid) ||
             (state is DevicesLoaded && state.data.contains(device.uuid)),
       ).map((state) => state is DevicesLoaded ? repo[device.uuid] : state.data);
+
+  /// Stream of changes on given device
+  Stream<Device> onMoved(Device device) => where(
+        (state) => (state.isLocationChanged() && state.data.uuid == device.uuid),
+      ).map((state) => state.data);
 
   void _assertState() {
     if (!userBloc.isAuthenticated) {
@@ -543,6 +551,7 @@ class DeviceUpdated extends DeviceState<Device> {
         );
   final Device previous;
 
+  bool isChanged() => data != previous;
   bool isStatusChanged() => data.status != previous?.status;
   bool isLocationChanged() => data.position != previous?.position;
 

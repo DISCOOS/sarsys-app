@@ -87,6 +87,7 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
             child: DeviceWidget(
+              withMap: false,
               unit: unit,
               personnel: personnel,
               device: device,
