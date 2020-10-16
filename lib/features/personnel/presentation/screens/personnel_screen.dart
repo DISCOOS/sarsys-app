@@ -68,9 +68,9 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     if (_group != null) _group.close();
     _group = StreamGroup.broadcast()
       ..add(context.bloc<PersonnelBloc>().onChanged(widget.personnel))
-      ..add(context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid));
+      ..add(context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid, skipPosition: true));
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<TrackingBloc>().onChanged(widget.personnel?.tracking?.uuid).listen(_onMove);
+    _onMoved = context.bloc<TrackingBloc>().onMoved(widget.personnel?.tracking?.uuid).listen(_onMove);
   }
 
   @override

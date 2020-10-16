@@ -356,11 +356,19 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   /// Stream of tracking changes for test
-  Stream<Tracking> onChanged(String uuid) => where(
+  Stream<Tracking> onChanged(String uuid, {bool skipPosition = false}) => where(
         (state) =>
-            (state is TrackingUpdated && state.data.uuid == uuid) ||
+            (state is TrackingUpdated &&
+                state.isChanged() &&
+                (!skipPosition || !state.isLocationChanged()) &&
+                state.data.uuid == uuid) ||
             (state is TrackingsLoaded && state.data.contains(uuid)),
       ).map((state) => state is TrackingsLoaded ? repo[uuid] : state.data);
+
+  /// Stream of tracking location changes for test
+  Stream<Tracking> onMoved(String uuid) => where(
+        (state) => (state.isLocationChanged() && state.data.uuid == uuid),
+      ).map((state) => state.data);
 
   /// Get all tracking objects
   Map<String, Tracking> get trackings => repo.map;
@@ -508,6 +516,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             source: PositionSource.manual,
           ),
         ),
+        tracking,
       ),
     );
   }
@@ -544,6 +553,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             source: PositionSource.manual,
           ),
         ),
+        tracking,
       ),
     );
   }
@@ -578,6 +588,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             source: PositionSource.manual,
           ),
         ),
+        tracking,
       ),
     );
   }
@@ -599,6 +610,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
             source: PositionSource.manual,
           ),
         ),
+        tracking,
       ),
     );
   }
@@ -703,7 +715,10 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     final tracking = repo.apply(command.data);
     yield toOK(
       command,
-      TrackingUpdated(tracking),
+      TrackingUpdated(
+        tracking,
+        command.previous,
+      ),
       result: tracking,
     );
 
@@ -712,6 +727,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       [repo.onRemote(tracking.uuid)],
       toState: (_) => TrackingUpdated(
         repo[tracking.uuid],
+        tracking,
         isRemote: true,
       ),
       toCommand: (state) => _StateChange(state),
@@ -828,7 +844,12 @@ class LoadTrackings extends TrackingCommand<String, List<Tracking>> {
 }
 
 class UpdateTracking extends TrackingCommand<Tracking, Tracking> {
-  UpdateTracking(Tracking data) : super(data);
+  UpdateTracking(
+    Tracking data,
+    this.previous,
+  ) : super(data);
+
+  final Tracking previous;
 
   @override
   String toString() => '$runtimeType {data: $data}';
@@ -889,6 +910,9 @@ abstract class TrackingState<T> extends PushableBlocEvent<T> {
   isDeleted() => this is TrackingDeleted;
   isUnloaded() => this is TrackingsUnloaded;
   isError() => this is TrackingBlocError;
+
+  bool isStatusChanged() => false;
+  bool isLocationChanged() => false;
 }
 
 class TrackingsEmpty extends TrackingState<Null> {
@@ -920,9 +944,16 @@ class TrackingCreated extends TrackingState<Tracking> {
 
 class TrackingUpdated extends TrackingState<Tracking> {
   TrackingUpdated(
-    Tracking data, {
+    Tracking data,
+    this.previous, {
     bool isRemote = false,
   }) : super(data, isRemote: isRemote);
+
+  final Tracking previous;
+
+  bool isChanged() => data != previous;
+  bool isStatusChanged() => data.status != previous?.status;
+  bool isLocationChanged() => data.position != previous?.position;
 
   @override
   String toString() => '$runtimeType {tracking: $data, isRemote: $isRemote}';

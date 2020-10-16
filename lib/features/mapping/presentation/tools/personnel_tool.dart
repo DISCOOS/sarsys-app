@@ -95,10 +95,11 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
             child: PersonnelWidget(
-              personnel: personnel,
+              withMap: false,
               tracking: tracking,
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
+              personnel: personnel,
               devices: bloc.devices(personnel.tracking.uuid),
+              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
               onMessage: onMessage,
               withActions: user.isCommander == true,
               onDeleted: () => Navigator.pop(context),
