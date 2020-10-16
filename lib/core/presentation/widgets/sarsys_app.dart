@@ -83,7 +83,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   bool get isOnboarded => configBloc?.config?.onboarded ?? false;
   bool get isFirstSetup => configBloc?.config?.firstSetup ?? false;
 
-  int get securityLockAfter => configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
+  int get securityLockAfter =>
+      configBloc?.config?.securityLockAfter ?? Defaults.securityLockAfter;
 
   @override
   void initState() {
@@ -91,6 +92,24 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _listenForBlocRebuilds();
     _listenForOperationsLoaded();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      writePageStorageBucket(widget.bucket);
+    } else if (state == AppLifecycleState.resumed) {
+      readPageStorageBucket(widget.bucket);
+      await widget.controller.setLockTimeout();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    readPageStorageBucket(widget.bucket, context: context);
   }
 
   @override
@@ -107,12 +126,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     _subscriptions.clear();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    readPageStorageBucket(widget.bucket, context: context);
-  }
-
   /// Initialize blocs and restart app after blocs are rebuilt
   void _listenForBlocRebuilds() {
     // Cancelled by _cancelAll
@@ -124,7 +137,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
   Future _handle(AppState state) async {
     if (widget.controller.shouldConfigure(state)) {
       // Configure blocs after rebuild
-      await widget.controller.configure().catchError(Catcher.reportCheckedError);
+      await widget.controller
+          .configure()
+          .catchError(Catcher.reportCheckedError);
 
       // Restart app to rehydrate with
       // blocs just built and initiated.
@@ -199,17 +214,6 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
           arguments: route,
         );
       }
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      writePageStorageBucket(widget.bucket);
-    } else if (state == AppLifecycleState.resumed) {
-      readPageStorageBucket(widget.bucket);
-      await widget.controller.setLockTimeout();
     }
   }
 
@@ -354,7 +358,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
     switch (name) {
       case SplashScreen.ROUTE:
         screen = SplashScreen(
-          message: arguments is String ? arguments : (isConfigured ? 'Laster data...' : 'Konfigurerer...'),
+          message: arguments is String
+              ? arguments
+              : (isConfigured ? 'Laster data...' : 'Konfigurerer...'),
         );
         break;
       case LoginScreen.ROUTE:
@@ -477,8 +483,10 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         MapWidgetState.STATE,
       );
       if (model?.ouuid != operation.uuid) {
-        final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
-        final meetup = operation.meetup != null ? toLatLng(operation.meetup.point) : null;
+        final ipp =
+            operation.ipp != null ? toLatLng(operation.ipp.point) : null;
+        final meetup =
+            operation.meetup != null ? toLatLng(operation.meetup.point) : null;
         final fitBounds = LatLngBounds(ipp, meetup);
         return MapScreen(
           operation: operation,
@@ -497,7 +505,9 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
       final Map<String, dynamic> route = Map.from(arguments);
       unit = units[route['data']];
     }
-    return unit == null || persisted ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS) : UnitScreen(unit: unit);
+    return unit == null || persisted
+        ? CommandScreen(tabIndex: CommandScreen.TAB_UNITS)
+        : UnitScreen(unit: unit);
   }
 
   Map<String, Unit> get units => widget.controller.bloc<UnitBloc>().units;
@@ -515,7 +525,8 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : PersonnelScreen(personnel: personnel);
   }
 
-  Map<String, Personnel> get personnels => widget.controller.bloc<PersonnelBloc>().repo.map;
+  Map<String, Personnel> get personnels =>
+      widget.controller.bloc<PersonnelBloc>().repo.map;
 
   Widget _toDeviceScreen(Object arguments, bool persisted) {
     var device;
@@ -530,13 +541,15 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         : DeviceScreen(device: device);
   }
 
-  Map<String, Device> get devices => widget.controller.bloc<DeviceBloc>().repo.map;
+  Map<String, Device> get devices =>
+      widget.controller.bloc<DeviceBloc>().repo.map;
 
   Widget _toPreviousRoute({@required Widget orElse}) {
     var child;
     var state = getPageState<Map>(context, RouteWriter.STATE);
     if (state != null) {
-      bool isUnset = operationBloc.isUnselected || personnelBloc.findUser().isEmpty;
+      bool isUnset =
+          operationBloc.isUnselected || personnelBloc.findUser().isEmpty;
       child = _toScreen(
         isUnset ? OperationsScreen.ROUTE : state[RouteWriter.FIELD_NAME],
         arguments: isUnset ? null : state,
