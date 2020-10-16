@@ -39,6 +39,7 @@ class Defaults {
 
   static final LatLng origo = LatLng(59.5, 10.09);
 
+  static final bool debugPrintHttp = false;
   static final bool debugPrintCommands = false;
   static final bool debugPrintTransitions = false;
 }

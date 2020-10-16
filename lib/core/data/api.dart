@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/defaults.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -127,7 +128,7 @@ class Api {
           ),
           interceptors: [
             BearerTokenInterceptor(users),
-            if (kDebugMode) HttpLoggingInterceptor(),
+            if (kDebugMode && Defaults.debugPrintHttp) HttpLoggingInterceptor(),
           ],
         );
 
