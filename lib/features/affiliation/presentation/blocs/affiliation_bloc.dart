@@ -223,7 +223,11 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       divs[affiliation?.div?.uuid]?.name,
       deps[affiliation?.dep?.uuid]?.name,
     ]..removeWhere((name) => name == null);
-    return names.isEmpty ? empty : short ? names.last : names.join(', ');
+    return names.isEmpty
+        ? empty
+        : short
+            ? names.last
+            : names.join(', ');
   }
 
   /// Get [Person] from User
@@ -981,16 +985,17 @@ class _StateChange extends AffiliationCommand<AffiliationState, Affiliation> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class AffiliationState<T> extends BlocEvent<T> {
+abstract class AffiliationState<T> extends PushableBlocEvent<T> {
   AffiliationState(
     T data, {
     props = const [],
     StackTrace stackTrace,
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   bool isEmpty() => this is AffiliationsEmpty;
   bool isLoaded() => this is AffiliationsLoaded;
@@ -1295,25 +1300,35 @@ class AffiliationQuery {
             ? // Match against all instances of given type
             _findTyped<DepartmentModel>(where)
             : // Match against given uuid
-            _accept<DepartmentModel>(uuid, where) ? [elementAt(uuid)] : [];
+            _accept<DepartmentModel>(uuid, where)
+                ? [elementAt(uuid)]
+                : [];
       case AffiliationModel:
         return uuid == null
             ? // Match against all instances of given type
             _findTyped<AffiliationModel>(where)
             : // Match against given uuid
-            _accept<AffiliationModel>(uuid, where) ? [elementAt(uuid)] : [];
+            _accept<AffiliationModel>(uuid, where)
+                ? [elementAt(uuid)]
+                : [];
       case PersonModel:
         return uuid == null
             ? // Match against all instances of given type
             _findTyped<PersonModel>(where)
             : // Match against given uuid
-            _accept<PersonModel>(uuid, where) ? [elementAt(uuid)] : [];
+            _accept<PersonModel>(uuid, where)
+                ? [elementAt(uuid)]
+                : [];
       default:
         return uuid == null
             ? // Match against all instances of given type(s)
-            types?.isNotEmpty == true ? _findTypes(_toModelTypes(types), where) : _findAny(where)
+            types?.isNotEmpty == true
+                ? _findTypes(_toModelTypes(types), where)
+                : _findAny(where)
             : // Match against given uuid
-            _accept<T>(uuid, where, types: _toModelTypes(types)) ? [elementAt(uuid)] : [];
+            _accept<T>(uuid, where, types: _toModelTypes(types))
+                ? [elementAt(uuid)]
+                : [];
     }
   }
 

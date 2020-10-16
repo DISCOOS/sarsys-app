@@ -41,5 +41,5 @@ class Defaults {
   static final bool debugPrintHttp = false;
   static final bool debugPrintLocation = false;
   static final bool debugPrintCommands = false;
-  static final bool debugPrintTransitions = true;
+  static final bool debugPrintTransitions = false;
 }

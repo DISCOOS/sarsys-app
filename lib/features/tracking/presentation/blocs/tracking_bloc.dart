@@ -870,16 +870,17 @@ class _StateChange extends TrackingCommand<TrackingState, Tracking> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class TrackingState<T> extends BlocEvent<T> {
+abstract class TrackingState<T> extends PushableBlocEvent<T> {
   TrackingState(
     Object data, {
     StackTrace stackTrace,
     props = const [],
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   isEmpty() => this is TrackingsEmpty;
   isLoaded() => this is TrackingsLoaded;

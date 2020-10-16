@@ -476,16 +476,18 @@ class _StateChange extends DeviceCommand<DeviceState, Device> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class DeviceState<T> extends BlocEvent<T> {
+abstract class DeviceState<T> extends PushableBlocEvent<T> {
   DeviceState(
     T data, {
     StackTrace stackTrace,
     props = const [],
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          props: [...props, isRemote],
+          stackTrace: stackTrace,
+          isRemote: isRemote,
+        );
 
   bool isError() => this is DeviceBlocError;
   bool isEmpty() => this is DevicesEmpty;

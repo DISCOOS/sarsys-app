@@ -21,7 +21,7 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart' show VoidCallback, required;
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:uuid/uuid.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
@@ -649,16 +649,17 @@ class _StateChange extends PersonnelCommand<PersonnelState, Personnel> {
 /// Normal States
 /// ---------------------
 
-abstract class PersonnelState<T> extends BlocEvent<T> {
+abstract class PersonnelState<T> extends PushableBlocEvent<T> {
   PersonnelState(
     T data, {
     StackTrace stackTrace,
     props = const [],
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   bool isError() => this is PersonnelBlocError;
   bool isEmpty() => this is PersonnelsEmpty;

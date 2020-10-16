@@ -327,16 +327,17 @@ class _StateChange extends AppConfigCommand<AppConfigState> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class AppConfigState<T> extends BlocEvent {
+abstract class AppConfigState<T> extends PushableBlocEvent {
   AppConfigState(
     T data, {
     StackTrace stackTrace,
     props = const [],
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   isEmpty() => this is AppConfigEmpty;
   isLoaded() => this is AppConfigLoaded;

@@ -633,16 +633,17 @@ class _StateChange extends OperationCommand<OperationState, Operation> {
 /// ---------------------
 /// Normal States
 /// ---------------------
-abstract class OperationState<T> extends BlocEvent<T> {
+abstract class OperationState<T> extends PushableBlocEvent<T> {
   OperationState(
     T data, {
     props = const [],
     StackTrace stackTrace,
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   bool isEmpty() => this is OperationsEmpty;
   bool isLoaded() => this is OperationsLoaded;

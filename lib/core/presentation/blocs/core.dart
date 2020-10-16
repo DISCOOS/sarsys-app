@@ -11,14 +11,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/core/utils/data.dart';
 
-abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
-    Error extends S> extends Bloc<C, S> {
+abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
   BaseBloc({@required this.bus}) : super() {
     assert(bus != null, "bus can not be null");
     _subscriptions.add(listen(
       (state) => bus.publish(this, state),
-      onError: (e, stackTrace) =>
-          BlocSupervisor.delegate.onError(this, e, stackTrace),
+      onError: (e, stackTrace) => BlocSupervisor.delegate.onError(this, e, stackTrace),
     ));
   }
 
@@ -28,8 +26,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
   /// Subscriptions released on [close]
   bool get hasSubscriptions => _subscriptions.isNotEmpty;
   final List<StreamSubscription> _subscriptions = [];
-  void registerStreamSubscription(StreamSubscription subscription) =>
-      _subscriptions.add(
+  void registerStreamSubscription(StreamSubscription subscription) => _subscriptions.add(
         subscription,
       );
 
@@ -49,8 +46,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
   /// Unhandled exceptions in handles are
   /// forwarded to [BlocDelegate.onError].
   ///
-  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(
-      BlocHandlerCallback<T> handler) {
+  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     _handlers.update(
       typeOf<T>(),
       (handlers) => handlers
@@ -93,8 +89,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
     });
   }
 
-  BlocHandlerCallback<T> _subscribe<T extends BlocEvent>(
-          BlocHandlerCallback<T> handler) =>
+  BlocHandlerCallback<T> _subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) =>
       bus.subscribe<T>((Bloc bloc, T event) {
         if (_dispatchQueue.isEmpty) {
           try {
@@ -156,8 +151,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
   }
 
   /// Get all handlers for given event
-  Iterable<Function> _toHandlers(BlocEvent event) =>
-      _handlers[event.runtimeType] ?? [];
+  Iterable<Function> _toHandlers(BlocEvent event) => _handlers[event.runtimeType] ?? [];
 
   /// Queue of [BlocCommand]s processed in FIFO manner.
   ///
@@ -327,8 +321,7 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent,
   }
 }
 
-typedef BlocHandlerCallback<T extends BlocEvent> = void Function(
-    BaseBloc bloc, T event);
+typedef BlocHandlerCallback<T extends BlocEvent> = void Function(BaseBloc bloc, T event);
 
 /// [BlocEvent] bus implementation
 class BlocEventBus {
@@ -346,8 +339,7 @@ class BlocEventBus {
   final Map<Type, Set<Function>> _routes = {};
 
   /// Subscribe to event with given handler
-  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(
-      BlocHandlerCallback<T> handler) {
+  BlocHandlerCallback<T> subscribe<T extends BlocEvent>(BlocHandlerCallback<T> handler) {
     _routes.update(
       typeOf<T>(),
       (handlers) => handlers..add(handler),
@@ -357,8 +349,7 @@ class BlocEventBus {
   }
 
   /// Subscribe to event of given [types] with given [handler]
-  BlocHandlerCallback subscribeAll(
-      BlocHandlerCallback handler, List<Type> types) {
+  BlocHandlerCallback subscribeAll(BlocHandlerCallback handler, List<Type> types) {
     for (var type in types) {
       _routes.update(
         type,
@@ -401,23 +392,17 @@ class BlocEventBus {
   }
 
   /// Get all handlers for given event
-  Iterable<Function> toHandlers(BlocEvent event) =>
-      _routes[event.runtimeType] ?? [];
+  Iterable<Function> toHandlers(BlocEvent event) => _routes[event.runtimeType] ?? [];
 }
 
 class BlocCommand<D, R> extends Equatable {
+  BlocCommand(this.data, [props = const []]) : super([data, ...props]);
   final D data;
   final Completer<R> callback = Completer();
   final StackTrace stackTrace = StackTrace.current;
-  BlocCommand(this.data, [props = const []]) : super([data, ...props]);
 }
 
 abstract class BlocEvent<T> extends Equatable {
-  final T data;
-  final StackTrace stackTrace;
-
-  DateTime get created => props.last;
-
   BlocEvent(this.data, {this.stackTrace, props = const []})
       : super([
           data,
@@ -427,6 +412,27 @@ abstract class BlocEvent<T> extends Equatable {
           // Bloc
           DateTime.now(),
         ]);
+
+  final T data;
+  final StackTrace stackTrace;
+
+  DateTime get created => props.last;
+}
+
+abstract class PushableBlocEvent<T> extends BlocEvent<T> {
+  PushableBlocEvent(
+    T data, {
+    StackTrace stackTrace,
+    props = const [],
+    this.isRemote = false,
+  }) : super(
+          data,
+          stackTrace: stackTrace,
+          props: [...props, isRemote],
+        );
+
+  final bool isRemote;
+  bool get isLocal => !isRemote;
 }
 
 class AppBlocDelegate implements BlocDelegate {
@@ -439,9 +445,14 @@ class AppBlocDelegate implements BlocDelegate {
   }
 
   @override
-  void onEvent(Bloc bloc, Object event) {
+  void onEvent(Bloc bloc, Object command) {
     if (kDebugMode && Defaults.debugPrintCommands) {
-      debugPrint('${bloc.runtimeType}: command: $event');
+      debugPrint(
+        '--- Command ---\n'
+        'bloc: ${bloc.runtimeType}\n'
+        'command: ${command.runtimeType}\n'
+        '******************',
+      );
     }
   }
 
@@ -449,10 +460,20 @@ class AppBlocDelegate implements BlocDelegate {
   void onTransition(Bloc bloc, Transition transition) {
     if (kDebugMode && Defaults.debugPrintTransitions) {
       debugPrint(
-        '${bloc.runtimeType}: command: ${transition.event} | '
-        'current: ${transition.currentState} > '
-        'next: ${transition.nextState}',
+        '--- Transition ---\n'
+        'bloc: ${bloc.runtimeType}\n'
+        'command: ${transition.event.runtimeType}\n'
+        'current: ${_toStateString(transition.currentState)}\n'
+        'next: ${_toStateString(transition.nextState)}\n'
+        '******************',
       );
     }
+  }
+
+  String _toStateString(Object state) {
+    if (state is PushableBlocEvent) {
+      return '${state.runtimeType}[isRemote: ${state.isRemote}]';
+    }
+    return '${state.runtimeType}';
   }
 }

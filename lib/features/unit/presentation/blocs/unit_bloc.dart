@@ -497,16 +497,17 @@ class _StateChange extends UnitCommand<UnitState, Unit> {
 /// Normal States
 /// ---------------------
 
-abstract class UnitState<T> extends BlocEvent<T> {
+abstract class UnitState<T> extends PushableBlocEvent<T> {
   UnitState(
     Object data, {
     StackTrace stackTrace,
     props = const [],
-    this.isRemote = false,
-  }) : super(data, props: [...props, isRemote], stackTrace: stackTrace);
-
-  final bool isRemote;
-  bool get isLocal => !isRemote;
+    bool isRemote = false,
+  }) : super(
+          data,
+          isRemote: isRemote,
+          stackTrace: stackTrace,
+        );
 
   bool isError() => this is UnitBlocError;
   bool isEmpty() => this is UnitsEmpty;
