@@ -116,25 +116,15 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// Invokes [load] and [unload] as needed.
   ///
   void _processOperationState(BaseBloc bloc, OperationState state) async {
-    // Only process local events
-    if (isOpen && state.isLocal) {
-      final unselected = (bloc as OperationBloc).isUnselected;
-      if (state.shouldLoad(ouuid)) {
-        dispatch(
-          LoadTrackings(state.data.uuid),
-        );
-      } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
-        await unload();
-      }
-    }
-
     try {
-      if (isOpen) {
+      // Only process local events
+      if (isOpen && state.isLocal) {
+        final unselected = (bloc as OperationBloc).isUnselected;
         if (state.shouldLoad(ouuid)) {
           dispatch(
             LoadTrackings(state.data.uuid),
           );
-        } else if (isReady && state.shouldUnload(ouuid)) {
+        } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
           await unload();
         }
       }
