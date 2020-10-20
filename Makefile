@@ -129,6 +129,8 @@ test:
 	echo "Running flutter tests...";
 	echo "Testing proj4d..."
 	flutter test test/proj4d.dart
+	echo "Testing core..."
+	flutter test test/core/stream_tests.dart
 	echo "Testing UserBloc..."
 	flutter test test/blocs/user_tests.dart
 	echo "Testing AppConfigBloc..."
@@ -143,8 +145,9 @@ test:
 	flutter test test/blocs/personnel_tests.dart
 	echo "Testing UnitBloc..."
 	flutter test test/blocs/unit_tests.dart
-	echo "Testing TrackingBloc..."
+	echo "Testing TrackingUtils..."
 	flutter test test//utils/tracking_utils_tests.dart
+#	echo "Testing TrackingBloc..."
 #	flutter test test/blocs/tracking_tests.dart
 	echo "[✓] Flutter tests complete."
 
