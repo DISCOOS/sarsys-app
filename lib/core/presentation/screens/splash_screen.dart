@@ -8,7 +8,7 @@ class SplashScreen extends StatefulWidget {
     this.message,
   }) : super(key: key);
 
-  final String message;
+  final Widget message;
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -44,9 +44,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       letterSpacing: 1.1,
       fontSize: SizeConfig.safeBlockVertical * 4.0,
     );
-    final statementStyle = Theme.of(context).textTheme.subtitle2.copyWith(
-          fontSize: SizeConfig.safeBlockVertical * 2.5,
-        );
 
     return Scaffold(
       body: SafeArea(
@@ -96,11 +93,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             Padding(
                               padding: const EdgeInsets.only(top: 16.0),
                               child: Center(
-                                child: Text(
-                                  widget.message ?? '',
-                                  style: statementStyle,
-                                  textAlign: TextAlign.center,
-                                ),
+                                child: widget.message,
                               ),
                             ),
                           ],

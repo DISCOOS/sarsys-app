@@ -97,6 +97,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> with TickerPr
   }
 
   Widget _buildProgress() {
+    SizeConfig.init(context);
     final primaryColor = Theme.of(context).primaryColor;
     final textTheme = Theme.of(context).textTheme;
     final rationaleStyle = textTheme.headline6.copyWith(

@@ -1,8 +1,18 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/streams.dart';
+import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
+import 'package:SarSys/core/presentation/screens/splash_screen.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
+import 'package:catcher/core/catcher.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -108,6 +118,9 @@ class AppController {
   bool get isLocked => !isSecured || bloc<UserBloc>().isLocked;
   bool get isLoading => isAuthenticated && !isReady || _state == AppState.Loading;
   bool get isReady => state == AppState.Ready;
+
+  bool get isOnboarded => bloc<AppConfigBloc>()?.config?.onboarded ?? false;
+  bool get isFirstSetup => bloc<AppConfigBloc>()?.config?.firstSetup ?? false;
 
   bool shouldConfigure(AppState state) => state == AppState.Built;
   bool shouldLogin(AppState state) => state == AppState.Anonymous && !isAuthenticated;
@@ -473,8 +486,69 @@ class AppController {
   void _setState(AppState state) {
     if (_state != state) {
       _controller.add(state);
-      _state = state;
+      final init = _state == AppState.Empty;
+      _handle(_state = state, init);
     }
+  }
+
+  Future _handle(AppState state, bool init) async {
+    debugPrint('AppController._handle(state: $state)');
+    if (!init && shouldConfigure(state)) {
+      // Configure blocs after rebuild
+      await configure().catchError(Catcher.reportCheckedError);
+
+      // Restart app to rehydrate with
+      // blocs just built and initiated.
+      // This will invalidate this
+      // SarSysAppState instance
+      Phoenix.rebirth(
+        NavigationService().context,
+      );
+    } else if (shouldLogin(state)) {
+      // Prompt user to login
+      NavigationService().pushReplacementNamed(
+        LoginScreen.ROUTE,
+      );
+    } else if (shouldChangePin(state)) {
+      // Prompt user to unload
+      NavigationService().pushReplacementNamed(
+        ChangePinScreen.ROUTE,
+      );
+    } else if (shouldUnlock(state)) {
+      // Prompt user to unload
+      NavigationService().pushReplacementNamed(
+        UnlockScreen.ROUTE,
+      );
+    } else if (shouldRoute(state)) {
+      final route = inferRouteName(
+        defaultName: MapScreen.ROUTE,
+      );
+      NavigationService().pushReplacementNamed(route);
+    }
+  }
+
+  String inferRouteName({RouteSettings settings, String defaultName}) {
+    var route;
+    if (!isConfigured) {
+      route = SplashScreen.ROUTE;
+    } else if (!isOnboarded) {
+      route = OnboardingScreen.ROUTE;
+    } else if (!isFirstSetup) {
+      route = FirstSetupScreen.ROUTE;
+    } else if (!isAuthenticated) {
+      route = LoginScreen.ROUTE;
+    } else if (!isSecured) {
+      route = ChangePinScreen.ROUTE;
+    } else if (isLocked) {
+      route = UnlockScreen.ROUTE;
+    } else if (isLoading) {
+      route = SplashScreen.ROUTE;
+    } else if (isReady) {
+      route = settings?.name ?? defaultName;
+    } else {
+      throw StateError("Unexpected application state");
+    }
+    return route;
   }
 
   /// Reset application
@@ -544,6 +618,7 @@ class AppController {
   }
 
   void _onConfigState(AppConfigState state) async {
+    debugPrint('AppController._onConfigState(state: ${state.runtimeType}, isConfigured: $isConfigured)');
     if (isConfigured) {
       // Only rebuild when initialize
       if (state.isInitialized()) {
@@ -556,6 +631,7 @@ class AppController {
     if (state.isPending()) {
       return;
     }
+    debugPrint('AppController._onUserState(state: ${state.runtimeType})');
     // Handle legal transitions only
     // 1) Configured -> Anonymous (not authenticated)
     // 2) Anonymous -> Authenticated (when user is authenticated or token is refreshed)
@@ -577,11 +653,14 @@ class AppController {
   }
 
   void _onModalState(AffiliationState state) async {
+    debugPrint('AppController._onModalState(state: ${state.runtimeType}{isRemote: ${state.isRemote}})');
     if (isAuthenticated) {
       switch (state.runtimeType) {
         case AffiliationsLoaded:
+        case AffiliationsFetched:
           if (isOnline) {
             await bloc<AffiliationBloc>().onLoadedAsync();
+            print('trst');
           }
           _setState(AppState.Ready);
           break;
