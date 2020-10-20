@@ -38,6 +38,10 @@ class StreamRequestQueue<T> {
   bool get isIdle => _isIdle || (_isDisposing || _dispatcher == null || _dispatcher.isClosed);
   bool _isIdle = true;
 
+  /// Future returning when queue is
+  ///done processing pending requests.
+  Future get done => _dispatcher?.done;
+
   /// Flag indicating that queue is [process]ing requests
   bool get isProcessing => !isIdle;
 
@@ -52,8 +56,11 @@ class StreamRequestQueue<T> {
     return _requests.isEmpty ? false : _requests.first.key == key;
   }
 
-  /// Check if queue is executing given [request]
-  bool isCurrent(StreamRequest<T> request) => _current == request;
+  /// Get [StreamRequest] currently being processed
+  StreamRequest<T> get current => _current;
+
+  /// Check if queue is executing [StreamRequest] with given [key]
+  bool isCurrent(String key) => key != null && _current?.key == key;
 
   /// Schedule singleton [request] for execution.
   /// This will cancel current requests.
@@ -87,23 +94,22 @@ class StreamRequestQueue<T> {
     if (_current?.key == key) {
       return false;
     }
-    final found = _requests.where((element) => element.key == key)
-      ..toList()
-      ..forEach(_requests.remove);
-
+    final found = _requests.where((element) => element.key == key).toList();
+    found.forEach(_requests.remove);
     return found.isNotEmpty;
   }
 
   /// Remove all pending [StreamRequest]s from queue.
   ///
   /// Returns a list of [StreamRequest]s.
-  List<StreamRequest<T>> clear() => _requests
-    ..toList()
-    ..clear();
+  List<StreamRequest<T>> clear() {
+    final removed = _requests.toList();
+    _requests.clear();
+    return removed;
+  }
 
   /// Process scheduled requests
   Future<void> _process() async {
-    var attempts = 0;
     StreamResult<T> result;
 
     if (isIdle) {
@@ -114,33 +120,19 @@ class StreamRequestQueue<T> {
             final request = await _queue.peek;
             if (isProcessing && contains(request.key)) {
               _current = request;
-              if (await _shouldExecute(request, result, ++attempts)) {
+              if (await _shouldExecute(request, result)) {
                 if (isProcessing && contains(request.key)) {
                   result = await _execute(request);
-                  if (result.isStop) {
-                    return await stop();
-                  }
-                }
-              }
-              if (_shouldConsume(request, result)) {
-                attempts = 0;
-                result = null;
-                // Move to next request?
-                if (await _hasNext()) {
-                  if (isProcessing) {
-                    await _queue.next;
-                    _requests.remove(request);
-                  }
                 }
               }
             }
           }
+          _current = null;
         }
-        _current = null;
       } catch (e, stackTrace) {
         _handleError(e, stackTrace);
       } finally {
-        _dispose();
+        await stop();
       }
     }
   }
@@ -181,35 +173,32 @@ class StreamRequestQueue<T> {
     return Future.value();
   }
 
-  /// Check if result is complete.
-  /// If complete, proceed with next
-  /// request, otherwise try again.
-  bool _shouldConsume(StreamRequest request, StreamResult result) =>
-      // Removed from queue?
-      !contains(request?.key) ||
-      // Request is empty?
-      result?.isNone == true ||
-      // Request is completed?
-      result?.isComplete == true ||
-      // Internal error?
-      request?.onResult?.isCompleted == true;
-
   StreamRequest<T> _current;
 
   /// Execute given [request]
   Future<StreamResult<T>> _execute(StreamRequest<T> request) async {
     try {
       final result = await request.execute();
-      if (result.isOK) {
-        request.onResult?.complete(
-          result.value,
-        );
-      } else if (result.isError) {
-        _handleError(
-          result.error,
-          result.stackTrace,
-          onResult: request.onResult,
-        );
+      // Consume from queue
+      _requests.remove(request);
+      if (_queue != null) {
+        await _queue.next;
+      }
+      // Stop processing?
+      if (result.isStop == true) {
+        await stop();
+      }
+      // Notify
+      if (request.onResult?.isCompleted == false) {
+        if (result.isError) {
+          request.onResult.completeError(
+            result?.error,
+          );
+        } else {
+          request.onResult.complete(
+            result?.value,
+          );
+        }
       }
       return result;
     } catch (error, stackTrace) {
@@ -245,17 +234,15 @@ class StreamRequestQueue<T> {
   Future<bool> _shouldExecute(
     StreamRequest<T> request,
     StreamResult<T> previous,
-    int attempts,
   ) async {
     if (isIdle) {
       return false;
     }
-    final skip = _shouldSkip(request, attempts);
+    final skip = _shouldSkip(request);
     if (skip) {
       if (request.fail) {
         _handleError(
-          '${request.runtimeType} failed with to execute after '
-          '${request.maxAttempts} attempts with error: ${previous.error}',
+          '${request.runtimeType} failed with to execute with error: ${previous.error}',
           previous.stackTrace ?? StackTrace.current,
           onResult: request.onResult,
         );
@@ -269,13 +256,11 @@ class StreamRequestQueue<T> {
   }
 
   /// Check if given request should be skipped
-  bool _shouldSkip(StreamRequest request, int attempts) =>
-      // Removed form queue?
-      request.onResult?.isCompleted == true ||
+  bool _shouldSkip(StreamRequest request) =>
       // Removed form queue?
       !_requests.contains(request) ||
-      // Maximum attempts reached?
-      request.maxAttempts != null && attempts > request.maxAttempts;
+      // Completed?
+      request.onResult?.isCompleted == true;
 
   /// Error handler.
   /// Will complete [onResult]
@@ -321,10 +306,11 @@ class StreamRequestQueue<T> {
     return _dispose();
   }
 
-  /// Cancel all pending requests and stop processing.
-  Future<void> cancel() async {
-    clear();
-    return _dispose();
+  /// Cancel all pending requests
+  ///and stop processing.
+  Future<List<StreamRequest<T>>> cancel() async {
+    await _dispose();
+    return clear();
   }
 }
 
@@ -336,11 +322,9 @@ class StreamRequest<T> {
     this.fallback,
     this.onResult,
     this.fail = true,
-    this.maxAttempts,
   }) : _key = key;
 
   final bool fail;
-  final int maxAttempts;
   final Completer<T> onResult;
   final Future<T> Function() fallback;
   final Future<StreamResult<T>> Function() execute;
@@ -356,7 +340,7 @@ class StreamResult<T> {
     this.error,
     bool stop,
     this.stackTrace,
-  }) : _stop = stop;
+  }) : _stop = stop ?? false;
 
   static StreamResult<T> none<T>() => StreamResult<T>();
   static StreamResult<T> stop<T>() => StreamResult<T>(stop: true);
@@ -366,12 +350,9 @@ class StreamResult<T> {
   final Object error;
   final StackTrace stackTrace;
 
-  bool get isOK => value != null;
+  bool get isStop => _stop;
+  bool get isComplete => !isStop;
   bool get isError => error != null;
-
-  bool get isNone => !isComplete;
-  bool get isStop => _stop == true;
-  bool get isComplete => !isStop && (isOK || isError);
 }
 
 /// Wait for given rule result from stream of results

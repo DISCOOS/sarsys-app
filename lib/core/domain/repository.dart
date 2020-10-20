@@ -330,7 +330,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Iterable<T> scheduleLoad(
     AsyncValueGetter<ServiceResponse<Iterable<T>>> request, {
     bool fail = false,
-    int maxAttempts = 3,
     bool shouldEvict = true,
     Completer<Iterable<T>> onResult,
   }) {
@@ -342,13 +341,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         request,
         shouldEvict,
       ),
-      maxAttempts: maxAttempts,
       fallback: () => Future.value(values),
     ));
 
     if (isOffline) {
-      _loadQueue.stop();
-      _pushQueue.stop();
+      _loadQueue.cancel();
+      _pushQueue.cancel();
       _popWhenOnline();
     }
 
@@ -815,10 +813,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     final scheduled = <K>[];
 
     if (_shouldSchedulePush()) {
-      // Stop async load
-      _loadQueue.stop();
-
-      // Cancel pending push
+      // Cancel current
       _pushQueue.cancel();
 
       if (_backlog.isNotEmpty) {
@@ -833,7 +828,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         }
       }
 
-      // Start processing requests
+      // Start processing
+      // all requests
       _loadQueue.start();
       _pushQueue.start();
 
@@ -850,18 +846,16 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   Timer _timer;
 
   void _retryPop() {
-    if (_shouldSchedulePush()) {
-      _timer?.cancel();
-      _timer = Timer(
-        toNextTimeout(_retries++, const Duration(seconds: 10)),
-        () {
-          if (_shouldSchedulePush()) {
-            debugPrint('_retryPop($_retries)');
-            _pop();
-          }
-        },
-      );
-    }
+    _timer?.cancel();
+    _timer = Timer(
+      toNextTimeout(_retries++, const Duration(seconds: 10)),
+      () {
+        if (_shouldSchedulePush()) {
+          debugPrint('_retryPop($_retries)');
+          _pop();
+        }
+      },
+    );
   }
 
   /// Get next timeout with exponential backoff
