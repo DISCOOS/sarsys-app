@@ -109,6 +109,8 @@ class AppController {
   bool get isOffline => !isOnline;
   bool get isOnline => ConnectivityService().isOnline;
 
+  bool get isHeadless => !NavigationService.isReady;
+
   bool get isEmpty => state == AppState.Empty;
   bool get isBuilt => state.index >= AppState.Built.index;
   bool get isConfigured => state.index >= AppState.Configured.index;
@@ -123,10 +125,10 @@ class AppController {
   bool get isFirstSetup => bloc<AppConfigBloc>()?.config?.firstSetup ?? false;
 
   bool shouldConfigure(AppState state) => state == AppState.Built;
-  bool shouldLogin(AppState state) => state == AppState.Anonymous && !isAuthenticated;
-  bool shouldChangePin(AppState state) => state == AppState.Authenticated && !isSecured;
-  bool shouldUnlock(AppState state) => state == AppState.Authenticated && isAuthenticated && isLocked;
-  bool shouldRoute(AppState state) => state == AppState.Ready && !isLocked;
+  bool shouldRoute(AppState state) => !isHeadless && state == AppState.Ready && !isLocked;
+  bool shouldChangePin(AppState state) => !isHeadless && state == AppState.Authenticated && !isSecured;
+  bool shouldUnlock(AppState state) => !isHeadless && state == AppState.Authenticated && isAuthenticated && isLocked;
+  bool shouldLogin(AppState state) => !isHeadless && state == AppState.Anonymous && isConfigured && !isAuthenticated;
 
   /// Subscriptions released on [close]
   final List<StreamSubscription> _subscriptions = [];
