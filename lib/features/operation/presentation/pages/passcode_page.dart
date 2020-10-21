@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -88,7 +89,7 @@ class _PasscodePageState extends State<PasscodePage> {
     if (_validateAndSave()) {
       if (await bloc.authorize(widget.operation, _passcode)) {
         await joinOperation(widget.operation);
-        Navigator.pushReplacementNamed(context, UserScreen.ROUTE_OPERATION);
+        NavigationService().pushReplacementNamed(UserScreen.ROUTE_OPERATION);
       }
     }
   }
