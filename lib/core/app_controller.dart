@@ -455,33 +455,46 @@ class AppController {
   }
 
   Future<void> _configure() async {
-    if (!isConfigured) {
-      //
-      // If 'current_user_id' in
-      // secure storage exists in bloc
-      // and access token is valid, this
-      // will load operations for given
-      // user. If any operation matches
-      // 'selected_ouuid' in secure storage
-      // it will be selected as current
-      // operation.
-      //
-      await bloc<UserBloc>().load();
+    try {
+      if (!isConfigured) {
+        //
+        // If 'current_user_id' in
+        // secure storage exists in bloc
+        // and access token is valid, this
+        // will load operations for given
+        // user. If any operation matches
+        // 'selected_ouuid' in secure storage
+        // it will be selected as current
+        // operation.
+        //
+        await bloc<UserBloc>().load();
 
-      // Wait for config to become available
-      await waitThroughStateWithData<AppConfigState, AppConfig>(
-        bus,
-        fail: true,
-        map: (state) => state.data,
-        timeout: Duration(minutes: 1),
-        test: (state) => state.data is AppConfig,
-      );
+        // Wait for config to become available
+        await waitThroughStateWithData<AppConfigState, AppConfig>(
+          bus,
+          fail: true,
+          map: (state) => state.data,
+          timeout: Duration(minutes: 1),
+          test: (state) => state.data is AppConfig,
+        );
 
-      // Allow _onUserChange to transition to next legal state
-      _setState(AppState.Configured);
+        // Allow _onUserChange to transition to next legal state
+        _setState(AppState.Configured);
 
-      // Set app state from user state
-      _onUserState(bloc<UserBloc>().state);
+        // Set app state from user state
+        _onUserState(bloc<UserBloc>().state);
+
+        // Toggles between Anonymous and Authenticated states
+        registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
+
+        // Rebuilds blocs when config is initialized
+        registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
+
+        // Toggles between loading and ready state
+        registerStreamSubscription(bloc<AffiliationBloc>().listen(_onModalState));
+      }
+    } catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
     }
   }
 
@@ -494,38 +507,42 @@ class AppController {
   }
 
   Future _handle(AppState state, bool init) async {
-    debugPrint('AppController._handle(state: $state)');
-    if (!init && shouldConfigure(state)) {
-      // Configure blocs after rebuild
-      await configure().catchError(Catcher.reportCheckedError);
+    try {
+      debugPrint('AppController._handle(state: $state)');
+      if (!init && shouldConfigure(state)) {
+        // Configure blocs after rebuild
+        await configure();
 
-      // Restart app to rehydrate with
-      // blocs just built and initiated.
-      // This will invalidate this
-      // SarSysAppState instance
-      Phoenix.rebirth(
-        NavigationService().context,
-      );
-    } else if (shouldLogin(state)) {
-      // Prompt user to login
-      NavigationService().pushReplacementNamed(
-        LoginScreen.ROUTE,
-      );
-    } else if (shouldChangePin(state)) {
-      // Prompt user to unload
-      NavigationService().pushReplacementNamed(
-        ChangePinScreen.ROUTE,
-      );
-    } else if (shouldUnlock(state)) {
-      // Prompt user to unload
-      NavigationService().pushReplacementNamed(
-        UnlockScreen.ROUTE,
-      );
-    } else if (shouldRoute(state)) {
-      final route = inferRouteName(
-        defaultName: MapScreen.ROUTE,
-      );
-      NavigationService().pushReplacementNamed(route);
+        // Restart app to rehydrate with
+        // blocs just built and initiated.
+        // This will invalidate this
+        // SarSysAppState instance
+        Phoenix.rebirth(
+          NavigationService().context,
+        );
+      } else if (shouldLogin(state)) {
+        // Prompt user to login
+        NavigationService().pushReplacementNamed(
+          LoginScreen.ROUTE,
+        );
+      } else if (shouldChangePin(state)) {
+        // Prompt user to unload
+        NavigationService().pushReplacementNamed(
+          ChangePinScreen.ROUTE,
+        );
+      } else if (shouldUnlock(state)) {
+        // Prompt user to unload
+        NavigationService().pushReplacementNamed(
+          UnlockScreen.ROUTE,
+        );
+      } else if (shouldRoute(state)) {
+        final route = inferRouteName(
+          defaultName: MapScreen.ROUTE,
+        );
+        NavigationService().pushReplacementNamed(route);
+      }
+    } catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
     }
   }
 
@@ -603,15 +620,6 @@ class AppController {
     services.forEach((service) {
       _services[service.runtimeType] = service;
     });
-
-    // Toggles between Anonymous and Authenticated states
-    registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
-
-    // Rebuilds blocs when config is initialized
-    registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
-
-    // Toggles between loading and ready state
-    registerStreamSubscription(bloc<AffiliationBloc>().listen(_onModalState));
 
     // Notify that blocs are built and ready for commands
     _setState(AppState.Built);
