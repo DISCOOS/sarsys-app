@@ -118,12 +118,16 @@ class StreamRequestQueue<T> {
         while (await _hasNext()) {
           if (isProcessing) {
             final request = await _queue.peek;
-            if (isProcessing && contains(request.key)) {
-              _current = request;
-              if (await _shouldExecute(request, result)) {
-                if (isProcessing && contains(request.key)) {
-                  result = await _execute(request);
+            if (isProcessing) {
+              if (contains(request.key)) {
+                _current = request;
+                if (await _shouldExecute(request, result)) {
+                  if (isProcessing && contains(request.key)) {
+                    result = await _execute(request);
+                  }
                 }
+              } else {
+                await _queue.next;
               }
             }
           }
