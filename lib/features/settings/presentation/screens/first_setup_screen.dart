@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/core/presentation/widgets/stepped_page.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/core/size_config.dart';
@@ -69,36 +70,50 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
         explanation: ['SARSYS trenger tilgang til posisjon', if (Platform.isAndroid) ' og lagring'].join(),
         child: PermissionSetup(
           key: _permissionsKey,
-          onChanged: (response) {
-            switch (response.request.permission) {
-              case Permission.locationAlways:
-                setState(
-                  () => _isLocationAlwaysGranted = PermissionStatus.granted == response.status,
-                );
-                break;
-              case Permission.locationWhenInUse:
-                setState(
-                  () => _isLocationWhenInUseGranted = PermissionStatus.granted == response.status,
-                );
-                break;
-              default:
-                switch (response.request.permission) {
-                  case Permission.storage:
-                    setState(
-                      () => _isStorageGranted = PermissionStatus.granted == response.status,
-                    );
-                    break;
-                  case Permission.activityRecognition:
-                    setState(
-                      () => _isActivityRecognitionGranted = PermissionStatus.granted == response.status,
-                    );
-                    break;
-                }
-            }
-          },
+          onChanged: _onPermissionResponse,
         ),
       ),
     ];
+    Permission.locationAlways.status.then(
+      (status) => setState(() => _isLocationAlwaysGranted = PermissionStatus.granted == status),
+    );
+    Permission.locationWhenInUse.status.then(
+      (status) => setState(() => _isLocationWhenInUseGranted = PermissionStatus.granted == status),
+    );
+    Permission.storage.status.then(
+      (status) => setState(() => _isStorageGranted = PermissionStatus.granted == status),
+    );
+    Permission.activityRecognition.status.then(
+      (status) => setState(() => _isActivityRecognitionGranted = PermissionStatus.granted == status),
+    );
+  }
+
+  void _onPermissionResponse(PermissionResponse response) {
+    switch (response.request.permission) {
+      case Permission.locationAlways:
+        setState(
+          () => _isLocationAlwaysGranted = PermissionStatus.granted == response.status,
+        );
+        break;
+      case Permission.locationWhenInUse:
+        setState(
+          () => _isLocationWhenInUseGranted = PermissionStatus.granted == response.status,
+        );
+        break;
+      default:
+        switch (response.request.permission) {
+          case Permission.storage:
+            setState(
+              () => _isStorageGranted = PermissionStatus.granted == response.status,
+            );
+            break;
+          case Permission.activityRecognition:
+            setState(
+              () => _isActivityRecognitionGranted = PermissionStatus.granted == response.status,
+            );
+            break;
+        }
+    }
   }
 
   @override

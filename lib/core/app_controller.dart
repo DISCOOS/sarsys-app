@@ -438,14 +438,6 @@ class AppController {
     );
   }
 
-  /// Rebuild providers with given demo parameters.
-  ///
-  /// Returns true if one or more providers was rebuilt
-  bool _rebuild() {
-    _unset();
-    return _build(this, client: client) != null;
-  }
-
   /// Initialize application state
   Future<AppController> configure() async {
     if (isBuilt) {
@@ -487,9 +479,6 @@ class AppController {
         // Toggles between Anonymous and Authenticated states
         registerStreamSubscription(bloc<UserBloc>().listen(_onUserState));
 
-        // Rebuilds blocs when config is initialized
-        registerStreamSubscription(bloc<AppConfigBloc>().listen(_onConfigState));
-
         // Toggles between loading and ready state
         registerStreamSubscription(bloc<AffiliationBloc>().listen(_onModalState));
       }
@@ -509,18 +498,7 @@ class AppController {
   Future _handle(AppState state, bool init) async {
     try {
       debugPrint('AppController._handle(state: $state)');
-      if (!init && shouldConfigure(state)) {
-        // Configure blocs after rebuild
-        await configure();
-
-        // Restart app to rehydrate with
-        // blocs just built and initiated.
-        // This will invalidate this
-        // SarSysAppState instance
-        Phoenix.rebirth(
-          NavigationService().context,
-        );
-      } else if (shouldLogin(state)) {
+      if (shouldLogin(state)) {
         // Prompt user to login
         NavigationService().pushReplacementNamed(
           LoginScreen.ROUTE,
@@ -572,8 +550,12 @@ class AppController {
 
   /// Reset application
   Future<void> reset() async {
-    // Notify blocs not ready, will show splash screen.
-    _setState(AppState.Empty);
+    if (!isHeadless) {
+      NavigationService().pushReplacementNamed(
+        SplashScreen.ROUTE,
+        arguments: 'Nullstiller...',
+      );
+    }
 
     // Initialize logout and delete user
     await bloc<UserBloc>().logout(delete: true);
@@ -584,8 +566,19 @@ class AppController {
     // Destroy all data
     await Storage.destroy(reinitialize: true);
 
-    // Rebuild blocs, will show onboarding screen
-    _rebuild();
+    // Rebuild blocs
+    _build(this, client: client);
+
+    // Configure blocs after rebuild
+    await configure();
+
+    // Restart app to rehydrate with
+    // blocs just built and initiated.
+    // This will invalidate this
+    // SarSysAppState instance
+    Phoenix.rebirth(
+      NavigationService().context,
+    );
   }
 
   AppController _set({
@@ -625,16 +618,6 @@ class AppController {
     _setState(AppState.Built);
 
     return this;
-  }
-
-  void _onConfigState(AppConfigState state) async {
-    debugPrint('AppController._onConfigState(state: ${state.runtimeType}, isConfigured: $isConfigured)');
-    if (isConfigured) {
-      // Only rebuild when initialize
-      if (state.isInitialized()) {
-        _rebuild();
-      }
-    }
   }
 
   void _onUserState(UserState state) {
