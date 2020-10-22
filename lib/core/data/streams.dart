@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:meta/meta.dart';
@@ -11,7 +12,7 @@ class StreamRequestQueue<T> {
   /// List of [StreamRequest.key]s.
   ///
   /// Used to track and dequeue requests.
-  final _requests = <StreamRequest<T>>[];
+  final _requests = LinkedHashSet<StreamRequest<T>>();
 
   /// Error callback.
   ///
@@ -49,7 +50,7 @@ class StreamRequestQueue<T> {
   bool contains(Object key) => _requests.any((element) => element.key == key);
 
   /// Returns the index of [StreamRequest] with given [key].
-  int indexOf(Object key) => _requests.indexWhere((element) => element.key == key);
+  int indexOf(Object key) => _requests.toList().indexWhere((element) => element.key == key);
 
   /// Check if [StreamRequest] with given [key] is at head of queue
   bool isHead(Object key) {
@@ -334,15 +335,15 @@ class StreamRequest<T> {
   final Future<T> Function() fallback;
   final Future<StreamResult<T>> Function() execute;
 
-  Object get key => _key ?? '$hashCode';
-  Object _key;
+  Object get key => _key ?? '${super.hashCode}';
+  final Object _key;
 
   @override
-  int get hashCode => _key.hashCode;
+  int get hashCode => key.hashCode;
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is StreamRequest && runtimeType == other.runtimeType && _key == other._key;
+      identical(this, other) || other is StreamRequest && runtimeType == other.runtimeType && key == other.key;
 }
 
 @Immutable()
