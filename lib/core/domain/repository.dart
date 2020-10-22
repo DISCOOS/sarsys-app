@@ -128,8 +128,8 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   bool _isNotNull(K key) => key != null;
 
   /// Get backlog of states pending push to a backend API
-  Iterable<K> get backlog => List.unmodifiable(_backlog);
-  final _backlog = LinkedHashSet();
+  Iterable<K> get backlog => List.unmodifiable(_backlog.keys);
+  final _backlog = LinkedHashMap<K, Completer<T>>();
 
   /// Get [StorageState] with errors
   ///
@@ -654,11 +654,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         encryptionKey: await Storage.hiveKey<T>(),
       );
       // Add local states to backlog
-      _backlog
-        ..clear()
-        ..addAll(
-          _states.values.where((state) => state.isCreated).map((state) => toKey(state)),
-        );
+      _backlog.clear();
+      _backlog.addAll(
+        Map.fromEntries(
+          _states.values.where((state) => state.isCreated).map((state) => MapEntry(toKey(state), null)),
+        ),
+      );
       _pop();
     }
     // Get mapped states
@@ -723,6 +724,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       if (_shouldSchedulePush()) {
         // Replace current if not executed yet
         _pushQueue.add(StreamRequest<T>(
+          key: '$key',
           fail: false,
           onResult: onResult,
           fallback: () => Future.value(state.value),
@@ -730,7 +732,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
         ));
         return state?.value;
       }
-      return _stash(state);
+      return _stash(state, onResult: onResult);
     }
     return state?.value;
   }
@@ -792,9 +794,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
   int get retries => _retries;
   int _retries = 0;
 
-  T _stash(StorageState<T> state) {
+  T _stash(
+    StorageState<T> state, {
+    Completer<T> onResult,
+  }) {
     final key = toKey(state);
-    _backlog.add(key);
+    _backlog[key] = onResult;
     _popWhenOnline();
     return state.value;
   }
@@ -814,22 +819,12 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
 
     if (_shouldSchedulePush()) {
       // Cancel current
-      _pushQueue.cancel();
+      final pending = await _pushQueue.cancel();
 
-      if (_backlog.isNotEmpty) {
-        // Keys will be added back
-        // if schedule fails
-        final keys = _backlog.toList();
-        _backlog.clear();
+      // Rebuild backlog
+      _rebuild(pending, scheduled);
 
-        for (var key in keys) {
-          schedulePush(key);
-          scheduled.add(key);
-        }
-      }
-
-      // Start processing
-      // all requests
+      // Start processing again
       _loadQueue.start();
       _pushQueue.start();
 
@@ -841,6 +836,27 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     }
 
     return scheduled;
+  }
+
+  void _rebuild(List<StreamRequest> pending, List scheduled) {
+    // Map key to result callback if given
+    final callbacks = Map<String, Completer<T>>.fromEntries(
+      pending.where((r) => r.onResult != null).map((r) => MapEntry(r.key, r.onResult)),
+    );
+
+    if (_backlog.isNotEmpty) {
+      // Overwrite backlog with pending callbacks
+      final backlog = _backlog.map((key, value) => MapEntry('$key', value));
+      backlog.addAll(callbacks);
+      final keys = _backlog.keys.toList();
+
+      _backlog.clear();
+
+      for (var key in keys) {
+        schedulePush(key, onResult: backlog['$key']);
+        scheduled.add(key);
+      }
+    }
   }
 
   Timer _timer;

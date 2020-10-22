@@ -130,7 +130,7 @@ test:
 	echo "Testing proj4d..."
 	flutter test test/proj4d.dart
 	echo "Testing core..."
-	flutter test test/core/stream_tests.dart
+	flutter test test/core/streams_tests.dart
 	echo "Testing UserBloc..."
 	flutter test test/blocs/user_tests.dart
 	echo "Testing AppConfigBloc..."

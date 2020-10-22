@@ -102,9 +102,15 @@ void main() async {
         harness.connectivity.cellular();
 
         // Assert
-        await expectLater(
-          toStatusChanges(harness.configBloc.repo.onChanged),
-          emits(StorageStatus.created),
+        await expectThroughLater(
+          harness.configBloc,
+          emits(isA<AppConfigInitialized>().having(
+            (event) {
+              return event.isRemote;
+            },
+            'Should be remote',
+            true,
+          )),
         );
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
         expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
