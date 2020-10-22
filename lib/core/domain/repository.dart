@@ -345,8 +345,6 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     ));
 
     if (isOffline) {
-      _loadQueue.cancel();
-      _pushQueue.cancel();
       _popWhenOnline();
     }
 
@@ -724,7 +722,7 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
       if (_shouldSchedulePush()) {
         // Replace current if not executed yet
         _pushQueue.add(StreamRequest<T>(
-          key: '$key',
+          key: key,
           fail: false,
           onResult: onResult,
           fallback: () => Future.value(state.value),
@@ -838,24 +836,21 @@ abstract class ConnectionAwareRepository<K, T extends Aggregate, U extends Servi
     return scheduled;
   }
 
-  void _rebuild(List<StreamRequest> pending, List scheduled) {
-    // Map key to result callback if given
-    final callbacks = Map<String, Completer<T>>.fromEntries(
-      pending.where((r) => r.onResult != null).map((r) => MapEntry(r.key, r.onResult)),
-    );
+  void _rebuild(List<StreamRequest> pending, List<K> scheduled) {
+    // Clone backlog
+    final next = _backlog.map((key, value) => MapEntry(key, value));
 
-    if (_backlog.isNotEmpty) {
-      // Overwrite backlog with pending callbacks
-      final backlog = _backlog.map((key, value) => MapEntry('$key', value));
-      backlog.addAll(callbacks);
-      final keys = _backlog.keys.toList();
+    // Overwrite backlog with pending callbacks
+    next.addAll(Map<K, Completer<T>>.fromEntries(
+      pending.where((r) => r.onResult != null).map((r) => MapEntry(r.key as K, r.onResult)),
+    ));
 
-      _backlog.clear();
+    _backlog.clear();
 
-      for (var key in keys) {
-        schedulePush(key, onResult: backlog['$key']);
-        scheduled.add(key);
-      }
+    // Rebuild backlog
+    for (var entry in next.entries) {
+      schedulePush(entry.key, onResult: entry.value);
+      scheduled.add(entry.key);
     }
   }
 

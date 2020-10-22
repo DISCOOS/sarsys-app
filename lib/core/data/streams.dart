@@ -46,13 +46,13 @@ class StreamRequestQueue<T> {
   bool get isProcessing => !isIdle;
 
   /// Check if a [StreamRequest] with given [key] is queued
-  bool contains(String key) => _requests.any((element) => element.key == key);
+  bool contains(Object key) => _requests.any((element) => element.key == key);
 
   /// Returns the index of [StreamRequest] with given [key].
-  int indexOf(String key) => _requests.indexWhere((element) => element.key == key);
+  int indexOf(Object key) => _requests.indexWhere((element) => element.key == key);
 
   /// Check if [StreamRequest] with given [key] is at head of queue
-  bool isHead(String key) {
+  bool isHead(Object key) {
     return _requests.isEmpty ? false : _requests.first.key == key;
   }
 
@@ -60,7 +60,7 @@ class StreamRequestQueue<T> {
   StreamRequest<T> get current => _current;
 
   /// Check if queue is executing [StreamRequest] with given [key]
-  bool isCurrent(String key) => key != null && _current?.key == key;
+  bool isCurrent(Object key) => key != null && _current?.key == key;
 
   /// Schedule singleton [request] for execution.
   /// This will cancel current requests.
@@ -90,7 +90,7 @@ class StreamRequestQueue<T> {
   }
 
   /// Remove [StreamRequest] with given [key] from queue.
-  bool remove(String key) {
+  bool remove(Object key) {
     if (_current?.key == key) {
       return false;
     }
@@ -183,25 +183,26 @@ class StreamRequestQueue<T> {
   Future<StreamResult<T>> _execute(StreamRequest<T> request) async {
     try {
       final result = await request.execute();
-      // Consume from queue
-      _requests.remove(request);
-      if (_queue != null) {
-        await _queue.next;
-      }
       // Stop processing?
-      if (result.isStop == true) {
+      if (result.isStop) {
         await stop();
-      }
-      // Notify
-      if (request.onResult?.isCompleted == false) {
-        if (result.isError) {
-          request.onResult.completeError(
-            result?.error,
-          );
-        } else {
-          request.onResult.complete(
-            result?.value,
-          );
+      } else {
+        // Consume from queue
+        _requests.remove(request);
+        if (_queue != null) {
+          await _queue.next;
+        }
+        // Notify
+        if (request.onResult?.isCompleted == false) {
+          if (result.isError) {
+            request.onResult.completeError(
+              result?.error,
+            );
+          } else {
+            request.onResult.complete(
+              result?.value,
+            );
+          }
         }
       }
       return result;
@@ -322,7 +323,7 @@ class StreamRequestQueue<T> {
 class StreamRequest<T> {
   StreamRequest({
     @required this.execute,
-    String key,
+    Object key,
     this.fallback,
     this.onResult,
     this.fail = true,
@@ -333,8 +334,8 @@ class StreamRequest<T> {
   final Future<T> Function() fallback;
   final Future<StreamResult<T>> Function() execute;
 
-  String get key => _key ?? '$hashCode';
-  String _key;
+  Object get key => _key ?? '$hashCode';
+  Object _key;
 }
 
 @Immutable()
