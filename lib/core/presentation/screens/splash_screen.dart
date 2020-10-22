@@ -6,8 +6,10 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({
     Key key,
     this.message,
+    this.icon = 'sar-team-2.png',
   }) : super(key: key);
 
+  final String icon;
   final Widget message;
 
   @override
@@ -72,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             SizedBox(
                               height: 300,
                               child: _buildRipple(
-                                _buildIcon('sar-team-2.png'),
+                                _buildIcon(widget.icon),
                               ),
                             )
                           ],

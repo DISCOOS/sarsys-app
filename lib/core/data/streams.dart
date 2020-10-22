@@ -336,6 +336,13 @@ class StreamRequest<T> {
 
   Object get key => _key ?? '$hashCode';
   Object _key;
+
+  @override
+  int get hashCode => _key.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is StreamRequest && runtimeType == other.runtimeType && _key == other._key;
 }
 
 @Immutable()
