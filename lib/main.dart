@@ -145,6 +145,12 @@ var _catcherIgnorerExceptions = [
   "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",
   "HttpException: Invalid statusCode: 500, uri = https://opencache2.statkart.no",
   "HttpException: Invalid statusCode: 500, uri = https://opencache3.statkart.no",
+  "HttpException: Invalid statusCode: 502, uri = https://opencache.statkart.no",
+  "HttpException: Invalid statusCode: 502, uri = https://opencache2.statkart.no",
+  "HttpException: Invalid statusCode: 502, uri = https://opencache3.statkart.no",
+  "HttpException: Invalid statusCode: 504, uri = https://opencache.statkart.no",
+  "HttpException: Invalid statusCode: 504, uri = https://opencache2.statkart.no",
+  "HttpException: Invalid statusCode: 504, uri = https://opencache3.statkart.no",
   // Silence general map tile fetch failures thrown by FlutterMap
   "FetchFailure",
   "FileSystemException: Cannot open file",
