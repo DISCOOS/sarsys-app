@@ -182,6 +182,32 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  static ServiceResponse<T> badGateway<T>({
+    Object error,
+    StackTrace stackTrace,
+    message: 'Bad gateway',
+  }) {
+    return ServiceResponse<T>(
+      error: error,
+      statusCode: 502,
+      reasonPhrase: message,
+      stackTrace: stackTrace,
+    );
+  }
+
+  static ServiceResponse<T> gatewayTimeout<T>({
+    Object error,
+    StackTrace stackTrace,
+    message: 'Gateway timeout',
+  }) {
+    return ServiceResponse<T>(
+      error: error,
+      statusCode: 504,
+      reasonPhrase: message,
+      stackTrace: stackTrace,
+    );
+  }
+
   bool get is200 => statusCode == HttpStatus.ok;
   bool get is201 => statusCode == HttpStatus.created;
   bool get is202 => statusCode == HttpStatus.accepted;
@@ -193,7 +219,9 @@ class ServiceResponse<T> extends Equatable {
   bool get is404 => statusCode == HttpStatus.notFound;
   bool get is409 => statusCode == HttpStatus.conflict;
   bool get is500 => statusCode == HttpStatus.internalServerError;
+  bool get is502 => statusCode == HttpStatus.badGateway;
   bool get is503 => statusCode == HttpStatus.serviceUnavailable;
+  bool get is504 => statusCode == HttpStatus.gatewayTimeout;
 
   @override
   String toString() {
@@ -226,7 +254,9 @@ class ServiceException implements Exception {
   bool get is404 => response.is404;
   bool get is409 => response.is409;
   bool get is500 => response.is500;
+  bool get is502 => response.is500;
   bool get is503 => response.is503;
+  bool get is504 => response.is500;
 
   ConflictModel get conflict => response.conflict;
 
