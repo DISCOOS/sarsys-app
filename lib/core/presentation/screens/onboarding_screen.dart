@@ -88,8 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   alignment: Alignment.topCenter,
                   child: _buildTitle(),
                 ),
-                FractionallySizedBox(
-                  heightFactor: 0.8,
+                Container(
                   child: PageView.builder(
                     pageSnapping: true,
                     itemCount: views.length,
@@ -117,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: EdgeInsets.only(top: 56, bottom: 24.0),
+          padding: EdgeInsets.only(top: 32, bottom: 24.0),
           child: Center(
             child: Container(
               height: 42,
@@ -190,48 +189,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           fontSize: SizeConfig.safeBlockVertical * 2.5,
         );
 
-    return FractionallySizedBox(
-      widthFactor: 0.9,
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
+    return Container(
+      child: FractionallySizedBox(
+        widthFactor: 0.9,
+        heightFactor: 1.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
           Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              SizedBox(
+                height:SizeConfig.safeBlockVertical * 8 + 32,
+              ),
               Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.all(2.0),
                 child: _buildIcon(asset),
               ),
             ],
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: EdgeInsets.only(top: SizeConfig.safeBlockVertical),
-                child: Center(
-                  child: Text(
-                    rationale,
-                    style: rationaleStyle,
-                    textAlign: TextAlign.center,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.only(top: SizeConfig.safeBlockVertical),
+                  child: Center(
+                    child: Text(
+                      rationale,
+                      style: rationaleStyle,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Center(
-                  child: Text(
-                    statement,
-                    style: statementStyle,
-                    textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Center(
+                    child: Text(
+                      statement,
+                      style: statementStyle,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
