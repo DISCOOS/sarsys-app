@@ -331,7 +331,7 @@ class UserStatusPageState extends State<UserStatusPage> {
       children: [
         Expanded(
           child: _buildOperationName(operation, context),
-    ),
+        ),
         Padding(
           padding: EdgeInsets.all(5.0),
           child: _buildActivityStatus(context),
