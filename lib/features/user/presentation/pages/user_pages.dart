@@ -208,7 +208,7 @@ class UserStatusPageState extends State<UserStatusPage> {
                 Row(
                   children: [
                     ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(40)),
+                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(42)),
                       child: child,
                     ),
                     Spacer(flex: 1),
@@ -329,10 +329,13 @@ class UserStatusPageState extends State<UserStatusPage> {
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildOperationName(operation, context),
-        Spacer(),
-        _buildActivityStatus(context),
-        Spacer(),
+        Expanded(
+          child: _buildOperationName(operation, context),
+    ),
+        Padding(
+          padding: EdgeInsets.all(5.0),
+          child: _buildActivityStatus(context),
+        ),
         Chip(
           elevation: 2,
           avatar: Icon(
