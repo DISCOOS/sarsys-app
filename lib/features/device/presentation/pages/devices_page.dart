@@ -94,7 +94,6 @@ class DevicesPageState extends State<DevicesPage> {
                       )
                     : ListView.builder(
                         itemCount: devices.length + 1,
-                        itemExtent: 72.0,
                         itemBuilder: (context, index) {
                           return _buildDevice(devices, index, units, personnel, tracked);
                         },
@@ -220,10 +219,8 @@ class DevicesPageState extends State<DevicesPage> {
     return Container(
       key: ObjectKey(device.uuid),
       color: Colors.white,
-      constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           CircleAvatar(
             backgroundColor: toPositionStatusColor(device.position),
@@ -231,30 +228,40 @@ class DevicesPageState extends State<DevicesPage> {
             foregroundColor: Colors.white,
           ),
           SizedBox(width: 16.0),
-          Chip(
-            label: Text(
-              [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
-            ),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: Icon(
-              toDialerIconData(device.type),
-              size: 16.0,
-              color: Colors.black38,
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text(
+                  [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
+                ),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  toDialerIconData(device.type),
+                  size: 16.0,
+                  color: Colors.black38,
+                ),
+              ),
             ),
           ),
-          Spacer(),
-          Chip(
-            label: Text(_toUsage(units, personnel, device)),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: isSelected || isCommander
-                ? Icon(
-                    Icons.my_location,
-                    size: 16.0,
-                    color: toPositionStatusColor(device?.position),
-                  )
-                : null,
+          Container(
+            width: 100,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text(_toUsage(units, personnel, device)),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: isSelected || isCommander
+                    ? Icon(
+                        Icons.my_location,
+                        size: 16.0,
+                        color: toPositionStatusColor(device?.position),
+                      )
+                    : null,
+              ),
+            ),
           ),
           if (widget.withActions && isCommander)
             RotatedBox(
