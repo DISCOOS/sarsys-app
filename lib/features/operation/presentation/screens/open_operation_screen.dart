@@ -72,9 +72,8 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> with TickerPr
     final result = await joinOperation(widget.operation);
     if (result.isRight()) {
       jumpToOperation(context, widget.operation);
-    } else {
-      Navigator.pop(context);
     }
+    Navigator.pop(context);
   }
 
   void _onCancel(int index) {
