@@ -229,15 +229,16 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
 
   @override
   Future<Tracking> onUpdate(StorageState<Tracking> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
-      return response.body;
-    }
-    throw TrackingServiceException(
-      'Failed to update Tracking ${state.value}',
-      response: response,
-      stackTrace: StackTrace.current,
-    );
+    return state.value;
+    // var response = await service.update(state.value);
+    // if (response.is200) {
+    //   return response.body;
+    // }
+    // throw TrackingServiceException(
+    //   'Failed to update Tracking ${state.value}',
+    //   response: response,
+    //   stackTrace: StackTrace.current,
+    // );
   }
 
   @override
