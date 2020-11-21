@@ -185,28 +185,10 @@ class StreamRequestQueue<T> {
     try {
       final result = await request.execute();
       // Stop processing?
-      if (result.isStop) {
-        await stop();
-      } else {
-        // Consume from queue
-        _requests.remove(request);
-        if (_queue != null) {
-          await _queue.next;
-        }
-        // Notify
-        if (request.onResult?.isCompleted == false) {
-          if (result.isError) {
-            request.onResult.completeError(
-              result?.error,
-            );
-          } else {
-            request.onResult.complete(
-              result?.value,
-            );
-          }
-        }
-      }
-      return result;
+      return await _onComplete(
+        request,
+        result,
+      );
     } catch (error, stackTrace) {
       _handleError(
         error,
@@ -214,9 +196,37 @@ class StreamRequestQueue<T> {
         onResult: request.onResult,
       );
       return StreamResult(
-        value: await request.fallback(),
+        value: await _onFallback(request),
       );
     }
+  }
+
+  Future<StreamResult<T>> _onComplete(
+    StreamRequest<T> request,
+    StreamResult<T> result,
+  ) async {
+    if (_requests.remove(request)) {
+      if (_queue != null) {
+        await _queue.next;
+      }
+    }
+    if (result.isStop) {
+      await stop();
+    } else {
+      // Notify
+      if (request.onResult?.isCompleted == false) {
+        if (result.isError) {
+          request.onResult.completeError(
+            result?.error,
+          );
+        } else {
+          request.onResult.complete(
+            result?.value,
+          );
+        }
+      }
+    }
+    return result;
   }
 
   /// Should only process next
@@ -254,12 +264,14 @@ class StreamRequestQueue<T> {
         );
       } else if (request.onResult?.isCompleted == false) {
         request.onResult?.complete(
-          request.fallback == null ? null : await request.fallback(),
+          await _onFallback(request),
         );
       }
     }
     return !skip;
   }
+
+  Future<T> _onFallback(StreamRequest<T> request) => request.fallback == null ? Future<T>.value() : request.fallback();
 
   /// Check if given request should be skipped
   bool _shouldSkip(StreamRequest request) =>
