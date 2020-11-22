@@ -90,7 +90,9 @@ class UnitsPageState extends State<UnitsPage> {
                         viewportConstraints,
                         message: snapshot.hasError
                             ? snapshot.error
-                            : widget.query == null ? "Legg til enhet" : "Ingen enheter funnet",
+                            : widget.query == null
+                                ? "Legg til enhet"
+                                : "Ingen enheter funnet",
                       )
                     : _buildList(units);
               },
@@ -122,7 +124,6 @@ class UnitsPageState extends State<UnitsPage> {
   ListView _buildList(List units) {
     return ListView.builder(
       itemCount: units.length + 1,
-      itemExtent: 72.0,
       itemBuilder: (context, index) {
         return _buildUnit(units, index);
       },
@@ -158,36 +159,42 @@ class UnitsPageState extends State<UnitsPage> {
     return Container(
       key: ObjectKey(unit.uuid),
       color: Colors.white,
-      constraints: BoxConstraints.expand(),
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           UnitAvatar(unit: unit, tracking: tracking),
           SizedBox(width: 16.0),
-          Chip(
-            label: Text("${unit.callsign}"),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: Icon(
-              Icons.headset_mic,
-              size: 16.0,
-              color: Colors.black38,
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text("${unit.callsign}" + " | " + "${unit.name}"),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  Icons.headset_mic,
+                  size: 16.0,
+                  color: Colors.black38,
+                ),
+              ),
             ),
           ),
-          SizedBox(width: 16.0),
-          Expanded(
-            child: Text(unit.name, overflow: TextOverflow.ellipsis),
-          ),
           SizedBox(width: 4.0),
-          Chip(
-            label: Text("${formatSince(tracking?.position?.timestamp, defaultValue: "Ingen")}"),
-            labelPadding: EdgeInsets.only(right: 4.0),
-            backgroundColor: Colors.grey[100],
-            avatar: Icon(
-              Icons.my_location,
-              size: 16.0,
-              color: toPositionStatusColor(tracking?.position),
+          Container(
+            width: 100,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text("${formatSince(tracking?.position?.timestamp, defaultValue: "Ingen")}"),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  Icons.my_location,
+                  size: 16.0,
+                  color: toPositionStatusColor(tracking?.position),
+                ),
+              ),
             ),
           ),
           if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
