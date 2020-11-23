@@ -108,7 +108,9 @@ class PersonnelsPageState extends State<PersonnelsPage> {
                       viewportConstraints,
                       message: snapshot.hasError
                           ? snapshot.error
-                          : widget.query == null ? "Legg til mannskap" : "Ingen mannskap funnet",
+                          : widget.query == null
+                              ? "Legg til mannskap"
+                              : "Ingen mannskap funnet",
                     )
                   : _buildList(personnels);
             },
@@ -197,85 +199,93 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   }
 
   Widget _buildPersonnelTile(Unit unit, Personnel personnel, TrackingStatus status, Tracking tracking) {
-    return ConstrainedBox(
-      constraints: BoxConstraints.tightForFinite(height: 72.0),
-      child: Container(
-        key: ObjectKey(personnel.uuid),
-        color: Colors.white,
-        constraints: BoxConstraints.expand(),
-        padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            if (widget.withAvatar)
-              PersonnelAvatar(
-                personnel: personnel,
-                tracking: tracking,
-              ),
-            SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
-            Chip(
-              label: Text(personnel.name),
-              backgroundColor: Colors.grey[100],
+    return Container(
+      key: ObjectKey(personnel.uuid),
+      color: Colors.white,
+      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          if (widget.withAvatar)
+            PersonnelAvatar(
+              personnel: personnel,
+              tracking: tracking,
+            ),
+          SizedBox(width: widget.withAvatar ? 16.0 : 8.0),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text(personnel.name),
+                backgroundColor: Colors.grey[100],
 //              avatar: AffiliationAvatar(
 //                size: 6.0,
 //                maxRadius: 10.0,
 //                affiliation: _toAffiliation(personnel),
 //              ),
+              ),
             ),
-            if (isTemporary(personnel))
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: GestureDetector(
-                    child: Chip(
-                      label: Text(
-                        'M',
-                        textAlign: TextAlign.end,
-                      ),
-                      labelPadding: EdgeInsets.only(right: 4.0),
-                      backgroundColor: Colors.grey[100],
-                      avatar: Icon(
-                        Icons.warning,
-                        size: 16.0,
-                        color: Colors.orange,
-                      ),
+          ),
+          if (isTemporary(personnel))
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: GestureDetector(
+                  child: Chip(
+                    label: Text(
+                      'M',
+                      textAlign: TextAlign.end,
                     ),
-                    onTap: () => alert(
-                          context,
-                          title: "Mannskap opprettet manuelt",
-                          content: TemporaryPersonnelDescription(),
-                        )),
-              ),
-            Spacer(),
-            if (widget.withStatus)
-              Chip(
-                label: Text(
-                  _toUsage(unit, personnel, tracking),
-                  textAlign: TextAlign.end,
+                    labelPadding: EdgeInsets.only(right: 4.0),
+                    backgroundColor: Colors.grey[100],
+                    avatar: Icon(
+                      Icons.warning,
+                      size: 16.0,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  onTap: () => alert(
+                        context,
+                        title: "Mannskap opprettet manuelt",
+                        content: TemporaryPersonnelDescription(),
+                      )),
+            ),
+//            Spacer(),
+          if (widget.withStatus)
+            Container(
+              width: 100,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(
+                  label: Text(
+                    _toUsage(unit, personnel, tracking),
+                    textAlign: TextAlign.end,
+                  ),
+                  labelPadding: EdgeInsets.only(right: 4.0),
+                  backgroundColor: Colors.grey[100],
+                  avatar: Icon(
+                    Icons.my_location,
+                    size: 16.0,
+                    color: toPositionStatusColor(tracking?.position),
+                  ),
                 ),
-                labelPadding: EdgeInsets.only(right: 4.0),
-                backgroundColor: Colors.grey[100],
-                avatar: Icon(
-                  Icons.my_location,
-                  size: 16.0,
-                  color: toPositionStatusColor(tracking?.position),
-                ),
               ),
-            if (widget.withMultiSelect)
-              Padding(
-                padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
-                child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
+            ),
+          if (widget.withMultiSelect)
+            Padding(
+              padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
+              child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
+            ),
+          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            RotatedBox(
+              quarterTurns: 1,
+              child: Icon(
+                Icons.drag_handle,
+                color: Colors.grey.withOpacity(0.2),
               ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
-              RotatedBox(
-                quarterTurns: 1,
-                child: Icon(
-                  Icons.drag_handle,
-                  color: Colors.grey.withOpacity(0.2),
-                ),
-              ),
-          ],
-        ),
+            ),
+        ],
       ),
+//      ),
     );
   }
 
