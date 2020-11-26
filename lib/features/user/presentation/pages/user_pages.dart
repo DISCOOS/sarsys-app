@@ -206,14 +206,17 @@ class UserStatusPageState extends State<UserStatusPage> {
                 _buildStandbyStatus(context),
                 Divider(),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(42)),
-                      child: child,
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: 200),
+                        child: child,
+                      ),
                     ),
-                    Spacer(flex: 1),
-                    ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(width: SizeConfig.width(35)),
+                    Container(
+                      width: 135,
+                      margin: const EdgeInsets.only(left: 5.0),
                       child: ButtonBarTheme(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -221,7 +224,6 @@ class UserStatusPageState extends State<UserStatusPage> {
                           children: buttons,
                         ),
                         data: ButtonBarThemeData(
-                          buttonMinWidth: SizeConfig.width(30),
                           alignment: MainAxisAlignment.end,
                           layoutBehavior: ButtonBarLayoutBehavior.constrained,
                         ),
@@ -239,7 +241,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildJoinAction(BuildContext context) => RaisedButton.icon(
         icon: Icon(Icons.list),
-        label: Text('VELG', style: labelTextStyle),
+        label: Text('VELG'),
         onPressed: () => showDialog<Personnel>(
           context: context,
           builder: (BuildContext context) {
@@ -262,7 +264,7 @@ class UserStatusPageState extends State<UserStatusPage> {
 
   RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
         icon: Icon(Icons.map),
-        label: Text('VIS', style: labelTextStyle),
+        label: Text('VIS'),
         onPressed: () => jumpToPoint(context, center: service.current?.geometry),
       );
 
@@ -270,7 +272,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.directions_run),
-      label: Text('PÅ VEI', style: labelTextStyle),
+      label: Text('PÅ VEI'),
       onPressed: personnel != null ? () => ingressPersonnel(personnel) : null,
     );
   }
@@ -279,7 +281,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
     return RaisedButton.icon(
       icon: Icon(Icons.assignment_turned_in),
-      label: Text('SJEKK INN', style: labelTextStyle),
+      label: Text('SJEKK INN'),
       onPressed: personnel != null ? () => checkInPersonnel(personnel) : null,
     );
   }
