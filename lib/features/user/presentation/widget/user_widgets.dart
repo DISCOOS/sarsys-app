@@ -310,7 +310,7 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
             return Column(
               children: <Widget>[
                 ConstrainedBox(
-                  constraints: BoxConstraints.tightFor(width: size, height: size - 36),
+                  constraints: BoxConstraints.tightFor(width: size, height: size - 20),
                   child: Stack(
                     children: [
                       Align(
@@ -438,17 +438,20 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                 final usage = positions.length / 1000;
                 return CircularPercentIndicator(
                   radius: SizeConfig.screenMin * 0.70,
-                  lineWidth: 20.0,
+                  lineWidth: SizeConfig.screenMin * 0.05,
                   percent: usage,
+                  progressColor: _toTrackingColor(service, usage),
                   center: FractionallySizedBox(
                     widthFactor: 0.7,
-                    heightFactor: 0.5,
+                    heightFactor: 0.6,
                     child: Stack(
                       children: <Widget>[
                         Align(
                           alignment: Alignment.topCenter,
                           child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
+                              Spacer(),
                               _buildValue(context, positions.length, 'punkter'),
                               Divider(
                                 thickness: 2,
@@ -474,7 +477,6 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                       ],
                     ),
                   ),
-                  progressColor: _toTrackingColor(service, usage),
                 );
               });
         },
