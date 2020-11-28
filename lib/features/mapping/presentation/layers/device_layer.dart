@@ -4,7 +4,7 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/features/tracking/domain/entities/Track.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/proj4d.dart';
@@ -85,7 +85,7 @@ class DeviceLayer extends MapPlugin {
           );
   }
 
-  Track _toTrack(Map<String, Set<Tracking>> trackings, Device device) {
+  TrackingTrack _toTrack(Map<String, Set<Tracking>> trackings, Device device) {
     final tracking = trackings[device.uuid]?.first;
     return tracking != null ? TrackingUtils.find(tracking.tracks, device.uuid) : null;
   }

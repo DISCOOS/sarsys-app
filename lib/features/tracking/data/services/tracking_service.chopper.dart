@@ -31,25 +31,10 @@ class _$TrackingServiceImpl extends TrackingServiceImpl {
   }
 
   @override
-  Future<Response<String>> create(dynamic iuuid, Tracking body) {
-    final $url = '/trackings';
-    final $body = body;
-    final $request = Request('POST', $url, client.baseUrl, body: $body);
-    return client.send<String, String>($request);
-  }
-
-  @override
   Future<Response<Tracking>> update(String uuid, Tracking body) {
     final $url = '/trackings/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
     return client.send<Tracking, Tracking>($request);
-  }
-
-  @override
-  Future<Response<void>> delete(String uuid) {
-    final $url = '/trackings/$uuid';
-    final $request = Request('DELETE', $url, client.baseUrl);
-    return client.send<void, void>($request);
   }
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
-abstract class DepartmentRepository implements ConnectionAwareRepository<String, Department, DepartmentService> {
+abstract class DepartmentRepository implements BoxRepository<String, Department, DepartmentService> {
   /// Get [Department.uuid] from [state]
   @override
   String toKey(StorageState<Department> state) {

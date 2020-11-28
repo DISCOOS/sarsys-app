@@ -1,19 +1,19 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'source_model.dart';
+part of 'tracking_source_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-SourceModel _$SourceModelFromJson(Map json) {
-  return SourceModel(
+TrackingSourceModel _$TrackingSourceModelFromJson(Map json) {
+  return TrackingSourceModel(
     uuid: json['uuid'] as String,
     type: _$enumDecodeNullable(_$SourceTypeEnumMap, json['type']),
   );
 }
 
-Map<String, dynamic> _$SourceModelToJson(SourceModel instance) {
+Map<String, dynamic> _$TrackingSourceModelToJson(TrackingSourceModel instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {

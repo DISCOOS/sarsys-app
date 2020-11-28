@@ -87,7 +87,7 @@ class OrganisationServiceMock extends Mock implements OrganisationService {
       }
     });
 
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       return ServiceResponse.ok(
         body: orgRepo.values.toList(),
       );

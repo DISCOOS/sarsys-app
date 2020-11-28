@@ -147,7 +147,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
     // Mock all service methods
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       return ServiceResponse.ok(body: devicesRepo.values.toList());
     });
     when(mock.create(any)).thenAnswer((_) async {

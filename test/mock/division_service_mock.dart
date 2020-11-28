@@ -96,7 +96,7 @@ class DivisionServiceMock extends Mock implements DivisionService {
       }
     });
 
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       return ServiceResponse.ok(
         body: divRepo.values.toList(),
       );

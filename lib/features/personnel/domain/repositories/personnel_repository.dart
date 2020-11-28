@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repository.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
-abstract class PersonnelRepository implements ConnectionAwareRepository<String, Personnel, PersonnelService> {
+abstract class PersonnelRepository implements BoxRepository<String, Personnel, PersonnelService> {
   /// Get [Operation.uuid]
   String get ouuid;
 

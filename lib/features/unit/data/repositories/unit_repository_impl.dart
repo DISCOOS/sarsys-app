@@ -6,14 +6,14 @@ import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 
-class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitService> implements UnitRepository {
+class UnitRepositoryImpl extends BoxRepository<String, Unit, UnitService> implements UnitRepository {
   UnitRepositoryImpl(
     UnitService service, {
     @required ConnectivityService connectivity,
@@ -112,12 +112,11 @@ class UnitRepositoryImpl extends ConnectionAwareRepository<String, Unit, UnitSer
     Completer<Iterable<Unit>> onRemote,
   }) async {
     await open(ouuid);
-    scheduleLoad(
-      () => service.fetchAll(ouuid),
+    return requestQueue.load(
+      () => service.getListFromId(ouuid),
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   /// Unload all devices for given [ouuid]

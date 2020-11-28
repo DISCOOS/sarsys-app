@@ -9,10 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
-class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division, DivisionService>
-    implements DivisionRepository {
+class DivisionRepositoryImpl extends BoxRepository<String, Division, DivisionService> implements DivisionRepository {
   DivisionRepositoryImpl(
     DivisionService service, {
     @required ConnectivityService connectivity,
@@ -45,19 +44,18 @@ class DivisionRepositoryImpl extends ConnectionAwareRepository<String, Division,
   }
 
   /// GET ../divisions
-  Future<List<Division>> _load({
+  Iterable<Division> _load({
     Completer<Iterable<Division>> onRemote,
-  }) async {
-    scheduleLoad(
-      service.fetchAll,
+  }) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Division>> onReset({Iterable<Division> previous = const []}) async => await _load();
+  Future<Iterable<Division>> onReset({Iterable<Division> previous = const []}) => Future.value(_load());
 
   @override
   Future<Division> onCreate(StorageState<Division> state) async {

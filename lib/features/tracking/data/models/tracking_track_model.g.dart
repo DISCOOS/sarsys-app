@@ -1,18 +1,18 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'track_model.dart';
+part of 'tracking_track_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-TrackModel _$TrackModelFromJson(Map json) {
-  return TrackModel(
+TrackingTrackModel _$TrackingTrackModelFromJson(Map json) {
+  return TrackingTrackModel(
     id: json['id'] as String,
     status: _$enumDecodeNullable(_$TrackStatusEnumMap, json['status']),
     source: json['source'] == null
         ? null
-        : SourceModel.fromJson((json['source'] as Map)?.map(
+        : TrackingSourceModel.fromJson((json['source'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
     positions: (json['positions'] as List)
@@ -25,7 +25,7 @@ TrackModel _$TrackModelFromJson(Map json) {
   );
 }
 
-Map<String, dynamic> _$TrackModelToJson(TrackModel instance) {
+Map<String, dynamic> _$TrackingTrackModelToJson(TrackingTrackModel instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {

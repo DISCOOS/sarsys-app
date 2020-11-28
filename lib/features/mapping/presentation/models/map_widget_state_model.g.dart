@@ -8,7 +8,8 @@ part of 'map_widget_state_model.dart';
 
 MapWidgetStateModel _$MapWidgetStateModelFromJson(Map json) {
   return MapWidgetStateModel(
-    center: MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>),
+    center:
+        MapWidgetStateModel._toLatLng(json['center'] as Map<String, dynamic>),
     zoom: (json['zoom'] as num)?.toDouble(),
     baseMap: json['baseMap'] == null
         ? null

@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/features/tracking/domain/entities/Track.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 

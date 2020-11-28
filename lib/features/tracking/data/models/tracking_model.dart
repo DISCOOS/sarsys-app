@@ -1,8 +1,8 @@
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/features/tracking/data/models/source_model.dart';
-import 'package:SarSys/features/tracking/data/models/track_model.dart';
-import 'package:SarSys/features/tracking/domain/entities/Source.dart';
-import 'package:SarSys/features/tracking/domain/entities/Track.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_source_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_track_model.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -31,10 +31,10 @@ class TrackingModel extends Tracking {
     Duration effort,
 
     /// Map from track id to list of positions
-    List<TrackModel> tracks = const [],
+    List<TrackingTrackModel> tracks = const [],
 
     /// List of tracked sources
-    List<SourceModel> sources = const [],
+    List<TrackingSourceModel> sources = const [],
 
     /// List of historical positions aggregated from temporally and spatially related positions in tracks
     List<Position> history = const [],
@@ -53,10 +53,10 @@ class TrackingModel extends Tracking {
         );
 
   @override
-  final List<SourceModel> sources;
+  final List<TrackingSourceModel> sources;
 
   @override
-  final List<TrackModel> tracks;
+  final List<TrackingTrackModel> tracks;
 
   /// Factory constructor for creating a new `Tracking` instance
   factory TrackingModel.fromJson(Map<String, dynamic> json) => _$TrackingModelFromJson(json);
@@ -70,10 +70,10 @@ class TrackingModel extends Tracking {
     double distance,
     Duration effort,
     Position position,
-    List<Source> sources,
+    List<TrackingSource> sources,
     List<Position> history,
     TrackingStatus status,
-    List<Track> tracks,
+    List<TrackingTrack> tracks,
   }) {
     return TrackingModel(
       uuid: this.uuid,
@@ -83,8 +83,8 @@ class TrackingModel extends Tracking {
       history: history ?? this.history,
       position: position ?? this.position,
       distance: distance ?? this.distance,
-      tracks: (tracks ?? this.tracks)?.cast<TrackModel>(),
-      sources: (sources ?? this.sources)?.cast<SourceModel>(),
+      tracks: (tracks ?? this.tracks)?.cast<TrackingTrackModel>(),
+      sources: (sources ?? this.sources)?.cast<TrackingSourceModel>(),
     );
   }
 

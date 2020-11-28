@@ -6,8 +6,8 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-abstract class Source extends EntityObject<Map<String, dynamic>> {
-  Source({
+abstract class TrackingSource extends EntityObject<Map<String, dynamic>> {
+  TrackingSource({
     @required this.uuid,
     @required this.type,
   }) : super(uuid, fields: [type]);

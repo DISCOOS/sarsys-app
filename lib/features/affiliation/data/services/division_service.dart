@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/api.dart';
@@ -11,12 +13,12 @@ part 'division_service.chopper.dart';
 /// Service for consuming the divisions endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DivisionService with ServiceFetchAll<Division> implements ServiceDelegate<DivisionServiceImpl> {
+class DivisionService with ServiceGetList<Division> implements ServiceDelegate<DivisionServiceImpl> {
   final DivisionServiceImpl delegate;
 
   DivisionService() : delegate = DivisionServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Division>>> fetch(int offset, int limit) async {
+  Future<ServiceResponse<List<Division>>> getSubList(int offset, int limit) async {
     return Api.from<PagedList<Division>, List<Division>>(
       await delegate.fetch(
         offset: offset,
@@ -55,7 +57,15 @@ class DivisionService with ServiceFetchAll<Division> implements ServiceDelegate<
 }
 
 @ChopperApi()
-abstract class DivisionServiceImpl extends ChopperService {
+abstract class DivisionServiceImpl extends JsonService<Division, DivisionModel> {
+  DivisionServiceImpl()
+      : super(
+          decoder: (json) => DivisionModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<DivisionModel>(value, remove: const [
+            'organisation',
+          ]),
+        );
+
   static DivisionServiceImpl newInstance([ChopperClient client]) => _$DivisionServiceImpl(client);
 
   @Post(path: '/organisations/{ouuid}/divisions')

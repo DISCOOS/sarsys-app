@@ -17,9 +17,9 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
-class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affiliation, AffiliationService>
+class AffiliationRepositoryImpl extends BoxRepository<String, Affiliation, AffiliationService>
     implements AffiliationRepository {
   AffiliationRepositoryImpl(
     AffiliationService service, {
@@ -107,7 +107,8 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
     bool replace = false,
     Completer<Iterable<Affiliation>> onRemote,
   }) async {
-    scheduleLoad(
+    // Replace current if not executed yet
+    requestQueue.load(
       () async {
         // Keep local values! Will be
         // overwritten by remote values
@@ -120,7 +121,11 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
           if (response.is200) {
             next.addAll(response.body);
             return ServiceResponse.ok<List<Affiliation>>(
-              body: next,
+              body: values
+                  .whereNotNull((a) => a.person)
+                  // Update persons repository
+                  .map((a) => _toPerson(a, isRemote: true))
+                  .toList(),
             );
           }
         }
@@ -141,12 +146,16 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
       try {
         final response = await service.search(filter, offset, limit);
         if (response.is200) {
-          response.body.forEach((element) {
+          response.body.forEach((affiliation) {
             put(
               StorageState.created(
-                element,
+                affiliation,
                 isRemote: true,
               ),
+            );
+            _toPerson(
+              affiliation,
+              isRemote: true,
             );
           });
           return response.body;
@@ -161,6 +170,21 @@ class AffiliationRepositoryImpl extends ConnectionAwareRepository<String, Affili
       }
     }
     return values;
+  }
+
+  Affiliation _toPerson(
+    Affiliation affiliation, {
+    @required bool isRemote,
+  }) {
+    assert(
+      affiliation.person != null,
+      "Person can not be null",
+    );
+    persons.replace(
+      affiliation.person,
+      isRemote: isRemote,
+    );
+    return affiliation;
   }
 
   @override

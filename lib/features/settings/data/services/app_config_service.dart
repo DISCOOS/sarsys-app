@@ -1,5 +1,7 @@
 import 'dart:async' show Future;
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/api.dart';
@@ -56,7 +58,12 @@ class AppConfigService implements ServiceDelegate<AppConfigServiceImpl> {
 }
 
 @ChopperApi(baseUrl: '/app-configs')
-abstract class AppConfigServiceImpl extends ChopperService {
+abstract class AppConfigServiceImpl extends JsonService<AppConfig, AppConfigModel> {
+  AppConfigServiceImpl()
+      : super(
+          decoder: (json) => AppConfigModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<AppConfigModel>(value),
+        );
   static AppConfigServiceImpl newInstance([ChopperClient client]) => _$AppConfigServiceImpl(client);
 
   /// Initializes configuration to default values for given version.

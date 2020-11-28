@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:chopper/chopper.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 
@@ -8,24 +11,43 @@ import 'package:SarSys/core/domain/models/core.dart';
 
 abstract class Service {}
 
+abstract class JsonService<D, R> extends ChopperService implements Service {
+  JsonService({
+    @required this.decoder,
+    @required this.reducer,
+    this.body = 'data',
+    this.isPaged = true,
+  });
+  final String body;
+  final bool isPaged;
+  final JsonReducer<R> reducer;
+  final JsonDecoder<D> decoder;
+  Type get decodedType => typeOf<D>();
+  Type get reducedType => typeOf<R>();
+  Map<Type, JsonDecoder> get decoders => {
+        decodedType: (json) => json[body] == null ? null : decoder(json[body]),
+        isPaged ? typeOf<PagedList<D>>() : typeOf<List<D>>(): (json) => JsonUtils.toPagedList<D>(json, decoder),
+      };
+}
+
 abstract class ServiceDelegate<S> implements Service {
   S get delegate;
 }
 
-mixin ServiceGet<T extends Aggregate> {
-  Future<ServiceResponse<T>> get(String uuid) async {
+mixin ServiceGetFromId<T extends JsonObject> {
+  Future<ServiceResponse<T>> getFromId(String id) async {
     throw UnimplementedError("fetch not implemented");
   }
 }
 
-mixin ServiceFetchAll<T extends Aggregate> {
-  Future<ServiceResponse<List<T>>> fetchAll({int offset = 0, int limit = 20}) async {
+mixin ServiceGetList<T extends JsonObject> {
+  Future<ServiceResponse<List<T>>> getList({int offset = 0, int limit = 20}) async {
     final body = <T>[];
-    var response = await fetch(offset, limit);
+    var response = await getSubList(offset, limit);
     while (response.is200) {
       body.addAll(response.body);
       if (response.page.hasNext) {
-        response = await fetch(
+        response = await getSubList(
           response.page.next,
           response.page.limit,
         );
@@ -36,35 +58,71 @@ mixin ServiceFetchAll<T extends Aggregate> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> fetch(int offset, int limit) {
+  Future<ServiceResponse<List<T>>> getSubList(int offset, int limit) {
     throw UnimplementedError("fetch not implemented");
   }
 }
 
-mixin ServiceFetchDescendants<T extends Aggregate> {
-  Future<ServiceResponse<List<T>>> fetchAll(
-    String uuid, {
+mixin ServiceGetListFromId<T extends JsonObject> {
+  Future<ServiceResponse<List<T>>> getListFromId(
+    String id, {
     int offset = 0,
     int limit = 20,
   }) async {
-    final divisions = <T>[];
-    var response = await fetch(uuid, offset, limit);
+    final items = <T>[];
+    var response = await getSubListFromId(id, offset, limit);
     while (response.is200) {
-      divisions.addAll(response.body);
+      items.addAll(response.body);
       if (response.page.hasNext) {
-        response = await fetch(
-          uuid,
+        response = await getSubListFromId(
+          id,
           response.page.next,
           response.page.limit,
         );
       } else {
-        return ServiceResponse.ok(body: divisions);
+        return ServiceResponse.ok(body: items);
       }
     }
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> fetch(String uuid, int offset, int limit) {
+  Future<ServiceResponse<List<T>>> getSubListFromId(String id, int offset, int limit) {
+    throw UnimplementedError("fetch not implemented");
+  }
+}
+
+mixin ServiceGetFromIds<T extends JsonObject> {
+  Future<ServiceResponse<T>> getFromIds(String id1, String id2) async {
+    throw UnimplementedError("get not implemented");
+  }
+}
+
+mixin ServiceGetListFromIds<T extends JsonObject> {
+  Future<ServiceResponse<List<T>>> getListFromIds(
+    String id1,
+    String id2, {
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    final items = <T>[];
+    var response = await getSubListFromIds(id1, id2, offset, limit);
+    while (response.is200) {
+      items.addAll(response.body);
+      if (response.page.hasNext) {
+        response = await getSubListFromIds(
+          id1,
+          id2,
+          response.page.next,
+          response.page.limit,
+        );
+      } else {
+        return ServiceResponse.ok(body: items);
+      }
+    }
+    return response;
+  }
+
+  Future<ServiceResponse<List<T>>> getSubListFromIds(String id1, String id2, int offset, int limit) {
     throw UnimplementedError("fetch not implemented");
   }
 }

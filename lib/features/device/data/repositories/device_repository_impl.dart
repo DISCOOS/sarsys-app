@@ -8,11 +8,10 @@ import 'package:SarSys/features/device/domain/repositories/device_repository.dar
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 
-class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, DeviceService>
-    implements DeviceRepository {
+class DeviceRepositoryImpl extends BoxRepository<String, Device, DeviceService> implements DeviceRepository {
   DeviceRepositoryImpl(
     DeviceService service, {
     @required ConnectivityService connectivity,
@@ -38,20 +37,25 @@ class DeviceRepositoryImpl extends ConnectionAwareRepository<String, Device, Dev
   Device fromJson(Map<String, dynamic> json) => DeviceModel.fromJson(json);
 
   /// Load all devices
-  Future<List<Device>> load({
+  Future<Iterable<Device>> load({
     Completer<Iterable<Device>> onRemote,
   }) async {
     await prepare();
-    scheduleLoad(
-      service.fetchAll,
+    return _load(
+      onRemote: onRemote,
+    );
+  }
+
+  Iterable<Device> _load({Completer<Iterable<Device>> onRemote}) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Device>> onReset({Iterable<Device> previous}) async => await load();
+  Future<Iterable<Device>> onReset({Iterable<Device> previous}) => Future.value(_load());
 
   @override
   Future<Device> onCreate(StorageState<Device> state) async {

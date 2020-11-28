@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
@@ -12,10 +13,9 @@ import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
-class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, PersonService>
-    implements PersonRepository {
+class PersonRepositoryImpl extends BoxRepository<String, Person, PersonService> implements PersonRepository {
   PersonRepositoryImpl(
     PersonService service, {
     @required ConnectivityService connectivity,
@@ -70,12 +70,12 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
     );
   }
 
-  Future<List<Person>> _fetch(
+  Iterable<Person> _fetch(
     Iterable<String> uuids, {
     bool replace = false,
     Completer<Iterable<Person>> onRemote,
-  }) async {
-    scheduleLoad(
+  }) {
+    return requestQueue.load(
       () async {
         final values = <Person>[];
         final errors = <ServiceResponse>[];
@@ -83,7 +83,7 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
           // Do not attempt to load local values
           final state = getState(uuid);
           if (state == null || state?.shouldLoad == true) {
-            final response = await service.get(uuid);
+            final response = await service.getFromId(uuid);
             if (response != null) {
               if (response.is200) {
                 values.add(response.body);
@@ -110,14 +110,13 @@ class PersonRepositoryImpl extends ConnectionAwareRepository<String, Person, Per
       onResult: onRemote,
       shouldEvict: replace,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Person>> onReset({Iterable<Person> previous = const []}) async => await _fetch(
+  Future<Iterable<Person>> onReset({Iterable<Person> previous = const []}) => Future.value(_fetch(
         previous.map((a) => a.uuid).toList(),
         replace: true,
-      );
+      ));
 
   @override
   Future<Person> onCreate(StorageState<Person> state) async {

@@ -10,9 +10,9 @@ import 'package:SarSys/features/affiliation/domain/repositories/department_repos
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
-class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Department, DepartmentService>
+class DepartmentRepositoryImpl extends BoxRepository<String, Department, DepartmentService>
     implements DepartmentRepository {
   DepartmentRepositoryImpl(
     DepartmentService service, {
@@ -45,19 +45,18 @@ class DepartmentRepositoryImpl extends ConnectionAwareRepository<String, Departm
   }
 
   /// GET ../departments
-  Future<List<Department>> _load({
+  Iterable<Department> _load({
     Completer<Iterable<Department>> onResult,
-  }) async {
-    scheduleLoad(
-      service.fetchAll,
+  }) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onResult,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Department>> onReset({Iterable<Department> previous = const []}) async => await _load();
+  Future<Iterable<Department>> onReset({Iterable<Department> previous = const []}) => Future.value(_load());
 
   @override
   Future<Department> onCreate(StorageState<Department> state) async {

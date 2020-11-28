@@ -1,25 +1,28 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/streams.dart';
-import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
-import 'package:SarSys/core/presentation/screens/splash_screen.dart';
-import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
-import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
-import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
-import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
-import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
 import 'package:catcher/core/catcher.dart';
-import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/data/streams.dart';
+import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
+import 'package:SarSys/core/presentation/screens/splash_screen.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
+import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
+import 'package:SarSys/features/tracking/data/repositories/tracking_track_repository_impl.dart';
+import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
+import 'package:SarSys/features/tracking/data/services/tracking_track_positions_service.dart';
+import 'package:SarSys/features/tracking/data/services/tracking_track_service.dart';
+import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
+import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/features/mapping/data/services/base_map_service.dart';
 import 'package:SarSys/features/activity/presentation/blocs/activity_bloc.dart';
@@ -82,6 +85,7 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 
 import 'data/services/navigation_service.dart';
 import 'data/services/provider.dart';
+import 'domain/repository.dart';
 
 class AppController {
   AppController._(
@@ -362,13 +366,19 @@ class AppController {
       controller.bus,
     );
 
-    // Configure Tracking service
-    final TrackingService trackingService = TrackingService();
+    // Configure Tracking services and repos
+    final TrackingService trackingService = TrackingService(TrackingSourceService());
+    final TrackingTrackService trackService = TrackingTrackService(TrackingTrackPositionsService());
+    final TrackingTrackRepository trackRepo = TrackingTrackRepositoryImpl(
+      trackService,
+      connectivity: connectivityService,
+    );
 
     // ignore: close_sinks
     final TrackingBloc trackingBloc = TrackingBloc(
       TrackingRepositoryImpl(
         trackingService,
+        tracks: trackRepo,
         connectivity: connectivityService,
       ),
       unitBloc: unitBloc,
@@ -395,17 +405,16 @@ class AppController {
 
     // Get all services
     final repoServices = blocs.whereType<ConnectionAwareBloc>().map((bloc) => bloc.repos).fold<Iterable<Service>>(
-      <Service>[],
+      <Service>[
+        trackService.positions,
+      ],
       (services, repos) => List.from(services)
         ..addAll(
           repos.map((repo) => repo.service),
         ),
     ).toList();
-    final apiServices = repoServices
-        .whereType<ServiceDelegate>()
-        .map((service) => service.delegate)
-        .whereType<ChopperService>()
-        .toList();
+    final apiServices =
+        repoServices.whereType<ServiceDelegate>().map((service) => service.delegate).whereType<JsonService>().toList();
 
     final api = Api(
       httpClient: client,

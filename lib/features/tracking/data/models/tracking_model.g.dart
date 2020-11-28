@@ -23,14 +23,14 @@ TrackingModel _$TrackingModelFromJson(Map json) {
     tracks: (json['tracks'] as List)
         ?.map((e) => e == null
             ? null
-            : TrackModel.fromJson((e as Map)?.map(
+            : TrackingTrackModel.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),
     sources: (json['sources'] as List)
         ?.map((e) => e == null
             ? null
-            : SourceModel.fromJson((e as Map)?.map(
+            : TrackingSourceModel.fromJson((e as Map)?.map(
                 (k, e) => MapEntry(k as String, e),
               )))
         ?.toList(),

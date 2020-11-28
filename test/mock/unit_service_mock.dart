@@ -113,7 +113,7 @@ class UnitServiceMock extends Mock implements UnitService {
       }
     });
 
-    when(mock.fetchAll(any)).thenAnswer((_) async {
+    when(mock.getListFromId(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var units = unitsRepo[ouuid];
       if (units == null) {

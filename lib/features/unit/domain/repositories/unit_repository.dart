@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:SarSys/core/data/services/service.dart';
 
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 
-abstract class UnitRepository implements ConnectionAwareRepository<String, Unit, UnitService> {
+abstract class UnitRepository implements BoxRepository<String, Unit, UnitService> {
   /// Get [Operation.uuid]
   String get ouuid;
 

@@ -6,8 +6,8 @@ import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
-import 'Source.dart';
-import 'Track.dart';
+import 'TrackingSource.dart';
+import 'TrackingTrack.dart';
 
 abstract class Tracking extends Positionable<Map<String, dynamic>> {
   Tracking({
@@ -30,13 +30,13 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
     this.effort,
 
     /// List of tracked sources
-    List<Source> sources = const [],
+    List<TrackingSource> sources = const [],
 
     /// List of historical positions aggregated from temporally and spatially related positions in tracks
     List<Position> history = const [],
 
     /// Map from track id to list of positions
-    List<Track> tracks = const [],
+    List<TrackingTrack> tracks = const [],
   })  : tracks = tracks ?? [],
         sources = sources ?? [],
         history = history ?? [],
@@ -54,8 +54,8 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
   final double speed;
   final Duration effort;
   final double distance;
-  final List<Track> tracks;
-  final List<Source> sources;
+  final List<TrackingTrack> tracks;
+  final List<TrackingSource> sources;
   final TrackingStatus status;
   final List<Position> history;
 
@@ -71,10 +71,10 @@ abstract class Tracking extends Positionable<Map<String, dynamic>> {
     double distance,
     Duration effort,
     Position position,
-    List<Source> sources,
+    List<TrackingSource> sources,
     List<Position> history,
     TrackingStatus status,
-    List<Track> tracks,
+    List<TrackingTrack> tracks,
   });
 
   /// Clone with json

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,13 +11,13 @@ part 'organisation_service.chopper.dart';
 /// Service for consuming the organisations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class OrganisationService with ServiceFetchAll<Organisation> implements ServiceDelegate<OrganisationServiceImpl> {
+class OrganisationService with ServiceGetList<Organisation> implements ServiceDelegate<OrganisationServiceImpl> {
   final OrganisationServiceImpl delegate;
 
   OrganisationService() : delegate = OrganisationServiceImpl.newInstance();
 
   /// GET ../organisations
-  Future<ServiceResponse<List<Organisation>>> fetch(int offset, int limit) async {
+  Future<ServiceResponse<List<Organisation>>> getSubList(int offset, int limit) async {
     return Api.from<PagedList<Organisation>, List<Organisation>>(
       await delegate.fetch(offset: offset, limit: limit),
     );
@@ -53,7 +55,13 @@ class OrganisationService with ServiceFetchAll<Organisation> implements ServiceD
 }
 
 @ChopperApi(baseUrl: '/organisations')
-abstract class OrganisationServiceImpl extends ChopperService {
+abstract class OrganisationServiceImpl extends JsonService<Organisation, OrganisationModel> {
+  OrganisationServiceImpl()
+      : super(
+          decoder: (json) => OrganisationModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<OrganisationModel>(value),
+        );
+
   static OrganisationServiceImpl newInstance([ChopperClient client]) => _$OrganisationServiceImpl(client);
 
   /// Initializes configuration to default values for given version.

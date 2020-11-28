@@ -8,10 +8,10 @@ import 'package:SarSys/features/operation/domain/repositories/operation_reposito
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 
-class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operation, OperationService>
+class OperationRepositoryImpl extends BoxRepository<String, Operation, OperationService>
     implements OperationRepository {
   OperationRepositoryImpl(
     OperationService service, {
@@ -50,19 +50,18 @@ class OperationRepositoryImpl extends ConnectionAwareRepository<String, Operatio
   }
 
   /// GET ../operations
-  Future<List<Operation>> _load({
+  Iterable<Operation> _load({
     Completer<Iterable<Operation>> onRemote,
-  }) async {
-    scheduleLoad(
-      service.fetchAll,
+  }) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Operation>> onReset({Iterable<Operation> previous}) async => await _load();
+  Future<Iterable<Operation>> onReset({Iterable<Operation> previous}) => Future.value(_load());
 
   @override
   Future<Operation> onCreate(StorageState<Operation> state) async {

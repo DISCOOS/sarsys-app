@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
@@ -15,12 +15,13 @@ import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/User.dart';
 
-class UserRepository implements Repository {
+class UserRepository implements Repository<String, User> {
   UserRepository({
     @required this.service,
     @required this.tokens,
     this.compactWhen = 10,
   });
+
   final int compactWhen;
   final UserService service;
   final AuthTokenRepository tokens;
@@ -53,7 +54,17 @@ class UserRepository implements Repository {
   bool _isNotNull(String userId) => emptyAsNull(userId) != null;
 
   /// Get [User] from given [User.userId]
+  @override
   User operator [](String userId) => get(userId);
+
+  @override
+  bool get isEmpty => _users == null || _users.isOpen && _users.isEmpty;
+
+  @override
+  bool get isNotEmpty => !isEmpty;
+
+  @override
+  int get length => isEmpty ? 0 : _users.length;
 
   /// Check if user has token
   bool get hasToken => isReady && tokens.containsKey(_userId);

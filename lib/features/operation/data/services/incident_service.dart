@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,12 +11,12 @@ part 'incident_service.chopper.dart';
 /// Service for consuming the incidents endpoint
 ///
 /// Delegates to a ChopperService implementation
-class IncidentService with ServiceFetchAll<Incident> implements ServiceDelegate<IncidentServiceImpl> {
+class IncidentService with ServiceGetList<Incident> implements ServiceDelegate<IncidentServiceImpl> {
   final IncidentServiceImpl delegate;
 
   IncidentService() : delegate = IncidentServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Incident>>> fetch(int offset, int limit) async {
+  Future<ServiceResponse<List<Incident>>> getSubList(int offset, int limit) async {
     return Api.from<PagedList<Incident>, List<Incident>>(
       await delegate.fetch(
         offset: offset,
@@ -52,7 +54,18 @@ class IncidentService with ServiceFetchAll<Incident> implements ServiceDelegate<
 }
 
 @ChopperApi(baseUrl: '/incidents')
-abstract class IncidentServiceImpl extends ChopperService {
+abstract class IncidentServiceImpl extends JsonService<Incident, IncidentModel> {
+  IncidentServiceImpl()
+      : super(
+          decoder: (json) => IncidentModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<IncidentModel>(value, remove: const [
+            'clues',
+            'subjects',
+            'messages',
+            'operations',
+            'transitions',
+          ]),
+        );
   static IncidentServiceImpl newInstance([ChopperClient client]) => _$IncidentServiceImpl(client);
 
   @Post()

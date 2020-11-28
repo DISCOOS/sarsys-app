@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
@@ -130,7 +130,7 @@ class PersonnelBloc extends BaseBloc<PersonnelCommand, PersonnelState, Personnel
   Iterable<Personnel> get values => repo.values;
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [repo];
+  Iterable<BoxRepository> get repos => [repo];
 
   /// Get [Personnel] from [uuid]
   Personnel operator [](String uuid) => repo[uuid];

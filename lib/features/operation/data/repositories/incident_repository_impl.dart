@@ -7,11 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
-class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident, IncidentService>
-    implements IncidentRepository {
+class IncidentRepositoryImpl extends BoxRepository<String, Incident, IncidentService> implements IncidentRepository {
   IncidentRepositoryImpl(
     IncidentService service, {
     @required ConnectivityService connectivity,
@@ -43,19 +42,18 @@ class IncidentRepositoryImpl extends ConnectionAwareRepository<String, Incident,
   }
 
   /// GET ../incidents
-  Future<List<Incident>> _load({
+  Iterable<Incident> _load({
     Completer<Iterable<Incident>> onRemote,
-  }) async {
-    scheduleLoad(
-      service.fetchAll,
+  }) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Incident>> onReset({Iterable<Incident> previous}) async => await _load();
+  Future<Iterable<Incident>> onReset({Iterable<Incident> previous}) => Future.value(_load());
 
   @override
   Future<Incident> onCreate(StorageState<Incident> state) async {

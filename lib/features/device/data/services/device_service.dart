@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
 
@@ -14,7 +16,7 @@ part 'device_service.chopper.dart';
 /// Service for consuming the devices endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<DeviceServiceImpl> {
+class DeviceService with ServiceGetList<Device> implements ServiceDelegate<DeviceServiceImpl> {
   DeviceService(this.channel) : delegate = DeviceServiceImpl.newInstance() {
     // Listen for Device messages
     channel.subscribe('DeviceCreated', _onMessage);
@@ -40,7 +42,7 @@ class DeviceService with ServiceFetchAll<Device> implements ServiceDelegate<Devi
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Device>>> fetch(int offset, int limit) async {
+  Future<ServiceResponse<List<Device>>> getSubList(int offset, int limit) async {
     return Api.from<PagedList<Device>, List<Device>>(
       await delegate.fetch(),
     );
@@ -93,7 +95,18 @@ class DeviceMessage {
 }
 
 @ChopperApi(baseUrl: '/devices')
-abstract class DeviceServiceImpl extends ChopperService {
+abstract class DeviceServiceImpl extends JsonService<Device, DeviceModel> {
+  DeviceServiceImpl()
+      : super(
+          decoder: (json) => DeviceModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<DeviceModel>(value, remove: const [
+            'type',
+            'manual',
+            'position',
+            'messages',
+            'transitions',
+          ]),
+        );
   static DeviceServiceImpl newInstance([ChopperClient client]) => _$DeviceServiceImpl(client);
 
   @Post()

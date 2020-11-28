@@ -122,7 +122,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.messages).thenAnswer((_) => controller.stream);
 
-    when(mock.fetchAll(any)).thenAnswer((_) async {
+    when(mock.getListFromId(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var personnel = personnelsRepo[ouuid];
       if (personnel == null) {

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,7 +11,7 @@ part 'personnel_service.chopper.dart';
 /// Service for consuming the personnels endpoint
 ///
 /// Delegates to a ChopperService implementation
-class PersonnelService with ServiceFetchDescendants<Personnel> implements ServiceDelegate<PersonnelServiceImpl> {
+class PersonnelService with ServiceGetListFromId<Personnel> implements ServiceDelegate<PersonnelServiceImpl> {
   final PersonnelServiceImpl delegate;
 
   PersonnelService() : delegate = PersonnelServiceImpl.newInstance();
@@ -19,7 +21,7 @@ class PersonnelService with ServiceFetchDescendants<Personnel> implements Servic
   /// Get stream of personnel messages
   Stream<PersonnelMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Personnel>>> fetch(String ouuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Personnel>>> getSubListFromId(String ouuid, int offset, int limit) async {
     return Api.from<PagedList<Personnel>, List<Personnel>>(
       await delegate.fetchAll(
         ouuid,
@@ -72,7 +74,14 @@ class PersonnelMessage {
 }
 
 @ChopperApi()
-abstract class PersonnelServiceImpl extends ChopperService {
+abstract class PersonnelServiceImpl extends JsonService<Personnel, PersonnelModel> {
+  PersonnelServiceImpl()
+      : super(
+          decoder: (json) => PersonnelModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<PersonnelModel>(value, remove: const [
+            'person',
+          ]),
+        );
   static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);
 
   @Post(path: '/operations/{ouuid}/personnels')

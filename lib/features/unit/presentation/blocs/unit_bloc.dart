@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -56,7 +56,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [repo];
+  Iterable<BoxRepository> get repos => [repo];
 
   /// Process [OperationState] events
   ///

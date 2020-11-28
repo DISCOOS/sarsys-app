@@ -12,7 +12,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
@@ -902,7 +902,7 @@ void expectStorageStatus(
 
 Future expectStorageStatusLater(
   String uuid,
-  ConnectionAwareRepository repo,
+  BoxRepository repo,
   StorageStatus expected, {
   @required bool remote,
   dynamic key,

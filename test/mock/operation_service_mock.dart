@@ -157,7 +157,7 @@ class OperationServiceMock extends Mock implements OperationService {
       }
     });
 
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();

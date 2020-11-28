@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
@@ -22,7 +22,7 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   final AppConfigRepository repo;
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [repo];
+  Iterable<BoxRepository> get repos => [repo];
 
   AppConfigService get service => repo.service;
 

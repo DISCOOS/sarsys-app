@@ -5,7 +5,7 @@ import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
@@ -90,7 +90,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [
+  Iterable<BoxRepository> get repos => [
         orgs,
         divs,
         deps,
@@ -582,7 +582,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         deps: deps.keys,
         isRemote: false,
         affiliations: repo.keys,
-        persons: _toPersons(cached, isRemote: false),
+        persons: repo.persons.keys,
       ),
       result: cached,
     );
@@ -603,7 +603,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         deps: deps.keys,
         isRemote: true,
         affiliations: repo.keys,
-        persons: _toPersons(repo.values, isRemote: true),
+        persons: repo.persons.keys,
       ),
       toCommand: (state) => _StateChange(state),
       toError: (Object error, StackTrace stackTrace) {
@@ -635,7 +635,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       AffiliationsFetched(
         isRemote: false,
         affiliations: command.data,
-        persons: _toPersons(cached, isRemote: false),
+        persons: cached.map((e) => e.person?.uuid).whereNotNull().toList(),
       ),
       result: cached,
     );
@@ -647,10 +647,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         return AffiliationsFetched(
           isRemote: true,
           affiliations: results.firstOrNull?.map((a) => a.uuid) ?? <String>[],
-          persons: _toPersons(
-            results.firstOrNull ?? <Affiliation>[],
-            isRemote: true,
-          ),
+          persons: results.cast<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
         );
       },
       toCommand: (state) => _StateChange(state),
@@ -683,7 +680,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       AffiliationsFetched(
         isRemote: true,
         affiliations: affiliations.map((a) => a.uuid),
-        persons: _toPersons(affiliations, isRemote: true),
+        persons: affiliations.map((e) => e.person?.uuid).whereNotNull().toList(),
       ),
       result: affiliations,
     );
@@ -881,23 +878,6 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       );
     }
     return Future.value();
-  }
-
-  Iterable<String> _toPersons(
-    List<Affiliation> values, {
-    @required bool isRemote,
-  }) {
-    final updated = values.whereNotNull((a) => a.person).map((a) => _toPerson(a, isRemote: isRemote)).toList();
-    return updated;
-  }
-
-  String _toPerson(
-    Affiliation affiliation, {
-    @required bool isRemote,
-  }) {
-    assert(affiliation.person != null, "Person can not be null");
-    persons.replace(affiliation.person, isRemote: isRemote);
-    return affiliation.person.uuid;
   }
 }
 
@@ -1440,7 +1420,7 @@ class AffiliationQuery {
   }
 
   /// Get filtered map of [Affiliation.uuid] to [Device] or
-  /// [Affiliation] tracked by aggregate of type [T]
+  /// [Affiliation] tracked by aggregate of type [V]
   ///
   /// The 'only one active tracking for each source'
   /// rule guarantees a one-to-one mapping.

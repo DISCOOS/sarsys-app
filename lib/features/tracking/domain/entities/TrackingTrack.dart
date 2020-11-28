@@ -2,10 +2,10 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:meta/meta.dart';
 
-import 'Source.dart';
+import 'TrackingSource.dart';
 
-abstract class Track extends EntityObject<Map<String, dynamic>> {
-  Track({
+abstract class TrackingTrack extends EntityObject<Map<String, dynamic>> {
+  TrackingTrack({
     @required String id,
     @required this.status,
     @required this.source,
@@ -16,22 +16,22 @@ abstract class Track extends EntityObject<Map<String, dynamic>> {
           positions,
         ]);
 
-  final Source source;
+  final TrackingSource source;
   final TrackStatus status;
   final List<Position> positions;
 
   bool get isNotEmpty => !isEmpty;
   bool get isEmpty => positions?.isEmpty == true;
 
-  Track cloneWith({
+  TrackingTrack cloneWith({
     String id,
     TrackStatus status,
-    Source source,
+    TrackingSource source,
     List<Position> positions,
   });
 
-  /// Truncate to number of points and return new [Track] instance
-  Track truncate(int count);
+  /// Truncate to number of points and return new [TrackingTrack] instance
+  TrackingTrack truncate(int count);
 }
 
 enum TrackStatus { attached, detached }

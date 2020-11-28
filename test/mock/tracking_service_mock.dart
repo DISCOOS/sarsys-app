@@ -6,10 +6,10 @@ import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/features/tracking/data/models/source_model.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_source_model.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
-import 'package:SarSys/features/tracking/domain/entities/Source.dart';
-import 'package:SarSys/features/tracking/domain/entities/Track.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -24,8 +24,8 @@ class TrackingBuilder {
   static Tracking create({
     String uuid,
     Position position,
-    List<Source> sources = const [],
-    List<Track> tracks = const [],
+    List<TrackingSource> sources = const [],
+    List<TrackingTrack> tracks = const [],
     List<Position> history = const [],
     TrackingStatus status = TrackingStatus.ready,
   }) {
@@ -73,8 +73,8 @@ class TrackingServiceMock extends Mock implements TrackingService {
   Tracking add(
     String ouuid, {
     String uuid,
-    List<Source> sources = const [],
-    List<Track> tracks = const [],
+    List<TrackingSource> sources = const [],
+    List<TrackingTrack> tracks = const [],
     List<Position> history = const [],
     TrackingStatus status = TrackingStatus.ready,
   }) {
@@ -181,7 +181,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
       (_) => mock.controller.stream,
     );
 
-    when(mock.fetchAll(any)).thenAnswer((_) async {
+    when(mock.getListFromId(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var trackingList = mock.trackingsRepo[ouuid];
       if (trackingList == null) {
@@ -191,19 +191,19 @@ class TrackingServiceMock extends Mock implements TrackingService {
       return ServiceResponse.ok(body: trackingList.values.toList());
     });
 
-    when(mock.create(any)).thenAnswer((_) async {
-      final ouuid = _.positionalArguments[0] as String;
-      final tracking = _.positionalArguments[1] as Tracking;
-      return _create(
-        ouuid: ouuid,
-        s2t: mock.s2t,
-        tracking: tracking,
-        simulations: mock.simulations,
-        trackingRepo: mock.trackingsRepo,
-        devices: devices.map,
-        simulate: simulate,
-      );
-    });
+    // when(mock.create(any)).thenAnswer((_) async {
+    //   final ouuid = _.positionalArguments[0] as String;
+    //   final tracking = _.positionalArguments[1] as Tracking;
+    //   return _create(
+    //     ouuid: ouuid,
+    //     s2t: mock.s2t,
+    //     tracking: tracking,
+    //     simulations: mock.simulations,
+    //     trackingRepo: mock.trackingsRepo,
+    //     devices: devices.map,
+    //     simulate: simulate,
+    //   );
+    // });
 
     when(mock.update(any)).thenAnswer((_) async {
       var request = _.positionalArguments[0] as Tracking;
@@ -273,65 +273,67 @@ class TrackingServiceMock extends Mock implements TrackingService {
       }
       return ServiceResponse.notFound(message: "Not found: Tracking ${request.uuid}");
     });
-    when(mock.delete(any)).thenAnswer((_) async {
-      var tracking = _.positionalArguments[0];
-      // Assumes that a device is attached to a single incident only
-      var incident = mock.trackingsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(tracking.uuid),
-        orElse: () => null,
-      );
-      if (incident != null) {
-        var trackingList = incident.value;
-        trackingList.remove(tracking.uuid);
-        mock.simulations.remove(tracking.uuid);
-        mock.s2t.removeWhere((suuid, tuuid) => tuuid == tracking.uuid);
-        return ServiceResponse.noContent();
-      }
-      return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.uuid}");
-    });
+
+    // when(mock.delete(any)).thenAnswer((_) async {
+    //   var tracking = _.positionalArguments[0];
+    //   // Assumes that a device is attached to a single incident only
+    //   var incident = mock.trackingsRepo.entries.firstWhere(
+    //     (entry) => entry.value.containsKey(tracking.uuid),
+    //     orElse: () => null,
+    //   );
+    //   if (incident != null) {
+    //     var trackingList = incident.value;
+    //     trackingList.remove(tracking.uuid);
+    //     mock.simulations.remove(tracking.uuid);
+    //     mock.s2t.removeWhere((suuid, tuuid) => tuuid == tracking.uuid);
+    //     return ServiceResponse.noContent();
+    //   }
+    //   return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.uuid}");
+    // });
+
     return mock;
   }
 
-  static ServiceResponse<Tracking> _create({
-    String ouuid,
-    Tracking tracking,
-    Map<String, String> s2t,
-    Map<String, Device> devices,
-    Map<String, Map<String, Tracking>> trackingRepo,
-    Map<String, _TrackSimulation> simulations,
-    bool simulate = false,
-  }) {
-//    final position = tracking.position;
-    final sources = tracking.sources;
-    final tuuid = tracking.uuid;
-
-    // Sanity checks
-    final found = sources.where(((source) => s2t.containsKey(source.uuid)));
-    if (found.isNotEmpty) {
-      return ServiceResponse.badRequest<Tracking>(
-        message: "Bad request: Sources $found are tracked already",
-      );
-    }
-//    if (position?.type != null && position?.source != PositionSource.manual) {
-//      return _toOnlyManualResponse(position);
-//    }
-
-    final trackingList = trackingRepo[ouuid];
-    trackingList.putIfAbsent(tuuid, () => tracking);
-    final next = simulate
-        ? _simulate(
-            tuuid,
-            trackingList,
-            devices,
-            simulations,
-          )
-        : tracking;
-    trackingList.putIfAbsent(tuuid, () => next);
-    s2t.addEntries(
-      next.sources.map((source) => MapEntry(source.uuid, tuuid)),
-    );
-    return ServiceResponse.ok<Tracking>(body: next);
-  }
+//   static ServiceResponse<Tracking> _create({
+//     String ouuid,
+//     Tracking tracking,
+//     Map<String, String> s2t,
+//     Map<String, Device> devices,
+//     Map<String, Map<String, Tracking>> trackingRepo,
+//     Map<String, _TrackSimulation> simulations,
+//     bool simulate = false,
+//   }) {
+// //    final position = tracking.position;
+//     final sources = tracking.sources;
+//     final tuuid = tracking.uuid;
+//
+//     // Sanity checks
+//     final found = sources.where(((source) => s2t.containsKey(source.uuid)));
+//     if (found.isNotEmpty) {
+//       return ServiceResponse.badRequest<Tracking>(
+//         message: "Bad request: Sources $found are tracked already",
+//       );
+//     }
+// //    if (position?.type != null && position?.source != PositionSource.manual) {
+// //      return _toOnlyManualResponse(position);
+// //    }
+//
+//     final trackingList = trackingRepo[ouuid];
+//     trackingList.putIfAbsent(tuuid, () => tracking);
+//     final next = simulate
+//         ? _simulate(
+//             tuuid,
+//             trackingList,
+//             devices,
+//             simulations,
+//           )
+//         : tracking;
+//     trackingList.putIfAbsent(tuuid, () => next);
+//     s2t.addEntries(
+//       next.sources.map((source) => MapEntry(source.uuid, tuuid)),
+//     );
+//     return ServiceResponse.ok<Tracking>(body: next);
+//   }
 
 //  static ServiceResponse<Tracking> _toOnlyManualResponse(Position position) {
 //    return ServiceResponse.badRequest(
@@ -380,7 +382,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
           ),
         ).copyWith(
             sources: List.from([
-          SourceModel(
+          TrackingSourceModel(
             uuid: "$ouuid:$device:$i",
             type: SourceType.device,
           )
@@ -624,7 +626,7 @@ class _TrackSimulation {
     return current;
   }
 
-  Position _toPosition(Source source) =>
+  Position _toPosition(TrackingSource source) =>
       SourceType.device == source.type ? _fromDevice(source.uuid) : _fromAggregate(source.uuid);
 
   Position _fromDevice(String uuid) => devices[uuid]?.position;

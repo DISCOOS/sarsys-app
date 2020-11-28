@@ -1,3 +1,5 @@
+import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
 
@@ -22,6 +24,14 @@ abstract class ValueObject<T> extends JsonObject<T> {
 
 class JsonUtils {
   static toNull(value) => null;
+
+  static List<T> toList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) =>
+      json['entries'] == null ? <T>[] : List.from(json['entries']).map((json) => factory(json)).toList();
+
+  static PagedList<T> toPagedList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) => PagedList<T>(
+        toList(json, factory),
+        PageResult.from(json),
+      );
 
   static List<Map<String, dynamic>> diff(JsonObject o1, JsonObject o2) {
     return JsonPatch.diff(o1.toJson(), o2.toJson());

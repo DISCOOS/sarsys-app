@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/domain/repository.dart';
 
-/// ConnectionAwareRepo
+/// Connection aware [Bloc] mixin
 mixin ConnectionAwareBloc<S, T> {
   /// Get repositories managed by this [Bloc]
-  Iterable<ConnectionAwareRepository> get repos;
+  Iterable<BoxRepository> get repos;
 
   /// Check if bloc is online
   bool get isOnline => repos.first.isOnline;

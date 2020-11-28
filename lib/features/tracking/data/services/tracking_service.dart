@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
+import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -10,35 +13,26 @@ part 'tracking_service.chopper.dart';
 /// Service for consuming the trackings endpoint
 ///
 /// Delegates to a ChopperService implementation
-class TrackingService with ServiceFetchDescendants<Tracking> implements ServiceDelegate<TrackingServiceImpl> {
-  final TrackingServiceImpl delegate;
+class TrackingService with ServiceGetListFromId<Tracking> implements ServiceDelegate<TrackingServiceImpl> {
+  TrackingService(
+    this.sources,
+  ) : delegate = TrackingServiceImpl.newInstance();
 
-  TrackingService() : delegate = TrackingServiceImpl.newInstance();
+  final TrackingServiceImpl delegate;
+  final TrackingSourceService sources;
 
   final StreamController<TrackingMessage> _controller = StreamController.broadcast();
 
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Tracking>>> fetch(String uuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Tracking>>> getSubListFromId(String uuid, int offset, int limit) async {
     return Api.from<PagedList<Tracking>, List<Tracking>>(
       await delegate.fetchAll(
         uuid,
         offset,
         limit,
       ),
-    );
-  }
-
-  /// POST ../tracking/{uuid}
-  Future<ServiceResponse<Tracking>> create(Tracking tracking) async {
-    return Api.from<String, Tracking>(
-      await delegate.create(
-        tracking.uuid,
-        tracking,
-      ),
-      // Created 201 returns uri to created tracking in body
-      body: tracking,
     );
   }
 
@@ -54,20 +48,21 @@ class TrackingService with ServiceFetchDescendants<Tracking> implements ServiceD
     );
   }
 
-  /// DELETE ../incident/tracking/{uuid}
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Tracking, Tracking>(await delegate.delete(
-      uuid,
-    ));
-  }
-
   void dispose() {
     _controller.close();
   }
 }
 
 @ChopperApi()
-abstract class TrackingServiceImpl extends ChopperService {
+abstract class TrackingServiceImpl extends JsonService<Tracking, TrackingModel> {
+  TrackingServiceImpl()
+      : super(
+          decoder: (json) => TrackingModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<TrackingModel>(value, retain: const [
+            'uuid',
+            'status',
+          ]),
+        );
   static TrackingServiceImpl newInstance([ChopperClient client]) => _$TrackingServiceImpl(client);
 
   @Get(path: '/operations/{ouuid}/trackings')
@@ -78,21 +73,10 @@ abstract class TrackingServiceImpl extends ChopperService {
     @Query('expand') List<String> expand = const [],
   });
 
-  @Post(path: '/trackings')
-  Future<Response<String>> create(
-    @Path() iuuid,
-    @Body() Tracking body,
-  );
-
   @Patch(path: '/trackings/{uuid}')
   Future<Response<Tracking>> update(
     @Path('uuid') String uuid,
     @Body() Tracking body,
-  );
-
-  @Delete(path: '/trackings/{uuid}')
-  Future<Response<void>> delete(
-    @Path('uuid') String uuid,
   );
 }
 

@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -124,12 +124,12 @@ class PersonServiceMock extends Mock implements PersonService {
 
   static Future<PersonService> build() async {
     final box = await Hive.openBox<StorageState<Person>>(
-      ConnectionAwareRepository.toBoxName<PersonRepositoryImpl>(),
+      BoxRepository.toBoxName<PersonRepositoryImpl>(),
     );
     final PersonServiceMock mock = PersonServiceMock(box);
     final personRepo = mock.personRepo;
 
-    when(mock.get(any)).thenAnswer((_) async {
+    when(mock.getFromId(any)).thenAnswer((_) async {
       final uuid = _.positionalArguments[0];
       await _doThrottle();
       if (personRepo.containsKey(uuid)) {

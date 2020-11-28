@@ -6,11 +6,21 @@ import 'package:hive/hive.dart';
 
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 
-class AuthTokenRepository implements Repository {
+class AuthTokenRepository implements Repository<String, AuthToken> {
   AuthTokenRepository();
 
-  Box<AuthToken> _tokens;
+  @override
   AuthToken operator [](String userId) => userId == null ? null : _tokens?.get(userId);
+  Box<AuthToken> _tokens;
+
+  @override
+  bool get isEmpty => _tokens == null || _tokens.isOpen && _tokens.isEmpty;
+
+  @override
+  bool get isNotEmpty => !isEmpty;
+
+  @override
+  int get length => isEmpty ? 0 : _tokens.length;
 
   AuthToken get(String userId) => _tokens.get(userId);
   Iterable<String> get keys => List.unmodifiable(_tokens?.keys ?? []);

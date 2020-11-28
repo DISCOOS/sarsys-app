@@ -11,13 +11,12 @@ import 'package:SarSys/features/settings/data/models/app_config_model.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
-class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, AppConfigService>
-    implements AppConfigRepository {
+class AppConfigRepositoryImpl extends BoxRepository<int, AppConfig, AppConfigService> implements AppConfigRepository {
   AppConfigRepositoryImpl(
     this.version, {
     @required AppConfigService service,
@@ -78,7 +77,7 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
         onError: onRemote.completeError,
       );
       return containsKey(version)
-          ? schedulePush(
+          ? requestQueue.push(
               toKey(state),
               onResult: onPush,
             )
@@ -143,7 +142,7 @@ class AppConfigRepositoryImpl extends ConnectionAwareRepository<int, AppConfig, 
     Completer<Iterable<AppConfig>> onRemote,
   }) async {
     final state = getState(version);
-    scheduleLoad(
+    requestQueue.load(
       () async {
         final response = await service.fetch(state.value.uuid);
         return response?.copyWith<Iterable<AppConfig>>(

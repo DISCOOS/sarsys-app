@@ -3,7 +3,7 @@ import 'dart:collection';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -73,7 +73,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   }
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [repo];
+  Iterable<BoxRepository> get repos => [repo];
 
   /// Get [OperationBloc]
   final OperationBloc operationBloc;
@@ -426,7 +426,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      repo.findTracingFrom(
+      repo.findTrackingFrom(
         aggregate.uuid,
         tracks: tracks,
         exclude: exclude,

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/api.dart';
@@ -12,7 +14,7 @@ part 'affiliation_service.chopper.dart';
 /// Service for consuming the affiliations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate<AffiliationServiceImpl> {
+class AffiliationService with ServiceGetFromId<Affiliation> implements ServiceDelegate<AffiliationServiceImpl> {
   final AffiliationServiceImpl delegate;
 
   AffiliationService() : delegate = AffiliationServiceImpl.newInstance();
@@ -28,7 +30,7 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
     );
   }
 
-  Future<ServiceResponse<Affiliation>> get(String uuid) async {
+  Future<ServiceResponse<Affiliation>> getFromId(String uuid) async {
     return Api.from<Affiliation, Affiliation>(
       await delegate.get(
         uuid: uuid,
@@ -96,7 +98,13 @@ class AffiliationService with ServiceGet<Affiliation> implements ServiceDelegate
 }
 
 @ChopperApi(baseUrl: '/affiliations')
-abstract class AffiliationServiceImpl extends ChopperService {
+abstract class AffiliationServiceImpl extends JsonService<Affiliation, AffiliationModel> {
+  AffiliationServiceImpl()
+      : super(
+          decoder: (json) => AffiliationModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<AffiliationModel>(value),
+        );
+
   static AffiliationServiceImpl newInstance([ChopperClient client]) => _$AffiliationServiceImpl(client);
 
   @Get(path: '{uuid}')

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -61,7 +61,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Operation operator [](String uuid) => repo[uuid];
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [incidents, repo];
+  Iterable<BoxRepository> get repos => [incidents, repo];
 
   /// Get [OperationService]
   OperationService get service => repo.service;

@@ -1,5 +1,4 @@
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/presentation/widgets/fatal_error_app.dart';
 import 'package:SarSys/core/presentation/widgets/network_sensitive.dart';
@@ -15,6 +14,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:sentry/sentry.dart';
 
+import 'core/domain/repository.dart';
 import 'features/settings/domain/entities/AppConfig.dart';
 import 'features/settings/presentation/blocs/app_config_bloc.dart';
 import 'core/page_state.dart';
@@ -176,7 +176,7 @@ final Map<String, ReportHandler> _catcherExplicitExceptionHandlersMap = Map.from
 
 class AppRepositoryDelegate implements RepositoryDelegate {
   @override
-  void onError(ConnectionAwareRepository repo, Object error, StackTrace stackTrace) {
+  void onError(Repository repo, Object error, StackTrace stackTrace) {
     Catcher.reportCheckedError(error, stackTrace);
   }
 }

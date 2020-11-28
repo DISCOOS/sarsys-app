@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -9,12 +11,12 @@ part 'unit_service.chopper.dart';
 /// Service for consuming the units endpoint
 ///
 /// Delegates to a ChopperService implementation
-class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<UnitServiceImpl> {
+class UnitService with ServiceGetListFromId<Unit> implements ServiceDelegate<UnitServiceImpl> {
   final UnitServiceImpl delegate;
 
   UnitService() : delegate = UnitServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Unit>>> fetch(String ouuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Unit>>> getSubListFromId(String ouuid, int offset, int limit) async {
     return Api.from<PagedList<Unit>, List<Unit>>(
       await delegate.fetch(
         ouuid,
@@ -53,7 +55,12 @@ class UnitService with ServiceFetchDescendants<Unit> implements ServiceDelegate<
 }
 
 @ChopperApi()
-abstract class UnitServiceImpl extends ChopperService {
+abstract class UnitServiceImpl extends JsonService<Unit, UnitModel> {
+  UnitServiceImpl()
+      : super(
+          decoder: (json) => UnitModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<UnitModel>(value),
+        );
   static UnitServiceImpl newInstance([ChopperClient client]) => _$UnitServiceImpl(client);
 
   @Post(path: '/operations/{ouuid}/units')

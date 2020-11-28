@@ -5,14 +5,14 @@ import 'package:SarSys/features/affiliation/data/services/affiliation_service.da
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
 import 'person_repository.dart';
 import 'department_repository.dart';
 import 'division_repository.dart';
 import 'organisation_repository.dart';
 
-abstract class AffiliationRepository implements ConnectionAwareRepository<String, Affiliation, AffiliationService> {
+abstract class AffiliationRepository implements BoxRepository<String, Affiliation, AffiliationService> {
   /// [Organisation] repository
   OrganisationRepository get orgs;
 

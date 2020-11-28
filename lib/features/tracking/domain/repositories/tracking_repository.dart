@@ -1,24 +1,16 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
-import 'package:SarSys/core/data/services/connectivity_service.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
 
-abstract class TrackingRepository extends ConnectionAwareRepository<String, Tracking, TrackingService> {
-  TrackingRepository(
-    TrackingService service, {
-    @required ConnectivityService connectivity,
-  }) : super(
-          service: service,
-          connectivity: connectivity,
-        );
-
+abstract class TrackingRepository extends BoxRepository<String, Tracking, TrackingService> {
   /// Get [Operation.uuid]
   String get ouuid;
 
@@ -28,6 +20,9 @@ abstract class TrackingRepository extends ConnectionAwareRepository<String, Trac
   /// created with [create].
   @override
   bool get isReady;
+
+  /// [TrackingTrack] repository
+  TrackingTrackRepository get tracks;
 
   /// Get [Tracking.uuid] from [state]
   @override
@@ -63,7 +58,7 @@ abstract class TrackingRepository extends ConnectionAwareRepository<String, Trac
   /// Returns empty list if [source.uuid] is not found
   /// for given set of excluded [TrackingStatus.values].
   ///
-  Iterable<Tracking> findTracingFrom(
+  Iterable<Tracking> findTrackingFrom(
     String suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],

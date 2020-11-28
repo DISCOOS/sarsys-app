@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
-abstract class DeviceRepository implements ConnectionAwareRepository<String, Device, DeviceService> {
+abstract class DeviceRepository implements BoxRepository<String, Device, DeviceService> {
   /// [Device] service
   DeviceService get service;
 
@@ -17,7 +17,7 @@ abstract class DeviceRepository implements ConnectionAwareRepository<String, Dev
   bool get isReady;
 
   /// Load all devices
-  Future<List<Device>> load({
+  Future<Iterable<Device>> load({
     Completer<Iterable<Device>> onRemote,
   });
 }

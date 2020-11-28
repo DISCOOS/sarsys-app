@@ -97,7 +97,7 @@ class IncidentServiceMock extends Mock implements IncidentService {
   }) {
     _incidents.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();

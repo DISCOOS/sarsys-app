@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/api.dart';
@@ -11,12 +13,12 @@ part 'department_service.chopper.dart';
 /// Service for consuming the departments endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DepartmentService with ServiceFetchAll<Department> implements ServiceDelegate<DepartmentServiceImpl> {
+class DepartmentService with ServiceGetList<Department> implements ServiceDelegate<DepartmentServiceImpl> {
   final DepartmentServiceImpl delegate;
 
   DepartmentService() : delegate = DepartmentServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Department>>> fetch(int offset, int limit) async {
+  Future<ServiceResponse<List<Department>>> getSubList(int offset, int limit) async {
     return Api.from<PagedList<Department>, List<Department>>(
       await delegate.fetch(offset: offset, limit: limit),
     );
@@ -52,7 +54,15 @@ class DepartmentService with ServiceFetchAll<Department> implements ServiceDeleg
 }
 
 @ChopperApi()
-abstract class DepartmentServiceImpl extends ChopperService {
+abstract class DepartmentServiceImpl extends JsonService<Department, DepartmentModel> {
+  DepartmentServiceImpl()
+      : super(
+          decoder: (json) => DepartmentModel.fromJson(json),
+          reducer: (value) => JsonUtils.toJson<DepartmentModel>(value, remove: const [
+            'division',
+          ]),
+        );
+
   static DepartmentServiceImpl newInstance([ChopperClient client]) => _$DepartmentServiceImpl(client);
 
   @Post(path: '/divisions/{duuid}/departments')

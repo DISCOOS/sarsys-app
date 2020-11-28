@@ -1,25 +1,27 @@
 import 'dart:async';
 
+import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
-import 'package:SarSys/features/tracking/domain/entities/Track.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
-class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking, TrackingService>
-    implements TrackingRepository {
+class TrackingRepositoryImpl extends BoxRepository<String, Tracking, TrackingService> implements TrackingRepository {
   TrackingRepositoryImpl(
     TrackingService service, {
+    @required this.tracks,
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
+          dependencies: [tracks],
           connectivity: connectivity,
         );
 
@@ -27,6 +29,9 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
   @override
   String get ouuid => _ouuid;
   String _ouuid;
+
+  /// [TrackingTrack] repository
+  final TrackingTrackRepository tracks;
 
   /// Map for efficient tracking lookup from [Source.uuid]
   final _sources = <String, Set<String>>{};
@@ -77,7 +82,7 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   }) =>
-      findTracingFrom(suuid, tracks: tracks, exclude: exclude).isNotEmpty;
+      findTrackingFrom(suuid, tracks: tracks, exclude: exclude).isNotEmpty;
 
   /// Find tracking from given source [suuid].
   ///
@@ -95,7 +100,7 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
   /// for given set of excluded [TrackingStatus.values].
   ///
   @override
-  Iterable<Tracking> findTracingFrom(
+  Iterable<Tracking> findTrackingFrom(
     String suuid, {
     bool tracks = false,
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
@@ -122,12 +127,11 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
     Completer<Iterable<Tracking>> onRemote,
   }) async {
     await open(ouuid);
-    scheduleLoad(
-      () => service.fetchAll(ouuid),
+    return requestQueue.load(
+      () => service.getListFromId(ouuid),
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   /// Unload all [Tracking]s for given [ouuid]
@@ -213,7 +217,7 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
   Iterable<String> _duplicates(StorageState<Tracking> state) => state.value.sources
       .where(
         // Search for active trackings not equal to tracking in given state
-        (source) => findTracingFrom(source.uuid).any((tracking) => tracking.uuid != state.value.uuid),
+        (source) => findTrackingFrom(source.uuid).any((tracking) => tracking.uuid != state.value.uuid),
       )
       .map((source) => source.uuid)
       .toList();
@@ -242,15 +246,5 @@ class TrackingRepositoryImpl extends ConnectionAwareRepository<String, Tracking,
   }
 
   @override
-  Future<Tracking> onDelete(StorageState<Tracking> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
-    }
-    throw TrackingServiceException(
-      'Failed to delete Tracking ${state.value}',
-      response: response,
-      stackTrace: StackTrace.current,
-    );
-  }
+  Future<Tracking> onDelete(StorageState<Tracking> state) => Future.value(state.value);
 }

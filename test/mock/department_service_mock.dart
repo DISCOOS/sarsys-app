@@ -91,7 +91,7 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
       }
     });
 
-    when(mock.fetchAll()).thenAnswer((_) async {
+    when(mock.getList()).thenAnswer((_) async {
       return ServiceResponse.ok(
         body: depRepo.values.toList(),
       );

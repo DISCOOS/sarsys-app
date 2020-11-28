@@ -9,9 +9,9 @@ import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 
-class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organisation, OrganisationService>
+class OrganisationRepositoryImpl extends BoxRepository<String, Organisation, OrganisationService>
     implements OrganisationRepository {
   OrganisationRepositoryImpl(
     OrganisationService service, {
@@ -44,19 +44,18 @@ class OrganisationRepositoryImpl extends ConnectionAwareRepository<String, Organ
   }
 
   /// GET ../organisations
-  Future<List<Organisation>> _load({
+  Iterable<Organisation> _load({
     Completer<Iterable<Organisation>> onRemote,
-  }) async {
-    scheduleLoad(
-      service.fetchAll,
+  }) {
+    return requestQueue.load(
+      service.getList,
       shouldEvict: true,
       onResult: onRemote,
     );
-    return values;
   }
 
   @override
-  Future<Iterable<Organisation>> onReset({Iterable<Organisation> previous = const []}) async => await _load();
+  Future<Iterable<Organisation>> onReset({Iterable<Organisation> previous = const []}) => Future.value(_load());
 
   @override
   Future<Organisation> onCreate(StorageState<Organisation> state) async {

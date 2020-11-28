@@ -7,7 +7,7 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
@@ -133,7 +133,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   }
 
   /// All repositories
-  Iterable<ConnectionAwareRepository> get repos => [repo];
+  Iterable<BoxRepository> get repos => [repo];
 
   /// Check if device is this application
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;

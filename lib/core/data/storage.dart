@@ -250,9 +250,11 @@ class StorageState<T> {
     @required this.value,
     @required this.status,
     @required bool isRemote,
+    this.previous,
     this.error,
   }) : _isRemote = isRemote;
   final T value;
+  final T previous;
   final bool _isRemote;
   final Object error;
   final StorageStatus status;
@@ -260,20 +262,23 @@ class StorageState<T> {
   bool get isLocal => !_isRemote;
   bool get isRemote => _isRemote;
 
-  factory StorageState.created(T value, {bool isRemote = false, Object error}) => StorageState<T>(
+  factory StorageState.created(T value, {bool isRemote = false, T previous, Object error}) => StorageState<T>(
         value: value,
+        previous: previous,
         status: StorageStatus.created,
         isRemote: isRemote,
         error: error,
       );
-  factory StorageState.updated(T value, {bool isRemote = false, Object error}) => StorageState<T>(
+  factory StorageState.updated(T value, {bool isRemote = false, T previous, Object error}) => StorageState<T>(
         value: value,
+        previous: previous,
         status: StorageStatus.updated,
         isRemote: isRemote,
         error: error,
       );
-  factory StorageState.deleted(T value, {bool isRemote = false, Object error}) => StorageState<T>(
+  factory StorageState.deleted(T value, {bool isRemote = false, T previous, Object error}) => StorageState<T>(
         value: value,
+        previous: previous,
         status: StorageStatus.deleted,
         isRemote: isRemote,
         error: error,
@@ -286,6 +291,8 @@ class StorageState<T> {
   bool get isChanged => StorageStatus.updated == status;
   bool get isDeleted => StorageStatus.deleted == status;
 
+  bool get hasValue => value != null;
+  bool get hasPrevious => previous != null;
   bool get shouldLoad => !(isCreated && isLocal);
 
   ConflictModel get conflict => isConflict ? error as ConflictModel : null;
@@ -293,24 +300,27 @@ class StorageState<T> {
   StorageState<T> failed(Object error) => StorageState<T>(
         value: value,
         status: status,
+        previous: previous,
         isRemote: _isRemote,
         error: error,
       );
 
   StorageState<T> remote(T value) => StorageState<T>(
         value: value,
+        error: null,
         status: status,
         isRemote: true,
-        error: null,
+        previous: previous,
       );
 
-  StorageState<T> apply(T value, {@required bool isRemote, Object error}) {
+  StorageState<T> apply(T value, {@required bool isRemote, Object error, T previous}) {
     switch (status) {
       case StorageStatus.created:
         return StorageState(
           value: value,
           error: error ?? this.error,
           isRemote: isRemote ?? _isRemote,
+          previous: previous ?? this.value,
           status: _isRemote
               // If current is remote,
               // value MUST HAVE status
@@ -322,18 +332,66 @@ class StorageState<T> {
               : status,
         );
       default:
-        return replace(value, isRemote: isRemote);
+        return replace(
+          value,
+          isRemote: isRemote,
+          previous: previous,
+        );
     }
   }
 
-  StorageState<T> replace(T value, {bool isRemote}) {
+  /// Patch [next] state with existing
+  /// [value]. Returns [StorageState] with
+  /// patched [value] is [value] is an
+  /// [JsonObject], otherwise [next].
+  StorageState<V> patch<V extends JsonObject>(StorageState<V> next, V fromJson(Map<String, dynamic> json)) {
+    if (value is JsonObject) {
+      final patches = JsonUtils.diff(value as JsonObject, next.value);
+      if (patches.isNotEmpty) {
+        next = apply(
+          fromJson(JsonUtils.apply(
+            value as JsonObject,
+            patches,
+          )) as T,
+          error: next.error,
+          isRemote: next.isRemote,
+        ) as StorageState<V>;
+      } else {
+        // Vale not changed, use current
+        next = apply(
+          next.value as T,
+          error: next.error,
+          isRemote: next.isRemote,
+        ) as StorageState<V>;
+      }
+    }
+
+    return next;
+  }
+
+  StorageState<T> replace(T value, {bool isRemote, T previous}) {
     switch (status) {
       case StorageStatus.created:
-        return StorageState.created(value, isRemote: isRemote ?? _isRemote, error: error);
+        return StorageState.created(
+          value,
+          error: error,
+          isRemote: isRemote ?? _isRemote,
+          previous: previous ?? this.value,
+        );
       case StorageStatus.updated:
-        return StorageState.updated(value, isRemote: isRemote ?? _isRemote, error: error);
+        return StorageState.updated(
+          value,
+          error: error,
+          isRemote: isRemote ?? _isRemote,
+          previous: previous ?? this.value,
+        );
       case StorageStatus.deleted:
-        return StorageState.deleted(value, isRemote: isRemote ?? _isRemote, error: error);
+        return StorageState.deleted(
+          value,
+          error: error,
+          isRemote: isRemote ?? _isRemote,
+          previous: previous ?? this.value,
+        );
       default:
         throw StorageStateException('Unknown state $status');
     }
@@ -343,10 +401,15 @@ class StorageState<T> {
 
   @override
   String toString() {
-    return '$runtimeType {status: $status, isRemote: $_isRemote, value: ${_toValueAsString()}}';
+    return '$runtimeType {'
+        'status: $status, '
+        'isRemote: $_isRemote, '
+        'value: ${_toValueAsString(value)}, '
+        'previous: ${_toValueAsString(previous)}'
+        '}';
   }
 
-  String _toValueAsString() => '${value?.runtimeType} ${value is Aggregate ? '{${(value as Aggregate).uuid}}' : ''}';
+  String _toValueAsString(T value) => '${value?.runtimeType} ${value is Aggregate ? '{${value.uuid}}' : ''}';
 }
 
 class StorageTransition<T> {
@@ -360,6 +423,7 @@ class StorageTransition<T> {
   bool get isChanged => to?.isChanged ?? false;
   bool get isDeleted => to?.isDeleted ?? false;
   bool get isConflict => to?.isConflict ?? false;
+  bool get hasPrevious => to?.hasPrevious ?? false;
 
   ConflictModel get conflict => isConflict ? to.error as ConflictModel : null;
 }
@@ -406,9 +470,11 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
   StorageState<T> read(BinaryReader reader) {
     var value;
     var error;
+    var previous;
     var json = reader.readMap();
     try {
-      value = json['value'] != null ? fromJson(Map<String, dynamic>.from(json['value'])) : null;
+      value = _toValue(json, 'value');
+      previous = _toValue(json, 'previous');
     } on ArgumentError catch (e, stackTrace) {
       error = e;
       Catcher.reportCheckedError(error, stackTrace);
@@ -418,11 +484,14 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     }
     return StorageState(
       value: value,
+      previous: previous,
       status: _toStatus(json['status'] as String),
       error: error ?? (json['error'] != null ? json['error'] : null),
       isRemote: json['remote'] != null ? json['remote'] as bool : false,
     );
   }
+
+  T _toValue(Map json, String key) => json[key] != null ? fromJson(Map<String, dynamic>.from(json[key])) : null;
 
   StorageStatus _toStatus(String name) {
     final status = StorageStatus.values.firstWhere(
@@ -435,8 +504,10 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
   @override
   void write(BinaryWriter writer, StorageState<T> state) {
     var value;
+    var previous;
     try {
-      value = state.value != null ? toJson(state.value) : null;
+      value = state.hasValue ? toJson(state.value) : null;
+      previous = state.hasPrevious ? toJson(state.previous) : null;
     } on ArgumentError catch (error, stackTrace) {
       Catcher.reportCheckedError(error, stackTrace);
     } on Exception catch (error, stackTrace) {
@@ -444,6 +515,7 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
     }
     writer.writeMap({
       'value': value,
+      'previous': previous,
       'status': enumName(state.status),
       'error': state.isError ? '${state.error}' : null,
       'remote': state?._isRemote != null ? state._isRemote : null,
