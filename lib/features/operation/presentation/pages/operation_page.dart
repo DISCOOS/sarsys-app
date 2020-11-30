@@ -44,6 +44,7 @@ class _OperationPageState extends State<OperationPage> {
   TextStyle labelStyle;
   TextStyle valueStyle;
   TextStyle unitStyle;
+  TextStyle codeStyle;
 
   StreamGroup<dynamic> _group;
 
@@ -69,6 +70,7 @@ class _OperationPageState extends State<OperationPage> {
     labelStyle = Theme.of(context).textTheme.bodyText2.copyWith(fontWeight: FontWeight.w400);
     valueStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 18.0);
     unitStyle = Theme.of(context).textTheme.headline5.copyWith(fontWeight: FontWeight.w500, fontSize: 10.0);
+    codeStyle = TextStyle(fontFamily: 'PTMono', fontSize: 18.0);
     return RefreshIndicator(
       onRefresh: () async {
         context.bloc<OperationBloc>().load();
@@ -303,16 +305,17 @@ class _OperationPageState extends State<OperationPage> {
             children: <Widget>[
               Expanded(
                 flex: 2,
-                child: _buildValueTile("${operation.passcodes?.commander}", label: "Kode for aksjonsledelse"),
+                child: _buildValueTile("${operation.passcodes?.commander}",
+                    label: "Kode aksjonsledelse", useCodeStyle: true),
               ),
               SizedBox(width: OperationPage.SPACING),
               Expanded(
                 flex: 2,
-                child: _buildValueTile("${operation.passcodes?.personnel}", label: "Kode for mannskap"),
+                child: _buildValueTile("${operation.passcodes?.personnel}", label: "Kode mannskap", useCodeStyle: true),
               ),
             ],
           )
-        : _buildValueTile("${operation.passcodes?.personnel}", label: "Kode for mannskap");
+        : _buildValueTile("${operation.passcodes?.personnel}", label: "Kode mannskap", useCodeStyle: true);
   }
 
   Widget _buildValueTile(
@@ -324,6 +327,7 @@ class _OperationPageState extends State<OperationPage> {
     GestureTapCallback onIconTap,
     GestureTapCallback onValueTap,
     GestureTapCallback onValueLongPress,
+    bool useCodeStyle = false,
   }) {
     Widget tile = GestureDetector(
       child: Column(
@@ -334,7 +338,10 @@ class _OperationPageState extends State<OperationPage> {
           if (label != null && label.isNotEmpty) Spacer(),
           Wrap(
             children: [
-              Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
+              if (useCodeStyle)
+                Text(value, style: codeStyle, overflow: TextOverflow.ellipsis)
+              else
+                Text(value, style: valueStyle, overflow: TextOverflow.ellipsis),
               if (unit != null && unit.isNotEmpty) Text(unit, style: unitStyle, overflow: TextOverflow.ellipsis),
             ],
           ),
