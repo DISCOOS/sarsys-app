@@ -120,7 +120,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> with TickerPr
               child: _buildTitle(context),
             ),
             FractionallySizedBox(
-              heightFactor: 0.8,
+              heightFactor: 0.9,
               child: FractionallySizedBox(
                 widthFactor: 0.9,
                 child: Column(
