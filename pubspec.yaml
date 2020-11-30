@@ -179,3 +179,6 @@ flutter:
     - family: SarSysIcons
       fonts:
         - asset: assets/icons/SarSys.ttf
+    - family: PTMono
+      fonts:
+        - asset: assets/fonts/PTMono-Bold.ttf
