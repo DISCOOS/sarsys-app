@@ -443,9 +443,9 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                   progressColor: _toTrackingColor(service, usage),
                   center: FractionallySizedBox(
                     widthFactor: 0.7,
-                    heightFactor: 0.6,
-                    child: Stack(
-                      children: <Widget>[
+                    heightFactor: 0.65,
+                    child: //Stack(
+                    //  children: <Widget>[
                         Align(
                           alignment: Alignment.topCenter,
                           child: Column(
@@ -474,8 +474,8 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                 //     ],
+                 //   ),
                   ),
                 );
               });
