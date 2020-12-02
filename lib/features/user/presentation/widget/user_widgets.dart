@@ -444,38 +444,34 @@ class _LocationBufferWidgetState extends State<LocationBufferWidget> {
                   center: FractionallySizedBox(
                     widthFactor: 0.7,
                     heightFactor: 0.65,
-                    child: //Stack(
-                    //  children: <Widget>[
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              Spacer(),
-                              _buildValue(context, positions.length, 'punkter'),
-                              Divider(
-                                thickness: 2,
-                              ),
-                              _buildValue(context, service.odometer?.toInt(), 'meter'),
-                              Spacer(),
-                              Text(
-                                service.isStoring ? '${positions.length} av 1000 bufret' : 'Bufrer ikke',
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  service.isSharing ? 'Posisjoner deles' : 'Posisjoner deles ikke',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: _toTrackingColor(service, usage),
-                                  ),
-                                ),
-                              ),
-                            ],
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Spacer(),
+                          _buildValue(context, positions.length, 'punkter'),
+                          Divider(
+                            thickness: 2,
                           ),
-                        ),
-                 //     ],
-                 //   ),
+                          _buildValue(context, service.odometer?.toInt(), 'meter'),
+                          Spacer(),
+                          Text(
+                            service.isStoring ? '${positions.length} av 1000 bufret' : 'Bufrer ikke',
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              service.isSharing ? 'Posisjoner deles' : 'Posisjoner deles ikke',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _toTrackingColor(service, usage),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               });
