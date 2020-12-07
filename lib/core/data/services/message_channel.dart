@@ -3,14 +3,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:catcher/core/catcher.dart';
+import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/status.dart' as status;
+
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:catcher/core/catcher.dart';
-import 'package:flutter/foundation.dart';
-import 'package:web_socket_channel/io.dart';
 
 import 'package:SarSys/core/extensions.dart';
 
@@ -22,18 +24,18 @@ class MessageChannel extends Service {
   static const int closeAppIsOffline = 4002;
   static const int closeApiUnreachable = 4003;
   static const Map<int, String> closeCodeNames = const {
-    WebSocketStatus.normalClosure: 'normalClosure',
-    WebSocketStatus.abnormalClosure: 'abnormalClosure',
-    WebSocketStatus.goingAway: 'goingAway',
-    WebSocketStatus.internalServerError: 'internalServerError',
-    WebSocketStatus.invalidFramePayloadData: 'invalidFramePayloadData',
-    WebSocketStatus.messageTooBig: 'messageTooBig',
-    WebSocketStatus.missingMandatoryExtension: 'missingMandatoryExtension',
-    WebSocketStatus.noStatusReceived: 'noStatusReceived',
-    WebSocketStatus.policyViolation: 'policyViolation',
-    WebSocketStatus.protocolError: 'protocolError',
-    WebSocketStatus.reserved1004: 'reserved1004',
-    WebSocketStatus.reserved1015: 'reserved1015',
+    status.normalClosure: 'normalClosure',
+    status.abnormalClosure: 'abnormalClosure',
+    status.goingAway: 'goingAway',
+    status.internalServerError: 'internalServerError',
+    status.invalidFramePayloadData: 'invalidFramePayloadData',
+    status.messageTooBig: 'messageTooBig',
+    status.missingMandatoryExtension: 'missingMandatoryExtension',
+    status.noStatusReceived: 'noStatusReceived',
+    status.policyViolation: 'policyViolation',
+    status.protocolError: 'protocolError',
+    1004: 'reserved1004',
+    1015: 'reserved1015',
     closedByApp: 'closedByApp',
     closeAppReopening: 'closeAppReopening',
     closeAppIsOffline: 'closeAppIsOffline',
@@ -174,7 +176,7 @@ class MessageChannel extends Service {
     if (!_isClosed) {
       _close(
         reason: _channel.closeReason ?? 'Done event received',
-        code: _channel.closeCode ?? WebSocketStatus.normalClosure,
+        code: _channel.closeCode ?? WebSocketStatus.goingAway,
       );
     }
   }
@@ -233,7 +235,7 @@ class MessageChannel extends Service {
     if (_channel != null) {
       _isClosed = true;
       _lastCode = code;
-      _channel?.sink?.close();
+      _channel?.sink?.close(status.goingAway);
       _subscriptions.forEach(
         (subscription) => subscription.cancel(),
       );
