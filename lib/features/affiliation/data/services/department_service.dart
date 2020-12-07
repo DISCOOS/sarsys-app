@@ -18,7 +18,11 @@ class DepartmentService with ServiceGetList<Department> implements ServiceDelega
 
   DepartmentService() : delegate = DepartmentServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Department>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Department>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Department>, List<Department>>(
       await delegate.fetch(offset: offset, limit: limit),
     );

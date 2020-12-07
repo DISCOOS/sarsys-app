@@ -15,6 +15,7 @@ class SteppedScreen extends StatefulWidget {
     @required this.views,
     @required this.isComplete,
     @required this.onComplete,
+    this.index = 0,
     this.onBack,
     this.onNext,
     this.hasBack,
@@ -30,6 +31,7 @@ class SteppedScreen extends StatefulWidget {
     this.controller,
   }) : super(key: key);
 
+  final int index;
   final List<Widget> views;
   final String nextActionText;
   final String backActionText;
@@ -54,16 +56,25 @@ class SteppedScreen extends StatefulWidget {
 }
 
 class _SteppedScreenState extends State<SteppedScreen> {
-  var controller = PageController();
-
   int index = 0;
+  PageController controller;
+
+  @override
+  void initState() {
+    controller = PageController(initialPage: widget.index);
+    super.initState();
+  }
 
   @override
   void didUpdateWidget(SteppedScreen oldWidget) {
     if (oldWidget.controller != widget.controller && widget.controller != null) {
       controller?.dispose();
-      controller = widget.controller;
+      controller = widget.controller ?? PageController(initialPage: widget.index);
     }
+    if (controller.page.toInt() != widget.index) {
+      controller.jumpToPage(widget.index);
+    }
+    index = controller.page.toInt();
     super.didUpdateWidget(oldWidget);
   }
 
@@ -128,12 +139,12 @@ class _SteppedScreenState extends State<SteppedScreen> {
                       ? null
                       : () {
                           if (_hasBack(index)) {
-                            _onBack(index);
                             controller.animateToPage(
                               index = max(0, --index),
                               curve: Curves.linearToEaseOut,
                               duration: const Duration(milliseconds: 500),
                             );
+                            _onBack(index);
                           }
                         },
                 ),
@@ -166,12 +177,12 @@ class _SteppedScreenState extends State<SteppedScreen> {
                       : widget.nextActionText),
                   onPressed: () async {
                     if (_hasNext(index)) {
-                      _onNext(index);
                       controller.animateToPage(
                         index = min(widget.views.length - 1, ++index),
                         curve: Curves.linearToEaseOut,
                         duration: const Duration(milliseconds: 500),
                       );
+                      _onNext(index);
                     } else if (widget.isComplete(index)) {
                       widget.onComplete(index);
                     } else {

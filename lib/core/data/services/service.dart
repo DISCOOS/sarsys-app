@@ -15,18 +15,25 @@ abstract class JsonService<D, R> extends ChopperService implements Service {
   JsonService({
     @required this.decoder,
     @required this.reducer,
-    this.body = 'data',
     this.isPaged = true,
+    this.dataField = 'data',
+    this.entriesField = 'entries',
   });
-  final String body;
+  final String dataField;
   final bool isPaged;
-  final JsonReducer<R> reducer;
+  final String entriesField;
+  final JsonReducer reducer;
   final JsonDecoder<D> decoder;
   Type get decodedType => typeOf<D>();
   Type get reducedType => typeOf<R>();
   Map<Type, JsonDecoder> get decoders => {
-        decodedType: (json) => json[body] == null ? null : decoder(json[body]),
-        isPaged ? typeOf<PagedList<D>>() : typeOf<List<D>>(): (json) => JsonUtils.toPagedList<D>(json, decoder),
+        decodedType: (json) => json[dataField] == null ? null : decoder(json[dataField]),
+        (isPaged ? typeOf<PagedList<D>>() : typeOf<List<D>>()): (json) => JsonUtils.toPagedList(
+              json,
+              decoder,
+              dataField: dataField,
+              entriesField: entriesField,
+            ),
       };
 }
 
@@ -41,15 +48,24 @@ mixin ServiceGetFromId<T extends JsonObject> {
 }
 
 mixin ServiceGetList<T extends JsonObject> {
-  Future<ServiceResponse<List<T>>> getList({int offset = 0, int limit = 20}) async {
+  Future<ServiceResponse<List<T>>> getList({
+    int offset = 0,
+    int limit = 20,
+    List<String> options = const [],
+  }) async {
     final body = <T>[];
-    var response = await getSubList(offset, limit);
+    var response = await getSubList(
+      offset,
+      limit,
+      options,
+    );
     while (response.is200) {
       body.addAll(response.body);
       if (response.page.hasNext) {
         response = await getSubList(
           response.page.next,
           response.page.limit,
+          options,
         );
       } else {
         return ServiceResponse.ok(body: body);
@@ -58,7 +74,11 @@ mixin ServiceGetList<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubList(int offset, int limit) {
+  Future<ServiceResponse<List<T>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) {
     throw UnimplementedError("fetch not implemented");
   }
 }
@@ -68,9 +88,15 @@ mixin ServiceGetListFromId<T extends JsonObject> {
     String id, {
     int offset = 0,
     int limit = 20,
+    List<String> options = const [],
   }) async {
     final items = <T>[];
-    var response = await getSubListFromId(id, offset, limit);
+    var response = await getSubListFromId(
+      id,
+      offset,
+      limit,
+      options,
+    );
     while (response.is200) {
       items.addAll(response.body);
       if (response.page.hasNext) {
@@ -78,6 +104,7 @@ mixin ServiceGetListFromId<T extends JsonObject> {
           id,
           response.page.next,
           response.page.limit,
+          options,
         );
       } else {
         return ServiceResponse.ok(body: items);
@@ -86,7 +113,12 @@ mixin ServiceGetListFromId<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubListFromId(String id, int offset, int limit) {
+  Future<ServiceResponse<List<T>>> getSubListFromId(
+    String id,
+    int offset,
+    int limit,
+    List<String> options,
+  ) {
     throw UnimplementedError("fetch not implemented");
   }
 }
@@ -103,9 +135,16 @@ mixin ServiceGetListFromIds<T extends JsonObject> {
     String id2, {
     int offset = 0,
     int limit = 20,
+    List<String> options = const [],
   }) async {
     final items = <T>[];
-    var response = await getSubListFromIds(id1, id2, offset, limit);
+    var response = await getSubListFromIds(
+      id1,
+      id2,
+      offset,
+      limit,
+      options,
+    );
     while (response.is200) {
       items.addAll(response.body);
       if (response.page.hasNext) {
@@ -114,6 +153,7 @@ mixin ServiceGetListFromIds<T extends JsonObject> {
           id2,
           response.page.next,
           response.page.limit,
+          options,
         );
       } else {
         return ServiceResponse.ok(body: items);
@@ -122,7 +162,13 @@ mixin ServiceGetListFromIds<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubListFromIds(String id1, String id2, int offset, int limit) {
+  Future<ServiceResponse<List<T>>> getSubListFromIds(
+    String id1,
+    String id2,
+    int offset,
+    int limit,
+    List<String> options,
+  ) {
     throw UnimplementedError("fetch not implemented");
   }
 }
@@ -153,8 +199,6 @@ class ServiceResponse<T> extends Equatable {
           statusCode,
           reasonPhrase,
         ]);
-
-  bool get isErrorCode => (statusCode ?? 0) >= 400;
 
   ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
     return ServiceResponse<T>(
@@ -266,6 +310,9 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
+  bool get isErrorCode => (statusCode ?? 0) >= 400;
+  bool get isErrorTemporary => is429 || is503 || is504;
+
   bool get is200 => statusCode == HttpStatus.ok;
   bool get is201 => statusCode == HttpStatus.created;
   bool get is202 => statusCode == HttpStatus.accepted;
@@ -276,6 +323,7 @@ class ServiceResponse<T> extends Equatable {
   bool get is403 => statusCode == HttpStatus.forbidden;
   bool get is404 => statusCode == HttpStatus.notFound;
   bool get is409 => statusCode == HttpStatus.conflict;
+  bool get is429 => statusCode == HttpStatus.tooManyRequests;
   bool get is500 => statusCode == HttpStatus.internalServerError;
   bool get is502 => statusCode == HttpStatus.badGateway;
   bool get is503 => statusCode == HttpStatus.serviceUnavailable;

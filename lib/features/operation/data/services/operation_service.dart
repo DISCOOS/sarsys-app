@@ -16,7 +16,11 @@ class OperationService with ServiceGetList<Operation> implements ServiceDelegate
 
   OperationService() : delegate = OperationServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Operation>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Operation>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Operation>, List<Operation>>(
       await delegate.fetch(
         offset: offset,

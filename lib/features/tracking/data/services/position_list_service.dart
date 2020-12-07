@@ -6,47 +6,45 @@ import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
 
-part 'tracking_track_positions_service.chopper.dart';
+part 'position_list_service.chopper.dart';
 
 /// Service for consuming the Tracks endpoint
 ///
 /// Delegates to a ChopperService implementation
-class TrackingTrackPositionsService
-    with ServiceGetListFromIds<Position>
-    implements ServiceDelegate<TrackingTrackPositionsServiceImpl> {
-  final TrackingTrackPositionsServiceImpl delegate;
+class PositionListService with ServiceGetListFromIds<Position> implements ServiceDelegate<PositionListServiceImpl> {
+  final PositionListServiceImpl delegate;
 
-  TrackingTrackPositionsService() : delegate = TrackingTrackPositionsServiceImpl.newInstance();
+  PositionListService() : delegate = PositionListServiceImpl.newInstance();
 
   /// Fetch [TrackingTrack]s for given [Tracking] uuid.
   Future<ServiceResponse<List<Position>>> getSubListFromIds(
     String tuuid,
     String suuid,
     int offset,
-    int limit, {
-    @Query('option') List<String> options = const ['truncate:-20:m'],
-  }) async {
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Position>, List<Position>>(
       await delegate.getPositions(
         tuuid,
         suuid,
         offset,
         limit,
-        options: options,
+        options: const ['truncate:-20:m'],
       ),
     );
   }
 }
 
 @ChopperApi()
-abstract class TrackingTrackPositionsServiceImpl extends JsonService<Position, Position> {
-  TrackingTrackPositionsServiceImpl()
+abstract class PositionListServiceImpl extends JsonService<Position, Position> {
+  PositionListServiceImpl()
       : super(
+          // Map
           decoder: (json) => Position.fromJson(json),
           reducer: (value) => JsonUtils.toJson<Position>(value),
         );
-  static TrackingTrackPositionsServiceImpl newInstance([ChopperClient client]) =>
-      _$TrackingTrackPositionsServiceImpl(client);
+  static PositionListServiceImpl newInstance([ChopperClient client]) => _$PositionListServiceImpl(client);
 
   @Get(path: '/trackings/{uuid}/tracks/{id}')
   Future<Response<PagedList<Position>>> getPositions(

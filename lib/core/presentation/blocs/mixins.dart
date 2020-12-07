@@ -1,29 +1,55 @@
 import 'dart:async';
 
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/repository.dart';
 
+mixin ReadyAwareBloc<S, T> {
+  /// Check if bloc is ready
+  bool get isReady;
+
+  /// Stream of isReady changes
+  Stream<bool> get onReadyChanged;
+
+  /// Wait on [isReady] is [true]
+  Future<bool> get onReady => isReady ? Future.value(true) : onReadyChanged.where((state) => state).first;
+
+  /// Wait on [isReady] is [false]
+  Future<bool> get onNotReady => !isReady ? Future.value(false) : onReadyChanged.where((state) => !state).first;
+}
+
 /// Connection aware [Bloc] mixin
-mixin ConnectionAwareBloc<S, T> {
-  /// Get repositories managed by this [Bloc]
-  Iterable<BoxRepository> get repos;
+mixin ConnectionAwareBloc<K, V extends JsonObject, S extends Service> on ReadyAwareBloc<K, V> {
+  /// Default timeout on requests that
+  /// should return within finite time
+  static const Duration timeLimit = const Duration(seconds: 1);
 
   /// Check if bloc is online
-  bool get isOnline => repos.first.isOnline;
+  bool get isOnline => repo.isOnline;
 
   /// Check if bloc is offline
-  bool get isOffline => repos.first.isOffline;
+  bool get isOffline => repo.isOffline;
 
   /// Check if repository is loading
-  bool get isLoading => repos.any((repo) => repo.isLoading);
+  bool get isLoading => repos.whereType<StatefulRepository>().any((repo) => repo.isLoading);
 
-  /// Get all values
-  Iterable<T> get values;
+  /// Get [StatefulRepository] instance
+  StatefulRepository<K, V, Service> get repo;
 
-  /// Get [T] from [uuid]
-  T operator [](S uuid);
+  /// Get <ll repositories managed by this [Bloc]
+  Iterable<StatefulRepository> get repos => [repo];
 
-  Completer<Iterable<T>> _onLoaded;
+  /// Get all [V]s
+  Iterable<V> get values => repo.values;
+
+  /// Get [V] from [uuid]
+  V operator [](K uuid) => repo[uuid];
+
+  /// Get [Service]
+  S get service => repo.service;
+
+  Completer<Iterable<V>> _onLoaded;
 
   /// Wait on future completed when
   /// loading is finished. If offline
@@ -47,29 +73,29 @@ mixin ConnectionAwareBloc<S, T> {
   /// loading does not complete with
   /// duration given by [waitFor].
   ///
-  Future<Iterable<T>> onLoadedAsync({
+  Future<Iterable<V>> onLoadedAsync({
     bool fail = false,
-    Duration waitFor,
     bool waitForOnline = false,
-  }) {
+  }) async {
+    await onReady;
+
     if (_onLoaded?.isCompleted == false) {
       return _onLoaded.future;
     }
 
-    _onLoaded = Completer<Iterable<T>>();
+    _onLoaded = Completer<Iterable<V>>();
     _awaitLoaded(
       _onLoaded,
-      waitFor,
       waitForOnline,
       fail,
       1,
     );
-    return _onLoaded.future;
+
+    return _onLoaded == null ? Future.value(values) : _onLoaded.future;
   }
 
   void _awaitLoaded(
-    Completer<Iterable<T>> completer,
-    Duration waitFor,
+    Completer<Iterable<V>> completer,
     bool waitForOnline,
     bool fail,
     int retry,
@@ -77,7 +103,9 @@ mixin ConnectionAwareBloc<S, T> {
     // Only wait if loading with connectivity
     // online, or wait for online is requested
     if (_shouldWait(waitForOnline)) {
-      await Future.delayed(waitFor ?? Duration(milliseconds: 50));
+      await Future.delayed(
+        const Duration(milliseconds: 50),
+      );
     }
 
     if (_shouldWait(waitForOnline)) {
@@ -88,12 +116,19 @@ mixin ConnectionAwareBloc<S, T> {
           ),
           StackTrace.current,
         );
+        _onLoaded = null;
       } else {
-        _awaitLoaded(completer, waitFor, waitForOnline, fail, ++retry);
+        _awaitLoaded(
+          completer,
+          waitForOnline,
+          fail,
+          ++retry,
+        );
       }
     } else if (!completer.isCompleted) {
       assert(!_shouldWait(waitForOnline), "Should not be loading when online");
       completer.complete(values);
+      _onLoaded = null;
     }
   }
 

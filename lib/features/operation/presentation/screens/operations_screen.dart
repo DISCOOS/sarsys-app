@@ -10,7 +10,6 @@ import 'package:SarSys/features/operation/domain/usecases/operation_use_cases.da
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
-import 'package:SarSys/features/operation/presentation/screens/open_operation_screen.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/presentation/screens/screen.dart';
@@ -195,7 +194,7 @@ class _OperationsPageState extends State<OperationsPage> {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.bloc<OperationBloc>().selected == operation;
           final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
-          final isMobilized = isCurrent && context.bloc<PersonnelBloc>().isUserMobilized();
+          final isMobilized = isCurrent && context.bloc<PersonnelBloc>().isUserMobilized;
           final isAuthorized = isMobilized || context.bloc<UserBloc>().isAuthorized(operation);
           return Card(
             elevation: 4.0,
@@ -233,12 +232,18 @@ class _OperationsPageState extends State<OperationsPage> {
                               icon: Icon(isAuthorized
                                   ? isMobilized
                                       ? toPersonnelStatusIcon(PersonnelStatus.leaving)
-                                      : isAuthorized ? toPersonnelStatusIcon(PersonnelStatus.enroute) : Icons.lock_open
+                                      : isAuthorized
+                                          ? toPersonnelStatusIcon(PersonnelStatus.enroute)
+                                          : Icons.lock_open
                                   : Icons.lock_open),
                               label: Text(
                                 isAuthorized
                                     ? (isMobilized ? 'SJEKK UT' : 'DELTA')
-                                    : hasRoles ? isMobilized ? 'LÅS OPP' : 'LÅS OPP' : 'INGEN TILGANG',
+                                    : hasRoles
+                                        ? isMobilized
+                                            ? 'LÅS OPP'
+                                            : 'LÅS OPP'
+                                        : 'INGEN TILGANG',
                                 style: TextStyle(fontSize: 14.0),
                               ),
                               padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
@@ -248,7 +253,7 @@ class _OperationsPageState extends State<OperationsPage> {
                                       if (isMobilized) {
                                         await leaveOperation();
                                       } else {
-                                        await _joinAndReroute(operation);
+                                        await joinOperation(operation);
                                       }
                                     }
                                   : null,
@@ -363,15 +368,10 @@ class _OperationsPageState extends State<OperationsPage> {
             withRead: true,
           ),
         ),
-        onTap: () => _joinAndReroute(operation),
+        onTap: () => joinOperation(operation),
       ),
     );
   }
-
-  Future _joinAndReroute(Operation operation) => showDialog(
-        context: context,
-        builder: (context) => OpenOperationScreen(operation: operation),
-      );
 }
 
 class OperationSearch extends SearchDelegate<Operation> {

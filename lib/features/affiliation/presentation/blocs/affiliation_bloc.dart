@@ -5,13 +5,14 @@ import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
+import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -56,8 +57,8 @@ import 'package:uuid/uuid.dart';
 /// accounts, an new Person will be onboarded
 /// for each account, leading to Person duplicates
 ///
-class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, AffiliationBlocError>
-    with LoadableBloc<List<Affiliation>>, UnloadableBloc<List<Affiliation>>, ConnectionAwareBloc<String, Affiliation> {
+class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState, AffiliationBlocError, String,
+    Affiliation, AffiliationService> with LoadableBloc<List<Affiliation>>, UnloadableBloc<List<Affiliation>> {
   ///
   /// Default constructor
   ///
@@ -85,12 +86,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
 
     registerStreamSubscription(persons.onChanged.listen(
       // Handle
-      _processPersonConflicts,
+      _processPersonChanges,
     ));
   }
 
   /// All repositories
-  Iterable<BoxRepository> get repos => [
+  Iterable<StatefulRepository> get repos => [
         orgs,
         divs,
         deps,
@@ -128,7 +129,6 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         if (state.shouldLoad() && repo.isNotReady) {
           // Wait for load before onboarding user
           await dispatch(LoadAffiliations());
-          await onLoadedAsync();
           await onboardUser();
         } else if (state.shouldUnload(isOnline: isOnline) && repo.isReady) {
           dispatch(UnloadAffiliations());
@@ -144,19 +144,30 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     }
   }
 
-  void _processPersonConflicts(StorageTransition<Person> event) {
+  void _processPersonChanges(StorageTransition<Person> event) {
     try {
       if (PersonRepository.isDuplicateUser(event)) {
         // Find current person usages and replace then with existing user
         final duplicate = event.from.value.uuid;
         final existing = PersonModel.fromJson(event.conflict.base);
-        find(
-          where: (affiliation) => affiliation.person.uuid == duplicate,
-        ).map((affiliation) => affiliation.withPerson(existing)).forEach(update);
-        // Remove duplicate person
+        repo.findPerson(duplicate).map((affiliation) => affiliation.withPerson(existing)).forEach(
+              update,
+            );
+        // Remove duplicate person and patch existing with local state
         persons.delete(duplicate);
-        // Patch existing with current state
-        persons.patch(existing);
+        persons.replace(
+          existing,
+          isRemote: event.isRemote,
+        );
+      } else {
+        // Synchronize affiliates with person
+        final person = event.to.value;
+        repo.findPerson(person.uuid).forEach((affiliate) {
+          repo.replace(
+            affiliate.withPerson(person, keep: false),
+            isRemote: event.isRemote,
+          );
+        });
       }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
@@ -169,7 +180,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   }
 
   /// Check if bloc is ready
+  @override
   bool get isReady => repo.isReady;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   @override
   AffiliationsEmpty get initialState => AffiliationsEmpty();
@@ -230,8 +246,12 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
             : names.join(', ');
   }
 
-  /// Get [Person] from User
-  Person findUserPerson({String userId}) => persons.findUser(userId ?? users.user.userId);
+  /// Get [Person] from given [userId].
+  /// If [userId] is not given, current
+  /// authenticated user is returned,
+  /// or [null] if ont found
+  Person findUserPerson({String userId}) =>
+      users.isAuthenticated ? persons.findUser(userId ?? users.user.userId) : null;
 
   /// Get Affiliation from User
   Affiliation findUserAffiliation({
@@ -325,23 +345,29 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
   /// Get Division from User
   Division findUserDivision({String userId}) {
     final user = users.repo[userId] ?? users.user;
-    final name = user.division?.toLowerCase();
-    return divs.values
-        .where(
-          (division) => division.name.toLowerCase() == name,
-        )
-        ?.firstOrNull;
+    if (user != null) {
+      final name = user.division?.toLowerCase();
+      return divs.values
+          .where(
+            (division) => division.name.toLowerCase() == name,
+          )
+          ?.firstOrNull;
+    }
+    return null;
   }
 
   /// Get Department id from User
   Department findUserDepartment({String userId}) {
     final user = users.repo[userId] ?? users.user;
-    final name = (user ?? users.user).department?.toLowerCase();
-    return deps.values
-        .where(
-          (department) => department.name.toLowerCase() == name,
-        )
-        ?.firstOrNull;
+    if (user != null) {
+      final name = (user ?? users.user).department?.toLowerCase();
+      return deps.values
+          .where(
+            (department) => department.name.toLowerCase() == name,
+          )
+          ?.firstOrNull;
+    }
+    return null;
   }
 
   /// Get Organisation from [FleetMap] number
@@ -475,6 +501,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
     AffiliationStandbyStatus status = AffiliationStandbyStatus.available,
   }) async {
     await _assertState('onboard');
+    await onLoadedAsync();
     final affiliation = findUserAffiliation(userId: userId);
     if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
@@ -647,7 +674,7 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
         return AffiliationsFetched(
           isRemote: true,
           affiliations: results.firstOrNull?.map((a) => a.uuid) ?? <String>[],
-          persons: results.cast<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
+          persons: results.whereType<Affiliation>().map((e) => e.person?.uuid).whereNotNull().toList(),
         );
       },
       toCommand: (state) => _StateChange(state),
@@ -833,16 +860,6 @@ class AffiliationBloc extends BaseBloc<AffiliationCommand, AffiliationState, Aff
       result: _affiliations,
     );
     yield unloaded;
-  }
-
-  @override
-  Future<void> close() async {
-    await deps.dispose();
-    await divs.dispose();
-    await orgs.dispose();
-    await persons.dispose();
-    await repo.dispose();
-    return super.close();
   }
 
   @override

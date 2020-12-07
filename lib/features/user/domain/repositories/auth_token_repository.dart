@@ -40,7 +40,7 @@ class AuthTokenRepository implements Repository<String, AuthToken> {
     if (_tokens == null) {
       _tokens = await Hive.openBox(
         '$AuthTokenRepository',
-        encryptionKey: await Storage.hiveKey<AuthToken>(),
+        encryptionCipher: await Storage.hiveCipher<AuthToken>(),
       );
     }
     return _tokens;

@@ -9,9 +9,10 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-class DivisionRepositoryImpl extends BoxRepository<String, Division, DivisionService> implements DivisionRepository {
+class DivisionRepositoryImpl extends StatefulRepository<String, Division, DivisionService>
+    implements DivisionRepository {
   DivisionRepositoryImpl(
     DivisionService service, {
     @required ConnectivityService connectivity,

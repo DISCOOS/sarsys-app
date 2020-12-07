@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/settings/domain/repositories/app_config_repository.dart';
@@ -12,17 +12,14 @@ import 'package:flutter/foundation.dart';
 
 typedef void AppConfigCallback(VoidCallback fn);
 
-class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfigBlocError>
-    with
-        InitableBloc<AppConfig>,
-        LoadableBloc<AppConfig>,
-        UpdatableBloc<AppConfig>,
-        ConnectionAwareBloc<int, AppConfig> {
+class AppConfigBloc
+    extends StatefulBloc<AppConfigCommand, AppConfigState, AppConfigBlocError, int, AppConfig, AppConfigService>
+    with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
   AppConfigBloc(this.repo, BlocEventBus bus) : super(bus: bus);
   final AppConfigRepository repo;
 
   /// All repositories
-  Iterable<BoxRepository> get repos => [repo];
+  Iterable<StatefulRepository> get repos => [repo];
 
   AppConfigService get service => repo.service;
 
@@ -30,7 +27,12 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
   AppConfigEmpty get initialState => AppConfigEmpty();
 
   /// Check if [config] is empty
+  @override
   bool get isReady => repo.isReady && repo.state != null && repo.state.isDeleted != true;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// Get config
   AppConfig get config => repo.config;
@@ -270,12 +272,6 @@ class AppConfigBloc extends BaseBloc<AppConfigCommand, AppConfigState, AppConfig
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
-
-  @override
-  Future<void> close() async {
-    await repo.dispose();
-    return super.close();
-  }
 }
 
 /// ---------------------

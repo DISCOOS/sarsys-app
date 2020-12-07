@@ -19,7 +19,6 @@ import 'package:SarSys/core/domain/usecase/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/core/utils/ui.dart';
-import 'package:catcher/core/catcher.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -157,18 +156,17 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 Future<dartz.Either<bool, Personnel>> mobilizeUser() => MobilizeUser()(PersonnelParams());
 
 class MobilizeUser extends UseCase<bool, Personnel, PersonnelParams> {
+  MobilizeUser() : super(failure: false);
+
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     if (params.operationBloc.isUnselected) {
       return dartz.left(false);
     }
     assert(params.user != null, "UserBloc contains no user");
-    try {
-      return dartz.right(await params.bloc.mobilizeUser());
-    } on Exception catch (e, stackTrace) {
-      Catcher.reportCheckedError(e, stackTrace);
-    }
-    return dartz.left(false);
+    return dartz.right(
+      await params.bloc.mobilizeUser(),
+    );
   }
 }
 
@@ -197,7 +195,9 @@ class EditPersonnel extends UseCase<bool, Personnel, PersonnelParams> {
     // Update personnel and affiliation
     // If was retired, tracking bloc will handle tracking
     final personnel = await params.bloc.update(result.data);
-    await params.context.bloc<AffiliationBloc>().update(result.affiliation);
+    if (result.affiliation != null) {
+      await params.context.bloc<AffiliationBloc>().update(result.affiliation);
+    }
 
     // Only update tracking if mobilized
     if (personnel.isMobilized) {

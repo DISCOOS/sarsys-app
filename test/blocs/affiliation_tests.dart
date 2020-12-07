@@ -91,8 +91,8 @@ void main() async {
               isA<Organisation>(),
               isA<Division>(),
               isA<Department>(),
-              isA<Person>(),
               isA<Affiliation>(),
+              isA<Person>(),
             ]));
 
         // Assert states
@@ -155,7 +155,7 @@ void main() async {
         await _authenticate(harness, exists: true);
 
         // Assert
-        await expectThroughLater(harness.affiliationBloc, emits(isA<UserOnboarded>()));
+        await expectThroughLater(harness.affiliationBloc, emits(isA<AffiliationsLoaded>()));
       },
     );
   });
@@ -230,15 +230,15 @@ void main() async {
       );
 
       // One affiliation
-      harness.connectivity.offline();
       await _seed(harness, offline: true);
+      harness.connectivity.offline();
       reset(harness.personService);
       reset(harness.divisionService);
       reset(harness.departmentService);
       reset(harness.affiliationService);
       reset(harness.organisationService);
 
-      // Act
+      // Act on local storage
       await harness.affiliationBloc.load();
 
       // Assert interactions
@@ -254,15 +254,15 @@ void main() async {
       expect(harness.affiliationBloc.deps.length, 0, reason: "SHOULD contain 0 departments");
 
       // These are created locally during onboarding and are always there
-      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 persons");
-      expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 1 affiliates");
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 2 persons");
+      expect(harness.affiliationBloc.affiliates.length, 1, reason: "SHOULD contain 2 affiliates");
     });
 
     test('SHOULD fetch from remote when online', () async {
       // Arrange
       await _authenticate(harness);
-      harness.connectivity.offline();
       await _seed(harness, offline: true);
+      harness.connectivity.offline();
       await harness.affiliationBloc.load();
       // Assert async loads
       await expectThroughLater(
@@ -310,7 +310,63 @@ void main() async {
       // Arrange
       await _authenticate(harness);
       await _seed(harness, offline: false);
+
+      // final cipher = await Storage.hiveCipher<Person>();
+      // // final key = [
+      // //   102,
+      // //   94,
+      // //   218,
+      // //   252,
+      // //   17,
+      // //   99,
+      // //   161,
+      // //   87,
+      // //   71,
+      // //   167,
+      // //   147,
+      // //   71,
+      // //   33,
+      // //   138,
+      // //   158,
+      // //   196,
+      // //   154,
+      // //   124,
+      // //   92,
+      // //   180,
+      // //   168,
+      // //   200,
+      // //   42,
+      // //   176,
+      // //   98,
+      // //   149,
+      // //   68,
+      // //   40,
+      // //   22,
+      // //   123,
+      // //   113,
+      // //   132,
+      // // ];
+      // print(cipher);
+      //
+      // final box1 = await Hive.openBox<StorageState<Person>>(
+      //   StatefulRepository.toBoxName(
+      //     runtimeType: PersonRepositoryImpl,
+      //   ),
+      //   encryptionCipher: cipher,
+      // );
+      // print(box1.values);
+      // await box1.close();
+      //
+      // final box2 = await Hive.openBox<StorageState<Person>>(
+      //   StatefulRepository.toBoxName(
+      //     runtimeType: PersonRepositoryImpl,
+      //   ),
+      //   encryptionCipher: cipher,
+      // );
+      // print(box2.values);
+
       await harness.affiliationBloc.load();
+
       await expectThroughLater(
         harness.affiliationBloc,
         emits(isA<AffiliationsLoaded>().having(
@@ -364,6 +420,7 @@ Future _seed(
     isNotNull,
   );
   final p2 = await harness.personService.add(
+    uuid: Uuid().v4(),
     userId: Uuid().v4(),
     storage: !offline,
   );
@@ -396,16 +453,18 @@ Future _authenticate(
   expect(harness.user.division, equals(harness.division));
   expect(harness.user.department, equals(harness.department));
 
-  // Wait until user is onboarded remotely
-  await expectThroughLater(
-    harness.affiliationBloc,
-    emits(isA<UserOnboarded>().having(
-      (event) => event.isRemote,
-      'Should be remote',
-      isTrue,
-    )),
-  );
   if (!exists) {
+    // Wait until user is onboarded remotely
+    await expectThroughLater(
+      harness.affiliationBloc,
+      emits(isA<UserOnboarded>().having(
+        (event) {
+          return event.isRemote;
+        },
+        'Should be remote',
+        isTrue,
+      )),
+    );
     await expectStorageStatusLater(
       harness.affiliationBloc.persons.values.first.uuid,
       harness.affiliationBloc.persons,

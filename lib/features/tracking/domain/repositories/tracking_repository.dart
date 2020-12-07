@@ -5,12 +5,13 @@ import 'package:SarSys/core/domain/repository.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
+import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
+import 'package:SarSys/features/tracking/domain/entities/TrackingSource.dart';
 
-abstract class TrackingRepository extends BoxRepository<String, Tracking, TrackingService> {
+abstract class TrackingRepository extends StatefulRepository<String, Tracking, TrackingService> {
   /// Get [Operation.uuid]
   String get ouuid;
 
@@ -20,9 +21,6 @@ abstract class TrackingRepository extends BoxRepository<String, Tracking, Tracki
   /// created with [create].
   @override
   bool get isReady;
-
-  /// [TrackingTrack] repository
-  TrackingTrackRepository get tracks;
 
   /// Get [Tracking.uuid] from [state]
   @override
@@ -64,10 +62,28 @@ abstract class TrackingRepository extends BoxRepository<String, Tracking, Tracki
     List<TrackingStatus> exclude: const [TrackingStatus.closed],
   });
 
-  /// GET ../units
+  /// Load all [Tracking] objects in given [Organisation.uuid]
   Future<List<Tracking>> load(
     String ouuid, {
     Completer<Iterable<Tracking>> onRemote,
+  });
+
+  /// Fetch positions for given
+  /// [Tracking].
+  ///
+  /// If [TrackingSource]s are
+  /// given, positions for only
+  /// those are fetched.
+  ///
+  /// Returns a [PositionList] if given
+  /// [Tracking] exists locally and
+  /// tracks given [TrackingSource],
+  /// [null] otherwise.
+  Future<PositionList> fetchPositionLists(
+    String tuuid, {
+    List<String> suuids = const [],
+    Completer<Iterable<Tracking>> onRemote,
+    List<String> options = const ['truncate:-20:m'],
   });
 }
 

@@ -16,7 +16,12 @@ class UnitService with ServiceGetListFromId<Unit> implements ServiceDelegate<Uni
 
   UnitService() : delegate = UnitServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Unit>>> getSubListFromId(String ouuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Unit>>> getSubListFromId(
+    String ouuid,
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Unit>, List<Unit>>(
       await delegate.fetch(
         ouuid,

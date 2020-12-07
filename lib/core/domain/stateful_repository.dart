@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 
+import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:meta/meta.dart';
@@ -15,7 +15,7 @@ import 'package:SarSys/core/data/services/connectivity_service.dart';
 
 import 'models/core.dart';
 import 'repository.dart';
-import 'box_repository_request_queue.dart';
+import 'stateful_request_queue.dart';
 
 /// Base class for implementing a stateful
 /// repository that is aware of connection
@@ -26,29 +26,48 @@ import 'box_repository_request_queue.dart';
 /// should cache all changes locally before
 /// attempting to [commit] them to a backend API.
 ///
-abstract class BoxRepository<K, T extends JsonObject, U extends Service> implements Repository<K, T> {
-  BoxRepository({
+abstract class StatefulRepository<K, T extends JsonObject, U extends Service> extends Repository<K, T> {
+  StatefulRepository({
     @required this.service,
     @required this.connectivity,
     this.dependencies = const [],
   }) {
-    _requestQueue = BoxRepositoryRequestQueue(this, connectivity);
+    _requestQueue = StatefulRequestQueue(this, connectivity);
   }
+
+  /// Default timeout on requests that
+  /// should return within finite time
+  static const Duration timeLimit = const Duration(seconds: 30);
 
   final U service;
   final ConnectivityService connectivity;
-  final Iterable<BoxRepository> dependencies;
-  final StreamController<StorageTransition<T>> _controller = StreamController.broadcast();
+  final Iterable<StatefulRepository> dependencies;
+  final StreamController<bool> _onReady = StreamController.broadcast();
+  final StreamController<StorageTransition<T>> _onTransition = StreamController.broadcast();
 
   /// Box request queue instance
-  BoxRepositoryRequestQueue<K, T, U> get requestQueue => _requestQueue;
-  BoxRepositoryRequestQueue _requestQueue;
+  StatefulRequestQueue<K, T, U> get requestQueue => _requestQueue;
+  StatefulRequestQueue<K, T, U> _requestQueue;
 
   /// Get aggregate type
   Type get aggregateType => typeOf<T>();
 
+  /// Check if repository is operational
+  @mustCallSuper
+  bool get isReady => _isReady();
+  bool get isNotReady => !_isReady();
+
+  /// Stream of isReady changes
+  Stream<bool> get onReadyChanged => _onReady.stream;
+
+  /// Wait on [isReady] is [true]
+  Future<bool> get onReady => isReady ? Future.value(true) : onReadyChanged.where((state) => state).first;
+
+  /// Wait on [isReady] is [false]
+  Future<bool> get onNotReady => !isReady ? Future.value(false) : onReadyChanged.where((state) => !state).first;
+
   /// Get stream of state changes
-  Stream<StorageTransition<T>> get onChanged => _controller.stream;
+  Stream<StorageTransition<T>> get onChanged => _onTransition.stream;
 
   /// Check if repository is empty
   ///
@@ -73,7 +92,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   bool get isOffline => connectivity.isOffline;
 
   /// Find [T]s matching given query
-  Iterable<T> find({bool where(T aggregate)}) => isReady ? values.where(where) : [];
+  Iterable<T> find({bool where(T value)}) => isReady ? values.where(where) : [];
 
   /// Get value from [key]
   T get(K key) => getState(key)?.value;
@@ -83,8 +102,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   bool _isNotNull(K key) => key != null;
 
   /// Get backlog of states pending push to a backend API
-  Iterable<K> get backlog => List.unmodifiable(_backlog.keys);
-  final _backlog = LinkedHashMap<K, Completer<T>>();
+  Iterable<K> get backlog => _requestQueue.backlog;
 
   /// Get [StorageState] with errors
   ///
@@ -113,11 +131,6 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   /// Check if value exists
   bool containsValue(T value) => isReady ? _box.values.any((state) => state.value == value) : false;
 
-  /// Check if repository is operational
-  @mustCallSuper
-  bool get isReady => _isReady();
-  bool get isNotReady => !_isReady();
-
   /// Get key [K] from state [T]
   K toKey(StorageState<T> state);
 
@@ -139,7 +152,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   void checkState() {
     if (_box?.isOpen != true) {
       throw RepositoryNotReadyException(this);
-    } else if (_disposed) {
+    } else if (_isDisposed) {
       throw RepositoryIsDisposedException(this);
     }
   }
@@ -157,7 +170,21 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
       if (compact) {
         await _box?.compact();
       }
+      if (_isReady()) {
+        await _closeBox();
+        if (_isDisposed) {
+          return [];
+        }
+        _onReady.add(false);
+      }
+
+      // Open box with given prefix
       _box = await openBox(postfix);
+      if (_isDisposed) {
+        await _closeBox();
+        return [];
+      }
+      _onReady.add(true);
 
       // Build queue from states
       _requestQueue.build(
@@ -175,7 +202,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
         postfix: postfix,
         runtimeType: runtimeType,
       ),
-      encryptionKey: await Storage.hiveKey<T>(),
+      encryptionCipher: await Storage.hiveCipher<T>(),
     );
   }
 
@@ -193,34 +220,48 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   /// [fail] is [true], otherwise future
   /// completes with error state.
   ///
+  /// If no result is given within
+  /// given [waitFor] this method will
+  /// return current state to prevent
+  /// buildup of waiting futures.
+  ///
   Future<StorageState<T>> onRemote(
     K key, {
     bool fail = false,
     bool require = true,
+    Duration waitFor = timeLimit,
   }) async {
     final current = getState(key);
     if (current?.isRemote == true || !require && current == null) {
       return Future.value(current);
     }
-    final transition = await onChanged
-        .where((transition) => transition.isRemote || transition.isError)
-        .where((transition) => toKey(transition.to) == key)
-        .firstWhere(
-          (transition) => transition.isError || transition.to != null,
-          orElse: () => null,
-        );
-    if (transition != null) {
-      final state = transition.to;
-      if (fail && transition.isError) {
-        throw RepositoryRemoteException(
-          'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
-          state: state,
-          stackTrace: StackTrace.current,
-        );
+    try {
+      final transition = await onChanged
+          .where((transition) => transition.isRemote || transition.isError)
+          .where((transition) => toKey(transition.to) == key)
+          .firstWhere(
+            (transition) => transition.isError || transition.to != null,
+            orElse: () => null,
+          )
+          .timeout(waitFor);
+      if (transition != null) {
+        final state = transition.to;
+        if (fail && transition.isError) {
+          throw RepositoryRemoteException(
+            'Failed to change state with error ${state.isConflict ? state.conflict.error : state.error}',
+            state: state,
+            stackTrace: StackTrace.current,
+          );
+        }
+        return state;
       }
-      return state;
+      return Future.value(current);
+    } on TimeoutException {
+      if (fail) {
+        rethrow;
+      }
+      return Future.value(current);
     }
-    return Future.value();
   }
 
   /// Is called before create, update and delete to
@@ -270,19 +311,24 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     );
   }
 
-  /// Patch [value] with existing
-  /// in repository and replace
-  /// current state
+  /// Patch [value] with existing in repository
+  /// and replace current state. This method
+  /// does not push changes to [service].
   StorageState<T> patch(T value, {bool isRemote = false}) {
     checkState();
     StorageState next = _toState(
       value,
-      isRemote,
+      replace: false,
+      isRemote: isRemote,
     );
     return put(_patch(next)) ? next : null;
   }
 
-  StorageState _toState(T value, bool isRemote) {
+  StorageState _toState(
+    T value, {
+    @required bool replace,
+    @required bool isRemote,
+  }) {
     final state = StorageState<T>.created(
       value,
       isRemote: isRemote,
@@ -292,6 +338,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     final next = containsKey(key)
         ? getState(key).apply(
             value,
+            replace: replace,
             isRemote: isRemote,
           )
         : state;
@@ -299,16 +346,20 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   }
 
   /// Replace [value] with existing in repository
+  /// and replace current state. This method
+  /// does not push changes to [service].
   StorageState<T> replace(T value, {bool isRemote = false}) {
     checkState();
     StorageState next = _toState(
       value,
-      isRemote,
+      replace: true,
+      isRemote: isRemote,
     );
     return put(next) ? next : null;
   }
 
-  /// Remove [value] from repository
+  /// Remove [value] from repository. This
+  /// method does not push changes to [service].
   StorageState<T> remove(T value, {bool isRemote = false, T previous}) {
     checkState();
     final next = StorageState<T>(
@@ -327,31 +378,50 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     return current == null ? next : current.patch<T>(next, fromJson);
   }
 
+  /// Wait for these on close
+  /// to prevent box corruption
+  final List<Future> _writes = <Future>[];
+
   /// Put [state] to repository.
   /// this will overwrite existing
   /// state. Returns [true] if
   /// state exists afterwards,
-  /// [false] otherwise.
+  /// [false] otherwise. This method
+  /// does not push changes to
+  /// [service].
   bool put(StorageState<T> state) {
     checkState();
     final key = toKey(state);
     assert(key != null, "Key can not be null");
-    final current = getState(key);
-    if (shouldDelete(next: state, current: current)) {
-      _box.delete(key);
-      // Can not logically exist
-      // anymore, remove it!
-      _requestQueue.remove(key);
-    } else {
-      _box.put(key, state);
-    }
-    if (!_disposed) {
-      _controller.add(StorageTransition<T>(
-        from: current,
-        to: state,
-      ));
+    if (!isStateEqual(state)) {
+      final current = getState(key);
+      if (shouldDelete(next: state, current: current)) {
+        _onWrite(
+          _box.delete(key),
+        );
+        // Can not logically exist
+        // anymore, remove it!
+        _requestQueue.remove(key);
+      } else {
+        _onWrite(
+          _box.put(key, state),
+        );
+      }
+      if (!_isDisposed) {
+        _onTransition.add(StorageTransition<T>(
+          from: current,
+          to: state,
+        ));
+      }
     }
     return containsKey(key);
+  }
+
+  void _onWrite(Future write) {
+    _writes.add(write);
+    write.whenComplete(
+      () => _writes.remove(write),
+    );
   }
 
   /// Check if [StorageState.value] of given [state]
@@ -374,6 +444,28 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     return current != null && current.status == state.status;
   }
 
+  /// Check if [StorageState.isRemote] of given [state]
+  /// is equal to value in current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isOriginEqual(StorageState<T> state) {
+    final current = getState(toKey(state));
+    return current != null && current.isRemote == state.isRemote;
+  }
+
+  /// Check if given [state] is to current state if exists.
+  ///
+  /// Returns false if current state does not exists
+  ///
+  bool isStateEqual(StorageState<T> state) {
+    final current = getState(toKey(state));
+    return current != null &&
+        current.value == state.value &&
+        current.status == state.status &&
+        current.isRemote == state.isRemote;
+  }
+
   /// Apply [value] an push to [service]
   T apply(
     T value, {
@@ -382,7 +474,8 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     checkState();
     StorageState next = _toState(
       value,
-      false,
+      replace: false,
+      isRemote: false,
     );
     return push(
       _patch(next),
@@ -390,7 +483,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     );
   }
 
-  /// Delete current value
+  /// Delete current value an push to [service]
   T delete(
     K key, {
     Completer<T> onResult,
@@ -402,7 +495,9 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     );
   }
 
-  /// Apply [state] and push to [service]
+  /// Write given [state] to local storage
+  /// and push to [service] if value was
+  /// changed.
   @visibleForOverriding
   T push(
     StorageState<T> state, {
@@ -410,10 +505,13 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   }) {
     checkState();
     final next = validate(state);
-    final hasValueChanged = !isValueEqual(next);
-    final hasStatusChanged = !isStatusEqual(next);
+    final hasChanged = !isStateEqual(next);
     final exists = put(next);
-    if (exists && (next.isLocal || hasValueChanged || hasStatusChanged)) {
+    // If state does not exist after
+    // put, it implies that it also
+    // is deleted REMOTELY and should
+    // therefore not be scheduled!
+    if (exists && hasChanged) {
       // Replace current if not executed yet
       return _requestQueue.push(
         toKey(next),
@@ -455,7 +553,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   /// Any [Exception] will be forwarded to [onError]
   @visibleForOverriding
   Future<StorageState<T>> onResolve(StorageState<T> state, ServiceResponse response) {
-    return MergeStrategy(this)(
+    return StatefulMergeStrategy(this)(
       state,
       response.conflict,
     );
@@ -510,27 +608,7 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     return _requestQueue.pop();
   }
 
-  //
-  // /// Schedule push state to [service]
-  // ///
-  // /// This method will return before any
-  // /// result is received from the [service].
-  // ///
-  // /// Errors from [service] are handled
-  // /// automatically by appropriate actions.
-  // @protected
-  // T schedulePush(
-  //   K key, {
-  //   Completer<T> onResult,
-  // }) {
-  //   // Replace current if not executed yet
-  //   return _requestQueue.push(
-  //     key,
-  //     onResult: onResult,
-  //   );
-  // }
-
-  bool _isReady() => _box?.isOpen == true && _disposed == false;
+  bool _isReady() => _box?.isOpen == true && _isDisposed == false;
 
   /// Current number of retries.
   /// Is reset on each offline -> online transition
@@ -589,7 +667,9 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
   Iterable<T> clear() {
     final Iterable<T> elements = values.toList();
     if (_isReady()) {
-      _box.clear();
+      _onWrite(
+        _box.clear(),
+      );
     }
     return List.unmodifiable(elements);
   }
@@ -616,7 +696,9 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
           evicted.add(state.value);
         }
       });
-      _box.deleteAll(keys);
+      _onWrite(
+        _box.deleteAll(keys),
+      );
     }
     return List.unmodifiable(evicted);
   }
@@ -631,31 +713,44 @@ abstract class BoxRepository<K, T extends JsonObject, U extends Service> impleme
     final Iterable<T> elements = values.toList();
     if (_isReady()) {
       await _requestQueue.cancel();
-      await _box.close();
+      await _closeBox();
+      if (!_isDisposed) {
+        _onReady.add(false);
+      }
     }
     _box = null;
     return List.unmodifiable(elements);
   }
 
+  Future _closeBox() async {
+    if (_box?.isOpen == true) {
+      // Prevents box corruption
+      await Future.wait(_writes);
+      await _box.close();
+      _writes.clear();
+    }
+  }
+
   /// Flag is true after
   /// [dispose] is called.
-  bool _disposed = false;
+  bool _isDisposed = false;
 
   /// Dispose repository
   ///
   /// After this point it can
   /// not used again.
   Future<void> dispose() async {
-    _disposed = true;
-    _controller.close();
+    _isDisposed = true;
+    if (_isReady()) {
+      await close();
+    }
+    _onReady.close();
+    _onTransition.close();
     _requestQueue?.cancel();
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );
     _subscriptions.clear();
-    if (_isReady()) {
-      await close();
-    }
   }
 
   /// Subscriptions released on [close]

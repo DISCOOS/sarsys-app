@@ -7,7 +7,7 @@ import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
@@ -19,14 +19,13 @@ import 'package:SarSys/features/device/data/services/device_service.dart';
 
 typedef void DeviceCallback(VoidCallback fn);
 
-class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
+class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocError, String, Device, DeviceService>
     with
         LoadableBloc<Iterable<Device>>,
         CreatableBloc<Device>,
         UpdatableBloc<Device>,
         DeletableBloc<Device>,
-        UnloadableBloc<Iterable<Device>>,
-        ConnectionAwareBloc<String, Device> {
+        UnloadableBloc<Iterable<Device>> {
   ///
   /// Default constructor
   ///
@@ -85,7 +84,11 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
           } else if (next.isRemote) {
             dispatch(
               // Catch up with remote state
-              _DeviceMessage(device, transition.from?.value),
+              _DeviceMessage(
+                device,
+                transition.from?.value,
+                transition.from?.isRemote ?? false,
+              ),
             );
           }
         }
@@ -132,8 +135,16 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     });
   }
 
+  /// Check if bloc is ready
+  @override
+  bool get isReady => repo.isReady;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
+
   /// All repositories
-  Iterable<BoxRepository> get repos => [repo];
+  Iterable<StatefulRepository> get repos => [repo];
 
   /// Check if device is this application
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
@@ -224,7 +235,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     );
   }
 
-  /// Detach given device from incident
+  /// Detach given device from operation
   Future<Device> detach(Device device) {
     _assertState();
     return update(
@@ -241,7 +252,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     );
   }
 
-  /// Detach given device
+  /// Delete given device
   @override
   Future<Device> delete(String uuid) {
     _assertState();
@@ -250,7 +261,7 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
     );
   }
 
-  /// Unload [map] from local storage
+  /// Unload devices from local storage
   @override
   Future<Iterable<Device>> unload() {
     return dispatch<Iterable<Device>>(
@@ -389,9 +400,24 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
   Future<DeviceState> _process(_DeviceMessage command) async {
     _assertData(command.data);
     final device = command.data;
+
+    if (command.previous == null) {
+      return toOK(
+        command,
+        DeviceCreated(
+          device,
+          isRemote: command.isRemote,
+        ),
+        result: device,
+      );
+    }
     return toOK(
       command,
-      DeviceUpdated(device, command.previous),
+      DeviceUpdated(
+        device,
+        command.previous,
+        isRemote: command.isRemote,
+      ),
       result: device,
     );
   }
@@ -410,12 +436,6 @@ class DeviceBloc extends BaseBloc<DeviceCommand, DeviceState, DeviceBlocError>
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
-
-  @override
-  Future<void> close() async {
-    await repo.dispose();
-    return super.close();
-  }
 }
 
 /// ---------------------
@@ -464,8 +484,10 @@ class _DeviceMessage extends DeviceCommand<Device, Device> {
   _DeviceMessage(
     Device device,
     this.previous,
+    this.isRemote,
   ) : super(device);
 
+  final bool isRemote;
   final Device previous;
 
   @override
@@ -546,8 +568,8 @@ class DeviceUpdated extends DeviceState<Device> {
     bool isRemote = false,
   }) : super(
           device,
-          isRemote: isRemote,
           props: [previous],
+          isRemote: isRemote,
         );
   final Device previous;
 

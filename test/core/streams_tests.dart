@@ -125,7 +125,6 @@ void main() async {
     final removed = await queue.cancel();
 
     // Assert
-    expect(queue.current, isNull, reason: "should not have current");
     expect(removed.length, 9, reason: "should remove 9");
     expect(queue.length, 0, reason: "should be empty");
     expect(queue.isEmpty, isTrue, reason: "should be empty");
@@ -168,7 +167,6 @@ void main() async {
     await queue.stop();
 
     // Assert
-    expect(queue.current, isNull, reason: "should not have current");
     expect(queue.length, 9, reason: "should be 9 left");
     expect(queue.isNotEmpty, isTrue, reason: "should not be empty");
     expect(queue.isIdle, isTrue, reason: "should be idle");
@@ -203,15 +201,13 @@ void main() async {
     final started = queue.start();
 
     // Wait for queue to empty
-    while (queue.isNotEmpty) {
-      await Future.delayed(Duration(milliseconds: 10));
-    }
+    await queue.onEvent().where((event) => event is StreamQueueIdle).first;
 
     // Assert
-    expect(started, isTrue, reason: "should be processing");
-    expect(queue.isEmpty, isTrue, reason: "should not be empty");
-    expect(queue.isIdle, isFalse, reason: "should not be idle");
-    expect(queue.isProcessing, isTrue, reason: "should be processing");
+    expect(started, isTrue, reason: "should be added");
+    expect(queue.isIdle, isTrue, reason: "should be idle");
+    expect(queue.isEmpty, isTrue, reason: "should be empty");
+    expect(queue.isProcessing, isFalse, reason: "should not be processing");
 
     // Cleanup
     await queue.cancel();

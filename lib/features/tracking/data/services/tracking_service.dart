@@ -26,7 +26,12 @@ class TrackingService with ServiceGetListFromId<Tracking> implements ServiceDele
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Tracking>>> getSubListFromId(String uuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Tracking>>> getSubListFromId(
+    String uuid,
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Tracking>, List<Tracking>>(
       await delegate.fetchAll(
         uuid,
@@ -61,6 +66,7 @@ abstract class TrackingServiceImpl extends JsonService<Tracking, TrackingModel> 
           reducer: (value) => JsonUtils.toJson<TrackingModel>(value, retain: const [
             'uuid',
             'status',
+            'sources',
           ]),
         );
   static TrackingServiceImpl newInstance([ChopperClient client]) => _$TrackingServiceImpl(client);

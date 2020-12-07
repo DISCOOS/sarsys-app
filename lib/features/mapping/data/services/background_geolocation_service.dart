@@ -105,7 +105,7 @@ class BackgroundGeolocationService implements LocationService {
   AuthToken get token => _token;
   AuthToken _token;
 
-  final _queue = StreamRequestQueue<LocationOptions>();
+  final _queue = StreamRequestQueue<String, LocationOptions>();
 
   bool _isSubscribed = false;
 
@@ -192,15 +192,15 @@ class BackgroundGeolocationService implements LocationService {
         );
 
         // Prevents concurrent configure
-        _queue.only(StreamRequest<LocationOptions>(execute: () async {
+        _queue.add(StreamRequest<String, LocationOptions>(execute: () async {
           // Wait for previous to complete or check plugin
-          var state = await bg.BackgroundGeolocation.state;
-          if (state.isFirstBoot) {
-            bg.BackgroundGeolocation.ready(config).then(
+          _state = await bg.BackgroundGeolocation.state;
+          if (isReady) {
+            bg.BackgroundGeolocation.setConfig(config).then(
               (_) => _onConfigured(completer, wasSharing),
             );
           } else {
-            bg.BackgroundGeolocation.setConfig(config).then(
+            bg.BackgroundGeolocation.ready(config).then(
               (_) => _onConfigured(completer, wasSharing),
             );
           }
@@ -261,7 +261,11 @@ class BackgroundGeolocationService implements LocationService {
     _duuid = duuid ?? _duuid;
     _token = token ?? _token;
     _share = share ?? _share;
-    debugPrint('bg.url: ${_toUrl()}');
+    debugPrint(
+      '_toConfig{\n'
+      '  bg.url: ${_toUrl()}\n'
+      '}',
+    );
     return bg.Config(
       reset: true,
       debug: _debug,

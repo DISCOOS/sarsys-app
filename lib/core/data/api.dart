@@ -27,10 +27,13 @@ class Api {
           ),
           converter: JsonSerializableConverter(
             reducers: Map.fromEntries(
-              services.whereType<JsonService>().map((s) => MapEntry(s.reducedType, s.reducer)),
+              services.map((s) => MapEntry(s.reducedType, s.reducer)),
             ),
             decoders: Map.from(
-              services.whereType<JsonService>().fold({}, (decoders, s) => decoders..addAll(s.decoders)),
+              services.fold(
+                <Type, JsonDecoder>{},
+                (decoders, s) => decoders..addAll(s.decoders),
+              ),
             ),
           ),
           interceptors: [
@@ -67,8 +70,8 @@ class Api {
   }
 }
 
-typedef JsonDecoder<T> = T Function(Map<String, dynamic> json);
-typedef JsonReducer<T> = Map<String, dynamic> Function(T value);
+typedef JsonDecoder<T> = T Function(dynamic json);
+typedef JsonReducer<T> = dynamic Function(T value);
 
 class JsonSerializableConverter extends JsonConverter {
   final Map<Type, JsonDecoder> decoders;

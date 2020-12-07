@@ -1,31 +1,35 @@
 import 'dart:async';
 
-import 'package:SarSys/features/operation/domain/entities/Operation.dart';
-import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
+import 'package:SarSys/core/presentation/blocs/mixins.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/presentation/pages/download_page.dart';
+import 'package:SarSys/features/operation/presentation/screens/open_operation_screen.dart';
+import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
+import 'package:SarSys/features/user/presentation/screens/user_screen.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/features/operation/presentation/editors/operation_editor.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/domain/usecase/core.dart';
-import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/core/utils/ui.dart';
 
 class OperationParams extends BlocParams<OperationBloc, Operation> {
-  final Point ipp;
-  final String uuid;
   OperationParams({
     Operation operation,
     this.ipp,
     this.uuid,
   }) : super(operation);
+  final Point ipp;
+  final String uuid;
 }
 
 /// Create operation
@@ -65,36 +69,6 @@ class CreateOperation extends UseCase<bool, Operation, OperationParams> {
   }
 }
 
-Future<dartz.Either<bool, Operation>> selectOperation(
-  String uuid,
-) =>
-    SelectOperation()(OperationParams(uuid: uuid));
-
-class SelectOperation extends UseCase<bool, Operation, OperationParams> {
-  @override
-  Future<dartz.Either<bool, Operation>> execute(params) async {
-    final user = _assertUser(params);
-    // Read from storage if not set in params
-    final ouuid = params.uuid ??
-        await Storage.readUserValue(
-          user,
-          suffix: OperationBloc.SELECTED_KEY_SUFFIX,
-        );
-
-    assert(ouuid != null, "Operation uuid must be given");
-    try {
-      final operation = await params.bloc.select(ouuid);
-      return dartz.Right(operation);
-    } on OperationNotFoundBlocException {
-      await Storage.deleteUserValue(
-        user,
-        suffix: OperationBloc.SELECTED_KEY_SUFFIX,
-      );
-    }
-    return dartz.left(false);
-  }
-}
-
 Future<dartz.Either<bool, Operation>> editOperation(
   Operation operation,
 ) =>
@@ -129,6 +103,37 @@ User _assertUser(OperationParams params) {
   return user;
 }
 
+Future<dartz.Either<bool, Operation>> openOperation(
+  String uuid,
+) =>
+    OpenOperation()(OperationParams(uuid: uuid));
+
+class OpenOperation extends UseCase<bool, Operation, OperationParams> {
+  @override
+  Future<dartz.Either<bool, Operation>> execute(params) async {
+    final user = _assertUser(params);
+    // Read from storage if not set in params
+    final ouuid = params.uuid ??
+        await Storage.readUserValue(
+          user,
+          suffix: OperationBloc.SELECTED_KEY_SUFFIX,
+        );
+
+    assert(ouuid != null, "Operation uuid must be given");
+    try {
+      // TODO: Use OpenOperationScreen here
+      final operation = await params.bloc.select(ouuid);
+      return dartz.Right(operation);
+    } on OperationNotFoundBlocException {
+      await Storage.deleteUserValue(
+        user,
+        suffix: OperationBloc.SELECTED_KEY_SUFFIX,
+      );
+    }
+    return dartz.left(false);
+  }
+}
+
 Future<dartz.Either<bool, Personnel>> joinOperation(
   Operation operation,
 ) =>
@@ -141,37 +146,27 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
     final user = params.bloc.userBloc.user;
     assert(user != null, "User must be authenticated");
 
-    if (_shouldRegister(params)) {
-      return mobilizeUser();
+    if (_shouldJoin(params)) {
+      return _join(params);
     }
 
-    final join = await prompt(
-      params.overlay.context,
-      'Bekreftelse',
-      'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
-    );
-
-    if (join == true) {
-      // PersonnelBloc will mobilize user
-      await params.bloc.select(params.data.uuid);
-      final personnel = await _findPersonnel(
-        params,
-        user,
-        wait: true,
-      );
+    final personnel = await _mobilize(params);
+    if (personnel != null) {
+      params.pushReplacementNamed(UserScreen.ROUTE_OPERATION);
       return dartz.right(personnel);
     }
     return dartz.Left(false);
   }
 }
 
-Future<dartz.Either<bool, Personnel>> leaveOperation() => LeaveOperation()(OperationParams());
+Future<dartz.Either<bool, Personnel>> leaveOperation() => LeaveOperation()(
+      OperationParams(),
+    );
 
 class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
   @override
   Future<dartz.Either<bool, Personnel>> execute(params) async {
     assert(params.data == null, "Operation should not be given");
-    final user = _assertUser(params);
 
     final leave = await prompt(
       params.overlay.context,
@@ -180,45 +175,116 @@ class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
     );
 
     if (leave) {
-      Personnel personnel = await _retire(params, user);
-      await params.bloc.unselect();
-      params.pushReplacementNamed(OperationsScreen.ROUTE);
+      Personnel personnel = await _leave(params);
       return dartz.Right(personnel);
     }
     return dartz.Left(false);
   }
 }
 
-bool _shouldRegister(
+bool _shouldJoin(
   OperationParams params,
 ) =>
-    !params.bloc.isUnselected && params.data.uuid == params.bloc.selected?.uuid;
+    params.bloc.isUnselected || params.data.uuid != params.bloc.selected?.uuid;
 
-FutureOr<Personnel> _findPersonnel(OperationParams params, User user, {bool wait = false}) async {
+Future<dartz.Either<bool, Personnel>> _join(
+  OperationParams params,
+) async {
+  final join = await prompt(
+    params.overlay.context,
+    'Bekreftelse',
+    'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
+  );
+
+  if (join == true) {
+    final personnel = await showDialog<Personnel>(
+      context: params.overlay.context,
+      builder: (context) => OpenOperationScreen(
+        operation: params.data,
+        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
+          operation,
+          passcode,
+        ),
+        onCancel: (step) {
+          if (step == OpenOperationScreen.DOWNLOAD && params.bloc.selected == params.data) {
+            leaveOperation();
+          }
+        },
+        onDownload: (operation, onProgress) async {
+          DownloadProgress.percent(0).linearToPercent(
+            onProgress,
+            100,
+          );
+          // PersonnelBloc will mobilize user
+          await params.bloc.select(operation.uuid);
+          // Wait for blocs to download all data
+          await _onLoadedAsync<UnitBloc>(params);
+          await _onLoadedAsync<PersonnelBloc>(params);
+          return _mobilize(params);
+        },
+      ),
+    );
+
+    if (personnel != null) {
+      params.pushReplacementNamed(UserScreen.ROUTE_OPERATION);
+      return dartz.right(personnel);
+    }
+  }
+  return dartz.Left(false);
+}
+
+Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationParams params) {
+  final bloc = params.context.bloc<B>();
+  if (bloc is ConnectionAwareBloc) {
+    return (bloc as ConnectionAwareBloc).onLoadedAsync();
+  }
+  return Future.value();
+}
+
+Future<Personnel> _mobilize(OperationParams params) async {
+  final user = params.bloc.userBloc.user;
+  var personnel = await _findPersonnel(
+    params,
+    wait: true,
+  );
+  assert(personnel != null, 'User $user not mobilized');
+  return personnel;
+}
+
+FutureOr<Personnel> _findPersonnel(OperationParams params, {bool wait = false}) async {
   // Look for existing personnel
-  final personnel = params.context.bloc<PersonnelBloc>().findMobilizedUserOrReuse(
-        userId: user.userId,
-      );
+  final bloc = params.context.bloc<PersonnelBloc>();
+  final personnel = bloc.findMobilizedUserOrReuse();
   // Wait for personnel to be created
   if (wait && personnel == null) {
-    return await waitThroughStateWithData<PersonnelState, Personnel>(
-      params.bus,
-      test: (state) => state.isCreated() && (state.data as Personnel).userId == user.userId,
-      map: (state) => state.data,
-    );
+    return bloc.mobilizeUser();
   }
   return personnel;
 }
 
 // TODO: Move to new use-case RetireUser in PersonnelBloc
-Future<Personnel> _retire(OperationParams params, User user) async {
-  var personnel = await _findPersonnel(params, user);
+Future<Personnel> _retire(OperationParams params) async {
+  var personnel = await _findPersonnel(params);
   if (personnel != null) {
-    personnel = await params.context.bloc<PersonnelBloc>().update(
-          personnel.copyWith(
-            status: PersonnelStatus.retired,
-          ),
-        );
+    final bloc = params.context.bloc<PersonnelBloc>();
+    personnel = await bloc.update(
+      personnel.copyWith(
+        status: PersonnelStatus.retired,
+      ),
+    );
+    // // Ensure state is pushed if online
+    // if (bloc.isOnline) {
+    //   await bloc.repo.onRemote(personnel.uuid).timeout(
+    //         const Duration(seconds: 5),
+    //       );
+    // }
   }
+  return personnel;
+}
+
+Future<Personnel> _leave(OperationParams params) async {
+  Personnel personnel = await _retire(params);
+  await params.bloc.unselect();
+  params.pushReplacementNamed(OperationsScreen.ROUTE);
   return personnel;
 }

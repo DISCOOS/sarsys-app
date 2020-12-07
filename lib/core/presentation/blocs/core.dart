@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
@@ -10,6 +12,8 @@ import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:SarSys/core/utils/data.dart';
+
+import 'mixins.dart';
 
 abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extends S> extends Bloc<C, S> {
   BaseBloc({@required this.bus}) : super() {
@@ -129,25 +133,25 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   /// until [_eventQueue] is empty. Any error
   /// will stop events processing.
   void _processEventQueue() {
-    try {
-      while (_eventQueue.isNotEmpty) {
-        final pair = _eventQueue.first;
-        _toHandlers(pair.right).forEach((handler) {
-          handler(pair.left, pair.right);
-        });
-        _eventQueue.removeFirst();
+    if (_isOpen) {
+      try {
+        while (_eventQueue.isNotEmpty) {
+          final pair = _eventQueue.first;
+          _toHandlers(pair.right).forEach((handler) {
+            handler(pair.left, pair.right);
+          });
+          _eventQueue.removeFirst();
+        }
+      } catch (error, stackTrace) {
+        BlocSupervisor.delegate.onError(
+          this,
+          error,
+          stackTrace,
+        );
       }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
     }
-    if (!_isOpen) {
-      _eventQueue.clear();
-      _dispatchQueue.clear();
-    }
+    _eventQueue.clear();
+    _dispatchQueue.clear();
   }
 
   /// Get all handlers for given event
@@ -173,6 +177,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   Future<T> dispatch<T>(C command) {
     if (isOpen) {
       add(command);
+    } else {
+      command.callback.completeError(
+        BlocClosedException(this, state, command: command),
+        StackTrace.current,
+      );
     }
     return command.callback.future;
   }
@@ -284,6 +293,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         object.stackTrace ?? StackTrace.current,
       );
     }
+    BlocSupervisor.delegate.onError(
+      this,
+      error,
+      stackTrace,
+    );
     _pop(command);
     return object;
   }
@@ -318,6 +332,23 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
     _subscriptions.clear();
     _isOpen = false;
     return super.close();
+  }
+}
+
+abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error extends E, K, V extends JsonObject,
+    S extends Service> extends BaseBloc<C, E, Error> with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
+  StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
+
+  @override
+  Future<void> close() async {
+    try {
+      return super.close();
+    } finally {
+      // Allows for any close order
+      await Future.wait(
+        repos.where((r) => r.isReady).map((r) => r.close()),
+      );
+    }
   }
 }
 
@@ -396,9 +427,14 @@ class BlocEventBus {
 }
 
 class BlocCommand<D, R> extends Equatable {
-  BlocCommand(this.data, [props = const []]) : super([data, ...props]);
+  BlocCommand(
+    this.data, [
+    props = const [],
+    Completer<R> callback,
+  ])  : callback = callback ?? Completer(),
+        super([data, ...props]);
   final D data;
-  final Completer<R> callback = Completer();
+  final Completer<R> callback;
   final StackTrace stackTrace = StackTrace.current;
 }
 
@@ -476,4 +512,18 @@ class AppBlocDelegate implements BlocDelegate {
     }
     return '${state.runtimeType}';
   }
+}
+
+/// ---------------------
+/// Exceptions
+/// ---------------------
+class BlocClosedException implements Exception {
+  BlocClosedException(this.bloc, this.state, {this.command, this.stackTrace});
+  final BaseBloc bloc;
+  final BlocEvent state;
+  final BlocCommand command;
+  final StackTrace stackTrace;
+
+  @override
+  String toString() => '${bloc.runtimeType} is closed {state: $state, command: $command, stackTrace: $stackTrace}';
 }

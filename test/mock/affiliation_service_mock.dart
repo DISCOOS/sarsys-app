@@ -6,7 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
@@ -127,7 +127,8 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
 
   static Future<AffiliationService> build(PersonServiceMock persons) async {
     final box = await Hive.openBox<StorageState<Affiliation>>(
-      BoxRepository.toBoxName<AffiliationRepositoryImpl>(),
+      StatefulRepository.toBoxName<AffiliationRepositoryImpl>(),
+      encryptionCipher: await Storage.hiveCipher<Affiliation>(),
     );
     final AffiliationServiceMock mock = AffiliationServiceMock(box, persons);
     final affiliationRepo = mock.affiliationRepo;

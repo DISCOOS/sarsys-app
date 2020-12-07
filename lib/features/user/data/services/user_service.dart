@@ -45,12 +45,14 @@ class UserIdentityService extends UserService {
 
   final http.Client client;
 
+  static const String INVALID_GRANT = "invalid_grant";
   static const String AUTHORIZE_ERROR_CODE = "authorize_failed";
   static const String TOKEN_ERROR_CODE = "token_failed";
   static const String AUTHORIZE_AND_EXCHANGE_CODE_FAILED = 'authorize_and_exchange_code_failed';
   static const List<String> USER_ERRORS = const [
-    AUTHORIZE_ERROR_CODE,
+    INVALID_GRANT,
     TOKEN_ERROR_CODE,
+    AUTHORIZE_ERROR_CODE,
     AUTHORIZE_AND_EXCHANGE_CODE_FAILED,
   ];
   static const String REFRESH_URL = 'https://id.discoos.io/auth/realms/DISCOOS/protocol/openid-connect/token';
@@ -192,12 +194,13 @@ class UserIdentityService extends UserService {
           message: "Unauthorized",
           error: e,
         ));
+      } else {
+        _refreshCompleter.complete(ServiceResponse.internalServerError(
+          message: "Failed to refresh token",
+          error: e,
+          stackTrace: stackTrace,
+        ));
       }
-      _refreshCompleter.complete(ServiceResponse.internalServerError(
-        message: "Failed to refresh token",
-        error: e,
-        stackTrace: stackTrace,
-      ));
     } catch (e, stackTrace) {
       _refreshCompleter.complete(ServiceResponse.internalServerError(
         message: "Failed to refresh token",

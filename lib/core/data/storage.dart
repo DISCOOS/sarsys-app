@@ -188,7 +188,7 @@ class Storage {
     );
   }
 
-  static Future<List<int>> hiveKey<T>() async {
+  static Future<HiveAesCipher> hiveCipher<T>() async {
     if (_initialized) {
       final type = typeOf<T>();
       final data = await _storage.read(key: '$type.key');
@@ -196,11 +196,12 @@ class Storage {
         final key = Hive.generateSecureKey();
         await _storage.write(
           key: '$type.key',
-          value: jsonEncode(key),
+          value: base64UrlEncode(key),
         );
-        return key;
+        return HiveAesCipher(key);
       }
-      return List<int>.from(jsonDecode(data));
+      final encryptedKey = base64Url.decode(data);
+      return HiveAesCipher(encryptedKey);
     }
     throw 'Storage not initialized';
   }
@@ -305,39 +306,44 @@ class StorageState<T> {
         error: error,
       );
 
-  StorageState<T> remote(T value) => StorageState<T>(
+  StorageState<T> remote(T value, {StorageStatus status}) => StorageState<T>(
         value: value,
         error: null,
-        status: status,
         isRemote: true,
         previous: previous,
+        status: status ?? this.status,
       );
 
-  StorageState<T> apply(T value, {@required bool isRemote, Object error, T previous}) {
-    switch (status) {
-      case StorageStatus.created:
-        return StorageState(
-          value: value,
-          error: error ?? this.error,
-          isRemote: isRemote ?? _isRemote,
-          previous: previous ?? this.value,
-          status: _isRemote
-              // If current is remote,
-              // value MUST HAVE status
-              // 'updated'
-              ? StorageStatus.updated
-              // If current is local,
-              // value SHOULD not
-              // change stats
-              : status,
-        );
-      default:
-        return replace(
-          value,
-          isRemote: isRemote,
-          previous: previous,
-        );
+  StorageState<T> apply(
+    T value, {
+    @required bool replace,
+    @required bool isRemote,
+    Object error,
+    T previous,
+  }) {
+    if (isCreated && !replace) {
+      final next = _isRemote
+          // If current is remote,
+          // value MUST HAVE status
+          // 'updated'
+          ? StorageStatus.updated
+          // If current is local,
+          // value SHOULD not
+          // change stats
+          : status;
+      return StorageState(
+        value: value,
+        status: next,
+        error: error ?? this.error,
+        isRemote: isRemote ?? _isRemote,
+        previous: previous ?? this.value,
+      );
     }
+    return this.replace(
+      value,
+      isRemote: isRemote,
+      previous: previous,
+    );
   }
 
   /// Patch [next] state with existing
@@ -353,6 +359,7 @@ class StorageState<T> {
             value as JsonObject,
             patches,
           )) as T,
+          replace: false,
           error: next.error,
           isRemote: next.isRemote,
         ) as StorageState<V>;
@@ -360,6 +367,7 @@ class StorageState<T> {
         // Vale not changed, use current
         next = apply(
           next.value as T,
+          replace: false,
           error: next.error,
           isRemote: next.isRemote,
         ) as StorageState<V>;

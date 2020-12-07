@@ -21,7 +21,12 @@ class PersonnelService with ServiceGetListFromId<Personnel> implements ServiceDe
   /// Get stream of personnel messages
   Stream<PersonnelMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Personnel>>> getSubListFromId(String ouuid, int offset, int limit) async {
+  Future<ServiceResponse<List<Personnel>>> getSubListFromId(
+    String ouuid,
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Personnel>, List<Personnel>>(
       await delegate.fetchAll(
         ouuid,

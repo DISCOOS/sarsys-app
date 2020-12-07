@@ -629,6 +629,16 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
     harness.unitBloc,
     [isA<UnitsUnloaded>(), isA<UnitsLoaded>()],
   );
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<UserMobilized>().having(
+      (event) {
+        return event.isRemote;
+      },
+      'Should be ${offline ? 'local' : 'remote'}',
+      !offline,
+    )),
+  );
   expect(harness.unitBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
   expect(harness.unitBloc.repo.length, 0, reason: "SHOULD BE empty");
   expect(

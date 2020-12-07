@@ -18,7 +18,11 @@ class DivisionService with ServiceGetList<Division> implements ServiceDelegate<D
 
   DivisionService() : delegate = DivisionServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Division>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Division>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Division>, List<Division>>(
       await delegate.fetch(
         offset: offset,

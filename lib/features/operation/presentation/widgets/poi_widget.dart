@@ -35,7 +35,7 @@ class POIWidget extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: 300.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           _buildHeader(theme, context),
           Divider(),
@@ -63,51 +63,60 @@ class POIWidget extends StatelessWidget {
         ),
       );
 
-  Row _buildLocationInfo(BuildContext context, TextTheme theme) => Row(
-        children: <Widget>[
-          Expanded(
-            flex: 4,
-            child: Column(
-              children: <Widget>[
-                buildCopyableText(
-                  context: context,
-                  label: "UTM",
-                  icon: Icon(Icons.my_location),
-                  value: toUTM(poi.point, prefix: ""),
-                  onCopy: onCopy,
-                  onMessage: onMessage,
-                  onTap: () => _onGoto(),
-                  onComplete: onComplete,
-                ),
-                buildCopyableText(
-                  context: context,
-                  label: "Desimalgrader (DD)",
-                  value: toDD(poi.point, prefix: ""),
-                  onCopy: onCopy,
-                  onMessage: onMessage,
-                  onTap: () => _onGoto(),
-                  onComplete: onComplete,
-                ),
-              ],
+  Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Expanded(
+              flex: 4,
+              child: Column(
+                children: <Widget>[
+                  buildCopyableText(
+                    context: context,
+                    label: "UTM",
+                    icon: Icon(Icons.my_location),
+                    value: toUTM(poi.point, prefix: ""),
+                    onCopy: onCopy,
+                    onMessage: onMessage,
+                    onTap: () => _onGoto(),
+                    onComplete: onComplete,
+                  ),
+                  buildCopyableText(
+                    context: context,
+                    label: "Desimalgrader (DD)",
+                    value: toDD(poi.point, prefix: ""),
+                    icon: Icon(Icons.my_location),
+                    onCopy: onCopy,
+                    onMessage: onMessage,
+                    onTap: () => _onGoto(),
+                    onComplete: onComplete,
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.navigation, color: Colors.black45),
-                  onPressed: () {
-                    if (onComplete != null) onComplete();
-                    navigateToLatLng(context, toLatLng(poi.point));
-                  },
-                ),
-                Text("Naviger", style: theme.caption),
-              ],
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.navigation, color: Colors.black45),
+                    onPressed: () {
+                      if (onComplete != null) onComplete();
+                      navigateToLatLng(context, toLatLng(poi.point));
+                    },
+                  ),
+                  Text(
+                    "Naviger",
+                    style: theme.caption,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
 
   Widget _buildActions(BuildContext context) => Padding(

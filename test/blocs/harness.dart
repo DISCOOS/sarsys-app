@@ -12,7 +12,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/department_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/repositories/division_repository_impl.dart';
@@ -902,7 +902,7 @@ void expectStorageStatus(
 
 Future expectStorageStatusLater(
   String uuid,
-  BoxRepository repo,
+  StatefulRepository repo,
   StorageStatus expected, {
   @required bool remote,
   dynamic key,
@@ -915,8 +915,8 @@ Future expectStorageStatusLater(
       emitsThrough(
         isA<StorageTransition>().having(
           (transition) =>
-              transition.from?.value is Aggregate &&
-              (transition.from?.value as Aggregate)?.uuid == uuid &&
+              transition.to?.value is Aggregate &&
+              (transition.to?.value as Aggregate)?.uuid == uuid &&
               (remote ? transition.isRemote : transition.isLocal),
           'is ${remote ? 'remote' : 'local'}',
           isTrue,
@@ -940,7 +940,7 @@ Future expectStorageStatusLater(
   );
 }
 
-bool _debug = false;
+bool _debug = true;
 void _print(String message) {
   if (_debug) {
     print(message);

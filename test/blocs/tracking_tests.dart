@@ -652,7 +652,6 @@ void main() async {
         isTrue,
         reason: "SHOULD contain tracking ${tracking.uuid}",
       );
-      expectThroughInOrder(harness.trackingBloc, [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()]);
     });
 
     test('SHOULD reload when operation is switched', () async {
@@ -1399,7 +1398,10 @@ Future<Tracking> _shouldDetachFromTrackingWhenDeviceUnavailable<T extends Tracka
   await harness.deviceBloc.detach(d3);
 
   // Assert
-  await expectThroughLater(harness.trackingBloc, emits(isA<TrackingUpdated>()));
+  await expectThroughLater(
+    harness.trackingBloc,
+    emits(isA<TrackingUpdated>()),
+  );
   final t3 = harness.trackingBloc.repo[t2.uuid];
 
   expect(t3.status, equals(TrackingStatus.tracking), reason: "SHOULD be status tracking");
@@ -1689,6 +1691,7 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable>(
       device,
     );
     await harness.deviceBloc.load();
+    await expectDeviceStatusLater(harness, device, StorageStatus.created);
   } else {
     device = await harness.deviceBloc.create(device);
   }
@@ -1718,6 +1721,15 @@ Future<Tracking> _shouldUpdateTrackingWhenDeviceAdded<T extends Trackable>(
   );
 
   return updated;
+}
+
+Future expectDeviceStatusLater(BlocTestHarness harness, Device device, StorageStatus status) {
+  return expectStorageStatusLater(
+    device.uuid,
+    harness.deviceBloc.repo,
+    status,
+    remote: harness.isOnline,
+  );
 }
 
 Future<T> _shouldCloseTrackingAutomatically<T extends Trackable>(
@@ -2131,8 +2143,8 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness) async {
 
 Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   final operation = await _prepare(harness);
-  final tracking = TrackingBuilder.create();
-  harness.trackingService.put(operation.uuid, tracking);
+  final t1 = TrackingBuilder.create();
+  harness.trackingService.put(operation.uuid, t1);
   await harness.trackingBloc.load();
   await expectThroughLater(
     harness.trackingBloc,
@@ -2140,7 +2152,7 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
   );
   expectTrackingCount(harness, harness.isOnline ? 1 : 0);
 
-  // Act
+  // Act - switch operation
   final incident = IncidentBuilder.create();
   final operation2 = await harness.operationsBloc.create(
     OperationBuilder.create(harness.userBloc.userId, iuuid: incident.uuid),
@@ -2148,18 +2160,33 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness) async {
     selected: true,
   );
 
-  // Assert
+  // Assert - reload
   await expectThroughInOrderLater(
     harness.trackingBloc,
     [isA<TrackingsUnloaded>(), isA<TrackingsLoaded>()],
   );
-  expect(harness.trackingBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
-  expect(harness.trackingBloc.repo.length, 0, reason: "SHOULD BE empty");
-  expect(
-    harness.trackingBloc.repo.containsKey(tracking.uuid),
-    isFalse,
-    reason: "SHOULD NOT contain tracking ${tracking.uuid}",
+  await expectThroughLater(
+    harness.personnelBloc,
+    emits(isA<UserMobilized>().having(
+      (event) {
+        return harness.isOnline ? event.isRemote : event.isLocal;
+      },
+      'Should be ${harness.isOnline ? 'remote' : 'local'}',
+      true,
+    )),
   );
+  expect(
+    harness.trackingBloc.repo.containsKey(t1.uuid),
+    isFalse,
+    // Previous tracking should not exist
+    reason: "SHOULD NOT contain tracking ${t1.uuid}",
+  );
+  expect(harness.trackingBloc.ouuid, operation2.uuid, reason: "SHOULD change to ${operation2.uuid}");
+  expect(harness.trackingBloc.repo.length, 1, reason: "SHOULD contain tracking for mobilized user");
+  final t2 = harness.trackingBloc.repo.values.first;
+  final personnels = harness.personnelBloc.findUser();
+  final personnel = personnels.first;
+  expect(t2.uuid, personnel.tracking.uuid, reason: "SHOULD track mobilized user");
 }
 
 /// Prepare blocs for testing

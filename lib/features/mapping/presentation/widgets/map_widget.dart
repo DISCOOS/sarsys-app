@@ -1118,7 +1118,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 class MapWidgetController extends MapControllerImpl {
   ValueNotifier<MapMoveState> progress = ValueNotifier(MapMoveState.none());
 
-  final StreamRequestQueue<void> _queue = StreamRequestQueue<void>();
+  final StreamRequestQueue _queue = StreamRequestQueue();
 
   AnimationController _controller;
   bool get isAnimating => _controller != null;

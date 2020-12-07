@@ -17,7 +17,11 @@ class OrganisationService with ServiceGetList<Organisation> implements ServiceDe
   OrganisationService() : delegate = OrganisationServiceImpl.newInstance();
 
   /// GET ../organisations
-  Future<ServiceResponse<List<Organisation>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Organisation>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Organisation>, List<Organisation>>(
       await delegate.fetch(offset: offset, limit: limit),
     );

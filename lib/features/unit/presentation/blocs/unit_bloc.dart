@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -25,14 +25,13 @@ import 'package:uuid/uuid.dart';
 
 typedef void UnitCallback(VoidCallback fn);
 
-class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
+class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, String, Unit, UnitService>
     with
         LoadableBloc<List<Unit>>,
         CreatableBloc<Unit>,
         UpdatableBloc<Unit>,
         DeletableBloc<Unit>,
-        UnloadableBloc<List<Unit>>,
-        ConnectionAwareBloc<String, Unit> {
+        UnloadableBloc<List<Unit>> {
   ///
   /// Default constructor
   ///
@@ -56,7 +55,7 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   }
 
   /// All repositories
-  Iterable<BoxRepository> get repos => [repo];
+  Iterable<StatefulRepository> get repos => [repo];
 
   /// Process [OperationState] events
   ///
@@ -114,8 +113,13 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
   /// Get units
   Map<String, Unit> get units => repo.map;
 
-  /// Check if this bloc is ready
+  /// Check if bloc is ready
+  @override
   bool get isReady => repo.isReady;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// [Operation] that manages given [map]
   String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
@@ -416,12 +420,6 @@ class UnitBloc extends BaseBloc<UnitCommand, UnitState, UnitBlocError>
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
-
-  @override
-  Future<void> close() async {
-    await repo.dispose();
-    return super.close();
-  }
 }
 
 /// ---------------------

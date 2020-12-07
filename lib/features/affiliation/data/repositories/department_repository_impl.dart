@@ -10,9 +10,9 @@ import 'package:SarSys/features/affiliation/domain/repositories/department_repos
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-class DepartmentRepositoryImpl extends BoxRepository<String, Department, DepartmentService>
+class DepartmentRepositoryImpl extends StatefulRepository<String, Department, DepartmentService>
     implements DepartmentRepository {
   DepartmentRepositoryImpl(
     DepartmentService service, {

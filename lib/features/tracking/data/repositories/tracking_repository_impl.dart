@@ -1,25 +1,29 @@
 import 'dart:async';
 
-import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
+import 'package:SarSys/features/tracking/domain/repositories/position_list_repository.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_service.dart';
 import 'package:SarSys/features/tracking/domain/repositories/tracking_repository.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
-class TrackingRepositoryImpl extends BoxRepository<String, Tracking, TrackingService> implements TrackingRepository {
+class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, TrackingService>
+    implements TrackingRepository {
   TrackingRepositoryImpl(
     TrackingService service, {
-    @required this.tracks,
+    @required PositionListRepository tracks,
     @required ConnectivityService connectivity,
-  }) : super(
+  })  : _tracks = tracks,
+        super(
           service: service,
           dependencies: [tracks],
           connectivity: connectivity,
@@ -31,7 +35,7 @@ class TrackingRepositoryImpl extends BoxRepository<String, Tracking, TrackingSer
   String _ouuid;
 
   /// [TrackingTrack] repository
-  final TrackingTrackRepository tracks;
+  final PositionListRepository _tracks;
 
   /// Map for efficient tracking lookup from [Source.uuid]
   final _sources = <String, Set<String>>{};
@@ -134,6 +138,25 @@ class TrackingRepositoryImpl extends BoxRepository<String, Tracking, TrackingSer
     );
   }
 
+  @override
+  Future<PositionList> fetchPositionLists(
+    String tuuid, {
+    List<String> suuids = const [],
+    Completer<Iterable<Tracking>> onRemote,
+    List<String> options = const ['truncate:-20:m'],
+  }) async {
+    if (containsKey(tuuid)) {
+      final tracking = get(tuuid);
+      final lists = await _tracks.fetch(
+        tuuid,
+        options: options,
+        suuids: suuids.isEmpty ? tracking.sources.map((s) => s.uuid) : suuids,
+      );
+      return lists.firstOrNull;
+    }
+    return null;
+  }
+
   /// Unload all [Tracking]s for given [ouuid]
   @override
   Future<List<Tracking>> close() async {
@@ -233,16 +256,15 @@ class TrackingRepositoryImpl extends BoxRepository<String, Tracking, TrackingSer
 
   @override
   Future<Tracking> onUpdate(StorageState<Tracking> state) async {
-    return state.value;
-    // var response = await service.update(state.value);
-    // if (response.is200) {
-    //   return response.body;
-    // }
-    // throw TrackingServiceException(
-    //   'Failed to update Tracking ${state.value}',
-    //   response: response,
-    //   stackTrace: StackTrace.current,
-    // );
+    var response = await service.update(state.value);
+    if (response.is200) {
+      return response.body;
+    }
+    throw TrackingServiceException(
+      'Failed to update Tracking ${state.value}',
+      response: response,
+      stackTrace: StackTrace.current,
+    );
   }
 
   @override

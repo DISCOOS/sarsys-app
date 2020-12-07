@@ -82,18 +82,19 @@ void main() async {
       await _authenticate(harness);
       final iuuid = Uuid().v4();
       harness.connectivity.cellular();
+      final localOperations = await harness.operationsBloc.load();
+      final localIncidents = harness.operationsBloc.incidents.values;
+
+      // Act
       harness.incidentService.add(uuid: iuuid);
       harness.operationService.add(harness.userBloc.userId, iuuid: iuuid);
       harness.operationService.add(harness.userBloc.userId, iuuid: iuuid);
-
-      // Act
-      final localOperations = await harness.operationsBloc.load();
-      final localIncidents = harness.operationsBloc.incidents.values;
+      await harness.operationsBloc.load();
       await expectRemoteIsNotEmpty<OperationsLoaded>(harness);
-      final remoteOperations = harness.operationsBloc.repo.values;
-      final remoteIncidents = harness.operationsBloc.incidents.values;
 
       // Assert
+      final remoteOperations = harness.operationsBloc.values;
+      final remoteIncidents = harness.operationsBloc.incidents.values;
       expect(localIncidents.length, 0, reason: "SHOULD contain zero incidents");
       expect(localOperations.length, 0, reason: "SHOULD contain zero operations");
       expect(remoteIncidents.length, 1, reason: "SHOULD contain one incident");

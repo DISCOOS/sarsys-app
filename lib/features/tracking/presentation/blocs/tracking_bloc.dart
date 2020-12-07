@@ -3,7 +3,6 @@ import 'dart:collection';
 
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -23,8 +22,9 @@ import 'package:flutter/foundation.dart';
 
 typedef void TrackingCallback(VoidCallback fn);
 
-class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBlocError>
-    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>>, ConnectionAwareBloc<String, Tracking> {
+class TrackingBloc
+    extends StatefulBloc<TrackingCommand, TrackingState, TrackingBlocError, String, Tracking, TrackingService>
+    with LoadableBloc<List<Tracking>>, UnloadableBloc<List<Tracking>> {
   ///
   /// Default constructor
   ///
@@ -51,19 +51,19 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
     registerStreamSubscription(
       // Updates tracking for unit
       // apriori to changes made in backend.
-      unitBloc.listen(_processUnitState),
+      unitBloc.where((e) => e.isLocal).listen(_processUnitState),
     );
 
     registerStreamSubscription(
       // Updates tracking for personnel
       // apriori to changes made in backend.
-      personnelBloc.listen(_processPersonnelState),
+      personnelBloc.where((e) => e.isLocal).listen(_processPersonnelState),
     );
 
     registerStreamSubscription(
       // Updates tracking for device
       // apriori to changes made in backend.
-      deviceBloc.listen(_processDeviceState),
+      deviceBloc.where((e) => e.isLocal).listen(_processDeviceState),
     );
 
     registerStreamSubscription(
@@ -71,9 +71,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       service.messages.listen(_processMessage),
     );
   }
-
-  /// All repositories
-  Iterable<BoxRepository> get repos => [repo];
 
   /// Get [OperationBloc]
   final OperationBloc operationBloc;
@@ -90,23 +87,19 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   /// Get [TrackingRepository]
   final TrackingRepository repo;
 
-  /// Get all [Tracking]s
-  Iterable<Tracking> get values => repo.values;
-
-  /// Get [Tracking] from [uuid]
-  Tracking operator [](String uuid) => repo[uuid];
-
-  /// Get [TrackingService]
-  TrackingService get service => repo.service;
-
-  /// Check if this bloc is ready
+  /// Check if bloc is ready
+  @override
   bool get isReady => repo.isReady;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
 
   /// Check if [Operation.uuid] is not set
   bool get isUnset => repo.ouuid == null;
 
-  /// [Operation] that manages given [devices]
-  String get ouuid => isReady ? repo.ouuid ?? operationBloc.selected?.uuid : null;
+  /// [Operation] that manages given [tra]
+  String get ouuid => isReady ? (repo.ouuid ?? operationBloc.selected?.uuid) : null;
 
   @override
   TrackingState get initialState => TrackingsEmpty();
@@ -121,7 +114,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       if (isOpen && state.isLocal) {
         final unselected = (bloc as OperationBloc).isUnselected;
         if (state.shouldLoad(ouuid)) {
-          dispatch(
+          await dispatch(
             LoadTrackings(state.data.uuid),
           );
         } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
@@ -156,30 +149,14 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   void _processDeviceState(DeviceState state) {
     try {
-      if (state.isLocationChanged() || state.isStatusChanged()) {
-        final device = state.data as Device;
-        final trackings = find(device, tracks: true);
-        if (trackings.isNotEmpty) {
-          final next = state.isAvailable()
-              ? TrackingUtils.attachAll(
-                  trackings.first,
-                  [PositionableSource.from<Device>(device)],
-                )
-              : TrackingUtils.detachAll(
-                  trackings.first,
-                  [device.uuid],
-                );
-          add(_toInternalChange(next));
-        }
-      } else if (state.isDeleted()) {
-        final device = state.data;
-        final trackings = find(device);
-        if (trackings.isNotEmpty) {
-          final next = TrackingUtils.deleteAll(
-            trackings.first,
-            [device.uuid],
-          );
-          add(_toInternalChange(next));
+      if (isOpen) {
+        switch (state.runtimeType) {
+          case DeviceUpdated:
+            _onDeviceUpdated(state);
+            break;
+          case DeviceDeleted:
+            _onDeviceDeleted(state);
+            break;
         }
       }
     } catch (error, stackTrace) {
@@ -189,6 +166,39 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         stackTrace,
       );
       onError(error, stackTrace);
+    }
+  }
+
+  void _onDeviceUpdated(DeviceUpdated state) {
+    if (state.isLocationChanged() || state.isStatusChanged()) {
+      final device = state.data;
+      final trackings = find(device, tracks: true);
+      if (trackings.isNotEmpty) {
+        final next = state.isAvailable()
+            ? TrackingUtils.attachAll(
+                trackings.first,
+                [PositionableSource.from<Device>(device)],
+              )
+            : TrackingUtils.detachAll(
+                trackings.first,
+                [device.uuid],
+              );
+        add(_toInternalChange(next));
+      }
+    }
+  }
+
+  void _onDeviceDeleted(DeviceState state) {
+    if (state.isDeleted()) {
+      final device = state.data;
+      final trackings = find(device);
+      if (trackings.isNotEmpty) {
+        final next = TrackingUtils.deleteAll(
+          trackings.first,
+          [device.uuid],
+        );
+        add(_toInternalChange(next));
+      }
     }
   }
 
@@ -212,46 +222,17 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   void _processUnitState(UnitState state) {
     try {
-      if (state.isCreated() && state.isTracked() && !state.isRetired()) {
-        final created = (state as UnitCreated);
-        final unit = created.data;
-        final tracking = TrackingUtils.create(
-          unit,
-          sources: [
-            ...TrackingUtils.toSources<Personnel>(personnelBloc.from(unit.personnels), repo),
-            ...TrackingUtils.toSources<Device>(created.devices, repo),
-          ],
-        );
-        // TODO: Backend will perform this apriori
-        add(_toInternalCreate(
-          tracking,
-        ));
-      } else if (state.isUpdated() && state.isStatusChanged()) {
-        final unit = (state as UnitUpdated).data;
-        final tracking = repo[unit.tracking?.uuid];
-        if (tracking != null) {
-          final next = TrackingUtils.toggle(
-            tracking,
-            state.isRetired(),
-          );
-          // TODO: Backend will perform this apriori
-          add(_toInternalChange(
-            next,
-          ));
-        } else if (!state.isRetired()) {
-          // TODO: Backend will perform this apriori
-          add(_toInternalCreate(
-            tracking,
-          ));
-        }
-      } else if (state.isDeleted()) {
-        final unit = (state as UnitDeleted).data;
-        final tracking = repo[unit.tracking?.uuid];
-        if (tracking != null) {
-          // TODO: Backend will perform this apriori
-          add(_toInternalDelete(
-            tracking,
-          ));
+      if (isOpen) {
+        switch (state.runtimeType) {
+          case UnitCreated:
+            _onUnitCreated(state);
+            break;
+          case UnitUpdated:
+            _onUnitUpdated(state);
+            break;
+          case UnitDeleted:
+            _onUnitDeleted(state);
+            break;
         }
       }
     } catch (error, stackTrace) {
@@ -261,6 +242,56 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         stackTrace,
       );
       onError(error, stackTrace);
+    }
+  }
+
+  void _onUnitCreated(UnitCreated state) {
+    if (state.isTracked() && !state.isRetired()) {
+      final unit = state.data;
+      final tracking = TrackingUtils.create(
+        unit,
+        sources: [
+          ...TrackingUtils.toSources<Personnel>(personnelBloc.from(unit.personnels), repo),
+          ...TrackingUtils.toSources<Device>(state.devices, repo),
+        ],
+      );
+      // TODO: Backend will perform this apriori
+      add(_toInternalCreate(
+        tracking,
+      ));
+    }
+  }
+
+  void _onUnitUpdated(UnitUpdated state) {
+    if (state.isStatusChanged()) {
+      final unit = state.data;
+      final tracking = repo[unit.tracking?.uuid];
+      if (tracking != null) {
+        final next = TrackingUtils.toggle(
+          tracking,
+          state.isRetired(),
+        );
+        // TODO: Backend will perform this apriori
+        add(_toInternalChange(
+          next,
+        ));
+      } else if (!state.isRetired()) {
+        // TODO: Backend will perform this apriori
+        add(_toInternalCreate(
+          tracking,
+        ));
+      }
+    }
+  }
+
+  void _onUnitDeleted(UnitDeleted state) {
+    final unit = state.data;
+    final tracking = repo[unit.tracking?.uuid];
+    if (tracking != null) {
+      // TODO: Backend will perform this apriori
+      add(_toInternalDelete(
+        tracking,
+      ));
     }
   }
 
@@ -284,34 +315,18 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   ///
   void _processPersonnelState(PersonnelState state) {
     try {
-      if (state.isCreated() && state.isTracked() && !state.isRetired()) {
-        final personnel = (state as PersonnelCreated).data;
-        final tracking = TrackingUtils.create(personnel);
-        // Backend will perform this apriori
-        add(_toInternalCreate(
-          tracking,
-        ));
-      } else if (state.isUpdated() && state.isStatusChanged()) {
-        final personnel = (state as PersonnelUpdated).data;
-        final tracking = repo[personnel.tracking?.uuid];
-        if (tracking != null) {
-          final next = TrackingUtils.toggle(
-            tracking,
-            state.isRetired(),
-          );
-          // Backend will perform this apriori
-          add(_toInternalChange(
-            next,
-          ));
-        }
-      } else if (state.isDeleted()) {
-        final personnel = (state as PersonnelDeleted).data;
-        final tracking = repo[personnel.tracking?.uuid];
-        if (tracking != null) {
-          // Backend will perform this apriori
-          add(_toInternalDelete(
-            tracking,
-          ));
+      if (isOpen) {
+        switch (state.runtimeType) {
+          case UserMobilized:
+          case PersonnelCreated:
+            _onPersonnelCreated(state);
+            break;
+          case PersonnelUpdated:
+            _onPersonnelUpdated(state);
+            break;
+          case PersonnelDeleted:
+            _onPersonnelDeleted(state);
+            break;
         }
       }
     } catch (error, stackTrace) {
@@ -321,6 +336,47 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         stackTrace,
       );
       onError(error, stackTrace);
+    }
+  }
+
+  void _onPersonnelCreated(PersonnelCreated state) {
+    if (state.isTracked() && !state.isRetired()) {
+      final personnel = state.data;
+      final tracking = TrackingUtils.create(personnel);
+      // Backend will perform this apriori
+      add(_toInternalCreate(
+        tracking,
+      ));
+    }
+  }
+
+  void _onPersonnelUpdated(PersonnelUpdated state) {
+    if (state.isUpdated() && state.isStatusChanged()) {
+      final personnel = state.data;
+      final tracking = repo[personnel.tracking?.uuid];
+      if (tracking != null) {
+        final next = TrackingUtils.toggle(
+          tracking,
+          state.isRetired(),
+        );
+        // Backend will perform this apriori
+        add(_toInternalChange(
+          next,
+        ));
+      }
+    }
+  }
+
+  void _onPersonnelDeleted(PersonnelDeleted state) {
+    if (state.isDeleted()) {
+      final personnel = state.data;
+      final tracking = repo[personnel.tracking?.uuid];
+      if (tracking != null) {
+        // Backend will perform this apriori
+        add(_toInternalDelete(
+          tracking,
+        ));
+      }
     }
   }
 
@@ -472,7 +528,7 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
   Future<List<Tracking>> load() async {
     _assertState();
     return dispatch<List<Tracking>>(
-      LoadTrackings(ouuid),
+      LoadTrackings(ouuid ?? operationBloc.selected?.uuid),
     );
   }
 
@@ -772,9 +828,14 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
       switch (event.data.type) {
         case TrackingMessageType.created:
         case TrackingMessageType.updated:
-          final next = repo[event.data.uuid] ?? TrackingModel.fromJson(event.data.json);
-          final tracking = repo.patch(next, isRemote: remote).value;
-          yield TrackingCreated(tracking);
+          final value = TrackingModel.fromJson(event.data.json);
+          final next = repo.patch(value, isRemote: remote).value;
+          yield event.data.type == TrackingMessageType.created
+              ? TrackingCreated(next)
+              : TrackingUpdated(
+                  next,
+                  value,
+                );
           break;
         case TrackingMessageType.deleted:
           final tracking = repo[event.data.uuid];
@@ -808,12 +869,6 @@ class TrackingBloc extends BaseBloc<TrackingCommand, TrackingState, TrackingBloc
         error,
         stackTrace: stackTrace ?? StackTrace.current,
       );
-
-  @override
-  Future<void> close() async {
-    await repo.dispose();
-    return super.close();
-  }
 }
 
 /// ---------------------

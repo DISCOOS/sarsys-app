@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/stateful_repository.dart';
+import 'package:SarSys/features/tracking/data/repositories/position_list_repository_impl.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -12,11 +14,9 @@ import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
 import 'package:SarSys/core/presentation/screens/splash_screen.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
-import 'package:SarSys/features/tracking/data/repositories/tracking_track_repository_impl.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
-import 'package:SarSys/features/tracking/data/services/tracking_track_positions_service.dart';
-import 'package:SarSys/features/tracking/data/services/tracking_track_service.dart';
-import 'package:SarSys/features/tracking/domain/repositories/tracking_track_repository.dart';
+import 'package:SarSys/features/tracking/data/services/position_list_service.dart';
+import 'package:SarSys/features/tracking/domain/repositories/position_list_repository.dart';
 import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:SarSys/features/user/presentation/screens/unlock_screen.dart';
@@ -368,9 +368,9 @@ class AppController {
 
     // Configure Tracking services and repos
     final TrackingService trackingService = TrackingService(TrackingSourceService());
-    final TrackingTrackService trackService = TrackingTrackService(TrackingTrackPositionsService());
-    final TrackingTrackRepository trackRepo = TrackingTrackRepositoryImpl(
-      trackService,
+    final PositionListService positionListService = PositionListService();
+    final PositionListRepository trackRepo = PositionListRepositoryImpl(
+      positionListService,
       connectivity: connectivityService,
     );
 
@@ -404,10 +404,11 @@ class AppController {
     ];
 
     // Get all services
-    final repoServices = blocs.whereType<ConnectionAwareBloc>().map((bloc) => bloc.repos).fold<Iterable<Service>>(
-      <Service>[
-        trackService.positions,
-      ],
+    final repoServices = blocs
+        .whereType<ConnectionAwareBloc>()
+        .map((bloc) => bloc.repos.whereType<StatefulRepository>())
+        .fold<Iterable<Service>>(
+      <Service>[positionListService],
       (services, repos) => List.from(services)
         ..addAll(
           repos.map((repo) => repo.service),
@@ -662,7 +663,6 @@ class AppController {
         case AffiliationsFetched:
           if (isOnline) {
             await bloc<AffiliationBloc>().onLoadedAsync();
-            print('trst');
           }
           _setState(AppState.Ready);
           break;

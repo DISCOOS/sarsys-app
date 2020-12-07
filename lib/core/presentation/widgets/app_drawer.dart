@@ -40,7 +40,7 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     final UserBloc userBloc = context.bloc<UserBloc>();
     final User user = userBloc.user;
-    final isPrivate = !context.bloc<PersonnelBloc>().isUserMobilized();
+    final isPrivate = !context.bloc<PersonnelBloc>().isUserMobilized;
     return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.

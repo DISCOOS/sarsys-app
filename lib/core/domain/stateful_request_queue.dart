@@ -8,19 +8,23 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/core/domain/models/core.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
 import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 
 import 'models/AggregateRef.dart';
 
-class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
-  BoxRepositoryRequestQueue(this.repo, this.connectivity);
+class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
+  StatefulRequestQueue(
+    StatefulRepository<K, V, U> repo,
+    this.connectivity,
+  ) : _repo = repo;
 
-  /// [BoxRepository] instance
-  final BoxRepository<K, V, U> repo;
+  /// [StatefulRepository] instance
+  StatefulRepository<K, V, U> get repo => _repo;
+  StatefulRepository<K, V, U> _repo;
 
   /// [ConnectivityService] instance
   final ConnectivityService connectivity;
@@ -39,7 +43,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   /// This queue ensures that each [load] is
   /// processed in order waiting for it to
   /// complete or fail.
-  StreamRequestQueue<Iterable<V>> _loadQueue;
+  StreamRequestQueue<K, Iterable<V>> _loadQueue;
 
   /// Check if [load] is scheduled for
   ///request from [service].
@@ -52,7 +56,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   /// fail. This prevents concurrent writes which will
   /// result in an unexpected behaviour due to race
   /// conditions.
-  StreamRequestQueue<V> _pushQueue;
+  StreamRequestQueue<K, V> _pushQueue;
 
   /// Check if queue is empty
   bool get isEmpty => _loadQueue.isEmpty && _pushQueue.isEmpty;
@@ -77,22 +81,22 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     Iterable<StorageState<V>> states,
   ) async {
     // Create if not exists
-    _pushQueue ??= StreamRequestQueue<V>(
+    _pushQueue ??= StreamRequestQueue<K, V>(
       onError: _shouldStop,
     );
-    _loadQueue ??= StreamRequestQueue<Iterable<V>>(
+    _loadQueue ??= StreamRequestQueue<K, Iterable<V>>(
       onError: _shouldStop,
     );
 
     // Cancel queues
-    _pushQueue.cancel();
     _loadQueue.cancel();
+    _pushQueue.cancel();
 
     // Add local states to backlog
     _backlog.clear();
     _backlog.addAll(
       Map.fromEntries(
-        states.where((state) => state.isCreated).map((state) => MapEntry(repo.toKey(state), null)),
+        states.where((state) => state.isCreated).map((state) => MapEntry(_repo.toKey(state), null)),
       ),
     );
     return pop();
@@ -124,21 +128,27 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
 
   /// Check if given error should move queue to idle state
   bool _shouldStop(Object error, StackTrace stackTrace) {
-    final stop = error is SocketException ||
+    final isServiceError = error is ServiceException;
+    final isOfflineError = error is SocketException ||
         error is ClientException ||
         error is TimeoutException ||
         error is RepositoryOfflineException ||
         isOffline;
 
-    if (stop) {
+    if (isOfflineError) {
       _popWhenOnline();
-    } else {
-      repo.onError(
-        error,
-        stackTrace,
-      );
+      return false;
+    } else if (isServiceError) {
+      final response = (error as ServiceException).response;
+      if (response?.isErrorTemporary == true) {
+        return false;
+      }
     }
-    return stop;
+    _repo.onError(
+      error,
+      stackTrace,
+    );
+    return isOfflineError || isServiceError;
   }
 
   /// Get local values and schedule a deferred load request
@@ -151,7 +161,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   }) {
     _assertState();
     // Replace current if not executed yet
-    _loadQueue.only(StreamRequest<Iterable<V>>(
+    _loadQueue.only(StreamRequest<K, Iterable<V>>(
       fail: fail,
       onResult: onResult,
       execute: () => _executeLoad(
@@ -159,14 +169,14 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
         request,
         shouldEvict,
       ),
-      fallback: () => Future.value(repo.values),
+      fallback: () => Future.value(_repo.values),
     ));
 
     if (isOffline) {
       _popWhenOnline();
     }
 
-    return repo.values;
+    return _repo.values;
   }
 
   Future<StreamResult<Iterable<V>>> _executeLoad(
@@ -181,22 +191,29 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     }
     var response = await request();
     if (response != null) {
-      if (repo.isReady && (response.is200 || response.is206)) {
+      if (_repo.isReady && (response.is200 || response.is206)) {
         final states = response.body.map((value) {
-          return StorageState.updated(
+          final state = StorageState.created(
             map == null ? value : map(value),
             isRemote: true,
           );
+          if (_repo.containsKey(_repo.toKey(state))) {
+            return state.remote(
+              value,
+              status: StorageStatus.updated,
+            );
+          }
+          return state;
         });
         if (shouldEvict) {
-          repo.evict(
-            retainKeys: states.map(repo.toKey),
+          _repo.evict(
+            retainKeys: states.map(_repo.toKey),
           );
         }
         states.forEach(
           (state) {
-            if (repo.toKey(state) != null) {
-              repo.put(
+            if (_repo.toKey(state) != null) {
+              _repo.put(
                 _patch(state),
               );
             }
@@ -213,7 +230,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
       }
     }
     return StreamResult<Iterable<V>>(
-      value: repo.values,
+      value: _repo.values,
     );
   }
 
@@ -280,7 +297,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
       }
     } else if (!completer.isCompleted) {
       assert(!_shouldWait(waitForOnline), "Should not be loading when online");
-      completer.complete(repo.values);
+      completer.complete(_repo.values);
     }
   }
 
@@ -293,7 +310,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     StorageState<V> state, {
     Completer<V> onResult,
   }) {
-    final key = repo.toKey(state);
+    final key = _repo.toKey(state);
     if (state.isLocal) {
       _backlog[key] = onResult;
     }
@@ -346,16 +363,16 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     Completer<V> onResult,
   }) {
     _assertState();
-    final state = repo.getState(key);
+    final state = _repo.getState(key);
     if (state?.isLocal == true) {
       if (_shouldSchedulePush()) {
         // Replace current if not executed yet
-        _pushQueue.add(StreamRequest<V>(
+        _pushQueue.add(StreamRequest<K, V>(
           key: key,
           fail: false,
           onResult: onResult,
           fallback: () => Future.value(state.value),
-          execute: () => repo.isReady ? _executePush(key) : state.value,
+          execute: () => _repo.isReady ? _executePush(key) : state.value,
         ));
         return state?.value;
       }
@@ -370,28 +387,28 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   Future<StreamResult<V>> _executePush(K key) async {
     try {
       _assertState();
-      if (repo.isReady) {
+      if (_repo.isReady) {
         final exists = await _waitForDeps(key);
-        if (exists && repo.containsKey(key)) {
+        if (exists && _repo.containsKey(key)) {
           final result = await _push(
-            repo.getState(key),
+            _repo.getState(key),
           );
-          if (repo.isReady) {
-            repo.put(_patch(
+          if (_repo.isReady) {
+            _repo.put(_patch(
               result,
             ));
           }
           return StreamResult(
             // If patch deleted state, use result before patch
-            value: repo.containsKey(key) ? repo.get(key) : result.value,
+            value: _repo.containsKey(key) ? _repo.get(key) : result.value,
           );
         }
       }
       return StreamResult.none<V>();
     } catch (error) {
-      final state = repo.getState(key);
+      final state = _repo.getState(key);
       if (state != null) {
-        repo.put(
+        _repo.put(
           state.failed(error),
         );
       }
@@ -399,7 +416,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     }
   }
 
-  bool _shouldSchedulePush() => connectivity.isOnline && !repo.inTransaction;
+  bool _shouldSchedulePush() => connectivity.isOnline && !_repo.inTransaction;
 
   /// Push state to remote
   FutureOr<StorageState<V>> _push(StorageState<V> state) async {
@@ -408,26 +425,26 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
         switch (state.status) {
           case StorageStatus.created:
             return StorageState.created(
-              await repo.onCreate(state),
+              await _repo.onCreate(state),
               isRemote: true,
             );
           case StorageStatus.updated:
             return StorageState.updated(
-              await repo.onUpdate(state),
+              await _repo.onUpdate(state),
               isRemote: true,
             );
           case StorageStatus.deleted:
             return StorageState.deleted(
-              await repo.onDelete(state),
+              await _repo.onDelete(state),
               isRemote: true,
             );
         }
         throw RepositoryException('Unable to process $state');
       } on ServiceException catch (e) {
         if (e.is409) {
-          return repo.onResolve(state, e.response);
+          return _repo.onResolve(state, e.response);
         } else if (e.is404) {
-          return repo.onNotFound(state, e.response);
+          return _repo.onNotFound(state, e.response);
         }
         rethrow;
       }
@@ -437,9 +454,9 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
 
   /// Patch [next] state with existing in repository
   StorageState<V> _patch(StorageState next) {
-    final key = repo.toKey(next);
-    final current = repo.getState(key);
-    return current == null ? next : current.patch<V>(next, repo.fromJson);
+    final key = _repo.toKey(next);
+    final current = _repo.getState(key);
+    return current == null ? next : current.patch<V>(next, _repo.fromJson);
   }
 
   /// Check if dependencies exists remotely
@@ -463,9 +480,9 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   /// because dependency was not found in backend.
   bool shouldWait(K key) {
     _assertState();
-    final state = repo.getState(key);
+    final state = _repo.getState(key);
     if (state?.isLocal == true) {
-      final refs = repo.toRefs(state.value);
+      final refs = _repo.toRefs(state.value);
       return refs.any(_isRefLocal);
     }
     return false;
@@ -473,7 +490,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
 
   /// Check if reference exists local only
   bool _isRefLocal(AggregateRef ref) {
-    final state = repo.dependencies
+    final state = _repo.dependencies
         .where((dep) => dep.containsKey(ref.uuid))
         .map((dep) => dep.getState(ref.uuid))
         .where((state) => state?.value?.runtimeType == ref.type)
@@ -487,9 +504,11 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
   void _popWhenOnline() {
     if (_onlineSubscription == null) {
       _onlineSubscription = connectivity.whenOnline.listen(
-        (_) => pop(),
+        (_) {
+          pop();
+        },
         cancelOnError: false,
-        onError: repo.onError,
+        onError: _repo.onError,
       );
     }
   }
@@ -548,6 +567,7 @@ class BoxRepositoryRequestQueue<K, V extends JsonObject, U extends Service> {
     _timer?.cancel();
     await _onlineSubscription?.cancel();
     _timer = null;
+    _repo = null;
     _onlineSubscription = null;
   }
 }

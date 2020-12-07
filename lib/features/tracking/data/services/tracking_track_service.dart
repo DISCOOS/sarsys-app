@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_track_model.dart';
-import 'package:SarSys/features/tracking/data/services/tracking_track_positions_service.dart';
+import 'package:SarSys/features/tracking/data/services/position_list_service.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -20,10 +20,15 @@ class TrackingTrackService
   ) : delegate = TrackingTrackServiceImpl.newInstance();
 
   final TrackingTrackServiceImpl delegate;
-  final TrackingTrackPositionsService positions;
+  final PositionListService positions;
 
   /// Fetch [TrackingTrack]s for given [Tracking] uuid.
-  Future<ServiceResponse<List<TrackingTrack>>> getSubListFromId(String tuuid, int offset, int limit) async {
+  Future<ServiceResponse<List<TrackingTrack>>> getSubListFromId(
+    String tuuid,
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<TrackingTrack>, List<TrackingTrack>>(
       await delegate.fetchAll(
         tuuid,

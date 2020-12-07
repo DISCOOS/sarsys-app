@@ -115,7 +115,7 @@ class UserRepository implements Repository<String, User> {
     await tokens.load();
     return Hive.openBox(
       '$UserRepository',
-      encryptionKey: await Storage.hiveKey<User>(),
+      encryptionCipher: await Storage.hiveCipher<User>(),
       compactionStrategy: (_, deleted) => compactWhen < deleted,
     );
   }

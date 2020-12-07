@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -14,14 +14,14 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 
-class OperationBloc extends BaseBloc<OperationCommand, OperationState, OperationBlocError>
+class OperationBloc
+    extends StatefulBloc<OperationCommand, OperationState, OperationBlocError, String, Operation, OperationService>
     with
         LoadableBloc<List<Operation>>,
         CreatableBloc<Operation>,
         UpdatableBloc<Operation>,
         DeletableBloc<Operation>,
-        UnloadableBloc<List<Operation>>,
-        ConnectionAwareBloc<String, Operation> {
+        UnloadableBloc<List<Operation>> {
   ///
   /// Default constructor
   ///
@@ -48,6 +48,14 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   /// Get [UserBloc]
   final UserBloc userBloc;
 
+  /// Check if bloc is ready
+  @override
+  bool get isReady => repo.isReady;
+
+  /// Stream of isReady changes
+  @override
+  Stream<bool> get onReadyChanged => repo.onReadyChanged;
+
   /// Get [IncidentRepository]
   IncidentRepository get incidents => repo.incidents;
 
@@ -61,7 +69,7 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
   Operation operator [](String uuid) => repo[uuid];
 
   /// All repositories
-  Iterable<BoxRepository> get repos => [incidents, repo];
+  Iterable<StatefulRepository> get repos => [incidents, repo];
 
   /// Get [OperationService]
   OperationService get service => repo.service;
@@ -532,13 +540,6 @@ class OperationBloc extends BaseBloc<OperationCommand, OperationState, Operation
     }
     _ouuid = null;
     return unselected;
-  }
-
-  @override
-  Future<void> close() async {
-    await repo.dispose();
-    await incidents.dispose();
-    return super.close();
   }
 
   @override

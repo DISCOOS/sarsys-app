@@ -7,10 +7,11 @@ import 'package:flutter/foundation.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
-class IncidentRepositoryImpl extends BoxRepository<String, Incident, IncidentService> implements IncidentRepository {
+class IncidentRepositoryImpl extends StatefulRepository<String, Incident, IncidentService>
+    implements IncidentRepository {
   IncidentRepositoryImpl(
     IncidentService service, {
     @required ConnectivityService connectivity,

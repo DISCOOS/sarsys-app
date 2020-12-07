@@ -1,7 +1,7 @@
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -278,7 +278,7 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   final VoidCallback onCommit;
   final String Function(StorageState<T> state) subject;
   final String Function(StorageState<T> state) content;
-  final BoxRepository<dynamic, T, Service> repo;
+  final StatefulRepository<dynamic, T, Service> repo;
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +299,7 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
             }
             return _buildRepoActions(context,
                 child: ListTile(
-                  key: PageStorageKey<BoxRepository>(repo),
+                  key: PageStorageKey<StatefulRepository>(repo),
                   leading: const Icon(Icons.storage),
                   title: SelectableText(title),
                   subtitle: repo.isEmpty

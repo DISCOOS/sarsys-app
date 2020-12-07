@@ -16,7 +16,11 @@ class IncidentService with ServiceGetList<Incident> implements ServiceDelegate<I
 
   IncidentService() : delegate = IncidentServiceImpl.newInstance();
 
-  Future<ServiceResponse<List<Incident>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Incident>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Incident>, List<Incident>>(
       await delegate.fetch(
         offset: offset,

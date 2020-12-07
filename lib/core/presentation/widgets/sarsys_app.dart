@@ -152,7 +152,7 @@ class _SarSysAppState extends State<SarSysApp> with WidgetsBindingObserver {
         RouteWriter.STATE,
         defaultValue: {},
       );
-      final result = await selectOperation(ouuid);
+      final result = await openOperation(ouuid);
       if (result.isRight()) {
         route[UserScreen.ROUTE_OPERATION] = result.toIterable().firstOrNull;
         NavigationService().pushReplacementNamed(

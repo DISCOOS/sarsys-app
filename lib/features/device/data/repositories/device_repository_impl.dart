@@ -8,10 +8,10 @@ import 'package:SarSys/features/device/domain/repositories/device_repository.dar
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/data/services/device_service.dart';
 import 'package:SarSys/core/data/storage.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 
-class DeviceRepositoryImpl extends BoxRepository<String, Device, DeviceService> implements DeviceRepository {
+class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceService> implements DeviceRepository {
   DeviceRepositoryImpl(
     DeviceService service, {
     @required ConnectivityService connectivity,

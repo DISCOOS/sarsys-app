@@ -42,7 +42,11 @@ class DeviceService with ServiceGetList<Device> implements ServiceDelegate<Devic
   /// Get stream of device messages
   Stream<DeviceMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Device>>> getSubList(int offset, int limit) async {
+  Future<ServiceResponse<List<Device>>> getSubList(
+    int offset,
+    int limit,
+    List<String> options,
+  ) async {
     return Api.from<PagedList<Device>, List<Device>>(
       await delegate.fetch(),
     );

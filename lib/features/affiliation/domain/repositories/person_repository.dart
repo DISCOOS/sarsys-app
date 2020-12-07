@@ -5,9 +5,9 @@ import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-abstract class PersonRepository implements BoxRepository<String, Person, PersonService> {
+abstract class PersonRepository implements StatefulRepository<String, Person, PersonService> {
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Person> state) {

@@ -17,9 +17,9 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-class AffiliationRepositoryImpl extends BoxRepository<String, Affiliation, AffiliationService>
+class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, AffiliationService>
     implements AffiliationRepository {
   AffiliationRepositoryImpl(
     AffiliationService service, {
@@ -180,11 +180,23 @@ class AffiliationRepositoryImpl extends BoxRepository<String, Affiliation, Affil
       affiliation.person != null,
       "Person can not be null",
     );
-    persons.replace(
-      affiliation.person,
+    // Ensure userId is set
+    final next = _ensureUserId(affiliation);
+    persons.patch(
+      next,
       isRemote: isRemote,
     );
     return affiliation;
+  }
+
+  Person _ensureUserId(Affiliation affiliation) {
+    if (affiliation.person.userId == null) {
+      final person = persons[affiliation.person.uuid];
+      if (person != null) {
+        return person;
+      }
+    }
+    return affiliation.person;
   }
 
   @override

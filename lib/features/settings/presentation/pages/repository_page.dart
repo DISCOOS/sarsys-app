@@ -1,4 +1,4 @@
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +7,7 @@ import 'package:SarSys/core/utils/data.dart';
 
 class RepositoryPage<T extends Aggregate> extends StatefulWidget {
   final bool withActions;
-  final BoxRepository repository;
+  final StatefulRepository repository;
   final bool Function(StorageState<T> state) where;
   final String Function(StorageState<T> state) subject;
   final String Function(StorageState<T> state) content;

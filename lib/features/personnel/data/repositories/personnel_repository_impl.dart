@@ -7,13 +7,13 @@ import 'package:SarSys/features/affiliation/domain/repositories/affiliation_repo
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/domain/repositories/personnel_repository.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/features/unit/domain/repositories/unit_repository.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 
-class PersonnelRepositoryImpl extends BoxRepository<String, Personnel, PersonnelService>
+class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, PersonnelService>
     implements PersonnelRepository {
   PersonnelRepositoryImpl(
     PersonnelService service, {

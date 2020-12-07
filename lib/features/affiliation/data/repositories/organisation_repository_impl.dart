@@ -9,9 +9,9 @@ import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-class OrganisationRepositoryImpl extends BoxRepository<String, Organisation, OrganisationService>
+class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation, OrganisationService>
     implements OrganisationRepository {
   OrganisationRepositoryImpl(
     OrganisationService service, {

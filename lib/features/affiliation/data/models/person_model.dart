@@ -45,7 +45,7 @@ class PersonModel extends Person {
       );
 
   static PersonModel fromPersonnel(Personnel personnel, {bool temporary = false}) => PersonModel(
-        uuid: Uuid().v4(),
+        uuid: personnel.person?.uuid ?? Uuid().v4(),
         fname: personnel.fname,
         lname: personnel.lname,
         phone: personnel.phone,

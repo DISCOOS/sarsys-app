@@ -1,4 +1,5 @@
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
@@ -25,17 +26,31 @@ abstract class ValueObject<T> extends JsonObject<T> {
 class JsonUtils {
   static toNull(value) => null;
 
-  static List<T> toList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) =>
-      json['entries'] == null ? <T>[] : List.from(json['entries']).map((json) => factory(json)).toList();
+  static List<T> toList<T>(
+    Map<String, dynamic> json,
+    JsonDecoder<T> factory, {
+    String dataField = 'data',
+    String entriesField = 'entries',
+  }) =>
+      json.hasPath(entriesField)
+          ? json.listAt(entriesField).map((json) => factory(Map.from(json).elementAt(dataField))).toList()
+          : <T>[];
 
-  static PagedList<T> toPagedList<T>(Map<String, dynamic> json, JsonDecoder<T> factory) => PagedList<T>(
-        toList(json, factory),
+  static PagedList<T> toPagedList<T>(
+    Map<String, dynamic> json,
+    JsonDecoder<T> factory, {
+    String dataField = 'data',
+    String entriesField = 'entries',
+  }) =>
+      PagedList<T>(
+        toList(
+          json,
+          factory,
+          dataField: dataField,
+          entriesField: entriesField,
+        ),
         PageResult.from(json),
       );
-
-  static List<Map<String, dynamic>> diff(JsonObject o1, JsonObject o2) {
-    return JsonPatch.diff(o1.toJson(), o2.toJson());
-  }
 
   static dynamic toJson<T extends JsonObject>(
     T value, {
@@ -62,16 +77,27 @@ class JsonUtils {
   /// Append-only operations allowed
   static const appendOnly = ['add', 'replace', 'move'];
 
+  static List<Map<String, dynamic>> diff(
+    JsonObject o1,
+    JsonObject o2, {
+    List<String> ops = appendOnly,
+  }) {
+    final patches = JsonPatch.diff(o1.toJson(), o2.toJson());
+    patches.removeWhere((diff) => !ops.contains(diff['op']));
+    return patches;
+  }
+
   static Map<String, dynamic> patch(
     JsonObject oldJson,
     JsonObject newJson, {
     bool strict = false,
     List<String> ops = appendOnly,
   }) {
-    final patches = JsonPatch.diff(
+    final patches = diff(
       oldJson?.toJson() ?? {},
       newJson?.toJson() ?? {},
-    )..removeWhere((diff) => !ops.contains(diff['op']));
+      ops: ops,
+    );
     return apply(oldJson, patches, strict: strict);
   }
 

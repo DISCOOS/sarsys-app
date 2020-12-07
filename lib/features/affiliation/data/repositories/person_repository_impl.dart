@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/data/services/person_service.dart';
@@ -13,9 +14,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
 
-class PersonRepositoryImpl extends BoxRepository<String, Person, PersonService> implements PersonRepository {
+class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonService> implements PersonRepository {
   PersonRepositoryImpl(
     PersonService service, {
     @required ConnectivityService connectivity,
@@ -168,7 +168,7 @@ class PersonRepositoryImpl extends BoxRepository<String, Person, PersonService> 
   }
 }
 
-class MergePersonStrategy extends MergeStrategy<String, Person, PersonService> {
+class MergePersonStrategy extends StatefulMergeStrategy<String, Person, PersonService> {
   MergePersonStrategy(PersonRepository repository) : super(repository);
 
   @override

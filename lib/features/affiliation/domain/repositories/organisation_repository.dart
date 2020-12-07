@@ -4,9 +4,9 @@ import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:SarSys/core/domain/box_repository.dart';
+import 'package:SarSys/core/domain/stateful_repository.dart';
 
-abstract class OrganisationRepository implements BoxRepository<String, Organisation, OrganisationService> {
+abstract class OrganisationRepository implements StatefulRepository<String, Organisation, OrganisationService> {
   /// Get [Operation.uuid] from [state]
   @override
   String toKey(StorageState<Organisation> state) {
