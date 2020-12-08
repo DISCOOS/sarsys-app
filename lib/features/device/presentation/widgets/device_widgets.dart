@@ -227,19 +227,14 @@ class DeviceWidget extends StatelessWidget {
       ? Divider(indent: 16.0, endIndent: 16.0)
       : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
-  Padding _buildHeader(TextTheme theme, BuildContext context) => Padding(
-        padding: EdgeInsets.only(left: 16, top: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text('Apparat ${device.name}', style: theme.headline6),
-            IconButton(
-              icon: Icon(Icons.close),
-              onPressed: () => _onComplete(device),
-            )
-          ],
-        ),
-      );
+  ListTile _buildHeader(TextTheme theme, BuildContext context) => ListTile(
+      selected: true,
+      title: Text('Apparat', style: theme.headline6),
+      subtitle: Text('${device.name}'),
+      trailing: IconButton(
+        icon: Icon(Icons.close),
+        onPressed: () => _onComplete(device),
+      ));
 
   Widget _buildMap(BuildContext context) {
     final center = device.position?.toLatLng();
