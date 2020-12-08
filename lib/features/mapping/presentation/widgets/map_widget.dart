@@ -29,7 +29,6 @@ import 'package:SarSys/features/mapping/presentation/layers/measure_layer.dart';
 import 'package:SarSys/features/mapping/presentation/layers/personnel_layer.dart';
 import 'package:SarSys/features/mapping/presentation/map_controls.dart';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
-import 'package:SarSys/features/mapping/presentation/my_location_controller.dart';
 import 'package:SarSys/features/mapping/presentation/tile_providers.dart';
 import 'package:SarSys/features/mapping/presentation/layers/scalebar.dart';
 import 'package:SarSys/features/mapping/presentation/tools/position_tool.dart';
@@ -49,7 +48,8 @@ import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_search.dart';
-import 'package:SarSys/features/mapping/presentation/layers/my_location.dart';
+import 'package:SarSys/features/mapping/presentation/layers/my_location_layer.dart';
+import 'package:SarSys/features/mapping/presentation/tools/my_location_tool.dart';
 import 'package:SarSys/core/presentation/widgets/filter_sheet.dart';
 
 import '../models/map_widget_state_model.dart';
@@ -207,7 +207,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   MapControls _mapControls;
   MapWidgetController _mapController;
   MapToolController _mapToolController;
-  MyLocationController _locationController;
+  MyLocationLayerController _locationController;
   PermissionController _permissionController;
 
   /// Conditionally set during initialization
@@ -460,13 +460,14 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             onMessage: widget.onMessage,
             active: () => _useLayers.contains(LAYER_DEVICE),
           ),
+          MyLocationTool(),
           PositionTool(
             controller: _mapController,
             onMessage: widget.onMessage,
             onHide: () => setState(() => _searchMatch = null),
             onShow: (point) => setState(() => _searchMatch = point),
             onCopy: (value) => setState(() => _searchFieldKey.currentState.setQuery(value)),
-          )
+          ),
         ],
       );
     }
@@ -475,7 +476,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   void _ensureLocationControllers() {
     // Configure location controller only once
     if (widget.withControlsLocateMe && _locationController == null) {
-      _locationController = MyLocationController(
+      _locationController = MyLocationLayerController(
         tickerProvider: this,
         mapController: widget.mapController,
         onTrackingChanged: _onTrackingChanged,
@@ -584,7 +585,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         onPositionChanged: _onPositionChanged,
         onLongPress: (point) => _onLongPress(point),
         plugins: [
-          MyLocation(),
+          MyLocationLayer(),
           POILayer(),
           DeviceLayer(),
           PersonnelLayer(),

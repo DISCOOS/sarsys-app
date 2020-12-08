@@ -1,23 +1,267 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:ui';
+import 'dart:math';
 
-import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/core/permission_controller.dart';
-import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
-import 'package:SarSys/features/mapping/presentation/layers/my_location.dart';
-import 'package:SarSys/core/defaults.dart';
-import 'package:catcher/catcher.dart';
+import 'package:SarSys/features/mapping/presentation/painters.dart';
+import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:latlong/latlong.dart' hide Path;
+
+import 'dart:io';
+import 'package:SarSys/features/mapping/data/services/location_service.dart';
+import 'package:SarSys/core/permission_controller.dart';
+import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
+import 'package:SarSys/core/defaults.dart';
+import 'package:catcher/catcher.dart';
 import 'package:latlong/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);
 typedef LocationCallback = void Function(LatLng point, bool located, bool locked);
 
-class MyLocationController {
-  MyLocationController({
+
+class MyLocationLayerOptions extends LayerOptions {
+  MyLocationLayerOptions(
+    this.point, {
+    @required this.tickerProvider,
+    @required this.locationUpdates,
+    this.bearing,
+    this.accuracy,
+    this.size = 30.0,
+    this.opacity = 0.6,
+    this.showTail = true,
+    this.milliSeconds = 500,
+    this.color = Colors.green,
+    Stream<Null> rebuild,
+    Iterable<Position> track = const [],
+  })  : track = List<Position>.from(track),
+        super(rebuild: rebuild) {
+    assert(tickerProvider != null, 'tickerProvider can not be null');
+    assert(locationUpdates != null, 'locationUpdates can not be null');
+  }
+
+  final Color color;
+  final double bearing;
+  final double opacity;
+  final int milliSeconds;
+  final List<Position> track;
+  final TickerProvider tickerProvider;
+  final StreamSink<Null> locationUpdates;
+
+  // Allow external change
+  double size;
+  LatLng point;
+  LatLng next;
+  bool showTail;
+  LatLng previous;
+  double accuracy;
+
+  AnimationController _controller;
+  bool get isAnimating => _controller != null;
+
+  void cancel() {
+    if (_controller != null) {
+      _controller.dispose();
+      _controller = null;
+      next = null;
+      previous = null;
+    }
+  }
+
+  /// Move icon to given point
+  void animatedMove(Position position, {double bearing, void onMove(LatLng p)}) {
+    if (isAnimating) return;
+
+    previous = this.point;
+    track.add(position);
+    next = position.toLatLng();
+
+    // Create some tweens. These serve to split up the transition from one location to another.
+    // In our case, we want to split the transition be<tween> previous position and the destination.
+    final _latTween = Tween<double>(begin: previous.latitude, end: next.latitude);
+    final _lngTween = Tween<double>(begin: previous.longitude, end: next.longitude);
+
+    // Create a animation controller that has a duration and a TickerProvider.
+    _controller = AnimationController(duration: Duration(milliseconds: milliSeconds), vsync: tickerProvider);
+
+    // The animation determines what path the animation will take. You can try different Curves values, although I found
+    // fastOutSlowIn to be my favorite.
+    Animation<double> animation = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+
+    _controller.addListener(() {
+      point = LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation));
+      _moveNext(point, position);
+      if (onMove != null) {
+        onMove(this.point);
+      }
+    });
+
+    animation.addStatusListener((status) {
+      if ([AnimationStatus.completed, AnimationStatus.dismissed].contains(status)) {
+        _moveEnd(position);
+      }
+    });
+    _controller.forward();
+  }
+
+  void _moveNext(LatLng next, Position end) {
+    point = next;
+    track.removeLast();
+    track.add(end.copyWith(
+      lat: next.latitude,
+      lon: next.longitude,
+    ));
+    locationUpdates.add(null);
+  }
+
+  void _moveEnd(Position position) {
+    point = position.toLatLng();
+    track.add(position);
+    locationUpdates.add(null);
+    cancel();
+  }
+}
+
+class MyLocationLayer extends MapPlugin {
+  @override
+  bool supportsLayer(LayerOptions options) {
+    return options is MyLocationLayerOptions;
+  }
+
+  @override
+  Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints bc) {
+      final size = Size(bc.maxWidth, bc.maxHeight);
+      return IgnorePointer(
+        child: StreamBuilder<Null>(
+          stream: stream,
+          builder: (context, snapshot) => _build(
+            context,
+            options as MyLocationLayerOptions,
+            map,
+            size,
+          ),
+        ),
+      );
+    });
+  }
+
+  Stack _build(
+    BuildContext context,
+    MyLocationLayerOptions options,
+    MapState map,
+    Size size,
+  ) {
+    return Stack(
+      children: <Widget>[
+        _buildPosition(context, options, map),
+        if (options.showTail && options.track.isNotEmpty)
+          _buildTrack(
+            context,
+            options,
+            map,
+            size,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPosition(BuildContext context, MyLocationLayerOptions options, MapState map) {
+    var size = 8.0;
+    var pos = map.project(options.point);
+    pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+    var pixelRadius = _toPixelRadius(map, size, pos.x, pos.y, options);
+
+    return Positioned(
+      top: pos.y,
+      left: pos.x,
+      width: pixelRadius,
+      height: pixelRadius,
+      child: Stack(
+        overflow: Overflow.visible,
+        children: [
+          Positioned(
+            left: 0.0,
+            top: 0.0,
+            child: CustomPaint(
+              painter: PointPainter(
+                size: 8.0,
+                color: Colors.green,
+                opacity: options.opacity,
+                outer: pixelRadius,
+              ),
+            ),
+          ),
+          if (options.bearing != null)
+            CustomPaint(
+              painter: BearingPainter(options.bearing),
+            ),
+          Positioned(
+            left: 0,
+            top: size,
+            child: CustomPaint(
+              painter: LabelPainter("Meg", top: size),
+              size: Size(size, size),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _buildTrack(
+    BuildContext context,
+    MyLocationLayerOptions options,
+    MapState map,
+    Size size,
+  ) {
+    final track = List<Position>.from(options.track);
+    final bounds = map.getBounds();
+    var offsets = track.reversed
+        .where((p) => p.isNotEmpty)
+        .take(1000)
+        .map((p) => p.toLatLng())
+        .where((p) => bounds.contains(p))
+        .map((position) {
+      var pos = map.project(position);
+      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+      return Offset(pos.x.toDouble(), pos.y.toDouble());
+    }).toList();
+
+    return CustomPaint(
+      painter: LineStringPainter(
+        offsets: offsets,
+        color: Colors.blue,
+        borderColor: Colors.blue,
+        opacity: options.opacity,
+      ),
+      size: size,
+    );
+  }
+
+  double _toPixelRadius(MapState map, double size, double x, double y, MyLocationLayerOptions options) {
+    var pixelRadius = size;
+    if (options.accuracy != null && options.accuracy > 0.0) {
+      var coords = ProjMath.calculateEndingGlobalCoordinates(
+        options.point.latitude,
+        options.point.longitude,
+        45.0,
+        options.accuracy,
+      );
+      var pos = map.project(LatLng(coords.y, coords.x));
+      pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+      pixelRadius = min(max((pos.x - x).abs(), size), max((pos.y - y).abs(), size).abs()).toDouble();
+    }
+    return pixelRadius;
+  }
+}
+
+class MyLocationLayerController {
+  MyLocationLayerController({
     @required this.mapController,
     @required this.permissionController,
     this.tickerProvider,
@@ -33,13 +277,13 @@ class MyLocationController {
   final PermissionController permissionController;
 
   bool _locked = false;
-  MyLocationOptions _options;
+  MyLocationLayerOptions _options;
   StreamSubscription _positionSubscription;
   StreamController<Null> _updateController = StreamController.broadcast();
 
   bool get isLocked => _locked;
   Position get current => service?.current;
-  MyLocationOptions get options => _options;
+  MyLocationLayerOptions get options => _options;
   bool get isReady => service?.isReady == true && _options != null && _disposed == false;
   LocationService get service => LocationService.exists ? LocationService() : null;
   bool get isAnimating => mapController.isAnimating || (_options != null && _options.isAnimating);
@@ -96,7 +340,7 @@ class MyLocationController {
   void _subscribe() {
     if (_positionSubscription == null) {
       _positionSubscription = service.stream.listen(
-        (position) => _updateLocation(position, false),
+            (position) => _updateLocation(position, false),
       );
       if (Platform.isIOS) {
         // Proposed workaround on iOS for https://github.com/BaseflowIT/flutter-geolocator/issues/190
@@ -216,11 +460,11 @@ class MyLocationController {
           // Wait before retrying
           await Future.delayed(
             const Duration(milliseconds: 100),
-            () => _handle(completer),
+                () => _handle(completer),
           );
         } else if (!service.isReady) {
           service.onEvent.where((event) => event is ConfigureEvent).first.then(
-            (_) {
+                (_) {
               return _onReady(completer);
             },
           );
@@ -251,11 +495,11 @@ class MyLocationController {
     }
   }
 
-  MyLocationOptions build({bool withTail}) {
+  MyLocationLayerOptions build({bool withTail}) {
     // Duplicates are overwritten
     final point = _toLatLng(service.current);
     _options?.cancel();
-    _options = MyLocationOptions(
+    _options = MyLocationLayerOptions(
       point,
       opacity: 0.5,
       track: service.positions,
