@@ -227,9 +227,7 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
-    if (hasGesture) {
-      _setFromLatLng(position.center);
-      _changes.add(position.center);
-    }
+    _setFromLatLng(position.center);
+    _changes.add(position.center);
   }
 }
