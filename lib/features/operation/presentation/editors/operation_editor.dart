@@ -284,7 +284,7 @@ class _OperationEditorState extends State<OperationEditor> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               _buildCopyFromMeetupButton(),
-              FlatButton.icon(
+              TextButton.icon(
                 icon: Icon(Icons.my_location),
                 label: Text("Min posisjon"),
                 onPressed: () => _setIppToMe(),
@@ -298,7 +298,7 @@ class _OperationEditorState extends State<OperationEditor> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               _buildCopyFromIppButton(),
-              FlatButton.icon(
+              TextButton.icon(
                 icon: Icon(Icons.my_location),
                 label: Text("Min posisjon"),
                 onPressed: () => _setMeetupToMe(),
@@ -637,7 +637,7 @@ class _OperationEditorState extends State<OperationEditor> {
         style: TextStyle(fontSize: 16.0),
       );
 
-  Widget _buildCopyFromIppButton() => FlatButton.icon(
+  Widget _buildCopyFromIppButton() => TextButton.icon(
         icon: Icon(Icons.content_copy),
         label: Text("IPP"),
         onPressed: _ipp is Location
@@ -654,7 +654,7 @@ class _OperationEditorState extends State<OperationEditor> {
             : null,
       );
 
-  Widget _buildCopyFromMeetupButton() => FlatButton.icon(
+  Widget _buildCopyFromMeetupButton() => TextButton.icon(
         icon: Icon(Icons.content_copy),
         label: Text("Oppmøte"),
         onPressed: _meetup is Location
