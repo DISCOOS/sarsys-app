@@ -194,21 +194,14 @@ class PersonnelWidget extends StatelessWidget {
       ? Divider(indent: 16.0, endIndent: 16.0)
       : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
-  Padding _buildHeader(BuildContext context, Personnel personnel, TextTheme theme) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16, top: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text('${personnel.name}', style: theme.headline6),
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () => _onComplete(personnel),
-          )
-        ],
-      ),
-    );
-  }
+  ListTile _buildHeader(BuildContext context, Personnel personnel, TextTheme theme) => ListTile(
+      selected: true,
+      title: Text('Mannskap', style: theme.headline6),
+      subtitle: Text('${personnel.name}'),
+      trailing: IconButton(
+        icon: Icon(Icons.close),
+        onPressed: () => _onComplete(personnel),
+      ));
 
   Widget _buildMap(BuildContext context) {
     final center = tracking?.position?.toLatLng();
