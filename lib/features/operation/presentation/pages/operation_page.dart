@@ -19,6 +19,7 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:timer_builder/timer_builder.dart';
+import 'package:SarSys/features/operation/presentation/screens/command_screen.dart';
 
 class OperationPage extends StatefulWidget {
   static const HEIGHT = 82.0;
@@ -197,6 +198,7 @@ class _OperationPageState extends State<OperationPage> {
                 return _buildValueTile(
                   "${snapshot.hasData ? context.bloc<PersonnelBloc>().count() : "-"}",
                   label: "Mnsk",
+                  onValueTap: () => Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_PERSONNEL_LIST),
                 );
               }),
         ),
@@ -209,6 +211,7 @@ class _OperationPageState extends State<OperationPage> {
                 return _buildValueTile(
                   "${snapshot.hasData ? context.bloc<UnitBloc>().count() : "-"}",
                   label: "Enheter",
+                  onValueTap: () => Navigator.pushReplacementNamed(context, CommandScreen.ROUTE_UNIT_LIST),
                 );
               }),
         ),
