@@ -138,19 +138,14 @@ class UnitWidget extends StatelessWidget {
       ? Divider(indent: 16.0, endIndent: 16.0)
       : VerticalDivider(indent: 16.0, endIndent: 16.0);
 
-  Padding _buildHeader(BuildContext context, TextTheme theme) => Padding(
-        padding: EdgeInsets.only(left: 16, top: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text('${unit.name}', style: theme.headline6),
-            IconButton(
-              icon: Icon(Icons.close),
-              onPressed: () => _onComplete(unit),
-            )
-          ],
-        ),
-      );
+  ListTile _buildHeader(BuildContext context, TextTheme theme) => ListTile(
+      selected: true,
+      title: Text('Enhet', style: theme.headline6),
+      subtitle: Text('${unit.name}'),
+      trailing: IconButton(
+        icon: Icon(Icons.close),
+        onPressed: () => _onComplete(unit),
+      ));
 
   Widget _buildMap(BuildContext context) {
     final center = tracking?.position?.toLatLng();
