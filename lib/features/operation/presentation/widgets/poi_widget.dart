@@ -49,19 +49,14 @@ class POIWidget extends StatelessWidget {
     );
   }
 
-  Padding _buildHeader(TextTheme theme, BuildContext context) => Padding(
-        padding: EdgeInsets.only(left: 16, top: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text('${poi.name}', style: theme.headline6),
-            IconButton(
-              icon: Icon(Icons.close),
-              onPressed: onCancel ?? onComplete,
-            )
-          ],
-        ),
-      );
+  ListTile _buildHeader(TextTheme theme, BuildContext context) => ListTile(
+      selected: true,
+      title: Text('POI', style: theme.headline6),
+      subtitle: Text('${poi.name}'),
+      trailing: IconButton(
+        icon: Icon(Icons.close),
+        onPressed: () => onCancel ?? onComplete,
+      ));
 
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Padding(
         padding: const EdgeInsets.only(right: 8.0),
