@@ -15,6 +15,9 @@ import 'package:SarSys/core/presentation/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 
 class CommandScreen extends StatefulWidget {
   static const TAB_UNITS = 0;
@@ -74,7 +77,6 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       initialData: context.bloc<OperationBloc>().selected,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         final operation = (snapshot.hasData ? context.bloc<OperationBloc>().selected : null);
-        final title = _toTitle(operation);
         final tabs = [
           UnitsPage(key: _unitsKey),
           PersonnelsPage(key: _personnelKey),
@@ -86,7 +88,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
           drawer: AppDrawer(),
           appBar: AppBar(
             actions: _buildActions(operation),
-            title: Text(title),
+            title: _toTitle(operation),
           ),
           body: tabs[routeData],
           floatingActionButton: operation == null ? null : _buildFAB(),
@@ -137,11 +139,23 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       case CommandScreen.TAB_MISSIONS:
         return "Oppdrag";
       case CommandScreen.TAB_UNITS:
-        return "Enheter";
+        return StreamBuilder<UnitState>(
+            stream: context.bloc<UnitBloc>(),
+            builder: (context, snapshot) {
+              return Text("Enheter (" + "${snapshot.hasData ? context.bloc<UnitBloc>().count(exclude: []) : "-"})");
+            });
       case CommandScreen.TAB_PERSONNEL:
-        return "Mannskap";
+        return StreamBuilder<PersonnelState>(
+            stream: context.bloc<PersonnelBloc>(),
+            builder: (context, snapshot) {
+              return Text("Mannskap (" + "${snapshot.hasData ? context.bloc<PersonnelBloc>().count(exclude: []) : "-"})");
+            });
       case CommandScreen.TAB_DEVICES:
-        return "Apparater";
+        return StreamBuilder<DeviceState>(
+            stream: context.bloc<DeviceBloc>(),
+            builder: (context, snapshot) {
+              return Text("Apparat (" + "${snapshot.hasData ? context.bloc<DeviceBloc>().count(exclude: []) : "-"})");
+            });
       default:
         return ifEmpty;
     }

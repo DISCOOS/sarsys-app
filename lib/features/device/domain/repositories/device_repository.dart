@@ -20,6 +20,11 @@ abstract class DeviceRepository implements StatefulRepository<String, Device, De
   Future<Iterable<Device>> load({
     Completer<Iterable<Device>> onRemote,
   });
+
+  /// Get [Device] count
+  int count({
+    List<DeviceStatus> exclude: const [DeviceStatus.unavailable],
+  });
 }
 
 class DeviceServiceException extends ServiceException {

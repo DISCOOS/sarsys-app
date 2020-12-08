@@ -46,6 +46,18 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
     );
   }
 
+  /// Get [Device] count
+  int count({
+    List<DeviceStatus> exclude: const [DeviceStatus.unavailable],
+  }) =>
+      exclude?.isNotEmpty == false
+          ? length
+          : values
+          .where(
+            (device) => !exclude.contains(device.status),
+      )
+          .length;
+
   Iterable<Device> _load({Completer<Iterable<Device>> onRemote}) {
     return requestQueue.load(
       service.getList,

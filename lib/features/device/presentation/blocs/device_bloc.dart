@@ -162,6 +162,9 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   /// Get all [Device]s
   Iterable<Device> get values => repo.values;
 
+  /// Get [Device] count
+  int count({List<DeviceStatus> exclude: const [DeviceStatus.unavailable]}) => repo.count(exclude: exclude);
+
   /// Get [Device] from [uuid]
   Device operator [](String uuid) => repo[uuid];
 
