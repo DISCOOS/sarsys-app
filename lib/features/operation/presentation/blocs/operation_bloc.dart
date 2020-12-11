@@ -148,10 +148,21 @@ class OperationBloc
         "Incident have no uuid",
       );
     }
-    if (command.data?.incident?.uuid != command.incident.uuid) {
+    final operation = command.data;
+    if (operation?.uuid == null) {
       throw ArgumentError(
-        "Operation does reference given incident: "
-        "expected ${command.incident.uuid}, found ${command.data?.incident?.uuid}",
+        "Operation have no uuid",
+      );
+    }
+    if (operation?.incident?.uuid == null) {
+      throw ArgumentError(
+        "Operation ${operation.uuid} have no incident uuid",
+      );
+    }
+    if (operation?.incident?.uuid != command.incident.uuid) {
+      throw ArgumentError(
+        "Operation ${operation.uuid} does not reference "
+        "incident ${command.incident.uuid}",
       );
     }
   }

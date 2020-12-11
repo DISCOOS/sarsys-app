@@ -1,57 +1,58 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
+
+import 'package:SarSys/features/tracking/data/models/position_list_model.dart';
+import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
+import 'package:chopper/chopper.dart';
+
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
-import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
-import 'package:SarSys/core/data/services/service.dart';
-import 'package:chopper/chopper.dart';
 
 part 'position_list_service.chopper.dart';
 
 /// Service for consuming the Tracks endpoint
 ///
 /// Delegates to a ChopperService implementation
-class PositionListService with ServiceGetListFromIds<Position> implements ServiceDelegate<PositionListServiceImpl> {
+class PositionListService extends StatefulServiceDelegate<PositionList, PositionListModel> with StatefulGetFromIds {
   final PositionListServiceImpl delegate;
 
   PositionListService() : delegate = PositionListServiceImpl.newInstance();
-
-  /// Fetch [TrackingTrack]s for given [Tracking] uuid.
-  Future<ServiceResponse<List<Position>>> getSubListFromIds(
-    String tuuid,
-    String suuid,
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Position>, List<Position>>(
-      await delegate.getPositions(
-        tuuid,
-        suuid,
-        offset,
-        limit,
-        options: const ['truncate:-20:m'],
-      ),
-    );
-  }
 }
 
 @ChopperApi()
-abstract class PositionListServiceImpl extends JsonService<Position, Position> {
+abstract class PositionListServiceImpl extends StatefulService<PositionList, PositionListModel> {
   PositionListServiceImpl()
       : super(
           // Map
-          decoder: (json) => Position.fromJson(json),
+          decoder: (json) => PositionListModel.fromJson({
+            'features': json['entries'],
+          }),
           reducer: (value) => JsonUtils.toJson<Position>(value),
         );
   static PositionListServiceImpl newInstance([ChopperClient client]) => _$PositionListServiceImpl(client);
 
-  @Get(path: '/trackings/{uuid}/tracks/{id}')
-  Future<Response<PagedList<Position>>> getPositions(
-    @Path() uuid,
-    @Path() id,
+  @override
+  Future<Response<StorageState<PositionList>>> onGetFromIds(
+    List<String> ids, {
+    List<String> options = const [],
+  }) async {
+    final suuid = ids[1];
+    final response = await getAll(ids[0], suuid, options: options);
+    final state = response.body;
+    return response.copyWith(
+      body: state.replace(
+        state.value.cloneWith(id: suuid),
+      ),
+    );
+  }
+
+  @Get(path: '/trackings/{tuuid}/tracks/{suuid}')
+  Future<Response<StorageState<PositionList>>> getAll(
+    @Path() tuuid,
+    @Path() suuid, {
     @Query('offset') int offset,
-    @Query('limit') int limit, {
+    @Query('limit') int limit,
     @Query('option') List<String> options = const ['truncate:-20:m'],
   });
 }

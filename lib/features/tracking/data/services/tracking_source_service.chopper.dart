@@ -17,27 +17,6 @@ class _$TrackingSourceServiceImpl extends TrackingSourceServiceImpl {
   final definitionType = TrackingSourceServiceImpl;
 
   @override
-  Future<Response<TrackingSource>> get(dynamic tuuid, dynamic suuid) {
-    final $url = '/trackings/$tuuid/sources/$suuid';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<TrackingSource, TrackingSource>($request);
-  }
-
-  @override
-  Future<Response<PagedList<TrackingSource>>> fetchAll(
-      dynamic tuuid, int offset, int limit,
-      {List<String> expand = const []}) {
-    final $url = '/trackings/$tuuid/sources';
-    final $params = <String, dynamic>{
-      'offset': offset,
-      'limit': limit,
-      'expand': expand
-    };
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<TrackingSource>, TrackingSource>($request);
-  }
-
-  @override
   Future<Response<String>> create(dynamic tuuid, TrackingSource body) {
     final $url = '/trackings/$tuuid/sources';
     final $body = body;
@@ -50,5 +29,28 @@ class _$TrackingSourceServiceImpl extends TrackingSourceServiceImpl {
     final $url = '/trackings/{tuuid}/sources/{suuid}';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<StorageState<TrackingSource>>> get(
+      dynamic tuuid, dynamic suuid) {
+    final $url = '/trackings/$tuuid/sources/$suuid';
+    final $request = Request('GET', $url, client.baseUrl);
+    return client.send<StorageState<TrackingSource>, TrackingSource>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<TrackingSource>>>> getAll(
+      dynamic tuuid, int offset, int limit,
+      {List<String> expand = const []}) {
+    final $url = '/trackings/$tuuid/sources';
+    final $params = <String, dynamic>{
+      'offset': offset,
+      'limit': limit,
+      'expand': expand
+    };
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<StorageState<TrackingSource>>, TrackingSource>(
+        $request);
   }
 }

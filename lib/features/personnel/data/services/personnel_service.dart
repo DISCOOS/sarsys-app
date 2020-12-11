@@ -1,68 +1,29 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
+
+import 'package:SarSys/core/utils/data.dart';
+import 'package:chopper/chopper.dart';
+
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:chopper/chopper.dart';
 
 part 'personnel_service.chopper.dart';
 
 /// Service for consuming the personnels endpoint
 ///
 /// Delegates to a ChopperService implementation
-class PersonnelService with ServiceGetListFromId<Personnel> implements ServiceDelegate<PersonnelServiceImpl> {
+class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel>
+    with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetListFromId {
   final PersonnelServiceImpl delegate;
-
   PersonnelService() : delegate = PersonnelServiceImpl.newInstance();
-
-  final StreamController<PersonnelMessage> _controller = StreamController.broadcast();
 
   /// Get stream of personnel messages
   Stream<PersonnelMessage> get messages => _controller.stream;
-
-  Future<ServiceResponse<List<Personnel>>> getSubListFromId(
-    String ouuid,
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Personnel>, List<Personnel>>(
-      await delegate.fetchAll(
-        ouuid,
-        offset,
-        limit,
-        expand: 'person',
-      ),
-    );
-  }
-
-  Future<ServiceResponse<Personnel>> create(String ouuid, Personnel personnel) async {
-    return Api.from<String, Personnel>(
-      await delegate.create(
-        ouuid,
-        personnel,
-      ),
-      // Created 201 returns uri to created personnel in body
-      body: personnel,
-    );
-  }
-
-  Future<ServiceResponse<Personnel>> update(Personnel personnel) async {
-    return Api.from<Personnel, Personnel>(
-      await delegate.update(
-        personnel.uuid,
-        personnel,
-      ),
-      body: personnel,
-    );
-  }
-
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Personnel, Personnel>(await delegate.delete(
-      uuid,
-    ));
-  }
+  final StreamController<PersonnelMessage> _controller = StreamController.broadcast();
 
   void dispose() {
     _controller.close();
@@ -72,14 +33,22 @@ class PersonnelService with ServiceGetListFromId<Personnel> implements ServiceDe
 enum PersonnelMessageType { PersonnelChanged }
 
 class PersonnelMessage {
-  final String uuid;
-  final PersonnelMessageType type;
-  final Map<String, dynamic> json;
-  PersonnelMessage(this.uuid, this.type, this.json);
+  PersonnelMessage(this.data);
+
+  final Map<String, dynamic> data;
+  String get uuid => data.elementAt('uuid');
+  StateVersion get version => StateVersion.fromJson(data);
+
+  PersonnelMessageType get type {
+    final type = data.elementAt('type');
+    return PersonnelMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
+
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('patches');
 }
 
 @ChopperApi()
-abstract class PersonnelServiceImpl extends JsonService<Personnel, PersonnelModel> {
+abstract class PersonnelServiceImpl extends StatefulService<Personnel, PersonnelModel> {
   PersonnelServiceImpl()
       : super(
           decoder: (json) => PersonnelModel.fromJson(json),
@@ -89,28 +58,59 @@ abstract class PersonnelServiceImpl extends JsonService<Personnel, PersonnelMode
         );
   static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);
 
+  @override
+  Future<Response<String>> onCreate(StorageState<Personnel> state) => create(
+        state.value.operation.uuid,
+        state.value,
+      );
+
   @Post(path: '/operations/{ouuid}/personnels')
   Future<Response<String>> create(
-    @Path() ouuid,
+    @Path('ouuid') ouuid,
     @Body() Personnel body,
   );
 
-  @Get(path: '/operations/{ouuid}/personnels')
-  Future<Response<PagedList<Personnel>>> fetchAll(
-    @Path() ouuid,
-    @Query('offset') int offset,
-    @Query('limit') int limit, {
-    @Query('expand') String expand,
-  });
+  @override
+  Future<Response<StorageState<Personnel>>> onUpdate(StorageState<Personnel> state) => update(
+        state.value.uuid,
+        state.value,
+      );
 
   @Patch(path: 'personnels/{uuid}')
-  Future<Response<Personnel>> update(
+  Future<Response<StorageState<Personnel>>> update(
     @Path('uuid') String uuid,
     @Body() Personnel personnel,
   );
+
+  @override
+  Future<Response<StorageState<Personnel>>> onDelete(StorageState<Personnel> state) => delete(
+        state.value.uuid,
+      );
 
   @Delete(path: 'personnels/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
   );
+
+  @override
+  Future<Response<PagedList<StorageState<Personnel>>>> onGetPageFromId(
+    String id,
+    int offset,
+    int limit,
+    List<String> options,
+  ) =>
+      fetch(
+        id,
+        offset,
+        limit,
+        expand: 'person',
+      );
+
+  @Get(path: '/operations/{ouuid}/personnels')
+  Future<Response<PagedList<StorageState<Personnel>>>> fetch(
+    @Path('ouuid') ouuid,
+    @Query('offset') int offset,
+    @Query('limit') int limit, {
+    @Query('expand') String expand,
+  });
 }

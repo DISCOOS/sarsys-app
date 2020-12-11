@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
@@ -15,6 +16,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     this.person,
     this.status,
     this.function,
+    this.operation,
     this.affiliation,
     AggregateRef<Tracking> tracking,
   }) : super(uuid, tracking, fields: [
@@ -35,6 +37,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   final PersonnelStatus status;
   final AggregateRef<Unit> unit;
   final OperationalFunctionType function;
+  final AggregateRef<Operation> operation;
   final AggregateRef<Affiliation> affiliation;
 
   String get name => emptyAsNull("${fname ?? ''} ${lname ?? ''}".trim()) ?? 'Mannskap';
@@ -67,6 +70,7 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     AggregateRef<Unit> unit,
     OperationalFunctionType function,
     AggregateRef<Tracking> tracking,
+    AggregateRef<Operation> operation,
     AggregateRef<Affiliation> affiliation,
   });
 

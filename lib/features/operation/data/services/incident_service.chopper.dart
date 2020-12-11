@@ -17,7 +17,7 @@ class _$IncidentServiceImpl extends IncidentServiceImpl {
   final definitionType = IncidentServiceImpl;
 
   @override
-  Future<Response<String>> create(Incident body) {
+  Future<Response<String>> create(String uuid, Incident body) {
     final $url = '/incidents';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -25,20 +25,11 @@ class _$IncidentServiceImpl extends IncidentServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Incident>>> fetch(
-      {int offset = 0, int limit = 20}) {
-    final $url = '/incidents';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Incident>, Incident>($request);
-  }
-
-  @override
-  Future<Response<Incident>> update(String uuid, Incident body) {
+  Future<Response<StorageState<Incident>>> update(String uuid, Incident body) {
     final $url = '/incidents/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Incident, Incident>($request);
+    return client.send<StorageState<Incident>, Incident>($request);
   }
 
   @override
@@ -46,5 +37,14 @@ class _$IncidentServiceImpl extends IncidentServiceImpl {
     final $url = '/incidents/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Incident>>>> fetch(
+      int offset, int limit) {
+    final $url = '/incidents';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<StorageState<Incident>>, Incident>($request);
   }
 }

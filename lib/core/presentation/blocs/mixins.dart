@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/repository.dart';
@@ -20,7 +20,7 @@ mixin ReadyAwareBloc<S, T> {
 }
 
 /// Connection aware [Bloc] mixin
-mixin ConnectionAwareBloc<K, V extends JsonObject, S extends Service> on ReadyAwareBloc<K, V> {
+mixin ConnectionAwareBloc<K, V extends JsonObject, S extends StatefulServiceDelegate<V, V>> on ReadyAwareBloc<K, V> {
   /// Default timeout on requests that
   /// should return within finite time
   static const Duration timeLimit = const Duration(seconds: 1);
@@ -35,7 +35,7 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends Service> on ReadyAw
   bool get isLoading => repos.whereType<StatefulRepository>().any((repo) => repo.isLoading);
 
   /// Get [StatefulRepository] instance
-  StatefulRepository<K, V, Service> get repo;
+  StatefulRepository<K, V, S> get repo;
 
   /// Get <ll repositories managed by this [Bloc]
   Iterable<StatefulRepository> get repos => [repo];
@@ -46,7 +46,7 @@ mixin ConnectionAwareBloc<K, V extends JsonObject, S extends Service> on ReadyAw
   /// Get [V] from [uuid]
   V operator [](K uuid) => repo[uuid];
 
-  /// Get [Service]
+  /// Get [StatefulServiceDelegate] instance
   S get service => repo.service;
 
   Completer<Iterable<V>> _onLoaded;

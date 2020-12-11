@@ -8,10 +8,10 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 
 abstract class PersonRepository implements StatefulRepository<String, Person, PersonService> {
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Person> state) {
-    return state?.value?.uuid;
+  String toKey(Person value) {
+    return value?.uuid;
   }
 
   /// Find Person with given userId

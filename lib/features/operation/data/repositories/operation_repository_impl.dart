@@ -27,10 +27,10 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
   @override
   final IncidentRepository incidents;
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Operation> state) {
-    return state?.value?.uuid;
+  String toKey(Operation value) {
+    return value?.uuid;
   }
 
   /// Create [Operation] from json
@@ -64,10 +64,10 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
   Future<Iterable<Operation>> onReset({Iterable<Operation> previous}) => Future.value(_load());
 
   @override
-  Future<Operation> onCreate(StorageState<Operation> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Operation>> onCreate(StorageState<Operation> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw OperationServiceException(
       'Failed to create Operation ${state.value}',
@@ -76,12 +76,10 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
     );
   }
 
-  Future<Operation> onUpdate(StorageState<Operation> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Operation>> onUpdate(StorageState<Operation> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw OperationServiceException(
       'Failed to update Operation ${state.value}',
@@ -90,10 +88,10 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
     );
   }
 
-  Future<Operation> onDelete(StorageState<Operation> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Operation>> onDelete(StorageState<Operation> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw OperationServiceException(
       'Failed to delete Operation ${state.value}',

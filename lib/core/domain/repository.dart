@@ -1,3 +1,4 @@
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/services/service.dart';
@@ -92,6 +93,17 @@ class RepositoryOfflineException extends RepositoryException {
   RepositoryOfflineException(this.message, {StorageState state, this.stackTrace})
       : super(
           message,
+          state: state,
+          stackTrace: stackTrace,
+        );
+}
+
+class RepositoryDependencyException extends RepositoryException {
+  final StackTrace stackTrace;
+  final List<AggregateRef> refs;
+  RepositoryDependencyException(this.refs, {StorageState state, this.stackTrace})
+      : super(
+          'Dependency timeout: ${refs.map((e) => '${e.type}: ${e.uuid}')}',
           state: state,
           stackTrace: stackTrace,
         );

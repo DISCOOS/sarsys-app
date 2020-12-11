@@ -17,7 +17,7 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   final definitionType = DeviceServiceImpl;
 
   @override
-  Future<Response<String>> create(Device body) {
+  Future<Response<String>> create(String uuid, Device body) {
     final $url = '/devices';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -25,18 +25,11 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Device>>> fetch() {
-    final $url = '/devices';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<PagedList<Device>, Device>($request);
-  }
-
-  @override
-  Future<Response<Device>> update(String uuid, Device body) {
+  Future<Response<StorageState<Device>>> update(String uuid, Device body) {
     final $url = '/devices/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Device, Device>($request);
+    return client.send<StorageState<Device>, Device>($request);
   }
 
   @override
@@ -44,5 +37,12 @@ class _$DeviceServiceImpl extends DeviceServiceImpl {
     final $url = '/devices/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Device>>>> fetch() {
+    final $url = '/devices';
+    final $request = Request('GET', $url, client.baseUrl);
+    return client.send<PagedList<StorageState<Device>>, Device>($request);
   }
 }

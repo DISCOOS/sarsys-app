@@ -1,3 +1,4 @@
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:meta/meta.dart';
 
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
@@ -12,8 +13,9 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
     @required this.status,
     @required this.callsign,
     this.phone,
-    List<String> personnels = const <String>[],
+    this.operation,
     AggregateRef<Tracking> tracking,
+    List<String> personnels = const <String>[],
   })  : personnels = personnels ?? const <String>[],
         super(uuid, tracking, fields: [
           type,
@@ -30,6 +32,7 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
   final String phone;
   final String callsign;
   final List<String> personnels;
+  final AggregateRef<Operation> operation;
 
   String get name => "${translateUnitType(type)} $number";
 
@@ -51,6 +54,7 @@ abstract class Unit extends Trackable<Map<String, dynamic>> {
     String callsign,
     List<String> personnels,
     AggregateRef<Tracking> tracking,
+    AggregateRef<Operation> operation,
   });
 }
 

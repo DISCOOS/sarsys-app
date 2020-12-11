@@ -1,16 +1,15 @@
 import 'dart:async';
 
 import 'package:SarSys/core/domain/stateful_repository.dart';
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
 abstract class DivisionRepository implements StatefulRepository<String, Division, DivisionService> {
-  /// Get [Division.uuid] from [state]
+  /// Get [Division.uuid] from [value]
   @override
-  String toKey(StorageState<Division> state) {
-    return state?.value?.uuid;
+  String toKey(Division value) {
+    return value?.uuid;
   }
 
   /// Load incidents

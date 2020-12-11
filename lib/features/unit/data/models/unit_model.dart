@@ -1,4 +1,7 @@
 import 'package:SarSys/core/domain/models/converters.dart';
+import 'package:SarSys/features/operation/data/models/operation_model.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -17,10 +20,13 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
     @required int number,
     @required UnitStatus status,
     @required String callsign,
+    @required AggregateRef<Tracking> tracking,
+    @required AggregateRef<Operation> operation,
     String phone,
     List<String> personnels = const [],
-    AggregateRef<Tracking> tracking,
-  }) : super(
+  })  : tracking = tracking?.cast<TrackingModel>(),
+        operation = operation?.cast<OperationModel>(),
+        super(
           uuid: uuid,
           type: type,
           phone: phone,
@@ -30,6 +36,14 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
           callsign: callsign,
           personnels: personnels,
         );
+
+  @override
+  @JsonKey(fromJson: toTrackingRef)
+  final AggregateRef<TrackingModel> tracking;
+
+  @override
+  @JsonKey(fromJson: toOperationRef)
+  final AggregateRef<OperationModel> operation;
 
   /// Factory constructor for creating a new `Unit` instance from json data
   factory UnitModel.fromJson(Map<String, dynamic> json) => _$UnitModelFromJson(json);
@@ -61,6 +75,7 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
     String callsign,
     List<String> personnels,
     AggregateRef<Tracking> tracking,
+    AggregateRef<Operation> operation,
   }) {
     return UnitModel(
       uuid: uuid ?? this.uuid,
@@ -69,8 +84,9 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
       status: status ?? this.status,
       phone: phone ?? this.phone,
       callsign: callsign ?? this.callsign,
-      tracking: tracking ?? this.tracking,
       personnels: personnels ?? this.personnels ?? const [],
+      tracking: tracking?.cast<TrackingModel>() ?? this.tracking,
+      operation: operation?.cast<OperationModel>() ?? this.operation,
     );
   }
 }

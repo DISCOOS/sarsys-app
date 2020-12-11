@@ -31,10 +31,16 @@ class JsonUtils {
     JsonDecoder<T> factory, {
     String dataField = 'data',
     String entriesField = 'entries',
-  }) =>
-      json.hasPath(entriesField)
-          ? json.listAt(entriesField).map((json) => factory(Map.from(json).elementAt(dataField))).toList()
-          : <T>[];
+  }) {
+    final isRoot = dataField == null || dataField == '.';
+    if (json.hasPath(entriesField)) {
+      return json
+          .listAt(entriesField)
+          .map((json) => factory(isRoot ? json : Map.from(json).elementAt(dataField)))
+          .toList();
+    }
+    return <T>[];
+  }
 
   static PagedList<T> toPagedList<T>(
     Map<String, dynamic> json,
@@ -74,16 +80,39 @@ class JsonUtils {
     return json;
   }
 
-  /// Append-only operations allowed
-  static const appendOnly = ['add', 'replace', 'move'];
-
-  static List<Map<String, dynamic>> diff(
-    JsonObject o1,
-    JsonObject o2, {
-    List<String> ops = appendOnly,
-  }) {
-    final patches = JsonPatch.diff(o1.toJson(), o2.toJson());
-    patches.removeWhere((diff) => !ops.contains(diff['op']));
+  /// Calculate key-stable patches enforcing
+  /// a 'append-only' rule for keys and
+  /// replace-only for arrays (remove are
+  /// only allowed for arrays).
+  ///
+  /// This is important to allow for partial
+  /// updates to an existing object that is
+  /// semantically consistent with the HTTP
+  /// PATCH method by only including keys
+  /// in [next] should be updated, keeping
+  /// the rest unchanged.
+  ///
+  static List<Map<String, dynamic>> diff(JsonObject o1, JsonObject o2) {
+    final current = o1.toJson();
+    final next = o2.toJson();
+    final patches = JsonPatch.diff(current, next)
+      ..removeWhere(
+        (diff) {
+          var isRemove = diff['op'] == 'remove';
+          if (isRemove) {
+            final elements = (diff['path'] as String).split('/');
+            if (elements.length > 1) {
+              // Get path to list by removing index
+              final path = elements.take(elements.length - 1).join('/');
+              if (current is Map && path.isNotEmpty) {
+                final value = current.elementAt(path);
+                isRemove = value is! List;
+              }
+            }
+          }
+          return isRemove;
+        },
+      );
     return patches;
   }
 
@@ -91,12 +120,10 @@ class JsonUtils {
     JsonObject oldJson,
     JsonObject newJson, {
     bool strict = false,
-    List<String> ops = appendOnly,
   }) {
     final patches = diff(
       oldJson?.toJson() ?? {},
       newJson?.toJson() ?? {},
-      ops: ops,
     );
     return apply(oldJson, patches, strict: strict);
   }
@@ -105,7 +132,6 @@ class JsonUtils {
     JsonObject oldJson,
     List<Map<String, dynamic>> patches, {
     bool strict = false,
-    List<String> ops = appendOnly,
   }) {
     return JsonPatch.apply(oldJson, patches, strict: strict);
   }

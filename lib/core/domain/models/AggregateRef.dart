@@ -29,4 +29,9 @@ class AggregateRef<T extends Aggregate> extends Equatable {
 
   /// Declare support for serialization to JSON
   Map<String, dynamic> toJson() => _$AggregateRefToJson(this);
+
+  @override
+  String toString() {
+    return 'AggregateRef{type: $type, uuid: $uuid}';
+  }
 }

@@ -22,9 +22,9 @@ abstract class TrackingRepository extends StatefulRepository<String, Tracking, T
   @override
   bool get isReady;
 
-  /// Get [Tracking.uuid] from [state]
+  /// Get [Tracking.uuid] from [value]
   @override
-  String toKey(StorageState<Tracking> state);
+  String toKey(Tracking value);
 
   /// Test if source [suuid] is being tracked
   ///

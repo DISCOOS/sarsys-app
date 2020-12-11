@@ -24,8 +24,8 @@ class PositionListRepositoryImpl extends StatefulRepository<String, PositionList
         );
 
   @override
-  String toKey(StorageState<PositionList> state) {
-    return state.value?.id;
+  String toKey(PositionList value) {
+    return value?.id;
   }
 
   /// Map for efficient tracking lookup from [Source.uuid]
@@ -50,6 +50,7 @@ class PositionListRepositoryImpl extends StatefulRepository<String, PositionList
               id: track.source?.uuid,
               features: track.positions,
             ),
+            StateVersion.first,
             isRemote: true,
           ),
         );
@@ -91,8 +92,8 @@ class PositionListRepositoryImpl extends StatefulRepository<String, PositionList
   }) async {
     return requestQueue.load(
       () async {
-        final values = <PositionList>[];
         final errors = <ServiceResponse>[];
+        final values = <StorageState<PositionList>>[];
         if (replace) {
           _sources.clear();
         }
@@ -100,25 +101,19 @@ class PositionListRepositoryImpl extends StatefulRepository<String, PositionList
           // Do not attempt to load local values
           final state = getState(suuid);
           if (state == null || state.shouldLoad) {
-            final response = await service.getListFromIds(
-              tuuid,
-              suuid,
+            final response = await service.getFromIds(
+              [tuuid, suuid],
               options: options,
             );
             if (response != null) {
               if (response.is200) {
-                values.add(
-                  PositionListModel(
-                    id: suuid,
-                    features: response.body,
-                  ),
-                );
+                values.add(response.body);
               } else {
                 errors.add(response);
               }
             }
           } else {
-            values.add(state.value);
+            values.add(state);
           }
           _sources.update(
             suuid,
@@ -127,14 +122,14 @@ class PositionListRepositoryImpl extends StatefulRepository<String, PositionList
           );
         }
         if (errors.isNotEmpty) {
-          return ServiceResponse<List<PositionList>>(
+          return ServiceResponse<List<StorageState<PositionList>>>(
             body: values,
             error: errors,
             statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
             reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
           );
         }
-        return ServiceResponse.ok<List<PositionList>>(
+        return ServiceResponse.ok(
           body: values,
         );
       },

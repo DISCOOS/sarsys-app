@@ -17,7 +17,7 @@ class _$OperationServiceImpl extends OperationServiceImpl {
   final definitionType = OperationServiceImpl;
 
   @override
-  Future<Response<String>> create(dynamic iuuid, Operation body) {
+  Future<Response<String>> create(String iuuid, Operation body) {
     final $url = '/incidents/$iuuid/operations';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -25,20 +25,12 @@ class _$OperationServiceImpl extends OperationServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Operation>>> fetch(
-      {int offset = 0, int limit = 20}) {
-    final $url = '/operations';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Operation>, Operation>($request);
-  }
-
-  @override
-  Future<Response<Operation>> update(String uuid, Operation body) {
+  Future<Response<StorageState<Operation>>> update(
+      String uuid, Operation body) {
     final $url = '/operations/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Operation, Operation>($request);
+    return client.send<StorageState<Operation>, Operation>($request);
   }
 
   @override
@@ -46,5 +38,14 @@ class _$OperationServiceImpl extends OperationServiceImpl {
     final $url = '/operations/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Operation>>>> fetch(
+      int offset, int limit) {
+    final $url = '/operations';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<StorageState<Operation>>, Operation>($request);
   }
 }

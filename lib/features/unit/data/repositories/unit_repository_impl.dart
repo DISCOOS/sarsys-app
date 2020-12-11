@@ -33,10 +33,10 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService> i
   @override
   bool get isReady => super.isReady && _ouuid != null;
 
-  /// Get [Unit.uuid] from [state]
+  /// Get [Unit.uuid] from [value]
   @override
-  String toKey(StorageState<Unit> state) {
-    return state.value.uuid;
+  String toKey(Unit value) {
+    return value?.uuid;
   }
 
   /// Create [Unit] from json
@@ -129,11 +129,13 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService> i
   Future<Iterable<Unit>> onReset({Iterable<Unit> previous}) => _ouuid != null ? load(_ouuid) : Future.value(previous);
 
   @override
-  Future<Unit> onCreate(StorageState<Unit> state) async {
-    var response = await service.create(_ouuid, state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Unit>> onCreate(StorageState<Unit> state) async {
+    assert(state.value.operation.uuid == _ouuid);
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
+
     throw UnitServiceException(
       'Failed to create Unit ${state.value}',
       response: response,
@@ -142,13 +144,12 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService> i
   }
 
   @override
-  Future<Unit> onUpdate(StorageState<Unit> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Unit>> onUpdate(StorageState<Unit> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
+
     throw UnitServiceException(
       'Failed to update Unit ${state.value}',
       response: response,
@@ -157,10 +158,10 @@ class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService> i
   }
 
   @override
-  Future<Unit> onDelete(StorageState<Unit> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Unit>> onDelete(StorageState<Unit> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw UnitServiceException(
       'Failed to delete Unit ${state.value}',

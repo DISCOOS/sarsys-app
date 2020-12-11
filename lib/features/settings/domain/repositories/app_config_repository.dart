@@ -6,16 +6,16 @@ import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/settings/data/services/app_config_service.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 
-abstract class AppConfigRepository implements StatefulRepository<int, AppConfig, AppConfigService> {
+abstract class AppConfigRepository implements StatefulRepository<String, AppConfig, AppConfigService> {
   int get version;
   String get assets;
   AppConfigService get service;
 
   /// Get current [AppConfig] instance
-  AppConfig get config => this[version];
+  AppConfig get config => this['$version'];
 
   /// Get current state
-  StorageState<AppConfig> get state => getState(version);
+  StorageState<AppConfig> get state => getState('$version');
 
   /// Initialize from [assets] and push to remote
   Future<AppConfig> init({

@@ -17,26 +17,20 @@ class _$AppConfigServiceImpl extends AppConfigServiceImpl {
   final definitionType = AppConfigServiceImpl;
 
   @override
-  Future<Response<String>> create(AppConfig config) {
+  Future<Response<String>> create(String uuid, AppConfig body) {
     final $url = '/app-configs';
-    final $body = config;
+    final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<AppConfig>> fetch(String uuid) {
+  Future<Response<StorageState<AppConfig>>> update(
+      String uuid, AppConfig body) {
     final $url = '/app-configs/$uuid';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<AppConfig, AppConfig>($request);
-  }
-
-  @override
-  Future<Response<AppConfig>> update(String uuid, AppConfig config) {
-    final $url = '/app-configs/$uuid';
-    final $body = config;
+    final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<AppConfig, AppConfig>($request);
+    return client.send<StorageState<AppConfig>, AppConfig>($request);
   }
 
   @override
@@ -44,5 +38,12 @@ class _$AppConfigServiceImpl extends AppConfigServiceImpl {
     final $url = '/app-configs/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<StorageState<AppConfig>>> get(dynamic uuid) {
+    final $url = '/app-configs/$uuid';
+    final $request = Request('GET', $url, client.baseUrl);
+    return client.send<StorageState<AppConfig>, AppConfig>($request);
   }
 }

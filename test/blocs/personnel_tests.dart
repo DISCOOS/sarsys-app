@@ -81,7 +81,7 @@ void main() async {
     test('SHOULD create personnel and push to backend', () async {
       // Arrange
       final operation = await _prepare(harness, offline: false);
-      final personnel = PersonnelBuilder.create();
+      final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
       final group = StreamGroup.merge([
         ...harness.affiliationBloc.repos.map((repo) => repo.onChanged),
         harness.personnelBloc.repo.onChanged,
@@ -108,12 +108,16 @@ void main() async {
         ]),
         emitsInAnyOrder([
           isA<PersonnelAffiliated>().having(
-            (event) => event.isRemote,
+            (event) {
+              return event.isRemote;
+            },
             'Should be remote',
             isTrue,
           ),
           isA<PersonnelCreated>().having(
-            (event) => event.isRemote,
+            (event) {
+              return event.isRemote;
+            },
             'Should be remote',
             isTrue,
           ),
@@ -123,7 +127,7 @@ void main() async {
       // Assert service calls
       verify(harness.personService.create(any)).called(2);
       verify(harness.affiliationService.create(any)).called(2);
-      verify(harness.personnelService.create(any, any)).called(2);
+      verify(harness.personnelService.create(any)).called(2);
 
       // Assert execution order
       expect(
@@ -431,8 +435,8 @@ void main() async {
 
     test('SHOULD create personnel with state CREATED', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final personnel = PersonnelBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
 
       // Act
       await harness.personnelBloc.create(personnel);
@@ -449,9 +453,9 @@ void main() async {
 
     test('SHOULD update personnel with state CREATED', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final personnel1 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
-      final personnel2 = PersonnelBuilder.create(status: PersonnelStatus.alerted);
+      final operation = await _prepare(harness, offline: true);
+      final personnel1 = PersonnelBuilder.create(ouuid: operation.uuid, status: PersonnelStatus.alerted);
+      final personnel2 = PersonnelBuilder.create(ouuid: operation.uuid, status: PersonnelStatus.alerted);
       await harness.personnelBloc.create(personnel1);
       await harness.personnelBloc.create(personnel2);
       expect(harness.personnelBloc.repo.length, 3, reason: "SHOULD contain three personnels");
@@ -480,8 +484,8 @@ void main() async {
 
     test('SHOULD delete local personnel', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final personnel = PersonnelBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -495,8 +499,8 @@ void main() async {
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final personnel = PersonnelBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -510,8 +514,8 @@ void main() async {
 
     test('SHOULD NOT be empty after reload', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final personnel = PersonnelBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
       await harness.personnelBloc.create(personnel);
       expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -556,8 +560,8 @@ void main() async {
 }
 
 Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@required bool offline}) async {
-  await _prepare(harness, offline: offline);
-  final personnel = PersonnelBuilder.create();
+  final operation = await _prepare(harness, offline: offline);
+  final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
   expect(harness.personnelBloc.ouuid, isNotNull, reason: "SHOULD NOT be null");
@@ -581,7 +585,7 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
 
 Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final personnel = PersonnelBuilder.create();
+  final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -606,7 +610,7 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@requi
 
 Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final personnel = PersonnelBuilder.create();
+  final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -634,7 +638,7 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@requ
 
 Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final personnel = PersonnelBuilder.create();
+  final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 
@@ -706,8 +710,8 @@ Future _testShouldLoadWhenOperationIsSelected(BlocTestHarness harness, {@require
 }
 
 Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@required bool offline}) async {
-  await _prepare(harness, offline: offline);
-  final personnel = PersonnelBuilder.create();
+  final operation = await _prepare(harness, offline: offline);
+  final personnel = PersonnelBuilder.create(ouuid: operation.uuid);
   await harness.personnelBloc.create(personnel);
   expect(harness.personnelBloc.repo.length, 2, reason: "SHOULD contain two personnels");
 

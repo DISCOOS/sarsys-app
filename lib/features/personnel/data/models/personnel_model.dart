@@ -1,8 +1,11 @@
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
+import 'package:SarSys/features/operation/data/models/operation_model.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -18,19 +21,25 @@ part 'personnel_model.g.dart';
 class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic>> {
   PersonnelModel({
     @required String uuid,
-    @required this.affiliation,
-    this.unit,
-    this.person,
+    @required this.person,
+    @required AggregateRef<Tracking> tracking,
+    @required AggregateRef<Operation> operation,
+    @required AggregateRef<Affiliation> affiliation,
     PersonnelStatus status,
+    AggregateRef<Unit> unit,
     OperationalFunctionType function,
-    AggregateRef<Tracking> tracking,
-  }) : super(
+  })  : unit = unit?.cast<UnitModel>(),
+        tracking = tracking?.cast<TrackingModel>(),
+        operation = operation?.cast<OperationModel>(),
+        affiliation = affiliation?.cast<AffiliationModel>(),
+        super(
           uuid: uuid,
           unit: unit,
           person: person,
           status: status,
           tracking: tracking,
           function: function,
+          operation: operation,
           affiliation: affiliation,
         );
 
@@ -40,6 +49,14 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
   @override
   @JsonKey(fromJson: toUnitRef)
   final AggregateRef<UnitModel> unit;
+
+  @override
+  @JsonKey(fromJson: toOperationRef)
+  final AggregateRef<OperationModel> operation;
+
+  @override
+  @JsonKey(fromJson: toTrackingRef)
+  final AggregateRef<TrackingModel> tracking;
 
   @override
   @JsonKey(fromJson: toAffiliationRef)
@@ -65,6 +82,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       status: clone.status,
       function: clone.function,
       tracking: clone.tracking,
+      operation: clone.operation,
       affiliation: clone.affiliation,
     );
   }
@@ -80,11 +98,11 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     AggregateRef<Unit> unit,
     AggregateRef<Tracking> tracking,
     OperationalFunctionType function,
+    AggregateRef<Operation> operation,
     AggregateRef<Affiliation> affiliation,
   }) {
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
-      unit: unit?.cast<UnitModel>() ?? this.unit,
       person: _copyPerson(
         person?.uuid,
         fname,
@@ -96,7 +114,9 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       ),
       status: status ?? this.status,
       function: function ?? this.function,
-      tracking: tracking ?? this.tracking,
+      unit: unit?.cast<UnitModel>() ?? this.unit,
+      tracking: tracking?.cast<TrackingModel>() ?? this.tracking,
+      operation: operation?.cast<OperationModel>() ?? this.operation,
       affiliation: affiliation?.cast<AffiliationModel>() ?? this.affiliation,
     );
   }
@@ -129,6 +149,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       status: status,
       function: function,
       tracking: tracking,
+      operation: operation,
       affiliation: affiliation,
       person: person != null
           ? _copyPerson(
@@ -140,7 +161,9 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
               person.userId,
               person.temporary,
             )
-          : keep ? this.person : null,
+          : keep
+              ? this.person
+              : null,
     );
   }
 }

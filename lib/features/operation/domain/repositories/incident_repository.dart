@@ -1,16 +1,15 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/features/operation/data/services/incident_service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
 abstract class IncidentRepository implements StatefulRepository<String, Incident, IncidentService> {
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Incident> state) {
-    return state?.value?.uuid;
+  String toKey(Incident value) {
+    return value?.uuid;
   }
 
   /// Load incidents

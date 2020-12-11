@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
+
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/affiliation/data/models/organisation_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
@@ -11,55 +13,14 @@ part 'organisation_service.chopper.dart';
 /// Service for consuming the organisations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class OrganisationService with ServiceGetList<Organisation> implements ServiceDelegate<OrganisationServiceImpl> {
-  final OrganisationServiceImpl delegate;
-
+class OrganisationService extends StatefulServiceDelegate<Organisation, OrganisationModel>
+    with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList, StatefulGetFromId {
   OrganisationService() : delegate = OrganisationServiceImpl.newInstance();
-
-  /// GET ../organisations
-  Future<ServiceResponse<List<Organisation>>> getSubList(
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Organisation>, List<Organisation>>(
-      await delegate.fetch(offset: offset, limit: limit),
-    );
-  }
-
-  /// POST ../organisations
-  Future<ServiceResponse<Organisation>> create(Organisation organisation) async {
-    return Api.from<String, Organisation>(
-      await delegate.create(
-        organisation,
-      ),
-      // Created 201 returns uri to created organisation in body
-      body: organisation,
-    );
-  }
-
-  /// PUT ../organisations/{ouuid}
-  Future<ServiceResponse<Organisation>> update(Organisation organisation) async {
-    return Api.from<Organisation, Organisation>(
-      await delegate.update(
-        organisation.uuid,
-        organisation,
-      ),
-      // Created 201 returns uri to created organisation in body
-      body: organisation,
-    );
-  }
-
-  /// DELETE ../organisations/{ouuid}
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Organisation, Organisation>(await delegate.delete(
-      uuid,
-    ));
-  }
+  final OrganisationServiceImpl delegate;
 }
 
 @ChopperApi(baseUrl: '/organisations')
-abstract class OrganisationServiceImpl extends JsonService<Organisation, OrganisationModel> {
+abstract class OrganisationServiceImpl extends StatefulService<Organisation, OrganisationModel> {
   OrganisationServiceImpl()
       : super(
           decoder: (json) => OrganisationModel.fromJson(json),
@@ -68,31 +29,50 @@ abstract class OrganisationServiceImpl extends JsonService<Organisation, Organis
 
   static OrganisationServiceImpl newInstance([ChopperClient client]) => _$OrganisationServiceImpl(client);
 
-  /// Initializes configuration to default values for given version.
-  ///
-  /// POST /organisations/{version}
+  @override
+  Future<Response<String>> onCreate(StorageState<Organisation> state) => create(
+        state.value.uuid,
+        state.value,
+      );
+
   @Post()
   Future<Response<String>> create(
+    @Path() String uuid,
     @Body() Organisation body,
   );
 
-  /// GET /organisations
-  @Get()
-  Future<Response<PagedList<Organisation>>> fetch({
-    @Query('offset') int offset = 0,
-    @Query('limit') int limit = 20,
-  });
+  @override
+  Future<Response<StorageState<Organisation>>> onUpdate(StorageState<Organisation> state) => update(
+        state.value.uuid,
+        state.value,
+      );
 
-  /// PATCH ../organisations/{uuid}
-  @Patch(path: "{uuid}")
-  Future<Response<Organisation>> update(
+  @Patch(path: '{uuid}')
+  Future<Response<StorageState<Organisation>>> update(
     @Path('uuid') String uuid,
     @Body() Organisation body,
   );
 
-  /// DELETE ../organisations/{uuid}
-  @Delete(path: "{uuid}")
+  @override
+  Future<Response<StorageState<Organisation>>> onDelete(StorageState<Organisation> state) => delete(
+        state.value.uuid,
+      );
+
+  @Delete(path: '{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
+  );
+
+  @override
+  Future<Response<PagedList<StorageState<Organisation>>>> onGetPage(int offset, int limit, List<String> options) =>
+      getAll(
+        offset,
+        limit,
+      );
+
+  @Get()
+  Future<Response<PagedList<StorageState<Organisation>>>> getAll(
+    @Query('offset') int offset,
+    @Query('limit') int limit,
   );
 }

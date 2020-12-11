@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:SarSys/features/affiliation/data/models/department_model.dart';
+import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:SarSys/features/affiliation/data/services/department_service.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/features/affiliation/domain/repositories/department_repository.dart';
 
@@ -22,10 +22,10 @@ class DepartmentRepositoryImpl extends StatefulRepository<String, Department, De
           connectivity: connectivity,
         );
 
-  /// Get [Department.uuid] from [state]
+  /// Get [Department.uuid] from [value]
   @override
-  String toKey(StorageState<Department> state) {
-    return state?.value?.uuid;
+  String toKey(Department value) {
+    return value?.uuid;
   }
 
   /// Create [Department] from json
@@ -59,10 +59,10 @@ class DepartmentRepositoryImpl extends StatefulRepository<String, Department, De
   Future<Iterable<Department>> onReset({Iterable<Department> previous = const []}) => Future.value(_load());
 
   @override
-  Future<Department> onCreate(StorageState<Department> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Department>> onCreate(StorageState<Department> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DepartmentServiceException(
       'Failed to create Department ${state.value}',
@@ -71,12 +71,10 @@ class DepartmentRepositoryImpl extends StatefulRepository<String, Department, De
     );
   }
 
-  Future<Department> onUpdate(StorageState<Department> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Department>> onUpdate(StorageState<Department> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw DepartmentServiceException(
       'Failed to update Department ${state.value}',
@@ -85,10 +83,10 @@ class DepartmentRepositoryImpl extends StatefulRepository<String, Department, De
     );
   }
 
-  Future<Department> onDelete(StorageState<Department> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Department>> onDelete(StorageState<Department> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DepartmentServiceException(
       'Failed to delete Department ${state.value}',

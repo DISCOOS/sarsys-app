@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
@@ -52,7 +53,7 @@ class IncidentBuilder {
 }
 
 class IncidentServiceMock extends Mock implements IncidentService {
-  static final Map<String, Incident> _incidents = {};
+  static final Map<String, StorageState<Incident>> _incidentRepo = {};
 
   Incident add({
     String uuid,
@@ -62,30 +63,39 @@ class IncidentServiceMock extends Mock implements IncidentService {
       uuid: uuid,
       since: since,
     );
-    _incidents[incident.uuid] = incident;
+    final state = StorageState.created(
+      incident,
+      StateVersion.first,
+      isRemote: true,
+    );
+    _incidentRepo[incident.uuid] = state;
     return incident;
   }
 
-  Incident remove(uuid) {
-    return _incidents.remove(uuid);
+  StorageState<Incident> remove(uuid) {
+    return _incidentRepo.remove(uuid);
   }
 
   IncidentServiceMock reset() {
-    _incidents.clear();
+    _incidentRepo.clear();
     return this;
   }
 
-  static MapEntry<String, Incident> _buildEntry(
+  static MapEntry<String, StorageState<Incident>> _buildEntry(
     String uuid,
     int since,
   ) =>
       MapEntry(
         uuid,
-        IncidentModel.fromJson(
-          IncidentBuilder.createIncidentAsJson(
-            uuid,
-            since,
+        StorageState.created(
+          IncidentModel.fromJson(
+            IncidentBuilder.createIncidentAsJson(
+              uuid,
+              since,
+            ),
           ),
+          StateVersion.first,
+          isRemote: true,
         ),
       );
 
@@ -95,59 +105,76 @@ class IncidentServiceMock extends Mock implements IncidentService {
     @required final String passcode,
     final int count = 0,
   }) {
-    _incidents.clear();
+    _incidentRepo.clear();
     final IncidentServiceMock mock = IncidentServiceMock();
     when(mock.getList()).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();
       }
-      if (_incidents.isEmpty) {
-        _incidents.addEntries([
+      if (_incidentRepo.isEmpty) {
+        _incidentRepo.addEntries([
           for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i)
         ]);
       }
-      return ServiceResponse.ok(body: _incidents.values.toList(growable: false));
+      return ServiceResponse.ok(body: _incidentRepo.values.toList(growable: false));
     });
     when(mock.create(any)).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();
       }
-      final Incident incident = _.positionalArguments[0];
-      final created = IncidentModel(
-        uuid: incident.uuid,
-        name: incident.name,
-        type: incident.type,
-        status: incident.status,
-        summary: incident.summary,
-        occurred: incident.occurred,
-        operations: incident.operations,
-        resolution: incident.resolution,
+      final state = _.positionalArguments[0] as StorageState<Incident>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final uuid = state.value.uuid;
+      _incidentRepo[uuid] = state.remote(
+        state.value,
+        version: state.version,
       );
-      _incidents.putIfAbsent(created.uuid, () => created);
-      return ServiceResponse.created();
+      return ServiceResponse.ok(
+        body: _incidentRepo[uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
-      var incident = _.positionalArguments[0];
-      if (_incidents.containsKey(incident.uuid)) {
-        _incidents.update(
-          incident.uuid,
-          (_) => incident,
-          ifAbsent: () => incident,
+      final next = _.positionalArguments[0] as StorageState<Incident>;
+      final uuid = next.value.uuid;
+      if (_incidentRepo.containsKey(uuid)) {
+        final state = _incidentRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        _incidentRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
         );
-        return ServiceResponse.ok(body: incident);
+        return ServiceResponse.ok(
+          body: _incidentRepo[uuid],
+        );
       }
-      return ServiceResponse.notFound(message: "Not found. Incident ${incident.uuid}");
+      return ServiceResponse.notFound(
+        message: "Incident not found: $uuid",
+      );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      var uuid = _.positionalArguments[0];
-      if (_incidents.containsKey(uuid)) {
-        _incidents.remove(uuid);
-        return ServiceResponse.noContent();
+      final state = _.positionalArguments[0] as StorageState<Incident>;
+      final uuid = state.value.uuid;
+      if (_incidentRepo.containsKey(uuid)) {
+        return ServiceResponse.ok(
+          body: _incidentRepo.remove(uuid),
+        );
       }
-      return ServiceResponse.notFound(message: "Not found. Incident $uuid");
+      return ServiceResponse.notFound(
+        message: "Incident not found: $uuid",
+      );
     });
     return mock;
   }

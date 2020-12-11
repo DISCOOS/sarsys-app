@@ -1,68 +1,28 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
+
+import 'package:chopper/chopper.dart';
+
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/core/data/services/service.dart';
-import 'package:chopper/chopper.dart';
 
 part 'operation_service.chopper.dart';
 
 /// Service for consuming the operations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class OperationService with ServiceGetList<Operation> implements ServiceDelegate<OperationServiceImpl> {
+class OperationService extends StatefulServiceDelegate<Operation, OperationModel>
+    with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList {
   final OperationServiceImpl delegate;
 
   OperationService() : delegate = OperationServiceImpl.newInstance();
-
-  Future<ServiceResponse<List<Operation>>> getSubList(
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Operation>, List<Operation>>(
-      await delegate.fetch(
-        offset: offset,
-        limit: limit,
-      ),
-    );
-  }
-
-  /// POST ../operations
-  Future<ServiceResponse<Operation>> create(Operation operation) async {
-    return Api.from<String, Operation>(
-      await delegate.create(
-        operation.incident.uuid,
-        operation,
-      ),
-      // Created 201 returns uri to created operation in body
-      body: operation,
-    );
-  }
-
-  /// PUT ../operations/{ouuid}
-  Future<ServiceResponse<Operation>> update(Operation operation) async {
-    return Api.from<Operation, Operation>(
-      await delegate.update(
-        operation.uuid,
-        operation,
-      ),
-      // Created 201 returns uri to created operation in body
-      body: operation,
-    );
-  }
-
-  /// DELETE ../operations/{ouuid}
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Operation, Operation>(await delegate.delete(
-      uuid,
-    ));
-  }
 }
 
 @ChopperApi()
-abstract class OperationServiceImpl extends JsonService<Operation, OperationModel> {
+abstract class OperationServiceImpl extends StatefulService<Operation, OperationModel> {
   OperationServiceImpl()
       : super(
           decoder: (json) => OperationModel.fromJson(json),
@@ -79,26 +39,50 @@ abstract class OperationServiceImpl extends JsonService<Operation, OperationMode
 
   static OperationServiceImpl newInstance([ChopperClient client]) => _$OperationServiceImpl(client);
 
+  @override
+  Future<Response<String>> onCreate(StorageState<Operation> state) => create(
+        state.value.incident.uuid,
+        state.value,
+      );
+
   @Post(path: '/incidents/{iuuid}/operations')
   Future<Response<String>> create(
-    @Path() iuuid,
+    @Path() String iuuid,
     @Body() Operation body,
   );
 
-  @Get(path: '/operations')
-  Future<Response<PagedList<Operation>>> fetch({
-    @Query('offset') int offset = 0,
-    @Query('limit') int limit = 20,
-  });
+  @override
+  Future<Response<StorageState<Operation>>> onUpdate(StorageState<Operation> state) => update(
+        state.value.uuid,
+        state.value,
+      );
 
   @Patch(path: '/operations/{uuid}')
-  Future<Response<Operation>> update(
+  Future<Response<StorageState<Operation>>> update(
     @Path('uuid') String uuid,
     @Body() Operation body,
   );
+
+  @override
+  Future<Response<StorageState<Operation>>> onDelete(StorageState<Operation> state) => delete(
+        state.value.uuid,
+      );
 
   @Delete(path: '/operations/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
+  );
+
+  Future<Response<PagedList<StorageState<Operation>>>> onGetPage(
+    int offset,
+    int limit,
+    List<String> options,
+  ) =>
+      fetch(offset, limit);
+
+  @Get(path: '/operations')
+  Future<Response<PagedList<StorageState<Operation>>>> fetch(
+    @Query('offset') int offset,
+    @Query('limit') int limit,
   );
 }

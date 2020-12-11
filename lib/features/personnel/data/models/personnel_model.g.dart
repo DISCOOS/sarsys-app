@@ -9,17 +9,18 @@ part of 'personnel_model.dart';
 PersonnelModel _$PersonnelModelFromJson(Map json) {
   return PersonnelModel(
     uuid: json['uuid'] as String,
-    affiliation: toAffiliationRef(json['affiliation']),
-    unit: toUnitRef(json['unit']),
     person: json['person'] == null
         ? null
         : PersonModel.fromJson((json['person'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
+    tracking: toTrackingRef(json['tracking']),
+    operation: toOperationRef(json['operation']),
+    affiliation: toAffiliationRef(json['affiliation']),
     status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
+    unit: toUnitRef(json['unit']),
     function: _$enumDecodeNullable(
         _$OperationalFunctionTypeEnumMap, json['function']),
-    tracking: toTrackingRef(json['tracking']),
   );
 }
 
@@ -33,11 +34,12 @@ Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
   }
 
   writeNotNull('uuid', instance.uuid);
-  writeNotNull('tracking', instance.tracking?.toJson());
   writeNotNull('status', _$PersonnelStatusEnumMap[instance.status]);
   writeNotNull('function', _$OperationalFunctionTypeEnumMap[instance.function]);
   writeNotNull('person', instance.person?.toJson());
   writeNotNull('unit', instance.unit?.toJson());
+  writeNotNull('operation', instance.operation?.toJson());
+  writeNotNull('tracking', instance.tracking?.toJson());
   writeNotNull('affiliation', instance.affiliation?.toJson());
   return val;
 }

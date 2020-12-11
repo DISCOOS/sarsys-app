@@ -73,7 +73,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
   );
   final PersonServiceMock persons;
   final Box<StorageState<Affiliation>> states;
-  final Map<String, Affiliation> affiliationRepo = {};
+  final Map<String, StorageState<Affiliation>> affiliationRepo = {};
 
   Future<Affiliation> add({
     String uuid,
@@ -96,6 +96,12 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
       depuuid: depuuid,
       active: active ?? true,
     );
+
+    final state = StorageState.created(
+      affiliation,
+      StateVersion.first,
+      isRemote: true,
+    );
     // Affiliations are only loaded
     // from server by id. Therefore, we
     // need to add them to local storage
@@ -107,17 +113,14 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     if (storage) {
       await states.put(
         affiliation.uuid,
-        StorageState.created(
-          affiliation,
-          isRemote: true,
-        ),
+        state,
       );
     }
-    affiliationRepo[affiliation.uuid] = affiliation;
+    affiliationRepo[affiliation.uuid] = state;
     return affiliation;
   }
 
-  Affiliation remove(String uuid) {
+  StorageState<Affiliation> remove(String uuid) {
     return affiliationRepo.remove(uuid);
   }
 
@@ -133,20 +136,7 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     final AffiliationServiceMock mock = AffiliationServiceMock(box, persons);
     final affiliationRepo = mock.affiliationRepo;
 
-    when(mock.getFromId(any)).thenAnswer((_) async {
-      await _doThrottle();
-      final uuid = _.positionalArguments[0];
-      if (affiliationRepo.containsKey(uuid)) {
-        Affiliation affiliation = _withPerson(affiliationRepo, uuid, persons);
-        return ServiceResponse.ok(
-          body: affiliation,
-        );
-      }
-      return ServiceResponse.notFound(
-        message: "Affiliation not found: $uuid",
-      );
-    });
-    when(mock.getAll(any)).thenAnswer((_) async {
+    when(mock.getListFromIds(any)).thenAnswer((_) async {
       await _doThrottle();
       final uuids = List<String>.from(_.positionalArguments[0]);
       final affiliations = uuids
@@ -159,16 +149,39 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     });
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
-      final affiliation = _toAffiliation(_);
-      affiliationRepo[affiliation.uuid] = affiliation;
-      return ServiceResponse.created();
+      final state = _.positionalArguments[0] as StorageState<Affiliation>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final affiliation = _toAffiliation(state);
+      affiliationRepo[affiliation.uuid] = state.remote(
+        affiliation,
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: affiliationRepo[affiliation.uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();
-      final Affiliation affiliation = _toAffiliation(_);
-      if (affiliationRepo.containsKey(affiliation.uuid)) {
-        final uuid = affiliation.uuid;
-        affiliationRepo[uuid] = affiliation;
+      final next = _.positionalArguments[0] as StorageState<Affiliation>;
+      final affiliation = _toAffiliation(next);
+      final uuid = affiliation.uuid;
+      if (affiliationRepo.containsKey(uuid)) {
+        final state = affiliationRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        affiliationRepo[uuid] = state.apply(
+          affiliation,
+          replace: false,
+          isRemote: true,
+        );
         return ServiceResponse.ok(
           body: _withPerson(affiliationRepo, uuid, persons),
         );
@@ -179,10 +192,12 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     });
     when(mock.delete(any)).thenAnswer((_) async {
       await _doThrottle();
-      final String uuid = _.positionalArguments[0];
+      final state = _.positionalArguments[0] as StorageState<Affiliation>;
+      final uuid = state.value.uuid;
       if (affiliationRepo.containsKey(uuid)) {
-        affiliationRepo.remove(uuid);
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(
+          body: affiliationRepo.remove(uuid),
+        );
       }
       return ServiceResponse.notFound(
         message: "Affiliation not found: $uuid",
@@ -191,14 +206,16 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     return mock;
   }
 
-  static Affiliation _withPerson(Map<String, Affiliation> affiliationRepo, uuid, PersonServiceMock persons) {
-    final affiliation = affiliationRepo[uuid];
-    final person = affiliation.person?.uuid == null ? null : persons.personRepo[affiliation.person.uuid];
-    return affiliation.copyWith(person: person);
+  static StorageState<Affiliation> _withPerson(
+      Map<String, StorageState<Affiliation>> affiliationRepo, uuid, PersonServiceMock persons) {
+    final state = affiliationRepo[uuid];
+    final affiliation = state.value;
+    final next = affiliation.person?.uuid == null ? null : persons.personRepo[affiliation.person.uuid];
+    return state.replace(affiliation.copyWith(person: next.value));
   }
 
-  static Affiliation _toAffiliation(Invocation method) {
-    final affiliation = method.positionalArguments[0] as Affiliation;
+  static Affiliation _toAffiliation(StorageState<Affiliation> state) {
+    final affiliation = state.value;
     final json = affiliation.toJson();
     assert(
       json.mapAt<String, dynamic>('person').length == 1,

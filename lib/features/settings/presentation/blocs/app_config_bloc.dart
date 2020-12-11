@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart';
 typedef void AppConfigCallback(VoidCallback fn);
 
 class AppConfigBloc
-    extends StatefulBloc<AppConfigCommand, AppConfigState, AppConfigBlocError, int, AppConfig, AppConfigService>
+    extends StatefulBloc<AppConfigCommand, AppConfigState, AppConfigBlocError, String, AppConfig, AppConfigService>
     with InitableBloc<AppConfig>, LoadableBloc<AppConfig>, UpdatableBloc<AppConfig> {
   AppConfigBloc(this.repo, BlocEventBus bus) : super(bus: bus);
   final AppConfigRepository repo;
@@ -40,8 +40,8 @@ class AppConfigBloc
   /// Get all [AppConfig]s
   Iterable<AppConfig> get values => repo.values;
 
-  /// Get [AppConfig] from [uuid]
-  AppConfig operator [](int uuid) => repo[uuid];
+  /// Get [AppConfig] from [version]
+  AppConfig operator [](String version) => repo[version];
 
   /// Initialize config from [service]
   @override
@@ -226,7 +226,7 @@ class AppConfigBloc
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(config.version)],
+      [repo.onRemote('${config.version}')],
       toState: (_) => AppConfigUpdated(
         repo.config,
         isLocal: false,
@@ -243,7 +243,7 @@ class AppConfigBloc
   Stream<AppConfigState> _delete(DeleteAppConfig command) async* {
     final onRemote = Completer<AppConfig>();
     var config = repo.delete(
-      repo.version,
+      '${repo.version}',
       onResult: onRemote,
     );
     yield toOK(

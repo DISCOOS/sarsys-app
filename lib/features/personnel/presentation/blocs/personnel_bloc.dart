@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
@@ -243,8 +244,16 @@ class PersonnelBloc
 
   String _assertData(Personnel personnel) {
     if (personnel?.uuid == null) {
+      throw ArgumentError("Personnel have no uuid");
+    }
+    if (personnel?.operation?.uuid == null) {
       throw ArgumentError(
-        "Personnel have no uuid",
+        "Personnel ${personnel.uuid} have no operation uuid",
+      );
+    }
+    if (personnel?.operation?.uuid != ouuid) {
+      throw ArgumentError(
+        "Personnel ${personnel.uuid} is not mobilized for operation $ouuid",
       );
     }
     TrackingUtils.assertRef(personnel);
@@ -424,8 +433,9 @@ class PersonnelBloc
             temporary: affiliation.isUnorganized,
           ),
           status: PersonnelStatus.alerted,
-          affiliation: affiliation.toRef(),
           tracking: TrackingUtils.newRef(),
+          affiliation: affiliation.toRef(),
+          operation: AggregateRef.fromType(ouuid),
         );
         yield* _create(
           CreatePersonnel(
@@ -464,6 +474,7 @@ class PersonnelBloc
     CreatePersonnel command,
     PersonnelState Function(Personnel personnel, bool isRemote) toState,
   ) async* {
+    _assertData(command.data);
     Affiliation affiliation = await _ensureAffiliation(command.data);
     final person = affiliationBloc.persons[affiliation.person.uuid];
     final personnel = repo.apply(
@@ -482,10 +493,13 @@ class PersonnelBloc
         affiliationBloc.repo.onRemote(affiliation.uuid),
         repo.onRemote(personnel.uuid),
       ],
-      toState: (_) => toState(
-        personnel,
-        true,
-      ),
+      toState: (results) {
+        final state = results.whereType<StorageState<Personnel>>().first;
+        return toState(
+          state.value,
+          state.isRemote,
+        );
+      },
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
         command,
@@ -587,7 +601,7 @@ class PersonnelBloc
       case PersonnelMessageType.PersonnelChanged:
         if (repo.containsKey(event.data.uuid)) {
           final current = repo[event.data.uuid];
-          final next = PersonnelModel.fromJson(event.data.json);
+          final next = PersonnelModel.fromJson(event.data.data);
           repo.patch(next);
           return PersonnelUpdated(next, current);
         }

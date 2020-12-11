@@ -20,10 +20,10 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
           connectivity: connectivity,
         );
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Incident> state) {
-    return state?.value?.uuid;
+  String toKey(Incident value) {
+    return value?.uuid;
   }
 
   /// Create [Incident] from json
@@ -57,10 +57,10 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
   Future<Iterable<Incident>> onReset({Iterable<Incident> previous}) => Future.value(_load());
 
   @override
-  Future<Incident> onCreate(StorageState<Incident> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Incident>> onCreate(StorageState<Incident> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw IncidentServiceException(
       'Failed to create Incident ${state.value}',
@@ -69,12 +69,10 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     );
   }
 
-  Future<Incident> onUpdate(StorageState<Incident> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Incident>> onUpdate(StorageState<Incident> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw IncidentServiceException(
       'Failed to update Incident ${state.value}',
@@ -83,10 +81,10 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
     );
   }
 
-  Future<Incident> onDelete(StorageState<Incident> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Incident>> onDelete(StorageState<Incident> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw IncidentServiceException(
       'Failed to delete Incident ${state.value}',

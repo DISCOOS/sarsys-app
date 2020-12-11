@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
@@ -14,6 +15,7 @@ import 'package:uuid/uuid.dart';
 class PersonnelBuilder {
   static Personnel create({
     String uuid,
+    String ouuid,
     String puuid,
     String auuid,
     String tuuid,
@@ -27,6 +29,7 @@ class PersonnelBuilder {
         tuuid: tuuid,
         userId: userId,
         uuid: uuid ?? Uuid().v4(),
+        ouuid: ouuid ?? Uuid().v4(),
         status: status ?? PersonnelStatus.alerted,
       ),
     );
@@ -34,6 +37,7 @@ class PersonnelBuilder {
 
   static Map<String, dynamic> createAsJson({
     @required String uuid,
+    @required String ouuid,
     @required PersonnelStatus status,
     String puuid,
     String auuid,
@@ -51,13 +55,14 @@ class PersonnelBuilder {
           '"status": "${enumName(status)}",'
           '"affiliation": {"uuid": "${auuid ?? Uuid().v4()}"},'
           '"function": "${enumName(OperationalFunctionType.personnel)}",'
+          '"operation": {"uuid": "${ouuid ?? Uuid().v4()}", "type": "Operation"},'
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
           '}');
 }
 
 class PersonnelServiceMock extends Mock implements PersonnelService {
   PersonnelServiceMock();
-  final Map<String, Map<String, Personnel>> personnelsRepo = {};
+  final Map<String, Map<String, StorageState<Personnel>>> personnelsRepo = {};
 
   Personnel add(
     String ouuid, {
@@ -68,23 +73,29 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
   }) {
     final personnel = PersonnelBuilder.create(
       uuid: uuid,
+      ouuid: ouuid,
       auuid: auuid,
       tuuid: tuuid,
       status: status,
     );
+    final state = StorageState.created(
+      personnel,
+      StateVersion.first,
+      isRemote: true,
+    );
     if (personnelsRepo.containsKey(ouuid)) {
-      personnelsRepo[ouuid].putIfAbsent(personnel.uuid, () => personnel);
+      personnelsRepo[ouuid].putIfAbsent(personnel.uuid, () => state);
     } else {
-      personnelsRepo[ouuid] = {personnel.uuid: personnel};
+      personnelsRepo[ouuid] = {personnel.uuid: state};
     }
     return personnel;
   }
 
-  List<Personnel> remove(String uuid) {
-    final iuuids = personnelsRepo.entries.where(
+  List<StorageState<Personnel>> remove(String uuid) {
+    final ouuids = personnelsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
-    return iuuids
+    return ouuids
         .map((ouuid) => personnelsRepo[ouuid].remove(uuid))
         .where(
           (personnel) => personnel != null,
@@ -104,13 +115,18 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
           for (var i = 1; i <= count; i++)
             MapEntry(
               "$ouuid:p:$i",
-              PersonnelModel.fromJson(
-                PersonnelBuilder.createAsJson(
-                  uuid: "$ouuid:p:$i",
-                  userId: "p:$i",
-                  status: PersonnelStatus.alerted,
-                  tuuid: "$ouuid:t:p:$i",
+              StorageState.created(
+                PersonnelModel.fromJson(
+                  PersonnelBuilder.createAsJson(
+                    ouuid: ouuid,
+                    uuid: "$ouuid:p:$i",
+                    userId: "p:$i",
+                    status: PersonnelStatus.alerted,
+                    tuuid: "$ouuid:t:p:$i",
+                  ),
                 ),
+                StateVersion.first,
+                isRemote: true,
               ),
             ),
         ]);
@@ -124,49 +140,75 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
 
     when(mock.getListFromId(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
-      var personnel = personnelsRepo[ouuid];
-      if (personnel == null) {
-        personnel = personnelsRepo.putIfAbsent(ouuid, () => {});
+      var personnelRepo = personnelsRepo[ouuid];
+      if (personnelRepo == null) {
+        personnelRepo = personnelsRepo.putIfAbsent(ouuid, () => {});
       }
       return ServiceResponse.ok(
-        body: personnel.values.toList(growable: false),
+        body: personnelRepo.values.toList(growable: false),
       );
     });
 
-    when(mock.create(any, any)).thenAnswer((_) async {
-      final ouuid = _.positionalArguments[0];
-      final Personnel personnel = _.positionalArguments[1];
-      final personnels = personnelsRepo.putIfAbsent(ouuid, () => {});
+    when(mock.create(any)).thenAnswer((_) async {
+      final state = _.positionalArguments[0] as StorageState<Personnel>;
+      final ouuid = state.value.operation.uuid;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final personnel = state.value;
+      final personnelRepo = personnelsRepo.putIfAbsent(ouuid, () => {});
       final String puuid = personnel.uuid;
-      personnels.putIfAbsent(puuid, () => personnel.copyWith(uuid: puuid));
-      return ServiceResponse.created();
+      personnelRepo[puuid] = state.remote(
+        personnel.copyWith(
+          operation: state.value.operation,
+        ),
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: personnelRepo[puuid],
+      );
     });
 
     when(mock.update(any)).thenAnswer((_) async {
-      final Personnel personnel = _.positionalArguments[0];
-      var personnels = personnelsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(personnel.uuid),
-        orElse: () => null,
-      );
-      if (personnels != null) {
+      final next = _.positionalArguments[0] as StorageState<Personnel>;
+      final personnel = next.value;
+      final puuid = personnel.uuid;
+      final ouuid = personnel.operation.uuid;
+      final personnelRepo = personnelsRepo.putIfAbsent(ouuid, () => {});
+      if (personnelRepo.containsKey(puuid)) {
+        final state = personnelRepo[puuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        personnelRepo[puuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
+        );
         return ServiceResponse.ok(
-          body: personnels.value.update(personnel.uuid, (_) => personnel, ifAbsent: () => personnel),
+          body: personnelRepo[puuid],
         );
       }
       return ServiceResponse.notFound(
-        message: "Not found. Personnel ${personnel.uuid}",
+        message: "Personnel not found: $puuid",
       );
     });
 
     when(mock.delete(any)).thenAnswer((_) async {
-      final puuid = _.positionalArguments[0] as String;
-      var incident = personnelsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(puuid),
-        orElse: () => null,
-      );
-      if (incident != null) {
-        incident.value.remove(puuid);
-        return ServiceResponse.noContent();
+      final state = _.positionalArguments[0] as StorageState<Personnel>;
+      final personnel = state.value;
+      final puuid = personnel.uuid;
+      final ouuid = personnel.operation.uuid;
+      final personnelRepo = personnelsRepo.putIfAbsent(ouuid, () => {});
+      if (personnelRepo.containsKey(puuid)) {
+        return ServiceResponse.ok(
+          body: personnelRepo.remove(puuid),
+        );
       }
       return ServiceResponse.notFound(
         message: "Personnel not found: $puuid",

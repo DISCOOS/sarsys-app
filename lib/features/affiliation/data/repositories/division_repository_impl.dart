@@ -21,10 +21,10 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
           connectivity: connectivity,
         );
 
-  /// Get [Division.uuid] from [state]
+  /// Get [Division.uuid] from [value]
   @override
-  String toKey(StorageState<Division> state) {
-    return state?.value?.uuid;
+  String toKey(Division value) {
+    return value?.uuid;
   }
 
   /// Create [Division] from json
@@ -59,10 +59,10 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
   Future<Iterable<Division>> onReset({Iterable<Division> previous = const []}) => Future.value(_load());
 
   @override
-  Future<Division> onCreate(StorageState<Division> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Division>> onCreate(StorageState<Division> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DivisionServiceException(
       'Failed to create Division ${state.value}',
@@ -71,12 +71,10 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
     );
   }
 
-  Future<Division> onUpdate(StorageState<Division> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Division>> onUpdate(StorageState<Division> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw DivisionServiceException(
       'Failed to update Division ${state.value}',
@@ -85,10 +83,10 @@ class DivisionRepositoryImpl extends StatefulRepository<String, Division, Divisi
     );
   }
 
-  Future<Division> onDelete(StorageState<Division> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Division>> onDelete(StorageState<Division> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DivisionServiceException(
       'Failed to delete Division ${state.value}',

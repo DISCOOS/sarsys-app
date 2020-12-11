@@ -17,11 +17,18 @@ class _$PositionListServiceImpl extends PositionListServiceImpl {
   final definitionType = PositionListServiceImpl;
 
   @override
-  Future<Response<PagedList<Position>>> getPositions(dynamic uuid, dynamic id, int offset, int limit,
-      {List<String> options = const ['truncate:-20:m']}) {
-    final $url = '/trackings/$uuid/tracks/$id';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit, 'option': options};
+  Future<Response<StorageState<PositionList>>> getAll(
+      dynamic tuuid, dynamic suuid,
+      {int offset,
+      int limit,
+      List<String> options = const ['truncate:-20:m']}) {
+    final $url = '/trackings/$tuuid/tracks/$suuid';
+    final $params = <String, dynamic>{
+      'offset': offset,
+      'limit': limit,
+      'option': options
+    };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Position>, Position>($request);
+    return client.send<StorageState<PositionList>, PositionList>($request);
   }
 }
