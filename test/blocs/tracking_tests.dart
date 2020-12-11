@@ -56,18 +56,24 @@ void main() async {
     test('SHOULD contain devices', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _prepare(harness);
+      final operation = await _prepare(harness);
 
       // Act
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
 
-      final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p1 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
-      final p2 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p2 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
-      final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p3 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
 
       // Assert
@@ -79,18 +85,24 @@ void main() async {
     test('SHOULD query and match personnels', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _prepare(harness);
+      final operation = await _prepare(harness);
 
       // Act
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
 
-      final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p1 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt1 = await _attachDeviceToTrackable(harness, p1, d1);
-      final p2 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p2 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt2 = await _attachDeviceToTrackable(harness, p2, d2);
-      final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p3 = await harness.personnelBloc.create(
+        PersonnelBuilder.create(ouuid: operation.uuid),
+      );
       final pt3 = await _attachDeviceToTrackable(harness, p3, d3);
 
       // Assert personnel trackings
@@ -115,23 +127,24 @@ void main() async {
     test('SHOULD query and match units', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _prepare(harness);
+      final operation = await _prepare(harness);
+      final ouuid = operation.uuid;
 
       // Act
       final d1 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d2 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
       final d3 = await harness.deviceBloc.create(DeviceBuilder.create(status: DeviceStatus.available));
 
-      final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p1 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p1, d1);
-      final p2 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p2 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p2, d2);
-      final p3 = await harness.personnelBloc.create(PersonnelBuilder.create());
+      final p3 = await harness.personnelBloc.create(PersonnelBuilder.create(ouuid: ouuid));
       await _attachDeviceToTrackable(harness, p3, d3);
 
-      final u1 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1.uuid]));
-      final u2 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p2.uuid]));
-      final u3 = await harness.unitBloc.create(UnitBuilder.create(personnels: [p3.uuid]));
+      final u1 = await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [p1.uuid]));
+      final u2 = await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [p2.uuid]));
+      final u3 = await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [p3.uuid]));
 
       final ut1 = await harness.trackingBloc.attach(u1.tracking.uuid, personnels: [p1]);
       final ut2 = await harness.trackingBloc.attach(u2.tracking.uuid, personnels: [p2]);
@@ -172,12 +185,8 @@ void main() async {
     test('SHOULD create unit tracking automatically', () async {
       // Arrange
       harness.connectivity.cellular();
-      final personnel1 = PersonnelBuilder.create();
-      final personnel2 = PersonnelBuilder.create();
-      final unit = UnitBuilder.create(personnels: [
-        personnel1.uuid,
-        personnel2.uuid,
-      ]);
+      final puuid1 = Uuid().v4();
+      final puuid2 = Uuid().v4();
 
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Unit>(
@@ -185,9 +194,16 @@ void main() async {
         // Expect tracking for two personnel and one unit
         count: 3,
         act: (ouuid) async {
-          await harness.personnelBloc.create(personnel1);
-          await harness.personnelBloc.create(personnel2);
-          return await harness.unitBloc.create(unit);
+          final p1 = await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid1),
+          );
+          final p2 = await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, uuid: puuid2),
+          );
+          return await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [
+            p1.uuid,
+            p2.uuid,
+          ]));
         },
       );
 
@@ -196,7 +212,7 @@ void main() async {
       expect(tracking.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(
         tracking.sources.map((source) => source.uuid),
-        equals(unit.personnels),
+        equals([puuid1, puuid2]),
         reason: "SHOULD match personnel uuids in unit",
       );
     });
@@ -208,7 +224,9 @@ void main() async {
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
 
       // Assert personnel tracking specifics
@@ -221,9 +239,13 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and Assert
-      await _shouldCreateTrackingForActiveUnitsOnly<Unit>(harness, act: () async {
-        await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.retired));
-        return await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized));
+      await _shouldCreateTrackingForActiveUnitsOnly<Unit>(harness, act: (ouuid) async {
+        await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.retired),
+        );
+        return await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+        );
       });
     });
 
@@ -232,9 +254,13 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and Assert
-      await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: () async {
-        await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.retired));
-        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted));
+      await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: (ouuid) async {
+        await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.retired),
+        );
+        return await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+        );
       });
     });
 
@@ -245,7 +271,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingWhenDeviceAdded<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+        ),
       );
     });
 
@@ -257,6 +285,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Unit>(
         harness,
         act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(
+          ouuid: ouuid,
           status: UnitStatus.mobilized,
         )),
       );
@@ -275,7 +304,10 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and assert
-      await _shouldUpdateUnitTrackingWhenPersonnelRemoved(harness, puuid: Uuid().v4());
+      await _shouldUpdateUnitTrackingWhenPersonnelRemoved(
+        harness,
+        puuid: Uuid().v4(),
+      );
     });
 
     test('SHOULD update unit tracking directly', () async {
@@ -285,7 +317,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -296,7 +330,9 @@ void main() async {
       // Act and assert
       await _shouldReplaceTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -307,7 +343,9 @@ void main() async {
       // Act and assert
       await _shouldAttachToTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -318,7 +356,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -329,7 +369,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingWhenDeviceUnavailable<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -340,7 +382,9 @@ void main() async {
       // Act and assert
       await _shouldDeleteFromTrackingWhenDeviceDeleted<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -352,6 +396,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceAdded<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
+          ouuid: ouuid,
           status: PersonnelStatus.alerted,
         )),
       );
@@ -365,6 +410,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
+          ouuid: ouuid,
           status: PersonnelStatus.alerted,
         )),
       );
@@ -377,7 +423,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -388,7 +436,9 @@ void main() async {
       // Act and assert
       await _shouldReplaceTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -399,7 +449,9 @@ void main() async {
       // Act and assert
       await _shouldAttachToTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -410,7 +462,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -421,7 +475,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingWhenDeviceUnavailable<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -432,7 +488,9 @@ void main() async {
       // Act and assert
       await _shouldDeleteFromTrackingWhenDeviceDeleted<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) => harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -441,10 +499,14 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and Assert
-      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Unit>(harness, act: () async {
+      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Unit>(harness, act: (ouuid) async {
         return [
-          await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
-          await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
+          await harness.unitBloc.create(
+            UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+          ),
+          await harness.unitBloc.create(
+            UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+          ),
         ];
       });
     });
@@ -454,10 +516,14 @@ void main() async {
       harness.connectivity.cellular();
 
       // Act and Assert
-      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: () async {
+      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: (ouuid) async {
         return [
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+          ),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+          ),
         ];
       });
     });
@@ -470,7 +536,7 @@ void main() async {
       await _shouldCloseTrackingAutomatically<Unit>(
         harness,
         arrange: (ouuid) async => await harness.unitBloc.create(
-          UnitBuilder.create(),
+          UnitBuilder.create(ouuid: ouuid),
         ),
         act: (unit) async {
           await harness.unitBloc.update(
@@ -488,7 +554,9 @@ void main() async {
       // Act and assert
       await _shouldCloseTrackingAutomatically<Personnel>(
         harness,
-        arrange: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        arrange: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
         act: (personnel) async {
           await harness.personnelBloc.update(
             personnel.copyWith(status: PersonnelStatus.retired),
@@ -533,13 +601,13 @@ void main() async {
     test('SHOULD delete unit tracking automatically', () async {
       // Arrange
       harness.connectivity.cellular();
-      final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create().uuid,
-        PersonnelBuilder.create().uuid,
-      ]);
+      final uuuid = Uuid().v4();
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(unit),
+        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(uuid: uuuid, ouuid: ouuid, personnels: [
+          PersonnelBuilder.create(ouuid: ouuid).uuid,
+          PersonnelBuilder.create(ouuid: ouuid).uuid,
+        ])),
       );
       final tuuid = state.value.uuid;
 
@@ -547,17 +615,19 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Unit>(
         harness,
         tuuid,
-        act: (tuuid) => harness.unitBloc.delete(unit.uuid),
+        act: (tuuid) => harness.unitBloc.delete(uuuid),
       );
     });
 
     test('SHOULD delete personnel tracking automatically', () async {
       // Arrange
       harness.connectivity.cellular();
-      final personnel = PersonnelBuilder.create();
+      final puuid = Uuid().v4();
       final state = await _shouldCreateTrackingAutomatically<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(personnel),
+        act: (ouuid) => harness.personnelBloc.create(
+          PersonnelBuilder.create(uuid: puuid, ouuid: ouuid),
+        ),
       );
       final tuuid = state.value.uuid;
 
@@ -565,17 +635,19 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Personnel>(
         harness,
         tuuid,
-        act: (tuuid) => harness.personnelBloc.delete(personnel.uuid),
+        act: (tuuid) => harness.personnelBloc.delete(puuid),
       );
     });
 
     test('SHOULD update tracking on remote change', () async {
       // Arrange
       harness.connectivity.cellular();
-      await _prepare(harness);
+      final operation = await _prepare(harness);
 
       // Act LOCALLY
-      final unit = await harness.unitBloc.create(UnitBuilder.create());
+      final unit = await harness.unitBloc.create(
+        UnitBuilder.create(ouuid: operation.uuid),
+      );
       final tuuid = unit.tracking.uuid;
 
       // Assert local state
@@ -707,12 +779,8 @@ void main() async {
     test('SHOULD create unit tracking automatically locally only', () async {
       // Arrange
       harness.connectivity.offline();
-      final personnel1 = PersonnelBuilder.create();
-      final personnel2 = PersonnelBuilder.create();
-      final unit = UnitBuilder.create(personnels: [
-        personnel1.uuid,
-        personnel2.uuid,
-      ]);
+      final puuid1 = Uuid().v4();
+      final puuid2 = Uuid().v4();
 
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Unit>(
@@ -720,9 +788,16 @@ void main() async {
         // Expect tracking for two personnel and one unit
         count: 3,
         act: (ouuid) async {
-          await harness.personnelBloc.create(personnel1);
-          await harness.personnelBloc.create(personnel2);
-          return await harness.unitBloc.create(unit);
+          final personnel1 = await harness.personnelBloc.create(
+            PersonnelBuilder.create(uuid: puuid1, ouuid: ouuid),
+          );
+          final personnel2 = await harness.personnelBloc.create(
+            PersonnelBuilder.create(uuid: puuid2, ouuid: ouuid),
+          );
+          return await harness.unitBloc.create(UnitBuilder.create(ouuid: ouuid, personnels: [
+            personnel1.uuid,
+            personnel2.uuid,
+          ]));
         },
       );
 
@@ -731,7 +806,7 @@ void main() async {
       expect(tracking.sources.length, 2, reason: "SHOULD contain 2 sources");
       expect(
         tracking.sources.map((source) => source.uuid),
-        equals(unit.personnels),
+        equals([puuid1, puuid2]),
         reason: "SHOULD match personnel uuids in unit",
       );
     });
@@ -743,7 +818,9 @@ void main() async {
       // Act and assert
       final state = await _shouldCreateTrackingAutomatically<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
 
       // Assert personnel tracking specifics
@@ -756,9 +833,13 @@ void main() async {
       harness.connectivity.offline();
 
       // Act and Assert
-      await _shouldCreateTrackingForActiveUnitsOnly<Unit>(harness, act: () async {
-        await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.retired));
-        return await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized));
+      await _shouldCreateTrackingForActiveUnitsOnly<Unit>(harness, act: (ouuid) async {
+        await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.retired),
+        );
+        return await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+        );
       });
     });
 
@@ -767,9 +848,13 @@ void main() async {
       harness.connectivity.offline();
 
       // Act and Assert
-      await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: () async {
-        await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.retired));
-        return await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted));
+      await _shouldCreateTrackingForActiveUnitsOnly<Personnel>(harness, act: (ouuid) async {
+        await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.retired),
+        );
+        return await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+        );
       });
     });
 
@@ -780,7 +865,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingWhenDeviceAdded<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+        ),
       );
     });
 
@@ -792,6 +879,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Unit>(
         harness,
         act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(
+          ouuid: ouuid,
           status: UnitStatus.mobilized,
         )),
       );
@@ -820,7 +908,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -831,7 +921,9 @@ void main() async {
       // Act and assert
       await _shouldReplaceTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -842,7 +934,9 @@ void main() async {
       // Act and assert
       await _shouldAttachToTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -853,7 +947,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingDirectly<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -864,7 +960,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingWhenDeviceUnavailable<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -875,7 +973,9 @@ void main() async {
       // Act and assert
       await _shouldDeleteFromTrackingWhenDeviceDeleted<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        act: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -887,6 +987,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceAdded<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
+          ouuid: ouuid,
           status: PersonnelStatus.alerted,
         )),
       );
@@ -900,6 +1001,7 @@ void main() async {
       await _shouldUpdateTrackingWhenDeviceRemoved<Personnel>(
         harness,
         act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
+          ouuid: ouuid,
           status: PersonnelStatus.alerted,
         )),
       );
@@ -912,7 +1014,9 @@ void main() async {
       // Act and assert
       await _shouldUpdateTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -923,7 +1027,9 @@ void main() async {
       // Act and assert
       await _shouldReplaceTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -934,7 +1040,9 @@ void main() async {
       // Act and assert
       await _shouldAttachToTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -945,7 +1053,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingDirectly<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -956,7 +1066,9 @@ void main() async {
       // Act and assert
       await _shouldDetachFromTrackingWhenDeviceUnavailable<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -967,7 +1079,9 @@ void main() async {
       // Act and assert
       await _shouldDeleteFromTrackingWhenDeviceDeleted<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
       );
     });
 
@@ -976,10 +1090,14 @@ void main() async {
       harness.connectivity.offline();
 
       // Act and Assert
-      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Unit>(harness, act: () async {
+      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Unit>(harness, act: (ouuid) async {
         return [
-          await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
-          await harness.unitBloc.create(UnitBuilder.create(status: UnitStatus.mobilized)),
+          await harness.unitBloc.create(
+            UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+          ),
+          await harness.unitBloc.create(
+            UnitBuilder.create(ouuid: ouuid, status: UnitStatus.mobilized),
+          ),
         ];
       });
     });
@@ -989,10 +1107,14 @@ void main() async {
       harness.connectivity.offline();
 
       // Act and Assert
-      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: () async {
+      await _shouldThrowWhenAttachingSourcesAlreadyTracked<Personnel>(harness, act: (ouuid) async {
         return [
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
-          await harness.personnelBloc.create(PersonnelBuilder.create(status: PersonnelStatus.alerted)),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+          ),
+          await harness.personnelBloc.create(
+            PersonnelBuilder.create(ouuid: ouuid, status: PersonnelStatus.alerted),
+          ),
         ];
       });
     });
@@ -1004,7 +1126,9 @@ void main() async {
       // Act and assert
       await _shouldCloseTrackingAutomatically<Unit>(
         harness,
-        arrange: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+        arrange: (ouuid) async => await harness.unitBloc.create(
+          UnitBuilder.create(ouuid: ouuid),
+        ),
         act: (unit) async {
           await harness.unitBloc.update(
             unit.copyWith(status: UnitStatus.retired),
@@ -1021,7 +1145,9 @@ void main() async {
       // Act and assert
       await _shouldCloseTrackingAutomatically<Personnel>(
         harness,
-        arrange: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create()),
+        arrange: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(ouuid: ouuid),
+        ),
         act: (personnel) async {
           await harness.personnelBloc.update(
             personnel.copyWith(status: PersonnelStatus.retired),
@@ -1068,13 +1194,13 @@ void main() async {
 
     test('SHOULD delete unit tracking automatically locally', () async {
       // Arrange
-      final unit = UnitBuilder.create(personnels: [
-        PersonnelBuilder.create().uuid,
-        PersonnelBuilder.create().uuid,
-      ]);
+      final uuuid = Uuid().v4();
       final state = await _shouldCreateTrackingAutomatically<Unit>(
         harness,
-        act: (ouuid) async => await harness.unitBloc.create(unit),
+        act: (ouuid) => harness.unitBloc.create(UnitBuilder.create(uuid: uuuid, ouuid: ouuid, personnels: [
+          PersonnelBuilder.create(ouuid: ouuid).uuid,
+          PersonnelBuilder.create(ouuid: ouuid).uuid,
+        ])),
       );
       final tuuid = state.value.uuid;
 
@@ -1083,16 +1209,18 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Unit>(
         harness,
         tuuid,
-        act: (tuuid) => harness.unitBloc.delete(unit.uuid),
+        act: (tuuid) => harness.unitBloc.delete(uuuid),
       );
     });
 
     test('SHOULD delete personnel tracking automatically locally', () async {
       // Arrange
-      final personnel = PersonnelBuilder.create();
+      final puuid = Uuid().v4();
       final state = await _shouldCreateTrackingAutomatically<Personnel>(
         harness,
-        act: (ouuid) async => await harness.personnelBloc.create(personnel),
+        act: (ouuid) async => await harness.personnelBloc.create(
+          PersonnelBuilder.create(uuid: puuid, ouuid: ouuid),
+        ),
       );
       final tuuid = state.value.uuid;
 
@@ -1101,7 +1229,7 @@ void main() async {
       await _shouldDeleteTrackingAutomatically<Personnel>(
         harness,
         tuuid,
-        act: (tuuid) => harness.personnelBloc.delete(personnel.uuid),
+        act: (tuuid) => harness.personnelBloc.delete(puuid),
       );
     });
 
@@ -1111,7 +1239,9 @@ void main() async {
       final operation = await _prepare(harness);
 
       // Act LOCALLY
-      final unit = await harness.unitBloc.create(UnitBuilder.create());
+      final unit = await harness.unitBloc.create(
+        UnitBuilder.create(ouuid: operation.uuid),
+      );
       final tuuid = unit.tracking.uuid;
 
       // Assert CREATED
@@ -1465,12 +1595,12 @@ Future<Tracking> _shouldDeleteFromTrackingWhenDeviceDeleted<T extends Trackable>
 
 Future _shouldCreateTrackingForActiveUnitsOnly<T extends Trackable>(
   BlocTestHarness harness, {
-  Future<T> Function() act,
+  Future<T> Function(String ouuid) act,
 }) async {
-  await _prepare(harness);
+  final operation = await _prepare(harness);
 
   // Act
-  final trackable = await act();
+  final trackable = await act(operation.uuid);
 
   // Assert
   await expectThroughLater(
@@ -1492,15 +1622,15 @@ void expectTrackingCount(BlocTestHarness harness, int count) {
 
 Future _shouldThrowWhenAttachingSourcesAlreadyTracked<T extends Trackable>(
   BlocTestHarness harness, {
-  Future<List<T>> Function() act,
+  Future<List<T>> Function(String ouuid) act,
 }) async {
   // Arrange
-  await _prepare(harness);
+  final operation = await _prepare(harness);
   // First position is (1,1)
   final p1 = Position.now(lat: 1, lon: 1, source: PositionSource.manual);
 
   // Act
-  final trackables = await act();
+  final trackables = await act(operation.uuid);
   expect(trackables.length, 2, reason: "SHOULD contain exactly two ${typeOf<T>()}s");
   expect(
     trackables.first,
@@ -1586,6 +1716,7 @@ Future<Tracking> _shouldUpdateUnitTrackingWhenPersonnelAdded(
     reuse: false,
     act: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create(
       uuid: uuuid,
+      ouuid: ouuid,
       status: UnitStatus.mobilized,
     )),
   );
@@ -1597,6 +1728,7 @@ Future<Tracking> _shouldUpdateUnitTrackingWhenPersonnelAdded(
     reuse: true,
     act: (ouuid) async => await harness.personnelBloc.create(PersonnelBuilder.create(
       uuid: puuid,
+      ouuid: ouuid,
       status: PersonnelStatus.alerted,
     )),
   );
@@ -1780,8 +1912,8 @@ Future _shouldReopenClosedPersonnelTrackingAutomatically(BlocTestHarness harness
   // Arrange
   final personnel = await _shouldCloseTrackingAutomatically<Personnel>(
     harness,
-    arrange: (ouuid) async => await harness.personnelBloc.create(
-      PersonnelBuilder.create(),
+    arrange: (ouuid) => harness.personnelBloc.create(
+      PersonnelBuilder.create(ouuid: ouuid),
     ),
     act: (personnel) async {
       await harness.personnelBloc.update(
@@ -1817,7 +1949,9 @@ Future _shouldReopenClosedUnitTrackingAutomatically(
   // Arrange
   final unit = await _shouldCloseTrackingAutomatically<Unit>(
     harness,
-    arrange: (ouuid) async => await harness.unitBloc.create(UnitBuilder.create()),
+    arrange: (ouuid) async => await harness.unitBloc.create(
+      UnitBuilder.create(ouuid: ouuid),
+    ),
     act: (personnel) async {
       await harness.unitBloc.update(
         personnel.copyWith(status: UnitStatus.retired),
@@ -2046,7 +2180,9 @@ Future<Tracking> _ensurePersonnelWithTracking(BlocTestHarness harness, Operation
   expectTrackingCount(harness, harness.isOnline ? 1 : 0);
   if (harness.isOffline) {
     // Create any tracking for any trackable
-    await harness.personnelBloc.create(PersonnelBuilder.create(tuuid: tracking.uuid));
+    await harness.personnelBloc.create(
+      PersonnelBuilder.create(ouuid: operation.uuid, tuuid: tracking.uuid),
+    );
     await expectThroughLater(
       harness.trackingBloc,
       emits(isA<TrackingCreated>()),

@@ -25,7 +25,23 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Personnel>>> fetchAll(
+  Future<Response<StorageState<Personnel>>> update(
+      String uuid, Personnel personnel) {
+    final $url = 'personnels/$uuid';
+    final $body = personnel;
+    final $request = Request('PATCH', $url, client.baseUrl, body: $body);
+    return client.send<StorageState<Personnel>, Personnel>($request);
+  }
+
+  @override
+  Future<Response<void>> delete(String uuid) {
+    final $url = 'personnels/$uuid';
+    final $request = Request('DELETE', $url, client.baseUrl);
+    return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Personnel>>>> fetch(
       dynamic ouuid, int offset, int limit,
       {String expand}) {
     final $url = '/operations/$ouuid/personnels';
@@ -35,21 +51,6 @@ class _$PersonnelServiceImpl extends PersonnelServiceImpl {
       'expand': expand
     };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Personnel>, Personnel>($request);
-  }
-
-  @override
-  Future<Response<Personnel>> update(String uuid, Personnel personnel) {
-    final $url = 'personnels/$uuid';
-    final $body = personnel;
-    final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Personnel, Personnel>($request);
-  }
-
-  @override
-  Future<Response<void>> delete(String uuid) {
-    final $url = 'personnels/$uuid';
-    final $request = Request('DELETE', $url, client.baseUrl);
-    return client.send<void, void>($request);
+    return client.send<PagedList<StorageState<Personnel>>, Personnel>($request);
   }
 }

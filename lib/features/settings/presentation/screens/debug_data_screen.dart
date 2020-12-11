@@ -1,4 +1,3 @@
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
@@ -276,9 +275,9 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
   final String title;
   final VoidCallback onReset;
   final VoidCallback onCommit;
+  final StatefulRepository repo;
   final String Function(StorageState<T> state) subject;
   final String Function(StorageState<T> state) content;
-  final StatefulRepository<dynamic, T, Service> repo;
 
   @override
   Widget build(BuildContext context) {

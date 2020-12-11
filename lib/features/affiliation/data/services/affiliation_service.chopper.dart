@@ -17,15 +17,46 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
   final definitionType = AffiliationServiceImpl;
 
   @override
-  Future<Response<Affiliation>> get({String uuid, String expand}) {
-    final $url = '/affiliations/$uuid';
-    final $params = <String, dynamic>{'expand': expand};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<Affiliation, Affiliation>($request);
+  Future<Response<String>> create(Affiliation body) {
+    final $url = '/affiliations';
+    final $body = body;
+    final $request = Request('POST', $url, client.baseUrl, body: $body);
+    return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<PagedList<Affiliation>>> getAll(String uuids,
+  Future<Response<StorageState<Affiliation>>> update(
+      String uuid, Affiliation body) {
+    final $url = '/affiliations/$uuid';
+    final $body = body;
+    final $request = Request('PATCH', $url, client.baseUrl, body: $body);
+    return client.send<StorageState<Affiliation>, Affiliation>($request);
+  }
+
+  @override
+  Future<Response<void>> delete(String uuid) {
+    final $url = '/affiliations/$uuid';
+    final $request = Request('DELETE', $url, client.baseUrl);
+    return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Affiliation>>>> search(
+      String filter, int limit, int offset, String expand) {
+    final $url = '/affiliations';
+    final $params = <String, dynamic>{
+      'filter': filter,
+      'limit': limit,
+      'offset': offset,
+      'expand': expand
+    };
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client
+        .send<PagedList<StorageState<Affiliation>>, Affiliation>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Affiliation>>>> getAll(String uuids,
       {String expand, int limit = 20, int offset = 0}) {
     final $url = '/affiliations';
     final $params = <String, dynamic>{
@@ -35,43 +66,7 @@ class _$AffiliationServiceImpl extends AffiliationServiceImpl {
       'offset': offset
     };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Affiliation>, Affiliation>($request);
-  }
-
-  @override
-  Future<Response<PagedList<Affiliation>>> search(String filter,
-      {String expand, int limit = 20, int offset = 0}) {
-    final $url = '/affiliations';
-    final $params = <String, dynamic>{
-      'filter': filter,
-      'expand': expand,
-      'limit': limit,
-      'offset': offset
-    };
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Affiliation>, Affiliation>($request);
-  }
-
-  @override
-  Future<Response<String>> create(Affiliation body) {
-    final $url = '/affiliations';
-    final $body = body;
-    final $request = Request('POST', $url, client.baseUrl, body: $body);
-    return client.send<String, String>($request);
-  }
-
-  @override
-  Future<Response<Affiliation>> update(String uuid, Affiliation body) {
-    final $url = '/affiliations/$uuid';
-    final $body = body;
-    final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Affiliation, Affiliation>($request);
-  }
-
-  @override
-  Future<Response<void>> delete(String uuid) {
-    final $url = '/affiliations/$uuid';
-    final $request = Request('DELETE', $url, client.baseUrl);
-    return client.send<void, void>($request);
+    return client
+        .send<PagedList<StorageState<Affiliation>>, Affiliation>($request);
   }
 }

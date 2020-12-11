@@ -132,4 +132,7 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
       talkgroups: talkGroups ?? this.talkgroups.map((tg) => TalkGroup.fromJson(tg.toJson())).toList(),
     );
   }
+
+  @override
+  AggregateRef<OperationModel> toRef() => uuid != null ? AggregateRef.fromType<OperationModel>(uuid) : null;
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/tracking/data/services/position_list_service.dart';
@@ -8,9 +7,9 @@ import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
 import 'package:SarSys/features/tracking/domain/entities/TrackingTrack.dart';
 
 abstract class PositionListRepository implements StatefulRepository<String, PositionList, PositionListService> {
-  /// Get [PositionList.id] from [state]
+  /// Get [PositionList.id] from [value]
   @override
-  String toKey(StorageState<PositionList> state);
+  String toKey(PositionList value);
 
   /// Find tracks matching given query
   Iterable<PositionList> find({bool where(PositionList list)});

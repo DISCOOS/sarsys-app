@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -74,7 +75,7 @@ class DeviceBuilder {
 
 class DeviceServiceMock extends Mock implements DeviceService {
   final Timer simulator;
-  final Map<String, Device> devices;
+  final Map<String, StorageState<Device>> devices;
 
   Device add({
     String uuid,
@@ -95,10 +96,21 @@ class DeviceServiceMock extends Mock implements DeviceService {
   }
 
   void put(Device device) {
-    devices.update(device.uuid, (_) => device, ifAbsent: () => device);
+    devices.update(
+        device.uuid,
+        (state) => state.apply(
+              device,
+              replace: true,
+              isRemote: true,
+            ),
+        ifAbsent: () => StorageState.created(
+              device,
+              StateVersion.first,
+              isRemote: true,
+            ));
   }
 
-  Device remove(uuid) {
+  StorageState<Device> remove(uuid) {
     return devices.remove(uuid);
   }
 
@@ -117,7 +129,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
     List<String> ouuids = const [],
   }) {
     final rnd = math.Random();
-    final Map<String, Device> devicesRepo = {}; // devices
+    final Map<String, StorageState<Device>> devicesRepo = {}; // devices
     final Map<String, _DeviceSimulation> simulations = {}; // duuid -> simulation
     final StreamController<DeviceMessage> controller = StreamController.broadcast();
     devicesRepo.clear();
@@ -151,7 +163,13 @@ class DeviceServiceMock extends Mock implements DeviceService {
       return ServiceResponse.ok(body: devicesRepo.values.toList());
     });
     when(mock.create(any)).thenAnswer((_) async {
-      var device = _.positionalArguments[0] as Device;
+      final state = _.positionalArguments[0] as StorageState<Device>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      var device = state.value;
       final duuid = device.uuid;
       Position center = _toCenter(bloc);
       if (simulate) {
@@ -173,29 +191,63 @@ class DeviceServiceMock extends Mock implements DeviceService {
           simulations,
         );
       }
-      devicesRepo.update(device.uuid, (_) => device, ifAbsent: () => device);
-      return ServiceResponse.created();
+      _update(devicesRepo, device);
+      return ServiceResponse.ok(
+        body: devicesRepo[device.uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
-      var device = _.positionalArguments[0] as Device;
-      if (!devicesRepo.containsKey(device.uuid))
-        ServiceResponse.notFound(
-          message: "Device ${device.uuid} not found",
+      final next = _.positionalArguments[0] as StorageState<Device>;
+      final uuid = next.value.uuid;
+      if (devicesRepo.containsKey(uuid)) {
+        final state = devicesRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        devicesRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
         );
-      devicesRepo.update(device.uuid, (_) => device);
-      return ServiceResponse.ok(body: device);
+        return ServiceResponse.ok(
+          body: devicesRepo[uuid],
+        );
+      }
+      return ServiceResponse.notFound(
+        message: "Device $uuid not found",
+      );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      var duuid = _.positionalArguments[0] as String;
-      if (!devicesRepo.containsKey(duuid))
-        ServiceResponse.notFound(
-          message: "Device $duuid not found",
+      var state = _.positionalArguments[0] as StorageState<Device>;
+      final uuid = state.value.uuid;
+      if (devicesRepo.containsKey(uuid)) {
+        return ServiceResponse.ok(
+          body: devicesRepo.remove(uuid),
         );
-      devicesRepo.remove(duuid);
-      return ServiceResponse.noContent();
+      }
+      return ServiceResponse.notFound(
+        message: "Device not found: $uuid",
+      );
     });
     return mock;
   }
+
+  static StorageState<Device> _update(Map<String, StorageState<Device>> devicesRepo, Device device) =>
+      devicesRepo.update(
+          device.uuid,
+          (state) => state.apply(
+                device,
+                isRemote: true,
+                replace: false,
+              ),
+          ifAbsent: () => StorageState.created(
+                device,
+                StateVersion.first,
+                isRemote: true,
+              ));
 
   static Position _toCenter(OperationBloc bloc) {
     return bloc.isUnselected
@@ -208,7 +260,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
 
   static void _createDevices(
     DeviceType type,
-    Map<String, Device> devices,
+    Map<String, StorageState<Device>> devices,
     int count,
     String ouuid,
     int number,
@@ -219,19 +271,23 @@ class DeviceServiceMock extends Mock implements DeviceService {
     final prefix = enumName(type).substring(0, 1).toLowerCase();
     return devices.addAll({
       for (var i = 1; i <= count; i++)
-        "$ouuid:d:$prefix:$i": _simulate(
-          DeviceModel.fromJson(
-            DeviceBuilder.createDeviceAsJson(
-              "$ouuid:d:$prefix:$i",
-              type,
-              "${++number % 10 == 0 ? ++number : number}",
-              center,
-              DeviceStatus.unavailable,
-              true,
+        "$ouuid:d:$prefix:$i": StorageState.created(
+          _simulate(
+            DeviceModel.fromJson(
+              DeviceBuilder.createDeviceAsJson(
+                "$ouuid:d:$prefix:$i",
+                type,
+                "${++number % 10 == 0 ? ++number : number}",
+                center,
+                DeviceStatus.unavailable,
+                true,
+              ),
             ),
+            rnd,
+            simulations,
           ),
-          rnd,
-          simulations,
+          StateVersion.first,
+          isRemote: true,
         ),
     });
   }
@@ -254,24 +310,24 @@ class DeviceServiceMock extends Mock implements DeviceService {
   static void _progress(
     math.Random rnd,
     OperationBloc bloc,
-    Map<String, Device> devicesMap,
+    Map<String, StorageState<Device>> devicesMap,
     Map<String, _DeviceSimulation> simulations,
     StreamController<DeviceMessage> controller,
   ) {
     final devices = devicesMap.values.toList()..shuffle();
     // only update 10% each iteration
     final min = math.min(math.max((devices.length * 0.2).toInt(), 1), 3);
-    devices.take(min).forEach((device) {
+    devices.take(min).forEach((state) {
+      var device = state.value;
       if (simulations.containsKey(device.uuid)) {
         var simulation = simulations[device.uuid];
         var position = simulation.progress(rnd.nextDouble() * 20.0);
         device = device.copyWith(
           position: position,
         );
-        devicesMap.update(
-          device.uuid,
-          (_) => device,
-          ifAbsent: () => device,
+        _update(
+          devicesMap,
+          device,
         );
         controller.add(
           DeviceMessage(

@@ -126,6 +126,7 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
           status: PersonnelStatus.alerted,
           tracking: TrackingUtils.newRef(),
           affiliation: affiliation.toRef(),
+          operation: params.operationBloc.selected.toRef(),
         )));
       }
       // Re-mobilize personnel?

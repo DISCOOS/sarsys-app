@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/device/data/models/device_model.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/device/domain/repositories/device_repository.dart';
@@ -89,15 +91,20 @@ class TrackingServiceMock extends Mock implements TrackingService {
   }
 
   Tracking put(String ouuid, Tracking tracking) {
+    final state = StorageState.created(
+      tracking,
+      StateVersion.first,
+      isRemote: true,
+    );
     if (trackingsRepo.containsKey(ouuid)) {
-      trackingsRepo[ouuid].putIfAbsent(tracking.uuid, () => tracking);
+      trackingsRepo[ouuid].putIfAbsent(tracking.uuid, () => state);
     } else {
-      trackingsRepo[ouuid] = {tracking.uuid: tracking};
+      trackingsRepo[ouuid] = {tracking.uuid: state};
     }
     return tracking;
   }
 
-  List<Tracking> remove(String uuid) {
+  List<StorageState<Tracking>> remove(String uuid) {
     final ouuids = trackingsRepo.entries.where(
       (entry) => entry.value.containsKey(uuid),
     );
@@ -118,7 +125,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   final Map<String, String> s2t = {}; // suuid -> tuuid
   final Map<String, _TrackSimulation> simulations = {}; // tuuid -> simulation
-  final Map<String, Map<String, Tracking>> trackingsRepo = {}; // ouuid -> tuuid -> tracking
+  final Map<String, Map<String, StorageState<Tracking>>> trackingsRepo = {}; // ouuid -> tuuid -> tracking
   final StreamController<TrackingMessage> controller = StreamController.broadcast();
 
   factory TrackingServiceMock.build(
@@ -181,53 +188,51 @@ class TrackingServiceMock extends Mock implements TrackingService {
       (_) => mock.controller.stream,
     );
 
-    when(mock.getListFromId(any)).thenAnswer((_) async {
-      final String ouuid = _.positionalArguments[0];
-      var trackingList = mock.trackingsRepo[ouuid];
-      if (trackingList == null) {
-        trackingList = mock.trackingsRepo.putIfAbsent(ouuid, () => {});
+    when(mock.getFromId(any)).thenAnswer((_) async {
+      final String tuuid = _.positionalArguments[0] as String;
+      final match = mock.trackingsRepo.entries.where((entry) => entry.value.containsKey(tuuid)).firstOrNull;
+      if (match != null) {
+        return ServiceResponse.ok(
+          body: match.value[tuuid],
+        );
       }
-
-      return ServiceResponse.ok(body: trackingList.values.toList());
+      return ServiceResponse.notFound(
+        message: "Tracking $tuuid not found",
+      );
     });
 
-    // when(mock.create(any)).thenAnswer((_) async {
-    //   final ouuid = _.positionalArguments[0] as String;
-    //   final tracking = _.positionalArguments[1] as Tracking;
-    //   return _create(
-    //     ouuid: ouuid,
-    //     s2t: mock.s2t,
-    //     tracking: tracking,
-    //     simulations: mock.simulations,
-    //     trackingRepo: mock.trackingsRepo,
-    //     devices: devices.map,
-    //     simulate: simulate,
-    //   );
-    // });
+    when(mock.getListFromId(any)).thenAnswer((_) async {
+      final String ouuid = _.positionalArguments[0] as String;
+      if (mock.trackingsRepo.containsKey(ouuid)) {
+        return ServiceResponse.ok(
+          body: mock.trackingsRepo[ouuid].values.toList(),
+        );
+      }
+      return ServiceResponse.ok(
+        body: <StorageState<Tracking>>[],
+      );
+    });
 
     when(mock.update(any)).thenAnswer((_) async {
-      var request = _.positionalArguments[0] as Tracking;
-      // Assumes that a device is attached to a single incident only
-      var incident = mock.trackingsRepo.entries.firstWhere(
-        (entry) => entry.value.containsKey(request.uuid),
-        orElse: () => null,
-      );
-      if (incident != null) {
-        // Update tracking instance
-        var trackingList = incident.value;
-
-        // Tracking does exists?
-        if (!trackingList.containsKey(request.uuid))
-          return ServiceResponse.notFound(
-            message: "Not found. Tracking ${request.uuid}",
+      final next = _.positionalArguments[0] as StorageState<Tracking>;
+      final tracking = next.value;
+      final tuuid = tracking.uuid;
+      final match = mock.trackingsRepo.entries.where((entry) => entry.value.containsKey(tuuid)).firstOrNull;
+      if (match != null) {
+        final trackingRepo = match.value;
+        final state = trackingRepo[tuuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
           );
-        final original = trackingList[request.uuid];
-
+        }
+        final original = state.value;
         // Ensure only valid statuses are persisted
-        var tracking = request.copyWith(
+        var tracking = next.value.copyWith(
             status: _toStatus(
-          request.status,
-          request.sources?.isNotEmpty == true,
+          next.value.status,
+          next.value.sources?.isNotEmpty == true,
         ));
 
 //        // Append position to history if manual and does not exist in track
@@ -239,18 +244,26 @@ class TrackingServiceMock extends Mock implements TrackingService {
 //          }
 //        }
 
-        final sources = request.sources.where(
+        final sources = next.value.sources.where(
           ((source) => !original.sources.contains(source) && mock.s2t.containsKey(source)),
         );
         if (sources.isNotEmpty) {
-          return ServiceResponse.badRequest<Tracking>(message: "Bad request: Sources $sources are tracked already");
+          return ServiceResponse.badRequest<StorageState<Tracking>>(
+            message: "Bad request: Sources $sources are tracked already",
+          );
         }
 
-        // Update tracking list
-        trackingList.update(
+        // Update tracking repo
+        trackingRepo.update(
           tracking.uuid,
-          (_) => tracking,
-          ifAbsent: () => tracking,
+          (_) => next.replace(
+            tracking,
+            isRemote: true,
+          ),
+          ifAbsent: () => next.replace(
+            tracking,
+            isRemote: true,
+          ),
         );
 
         // Remove all and add again
@@ -263,111 +276,54 @@ class TrackingServiceMock extends Mock implements TrackingService {
         if (simulate) {
           _simulate(
             tracking.uuid,
-            trackingList,
+            trackingRepo,
             devices.map,
             mock.simulations,
           );
         }
 
-        return ServiceResponse.ok(body: tracking);
+        trackingRepo[tuuid] = state.apply(
+          tracking,
+          replace: false,
+          isRemote: true,
+        );
+        return ServiceResponse.ok(
+          body: trackingRepo[tuuid],
+        );
       }
-      return ServiceResponse.notFound(message: "Not found: Tracking ${request.uuid}");
+      return ServiceResponse.notFound(
+        message: "Tracking $tuuid not found",
+      );
     });
-
-    // when(mock.delete(any)).thenAnswer((_) async {
-    //   var tracking = _.positionalArguments[0];
-    //   // Assumes that a device is attached to a single incident only
-    //   var incident = mock.trackingsRepo.entries.firstWhere(
-    //     (entry) => entry.value.containsKey(tracking.uuid),
-    //     orElse: () => null,
-    //   );
-    //   if (incident != null) {
-    //     var trackingList = incident.value;
-    //     trackingList.remove(tracking.uuid);
-    //     mock.simulations.remove(tracking.uuid);
-    //     mock.s2t.removeWhere((suuid, tuuid) => tuuid == tracking.uuid);
-    //     return ServiceResponse.noContent();
-    //   }
-    //   return ServiceResponse.notFound(message: "Not found. Tracking ${tracking.uuid}");
-    // });
 
     return mock;
   }
 
-//   static ServiceResponse<Tracking> _create({
-//     String ouuid,
-//     Tracking tracking,
-//     Map<String, String> s2t,
-//     Map<String, Device> devices,
-//     Map<String, Map<String, Tracking>> trackingRepo,
-//     Map<String, _TrackSimulation> simulations,
-//     bool simulate = false,
-//   }) {
-// //    final position = tracking.position;
-//     final sources = tracking.sources;
-//     final tuuid = tracking.uuid;
-//
-//     // Sanity checks
-//     final found = sources.where(((source) => s2t.containsKey(source.uuid)));
-//     if (found.isNotEmpty) {
-//       return ServiceResponse.badRequest<Tracking>(
-//         message: "Bad request: Sources $found are tracked already",
-//       );
-//     }
-// //    if (position?.type != null && position?.source != PositionSource.manual) {
-// //      return _toOnlyManualResponse(position);
-// //    }
-//
-//     final trackingList = trackingRepo[ouuid];
-//     trackingList.putIfAbsent(tuuid, () => tracking);
-//     final next = simulate
-//         ? _simulate(
-//             tuuid,
-//             trackingList,
-//             devices,
-//             simulations,
-//           )
-//         : tracking;
-//     trackingList.putIfAbsent(tuuid, () => next);
-//     s2t.addEntries(
-//       next.sources.map((source) => MapEntry(source.uuid, tuuid)),
-//     );
-//     return ServiceResponse.ok<Tracking>(body: next);
-//   }
-
-//  static ServiceResponse<Tracking> _toOnlyManualResponse(Position position) {
-//    return ServiceResponse.badRequest(
-//      message: "Bad request: "
-//          "Only position of type 'Manual' is allowed, "
-//          "found ${enumName(position?.type)}",
-//    );
-//  }
-
-  static Iterable<MapEntry<String, Tracking>> _createTrackingPersonnel(
+  static Iterable<MapEntry<String, StorageState<Tracking>>> _createTrackingPersonnel(
     String ouuid,
     Map<String, String> s2t, // suuid -> tuuid
     int count,
   ) {
     // Track devices from app-series (tracking ouuid:t:p:$i -> device ouuid:d:a:$i)
-    final tracking = _createTracking(ouuid, 'p', 'd:a', count);
+    final tracking = _createTrackings(ouuid, 'p', 'd:a', count);
     // Map device ouuid:d:a:$i -> tracking ouuid:t:p:$i
     _addEntries(ouuid, 'd:a', s2t, tracking);
     return tracking;
   }
 
-  static Iterable<MapEntry<String, Tracking>> _createTrackingUnits(
+  static Iterable<MapEntry<String, StorageState<Tracking>>> _createTrackingUnits(
     String ouuid,
     Map<String, String> s2t, // suuid -> tuuid
     int unitCount,
   ) {
     // Track devices from tetra-series (tracking ouuid:t:u:$i -> device ouuid:d:t:$i)
-    final tracking = _createTracking(ouuid, 'u', 'd:t', unitCount);
+    final tracking = _createTrackings(ouuid, 'u', 'd:t', unitCount);
     // Map device ouuid:d:t:$i -> tracking ouuid:t:u:$i
     _addEntries(ouuid, 'd:t', s2t, tracking);
     return tracking;
   }
 
-  static Iterable<MapEntry<String, Tracking>> _createTracking<T>(
+  static Iterable<MapEntry<String, StorageState<Tracking>>> _createTrackings<T>(
     String ouuid,
     String entity,
     String device,
@@ -387,14 +343,23 @@ class TrackingServiceMock extends Mock implements TrackingService {
             type: SourceType.device,
           )
         ])),
-    ].map((tracking) => MapEntry(tracking.uuid, tracking));
+    ].map(
+      (tracking) => MapEntry(
+        tracking.uuid,
+        StorageState.created(
+          tracking,
+          StateVersion.first,
+          isRemote: true,
+        ),
+      ),
+    );
   }
 
   static void _addEntries(
     String ouuid,
     String type,
     Map<String, String> tracked,
-    Iterable<MapEntry<String, Tracking>> items,
+    Iterable<MapEntry<String, StorageState<Tracking>>> items,
   ) {
     int i = 0;
     tracked.addEntries(
@@ -410,11 +375,11 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
   static Tracking _simulate(
     String uuid,
-    Map<String, Tracking> trackingList,
+    Map<String, StorageState<Tracking>> trackingList,
     Map<String, Device> devices,
     Map<String, _TrackSimulation> simulations,
   ) {
-    var tracking = trackingList[uuid];
+    var tracking = trackingList[uuid]?.value;
     if (tracking != null) {
       // Only simulate aggregated position for tracking with devices
       if ([
@@ -439,7 +404,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
   static void _handle(
     DeviceMessage message,
     Map<String, String> s2t,
-    Map<String, Map<String, Tracking>> trackingRepo,
+    Map<String, Map<String, StorageState<Tracking>>> trackingRepo,
     Map<String, _TrackSimulation> simulations,
     StreamController<TrackingMessage> controller,
   ) {
@@ -472,7 +437,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
     String tuuid,
     Map<String, String> s2t,
     Map<String, _TrackSimulation> simulations,
-    Map<String, Map<String, Tracking>> trackingRepo,
+    Map<String, Map<String, StorageState<Tracking>>> trackingRepo,
     StreamController<TrackingMessage> controller,
   ) {
     // Calculate
@@ -517,8 +482,22 @@ class TrackingServiceMock extends Mock implements TrackingService {
       final next = simulation.progress(
         suuids: {...s2a1.keys, ...s2a2.keys, device.uuid},
       );
-      trackingList[tuuid] = next;
-      trackingRepo.update(ouuid, (_) => trackingList);
+      trackingList.update(
+          tuuid,
+          (state) => state.apply(
+                next,
+                replace: false,
+                isRemote: true,
+              ),
+          ifAbsent: () => StorageState.created(
+                next,
+                StateVersion.first,
+                isRemote: true,
+              ));
+      trackingRepo.update(
+        ouuid,
+        (_) => trackingList,
+      );
 
       // Notify listeners
       controller.add(
@@ -534,11 +513,12 @@ class TrackingServiceMock extends Mock implements TrackingService {
   static Map<String, String> _toAggregateIds(
     String suuid,
     String tuuid,
-    Map<String, Tracking> trackingList,
+    Map<String, StorageState<Tracking>> trackingList,
     Map<String, String> s2t,
   ) =>
       Map.fromEntries(s2t.entries.where((e) => tuuid == e.key).where(
             (e) => trackingList[e.key]
+                ?.value
                 ?.sources
                 // Only match aggregates
                 ?.any((source) => SourceType.trackable == source.type && source.uuid == suuid),
@@ -548,9 +528,9 @@ class TrackingServiceMock extends Mock implements TrackingService {
 class _TrackSimulation {
   final String uuid;
   final Map<String, Device> devices;
-  final Map<String, Tracking> trackingList;
+  final Map<String, StorageState<Tracking>> trackingList;
 
-  Tracking get tracking => trackingList[uuid];
+  Tracking get tracking => trackingList[uuid]?.value;
 
   _TrackSimulation({
     @required this.uuid,
@@ -630,7 +610,7 @@ class _TrackSimulation {
       SourceType.device == source.type ? _fromDevice(source.uuid) : _fromAggregate(source.uuid);
 
   Position _fromDevice(String uuid) => devices[uuid]?.position;
-  Position _fromAggregate(String uuid) => trackingList[uuid]?.position;
+  Position _fromAggregate(String uuid) => trackingList[uuid]?.value?.position;
 
   List<num> _aggregate(List<num> sum, Position position) => position == null
       ? sum

@@ -17,7 +17,7 @@ class _$PersonServiceImpl extends PersonServiceImpl {
   final definitionType = PersonServiceImpl;
 
   @override
-  Future<Response<String>> create(Person body) {
+  Future<Response<String>> create(String uuid, Person body) {
     final $url = '/persons';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -25,18 +25,11 @@ class _$PersonServiceImpl extends PersonServiceImpl {
   }
 
   @override
-  Future<Response<Person>> get({String uuid}) {
-    final $url = '/persons/$uuid';
-    final $request = Request('GET', $url, client.baseUrl);
-    return client.send<Person, Person>($request);
-  }
-
-  @override
-  Future<Response<Person>> update(String uuid, Person body) {
+  Future<Response<StorageState<Person>>> update(String uuid, Person body) {
     final $url = '/persons/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Person, Person>($request);
+    return client.send<StorageState<Person>, Person>($request);
   }
 
   @override
@@ -44,5 +37,12 @@ class _$PersonServiceImpl extends PersonServiceImpl {
     final $url = '/persons/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<StorageState<Person>>> get(String uuid) {
+    final $url = '/persons/$uuid';
+    final $request = Request('GET', $url, client.baseUrl);
+    return client.send<StorageState<Person>, Person>($request);
   }
 }

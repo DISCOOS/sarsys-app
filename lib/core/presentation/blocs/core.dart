@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:bloc/bloc.dart';
@@ -336,7 +336,8 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
 }
 
 abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error extends E, K, V extends JsonObject,
-    S extends Service> extends BaseBloc<C, E, Error> with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
+        S extends StatefulServiceDelegate<V, V>> extends BaseBloc<C, E, Error>
+    with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
   StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
 
   @override

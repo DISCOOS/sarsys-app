@@ -27,10 +27,10 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
     ));
   }
 
-  /// Get [Device.uuid] from [state]
+  /// Get [Device.uuid] from [value]
   @override
-  String toKey(StorageState<Device> state) {
-    return state.value.uuid;
+  String toKey(Device value) {
+    return value?.uuid;
   }
 
   /// Create [Device] from json
@@ -70,10 +70,10 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   Future<Iterable<Device>> onReset({Iterable<Device> previous}) => Future.value(_load());
 
   @override
-  Future<Device> onCreate(StorageState<Device> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Device>> onCreate(StorageState<Device> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DeviceServiceException(
       'Failed to create Device ${state.value}',
@@ -83,12 +83,10 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   }
 
   @override
-  Future<Device> onUpdate(StorageState<Device> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Device>> onUpdate(StorageState<Device> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw DeviceServiceException(
       'Failed to update Device ${state.value}',
@@ -98,10 +96,10 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
   }
 
   @override
-  Future<Device> onDelete(StorageState<Device> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Device>> onDelete(StorageState<Device> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw DeviceServiceException(
       'Failed to delete Device ${state.value}',
@@ -125,13 +123,26 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
             message.patches,
             strict: false,
           ));
-          state = previous.isRemote ? StorageState.updated(next, isRemote: true) : previous.replace(next);
+          state = previous.isRemote
+              ? StorageState.updated(
+                  next,
+                  message.version,
+                  isRemote: true,
+                )
+              : previous.replace(
+                  next,
+                  isRemote: false,
+                );
           put(state);
         } else if (message.type == 'DeviceCreated') {
           final next = DeviceModel.fromJson(
             JsonPatch.apply({}, message.patches, strict: false),
           );
-          state = StorageState.created(next, isRemote: true);
+          state = StorageState.created(
+            next,
+            message.version,
+            isRemote: true,
+          );
           put(state);
         }
       } on Exception catch (error, stackTrace) {

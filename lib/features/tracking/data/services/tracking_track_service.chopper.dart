@@ -17,14 +17,14 @@ class _$TrackingTrackServiceImpl extends TrackingTrackServiceImpl {
   final definitionType = TrackingTrackServiceImpl;
 
   @override
-  Future<Response<TrackingTrack>> get(dynamic uuid, dynamic id) {
+  Future<Response<StorageState<TrackingTrack>>> get(dynamic uuid, dynamic id) {
     final $url = '/trackings/$uuid/tracks/$id';
     final $request = Request('GET', $url, client.baseUrl);
-    return client.send<TrackingTrack, TrackingTrack>($request);
+    return client.send<StorageState<TrackingTrack>, TrackingTrack>($request);
   }
 
   @override
-  Future<Response<PagedList<TrackingTrack>>> fetchAll(
+  Future<Response<PagedList<StorageState<TrackingTrack>>>> getAll(
       dynamic uuid, int offset, int limit,
       {List<String> expand = const []}) {
     final $url = '/trackings/$uuid/tracks';
@@ -34,6 +34,7 @@ class _$TrackingTrackServiceImpl extends TrackingTrackServiceImpl {
       'expand': expand
     };
     final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<TrackingTrack>, TrackingTrack>($request);
+    return client
+        .send<PagedList<StorageState<TrackingTrack>>, TrackingTrack>($request);
   }
 }

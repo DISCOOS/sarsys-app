@@ -43,10 +43,10 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   @override
   bool get isReady => super.isReady && _ouuid != null;
 
-  /// Get [Personnel.uuid] from [state]
+  /// Get [Personnel.uuid] from [value]
   @override
-  String toKey(StorageState<Personnel> state) {
-    return state.value.uuid;
+  String toKey(Personnel value) {
+    return value?.uuid;
   }
 
   /// Create [Personnel] from json
@@ -114,10 +114,11 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
       _ouuid != null ? load(_ouuid) : Future.value(previous);
 
   @override
-  Future<Personnel> onCreate(StorageState<Personnel> state) async {
-    var response = await service.create(_ouuid, state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Personnel>> onCreate(StorageState<Personnel> state) async {
+    assert(state.value.operation.uuid == _ouuid);
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw PersonnelServiceException(
       'Failed to create Personnel ${state.value}',
@@ -127,12 +128,10 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   }
 
   @override
-  Future<Personnel> onUpdate(StorageState<Personnel> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Personnel>> onUpdate(StorageState<Personnel> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw PersonnelServiceException(
       'Failed to update Personnel ${state.value}',
@@ -142,10 +141,10 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   }
 
   @override
-  Future<Personnel> onDelete(StorageState<Personnel> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Personnel>> onDelete(StorageState<Personnel> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw PersonnelServiceException(
       'Failed to delete Personnel ${state.value}',

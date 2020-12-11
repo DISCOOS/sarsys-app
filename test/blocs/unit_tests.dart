@@ -74,7 +74,7 @@ void main() async {
       // Arrange
       harness.connectivity.cellular();
       final operation = await _prepare(harness, offline: false);
-      final unit = UnitBuilder.create();
+      final unit = UnitBuilder.create(ouuid: operation.uuid);
 
       // Act
       await harness.unitBloc.create(unit);
@@ -86,7 +86,7 @@ void main() async {
       );
 
       // Assert
-      verify(harness.unitService.create(any, any)).called(1);
+      verify(harness.unitService.create(any)).called(1);
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
       expect(harness.unitBloc.ouuid, operation.uuid, reason: "SHOULD depend on ${operation.uuid}");
       expect(harness.unitBloc.repo.containsKey(unit.uuid), isTrue, reason: "SHOULD contain unit ${unit.uuid}");
@@ -256,8 +256,8 @@ void main() async {
 
     test('SHOULD create unit with state CREATED', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final unit = UnitBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final unit = UnitBuilder.create(ouuid: operation.uuid);
 
       // Act
       await harness.unitBloc.create(unit);
@@ -274,9 +274,9 @@ void main() async {
 
     test('SHOULD update unit with state CREATED', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final unit1 = UnitBuilder.create(status: UnitStatus.mobilized);
-      final unit2 = UnitBuilder.create(status: UnitStatus.mobilized);
+      final operation = await _prepare(harness, offline: true);
+      final unit1 = UnitBuilder.create(ouuid: operation.uuid, status: UnitStatus.mobilized);
+      final unit2 = UnitBuilder.create(ouuid: operation.uuid, status: UnitStatus.mobilized);
       await harness.unitBloc.create(unit1);
       await harness.unitBloc.create(unit2);
       expect(harness.unitBloc.repo.length, 2, reason: "SHOULD contain two unit");
@@ -305,8 +305,8 @@ void main() async {
 
     test('SHOULD delete local unit', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final unit = UnitBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final unit = UnitBuilder.create(ouuid: operation.uuid);
       await harness.unitBloc.create(unit);
       expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
@@ -320,8 +320,8 @@ void main() async {
 
     test('SHOULD BE empty after unload', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final unit = UnitBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final unit = UnitBuilder.create(ouuid: operation.uuid);
       await harness.unitBloc.create(unit);
       await expectThroughLater(
         harness.unitBloc,
@@ -343,8 +343,8 @@ void main() async {
 
     test('SHOULD retain after reload', () async {
       // Arrange
-      await _prepare(harness, offline: true);
-      final unit = UnitBuilder.create();
+      final operation = await _prepare(harness, offline: true);
+      final unit = UnitBuilder.create(ouuid: operation.uuid);
       await harness.unitBloc.create(unit);
       await expectThroughLater(
         harness.unitBloc,
@@ -398,8 +398,10 @@ void main() async {
 
 Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness, {@required bool offline}) async {
   // Arrange
-  await _prepare(harness, offline: offline);
-  final p1 = await harness.personnelBloc.create(PersonnelBuilder.create());
+  final operation = await _prepare(harness, offline: offline);
+  final p1 = await harness.personnelBloc.create(
+    PersonnelBuilder.create(ouuid: operation.uuid),
+  );
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelCreated>().having(
@@ -408,7 +410,9 @@ Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness,
       !offline,
     )),
   );
-  final p2 = await harness.personnelBloc.create(PersonnelBuilder.create());
+  final p2 = await harness.personnelBloc.create(PersonnelBuilder.create(
+    ouuid: operation.uuid,
+  ));
   await expectThroughLater(
     harness.personnelBloc,
     emits(isA<PersonnelCreated>().having(
@@ -417,7 +421,9 @@ Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness,
       !offline,
     )),
   );
-  final unit = await harness.unitBloc.create(UnitBuilder.create(personnels: [p1.uuid, p2.uuid]));
+  final unit = await harness.unitBloc.create(
+    UnitBuilder.create(ouuid: operation.uuid, personnels: [p1.uuid, p2.uuid]),
+  );
   await expectThroughLater(
     harness.unitBloc,
     emits(isA<UnitCreated>().having(
@@ -451,8 +457,8 @@ Future _testShouldDeleteReferenceWhenPersonnelIsDeleted(BlocTestHarness harness,
 }
 
 Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@required bool offline}) async {
-  await _prepare(harness, offline: offline);
-  final unit = UnitBuilder.create();
+  final operation = await _prepare(harness, offline: offline);
+  final unit = UnitBuilder.create(ouuid: operation.uuid);
   await harness.unitBloc.create(unit);
   await expectThroughLater(
     harness.unitBloc,
@@ -488,7 +494,7 @@ Future _testShouldUnloadWhenOperationIsUnloaded(BlocTestHarness harness, {@requi
 
 Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final unit = UnitBuilder.create();
+  final unit = UnitBuilder.create(ouuid: operation.uuid);
   await harness.unitBloc.create(unit);
   await expectThroughLater(
     harness.unitBloc,
@@ -521,7 +527,7 @@ Future _testShouldUnloadWhenOperationIsResolved(BlocTestHarness harness, {@requi
 
 Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final unit = UnitBuilder.create();
+  final unit = UnitBuilder.create(ouuid: operation.uuid);
   await harness.unitBloc.create(unit);
   await expectThroughLater(
     harness.unitBloc,
@@ -558,7 +564,7 @@ Future _testShouldUnloadWhenOperationIsCancelled(BlocTestHarness harness, {@requ
 
 Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@required bool offline}) async {
   final operation = await _prepare(harness, offline: offline);
-  final unit = UnitBuilder.create();
+  final unit = UnitBuilder.create(ouuid: operation.uuid);
   await harness.unitBloc.create(unit);
   await expectThroughLater(
     harness.unitBloc,
@@ -588,8 +594,8 @@ Future _testShouldUnloadWhenOperationIsDeleted(BlocTestHarness harness, {@requir
 }
 
 Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@required bool offline}) async {
-  await _prepare(harness, offline: offline);
-  final unit = UnitBuilder.create();
+  final operation = await _prepare(harness, offline: offline);
+  final unit = UnitBuilder.create(ouuid: operation.uuid);
   await harness.unitBloc.create(unit);
   await expectThroughLater(
     harness.unitBloc,

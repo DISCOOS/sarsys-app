@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/domain/stateful_repository.dart';
-import 'package:SarSys/features/tracking/data/repositories/position_list_repository_impl.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
 import 'package:SarSys/core/presentation/screens/splash_screen.dart';
+import 'package:SarSys/features/tracking/data/repositories/position_list_repository_impl.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
@@ -86,6 +85,7 @@ import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'data/services/navigation_service.dart';
 import 'data/services/provider.dart';
 import 'domain/repository.dart';
+import 'domain/stateful_repository.dart';
 
 class AppController {
   AppController._(
@@ -407,15 +407,14 @@ class AppController {
     final repoServices = blocs
         .whereType<ConnectionAwareBloc>()
         .map((bloc) => bloc.repos.whereType<StatefulRepository>())
-        .fold<Iterable<Service>>(
-      <Service>[positionListService],
+        .fold<Iterable<JsonService>>(
+      [positionListService.delegate],
       (services, repos) => List.from(services)
         ..addAll(
-          repos.map((repo) => repo.service),
+          repos.map((repo) => repo.service.delegate),
         ),
     ).toList();
-    final apiServices =
-        repoServices.whereType<ServiceDelegate>().map((service) => service.delegate).whereType<JsonService>().toList();
+    final apiServices = repoServices.whereType<JsonService>().toList();
 
     final api = Api(
       httpClient: client,
@@ -595,8 +594,8 @@ class AppController {
     @required Api api,
     @required Iterable<Bloc> blocs,
     @required MessageChannel channel,
-    @required Iterable<Service> services,
     @required Iterable<Repository> repos,
+    @required Iterable<Service> services,
   }) {
     assert(
       _blocs.isEmpty,

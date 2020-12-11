@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
@@ -13,7 +14,8 @@ part 'tracking_service.chopper.dart';
 /// Service for consuming the trackings endpoint
 ///
 /// Delegates to a ChopperService implementation
-class TrackingService with ServiceGetListFromId<Tracking> implements ServiceDelegate<TrackingServiceImpl> {
+class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
+    with StatefulUpdate, StatefulGetFromId, StatefulGetListFromId {
   TrackingService(
     this.sources,
   ) : delegate = TrackingServiceImpl.newInstance();
@@ -26,40 +28,13 @@ class TrackingService with ServiceGetListFromId<Tracking> implements ServiceDele
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
 
-  Future<ServiceResponse<List<Tracking>>> getSubListFromId(
-    String uuid,
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Tracking>, List<Tracking>>(
-      await delegate.fetchAll(
-        uuid,
-        offset,
-        limit,
-      ),
-    );
-  }
-
-  /// PATCH ../tracking/{uuid}
-  Future<ServiceResponse<Tracking>> update(Tracking tracking) async {
-    return Api.from<Tracking, Tracking>(
-      await delegate.update(
-        tracking.uuid,
-        tracking,
-      ),
-      // Created 201 returns uri to created tracking in body
-      body: tracking,
-    );
-  }
-
   void dispose() {
     _controller.close();
   }
 }
 
 @ChopperApi()
-abstract class TrackingServiceImpl extends JsonService<Tracking, TrackingModel> {
+abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingModel> {
   TrackingServiceImpl()
       : super(
           decoder: (json) => TrackingModel.fromJson(json),
@@ -71,19 +46,43 @@ abstract class TrackingServiceImpl extends JsonService<Tracking, TrackingModel> 
         );
   static TrackingServiceImpl newInstance([ChopperClient client]) => _$TrackingServiceImpl(client);
 
+  @override
+  Future<Response<StorageState<Tracking>>> onUpdate(StorageState<Tracking> state) => update(
+        state.value.uuid,
+        state.value,
+      );
+
+  @Patch(path: '/trackings/{uuid}')
+  Future<Response<StorageState<Tracking>>> update(
+    @Path('uuid') String uuid,
+    @Body() Tracking body,
+  );
+
+  @override
+  Future<Response<StorageState<Tracking>>> onGetFromId(
+    String id, {
+    List<String> options = const [],
+  }) =>
+      get(id, expand: options);
+
+  @Get(path: '/trackings/{uuid}')
+  Future<Response<StorageState<Tracking>>> get(
+    @Path() uuid, {
+    @Query('expand') List<String> expand = const [],
+  });
+
+  @override
+  Future<Response<PagedList<StorageState<Tracking>>>> onGetPageFromId(
+          String id, int offset, int limit, List<String> options) =>
+      getAll(id, offset, limit);
+
   @Get(path: '/operations/{ouuid}/trackings')
-  Future<Response<PagedList<Tracking>>> fetchAll(
-    @Path() ouuid,
+  Future<Response<PagedList<StorageState<Tracking>>>> getAll(
+    @Path('ouuid') ouuid,
     @Query('offset') int offset,
     @Query('limit') int limit, {
     @Query('expand') List<String> expand = const [],
   });
-
-  @Patch(path: '/trackings/{uuid}')
-  Future<Response<Tracking>> update(
-    @Path('uuid') String uuid,
-    @Body() Tracking body,
-  );
 }
 
 enum TrackingMessageType { created, updated, deleted }

@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:SarSys/core/domain/models/core.dart';
-import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:chopper/chopper.dart';
 
-import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
@@ -13,52 +14,14 @@ part 'department_service.chopper.dart';
 /// Service for consuming the departments endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DepartmentService with ServiceGetList<Department> implements ServiceDelegate<DepartmentServiceImpl> {
-  final DepartmentServiceImpl delegate;
-
+class DepartmentService extends StatefulServiceDelegate<Department, DepartmentModel>
+    with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList, StatefulGetFromId {
   DepartmentService() : delegate = DepartmentServiceImpl.newInstance();
-
-  Future<ServiceResponse<List<Department>>> getSubList(
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Department>, List<Department>>(
-      await delegate.fetch(offset: offset, limit: limit),
-    );
-  }
-
-  Future<ServiceResponse<Department>> create(Department department) async {
-    return Api.from<String, Department>(
-      await delegate.create(
-        department.division.uuid,
-        department,
-      ),
-      // Created 201 returns uri to created department in body
-      body: department,
-    );
-  }
-
-  Future<ServiceResponse<Department>> update(Department department) async {
-    return Api.from<Department, Department>(
-      await delegate.update(
-        department.uuid,
-        department,
-      ),
-      // Created 201 returns uri to created department in body
-      body: department,
-    );
-  }
-
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Department, Department>(await delegate.delete(
-      uuid,
-    ));
-  }
+  final DepartmentServiceImpl delegate;
 }
 
 @ChopperApi()
-abstract class DepartmentServiceImpl extends JsonService<Department, DepartmentModel> {
+abstract class DepartmentServiceImpl extends StatefulService<Department, DepartmentModel> {
   DepartmentServiceImpl()
       : super(
           decoder: (json) => DepartmentModel.fromJson(json),
@@ -69,26 +32,50 @@ abstract class DepartmentServiceImpl extends JsonService<Department, DepartmentM
 
   static DepartmentServiceImpl newInstance([ChopperClient client]) => _$DepartmentServiceImpl(client);
 
-  @Post(path: '/divisions/{duuid}/departments')
+  @override
+  Future<Response<String>> onCreate(StorageState<Department> state) => create(
+        state.value.division.uuid,
+        state.value,
+      );
+
+  @Post(path: '/divisions/{uuid}/departments')
   Future<Response<String>> create(
-    @Path() String duuid,
+    @Path() String uuid,
     @Body() Department body,
   );
 
-  @Get(path: '/departments')
-  Future<Response<PagedList<Department>>> fetch({
-    @Query('offset') int offset = 0,
-    @Query('limit') int limit = 20,
-  });
+  @override
+  Future<Response<StorageState<Department>>> onUpdate(StorageState<Department> state) => update(
+        state.value.uuid,
+        state.value,
+      );
 
   @Patch(path: '/departments/{uuid}')
-  Future<Response<Department>> update(
+  Future<Response<StorageState<Department>>> update(
     @Path('uuid') String uuid,
     @Body() Department body,
   );
+
+  @override
+  Future<Response<StorageState<Department>>> onDelete(StorageState<Department> state) => delete(
+        state.value.uuid,
+      );
 
   @Delete(path: '/departments/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
+  );
+
+  @override
+  Future<Response<PagedList<StorageState<Department>>>> onGetPage(int offset, int limit, List<String> options) =>
+      getAll(
+        offset,
+        limit,
+      );
+
+  @Get(path: '/departments')
+  Future<Response<PagedList<StorageState<Department>>>> getAll(
+    @Query('offset') int offset,
+    @Query('limit') int limit,
   );
 }

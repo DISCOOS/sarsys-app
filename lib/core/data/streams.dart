@@ -537,6 +537,12 @@ class StreamResult<T> {
 
   static StreamResult<T> none<T>({String tag}) => StreamResult<T>(tag: tag);
   static StreamResult<T> stop<T>({String tag}) => StreamResult<T>(tag: tag, stop: true);
+  static StreamResult<T> failed<T>(Object error, {StackTrace stackTrace, String tag, bool stop}) => StreamResult<T>(
+        tag: tag,
+        stop: stop,
+        error: error,
+        stackTrace: stackTrace,
+      );
 
   final T value;
   final Object tag;

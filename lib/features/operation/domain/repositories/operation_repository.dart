@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:SarSys/core/domain/stateful_repository.dart';
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/operation/data/services/operation_service.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -15,10 +14,10 @@ abstract class OperationRepository implements StatefulRepository<String, Operati
   /// Get [Incident] repository
   IncidentRepository get incidents;
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Operation> state) {
-    return state?.value?.uuid;
+  String toKey(Operation value) {
+    return value?.uuid;
   }
 
   /// Load incidents

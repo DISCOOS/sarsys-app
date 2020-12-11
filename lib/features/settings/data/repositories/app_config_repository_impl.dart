@@ -16,7 +16,7 @@ import 'package:SarSys/core/data/services/connectivity_service.dart';
 
 const int APP_CONFIG_VERSION = 1;
 
-class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConfigService>
+class AppConfigRepositoryImpl extends StatefulRepository<String, AppConfig, AppConfigService>
     implements AppConfigRepository {
   AppConfigRepositoryImpl(
     this.version, {
@@ -32,13 +32,13 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
   final String assets;
 
   /// Get current [AppConfig] instance
-  AppConfig get config => this[version];
+  AppConfig get config => this['$version'];
 
   /// Get current state
-  StorageState<AppConfig> get state => getState(version);
+  StorageState<AppConfig> get state => getState('$version');
 
   @override
-  int toKey(StorageState<AppConfig> state) => version;
+  String toKey(AppConfig value) => '$version';
 
   /// Create [AppConfig] from json
   AppConfig fromJson(Map<String, dynamic> json) => AppConfigModel.fromJson(json);
@@ -55,13 +55,17 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
   Future<AppConfig> init({
     Completer<Iterable<AppConfig>> onRemote,
   }) async {
-    final onPush = Completer<AppConfig>();
-    onPush.future.then(
-      (value) => onRemote.complete([value]),
-      onError: onRemote.completeError,
-    );
+    var onPush;
+    if (onRemote != null) {
+      onPush = Completer<AppConfig>();
+      onPush.future.then(
+        (value) => onRemote.complete([value]),
+        onError: onRemote.completeError,
+      );
+    }
+    final state = await _open(force: true);
     return push(
-      await _open(force: true),
+      state,
       onResult: onPush,
     );
   }
@@ -77,9 +81,9 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
         (value) => onRemote.complete([value]),
         onError: onRemote.completeError,
       );
-      return containsKey(version)
+      return containsKey('$version')
           ? requestQueue.push(
-              toKey(state),
+              toKey(state.value),
               onResult: onPush,
             )
           : push(
@@ -97,7 +101,7 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
     if (force || !isReady) {
       await prepare(force: force);
     }
-    var current = getState(version);
+    var current = getState('$version');
     if (force || current == null) {
       current = await _initFromAssets(current);
     } else if ((current.value.version ?? 0) < version) {
@@ -112,17 +116,20 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
     final newJson = jsonDecode(assetData) as Map<String, dynamic>;
     var init = AppConfigModel.fromJson(newJson);
     final udid = await FlutterUdid.consistentUdid;
+    final uuid = current?.value?.uuid ?? Uuid().v4();
     final next = init.copyWith(
-      uuid: current?.value?.uuid ?? Uuid().v4(),
+      uuid: uuid,
       udid: udid,
       version: version,
     );
     return current?.isRemote == true
         ? StorageState.updated(
             next,
+            getVersion('$version'),
           )
         : StorageState.created(
             next,
+            StateVersion.first,
           );
   }
 
@@ -142,11 +149,11 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
   Future<AppConfig> _load({
     Completer<Iterable<AppConfig>> onRemote,
   }) async {
-    final state = getState(version);
+    final state = getState('$version');
     requestQueue.load(
       () async {
-        final response = await service.fetch(state.value.uuid);
-        return response?.copyWith<Iterable<AppConfig>>(
+        final response = await service.getFromId(state.value.uuid);
+        return response.copyWith<List<StorageState<AppConfig>>>(
           body: [response.body],
         );
       },
@@ -160,10 +167,10 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
   Future<Iterable<AppConfig>> onReset({Iterable<AppConfig> previous}) async => [await _load()];
 
   @override
-  Future<AppConfig> onCreate(StorageState<AppConfig> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<AppConfig>> onCreate(StorageState<AppConfig> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw AppConfigServiceException(
       'Failed to create AppConfig ${state.value}',
@@ -171,12 +178,10 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
     );
   }
 
-  Future<AppConfig> onUpdate(StorageState<AppConfig> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<AppConfig>> onUpdate(StorageState<AppConfig> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     } else if (response.is404) {
       return onCreate(state);
     }
@@ -186,10 +191,10 @@ class AppConfigRepositoryImpl extends StatefulRepository<int, AppConfig, AppConf
     );
   }
 
-  Future<AppConfig> onDelete(StorageState<AppConfig> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<AppConfig>> onDelete(StorageState<AppConfig> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw AppConfigServiceException(
       'Failed to delete AppConfig ${state.value}',

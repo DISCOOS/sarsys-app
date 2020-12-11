@@ -63,7 +63,7 @@ class PersonBuilder {
 class PersonServiceMock extends Mock implements PersonService {
   PersonServiceMock(this.states);
   final Box<StorageState<Person>> states;
-  final Map<String, Person> personRepo = {};
+  final Map<String, StorageState<Person>> personRepo = {};
 
   Future<Person> add({
     String uuid,
@@ -93,6 +93,11 @@ class PersonServiceMock extends Mock implements PersonService {
     Person person, {
     bool storage = true,
   }) async {
+    final state = StorageState.created(
+      person,
+      StateVersion.first,
+      isRemote: true,
+    );
     // Persons are only loaded
     // from server with affiliation command.
     // Therefore, we need to add them to
@@ -104,17 +109,14 @@ class PersonServiceMock extends Mock implements PersonService {
     if (storage) {
       await states.put(
         person.uuid,
-        StorageState.created(
-          person,
-          isRemote: true,
-        ),
+        state,
       );
     }
-    personRepo[person.uuid] = person;
+    personRepo[person.uuid] = state;
     return person;
   }
 
-  Person remove(String uuid) {
+  StorageState<Person> remove(String uuid) {
     return personRepo.remove(uuid);
   }
 
@@ -144,7 +146,13 @@ class PersonServiceMock extends Mock implements PersonService {
     });
     when(mock.create(any)).thenAnswer((_) async {
       await _doThrottle();
-      final person = _.positionalArguments[0] as Person;
+      final state = _.positionalArguments[0] as StorageState<Person>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final person = state.value;
       final existing = findExistingUser(person, personRepo);
       if (existing != null) {
         return ServiceResponse.asConflict(
@@ -156,28 +164,48 @@ class PersonServiceMock extends Mock implements PersonService {
           ),
         );
       }
-      personRepo[person.uuid] = person;
-      return ServiceResponse.created();
+      final uuid = person.uuid;
+      personRepo[uuid] = state.remote(
+        state.value,
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: personRepo[uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();
-      final person = _.positionalArguments[0] as Person;
-      if (personRepo.containsKey(person.uuid)) {
-        personRepo[person.uuid] = person;
+      final next = _.positionalArguments[0] as StorageState<Person>;
+      final uuid = next.value.uuid;
+      if (personRepo.containsKey(uuid)) {
+        final state = personRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        personRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
+        );
         return ServiceResponse.ok(
-          body: person,
+          body: personRepo[uuid],
         );
       }
       return ServiceResponse.notFound(
-        message: "Person not found: ${person.uuid}",
+        message: "Person not found: $uuid",
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
       await _doThrottle();
-      final String uuid = _.positionalArguments[0];
+      final state = _.positionalArguments[0] as StorageState<Person>;
+      final uuid = state.value.uuid;
       if (personRepo.containsKey(uuid)) {
-        personRepo.remove(uuid);
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(
+          body: personRepo.remove(uuid),
+        );
       }
       return ServiceResponse.notFound(
         message: "Person not found: $uuid",
@@ -186,8 +214,9 @@ class PersonServiceMock extends Mock implements PersonService {
     return mock;
   }
 
-  static Person findExistingUser(Person person, Map<String, Person> personRepo) =>
-      person.userId != null ? personRepo.values.where((p) => p.userId == person.userId).firstOrNull : null;
+  static Person findExistingUser(Person person, Map<String, StorageState<Person>> personRepo) => person.userId != null
+      ? personRepo.values.map((s) => s.value).where((p) => p.userId == person.userId).firstOrNull
+      : null;
 
   static Future _doThrottle() async {
     if (_throttle != null) {

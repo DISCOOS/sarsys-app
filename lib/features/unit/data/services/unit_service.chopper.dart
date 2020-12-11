@@ -25,20 +25,11 @@ class _$UnitServiceImpl extends UnitServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Unit>>> fetch(
-      dynamic ouuid, int offset, int limit) {
-    final $url = '/operations/$ouuid/units';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Unit>, Unit>($request);
-  }
-
-  @override
-  Future<Response<Unit>> update(String uuid, Unit unit) {
+  Future<Response<StorageState<Unit>>> update(String uuid, Unit personnel) {
     final $url = 'units/$uuid';
-    final $body = unit;
+    final $body = personnel;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Unit, Unit>($request);
+    return client.send<StorageState<Unit>, Unit>($request);
   }
 
   @override
@@ -46,5 +37,14 @@ class _$UnitServiceImpl extends UnitServiceImpl {
     final $url = 'units/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Unit>>>> onGetPageFromId(
+      String id, int offset, int limit, List<String> options) {
+    final $url = '/operations/$id/units';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<StorageState<Unit>>, Unit>($request);
   }
 }

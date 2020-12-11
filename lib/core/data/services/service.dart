@@ -37,23 +37,27 @@ abstract class JsonService<D, R> extends ChopperService implements Service {
       };
 }
 
-abstract class ServiceDelegate<S> implements Service {
+abstract class ServiceDelegate<S extends Service> implements Service {
   S get delegate;
 }
 
-mixin ServiceGetFromId<T extends JsonObject> {
-  Future<ServiceResponse<T>> getFromId(String id) async {
+abstract class JsonServiceDelegate<S extends JsonService<D, R>, D, R> implements Service {
+  S get delegate;
+}
+
+mixin JsonServiceGetFromId<S extends JsonService<D, R>, D extends JsonObject, R> on JsonServiceDelegate<S, D, R> {
+  Future<ServiceResponse<D>> getFromId(String id) async {
     throw UnimplementedError("fetch not implemented");
   }
 }
 
-mixin ServiceGetList<T extends JsonObject> {
-  Future<ServiceResponse<List<T>>> getList({
+mixin JsonServiceGetList<S extends JsonService<D, R>, D extends JsonObject, R> on JsonServiceDelegate<S, D, R> {
+  Future<ServiceResponse<List<D>>> getList({
     int offset = 0,
     int limit = 20,
     List<String> options = const [],
   }) async {
-    final body = <T>[];
+    final body = <D>[];
     var response = await getSubList(
       offset,
       limit,
@@ -74,7 +78,7 @@ mixin ServiceGetList<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubList(
+  Future<ServiceResponse<List<D>>> getSubList(
     int offset,
     int limit,
     List<String> options,
@@ -83,14 +87,14 @@ mixin ServiceGetList<T extends JsonObject> {
   }
 }
 
-mixin ServiceGetListFromId<T extends JsonObject> {
-  Future<ServiceResponse<List<T>>> getListFromId(
+mixin JsonServiceGetListFromId<S extends JsonService<D, R>, D extends JsonObject, R> on JsonServiceDelegate<S, D, R> {
+  Future<ServiceResponse<List<D>>> getListFromId(
     String id, {
     int offset = 0,
     int limit = 20,
     List<String> options = const [],
   }) async {
-    final items = <T>[];
+    final items = <D>[];
     var response = await getSubListFromId(
       id,
       offset,
@@ -113,7 +117,7 @@ mixin ServiceGetListFromId<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubListFromId(
+  Future<ServiceResponse<List<D>>> getSubListFromId(
     String id,
     int offset,
     int limit,
@@ -123,21 +127,21 @@ mixin ServiceGetListFromId<T extends JsonObject> {
   }
 }
 
-mixin ServiceGetFromIds<T extends JsonObject> {
-  Future<ServiceResponse<T>> getFromIds(String id1, String id2) async {
+mixin JsonServiceGetFromIds<S extends JsonService<D, R>, D extends JsonObject, R> on JsonServiceDelegate<S, D, R> {
+  Future<ServiceResponse<D>> getFromIds(String id1, String id2) async {
     throw UnimplementedError("get not implemented");
   }
 }
 
-mixin ServiceGetListFromIds<T extends JsonObject> {
-  Future<ServiceResponse<List<T>>> getListFromIds(
+mixin JsonServiceGetListFromIds<S extends JsonService<D, R>, D extends JsonObject, R> on JsonServiceDelegate<S, D, R> {
+  Future<ServiceResponse<List<D>>> getListFromIds(
     String id1,
     String id2, {
     int offset = 0,
     int limit = 20,
     List<String> options = const [],
   }) async {
-    final items = <T>[];
+    final items = <D>[];
     var response = await getSubListFromIds(
       id1,
       id2,
@@ -162,7 +166,7 @@ mixin ServiceGetListFromIds<T extends JsonObject> {
     return response;
   }
 
-  Future<ServiceResponse<List<T>>> getSubListFromIds(
+  Future<ServiceResponse<List<D>>> getSubListFromIds(
     String id1,
     String id2,
     int offset,
@@ -173,8 +177,8 @@ mixin ServiceGetListFromIds<T extends JsonObject> {
   }
 }
 
-class ServiceResponse<T> extends Equatable {
-  final T body;
+class ServiceResponse<D> extends Equatable {
+  final D body;
   final Object error;
   final int statusCode;
   final PageResult page;
@@ -200,8 +204,8 @@ class ServiceResponse<T> extends Equatable {
           reasonPhrase,
         ]);
 
-  ServiceResponse<T> copyWith<T>({T body, int code, String message}) {
-    return ServiceResponse<T>(
+  ServiceResponse<D> copyWith<D>({D body, int code, String message}) {
+    return ServiceResponse<D>(
       page: page,
       error: error,
       body: body ?? body,
@@ -212,71 +216,71 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> ok<T>({T body}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> ok<D>({D body}) {
+    return ServiceResponse<D>(
       statusCode: 200,
       reasonPhrase: 'OK',
       body: body,
     );
   }
 
-  static ServiceResponse<T> created<T>() {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> created<D>() {
+    return ServiceResponse<D>(
       statusCode: 201,
       reasonPhrase: 'Created',
     );
   }
 
-  static ServiceResponse<T> noContent<T>({String message = 'No content'}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> noContent<D>({String message = 'No content'}) {
+    return ServiceResponse<D>(
       statusCode: 204,
       reasonPhrase: message,
     );
   }
 
-  static ServiceResponse<T> badRequest<T>({message: 'Bad request'}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> badRequest<D>({message: 'Bad request'}) {
+    return ServiceResponse<D>(
       statusCode: 400,
       reasonPhrase: message,
     );
   }
 
-  static ServiceResponse<T> unauthorized<T>({message: 'Unauthorized', Object error}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> unauthorized<D>({message: 'Unauthorized', Object error}) {
+    return ServiceResponse<D>(
       error: error,
       statusCode: 401,
       reasonPhrase: message,
     );
   }
 
-  static ServiceResponse<T> forbidden<T>({message: 'Forbidden'}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> forbidden<D>({message: 'Forbidden'}) {
+    return ServiceResponse<D>(
       statusCode: 403,
       reasonPhrase: message,
     );
   }
 
-  static ServiceResponse<T> notFound<T>({message: 'Not found'}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> notFound<D>({message: 'Not found'}) {
+    return ServiceResponse<D>(
       statusCode: 404,
       reasonPhrase: message,
     );
   }
 
-  static ServiceResponse<T> asConflict<T>({@required ConflictModel conflict, message: 'Conflict'}) {
-    return ServiceResponse<T>(
+  static ServiceResponse<D> asConflict<D>({@required ConflictModel conflict, message: 'Conflict'}) {
+    return ServiceResponse<D>(
       statusCode: 409,
       reasonPhrase: message,
       conflict: conflict,
     );
   }
 
-  static ServiceResponse<T> internalServerError<T>({
+  static ServiceResponse<D> internalServerError<D>({
     Object error,
     StackTrace stackTrace,
     message: 'Internal server error',
   }) {
-    return ServiceResponse<T>(
+    return ServiceResponse<D>(
       error: error,
       statusCode: 500,
       reasonPhrase: message,
@@ -284,12 +288,12 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> badGateway<T>({
+  static ServiceResponse<D> badGateway<D>({
     Object error,
     StackTrace stackTrace,
     message: 'Bad gateway',
   }) {
-    return ServiceResponse<T>(
+    return ServiceResponse<D>(
       error: error,
       statusCode: 502,
       reasonPhrase: message,
@@ -297,12 +301,12 @@ class ServiceResponse<T> extends Equatable {
     );
   }
 
-  static ServiceResponse<T> gatewayTimeout<T>({
+  static ServiceResponse<D> gatewayTimeout<D>({
     Object error,
     StackTrace stackTrace,
     message: 'Gateway timeout',
   }) {
-    return ServiceResponse<T>(
+    return ServiceResponse<D>(
       error: error,
       statusCode: 504,
       reasonPhrase: message,
@@ -311,6 +315,7 @@ class ServiceResponse<T> extends Equatable {
   }
 
   bool get isErrorCode => (statusCode ?? 0) >= 400;
+  bool get isOK => is200 || is201 || is202 || is204;
   bool get isErrorTemporary => is429 || is503 || is504;
 
   bool get is200 => statusCode == HttpStatus.ok;
@@ -331,7 +336,7 @@ class ServiceResponse<T> extends Equatable {
 
   @override
   String toString() {
-    return 'ServiceResponse{\n'
+    return '$runtimeType{\n'
         'body: $body, \n'
         'error: $error, \n'
         'statusCode: $statusCode, \n'
@@ -372,9 +377,9 @@ class ServiceException implements Exception {
   }
 }
 
-class PagedList<T> {
+class PagedList<D> {
   PagedList(this.items, this.page);
-  final List<T> items;
+  final List<D> items;
   final PageResult page;
 }
 

@@ -51,7 +51,7 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
       .cast<StorageState<T>>();
 
   Widget _buildTile(BuildContext context, StorageState<T> state) {
-    final key = widget.repository.toKey(state);
+    final key = widget.repository.toKey(state.value);
     return ListTile(
       title: SelectableText(widget.subject(state)),
       subtitle: Column(
@@ -63,6 +63,7 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
           if (widget.content != null) SelectableText('${widget.content(state)}'),
           SelectableText('Status ${enumName(state.status)}, '
               'last change was ${state.isLocal ? 'local' : 'remote'},'),
+          SelectableText('Version ${state.version}'),
           if (state.isError) SelectableText('Last error: ${state.error}'),
         ],
       ),

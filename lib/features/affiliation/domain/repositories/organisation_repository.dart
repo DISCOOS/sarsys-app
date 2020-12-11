@@ -1,16 +1,15 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/organisation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 
 abstract class OrganisationRepository implements StatefulRepository<String, Organisation, OrganisationService> {
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Organisation> state) {
-    return state?.value?.uuid;
+  String toKey(Organisation value) {
+    return value?.uuid;
   }
 
   /// Load organisations

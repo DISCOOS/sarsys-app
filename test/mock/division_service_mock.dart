@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:SarSys/features/affiliation/data/services/division_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
@@ -50,7 +51,7 @@ class DivisionBuilder {
 }
 
 class DivisionServiceMock extends Mock implements DivisionService {
-  final Map<String, Division> divRepo = {};
+  final Map<String, StorageState<Division>> divRepo = {};
 
   Division add(
     String orguuid, {
@@ -68,11 +69,16 @@ class DivisionServiceMock extends Mock implements DivisionService {
       departments: departments,
       active: active,
     );
-    divRepo[div.uuid] = div;
+    divRepo[div.uuid] = StorageState.created(
+      div,
+      StateVersion.first,
+      isRemote: true,
+    );
+    ;
     return div;
   }
 
-  Division remove(String uuid) {
+  StorageState<Division> remove(String uuid) {
     return divRepo.remove(uuid);
   }
 
@@ -91,7 +97,11 @@ class DivisionServiceMock extends Mock implements DivisionService {
             suffix: "$i",
             departments: List.generate(deps, (j) => '$orguuid:div:$i:dep:$j'),
           );
-          divRepo[divuuid] = div;
+          divRepo[divuuid] = StorageState.created(
+            div,
+            StateVersion.first,
+            isRemote: true,
+          );
         }
       }
     });
@@ -102,27 +112,52 @@ class DivisionServiceMock extends Mock implements DivisionService {
       );
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final uuid = _.positionalArguments[0];
-      divRepo[uuid] = _.positionalArguments[1];
-      return ServiceResponse.created();
+      final state = _.positionalArguments[0] as StorageState<Division>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Division has not version 0: $state",
+        );
+      }
+      final uuid = state.value.uuid;
+      divRepo[uuid] = state.remote(
+        state.value,
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: divRepo[uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
-      final Division org = _.positionalArguments[0];
-      if (divRepo.containsKey(org.uuid)) {
-        divRepo[org.uuid] = org;
+      final next = _.positionalArguments[0] as StorageState<Division>;
+      final uuid = next.value.uuid;
+      if (divRepo.containsKey(uuid)) {
+        final state = divRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        divRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
+        );
         return ServiceResponse.ok(
-          body: org,
+          body: divRepo[uuid],
         );
       }
       return ServiceResponse.notFound(
-        message: "Division not found: ${org.uuid}",
+        message: "Division not found: $uuid",
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      final String uuid = _.positionalArguments[0];
+      final state = _.positionalArguments[0] as StorageState<Division>;
+      final uuid = state.value.uuid;
       if (divRepo.containsKey(uuid)) {
-        divRepo.remove(uuid);
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(
+          body: divRepo.remove(uuid),
+        );
       }
       return ServiceResponse.notFound(
         message: "Division not found: $uuid",

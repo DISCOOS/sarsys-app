@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/services/department_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Department.dart';
@@ -46,7 +47,7 @@ class DepartmentBuilder {
 }
 
 class DepartmentServiceMock extends Mock implements DepartmentService {
-  final Map<String, Department> depRepo = {};
+  final Map<String, StorageState<Department>> depRepo = {};
 
   Department add(
     String divuuid, {
@@ -62,11 +63,16 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
       suffix: suffix ?? '${depRepo.length + 1}',
       active: active ?? true,
     );
-    depRepo[dep.uuid] = dep;
+    final state = StorageState.created(
+      dep,
+      StateVersion.first,
+      isRemote: true,
+    );
+    depRepo[dep.uuid] = state;
     return dep;
   }
 
-  Department remove(String uuid) {
+  StorageState<Department> remove(String uuid) {
     return depRepo.remove(uuid);
   }
 
@@ -85,7 +91,11 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
               name: "Dep $j",
               suffix: "$j",
             );
-            depRepo[depuuid] = dep;
+            depRepo[depuuid] = StorageState.created(
+              dep,
+              StateVersion.first,
+              isRemote: true,
+            );
           }
         }
       }
@@ -97,27 +107,52 @@ class DepartmentServiceMock extends Mock implements DepartmentService {
       );
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final uuid = _.positionalArguments[0];
-      depRepo[uuid] = _.positionalArguments[1];
-      return ServiceResponse.created();
+      final state = _.positionalArguments[0] as StorageState<Department>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final uuid = state.value.uuid;
+      depRepo[uuid] = state.remote(
+        state.value,
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: depRepo[uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
-      final Department org = _.positionalArguments[0];
-      if (depRepo.containsKey(org.uuid)) {
-        depRepo[org.uuid] = org;
+      final next = _.positionalArguments[0] as StorageState<Department>;
+      final uuid = next.value.uuid;
+      if (depRepo.containsKey(uuid)) {
+        final state = depRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        depRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
+        );
         return ServiceResponse.ok(
-          body: org,
+          body: depRepo[uuid],
         );
       }
       return ServiceResponse.notFound(
-        message: "Department not found: ${org.uuid}",
+        message: "Department not found: $uuid",
       );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      final String uuid = _.positionalArguments[0];
+      final state = _.positionalArguments[0] as StorageState<Department>;
+      final uuid = state.value.uuid;
       if (depRepo.containsKey(uuid)) {
-        depRepo.remove(uuid);
-        return ServiceResponse.noContent();
+        return ServiceResponse.ok(
+          body: depRepo.remove(uuid),
+        );
       }
       return ServiceResponse.notFound(
         message: "Department not found: $uuid",

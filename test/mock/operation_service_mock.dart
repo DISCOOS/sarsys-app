@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mockito/mockito.dart';
 import 'package:uuid/uuid.dart';
@@ -88,7 +89,7 @@ class OperationBuilder {
 }
 
 class OperationServiceMock extends Mock implements OperationService {
-  static final Map<String, Operation> _operations = {};
+  static final Map<String, StorageState<Operation>> _operationRepo = {};
 
   Operation add(
     String userId, {
@@ -104,20 +105,25 @@ class OperationServiceMock extends Mock implements OperationService {
       since: since,
       passcode: passcode,
     );
-    _operations[operation.uuid] = operation;
+    final state = StorageState.created(
+      operation,
+      StateVersion.first,
+      isRemote: true,
+    );
+    _operationRepo[operation.uuid] = state;
     return operation;
   }
 
-  Operation remove(uuid) {
-    return _operations.remove(uuid);
+  StorageState<Operation> remove(uuid) {
+    return _operationRepo.remove(uuid);
   }
 
   OperationServiceMock reset() {
-    _operations.clear();
+    _operationRepo.clear();
     return this;
   }
 
-  static MapEntry<String, Operation> _buildEntry(
+  static MapEntry<String, StorageState<Operation>> _buildEntry(
     String uuid,
     int since,
     User user,
@@ -125,13 +131,17 @@ class OperationServiceMock extends Mock implements OperationService {
   ) =>
       MapEntry(
         uuid,
-        OperationModel.fromJson(
-          OperationBuilder.createOperationAsJson(
-            ouuid: uuid,
-            since: since,
-            userId: user.userId,
-            passcode: passcode,
+        StorageState.created(
+          OperationModel.fromJson(
+            OperationBuilder.createOperationAsJson(
+              ouuid: uuid,
+              since: since,
+              userId: user.userId,
+              passcode: passcode,
+            ),
           ),
+          StateVersion.first,
+          isRemote: true,
         ),
       );
 
@@ -142,7 +152,7 @@ class OperationServiceMock extends Mock implements OperationService {
     List<String> iuuids = const [],
     final int count = 0,
   }) {
-    _operations.clear();
+    _operationRepo.clear();
     final user = users.user;
     final OperationServiceMock mock = OperationServiceMock();
     final unauthorized = UserServiceMock.createToken("unauthorized", role).toUser();
@@ -150,7 +160,7 @@ class OperationServiceMock extends Mock implements OperationService {
     // Only generate operations for automatically generated incidents
     iuuids.forEach((iuuid) {
       if (iuuid.startsWith('a:')) {
-        _operations.addEntries([
+        _operationRepo.addEntries([
           for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
@@ -162,23 +172,32 @@ class OperationServiceMock extends Mock implements OperationService {
       if (authorized == null) {
         return ServiceResponse.unauthorized();
       }
-      if (_operations.isEmpty) {
+      if (_operationRepo.isEmpty) {
         var user = await users.load();
-        _operations.addEntries([
+        _operationRepo.addEntries([
           for (var i = 1; i <= count ~/ 2; i++) _buildEntry("a:x$i", i, user, passcode),
           for (var i = count ~/ 2 + 1; i <= count; i++) _buildEntry("a:y$i", i, unauthorized, passcode)
         ]);
       }
-      return ServiceResponse.ok(body: _operations.values.toList(growable: false));
+      return ServiceResponse.ok(
+        body: _operationRepo.values.toList(growable: false),
+      );
     });
     when(mock.create(any)).thenAnswer((_) async {
       final authorized = await users.load();
       if (authorized == null) {
         return ServiceResponse.unauthorized();
       }
-      final Operation operation = _.positionalArguments[0];
+      final state = _.positionalArguments[0] as StorageState<Operation>;
+      if (!state.version.isFirst) {
+        return ServiceResponse.badRequest(
+          message: "Aggregate has not version 0: $state",
+        );
+      }
+      final uuid = state.value.uuid;
+      final Operation operation = state.value;
       final created = OperationModel(
-        uuid: operation.uuid,
+        uuid: uuid,
         name: operation.name,
         type: operation.type,
         passcodes: Passcodes(
@@ -196,28 +215,49 @@ class OperationServiceMock extends Mock implements OperationService {
         resolution: operation.resolution,
         justification: operation.justification,
       );
-      _operations.putIfAbsent(created.uuid, () => created);
-      return ServiceResponse.created();
+      _operationRepo[uuid] = state.remote(
+        created,
+        version: state.version,
+      );
+      return ServiceResponse.ok(
+        body: _operationRepo[uuid],
+      );
     });
     when(mock.update(any)).thenAnswer((_) async {
-      var operation = _.positionalArguments[0];
-      if (_operations.containsKey(operation.uuid)) {
-        _operations.update(
-          operation.uuid,
-          (_) => operation,
-          ifAbsent: () => operation,
+      final next = _.positionalArguments[0] as StorageState<Operation>;
+      final uuid = next.value.uuid;
+      if (_operationRepo.containsKey(uuid)) {
+        final state = _operationRepo[uuid];
+        final delta = next.version.value - state.version.value;
+        if (delta != 1) {
+          return ServiceResponse.badRequest(
+            message: "Wrong version: expected ${state.version + 1}, actual was ${next.version}",
+          );
+        }
+        _operationRepo[uuid] = state.apply(
+          next.value,
+          replace: false,
+          isRemote: true,
         );
-        return ServiceResponse.ok(body: operation);
+        return ServiceResponse.ok(
+          body: _operationRepo[uuid],
+        );
       }
-      return ServiceResponse.notFound(message: "Not found. Operation ${operation.uuid}");
+      return ServiceResponse.notFound(
+        message: "Operation not found: $uuid",
+      );
     });
     when(mock.delete(any)).thenAnswer((_) async {
-      var uuid = _.positionalArguments[0];
-      if (_operations.containsKey(uuid)) {
-        _operations.remove(uuid);
-        return ServiceResponse.noContent();
+      final state = _.positionalArguments[0] as StorageState<Operation>;
+      final uuid = state.value.uuid;
+      if (_operationRepo.containsKey(uuid)) {
+        return ServiceResponse.ok(
+          body: _operationRepo.remove(uuid),
+        );
       }
-      return ServiceResponse.notFound(message: "Not found. Operation $uuid");
+      return ServiceResponse.notFound(
+        message: "Operation not found: $uuid",
+      );
     });
     return mock;
   }

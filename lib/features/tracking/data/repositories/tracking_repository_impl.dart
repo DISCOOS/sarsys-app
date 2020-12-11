@@ -47,10 +47,10 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   @override
   bool get isReady => super.isReady && _ouuid != null;
 
-  /// Get [Tracking.uuid] from [state]
+  /// Get [Tracking.uuid] from [value]
   @override
-  String toKey(StorageState<Tracking> state) {
-    return state.value.uuid;
+  String toKey(Tracking value) {
+    return value?.uuid;
   }
 
   /// Create [Tracking] from json
@@ -252,12 +252,12 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   /// Tracking are created in the backend,
   /// just return current value
   @override
-  Future<Tracking> onCreate(StorageState<Tracking> state) => Future.value(state.value);
+  Future<StorageState<Tracking>> onCreate(StorageState<Tracking> state) => Future.value(state);
 
   @override
-  Future<Tracking> onUpdate(StorageState<Tracking> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Tracking>> onUpdate(StorageState<Tracking> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
     }
     throw TrackingServiceException(
@@ -268,5 +268,5 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
   }
 
   @override
-  Future<Tracking> onDelete(StorageState<Tracking> state) => Future.value(state.value);
+  Future<StorageState<Tracking>> onDelete(StorageState<Tracking> state) => Future.value(state);
 }

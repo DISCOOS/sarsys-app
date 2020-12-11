@@ -1,67 +1,27 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
 import 'package:chopper/chopper.dart';
 
-import 'package:SarSys/core/data/api.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Division.dart';
 import 'package:SarSys/core/data/services/service.dart';
 
 part 'division_service.chopper.dart';
 
-/// Service for consuming the divisions endpoint
+/// Service for consuming the organisations endpoint
 ///
 /// Delegates to a ChopperService implementation
-class DivisionService with ServiceGetList<Division> implements ServiceDelegate<DivisionServiceImpl> {
-  final DivisionServiceImpl delegate;
-
+class DivisionService extends StatefulServiceDelegate<Division, DivisionModel>
+    with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList, StatefulGetFromId {
   DivisionService() : delegate = DivisionServiceImpl.newInstance();
-
-  Future<ServiceResponse<List<Division>>> getSubList(
-    int offset,
-    int limit,
-    List<String> options,
-  ) async {
-    return Api.from<PagedList<Division>, List<Division>>(
-      await delegate.fetch(
-        offset: offset,
-        limit: limit,
-      ),
-    );
-  }
-
-  Future<ServiceResponse<Division>> create(Division division) async {
-    return Api.from<String, Division>(
-      await delegate.create(
-        division.organisation.uuid,
-        division,
-      ),
-      // Created 201 returns uri to created division in body
-      body: division,
-    );
-  }
-
-  Future<ServiceResponse<Division>> update(Division division) async {
-    return Api.from<Division, Division>(
-      await delegate.update(
-        division.uuid,
-        division,
-      ),
-      // Created 201 returns uri to created division in body
-      body: division,
-    );
-  }
-
-  Future<ServiceResponse<void>> delete(String uuid) async {
-    return Api.from<Division, Division>(await delegate.delete(
-      uuid,
-    ));
-  }
+  final DivisionServiceImpl delegate;
 }
 
 @ChopperApi()
-abstract class DivisionServiceImpl extends JsonService<Division, DivisionModel> {
+abstract class DivisionServiceImpl extends StatefulService<Division, DivisionModel> {
   DivisionServiceImpl()
       : super(
           decoder: (json) => DivisionModel.fromJson(json),
@@ -72,26 +32,49 @@ abstract class DivisionServiceImpl extends JsonService<Division, DivisionModel> 
 
   static DivisionServiceImpl newInstance([ChopperClient client]) => _$DivisionServiceImpl(client);
 
-  @Post(path: '/organisations/{ouuid}/divisions')
+  @override
+  Future<Response<String>> onCreate(StorageState<Division> state) => create(
+        state.value.organisation.uuid,
+        state.value,
+      );
+
+  @Post(path: '/organisations/{uuid}/divisions')
   Future<Response<String>> create(
-    @Path() ouuid,
+    @Path() String uuid,
     @Body() Division body,
   );
 
-  @Get(path: '/divisions')
-  Future<Response<PagedList<Division>>> fetch({
-    @Query('offset') int offset = 0,
-    @Query('limit') int limit = 20,
-  });
+  @override
+  Future<Response<StorageState<Division>>> onUpdate(StorageState<Division> state) => update(
+        state.value.uuid,
+        state.value,
+      );
 
   @Patch(path: '/divisions/{uuid}')
-  Future<Response<Division>> update(
+  Future<Response<StorageState<Division>>> update(
     @Path('uuid') String uuid,
     @Body() Division body,
   );
+
+  @override
+  Future<Response<StorageState<Division>>> onDelete(StorageState<Division> state) => delete(
+        state.value.uuid,
+      );
 
   @Delete(path: '/divisions/{uuid}')
   Future<Response<void>> delete(
     @Path('uuid') String uuid,
+  );
+
+  @override
+  Future<Response<PagedList<StorageState<Division>>>> onGetPage(int offset, int limit, List<String> options) => getAll(
+        offset,
+        limit,
+      );
+
+  @Get(path: '/divisions')
+  Future<Response<PagedList<StorageState<Division>>>> getAll(
+    @Query('offset') int offset,
+    @Query('limit') int limit,
   );
 }

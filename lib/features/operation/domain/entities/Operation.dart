@@ -74,11 +74,16 @@ abstract class Operation extends Aggregate<Map<String, dynamic>> {
                     ? translateOperationStatus(prop)
                     : (prop is OperationResolution
                         ? translateOperationResolution(resolution)
-                        : prop is List<TalkGroup> ? prop.map((tg) => tg.searchable) : prop)))
+                        : prop is List<TalkGroup>
+                            ? prop.map((tg) => tg.searchable)
+                            : prop)))
             .toList(),
         "ipp: $ipp",
         "oppmøte: $meetup"
       ].join(' ');
+
+  /// Get [Operation] reference
+  AggregateRef<Operation> toRef();
 
   /// Clone with author
   Operation withAuthor(String userId);

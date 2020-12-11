@@ -24,10 +24,10 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
           connectivity: connectivity,
         );
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Person> state) {
-    return state?.value?.uuid;
+  String toKey(Person value) {
+    return value?.uuid;
   }
 
   /// Create [Person] from json
@@ -45,14 +45,10 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
     await prepare(
       force: true,
     );
-    (persons ?? []).forEach((element) {
-      put(
-        StorageState.created(
-          element,
+    (persons ?? []).forEach((person) => replace(
+          person,
           isRemote: true,
-        ),
-      );
-    });
+        ));
     return length;
   }
 
@@ -77,7 +73,7 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }) {
     return requestQueue.load(
       () async {
-        final values = <Person>[];
+        final values = <StorageState<Person>>[];
         final errors = <ServiceResponse>[];
         for (var uuid in uuids) {
           // Do not attempt to load local values
@@ -92,18 +88,18 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
               }
             }
           } else {
-            values.add(state.value);
+            values.add(state);
           }
         }
         if (errors.isNotEmpty) {
-          return ServiceResponse<List<Person>>(
+          return ServiceResponse(
             body: values,
             error: errors,
             statusCode: values.isNotEmpty ? HttpStatus.partialContent : errors.first.statusCode,
             reasonPhrase: values.isNotEmpty ? 'Partial fetch failure' : 'Fetch failed',
           );
         }
-        return ServiceResponse.ok<List<Person>>(
+        return ServiceResponse.ok(
           body: values,
         );
       },
@@ -119,10 +115,10 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
       ));
 
   @override
-  Future<Person> onCreate(StorageState<Person> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Person>> onCreate(StorageState<Person> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw PersonServiceException(
       'Failed to create Person ${state.value}',
@@ -132,12 +128,10 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   @override
-  Future<Person> onUpdate(StorageState<Person> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
+  Future<StorageState<Person>> onUpdate(StorageState<Person> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
       return response.body;
-    } else if (response.is204) {
-      return state.value;
     }
     throw PersonServiceException(
       'Failed to update Person ${state.value}',
@@ -147,10 +141,10 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
   }
 
   @override
-  Future<Person> onDelete(StorageState<Person> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return state.value;
+  Future<StorageState<Person>> onDelete(StorageState<Person> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return response.body;
     }
     throw PersonServiceException(
       'Failed to delete Person ${state.value}',

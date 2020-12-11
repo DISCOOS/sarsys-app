@@ -6,6 +6,7 @@ import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 import 'package:SarSys/features/mapping/domain/entities/Coordinates.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
+import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -91,6 +92,7 @@ AggregateRef<PersonModel> toPersonRef(dynamic json) => AggregateRef<PersonModel>
 AggregateRef<DivisionModel> toDivRef(dynamic json) => AggregateRef<DivisionModel>.fromJson(json);
 AggregateRef<DepartmentModel> toDepRef(dynamic json) => AggregateRef<DepartmentModel>.fromJson(json);
 AggregateRef<IncidentModel> toIncidentRef(dynamic json) => AggregateRef<IncidentModel>.fromJson(json);
+AggregateRef<OperationModel> toOperationRef(dynamic json) => AggregateRef<OperationModel>.fromJson(json);
 AggregateRef<OrganisationModel> toOrgRef(dynamic json) => AggregateRef<OrganisationModel>.fromJson(json);
 AggregateRef<AffiliationModel> toAffiliationRef(dynamic json) => AggregateRef<AffiliationModel>.fromJson(json);
 

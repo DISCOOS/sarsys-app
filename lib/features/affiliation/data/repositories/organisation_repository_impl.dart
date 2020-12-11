@@ -21,10 +21,10 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
           connectivity: connectivity,
         );
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Organisation> state) {
-    return state?.value?.uuid;
+  String toKey(Organisation value) {
+    return value?.uuid;
   }
 
   /// Create [Organisation] from json
@@ -58,10 +58,10 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
   Future<Iterable<Organisation>> onReset({Iterable<Organisation> previous = const []}) => Future.value(_load());
 
   @override
-  Future<Organisation> onCreate(StorageState<Organisation> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return await _withFleetMap(state.value);
+  Future<StorageState<Organisation>> onCreate(StorageState<Organisation> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return await _withFleetMap(response.body);
     }
     throw OrganisationServiceException(
       'Failed to create Organisation ${state.value}',
@@ -70,12 +70,10 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
     );
   }
 
-  Future<Organisation> onUpdate(StorageState<Organisation> state) async {
-    var response = await service.update(state.value);
-    if (response.is200) {
-      return _withFleetMap(response.body);
-    } else if (response.is204) {
-      return _withFleetMap(state.value);
+  Future<StorageState<Organisation>> onUpdate(StorageState<Organisation> state) async {
+    var response = await service.update(state);
+    if (response.isOK) {
+      return await _withFleetMap(response.body);
     }
     throw OrganisationServiceException(
       'Failed to update Organisation ${state.value}',
@@ -84,10 +82,10 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
     );
   }
 
-  Future<Organisation> onDelete(StorageState<Organisation> state) async {
-    var response = await service.delete(state.value.uuid);
-    if (response.is204) {
-      return _withFleetMap(state.value);
+  Future<StorageState<Organisation>> onDelete(StorageState<Organisation> state) async {
+    var response = await service.delete(state);
+    if (response.isOK) {
+      return await _withFleetMap(response.body);
     }
     throw OrganisationServiceException(
       'Failed to delete Organisation ${state.value}',
@@ -96,10 +94,14 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
     );
   }
 
-  Future<Organisation> _withFleetMap(Organisation organisation) async {
+  Future<StorageState<Organisation>> _withFleetMap(StorageState<Organisation> state) async {
     final fleetMap = await FleetMapService().fetchFleetMap(
-      organisation.prefix,
+      state.value.prefix,
     );
-    return fleetMap == null ? organisation : (organisation as OrganisationModel).cloneWith(fleetMap);
+    return fleetMap == null
+        ? state
+        : state.replace(
+            (state.value as OrganisationModel).cloneWith(fleetMap),
+          );
   }
 }

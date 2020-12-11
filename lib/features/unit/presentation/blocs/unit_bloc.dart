@@ -195,13 +195,23 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     }
   }
 
-  void _assertData(Unit data) {
-    if (data?.uuid == null) {
+  void _assertData(Unit unit) {
+    if (unit?.uuid == null) {
       throw ArgumentError(
         "Unit have no uuid",
       );
     }
-    TrackingUtils.assertRef(data);
+    if (unit?.operation?.uuid == null) {
+      throw ArgumentError(
+        "Unit ${unit.uuid} have no operation uuid",
+      );
+    }
+    if (unit?.operation?.uuid != ouuid) {
+      throw ArgumentError(
+        "Unit ${unit.uuid} is not mobilized for operation $ouuid",
+      );
+    }
+    TrackingUtils.assertRef(unit);
   }
 
   /// Fetch units from [service]

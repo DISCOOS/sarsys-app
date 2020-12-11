@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -16,15 +17,17 @@ import 'package:http/http.dart';
 
 import 'models/AggregateRef.dart';
 
-class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
+class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDelegate<V, V>> {
   StatefulRequestQueue(
-    StatefulRepository<K, V, U> repo,
+    StatefulRepository<K, V, S> repo,
     this.connectivity,
   ) : _repo = repo;
 
+  static const Duration timeLimit = Duration(seconds: 30);
+
   /// [StatefulRepository] instance
-  StatefulRepository<K, V, U> get repo => _repo;
-  StatefulRepository<K, V, U> _repo;
+  StatefulRepository<K, V, S> get repo => _repo;
+  StatefulRepository<K, V, S> _repo;
 
   /// [ConnectivityService] instance
   final ConnectivityService connectivity;
@@ -96,7 +99,7 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
     _backlog.clear();
     _backlog.addAll(
       Map.fromEntries(
-        states.where((state) => state.isCreated).map((state) => MapEntry(_repo.toKey(state), null)),
+        states.where((state) => state.isCreated).map((state) => MapEntry(_repo.toKey(state.value), null)),
       ),
     );
     return pop();
@@ -129,32 +132,29 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
   /// Check if given error should move queue to idle state
   bool _shouldStop(Object error, StackTrace stackTrace) {
     final isServiceError = error is ServiceException;
-    final isOfflineError = error is SocketException ||
+    final isTemporary = isOffline ||
+        error is SocketException ||
         error is ClientException ||
         error is TimeoutException ||
         error is RepositoryOfflineException ||
-        isOffline;
+        error is RepositoryDependencyException ||
+        isServiceError && (error as ServiceException).response.isErrorTemporary;
 
-    if (isOfflineError) {
+    if (isTemporary) {
       _popWhenOnline();
-      return false;
-    } else if (isServiceError) {
-      final response = (error as ServiceException).response;
-      if (response?.isErrorTemporary == true) {
-        return false;
-      }
+      return isOffline;
     }
     _repo.onError(
       error,
       stackTrace,
     );
-    return isOfflineError || isServiceError;
+    return isServiceError;
   }
 
   /// Get local values and schedule a deferred load request
   Iterable<V> load(
-    AsyncValueGetter<ServiceResponse<Iterable<V>>> request, {
-    V map(T),
+    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>>>> request, {
+    V map(V value),
     bool fail = false,
     bool shouldEvict = true,
     Completer<Iterable<V>> onResult,
@@ -180,8 +180,8 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
   }
 
   Future<StreamResult<Iterable<V>>> _executeLoad(
-    V map(T),
-    AsyncValueGetter<ServiceResponse<Iterable<V>>> request,
+    V map(V value),
+    AsyncValueGetter<ServiceResponse<Iterable<StorageState<V>>>> request,
     bool shouldEvict,
   ) async {
     _assertState();
@@ -192,27 +192,24 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
     var response = await request();
     if (response != null) {
       if (_repo.isReady && (response.is200 || response.is206)) {
-        final states = response.body.map((value) {
-          final state = StorageState.created(
-            map == null ? value : map(value),
-            isRemote: true,
+        final states = response.body.map((state) {
+          final next = state.remote(
+            map == null ? state.value : map(state.value),
+            status: StorageStatus.updated,
           );
-          if (_repo.containsKey(_repo.toKey(state))) {
-            return state.remote(
-              value,
-              status: StorageStatus.updated,
-            );
+          if (_repo.containsKey(_repo.toKey(state.value))) {
+            return next;
           }
           return state;
         });
         if (shouldEvict) {
           _repo.evict(
-            retainKeys: states.map(_repo.toKey),
+            retainKeys: states.map((s) => s.value).map(_repo.toKey),
           );
         }
         states.forEach(
           (state) {
-            if (_repo.toKey(state) != null) {
+            if (_repo.toKey(state.value) != null) {
               _repo.put(
                 _patch(state),
               );
@@ -310,7 +307,7 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
     StorageState<V> state, {
     Completer<V> onResult,
   }) {
-    final key = _repo.toKey(state);
+    final key = _repo.toKey(state.value);
     if (state.isLocal) {
       _backlog[key] = onResult;
     }
@@ -371,7 +368,9 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
           key: key,
           fail: false,
           onResult: onResult,
-          fallback: () => Future.value(state.value),
+          fallback: () {
+            return Future.value(state.value);
+          },
           execute: () => _repo.isReady ? _executePush(key) : state.value,
         ));
         return state?.value;
@@ -388,23 +387,41 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
     try {
       _assertState();
       if (_repo.isReady) {
-        final exists = await _waitForDeps(key);
-        if (exists && _repo.containsKey(key)) {
-          final result = await _push(
-            _repo.getState(key),
-          );
-          if (_repo.isReady) {
-            _repo.put(_patch(
-              result,
-            ));
+        if (_repo.containsKey(key)) {
+          final exists = await _waitForDeps(key);
+          if (exists) {
+            final result = await _push(
+              _repo.getState(key),
+            );
+            if (_repo.isReady) {
+              _repo.put(_patch(
+                result,
+              ));
+            }
+            return StreamResult(
+              // If patch deleted state, use result before patch
+              value: _repo.containsKey(key) ? _repo.get(key) : result.value,
+            );
+          } else {
+            // Some dependencies where not in remote state
+            final state = _repo.getState(key);
+            final refs = _repo.toRefs(state.value);
+            final error = RepositoryDependencyException(
+              refs,
+              state: state,
+              stackTrace: StackTrace.current,
+            );
+            _repo.put(
+              state.failed(error),
+            );
+            return StreamResult.failed(
+              error,
+              stackTrace: StackTrace.current,
+            );
           }
-          return StreamResult(
-            // If patch deleted state, use result before patch
-            value: _repo.containsKey(key) ? _repo.get(key) : result.value,
-          );
         }
       }
-      return StreamResult.none<V>();
+      return StreamResult.none();
     } catch (error) {
       final state = _repo.getState(key);
       if (state != null) {
@@ -424,20 +441,22 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
       try {
         switch (state.status) {
           case StorageStatus.created:
-            return StorageState.created(
-              await _repo.onCreate(state),
-              isRemote: true,
-            );
+            return await _repo.onCreate(state);
+          // await _repo.onCreate(state)
+          // return StorageState.created(
+          //   await _repo.onCreate(state),
+          //   isRemote: true,
+          // );
           case StorageStatus.updated:
-            return StorageState.updated(
-              await _repo.onUpdate(state),
-              isRemote: true,
-            );
+            return await _repo.onUpdate(state);
+          // return StorageState.updated(
+          //   isRemote: true,
+          // );
           case StorageStatus.deleted:
-            return StorageState.deleted(
-              await _repo.onDelete(state),
-              isRemote: true,
-            );
+            return await _repo.onDelete(state);
+          // return StorageState.deleted(
+          //   isRemote: true,
+          // );
         }
         throw RepositoryException('Unable to process $state');
       } on ServiceException catch (e) {
@@ -454,7 +473,7 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
 
   /// Patch [next] state with existing in repository
   StorageState<V> _patch(StorageState next) {
-    final key = _repo.toKey(next);
+    final key = _repo.toKey(next.value);
     final current = _repo.getState(key);
     return current == null ? next : current.patch<V>(next, _repo.fromJson);
   }
@@ -467,10 +486,13 @@ class StatefulRequestQueue<K, V extends JsonObject, U extends Service> {
   /// exists, [false] otherwise.
   Future<bool> _waitForDeps(
     K key, {
-    Duration waitFor = const Duration(milliseconds: 10),
+    Duration waitFor = timeLimit,
   }) async {
-    if (shouldWait(key)) {
-      await Future.delayed(waitFor);
+    final tic = DateTime.now();
+    while (shouldWait(key) && DateTime.now().difference(tic) < waitFor) {
+      await Future.delayed(
+        const Duration(milliseconds: 10),
+      );
     }
     return !shouldWait(key);
   }

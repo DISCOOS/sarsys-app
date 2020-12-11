@@ -17,28 +17,19 @@ class _$DivisionServiceImpl extends DivisionServiceImpl {
   final definitionType = DivisionServiceImpl;
 
   @override
-  Future<Response<String>> create(dynamic ouuid, Division body) {
-    final $url = '/organisations/$ouuid/divisions';
+  Future<Response<String>> create(String uuid, Division body) {
+    final $url = '/organisations/$uuid/divisions';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
     return client.send<String, String>($request);
   }
 
   @override
-  Future<Response<PagedList<Division>>> fetch(
-      {int offset = 0, int limit = 20}) {
-    final $url = '/divisions';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Division>, Division>($request);
-  }
-
-  @override
-  Future<Response<Division>> update(String uuid, Division body) {
+  Future<Response<StorageState<Division>>> update(String uuid, Division body) {
     final $url = '/divisions/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Division, Division>($request);
+    return client.send<StorageState<Division>, Division>($request);
   }
 
   @override
@@ -46,5 +37,14 @@ class _$DivisionServiceImpl extends DivisionServiceImpl {
     final $url = '/divisions/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Division>>>> getAll(
+      int offset, int limit) {
+    final $url = '/divisions';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client.send<PagedList<StorageState<Division>>, Division>($request);
   }
 }

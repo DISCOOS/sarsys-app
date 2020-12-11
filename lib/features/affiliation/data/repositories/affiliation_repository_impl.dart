@@ -52,8 +52,8 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
 
   /// Get [Operation.uuid] from [state]
   @override
-  String toKey(StorageState<Affiliation> state) {
-    return state?.value?.uuid;
+  String toKey(Affiliation value) {
+    return value?.uuid;
   }
 
   /// Create [Affiliation] from json
@@ -115,17 +115,17 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
         // if exists. If replace = true,
         // this will remove local values
         // with remote state.
-        final next = states.values.where((state) => state.isLocal).map((state) => state.value).toList();
-        final response = await service.getAll(uuids);
+        final next = states.values.where((state) => state.isLocal).toList();
+        final response = await service.getListFromIds(uuids);
         if (response != null) {
           if (response.is200) {
+            // Update persons repository
+            response.body.map((s) => s.value).whereNotNull((a) => a.person).map(
+                  (a) => _onPerson(a, isRemote: true),
+                );
             next.addAll(response.body);
-            return ServiceResponse.ok<List<Affiliation>>(
-              body: values
-                  .whereNotNull((a) => a.person)
-                  // Update persons repository
-                  .map((a) => _toPerson(a, isRemote: true))
-                  .toList(),
+            return ServiceResponse.ok<List<StorageState<Affiliation>>>(
+              body: next,
             );
           }
         }
@@ -144,21 +144,20 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
   }) async {
     if (connectivity.isOnline) {
       try {
-        final response = await service.search(filter, offset, limit);
+        final response = await service.search(
+          filter,
+          offset: offset,
+          limit: limit,
+        );
         if (response.is200) {
           response.body.forEach((affiliation) {
-            put(
-              StorageState.created(
-                affiliation,
-                isRemote: true,
-              ),
-            );
-            _toPerson(
-              affiliation,
+            put(affiliation);
+            _onPerson(
+              affiliation.value,
               isRemote: true,
             );
           });
-          return response.body;
+          return response.body.map((s) => s.value);
         }
         throw AffiliationServiceException(
           'Failed to search for affiliation matching $filter',
@@ -172,7 +171,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
     return values;
   }
 
-  Affiliation _toPerson(
+  Affiliation _onPerson(
     Affiliation affiliation, {
     @required bool isRemote,
   }) {
@@ -206,10 +205,10 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
       );
 
   @override
-  Future<Affiliation> onCreate(StorageState<Affiliation> state) async {
-    var response = await service.create(state.value);
-    if (response.is201) {
-      return state.value;
+  Future<StorageState<Affiliation>> onCreate(StorageState<Affiliation> state) async {
+    var response = await service.create(state);
+    if (response.isOK) {
+      return state;
     }
     throw AffiliationServiceException(
       'Failed to create Affiliation ${state.value}',
@@ -219,25 +218,25 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
   }
 
   @override
-  Future<Affiliation> onUpdate(StorageState<Affiliation> state) async {
-    var response = await service.update(state.value);
+  Future<StorageState<Affiliation>> onUpdate(StorageState<Affiliation> state) async {
+    var response = await service.update(state);
     if (response.is200) {
       return response.body;
     } else if (response.is204) {
-      return state.value;
+      return state;
     }
     throw AffiliationServiceException(
-      'Failed to update Affiliation ${state.value}',
+      'Failed to update Affiliation ${state.value}@${state.version}',
       response: response,
       stackTrace: StackTrace.current,
     );
   }
 
   @override
-  Future<Affiliation> onDelete(StorageState<Affiliation> state) async {
-    var response = await service.delete(state.value.uuid);
+  Future<StorageState<Affiliation>> onDelete(StorageState<Affiliation> state) async {
+    var response = await service.delete(state);
     if (response.is204) {
-      return state.value;
+      return state;
     }
     throw AffiliationServiceException(
       'Failed to delete Affiliation ${state.value}',

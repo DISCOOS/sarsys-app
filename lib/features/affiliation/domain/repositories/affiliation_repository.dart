@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
@@ -25,10 +24,10 @@ abstract class AffiliationRepository implements StatefulRepository<String, Affil
   /// [Person] repository
   PersonRepository get persons;
 
-  /// Get [Operation.uuid] from [state]
+  /// Get [Operation.uuid] from [value]
   @override
-  String toKey(StorageState<Affiliation> state) {
-    return state?.value?.uuid;
+  String toKey(Affiliation value) {
+    return value?.uuid;
   }
 
   /// Find [Affiliation]s for affiliate with given [Person.uuid]

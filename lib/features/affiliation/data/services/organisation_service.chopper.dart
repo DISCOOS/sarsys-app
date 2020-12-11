@@ -17,7 +17,7 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
   final definitionType = OrganisationServiceImpl;
 
   @override
-  Future<Response<String>> create(Organisation body) {
+  Future<Response<String>> create(String uuid, Organisation body) {
     final $url = '/organisations';
     final $body = body;
     final $request = Request('POST', $url, client.baseUrl, body: $body);
@@ -25,20 +25,12 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
   }
 
   @override
-  Future<Response<PagedList<Organisation>>> fetch(
-      {int offset = 0, int limit = 20}) {
-    final $url = '/organisations';
-    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
-    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
-    return client.send<PagedList<Organisation>, Organisation>($request);
-  }
-
-  @override
-  Future<Response<Organisation>> update(String uuid, Organisation body) {
+  Future<Response<StorageState<Organisation>>> update(
+      String uuid, Organisation body) {
     final $url = '/organisations/$uuid';
     final $body = body;
     final $request = Request('PATCH', $url, client.baseUrl, body: $body);
-    return client.send<Organisation, Organisation>($request);
+    return client.send<StorageState<Organisation>, Organisation>($request);
   }
 
   @override
@@ -46,5 +38,15 @@ class _$OrganisationServiceImpl extends OrganisationServiceImpl {
     final $url = '/organisations/$uuid';
     final $request = Request('DELETE', $url, client.baseUrl);
     return client.send<void, void>($request);
+  }
+
+  @override
+  Future<Response<PagedList<StorageState<Organisation>>>> getAll(
+      int offset, int limit) {
+    final $url = '/organisations';
+    final $params = <String, dynamic>{'offset': offset, 'limit': limit};
+    final $request = Request('GET', $url, client.baseUrl, parameters: $params);
+    return client
+        .send<PagedList<StorageState<Organisation>>, Organisation>($request);
   }
 }
