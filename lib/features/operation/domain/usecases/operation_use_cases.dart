@@ -169,7 +169,7 @@ class LeaveOperation extends UseCase<bool, Personnel, OperationParams> {
     assert(params.data == null, "Operation should not be given");
 
     final leave = await prompt(
-      params.overlay.context,q
+      params.overlay.context,
       'Bekreftelse',
       'Du dimitteres nå fra aksjonen. Vil du fortsette?',
     );
