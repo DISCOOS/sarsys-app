@@ -24,6 +24,7 @@ class SteppedScreen extends StatefulWidget {
     this.withProgress = true,
     this.withNextAction = true,
     this.withBackAction = true,
+    this.canScroll = true,
     this.nextActionText = 'NESTE',
     this.backActionText = 'FORRIGE',
     this.cancelActionText = 'AVBRYT',
@@ -42,6 +43,7 @@ class SteppedScreen extends StatefulWidget {
   final bool withProgress;
   final bool withBackAction;
   final bool withNextAction;
+  final bool canScroll;
 
   final ValueChanged<int> onBack;
   final ValueChanged<int> onNext;
@@ -102,7 +104,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                   child: PageView.builder(
                     pageSnapping: true,
                     itemCount: widget.views.length,
-                    physics: ClampingScrollPhysics(),
+                    physics: widget.canScroll ? ClampingScrollPhysics() : NeverScrollableScrollPhysics(),
                     onPageChanged: (int page) {
                       getChangedPageAndMoveBar(page);
                     },
