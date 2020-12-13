@@ -48,15 +48,17 @@ class _PasscodePageState extends State<PasscodePage> {
                     icon: Icon(Icons.close),
                     onPressed: () => widget.onComplete(false),
                   ),
-                  Text(
-                    forbidden
-                        ? "Feil tilgangskode, forsøk igjen"
-                        : "${[
-                            translateOperationType(widget.operation.type),
-                            widget.operation.name
-                          ].join(' ').trim()} krever tilgangskode",
-                    style: Theme.of(context).textTheme.headline6,
-                    textAlign: TextAlign.center,
+                  Expanded(
+                    child: Text(
+                      forbidden
+                          ? "Feil tilgangskode, forsøk igjen"
+                          : "${[
+                              translateOperationType(widget.operation.type),
+                              widget.operation.name
+                            ].join(' ').trim()} krever tilgangskode",
+                      style: Theme.of(context).textTheme.headline6,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
               );
