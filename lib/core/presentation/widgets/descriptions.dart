@@ -352,3 +352,28 @@ class TemporaryPersonnelDescription extends StatelessWidget {
     );
   }
 }
+
+class PasscodeDescription extends StatelessWidget {
+  const PasscodeDescription({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: "Tilgangskoden gir deg tilgangsnivå som mannskap eller "
+                  "aksjonsledelse. Dersom du ønsker å bytte tilgangsnivå "
+                  "etter å deltatt på aksjonen gjør du det ved å "
+                  "legge inn ny kode under dine innstillinger?...",
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

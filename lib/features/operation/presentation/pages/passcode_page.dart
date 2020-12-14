@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 
 typedef PasscodeCallback = Future<bool> Function(Operation operation, String passcode);
 
@@ -42,38 +43,34 @@ class _PasscodePageState extends State<PasscodePage> {
             initialData: context.bloc<UserBloc>().state,
             builder: (context, snapshot) {
               var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
-              return Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => widget.onComplete(false),
-                  ),
-                  Expanded(
-                    child: Text(
-                      forbidden
-                          ? "Feil tilgangskode, forsøk igjen"
-                          : "${[
-                              translateOperationType(widget.operation.type),
-                              widget.operation.name
-                            ].join(' ').trim()} krever tilgangskode",
-                      style: Theme.of(context).textTheme.headline6,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
+              return ListTile(
+                selected: true,
+                leading: IconButton(
+                  icon: Icon(Icons.close),
+                  onPressed: () => widget.onComplete(false),
+                ),
+                title: Text('Oppgi tilgangskode', style: Theme.of(context).textTheme.headline6),
+                subtitle: Text(
+                  forbidden
+                      ? "Feil tilgangskode, forsøk igjen"
+                      : "${[translateOperationType(widget.operation.type), widget.operation.name].join(' ').trim()}",
+                  style: Theme.of(context).textTheme.headline6,
+                  textAlign: TextAlign.left,
+                ),
               );
             },
           ),
           Divider(),
           _buildPasscodeInput(),
+          Divider(),
+          _buildPasscodeDescription(),
         ],
       ),
     );
   }
 
   Widget _buildPasscodeInput() {
-    return Align(
-      child: Padding(
+    return Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.0),
         child: TextFormField(
           maxLines: 1,
@@ -105,7 +102,13 @@ class _PasscodePageState extends State<PasscodePage> {
           },
           onFieldSubmitted: (_) => _unlock(),
         ),
-      ),
+    );
+  }
+
+  Widget _buildPasscodeDescription() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.0),
+      child: PasscodeDescription(), // your column
     );
   }
 
