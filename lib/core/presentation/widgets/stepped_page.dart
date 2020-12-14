@@ -110,7 +110,10 @@ class _SteppedScreenState extends State<SteppedScreen> {
                     },
                     controller: controller,
                     itemBuilder: (context, index) {
-                      return KeyboardAvoider(child: widget.views[index]);
+                      return KeyboardAvoider(
+                        child: widget.views[index],
+                        autoScroll: true,
+                      );
                     },
                   ),
                 ),
