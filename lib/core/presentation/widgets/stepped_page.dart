@@ -25,6 +25,7 @@ class SteppedScreen extends StatefulWidget {
     this.withNextAction = true,
     this.withBackAction = true,
     this.canScroll = true,
+    this.enableAutoScroll = false,
     this.nextActionText = 'NESTE',
     this.backActionText = 'FORRIGE',
     this.cancelActionText = 'AVBRYT',
@@ -44,6 +45,7 @@ class SteppedScreen extends StatefulWidget {
   final bool withBackAction;
   final bool withNextAction;
   final bool canScroll;
+  final bool enableAutoScroll;
 
   final ValueChanged<int> onBack;
   final ValueChanged<int> onNext;
@@ -112,7 +114,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
                     itemBuilder: (context, index) {
                       return KeyboardAvoider(
                         child: widget.views[index],
-                        autoScroll: true,
+                        autoScroll: widget.enableAutoScroll,
                       );
                     },
                   ),

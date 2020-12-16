@@ -60,6 +60,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
       hasBack: (_) => false,
       onComplete: _onComplete,
       canScroll: false,
+      enableAutoScroll: true,
       isComplete: (_) => false,
       hasNext: (index) => isAuthorized || OpenOperationScreen.PASSCODE == _index,
     );
