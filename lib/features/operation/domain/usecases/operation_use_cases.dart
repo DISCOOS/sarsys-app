@@ -196,7 +196,7 @@ Future<dartz.Either<bool, Personnel>> _join(
     'Du legges nå til aksjonen som mannskap. Vil du fortsette?',
   );
 
-  if (join == true) {
+  if (join == true && !params.bloc.userBloc.isAuthorized(params.data)) {
     final personnel = await showDialog<Personnel>(
       context: params.overlay.context,
       builder: (context) => OpenOperationScreen(
@@ -205,6 +205,42 @@ Future<dartz.Either<bool, Personnel>> _join(
           operation,
           passcode,
         ),
+        requirePasscode: 0,
+        onCancel: (step) {
+          if (step == OpenOperationScreen.DOWNLOAD && params.bloc.selected == params.data) {
+            leaveOperation();
+          }
+        },
+        onDownload: (operation, onProgress) async {
+          DownloadProgress.percent(0).linearToPercent(
+            onProgress,
+            100,
+          );
+          // PersonnelBloc will mobilize user
+          await params.bloc.select(operation.uuid);
+          // Wait for blocs to download all data
+          await _onLoadedAsync<UnitBloc>(params);
+          await _onLoadedAsync<PersonnelBloc>(params);
+          return _mobilize(params);
+        },
+      ),
+    );
+
+    if (personnel != null) {
+      params.pushReplacementNamed(UserScreen.ROUTE_OPERATION);
+      return dartz.right(personnel);
+    }
+  }
+  if (join == true && params.bloc.userBloc.isAuthorized(params.data)) {
+    final personnel = await showDialog<Personnel>(
+      context: params.overlay.context,
+      builder: (context) => OpenOperationScreen(
+        operation: params.data,
+        onAuthorize: (operation, passcode) => params.bloc.userBloc.authorize(
+          operation,
+          passcode,
+        ),
+        requirePasscode: 1,
         onCancel: (step) {
           if (step == OpenOperationScreen.DOWNLOAD && params.bloc.selected == params.data) {
             leaveOperation();

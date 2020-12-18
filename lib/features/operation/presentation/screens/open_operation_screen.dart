@@ -11,6 +11,7 @@ import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/operation/presentation/pages/passcode_page.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'dart:math';
 
 typedef OpenCallback = Future<Personnel> Function(Operation operation, StreamSink<DownloadProgress> onProgress);
 
@@ -19,13 +20,14 @@ class OpenOperationScreen extends StatefulWidget {
   static const int PASSCODE = 0;
   static const int DOWNLOAD = 1;
 
-  OpenOperationScreen({
-    Key key,
-    @required this.operation,
-    @required this.onCancel,
-    @required this.onDownload,
-    @required this.onAuthorize,
-  }) : super(key: key) {
+  OpenOperationScreen(
+      {Key key,
+      @required this.operation,
+      @required this.onCancel,
+      @required this.onDownload,
+      @required this.onAuthorize,
+      @required this.requirePasscode})
+      : super(key: key) {
     assert(operation != null, 'Operation is required');
   }
 
@@ -33,6 +35,7 @@ class OpenOperationScreen extends StatefulWidget {
   final OpenCallback onDownload;
   final ValueSetter<int> onCancel;
   final PasscodeCallback onAuthorize;
+  final int requirePasscode;
 
   @override
   _OpenOperationScreenState createState() => _OpenOperationScreenState();
@@ -51,9 +54,10 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
+    if (widget.requirePasscode == 1) _onOpen();
     return SteppedScreen(
       views: views,
-      index: _index,
+      index: max(widget.requirePasscode, _index),
       onNext: _onNext,
       withProgress: false,
       onCancel: _onCancel,
@@ -68,10 +72,11 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
 
   void _onNext(int step) async {
     // 'Next' on bottom bar was pressed?
-    if (step == OpenOperationScreen.DOWNLOAD && step > _index) {
+    if (step == OpenOperationScreen.DOWNLOAD && step > _index && isAuthorized) {
       _onOpen();
-    }
-    _index = step;
+      _index = step;
+    } else
+      _deferNext(0);
   }
 
   void _onOpen() async {
