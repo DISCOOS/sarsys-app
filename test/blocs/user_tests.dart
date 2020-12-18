@@ -217,7 +217,7 @@ Future _waitForConfigBloc(BlocTestHarness harness, StorageStatus status) async {
     harness.configBloc.repo,
     status,
     remote: true,
-    key: harness.configBloc.config.version,
+    key: '${harness.configBloc.config.version}',
   );
   expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have empty backlog");
 }

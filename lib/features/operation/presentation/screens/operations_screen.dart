@@ -194,7 +194,8 @@ class _OperationsPageState extends State<OperationsPage> {
           if (snapshot.hasData == false) return Container();
           final isCurrent = context.bloc<OperationBloc>().selected == operation;
           final incident = context.bloc<OperationBloc>().incidents[operation.incident.uuid];
-          final isMobilized = isCurrent && context.bloc<PersonnelBloc>().isUserMobilized;
+          final isUserMobilized = context.bloc<PersonnelBloc>().isUserMobilized;
+          final isMobilized = isCurrent && isUserMobilized;
           final isAuthorized = isMobilized || context.bloc<UserBloc>().isAuthorized(operation);
           return Card(
             elevation: 4.0,

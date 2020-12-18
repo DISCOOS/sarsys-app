@@ -138,7 +138,7 @@ void main() async {
 
         // Assert
         expect(keys.length, 1, reason: "SHOULD contain 1 key");
-        expect(keys.first, config.version, reason: "SHOULD contain config version");
+        expect(keys.first, '${config.version}', reason: "SHOULD contain config version");
         expect(harness.configBloc.repo.config, isA<AppConfig>(), reason: "SHOULD have AppConfig");
         expect(harness.configBloc.repo.state.isRemote, isTrue, reason: "SHOULD HAVE remote state");
         expect(harness.configBloc.repo.backlog.length, 0, reason: "SHOULD have 0 states in backlog");

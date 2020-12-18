@@ -26,7 +26,9 @@ abstract class UnitServiceImpl extends StatefulService<Unit, UnitModel> {
   UnitServiceImpl()
       : super(
           decoder: (json) => UnitModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<UnitModel>(value),
+          reducer: (value) => JsonUtils.toJson<UnitModel>(value, remove: const [
+            'operation',
+          ]),
         );
   static UnitServiceImpl newInstance([ChopperClient client]) => _$UnitServiceImpl(client);
 
