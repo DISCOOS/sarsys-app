@@ -85,7 +85,6 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
       _config = event.data;
       final next = _toOptions(
         _config,
-        debug: options?.debug ?? kDebugMode,
         defaultAccuracy: null,
       );
       final manual = await isManual;
@@ -173,7 +172,6 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     final next = manual
         ? _toOptions(
             _config = config,
-            debug: (profile?.options ?? options)?.debug ?? kDebugMode,
             defaultAccuracy: profile?.options?.accuracy ?? options.accuracy,
           )
         // Override current if
@@ -257,11 +255,10 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   LocationOptions _toOptions(
     AppConfig config, {
-    @required bool debug,
     @required LocationAccuracy defaultAccuracy,
   }) =>
       LocationOptions(
-        debug: debug,
+        locationDebug: config.locationDebug ?? Defaults.locationDebug,
         accuracy: _toAccuracy(config, defaultAccuracy),
         locationAlways: config.locationAlways ?? false,
         locationWhenInUse: config.locationWhenInUse ?? false,

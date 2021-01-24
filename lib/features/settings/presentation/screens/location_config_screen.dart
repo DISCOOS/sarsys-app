@@ -20,7 +20,6 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   final _displacement = TextEditingController();
   final _interval = TextEditingController();
 
-  bool _debug;
   bool _manual;
 
   AppConfigBloc get bloc => context.bloc<AppConfigBloc>();
@@ -29,7 +28,6 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _manual ??= false;
-    _debug ??= (options?.debug ?? kDebugMode);
     _interval.text = "${timeInterval ~/ 1000}";
     _displacement.text = "$distanceFilter";
   }
@@ -44,6 +42,8 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
 
   bool get locationAllowSharing =>
       _manual ? context.bloc<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
+
+  bool get _locationDebug => _manual ? context.bloc<AppConfigBloc>().config.locationDebug : options.locationDebug;
 
   @override
   void dispose() {
@@ -74,7 +74,6 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 future: future,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
-                    _debug = snapshot.data.getBool(LocationService.pref_location_debug) ?? _debug;
                     _manual = snapshot.data.getBool(LocationService.pref_location_manual) ?? _manual;
                   }
                   _interval.text = "${timeInterval ~/ 1000}";
@@ -312,44 +311,20 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
     );
   }
 
-  Padding _buildLocationDebugField() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            flex: 4,
-            child: ListTile(
-              title: Text("Aktiver debugging"),
-              subtitle: Text("En lyd høres når endringer skjer"),
-            ),
-          ),
-          Flexible(
-              child: FutureBuilder<SharedPreferences>(
-                  future: future,
-                  builder: (context, snapshot) {
-                    _debug = snapshot.hasData
-                        ? snapshot.data.getBool(LocationService.pref_location_debug) ?? _debug
-                        : _debug;
-                    return Switch(
-                      value: _debug,
-                      onChanged: (value) async {
-                        if (snapshot.hasData) {
-                          await snapshot.data.setBool(LocationService.pref_location_debug, value);
-                          await LocationService().configure(
-                            debug: value,
-                          );
-                        }
-                        setState(() => _debug = value);
-                      },
-                    );
-                  })),
-        ],
-      ),
-    );
+  Widget _buildLocationDebugField() {
+    return SwitchListTile(
+        value: _locationDebug,
+        title: Text('Aktiver debugging'),
+        subtitle: Text('En lyd høres når endringer skjer'),
+        onChanged: (value) async {
+          await context.bloc<AppConfigBloc>().updateWith(
+                locationDebug: value,
+              );
+          await LocationService().configure(
+            locationDebug: value,
+          );
+          setState(() {});
+        });
   }
 
   Future<SharedPreferences> get future => _prefs ??= SharedPreferences.getInstance();

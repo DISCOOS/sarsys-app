@@ -25,7 +25,9 @@ abstract class AppConfigServiceImpl extends StatefulService<AppConfig, AppConfig
   AppConfigServiceImpl()
       : super(
           decoder: (json) => AppConfigModel.fromJson(json),
-          reducer: (value) => JsonUtils.toJson<AppConfigModel>(value),
+          reducer: (value) => JsonUtils.toJson<AppConfigModel>(value, remove: const [
+            'locationDebug',
+          ]),
         );
   static AppConfigServiceImpl newInstance([ChopperClient client]) => _$AppConfigServiceImpl(client);
 

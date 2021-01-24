@@ -39,6 +39,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     this.securityMode = Defaults.securityMode,
     this.trustedDomains = Defaults.trustedDomains,
     this.securityLockAfter = Defaults.securityLockAfter,
+    this.locationDebug = Defaults.locationDebug,
   })  : this.talkGroups = talkGroups ?? const <String>[],
         this.units = units ?? const <String>[],
         super(uuid, fields: [
@@ -71,6 +72,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
           securityMode,
           trustedDomains,
           securityLockAfter,
+          locationDebug,
         ]);
   final String udid;
   final int version;
@@ -101,6 +103,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
   final SecurityMode securityMode;
   final List<String> trustedDomains;
   final int securityLockAfter;
+  final bool locationDebug;
 
   AppConfig copyWith({
     String uuid,
@@ -136,6 +139,7 @@ abstract class AppConfig extends Aggregate<Map<String, dynamic>> {
     SecurityMode securityMode,
     List<String> trustedDomains,
     int securityLockAfter,
+    bool locationDebug,
   });
 
   DemoParams toDemoParams() => DemoParams(demo, role: toRole());

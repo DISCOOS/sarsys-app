@@ -38,6 +38,8 @@ class Defaults {
 
   static final LatLng origo = LatLng(59.5, 10.09);
 
+  static const bool locationDebug = false;
+
   static final bool debugPrintHttp = true;
   static final bool debugPrintLocation = false;
   static final bool debugPrintCommands = false;
