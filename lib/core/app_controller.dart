@@ -684,6 +684,7 @@ class AppController {
       ).configure(
         token: bloc<UserBloc>().repo.token,
         duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+        locationDebug: bloc<AppConfigBloc>().config?.locationDebug,
       );
     }
   }

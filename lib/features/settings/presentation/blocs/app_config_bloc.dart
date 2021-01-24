@@ -89,6 +89,7 @@ class AppConfigBloc
     SecurityMode securityMode,
     List<String> trustedDomains,
     int securityLockAfter,
+    bool locationDebug,
   }) async {
     if (!isReady) return Future.error("AppConfig not ready");
     final config = this.config.copyWith(
@@ -118,8 +119,9 @@ class AppConfigBloc
           units: units,
           securityType: securityType,
           securityMode: securityMode,
-          securityLockAfter: securityLockAfter,
           trustedDomains: trustedDomains,
+          securityLockAfter: securityLockAfter,
+          locationDebug: locationDebug,
         );
     return update(config);
   }

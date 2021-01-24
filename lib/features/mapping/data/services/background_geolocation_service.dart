@@ -21,6 +21,7 @@ class BackgroundGeolocationService implements LocationService {
     String duuid,
     AuthToken token,
     bool share = false,
+    bool locationDebug = false,
     this.maxEvents = 100,
   }) {
     assert(options != null, "options are required");
@@ -152,7 +153,7 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future<LocationOptions> configure({
     bool share,
-    bool debug,
+    bool locationDebug,
     String duuid,
     AuthToken token,
     bool force = false,
@@ -171,7 +172,7 @@ class BackgroundGeolocationService implements LocationService {
           _isConfigChanged(
             duuid: duuid,
             token: token,
-            debug: debug,
+            locationDebug: locationDebug,
             share: share,
             options: options ?? _options,
           );
@@ -183,7 +184,7 @@ class BackgroundGeolocationService implements LocationService {
 
         // Ensure debug flag is updated if given
         _options = (options ?? _options).copyWith(
-          debug: debug ?? _options.debug,
+          locationDebug: locationDebug ?? _options.locationDebug,
         );
         final config = _toConfig(
           duuid: duuid,
@@ -268,7 +269,7 @@ class BackgroundGeolocationService implements LocationService {
     );
     return bg.Config(
       reset: true,
-      debug: _debug,
+      debug: _locationDebug,
       url: _toUrl(),
       method: 'POST',
       batchSync: true,
@@ -304,7 +305,7 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  bool get _debug => _options.debug ?? kDebugMode;
+  bool get _locationDebug => (_options?.locationDebug ?? kDebugMode);
 
   String _toUrl({bool override = false}) =>
       override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
@@ -325,7 +326,7 @@ class BackgroundGeolocationService implements LocationService {
 
   int get _persistMode => canStore ? bg.Config.PERSIST_MODE_LOCATION : bg.Config.PERSIST_MODE_NONE;
   int get _logLevel => Defaults.debugPrintLocation
-      ? ((_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
+      ? ((_options?.locationDebug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
       : bg.Config.LOG_LEVEL_OFF;
 
   int _toAccuracy(LocationAccuracy accuracy) {
@@ -430,12 +431,12 @@ class BackgroundGeolocationService implements LocationService {
 
   bool _isConfigChanged({
     bool share,
-    bool debug,
+    bool locationDebug,
     String duuid,
     AuthToken token,
     LocationOptions options,
   }) {
-    return _options?.debug != (debug ?? options.debug ?? kDebugMode) ||
+    return _options?.locationDebug != (locationDebug ?? options.locationDebug ?? kDebugMode) ||
         _options?.accuracy != options.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||

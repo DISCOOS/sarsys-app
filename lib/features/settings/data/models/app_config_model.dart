@@ -40,6 +40,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
     SecurityMode securityMode = Defaults.securityMode,
     List<String> trustedDomains = Defaults.trustedDomains,
     int securityLockAfter = Defaults.securityLockAfter,
+    bool locationDebug = Defaults.locationDebug,
   }) : super(
           uuid: uuid,
           udid: udid,
@@ -52,6 +53,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
           onboarded: onboarded ?? false,
           firstSetup: firstSetup ?? false,
           talkGroups: talkGroups ?? <String>[],
+          locationDebug: locationDebug ?? Defaults.locationDebug,
           locationAlways: locationAlways ?? false,
           idpHints: idpHints ?? Defaults.idpHints,
           locationWhenInUse: locationWhenInUse ?? false,
@@ -108,6 +110,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
     SecurityMode securityMode,
     List<String> trustedDomains,
     int securityLockAfter,
+    bool locationDebug,
   }) {
     return AppConfigModel(
       uuid: uuid ?? this.uuid,
@@ -140,6 +143,7 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
       securityMode: securityMode ?? this.securityMode,
       trustedDomains: trustedDomains ?? this.trustedDomains,
       securityLockAfter: securityLockAfter ?? this.securityLockAfter,
+      locationDebug: locationDebug ?? this.locationDebug,
     );
   }
 

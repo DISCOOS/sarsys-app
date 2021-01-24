@@ -41,6 +41,7 @@ AppConfigModel _$AppConfigModelFromJson(Map json) {
     trustedDomains:
         (json['trustedDomains'] as List)?.map((e) => e as String)?.toList(),
     securityLockAfter: json['securityLockAfter'] as int,
+    locationDebug: json['locationDebug'] as bool,
   );
 }
 
@@ -84,6 +85,7 @@ Map<String, dynamic> _$AppConfigModelToJson(AppConfigModel instance) {
   writeNotNull('securityMode', _$SecurityModeEnumMap[instance.securityMode]);
   writeNotNull('trustedDomains', instance.trustedDomains);
   writeNotNull('securityLockAfter', instance.securityLockAfter);
+  writeNotNull('locationDebug', instance.locationDebug);
   return val;
 }
 

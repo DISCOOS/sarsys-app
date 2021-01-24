@@ -98,7 +98,7 @@ abstract class LocationService extends Service {
   /// Use [force] to force reconfiguration of service
   Future<LocationOptions> configure({
     bool share,
-    bool debug,
+    bool locationDebug,
     String duuid,
     AuthToken token,
     bool force = false,
@@ -197,7 +197,7 @@ class LocationOptions {
   /// - forceAndroidLocationManager: false
   /// - timeInterval: 0
   const LocationOptions({
-    this.debug = kDebugMode ?? false,
+    this.locationDebug = Defaults.locationDebug,
     this.locationAlways,
     this.locationWhenInUse,
     this.forceAndroidLocationManager,
@@ -211,7 +211,7 @@ class LocationOptions {
 
   /// Tells service to enter debug mode
   ///
-  final bool debug;
+  final bool locationDebug;
 
   /// Tells service to track location also when app is terminated by OS
   ///
@@ -256,7 +256,7 @@ class LocationOptions {
   final int timeInterval;
 
   LocationOptions copyWith({
-    bool debug,
+    bool locationDebug,
     int timeInterval,
     int distanceFilter,
     bool locationAlways,
@@ -268,7 +268,7 @@ class LocationOptions {
     LocationAccuracy accuracy = LocationAccuracy.best,
   }) =>
       LocationOptions(
-        debug: debug ?? this.debug,
+        locationDebug: locationDebug ?? this.locationDebug ?? Defaults.locationDebug,
         accuracy: accuracy ?? this.accuracy,
         locationAlways: locationAlways ?? this.locationAlways ?? false,
         locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse ?? false,
@@ -281,6 +281,7 @@ class LocationOptions {
       );
 
   bool equals(AppConfig config) =>
+      locationDebug == config.locationDebug &&
       locationAlways == config.locationAlways &&
       locationWhenInUse == config.locationWhenInUse &&
       activityRecognition == config.activityRecognition &&
@@ -295,7 +296,7 @@ class LocationOptions {
       identical(this, other) ||
       other is LocationOptions &&
           runtimeType == other.runtimeType &&
-          debug == other.debug &&
+          locationDebug == other.locationDebug &&
           locationAlways == other.locationAlways &&
           locationWhenInUse == other.locationWhenInUse &&
           activityRecognition == other.activityRecognition &&
@@ -308,7 +309,7 @@ class LocationOptions {
 
   @override
   int get hashCode =>
-      debug.hashCode ^
+      locationDebug.hashCode ^
       locationAlways.hashCode ^
       locationWhenInUse.hashCode ^
       activityRecognition.hashCode ^
@@ -321,7 +322,7 @@ class LocationOptions {
 
   @override
   String toString() => 'Options: {\n'
-      '   debug: $debug\n'
+      '   locationDebug: $locationDebug\n'
       '   accuracy: $accuracy\n'
       '   timeInterval: $timeInterval\n'
       '   distanceFilter: $distanceFilter\n'
