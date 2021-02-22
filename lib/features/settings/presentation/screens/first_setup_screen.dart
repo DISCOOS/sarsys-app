@@ -30,6 +30,8 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
 
   List<Widget> views;
 
+  int _index = 0;
+
   SecurityMode _mode = SecurityMode.personal;
 
   String _idpHint = 'rodekors';
@@ -114,12 +116,22 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
             break;
         }
     }
+    _index = 1;
+  }
+
+  void _onSecuritySettingResponse(SecurityMode value) {
+    setState(() {
+      _mode = value;
+      _index = 0;
+    });
+    this.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     return SteppedScreen(
       views: views,
+      index: _index,
       isComplete: (_) => isComplete,
       onCancel: (_) async {
         final answer = await prompt(
@@ -155,22 +167,16 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
     return ListView(
       itemExtent: 88,
       children: <Widget>[
-        ListTile(
+        RadioListTile(
           title: Text('Personlig modus'),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8.0, right: 16.0),
             child: Text('Hvis appen kun benyttes av deg'),
           ),
-          leading: Radio<SecurityMode>(
-            value: SecurityMode.personal,
-            groupValue: _mode,
-            onChanged: (value) => setState(
-              () {
-                _mode = value;
-              },
-            ),
-          ),
-          trailing: IconButton(
+          value: SecurityMode.personal,
+          groupValue: _mode,
+          onChanged: (value) => _onSecuritySettingResponse(value),
+          secondary: IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () => alert(
               context,
@@ -179,20 +185,17 @@ class _FirstSetupScreenState extends State<FirstSetupScreen> {
             ),
           ),
         ),
-        ListTile(
+        RadioListTile(
+          key: UniqueKey(),
           title: Text('Delt modus'),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8.0, right: 16.0),
             child: Text('Hvis appen benyttes av flere'),
           ),
-          leading: Radio<SecurityMode>(
-            value: SecurityMode.shared,
-            groupValue: _mode,
-            onChanged: (value) => setState(() {
-              _mode = value;
-            }),
-          ),
-          trailing: IconButton(
+          value: SecurityMode.shared,
+          groupValue: _mode,
+          onChanged: (value) => _onSecuritySettingResponse(value),
+          secondary: IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () => alert(
               context,

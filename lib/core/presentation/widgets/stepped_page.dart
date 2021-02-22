@@ -62,6 +62,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
   @override
   void initState() {
     controller = PageController(initialPage: widget.index);
+    index = widget.index;
     super.initState();
   }
 
