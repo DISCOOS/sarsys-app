@@ -55,7 +55,7 @@ class POIWidget extends StatelessWidget {
       subtitle: Text('${poi.name}'),
       trailing: IconButton(
         icon: Icon(Icons.close),
-        onPressed: () => onCancel ?? onComplete,
+        onPressed: onCancel ?? onComplete,
       ));
 
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Padding(
