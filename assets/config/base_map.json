@@ -105,6 +105,17 @@
       "opencache2",
       "opencache3"
     ]
+  },
+  {
+    "name": "mapant",
+    "description": "MapAnt",
+    "previewFile": "mapant.png",
+    "minZoom": 5,
+    "maxZoom": 16,
+    "offline": false,
+    "tms": false,
+    "url": "https://mapant.no/osm-tiles/{z}/{x}/{y}.png",
+    "subdomains": []
   }
 ]
 
