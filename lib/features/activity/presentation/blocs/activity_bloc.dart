@@ -258,7 +258,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
     @required LocationAccuracy defaultAccuracy,
   }) =>
       LocationOptions(
-        locationDebug: config.locationDebug ?? Defaults.locationDebug,
+        debug: config.locationDebug ?? Defaults.locationDebug,
         accuracy: _toAccuracy(config, defaultAccuracy),
         locationAlways: config.locationAlways ?? false,
         locationWhenInUse: config.locationWhenInUse ?? false,
