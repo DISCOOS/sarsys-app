@@ -367,9 +367,11 @@ class PasscodeDescription extends StatelessWidget {
           child: Text.rich(
             TextSpan(
               text: "Tilgangskoden gir deg tilgangsnivå som mannskap eller "
-                  "aksjonsledelse. Dersom du ønsker å bytte tilgangsnivå "
-                  "etter å deltatt på aksjonen gjør du det ved å "
-                  "legge inn ny kode under dine innstillinger?...",
+                  "aksjonsledelse.",
+              // TODO: Implement functionality that allows the user to enter new access code, add text in message like:
+              //  Dersom du ønsker å bytte tilgangsnivå "
+              //                   "etter å deltatt på aksjonen gjør du det ved å "
+              //                   "legge inn ny kode under dine innstillinger?...",
             ),
           ),
         ),
