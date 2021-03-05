@@ -256,7 +256,7 @@ class LocationOptions {
   final int timeInterval;
 
   LocationOptions copyWith({
-    bool locationDebug,
+    bool debug,
     int timeInterval,
     int distanceFilter,
     bool locationAlways,

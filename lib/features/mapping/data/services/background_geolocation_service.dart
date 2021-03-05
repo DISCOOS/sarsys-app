@@ -172,7 +172,7 @@ class BackgroundGeolocationService implements LocationService {
           _isConfigChanged(
             duuid: duuid,
             token: token,
-            locationDebug: debug,
+            debug: debug,
             share: share,
             options: options ?? _options,
           );
@@ -184,7 +184,7 @@ class BackgroundGeolocationService implements LocationService {
 
         // Ensure debug flag is updated if given
         _options = (options ?? _options).copyWith(
-          locationDebug: debug ?? _options.debug,
+          debug: debug ?? _options.debug,
         );
         final config = _toConfig(
           duuid: duuid,
@@ -269,7 +269,7 @@ class BackgroundGeolocationService implements LocationService {
     );
     return bg.Config(
       reset: true,
-      debug: _locationDebug,
+      debug: _debug,
       url: _toUrl(),
       method: 'POST',
       batchSync: true,
@@ -305,7 +305,7 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  bool get _locationDebug => (_options?.debug ?? kDebugMode);
+  bool get _debug => (_options?.debug ?? kDebugMode);
 
   String _toUrl({bool override = false}) =>
       override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
@@ -431,12 +431,12 @@ class BackgroundGeolocationService implements LocationService {
 
   bool _isConfigChanged({
     bool share,
-    bool locationDebug,
+    bool debug,
     String duuid,
     AuthToken token,
     LocationOptions options,
   }) {
-    return _options?.debug != (locationDebug ?? options.debug ?? kDebugMode) ||
+    return _options?.debug != (debug ?? options.debug ?? kDebugMode) ||
         _options?.accuracy != options.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
