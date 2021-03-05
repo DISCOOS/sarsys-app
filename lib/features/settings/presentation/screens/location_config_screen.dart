@@ -43,7 +43,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
   bool get locationAllowSharing =>
       _manual ? context.bloc<AppConfigBloc>().config.locationAllowSharing : options.locationAllowSharing;
 
-  bool get _locationDebug => _manual ? context.bloc<AppConfigBloc>().config.locationDebug : options.locationDebug;
+  bool get _locationDebug => _manual ? context.bloc<AppConfigBloc>().config.locationDebug : options.debug;
 
   @override
   void dispose() {
@@ -321,7 +321,7 @@ class _LocationConfigScreenState extends State<LocationConfigScreen> {
                 locationDebug: value,
               );
           await LocationService().configure(
-            locationDebug: value,
+            debug: value,
           );
           setState(() {});
         });

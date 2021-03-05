@@ -98,7 +98,7 @@ abstract class LocationService extends Service {
   /// Use [force] to force reconfiguration of service
   Future<LocationOptions> configure({
     bool share,
-    bool locationDebug,
+    bool debug,
     String duuid,
     AuthToken token,
     bool force = false,
@@ -197,7 +197,7 @@ class LocationOptions {
   /// - forceAndroidLocationManager: false
   /// - timeInterval: 0
   const LocationOptions({
-    this.locationDebug = Defaults.locationDebug,
+    this.debug = Defaults.locationDebug,
     this.locationAlways,
     this.locationWhenInUse,
     this.forceAndroidLocationManager,
@@ -211,7 +211,7 @@ class LocationOptions {
 
   /// Tells service to enter debug mode
   ///
-  final bool locationDebug;
+  final bool debug;
 
   /// Tells service to track location also when app is terminated by OS
   ///
@@ -268,7 +268,7 @@ class LocationOptions {
     LocationAccuracy accuracy = LocationAccuracy.best,
   }) =>
       LocationOptions(
-        locationDebug: locationDebug ?? this.locationDebug ?? Defaults.locationDebug,
+        debug: debug ?? this.debug ?? Defaults.locationDebug,
         accuracy: accuracy ?? this.accuracy,
         locationAlways: locationAlways ?? this.locationAlways ?? false,
         locationWhenInUse: locationWhenInUse ?? this.locationWhenInUse ?? false,
@@ -281,7 +281,7 @@ class LocationOptions {
       );
 
   bool equals(AppConfig config) =>
-      locationDebug == config.locationDebug &&
+      debug == config.locationDebug &&
       locationAlways == config.locationAlways &&
       locationWhenInUse == config.locationWhenInUse &&
       activityRecognition == config.activityRecognition &&
@@ -296,7 +296,7 @@ class LocationOptions {
       identical(this, other) ||
       other is LocationOptions &&
           runtimeType == other.runtimeType &&
-          locationDebug == other.locationDebug &&
+          debug == other.debug &&
           locationAlways == other.locationAlways &&
           locationWhenInUse == other.locationWhenInUse &&
           activityRecognition == other.activityRecognition &&
@@ -309,7 +309,7 @@ class LocationOptions {
 
   @override
   int get hashCode =>
-      locationDebug.hashCode ^
+      debug.hashCode ^
       locationAlways.hashCode ^
       locationWhenInUse.hashCode ^
       activityRecognition.hashCode ^
@@ -322,7 +322,7 @@ class LocationOptions {
 
   @override
   String toString() => 'Options: {\n'
-      '   locationDebug: $locationDebug\n'
+      '   locationDebug: $debug\n'
       '   accuracy: $accuracy\n'
       '   timeInterval: $timeInterval\n'
       '   distanceFilter: $distanceFilter\n'

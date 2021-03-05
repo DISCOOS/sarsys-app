@@ -153,7 +153,7 @@ class BackgroundGeolocationService implements LocationService {
   @override
   Future<LocationOptions> configure({
     bool share,
-    bool locationDebug,
+    bool debug,
     String duuid,
     AuthToken token,
     bool force = false,
@@ -172,7 +172,7 @@ class BackgroundGeolocationService implements LocationService {
           _isConfigChanged(
             duuid: duuid,
             token: token,
-            locationDebug: locationDebug,
+            locationDebug: debug,
             share: share,
             options: options ?? _options,
           );
@@ -184,7 +184,7 @@ class BackgroundGeolocationService implements LocationService {
 
         // Ensure debug flag is updated if given
         _options = (options ?? _options).copyWith(
-          locationDebug: locationDebug ?? _options.locationDebug,
+          locationDebug: debug ?? _options.debug,
         );
         final config = _toConfig(
           duuid: duuid,
@@ -305,7 +305,7 @@ class BackgroundGeolocationService implements LocationService {
     );
   }
 
-  bool get _locationDebug => (_options?.locationDebug ?? kDebugMode);
+  bool get _locationDebug => (_options?.debug ?? kDebugMode);
 
   String _toUrl({bool override = false}) =>
       override || isSharing ? '${Defaults.baseRestUrl}/devices/$_duuid/positions' : null;
@@ -326,7 +326,7 @@ class BackgroundGeolocationService implements LocationService {
 
   int get _persistMode => canStore ? bg.Config.PERSIST_MODE_LOCATION : bg.Config.PERSIST_MODE_NONE;
   int get _logLevel => Defaults.debugPrintLocation
-      ? ((_options?.locationDebug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
+      ? ((_options?.debug ?? kDebugMode) ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_INFO)
       : bg.Config.LOG_LEVEL_OFF;
 
   int _toAccuracy(LocationAccuracy accuracy) {
@@ -436,7 +436,7 @@ class BackgroundGeolocationService implements LocationService {
     AuthToken token,
     LocationOptions options,
   }) {
-    return _options?.locationDebug != (locationDebug ?? options.locationDebug ?? kDebugMode) ||
+    return _options?.debug != (locationDebug ?? options.debug ?? kDebugMode) ||
         _options?.accuracy != options.accuracy ||
         _options?.locationAlways != (options.locationAlways ?? false) ||
         _options?.locationWhenInUse != (options.locationWhenInUse ?? false) ||
