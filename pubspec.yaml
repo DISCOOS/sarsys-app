@@ -50,7 +50,7 @@ dependencies:
   flutter_slidable: ^0.5.3
   package_info: ^0.4.0+5
   font_awesome_flutter: ^8.5.0
-  flutter_map: ^0.10.1+1
+  flutter_map: ^0.11.0
   badges: ^1.1.0
   sentry: ^3.0.0+1
   catcher: ^0.3.17
@@ -94,17 +94,18 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dependency_overrides:
-#  flutter_map:
-#    # Use local branch of flutter_map
-##    path: ../flutter_map
-#    git:
-##      url: git://github.com/johnpryan/flutter_map
-#      # Merged PR https://github.com/johnpryan/flutter_map/pull/577 Evict error tiles
-#      # Merged PR https://github.com/johnpryan/flutter_map/pull/584 Observe TileLayerOptions changes
-#      # Proposed fix for missing disposal of AnimationController in Tile class
-#      url: https://github.com/DISCOOS/flutter_map
-#      ref: track_change_and_evict_errors
-#      #ref: master
+  flutter_map:
+    # Use local branch of flutter_map
+#    path: ../flutter_map
+    git:
+#      url: git://github.com/johnpryan/flutter_map
+      # Merged PR https://github.com/johnpryan/flutter_map/pull/577 Evict error tiles
+      # Merged PR https://github.com/johnpryan/flutter_map/pull/584 Observe TileLayerOptions changes
+      # Proposed fix for missing disposal of AnimationController in Tile class
+      url: https://github.com/DISCOOS/flutter_map
+      #ref: track_change_and_evict_errors
+      #ref: master
+      ref: issues/836
 
 #  intro_views_flutter:
 #    #path: ../IntroViews-Flutter
