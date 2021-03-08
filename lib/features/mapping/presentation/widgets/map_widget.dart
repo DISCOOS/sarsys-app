@@ -675,6 +675,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         overrideTilesWhenUrlChanges: true,
         subdomains: _currentBaseMap.subdomains,
         errorTileCallback: _tileProvider.onError,
+        minZoom: _currentBaseMap?.minZoom ?? Defaults.minZoom,
         maxZoom: _currentBaseMap?.maxZoom ?? Defaults.maxZoom,
         errorImage: _offline ? _tileOfflineImage : _tileErrorImage,
         placeholderImage: _offline ? _tileOfflineImage : _tilePendingImage,
@@ -969,17 +970,23 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       _cards.add(
         GestureDetector(
           child: Center(child: BaseMapCard(map: map)),
-          onTap: () => setState(
-            () {
-              _setBaseMap(_writeState(STATE_BASE_MAP, map));
-              _setLayerOptions();
-              Navigator.pop(context);
-            },
-          ),
+          onTap: () => _onBaseMapChanged(map),
         ),
       );
     }
     return _cards;
+  }
+
+  void _onBaseMapChanged(BaseMap map) {
+    if (_zoom > map.maxZoom || _zoom < map.minZoom) {
+      _zoom = _writeState(STATE_ZOOM, math.min(_zoom, map.maxZoom));
+      _zoom = _writeState(STATE_ZOOM, math.max(_zoom, map.minZoom));
+      _mapController.move(_center, _zoom);
+    }
+
+    _setBaseMap(_writeState(STATE_BASE_MAP, map));
+    _setLayerOptions();
+    Navigator.pop(context);
   }
 
   void _onTrackingChanged(bool isLocated, bool isLocked) {
