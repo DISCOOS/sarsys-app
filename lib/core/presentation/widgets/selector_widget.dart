@@ -25,32 +25,33 @@ class SelectorWidget<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: EdgeInsets.only(left: 16, top: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(title, style: style),
-              IconButton(
-                icon: Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.only(left: 16, top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(title, style: style),
+                IconButton(
+                  icon: Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                )
+              ],
+            ),
           ),
-        ),
-        Divider(),
-        ...items.map((item) => ListTile(
-              leading: Icon(icon),
-              title: itemBuilder(context, item),
-              onTap: () {
-                Navigator.of(context).pop();
-                onSelected(context, item);
-              },
-            )),
+          Divider(),
+          ...items.map((item) => ListTile(
+                leading: Icon(icon),
+                title: itemBuilder(context, item),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onSelected(context, item);
+                },
+              )),
 //        SizedBox(
 //          height: min(size.height - 150, 380),
 //          width: MediaQuery.of(context).size.width - 96,
@@ -68,7 +69,8 @@ class SelectorWidget<T> extends StatelessWidget {
 //            },
 //          ),
 //        ),
-      ],
+        ],
+      ),
     );
   }
 }
