@@ -127,28 +127,29 @@ ios-configure:
 
 test:
 	echo "Running flutter tests...";
-	echo "Testing proj4d..."
-	flutter test test/proj4d.dart
-	echo "Testing core..."
-	flutter test test/core/streams_tests.dart
-	echo "Testing UserBloc..."
-	flutter test test/blocs/user_tests.dart
-	echo "Testing AppConfigBloc..."
-	flutter test test/blocs/app_config_tests.dart
-	echo "Testing AffiliationBloc..."
-	flutter test test/blocs/affiliation_tests.dart
-	echo "Testing OperationBloc..."
-	flutter test test/blocs/operation_tests.dart
-	echo "Testing DeviceBloc..."
-	flutter test test/blocs/device_tests.dart
-	echo "Testing PersonnelBloc..."
-	flutter test test/blocs/personnel_tests.dart
-	echo "Testing UnitBloc..."
-	flutter test test/blocs/unit_tests.dart
-	echo "Testing TrackingUtils..."
-	flutter test test//utils/tracking_utils_tests.dart
-#	echo "Testing TrackingBloc..."
-#	flutter test test/blocs/tracking_tests.dart
+	flutter test -j 1
+#	echo "Testing proj4d..."
+#	flutter test test/proj4d.dart
+#	echo "Testing core..."
+#	flutter test test/core/streams_test.dart
+#	echo "Testing UserBloc..."
+#	flutter test test/blocs/user_test.dart
+#	echo "Testing AppConfigBloc..."
+#	flutter test test/blocs/app_config_test.dart
+#	echo "Testing AffiliationBloc..."
+#	flutter test test/blocs/affiliation_test.dart
+#	echo "Testing OperationBloc..."
+#	flutter test test/blocs/operation_test.dart
+#	echo "Testing DeviceBloc..."
+#	flutter test test/blocs/device_tests.dart
+#	echo "Testing PersonnelBloc..."
+#	flutter test test/blocs/personnel_tests.dart
+#	echo "Testing UnitBloc..."
+#	flutter test test/blocs/unit_tests.dart
+#	echo "Testing TrackingUtils..."
+#	flutter test test//utils/tracking_utils_tests.dart
+##	echo "Testing TrackingBloc..."
+##	flutter test test/blocs/tracking_tests.dart
 	echo "[✓] Flutter tests complete."
 
 models:

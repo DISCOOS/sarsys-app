@@ -940,7 +940,7 @@ Future expectStorageStatusLater(
   );
 }
 
-bool _debug = true;
+bool _debug = false;
 void _print(String message) {
   if (_debug) {
     print(message);
