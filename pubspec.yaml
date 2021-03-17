@@ -96,6 +96,7 @@ dependencies:
 
 dependency_overrides:
   intl: ^0.17.0
+  country_pickers: 2.0.0
 #  flutter_map:
 #    # Use local branch of flutter_map
 #    path: ../flutter_map
