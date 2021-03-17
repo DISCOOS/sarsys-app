@@ -978,9 +978,9 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _onBaseMapChanged(BaseMap map) {
-    if (_zoom > map.maxZoom || _zoom < map.minZoom) {
-      _zoom = _writeState(STATE_ZOOM, math.min(_zoom, map.maxZoom));
-      _zoom = _writeState(STATE_ZOOM, math.max(_zoom, map.minZoom));
+    if (_zoom > (map.maxZoom ?? 1.0) || _zoom < (map.minZoom ?? 20.0)) {
+      _zoom = _writeState(STATE_ZOOM, math.min(_zoom, map.maxZoom ?? 20.0));
+      _zoom = _writeState(STATE_ZOOM, math.max(_zoom, map.minZoom ?? 1.0));
       _mapController.move(_center, _zoom);
     }
 
