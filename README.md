@@ -1,6 +1,8 @@
+[![CI](https://travis-ci.com/DISCOOS/sarsys-app.svg?branch=master)](https://github.com/DISCOOS/sarsys-app/actions?query=branch%3Amaster)
+
 # SARSys App
 
-SarSys App is dependent on SARSys API.
+SarSys App is dependent on SARSys API. 
 
 ## Prepare release toolchain
 Requires `make` on `PATH`
