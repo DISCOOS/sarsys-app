@@ -15,6 +15,7 @@ version: 0.1.1+86
 
 environment:
   sdk: ">=2.9.0 <3.0.0"
+  flutter: ">=2.0.0"
 
 dependencies:
   flutter:
@@ -94,18 +95,22 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dependency_overrides:
+  intl: ^0.17.0
+#  flutter_map:
+#    # Use local branch of flutter_map
+#    path: ../flutter_map
   flutter_map:
     # Use local branch of flutter_map
-#    path: ../flutter_map
+    #path: ../flutter_map
     git:
       url: git://github.com/fleaflet/flutter_map
+      ref: master
       # Merged PR https://github.com/johnpryan/flutter_map/pull/577 Evict error tiles
       # Merged PR https://github.com/johnpryan/flutter_map/pull/584 Observe TileLayerOptions changes
       # Proposed fix for missing disposal of AnimationController in Tile class
 #      url: https://github.com/DISCOOS/flutter_map
-      #ref: track_change_and_evict_errors
-      ref: master
-      #ref: issues/836
+#      ref: track_change_and_evict_errors
+#      ref: issues/836
 
 #  intro_views_flutter:
 #    #path: ../IntroViews-Flutter
