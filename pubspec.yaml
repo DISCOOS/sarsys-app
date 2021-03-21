@@ -50,7 +50,7 @@ dependencies:
   permission_handler: ^5.0.1+1
   flutter_slidable: ^0.5.3
   package_info: ^0.4.0+5
-  font_awesome_flutter: ^8.5.0
+  font_awesome_flutter: ^9.0.0
   flutter_map: ^0.11.0
   badges: ^1.1.0
   sentry: ^3.0.0+1
@@ -65,7 +65,7 @@ dependencies:
   provider: ^4.0.1
   wakelock: ^0.1.4
   faker: ^1.1.1
-  connectivity: ^0.4.8+2
+  connectivity: ^3.0.3
   data_connection_checker: ^0.3.4
   xml: ^4.2.0
   pin_code_fields: ^2.4.0
@@ -77,9 +77,9 @@ dependencies:
   json_patch: ^2.0.0
   cached_network_image: ^2.3.1
   flutter_cache_manager: ^1.4.1
-  flutter_phoenix: ^0.1.0
+  flutter_phoenix: ^1.0.0
   chopper: ^3.0.2
-  debounce_throttle: ^1.1.0
+  debounce_throttle: ^2.0.0
   grouped_list: ^3.3.0
   flutter_background_geolocation: 1.10.1
   percent_indicator: ^2.1.5
@@ -92,7 +92,7 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.2
+  cupertino_icons: ^1.0.2
 
 dependency_overrides:
   intl: ^0.17.0
