@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 import 'package:SarSys/features/operation/presentation/screens/operations_screen.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -451,7 +452,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         child: _newUser || bloc.users.isEmpty
             ? _buildEmailTextField(bloc)
             : buildDropDownField<String>(
-                attribute: 'email',
+                name: 'email',
                 isDense: false,
                 initialValue: _setUser(
                   bloc,
@@ -467,7 +468,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
                   );
                   _setUser(bloc, user);
                 },
-                validators: [],
+                validator: FormBuilderValidators.minLength(context, 0),
               ),
       );
 
