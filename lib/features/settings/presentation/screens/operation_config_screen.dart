@@ -70,7 +70,7 @@ class _OperationConfigScreenState extends State<OperationConfigScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: FormBuilderChipsInput(
-            attribute: 'units',
+            name: 'units',
             maxChips: 15,
             initialValue: _bloc.config.units,
             decoration: InputDecoration(

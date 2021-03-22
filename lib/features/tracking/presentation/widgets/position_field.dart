@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class PositionField extends StatelessWidget {
-  final String attribute;
+  final String name;
   final String hintText;
   final String labelText;
   final String errorText;
@@ -19,7 +19,7 @@ class PositionField extends StatelessWidget {
 
   const PositionField({
     Key key,
-    @required this.attribute,
+    @required this.name,
     @required this.labelText,
     @required this.hintText,
     @required this.errorText,
@@ -33,40 +33,40 @@ class PositionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FormBuilderCustomField(
-      attribute: attribute,
-      formField: FormField<Position>(
-        enabled: enabled,
-        initialValue: initialValue,
-        builder: (FormFieldState<Position> field) => GestureDetector(
-          child: InputDecorator(
-            decoration: InputDecoration(
-              filled: true,
-              enabled: true,
-              labelText: labelText,
-              helperText: helperText,
-              suffixIcon: enabled ? Icon(Icons.map) : null,
-              contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
-              errorText: field.hasError ? field.errorText : null,
-              border: enabled ? UnderlineInputBorder() : InputBorder.none,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: field.value == null
-                  ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
-                  : Text(
-                      toUTM(field.value?.geometry),
-                      style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 16),
-                    ),
-            ),
+    return FormBuilderField(
+      name: name,
+//      formField: FormField<Position>(
+      enabled: enabled,
+      initialValue: initialValue,
+      builder: (FormFieldState<Position> field) => GestureDetector(
+        child: InputDecorator(
+          decoration: InputDecoration(
+            filled: true,
+            enabled: true,
+            labelText: labelText,
+            helperText: helperText,
+            suffixIcon: enabled ? Icon(Icons.map) : null,
+            contentPadding: EdgeInsets.fromLTRB(12.0, 16.0, 8.0, 16.0),
+            errorText: field.hasError ? field.errorText : null,
+            border: enabled ? UnderlineInputBorder() : InputBorder.none,
           ),
-          onTap: enabled ? () => _selectLocation(context, field) : null,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: field.value == null
+                ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                : Text(
+                    toUTM(field.value?.geometry),
+                    style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 16),
+                  ),
+          ),
         ),
+        onTap: enabled ? () => _selectLocation(context, field) : null,
       ),
+//      ),
       valueTransformer: (point) => point?.toJson(),
-      validators: [
-        if (optional == false) FormBuilderValidators.required(errorText: errorText),
-      ],
+      validator: FormBuilderValidators.compose([
+        if (optional == false) FormBuilderValidators.required(context, errorText: errorText),
+      ]),
     );
   }
 

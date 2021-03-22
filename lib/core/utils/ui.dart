@@ -91,29 +91,27 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
   return answer ?? false;
 }
 
-FormBuilderCustomField<T> buildReadOnlyField<T>(
+FormBuilderField<T> buildReadOnlyField<T>(
   BuildContext context,
-  String attribute,
+  String name,
   String label,
   String title,
   T value,
 ) {
-  return FormBuilderCustomField<T>(
-    attribute: attribute,
-    formField: FormField<T>(
-      enabled: false,
-      initialValue: value,
-      builder: (FormFieldState<T> field) => InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          enabled: false,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Text(
-            title ?? '-',
-          ),
+  return FormBuilderField<T>(
+    name: name,
+    enabled: false,
+    initialValue: value,
+    builder: (FormFieldState<T> field) => InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        enabled: false,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Text(
+          title ?? '-',
         ),
       ),
     ),
@@ -121,10 +119,10 @@ FormBuilderCustomField<T> buildReadOnlyField<T>(
 }
 
 Widget buildDropDownField<T>({
-  @required String attribute,
+  @required String name,
   @required T initialValue,
   @required List<DropdownMenuItem<T>> items,
-  @required List<FormFieldValidator> validators,
+  @required FormFieldValidator validator,
   String label,
   String helperText,
   bool isDense = true,
@@ -132,29 +130,27 @@ Widget buildDropDownField<T>({
   EdgeInsetsGeometry contentPadding,
   ValueChanged<T> onChanged,
 }) =>
-    FormBuilderCustomField(
-      attribute: attribute,
-      formField: FormField<T>(
+    FormBuilderField(
+      name: name,
+      enabled: enabled,
+      initialValue: initialValue,
+      builder: (FormFieldState<T> field) => buildDropdown<T>(
+        value: _ensureLegalItem(field, items),
+        hasError: field.hasError,
+        errorText: field.errorText,
+        label: label,
+        helperText: helperText,
+        items: items,
+        isDense: isDense,
         enabled: enabled,
         initialValue: initialValue,
-        builder: (FormFieldState<T> field) => buildDropdown<T>(
-          value: _ensureLegalItem(field, items),
-          hasError: field.hasError,
-          errorText: field.errorText,
-          label: label,
-          helperText: helperText,
-          items: items,
-          isDense: isDense,
-          enabled: enabled,
-          initialValue: initialValue,
-          contentPadding: contentPadding,
-          onChanged: (T newValue) {
-            field.didChange(newValue);
-            if (onChanged != null) onChanged(newValue);
-          },
-        ),
+        contentPadding: contentPadding,
+        onChanged: (T newValue) {
+          field.didChange(newValue);
+          if (onChanged != null) onChanged(newValue);
+        },
       ),
-      validators: validators,
+      validator: validator,
     );
 
 T _ensureLegalItem<T>(FormFieldState field, List<DropdownMenuItem<T>> items) {

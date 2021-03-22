@@ -301,7 +301,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           )
         : FormBuilderTextField(
             maxLines: 1,
-            attribute: 'fname',
+            name: 'fname',
             controller: _fnameController,
             decoration: InputDecoration(
               hintText: 'Skriv inn',
@@ -321,10 +321,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             ),
             keyboardType: TextInputType.text,
             valueTransformer: (value) => emptyAsNull(value),
-            validators: [
-              FormBuilderValidators.required(errorText: 'Må fylles inn'),
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(context, errorText: 'Må fylles inn'),
               (value) => _validateName(value, _fnameController.text),
-            ],
+            ]),
             autocorrect: true,
             textCapitalization: TextCapitalization.sentences,
           );
@@ -339,7 +339,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           )
         : FormBuilderTextField(
             maxLines: 1,
-            attribute: 'lname',
+            name: 'lname',
             controller: _lnameController,
             decoration: InputDecoration(
               hintText: 'Skriv inn',
@@ -359,10 +359,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             ),
             keyboardType: TextInputType.text,
             valueTransformer: (value) => emptyAsNull(value),
-            validators: [
-              FormBuilderValidators.required(errorText: 'Må fylles inn'),
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(context, errorText: 'Må fylles inn'),
               (value) => _validateName(value, _lnameController.text),
-            ],
+            ]),
             autocorrect: true,
             textCapitalization: TextCapitalization.sentences,
           );
@@ -409,31 +409,27 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Widget _buildStatusField() {
     return buildDropDownField(
-      attribute: 'status',
+      name: 'status',
       label: 'Status',
       initialValue: enumName(widget?.personnel?.status ?? PersonnelStatus.alerted),
       items: PersonnelStatus.values
           .map((status) => [enumName(status), translatePersonnelStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Status må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Status må velges'),
     );
   }
 
   Widget _buildFunctionField() {
     return buildDropDownField(
-      attribute: 'function',
+      name: 'function',
       label: 'Funksjon',
       initialValue: enumName(widget?.personnel?.function ?? OperationalFunctionType.personnel),
       items: OperationalFunctionType.values
           .map((function) => [enumName(function), translateOperationalFunction(function)])
           .map((function) => DropdownMenuItem(value: function[0], child: Text("${function[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Funksjon må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Funksjon må velges'),
     );
   }
 
@@ -446,7 +442,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
           )
         : FormBuilderTextField(
             maxLines: 1,
-            attribute: 'phone',
+            name: 'phone',
             maxLength: 12,
             maxLengthEnforced: true,
             controller: _phoneController,
@@ -472,13 +468,13 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             keyboardType: TextInputType.number,
             valueTransformer: (value) => emptyAsNull(value),
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            validators: [
+            validator: FormBuilderValidators.compose([
               _validatePhone,
-              FormBuilderValidators.numeric(errorText: "Kun talltegn"),
+              FormBuilderValidators.numeric(context, errorText: "Kun talltegn"),
               (value) => emptyAsNull(value) != null
-                  ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
+                  ? FormBuilderValidators.minLength(context, 8, errorText: "Minimum åtte tegn")(value)
                   : null,
-            ],
+            ]),
           );
   }
 
@@ -513,7 +509,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: FormBuilderChipsInput(
-        attribute: 'devices',
+        name: 'devices',
         maxChips: 5,
         initialValue: _getActualDevices(),
         onChanged: (devices) => _devices = List.from(devices),
@@ -581,7 +577,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   Widget _buildPointField() {
     final point = _toPosition();
     return PositionField(
-      attribute: 'position',
+      name: 'position',
       initialValue: point,
       labelText: "Siste posisjon",
       hintText: 'Velg posisjon',
