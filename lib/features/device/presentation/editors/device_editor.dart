@@ -144,7 +144,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     final originalNumber = widget.device?.number;
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'number',
+      name: 'number',
       maxLength: 12,
       maxLengthEnforced: true,
       controller: _numberController,
@@ -177,8 +177,8 @@ class _DeviceEditorState extends State<DeviceEditor> {
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      validators: [
-        FormBuilderValidators.required(errorText: 'Påkrevd'),
+      validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(context, errorText: 'Påkrevd'),
         (number) {
           Device device = context.bloc<DeviceBloc>().values.firstWhere(
                 (Device device) => isSameNumber(device, number),
@@ -186,7 +186,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
               );
           return device != null ? "Finnes allerede" : null;
         },
-      ],
+      ]),
     );
   }
 
@@ -267,7 +267,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     var originalValue = widget.device?.alias;
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'alias',
+      name: 'alias',
       textInputAction: TextInputAction.done,
       controller: _aliasController,
       onChanged: (value) => _setText(
@@ -289,7 +289,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
       ),
       keyboardType: TextInputType.text,
       valueTransformer: (value) => emptyAsNull(value),
-      validators: [
+      validator: FormBuilderValidators.compose([
         (alias) {
           Device device = context.bloc<DeviceBloc>().values.firstWhere(
                 (Device device) => _isSameAlias(device, alias),
@@ -297,7 +297,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
               );
           return device != null ? "Finnes allerede" : null;
         },
-      ],
+      ]),
     );
   }
 
@@ -329,7 +329,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     final defaultValue = widget.type;
     final actualValue = _getActualType(defaultValue);
     return buildDropDownField(
-      attribute: 'type',
+      name: 'type',
       label: 'Type enhet',
       enabled: false,
       initialValue: enumName(actualValue),
@@ -337,9 +337,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
           .map((type) => [enumName(type), translateDeviceType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Type må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Type må velges'),
       onChanged: (_) {
         _onNumberOrAliasEdit(
           _getActualAlias(),
@@ -351,7 +349,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
   }
 
   Widget _buildPointField() => PositionField(
-        attribute: 'point',
+        name: 'point',
         initialValue: widget?.device?.position,
         labelText: "Siste posisjon",
         hintText: 'Ingen posisjon',

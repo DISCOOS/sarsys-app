@@ -198,7 +198,7 @@ class _UnitEditorState extends State<UnitEditor> {
   FormBuilderTextField _buildNumberField() {
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'number',
+      name: 'number',
       maxLength: 2,
       maxLengthEnforced: true,
       controller: _numberController,
@@ -224,11 +224,11 @@ class _UnitEditorState extends State<UnitEditor> {
       keyboardType: TextInputType.number,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       valueTransformer: (value) => int.tryParse(emptyAsNull(value) ?? _defaultNumber()),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Må fylles inn'),
-        FormBuilderValidators.numeric(errorText: "Må være et nummer"),
+      validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(context, errorText: 'Må fylles inn'),
+        FormBuilderValidators.numeric(context, errorText: "Må være et nummer"),
         _validateNumber,
-      ],
+      ]),
     );
   }
 
@@ -257,7 +257,7 @@ class _UnitEditorState extends State<UnitEditor> {
   FormBuilderTextField _buildCallsignField() {
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'callsign',
+      name: 'callsign',
       controller: _callsignController,
       decoration: InputDecoration(
         hintText: 'Skriv inn',
@@ -278,10 +278,10 @@ class _UnitEditorState extends State<UnitEditor> {
       keyboardType: TextInputType.text,
       valueTransformer: (value) => emptyAsNull(value),
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      validators: [
-        FormBuilderValidators.required(errorText: 'Må fylles inn'),
+      validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(context, errorText: 'Må fylles inn'),
         _validateCallsign,
-      ],
+      ]),
     );
   }
 
@@ -310,7 +310,7 @@ class _UnitEditorState extends State<UnitEditor> {
   FormBuilderTextField _buildPhoneField() {
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'phone',
+      name: 'phone',
       maxLength: 12,
       maxLengthEnforced: true,
       controller: _phoneController,
@@ -336,13 +336,13 @@ class _UnitEditorState extends State<UnitEditor> {
       keyboardType: TextInputType.number,
       valueTransformer: (value) => emptyAsNull(value),
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      validators: [
+      validator: FormBuilderValidators.compose([
         _validatePhone,
-        FormBuilderValidators.numeric(errorText: "Kun talltegn"),
+        FormBuilderValidators.numeric(context, errorText: "Kun talltegn"),
         (value) => emptyAsNull(value) != null
-            ? FormBuilderValidators.minLength(8, errorText: "Minimum åtte tegn")(value)
+            ? FormBuilderValidators.minLength(context, 8, errorText: "Minimum åtte tegn")(value)
             : null,
-      ],
+      ]),
     );
   }
 
@@ -384,16 +384,14 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget _buildTypeField() {
     final actualValue = _actualType(widget.type);
     return buildDropDownField(
-      attribute: 'type',
+      name: 'type',
       label: 'Type enhet',
       initialValue: enumName(actualValue),
       items: UnitType.values
           .map((type) => [enumName(type), translateUnitType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Type må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Type må velges'),
       onChanged: (value) => _onTypeOrNumberEdit(
         UnitType.values.firstWhere(
           (test) => enumName(test) == value,
@@ -407,16 +405,14 @@ class _UnitEditorState extends State<UnitEditor> {
 
   Widget _buildStatusField() {
     return buildDropDownField(
-      attribute: 'status',
+      name: 'status',
       label: 'Status',
       initialValue: enumName(widget?.unit?.status ?? UnitStatus.mobilized),
       items: UnitStatus.values
           .map((status) => [enumName(status), translateUnitStatus(status)])
           .map((status) => DropdownMenuItem(value: status[0], child: Text("${status[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Status må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Status må velges'),
     );
   }
 
@@ -425,7 +421,7 @@ class _UnitEditorState extends State<UnitEditor> {
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: hasAvailableDevices
           ? FormBuilderChipsInput(
-              attribute: 'devices',
+              name: 'devices',
               maxChips: 5,
               initialValue: _getActualDevices(),
               onChanged: (devices) => _devices = List.from(devices),
@@ -502,7 +498,7 @@ class _UnitEditorState extends State<UnitEditor> {
       padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
       child: hasAvailablePersonnel
           ? FormBuilderChipsInput(
-              attribute: 'personnels',
+              name: 'personnels',
               maxChips: 15,
               initialValue: _personnels,
               onChanged: (personnels) {
@@ -582,7 +578,7 @@ class _UnitEditorState extends State<UnitEditor> {
   Widget _buildPositionField() {
     final position = _toPosition();
     return PositionField(
-      attribute: 'position',
+      name: 'position',
       initialValue: position,
       labelText: "Siste posisjon",
       hintText: 'Velg posisjon',

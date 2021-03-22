@@ -158,7 +158,7 @@ class AffiliationFormState extends State<AffiliationForm> {
     final orgs = _buildOrgItems();
     return editable
         ? buildDropDownField<String>(
-            attribute: ORG_FIELD,
+            name: ORG_FIELD,
             label: 'Organisasjon',
             initialValue: ouuid,
             items: orgs,
@@ -166,9 +166,7 @@ class AffiliationFormState extends State<AffiliationForm> {
               _org.value = selected;
               _onChanged();
             },
-            validators: [
-              FormBuilderValidators.required(errorText: 'Organisasjon må velges'),
-            ],
+            validator: FormBuilderValidators.required(context, errorText: 'Organisasjon må velges'),
           )
         : buildReadOnlyField<String>(
             context,
@@ -188,7 +186,7 @@ class AffiliationFormState extends State<AffiliationForm> {
         // scheduleMicrotask(() => _div.value = duuid);
         return editable & divisions.isNotEmpty
             ? buildDropDownField<String>(
-                attribute: DIV_FIELD,
+                name: DIV_FIELD,
                 label: 'Distrikt',
                 initialValue: duuid,
                 items: divisions,
@@ -196,9 +194,7 @@ class AffiliationFormState extends State<AffiliationForm> {
                   _div.value = selected;
                   _onChanged();
                 },
-                validators: [
-                  FormBuilderValidators.required(errorText: 'Distrikt må velges'),
-                ],
+                validator: FormBuilderValidators.required(context, errorText: 'Distrikt må velges'),
               )
             : buildReadOnlyField<String>(
                 context,
@@ -220,7 +216,7 @@ class AffiliationFormState extends State<AffiliationForm> {
           // scheduleMicrotask(() => _dep = depuuid);
           return editable && departments.isNotEmpty
               ? buildDropDownField<String>(
-                  attribute: DEP_FIELD,
+                  name: DEP_FIELD,
                   label: 'Avdeling',
                   items: departments,
                   initialValue: _dep,
@@ -229,9 +225,7 @@ class AffiliationFormState extends State<AffiliationForm> {
                     _dep = selected;
                     _onChanged();
                   },
-                  validators: [
-                    FormBuilderValidators.required(errorText: 'Avdeling må velges'),
-                  ],
+                  validator: FormBuilderValidators.required(context, errorText: 'Avdeling må velges'),
                 )
               : buildReadOnlyField<String>(
                   context,

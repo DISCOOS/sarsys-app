@@ -109,7 +109,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 16.0, right: 16.0),
           child: FormBuilderChipsInput(
-            attribute: 'talkgroups',
+            name: 'talkgroups',
             maxChips: 5,
             initialValue: FleetMapTalkGroupConverter.toList(_bloc.config.talkGroups),
             decoration: InputDecoration(

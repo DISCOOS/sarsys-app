@@ -185,7 +185,7 @@ class _CoordinateInputState extends State<CoordinateInput> {
 
   Widget _buildZoneField() {
     return buildDropDownField(
-      attribute: 'zone',
+      name: 'zone',
       initialValue: 32,
       isDense: true,
       items: [31, 32, 33, 34, 35, 36, 37]
@@ -194,16 +194,14 @@ class _CoordinateInputState extends State<CoordinateInput> {
           )
           .toList(),
       contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Sone må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Sone må velges'),
     );
   }
 
   Widget _buildBandField(String band) {
     // TODO: Limit band to legal range
     return buildDropDownField(
-      attribute: 'band',
+      name: 'band',
       initialValue: band,
       isDense: true,
       items: ["V", "W", "X"]
@@ -212,9 +210,7 @@ class _CoordinateInputState extends State<CoordinateInput> {
           )
           .toList(),
       contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Bånd må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Bånd må velges'),
     );
   }
 

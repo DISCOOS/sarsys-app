@@ -356,7 +356,7 @@ class _OperationEditorState extends State<OperationEditor> {
   FormBuilderDateTimePicker _buildOccurredField() {
     final now = DateTime.now();
     return FormBuilderDateTimePicker(
-      attribute: "occurred",
+      name: "occurred",
       initialTime: null,
       lastDate: DateTime(now.year, now.month, now.day, 23, 59, 59),
       initialValue: widget?.incident?.occurred ?? now,
@@ -369,11 +369,11 @@ class _OperationEditorState extends State<OperationEditor> {
         filled: true,
       ),
       keyboardType: TextInputType.datetime,
-      validators: [
+      validator: FormBuilderValidators.compose([
         (value) {
           return value.isAfter(DateTime.now()) ? "Du kan ikke sette klokkeslett frem i tid" : null;
         }
-      ],
+      ]),
       valueTransformer: (dt) => dt.toString(),
     );
   }
@@ -414,7 +414,7 @@ class _OperationEditorState extends State<OperationEditor> {
   Widget _buildNameField() {
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'name',
+      name: 'name',
       initialValue: widget?.incident?.name,
       decoration: new InputDecoration(
         labelText: 'Stedsnavn',
@@ -427,9 +427,7 @@ class _OperationEditorState extends State<OperationEditor> {
           _updateDescription('ipp_description', value, _ippController);
         }
       },
-      validators: [
-        FormBuilderValidators.required(errorText: 'Navn må fylles inn'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Navn må fylles inn'),
       autocorrect: true,
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(fontSize: 16.0),
@@ -439,16 +437,14 @@ class _OperationEditorState extends State<OperationEditor> {
   Widget _buildJustificationField() {
     return FormBuilderTextField(
       maxLines: 3,
-      attribute: 'justification',
+      name: 'justification',
       initialValue: widget?.operation?.justification,
       decoration: new InputDecoration(
         labelText: 'Begrunnelse',
         hintText: 'Oppgi begrunnelse',
         filled: true,
       ),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Begrunnelse må fylles inn'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Begrunnelse må fylles inn'),
       autocorrect: true,
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(fontSize: 16.0),
@@ -458,7 +454,7 @@ class _OperationEditorState extends State<OperationEditor> {
   Widget _buildReferenceField() {
     return FormBuilderTextField(
       maxLines: 1,
-      attribute: 'reference',
+      name: 'reference',
       initialValue: widget?.operation?.reference,
       decoration: new InputDecoration(
         hintText: 'SAR- eller AMIS-nummer',
@@ -469,66 +465,58 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Widget _buildIncidentTypeField() {
     return buildDropDownField<String>(
-      attribute: 'incident_type',
+      name: 'incident_type',
       label: 'Type hendelse',
       initialValue: enumName(widget?.incident?.type ?? IncidentType.lost),
       items: IncidentType.values
           .map((type) => [enumName(type), translateIncidentType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Type må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Type må velges'),
     );
   }
 
   Widget _buildOperationTypeField() {
     return buildDropDownField(
-      attribute: 'operation_type',
+      name: 'operation_type',
       label: 'Disiplin',
       initialValue: enumName(widget?.operation?.type ?? OperationType.search),
       items: OperationType.values
           .map((type) => [enumName(type), translateOperationType(type)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Disiplin må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Disiplin må velges'),
     );
   }
 
   Widget _buildIncidentStatusField() {
     return buildDropDownField(
-      attribute: 'incident_status',
+      name: 'incident_status',
       label: 'Status',
       initialValue: enumName(widget?.incident?.status ?? IncidentStatus.registered),
       items: IncidentStatus.values
           .map((status) => [enumName(status), translateIncidentStatus(status)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Status må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Status må velges'),
     );
   }
 
   Widget _buildOperationStatusField() {
     return buildDropDownField(
-      attribute: 'operation_status',
+      name: 'operation_status',
       label: 'Fase',
       initialValue: enumName(widget?.operation?.status ?? OperationStatus.planned),
       items: OperationStatus.values
           .map((status) => [enumName(status), translateOperationStatus(status)])
           .map((type) => DropdownMenuItem(value: type[0], child: Text("${type[1]}")))
           .toList(),
-      validators: [
-        FormBuilderValidators.required(errorText: 'Status må velges'),
-      ],
+      validator: FormBuilderValidators.required(context, errorText: 'Status må velges'),
     );
   }
 
   Widget _buildIPPField() => PositionField(
-        attribute: 'ipp',
+        name: 'ipp',
         initialValue: toPosition(
           _ipp?.point,
           defaultValue: widget.ipp,
@@ -559,7 +547,7 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   Widget _buildMeetupField() => PositionField(
-        attribute: 'meetup',
+        name: 'meetup',
         initialValue: toPosition(
           _meetup?.point,
           defaultValue: widget.ipp,
@@ -582,7 +570,7 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Widget _buildIPPDescriptionField() => FormBuilderTextField(
         maxLines: 1,
-        attribute: 'ipp_description',
+        name: 'ipp_description',
         controller: _ippController,
         decoration: InputDecoration(
           labelText: "Stedsnavn",
@@ -611,7 +599,7 @@ class _OperationEditorState extends State<OperationEditor> {
 
   Widget _buildMeetupDescriptionField() => FormBuilderTextField(
         maxLines: 1,
-        attribute: 'meetup_description',
+        name: 'meetup_description',
         controller: _meetupController,
         decoration: InputDecoration(
             labelText: "Stedsnavn",
@@ -677,8 +665,8 @@ class _OperationEditorState extends State<OperationEditor> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
         child: Center(
-          child: FormBuilderChipsInput(
-            attribute: 'talkgroups',
+          child: FormBuilderChipsInput<TalkGroup>(
+            name: 'talkgroups',
             maxChips: 5,
             initialValue: widget?.operation?.talkgroups ??
                 FleetMapTalkGroupConverter.toList(
@@ -697,7 +685,7 @@ class _OperationEditorState extends State<OperationEditor> {
                 final tgCatalog = org != null
                     ? AffiliationUtils.findCatalog(
                         org.fleetMap,
-                        _formKey.currentState.fields["tgCatalog"].currentState.value,
+                        _formKey.currentState.fields["tgCatalog"].value,
                       )
                     : null;
                 return (tgCatalog?.groups ?? [])
@@ -729,9 +717,7 @@ class _OperationEditorState extends State<OperationEditor> {
               );
             },
             valueTransformer: (values) => values.map((tg) => tg.toJson()).toList(),
-            validators: [
-              FormBuilderValidators.required(errorText: 'Talegruppe(r) må oppgis'),
-            ],
+            validator: FormBuilderValidators.required(context, errorText: 'Talegruppe(r) må oppgis'),
             // BUG: These are required, no default values are given.
             obscureText: false,
             inputType: TextInputType.text,
@@ -759,13 +745,11 @@ class _OperationEditorState extends State<OperationEditor> {
                 '',
               )
             : buildDropDownField(
-                attribute: 'tgCatalog',
+                name: 'tgCatalog',
                 label: 'Nødnett',
                 initialValue: context.bloc<AppConfigBloc>().config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
                 items: catalogs.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
-                validators: [
-                  FormBuilderValidators.required(errorText: 'Talegruppe må velges'),
-                ],
+                validator: FormBuilderValidators.required(context, errorText: 'Talegruppe må velges'),
               );
       },
     );
@@ -806,7 +790,7 @@ class _OperationEditorState extends State<OperationEditor> {
     return Padding(
       padding: EdgeInsets.zero,
       child: FormBuilderChipsInput(
-        attribute: 'units',
+        name: 'units',
         maxChips: 15,
         initialValue: context.bloc<AppConfigBloc>().config.units,
         decoration: InputDecoration(
@@ -916,12 +900,12 @@ class _OperationEditorState extends State<OperationEditor> {
   }
 
   void _updateField<T>(
-    String attribute,
+    String name,
     T value,
   ) {
     if (_formKey.currentState != null) {
-      _formKey.currentState.setAttributeValue(attribute, value);
-      _formKey.currentState.fields[attribute].currentState.didChange(value);
+      _formKey.currentState.patchValue({name: value});
+      _formKey.currentState.fields[name].didChange(value);
       _formKey.currentState.save();
     }
   }
@@ -994,8 +978,7 @@ class _OperationEditorState extends State<OperationEditor> {
   _isValid(List<String> fields) {
     var state = _formKey.currentState;
     return _formKey.currentState == null ||
-        fields.where((name) => state.fields[name] == null || !state.fields[name].currentState.hasError).length ==
-            fields.length;
+        fields.where((name) => state.fields[name] == null || !state.fields[name].hasError).length == fields.length;
   }
 
   Map<String, dynamic> _toIncidentJson(
