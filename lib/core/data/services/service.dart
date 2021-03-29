@@ -194,15 +194,18 @@ class ServiceResponse<D> extends Equatable {
     this.stackTrace,
     this.statusCode,
     this.reasonPhrase,
-  }) : super([
-          body,
-          page,
-          error,
-          conflict,
-          stackTrace,
-          statusCode,
-          reasonPhrase,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        body,
+        page,
+        error,
+        conflict,
+        stackTrace,
+        statusCode,
+        reasonPhrase,
+      ];
 
   ServiceResponse<D> copyWith<D>({D body, int code, String message}) {
     return ServiceResponse<D>(

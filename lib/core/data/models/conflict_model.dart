@@ -28,6 +28,15 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
           error,
         ]);
 
+  @override
+  List<Object> get props => [
+        type,
+        base,
+        mine,
+        yours,
+        error,
+      ];
+
   final String code;
   final String error;
   final ConflictType type;

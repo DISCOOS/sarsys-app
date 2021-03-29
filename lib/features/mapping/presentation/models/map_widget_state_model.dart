@@ -19,7 +19,16 @@ class MapWidgetStateModel extends Equatable {
     this.filters,
     this.ouuid,
     this.following = false,
-  }) : super([center, zoom, baseMap, filters]);
+  });
+
+  @override
+  List<Object> get props => [
+        center,
+        zoom,
+        baseMap,
+        filters,
+      ];
+
   final double zoom;
   @JsonKey(fromJson: _toLatLng, toJson: _toJson)
   final LatLng center;

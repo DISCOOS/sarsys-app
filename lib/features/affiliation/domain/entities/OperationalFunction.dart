@@ -12,10 +12,13 @@ class OperationalFunction extends Equatable {
   OperationalFunction({
     @required this.name,
     @required this.pattern,
-  }) : super([
-          name,
-          pattern,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        name,
+        pattern,
+      ];
 
   /// Get searchable string
   get searchable => props.join(' ');

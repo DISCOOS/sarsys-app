@@ -17,10 +17,13 @@ class TalkGroupCatalog extends Equatable {
   TalkGroupCatalog({
     @required this.name,
     @required this.groups,
-  }) : super([
-          name,
-          groups,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        name,
+        groups,
+      ];
 
   /// Factory constructor for creating a new `TalkGroupCatalog`  instance
   factory TalkGroupCatalog.fromJson(Map<String, dynamic> json) => _$TalkGroupCatalogFromJson(json);

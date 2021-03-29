@@ -15,10 +15,13 @@ class TalkGroup extends Equatable {
     @required this.id,
     @required this.name,
     @required this.type,
-  }) : super([
-          name,
-          type,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        name,
+        type,
+      ];
 
   /// Get searchable string
   get searchable => props.map((prop) => prop is TalkGroupType ? translateTalkGroupType(prop) : prop).join(' ');

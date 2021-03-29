@@ -48,18 +48,21 @@ class User extends Equatable {
     this.department,
     this.roles = const [],
     this.passcodes = const [],
-  }) : super([
-          userId,
-          fname,
-          lname,
-          uname,
-          email,
-          phone,
-          division,
-          department,
-          roles,
-          passcodes,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        userId,
+        fname,
+        lname,
+        uname,
+        email,
+        phone,
+        division,
+        department,
+        roles,
+        passcodes,
+      ];
 
   String get fullName => '$fname $lname';
   String get shortName => '${fname.substring(0, 1)} $lname';

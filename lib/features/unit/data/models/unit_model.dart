@@ -38,6 +38,18 @@ class UnitModel extends Unit implements JsonObject<Map<String, dynamic>> {
         );
 
   @override
+  List<Object> get props => [
+        uuid,
+        type,
+        phone,
+        number,
+        status,
+        tracking,
+        callsign,
+        personnels,
+      ];
+
+  @override
   @JsonKey(fromJson: toTrackingRef)
   final AggregateRef<TrackingModel> tracking;
 

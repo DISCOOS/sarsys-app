@@ -21,6 +21,13 @@ class Position extends ValueObject<Map<String, dynamic>> {
           PositionType.feature,
         ]);
 
+  @override
+  List<Object> get props => [
+        geometry,
+        properties,
+        PositionType.feature,
+      ];
+
   final Point geometry;
   final PositionProperties properties;
   final PositionType type = PositionType.feature;

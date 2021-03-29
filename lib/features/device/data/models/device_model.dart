@@ -39,6 +39,21 @@ class DeviceModel extends Device implements JsonObject<Map<String, dynamic>> {
         );
 
   @override
+  List<Object> get props => [
+        uuid,
+        position,
+        type,
+        alias,
+        number,
+        manual,
+        network,
+        trackable,
+        networkId,
+        allocatedTo,
+        status,
+      ];
+
+  @override
   @JsonKey(fromJson: toIncidentRef)
   final AggregateRef<Incident> allocatedTo;
 

@@ -535,19 +535,24 @@ class GeocodeResult extends Equatable {
     this.source,
     this.address,
     this.distance,
-  }) : super([
-          title,
-          icon,
-          address,
-          position,
-          longitude,
-          latitude,
-          type,
-          source,
-          distance,
-        ]);
+  });
 
   bool get hasLocation => latitude != null && longitude != null;
+
+  @override
+  List<Object> get props {
+    return [
+      title,
+      icon,
+      address,
+      position,
+      longitude,
+      latitude,
+      type,
+      source,
+      distance,
+    ];
+  }
 
   @override
   String toString() {

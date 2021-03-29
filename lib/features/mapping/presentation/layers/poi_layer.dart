@@ -26,6 +26,13 @@ class POI extends Equatable {
     @required this.name,
     @required this.point,
   });
+
+  @override
+  List<Object> get props => [
+        name,
+        point,
+        type,
+      ];
 }
 
 enum POIType { IPP, Meetup, Any }

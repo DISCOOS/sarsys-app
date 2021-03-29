@@ -92,12 +92,16 @@ abstract class UseCase<E, T, P> {
   Future<Either<E, T>> execute(P params);
 }
 
-class NoParams extends Equatable {}
+class NoParams extends Equatable {
+  @override
+  List<Object> get props => [];
+}
 
 class BlocParams<B extends Bloc, T> extends Equatable {
-  BlocParams(this.data, {B bloc})
-      : this.bloc = bloc ?? BlocProvider.of<B>(NavigationService().context),
-        super([data]);
+  BlocParams(this.data, {B bloc}) : this.bloc = bloc ?? BlocProvider.of<B>(NavigationService().context);
+
+  @override
+  List<Object> get props => [data];
 
   final B bloc;
   final T data;

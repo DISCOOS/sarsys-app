@@ -5,8 +5,13 @@ import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
 
 abstract class JsonObject<T> extends Equatable {
-  JsonObject(List fields) : super(fields);
+  JsonObject(List fields) : _props = [...fields];
   T toJson();
+
+  final List<Object> _props;
+
+  @override
+  List<Object> get props => _props;
 }
 
 abstract class Aggregate<T> extends JsonObject<T> {

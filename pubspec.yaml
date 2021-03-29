@@ -37,12 +37,12 @@ dependencies:
   path: ^1.6.2
   path_provider: ^1.1.0
   protobuf: ^1.0.1
-  web_socket_channel: ^1.0.12
+  web_socket_channel: ^1.2.0
   rxdart: ^0.23.0
   json_annotation: ^3.0.1
   bloc: ^3.0.0
   flutter_bloc: ^3.2.0
-  equatable: ^0.2.3
+  equatable: ^2.0.0
   jaguar_jwt: ^2.1.6
   flutter_form_builder: ^4.2.0
   flutter_chips_input: ^1.3.1
@@ -54,16 +54,16 @@ dependencies:
   flutter_map: ^0.11.0
   badges: ^1.1.0
   sentry: ^3.0.0+1
-  catcher: ^0.3.17
-  device_info: ^0.4.0+2
+  catcher: ^0.3.23
+  device_info: ^1.0.0
   url_launcher: ^6.0.2
   material_design_icons_flutter: ^4.0.5345
   filesize: ^1.0.4
   dartz: ^0.9.1
   intro_views_flutter: ^2.8.1
   flutter_email_sender: ^3.0.1
-  provider: ^4.0.1
-  wakelock: ^0.1.4
+  provider: ^4.3.3
+  wakelock: ^0.5.0+2
   faker: ^1.1.1
   connectivity: ^3.0.3
   data_connection_checker: ^0.3.4

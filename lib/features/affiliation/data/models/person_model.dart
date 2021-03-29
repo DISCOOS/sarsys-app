@@ -28,6 +28,17 @@ class PersonModel extends Person {
           temporary: temporary,
         );
 
+  @override
+  List<Object> get props => [
+        uuid,
+        fname,
+        lname,
+        phone,
+        email,
+        userId,
+        temporary,
+      ];
+
   /// Factory constructor for creating a new `Person` instance
   factory PersonModel.fromJson(Map<String, dynamic> json) => _$PersonModelFromJson(json);
 
