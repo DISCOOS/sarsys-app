@@ -20,6 +20,17 @@ class FleetMap extends JsonObject {
     @required this.functions,
   }) : super([name, alias, prefix, pattern, numbers, catalogs, functions]);
 
+  @override
+  List<Object> get props => [
+        name,
+        alias,
+        prefix,
+        pattern,
+        numbers,
+        catalogs,
+        functions,
+      ];
+
   /// FleetMap name
   final String name;
 

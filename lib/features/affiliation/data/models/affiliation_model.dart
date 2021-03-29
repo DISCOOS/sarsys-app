@@ -37,6 +37,18 @@ class AffiliationModel extends Affiliation {
         );
 
   @override
+  List<Object> get props => [
+        uuid,
+        person,
+        org,
+        div,
+        dep,
+        type,
+        status,
+        active,
+      ];
+
+  @override
   @JsonKey(
     // Person is read only with 'expand=person'
     toJson: fromPersonRef,

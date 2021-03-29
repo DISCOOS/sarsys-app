@@ -31,6 +31,19 @@ class IncidentModel extends Incident implements JsonObject<Map<String, dynamic>>
           resolution: resolution,
         );
 
+  @override
+  List<Object> get props => [
+        uuid,
+        name,
+        type,
+        status,
+        summary,
+        occurred,
+        exercise,
+        operations,
+        resolution,
+      ];
+
   /// Factory constructor for creating a new `IncidentModel` instance
   factory IncidentModel.fromJson(Map<String, dynamic> json) => _$IncidentModelFromJson(json);
 

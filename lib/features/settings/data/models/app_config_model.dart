@@ -76,6 +76,41 @@ class AppConfigModel extends AppConfig implements JsonObject<Map<String, dynamic
         );
 
   @override
+  List<Object> get props => [
+        uuid,
+        udid,
+        demo,
+        units,
+        version,
+        demoRole,
+        storage,
+        sentryDns,
+        onboarded,
+        firstSetup,
+        talkGroups,
+        locationDebug,
+        locationAlways,
+        idpHints,
+        locationWhenInUse,
+        mapCacheTTL,
+        activityRecognition,
+        securityType,
+        securityMode,
+        keepScreenOn,
+        mapRetinaMode,
+        callsignReuse,
+        trustedDomains,
+        talkGroupCatalog,
+        mapCacheCapacity,
+        locationAccuracy,
+        securityLockAfter,
+        locationStoreLocally,
+        locationAllowSharing,
+        locationFastestInterval,
+        locationSmallestDisplacement,
+      ];
+
+  @override
   AppConfig copyWith({
     String uuid,
     String udid,

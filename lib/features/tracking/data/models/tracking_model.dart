@@ -53,6 +53,19 @@ class TrackingModel extends Tracking {
         );
 
   @override
+  List<Object> get props => [
+        uuid,
+        speed,
+        effort,
+        status,
+        position,
+        distance,
+        tracks,
+        sources,
+        history,
+      ];
+
+  @override
   final List<TrackingSourceModel> sources;
 
   @override

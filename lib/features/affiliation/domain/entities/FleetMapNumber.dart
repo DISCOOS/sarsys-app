@@ -12,6 +12,12 @@ class FleetMapNumber extends JsonObject {
     @required this.suffix,
   }) : super([name, suffix]);
 
+  @override
+  List<Object> get props => [
+        name,
+        suffix,
+      ];
+
   final String name;
   final String suffix;
 

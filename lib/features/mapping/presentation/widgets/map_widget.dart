@@ -371,15 +371,15 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   }
 
   void _initWakeLock() async {
-    _wakeLockWasOn = await Wakelock.isEnabled;
+    _wakeLockWasOn = await Wakelock.enabled;
     if (mounted) {
-      await Wakelock.toggle(on: context.bloc<AppConfigBloc>().config.keepScreenOn);
+      await Wakelock.toggle(enable: context.bloc<AppConfigBloc>().config.keepScreenOn);
     }
   }
 
   void _restoreWakeLock() async {
-    final wakeLock = await Wakelock.isEnabled;
-    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(on: _wakeLockWasOn);
+    final wakeLock = await Wakelock.enabled;
+    if (wakeLock != _wakeLockWasOn) await Wakelock.toggle(enable: _wakeLockWasOn);
   }
 
   Future _asyncBaseMapLoad(bool update) async {

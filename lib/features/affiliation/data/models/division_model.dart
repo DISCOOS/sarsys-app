@@ -24,6 +24,16 @@ class DivisionModel extends Division {
           active: active,
         );
 
+  @override
+  List<Object> get props => [
+        uuid,
+        name,
+        suffix,
+        organisation,
+        departments,
+        active,
+      ];
+
   /// Factory constructor for creating a new `DivisionModel` instance
   factory DivisionModel.fromJson(Map<String, dynamic> json) => _$DivisionModelFromJson(json);
 

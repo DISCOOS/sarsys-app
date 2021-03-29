@@ -15,13 +15,16 @@ class AuthToken extends Equatable {
     this.clientId,
     this.refreshToken,
     this.accessTokenExpiration,
-  }) : super([
-          idToken,
-          clientId,
-          accessToken,
-          refreshToken,
-          accessTokenExpiration,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        idToken,
+        clientId,
+        accessToken,
+        refreshToken,
+        accessTokenExpiration,
+      ];
 
   final String idToken;
   final String clientId;

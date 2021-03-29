@@ -16,6 +16,12 @@ class Point extends ValueObject<Map<String, dynamic>> {
           PointType.point,
         ]);
 
+  @override
+  List<Object> get props => [
+        coordinates,
+        PointType.point,
+      ];
+
   @JsonKey(ignore: true)
   double get lat => coordinates.lat;
 

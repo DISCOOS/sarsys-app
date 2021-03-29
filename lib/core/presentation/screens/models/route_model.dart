@@ -5,9 +5,15 @@ part 'route_model.g.dart';
 
 @JsonSerializable()
 class RouteModel extends Equatable {
-  RouteModel(this.data, this.name) : super([data, name]);
+  RouteModel(this.data, this.name);
   final String name;
   final dynamic data;
+
+  @override
+  List<Object> get props => [
+        data,
+        name,
+      ];
 
   /// Factory constructor for creating a new `Route` instance
   factory RouteModel.fromJson(Map<String, dynamic> json) => _$RouteModelFromJson(json);

@@ -10,7 +10,10 @@ part 'AggregateRef.g.dart';
 class AggregateRef<T extends Aggregate> extends Equatable {
   AggregateRef({
     @required this.uuid,
-  }) : super([uuid, typeOf<T>()]);
+  });
+
+  @override
+  List<Object> get props => [uuid, typeOf<T>()];
 
   final String uuid;
 

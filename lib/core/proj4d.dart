@@ -36,14 +36,17 @@ class Ellipsoid extends Equatable {
     this.poleRadius = 1.0,
     this.eccentricity = 1.0,
     this.eccentricitySquared = 1.0,
-  }) : super([
-          shortName,
-          name,
-          equatorRadius,
-          poleRadius,
-          eccentricity,
-          eccentricitySquared,
-        ]);
+  });
+
+  @override
+  List<Object> get props => [
+        shortName,
+        name,
+        equatorRadius,
+        poleRadius,
+        eccentricity,
+        eccentricitySquared,
+      ];
 
   factory Ellipsoid.polar(
     String shortName,
@@ -109,12 +112,15 @@ class Datum extends Equatable {
     this.name,
     this.ellipsoid,
     this._transform,
-  ) : super([
-          code,
-          name,
-          ellipsoid,
-          _transform,
-        ]);
+  );
+
+  @override
+  List<Object> get props => [
+        code,
+        name,
+        ellipsoid,
+        _transform,
+      ];
 
   /// Create Datum with 3-param transform
   factory Datum.from3params(
@@ -297,7 +303,10 @@ class ProjCoordinate extends Equatable {
     this.x,
     this.y,
     this.z,
-  ) : super([x, y, z]);
+  );
+
+  @override
+  List<Object> get props => [x, y, z];
 
   factory ProjCoordinate.from2D(double x, double y) => ProjCoordinate(x, y, double.nan);
 
@@ -948,7 +957,11 @@ class TransverseMercatorProjection extends Projection {
 
   static int getZoneFromNearestMeridianInRadians(double longitude) {
     int zone = (ProjMath.normalizeLongitudeInRadians(longitude) + math.pi).floor() * 30 ~/ math.pi + 1;
-    return zone < 1 ? 1 : zone > 60 ? 60 : zone;
+    return zone < 1
+        ? 1
+        : zone > 60
+            ? 60
+            : zone;
   }
 
   static int getRowFromNearestParallelInDegrees(double latitude) {

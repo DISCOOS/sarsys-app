@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:ffi';
 
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/defaults.dart';
@@ -433,22 +434,36 @@ class BlocCommand<D, R> extends Equatable {
     props = const [],
     Completer<R> callback,
   ])  : callback = callback ?? Completer(),
-        super([data, ...props]);
+        _props = [data, ...props];
+
+  final List<Object> _props;
+
+  @override
+  List<Object> get props => _props;
+
   final D data;
   final Completer<R> callback;
   final StackTrace stackTrace = StackTrace.current;
 }
 
 abstract class BlocEvent<T> extends Equatable {
-  BlocEvent(this.data, {this.stackTrace, props = const []})
-      : super([
+  BlocEvent(
+    this.data, {
+    this.stackTrace,
+    props = const [],
+  }) : _props = [
           data,
           ...props,
           // Ensures events with no
           // props are published by
           // Bloc
           DateTime.now(),
-        ]);
+        ];
+
+  final List<Object> _props;
+
+  @override
+  List<Object> get props => _props;
 
   final T data;
   final StackTrace stackTrace;

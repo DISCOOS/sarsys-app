@@ -13,14 +13,16 @@ class Security extends Equatable {
     this.trusted,
     this.mode,
     DateTime heartbeat,
-  })  : heartbeat = heartbeat ?? DateTime.now(),
-        super([
-          pin,
-          type,
-          locked,
-          trusted,
-          heartbeat,
-        ]);
+  })  : heartbeat = heartbeat ?? DateTime.now();
+
+  @override
+  List<Object> get props => [
+    pin,
+    type,
+    locked,
+    trusted,
+    heartbeat,
+  ];
 
   final String pin;
   final SecurityType type;

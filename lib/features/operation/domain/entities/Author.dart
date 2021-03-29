@@ -17,6 +17,9 @@ class Author extends ValueObject<Map<String, dynamic>> {
           timestamp,
         ]);
 
+  @override
+  List<Object> get props => [userId, timestamp];
+
   /// Factory constructor for `Author` with timestamp now
   factory Author.now(String userId) {
     return Author(

@@ -24,6 +24,14 @@ class TrackingTrackModel extends TrackingTrack {
         );
 
   @override
+  List<Object> get props => [
+        id,
+        status,
+        source,
+        positions,
+      ];
+
+  @override
   final TrackingSourceModel source;
 
   /// Factory constructor for creating a new `TrackModel`  instance
