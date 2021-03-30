@@ -24,8 +24,6 @@ class GeolocatorService implements LocationService {
   static List<Position> _positions = [];
   static List<LocationEvent> _events = [];
 
-  gl.Geolocator _geolocator;
-
   Stream<Position> _internalStream;
   StreamSubscription _configSubscription;
   StreamSubscription _locatorSubscription;
@@ -139,13 +137,11 @@ class GeolocatorService implements LocationService {
       try {
         final last = _current;
         _current = _toPosition(
-          await _geolocator.getLastKnownPosition(
-            desiredAccuracy: _toAccuracy(_options.accuracy),
-          ),
+          await gl.Geolocator.getLastKnownPosition(),
         );
         if (_current == null) {
           _current = _toPosition(
-            await _geolocator.getCurrentPosition(
+            await gl.Geolocator.getCurrentPosition(
               desiredAccuracy: _toAccuracy(_options.accuracy),
             ),
           );
@@ -199,14 +195,12 @@ class GeolocatorService implements LocationService {
   void _subscribe(LocationOptions options) async {
     if (_internalStream != null) _unsubscribe();
     _options = options;
-    _internalStream = _geolocator
-        .getPositionStream(gl.LocationOptions(
-          accuracy: _toAccuracy(options.accuracy),
-          distanceFilter: options.distanceFilter,
-          timeInterval: options.timeInterval,
-          forceAndroidLocationManager: options.forceAndroidLocationManager,
-        ))
-        .map(_toPosition);
+    _internalStream = gl.Geolocator.getPositionStream(
+      desiredAccuracy: _toAccuracy(options.accuracy),
+      distanceFilter: options.distanceFilter,
+      intervalDuration: Duration(milliseconds: options.timeInterval),
+      forceAndroidLocationManager: options.forceAndroidLocationManager,
+    ).map(_toPosition);
     _locatorSubscription = _internalStream.listen((Position position) {
       _current = position;
       _positionController.add(position);
