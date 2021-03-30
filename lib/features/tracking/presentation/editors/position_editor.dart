@@ -221,11 +221,11 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
       action: SnackBarAction(
         label: "OK",
         onPressed: () {
-          _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+          ScaffoldMessenger.of(context).hideCurrentSnackBar(reason: SnackBarClosedReason.action);
         },
       ),
     );
-    _scaffoldKey.currentState.showSnackBar(snackbar);
+    ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }
 
   void _onPositionChanged(MapPosition position, bool hasGesture) {
