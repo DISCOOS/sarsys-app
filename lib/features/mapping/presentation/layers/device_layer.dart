@@ -66,7 +66,7 @@ class DeviceLayer extends MapPlugin {
     return devices.isEmpty
         ? Container()
         : Stack(
-            overflow: Overflow.clip,
+            clipBehavior: Clip.hardEdge,
             children: [
               if (options.showTail)
                 ...devices

@@ -71,7 +71,7 @@ class UnitLayer extends MapPlugin {
     return tracking.isEmpty
         ? Container()
         : Stack(
-            overflow: Overflow.clip,
+            clipBehavior: Clip.hardEdge,
             children: [
               if (options.showTail)
                 ...units
