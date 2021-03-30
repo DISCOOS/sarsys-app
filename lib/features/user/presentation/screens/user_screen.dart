@@ -213,10 +213,10 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
       ),
       action: _buildSnackBarAction(action, () {
         if (onPressed != null) onPressed();
-        _scaffoldKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+        ScaffoldMessenger.of(context).hideCurrentSnackBar(reason: SnackBarClosedReason.action);
       }),
     );
-    _scaffoldKey.currentState.showSnackBar(snackbar);
+    ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }
 
   Widget _buildSnackBarAction(String label, VoidCallback onPressed) {
