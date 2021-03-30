@@ -81,7 +81,7 @@ void runAppWithCatcher(Widget app, AppController controller) {
   RepositorySupervisor.delegate = AppRepositoryDelegate();
 
   _catcher = Catcher(
-    app,
+    rootWidget: app,
     debugConfig: _toCatcherDebugConfig(sentryDns),
     releaseConfig: _toCatcherReleaseConfig(sentryDns),
     navigatorKey: NavigationService.navigatorKey,
@@ -100,7 +100,7 @@ void updateCatcherConfig(AppConfig config) {
 CatcherOptions _toCatcherReleaseConfig(String sentryDns) {
   return CatcherOptions(
     ScreenReportMode(),
-    [SentryHandler(SentryClient(dsn: sentryDns))],
+    [SentryHandler(SentryClient(SentryOptions(dsn: sentryDns)))],
     explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
     explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
     localizationOptions: [_catcherLocalizationOptions],
@@ -110,7 +110,7 @@ CatcherOptions _toCatcherReleaseConfig(String sentryDns) {
 CatcherOptions _toCatcherDebugConfig(String sentryDns) {
   return CatcherOptions(
     ScreenReportMode(),
-    [SentryHandler(SentryClient(dsn: sentryDns)), ConsoleHandler(enableStackTrace: true)],
+    [SentryHandler(SentryClient(SentryOptions(dsn: sentryDns))), ConsoleHandler(enableStackTrace: true)],
     explicitExceptionReportModesMap: _catcherExplicitReportModesMap,
     explicitExceptionHandlersMap: _catcherExplicitExceptionHandlersMap,
     localizationOptions: [_catcherLocalizationOptions],
