@@ -104,9 +104,11 @@ class _PositionEditorState extends State<PositionEditor> with TickerProviderStat
           },
         ),
         actions: <Widget>[
-          FlatButton(
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.only(left: 16.0, right: 16.0),
+            ),
             child: Text('FERDIG', style: TextStyle(fontSize: 14.0, color: Colors.white)),
-            padding: EdgeInsets.only(left: 16.0, right: 16.0),
             onPressed: () {
               Navigator.pop(context, _current);
             },

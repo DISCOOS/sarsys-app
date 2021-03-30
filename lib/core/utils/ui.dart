@@ -50,7 +50,7 @@ Future<void> alert(BuildContext context, {String title, Widget content}) {
         title: title == null ? Container() : Text(title),
         content: content,
         actions: <Widget>[
-          FlatButton(
+          TextButton(
             child: Text("LUKK"),
             onPressed: () {
               Navigator.pop(context);
@@ -72,13 +72,13 @@ Future<bool> prompt(BuildContext context, String title, String message) async {
         title: Text(title),
         content: Text(message),
         actions: <Widget>[
-          FlatButton(
+          TextButton(
             child: Text("AVBRYT"),
             onPressed: () {
               Navigator.of(context).pop(false);
             },
           ),
-          FlatButton(
+          TextButton(
             child: Text("FORTSETT"),
             onPressed: () {
               Navigator.of(context).pop(true);

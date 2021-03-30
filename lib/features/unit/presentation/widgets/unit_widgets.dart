@@ -481,7 +481,7 @@ class UnitActionGroup extends StatelessWidget {
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre enhet",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
             "ENDRE",
@@ -508,7 +508,7 @@ class UnitActionGroup extends StatelessWidget {
     final color = toUnitStatusColor(UnitStatus.mobilized);
     return Tooltip(
       message: "Registrer som mobilisert",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
@@ -532,7 +532,7 @@ class UnitActionGroup extends StatelessWidget {
     final color = toUnitStatusColor(UnitStatus.deployed);
     return Tooltip(
       message: "Registrer som deployert",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
@@ -588,7 +588,7 @@ class UnitActionGroup extends StatelessWidget {
     final color = toUnitStatusColor(UnitStatus.retired);
     return Tooltip(
       message: "Dimitter og avslutt sporing",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.archive,
           color: color,
@@ -609,7 +609,7 @@ class UnitActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett mannskap",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.delete,
           color: Colors.red,

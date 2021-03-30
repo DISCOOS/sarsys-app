@@ -229,7 +229,11 @@ class _OperationsPageState extends State<OperationsPage> {
                         child: ButtonBar(
                           alignment: MainAxisAlignment.start,
                           children: <Widget>[
-                            FlatButton.icon(
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                               icon: Icon(isAuthorized
                                   ? isMobilized
                                       ? toPersonnelStatusIcon(PersonnelStatus.leaving)
@@ -247,8 +251,6 @@ class _OperationsPageState extends State<OperationsPage> {
                                         : 'INGEN TILGANG',
                                 style: TextStyle(fontSize: 14.0),
                               ),
-                              padding: EdgeInsets.only(left: isAuthorized ? 16.0 : 16.0),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               onPressed: isAuthorized || hasRoles
                                   ? () async {
                                       if (isMobilized) {

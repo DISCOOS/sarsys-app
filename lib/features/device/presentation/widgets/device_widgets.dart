@@ -569,7 +569,7 @@ class DeviceActionGroup extends StatelessWidget {
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre apparat",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
             "ENDRE",
@@ -593,7 +593,7 @@ class DeviceActionGroup extends StatelessWidget {
 
   Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
         message: "Knytt apparat til mannskap",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.person),
           label: Text(
             'KNYTT',
@@ -616,7 +616,7 @@ class DeviceActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Fjern apparat fra unit",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.people,
           color: Colors.red,
@@ -645,7 +645,7 @@ class DeviceActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Fjern apparat fra mannskap",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.person,
           color: Colors.red,
@@ -674,7 +674,7 @@ class DeviceActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett apparat lagt til manuelt",
-      child: FlatButton.icon(
+      child: TextButton.icon(
           icon: Icon(MdiIcons.cellphoneBasic),
           label: Text(
             'SLETT',

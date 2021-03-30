@@ -406,7 +406,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
           ),
         ),
       ),
-      type: OutlineButton,
+      type: OutlinedButton,
       validate: false,
     );
   }
@@ -491,7 +491,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
       ..add(DropdownMenuItem(
         child: Stack(
           children: [
-            OutlineButton(
+            OutlinedButton(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
@@ -560,7 +560,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     String label,
     Function() onPressed, {
     bool enabled = true,
-    Type type = RaisedButton,
+    Type type = ElevatedButton,
     Widget icon,
     Color color = const Color.fromRGBO(00, 41, 73, 1),
     bool validate = true,
@@ -594,7 +594,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     Widget icon,
     bool validate = true,
   }) {
-    if (type == OutlineButton) {
+    if (type == OutlinedButton) {
       return _buildOutlineButton(
         label,
         enabled,
@@ -603,7 +603,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
         validate: validate,
       );
     }
-    return _buildRaisedButton(
+    return _buildElevatedButton(
       color,
       label,
       enabled,
@@ -613,7 +613,7 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     );
   }
 
-  Widget _buildRaisedButton(
+  Widget _buildElevatedButton(
     Color color,
     String label,
     bool enabled,
@@ -621,11 +621,13 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     Widget icon,
     bool validate = true,
   }) =>
-      RaisedButton(
-        color: color,
-        elevation: 2.0,
-        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          primary: color,
+          elevation: 2.0,
+          padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+        ),
         child: Row(
           mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
           children: <Widget>[
@@ -659,8 +661,10 @@ class LoginScreenState extends RouteWriter<LoginScreen, void> with TickerProvide
     Widget icon,
     bool validate = true,
   }) =>
-      OutlineButton(
-        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+      OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+        ),
         child: Row(
           mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
           children: <Widget>[

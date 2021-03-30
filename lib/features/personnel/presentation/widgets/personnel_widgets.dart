@@ -383,7 +383,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre mannskap",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
             "ENDRE",
@@ -407,7 +407,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
         message: "Knytt mannskap til enhet",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.people),
           label: Text(
             'KNYTT',
@@ -428,7 +428,7 @@ class PersonnelActionGroup extends StatelessWidget {
 
   Widget _buildRemoveFromUnitAction(BuildContext context) => Tooltip(
         message: "Fjern mannskap fra enhet",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.people),
           label: Text(
             'FJERN',
@@ -451,7 +451,7 @@ class PersonnelActionGroup extends StatelessWidget {
     final color = toPersonnelStatusColor(PersonnelStatus.alerted);
     return Tooltip(
       message: "Registrer som mobilisert",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
@@ -475,7 +475,7 @@ class PersonnelActionGroup extends StatelessWidget {
     final color = toPersonnelStatusColor(PersonnelStatus.onscene);
     return Tooltip(
       message: "Registrer som ankommet",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
@@ -549,7 +549,7 @@ class PersonnelActionGroup extends StatelessWidget {
     final color = toPersonnelStatusColor(PersonnelStatus.retired);
     return Tooltip(
       message: "Dimitter og avslutt sporing",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.archive,
           color: color,
@@ -570,7 +570,7 @@ class PersonnelActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett mannskap",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.delete,
           color: Colors.red,

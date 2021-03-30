@@ -140,8 +140,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
             if (widget.withBackAction)
               Align(
                 alignment: Alignment.centerLeft,
-                child: FlatButton(
-                  disabledTextColor: Theme.of(context).bottomAppBarColor,
+                child: TextButton(
                   child: Text(widget.backActionText),
                   onPressed: index == 0
                       ? null
@@ -179,7 +178,7 @@ class _SteppedScreenState extends State<SteppedScreen> {
             if (widget.withNextAction)
               Align(
                 alignment: Alignment.centerRight,
-                child: FlatButton(
+                child: TextButton(
                   child: Text(index == widget.views.length - 1
                       ? (widget.isComplete(index) ? widget.completeActionText : widget.cancelActionText)
                       : widget.nextActionText),

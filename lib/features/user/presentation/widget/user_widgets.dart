@@ -208,7 +208,7 @@ class UserActionGroup extends StatelessWidget {
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre bruker",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
             "ENDRE",
@@ -234,7 +234,7 @@ class UserActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Slett bruker",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.delete,
           color: Colors.red,
