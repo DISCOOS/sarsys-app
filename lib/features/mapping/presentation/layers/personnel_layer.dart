@@ -73,7 +73,7 @@ class PersonnelLayer extends MapPlugin {
     return trackings.isEmpty
         ? Container()
         : Stack(
-            overflow: Overflow.clip,
+            clipBehavior: Clip.hardEdge,
             children: [
               if (options.showTail) ..._buildTracks(context, personnels, size, options, map, trackings),
               if (options.showLabels) ..._buildLabels(context, personnels, options, map, trackings),
