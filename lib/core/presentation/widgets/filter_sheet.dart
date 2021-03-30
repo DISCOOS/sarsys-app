@@ -61,7 +61,7 @@ class _FilterSheetState<T> extends State<FilterSheet<T>> {
               dense: true,
               contentPadding: EdgeInsets.only(left: 16.0, right: 0),
               title: Text(widget.title, style: title),
-              trailing: FlatButton(
+              trailing: TextButton(
                 child: Text('LUKK', textAlign: TextAlign.center, style: TextStyle(fontSize: 14.0)),
                 onPressed: () => Navigator.pop(context),
               ),

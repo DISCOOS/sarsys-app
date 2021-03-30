@@ -239,7 +239,7 @@ class UserStatusPageState extends State<UserStatusPage> {
     );
   }
 
-  RaisedButton _buildJoinAction(BuildContext context) => RaisedButton.icon(
+  ElevatedButton _buildJoinAction(BuildContext context) => ElevatedButton.icon(
         icon: Icon(Icons.list),
         label: Text('VELG'),
         onPressed: () => showDialog<Personnel>(
@@ -262,42 +262,42 @@ class UserStatusPageState extends State<UserStatusPage> {
         ),
       );
 
-  RaisedButton _buildMapAction(BuildContext context, LocationService service) => RaisedButton.icon(
+  ElevatedButton _buildMapAction(BuildContext context, LocationService service) => ElevatedButton.icon(
         icon: Icon(Icons.map),
         label: Text('VIS'),
         onPressed: () => jumpToPoint(context, center: service.current?.geometry),
       );
 
-  RaisedButton _buildEnrouteAction(BuildContext context) {
+  ElevatedButton _buildEnrouteAction(BuildContext context) {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
-    return RaisedButton.icon(
+    return ElevatedButton.icon(
       icon: Icon(Icons.directions_run),
       label: Text('PÅ VEI'),
       onPressed: personnel != null ? () => ingressPersonnel(personnel) : null,
     );
   }
 
-  RaisedButton _buildCheckInAction(BuildContext context) {
+  ElevatedButton _buildCheckInAction(BuildContext context) {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
-    return RaisedButton.icon(
+    return ElevatedButton.icon(
       icon: Icon(Icons.assignment_turned_in),
       label: Text('SJEKK INN'),
       onPressed: personnel != null ? () => checkInPersonnel(personnel) : null,
     );
   }
 
-  RaisedButton _buildCheckOutAction(BuildContext context) {
+  ElevatedButton _buildCheckOutAction(BuildContext context) {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
-    return RaisedButton.icon(
+    return ElevatedButton.icon(
       icon: Icon(Icons.directions_walk),
       label: Text('SJEKK UT'),
       onPressed: personnel != null ? () => checkOutPersonnel(personnel) : null,
     );
   }
 
-  RaisedButton _buildRetireAction(BuildContext context) {
+  ElevatedButton _buildRetireAction(BuildContext context) {
     final personnel = context.bloc<PersonnelBloc>().findUser().firstOrNull;
-    return RaisedButton.icon(
+    return ElevatedButton.icon(
       icon: Icon(Icons.home),
       label: Text('HJEMME'),
       onPressed: personnel != null ? () => retirePersonnel(personnel) : null,

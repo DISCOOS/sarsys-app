@@ -470,7 +470,7 @@ class OperationActionGroup extends StatelessWidget {
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
         message: "Endre aksjon",
-        child: FlatButton.icon(
+        child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
             "ENDRE",
@@ -493,7 +493,7 @@ class OperationActionGroup extends StatelessWidget {
   }
 
   Widget _buildCompleteAction(BuildContext context) {
-    return FlatButton.icon(
+    return TextButton.icon(
       icon: Icon(Icons.check_circle),
       label: Text(
         "LØST",
@@ -525,7 +525,7 @@ class OperationActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
       message: "Kansellèr aksjon",
-      child: FlatButton.icon(
+      child: TextButton.icon(
         icon: Icon(
           Icons.cancel,
           color: Colors.red,

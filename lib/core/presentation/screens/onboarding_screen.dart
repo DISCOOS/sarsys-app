@@ -120,7 +120,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Center(
             child: Container(
               height: 42,
-              child: RaisedButton(
+              child: ElevatedButton(
                 child: Text('KOM I GANG'),
                 onPressed: () async {
                   timer?.cancel();

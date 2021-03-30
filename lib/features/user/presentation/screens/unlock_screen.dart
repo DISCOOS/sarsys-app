@@ -423,7 +423,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     String label,
     Function() onPressed, {
     bool enabled = true,
-    Type type = RaisedButton,
+    Type type = ElevatedButton,
     Widget icon,
     Color color = const Color.fromRGBO(00, 41, 73, 1),
     bool validate = true,
@@ -457,8 +457,8 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     Widget icon,
     bool validate = true,
   }) {
-    if (type == OutlineButton) {
-      return _buildOutlineButton(
+    if (type == OutlinedButton) {
+      return _buildOutlinedButton(
         label,
         enabled,
         onPressed,
@@ -466,7 +466,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
         validate: validate,
       );
     }
-    return _buildRaisedButton(
+    return _buildElevatedButton(
       color,
       label,
       enabled,
@@ -476,7 +476,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     );
   }
 
-  Widget _buildRaisedButton(
+  Widget _buildElevatedButton(
     Color color,
     String label,
     bool enabled,
@@ -484,11 +484,13 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     Widget icon,
     bool validate = true,
   }) =>
-      RaisedButton(
-        color: color,
-        elevation: 2.0,
-        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          primary: color,
+          elevation: 2.0,
+          padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+        ),
         child: Row(
           mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
           children: <Widget>[
@@ -515,15 +517,17 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
     }
   }
 
-  Widget _buildOutlineButton(
+  Widget _buildOutlinedButton(
     String label,
     bool enabled,
     onPressed(), {
     Widget icon,
     bool validate = true,
   }) =>
-      OutlineButton(
-        padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+      OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: icon == null ? null : EdgeInsets.only(left: 16.0),
+        ),
         child: Row(
           mainAxisAlignment: icon == null ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
           children: <Widget>[

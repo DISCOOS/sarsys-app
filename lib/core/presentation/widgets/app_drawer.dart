@@ -212,7 +212,7 @@ class _AppDrawerState extends State<AppDrawer> {
       ),
       trailing: isPrivate
           ? null
-          : RaisedButton.icon(
+          : ElevatedButton.icon(
               icon: Icon(toPersonnelStatusIcon(PersonnelStatus.leaving)),
               label: Text("SJEKK UT"),
               onPressed: () {

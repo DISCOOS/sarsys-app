@@ -135,10 +135,12 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
             },
           ),
           actions: <Widget>[
-            FlatButton(
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              ),
               child: Text(widget.personnel == null ? 'OPPRETT' : 'OPPDATER',
                   style: TextStyle(fontSize: 14.0, color: Colors.white)),
-              padding: EdgeInsets.only(left: 16.0, right: 16.0),
               onPressed: () => _submit(),
             ),
           ],

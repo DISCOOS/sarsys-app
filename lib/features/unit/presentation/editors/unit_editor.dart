@@ -139,10 +139,12 @@ class _UnitEditorState extends State<UnitEditor> {
             },
           ),
           actions: <Widget>[
-            FlatButton(
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 16.0, right: 16.0),
+              ),
               child: Text(widget.unit == null ? 'OPPRETT' : 'OPPDATER',
                   style: TextStyle(fontSize: 14.0, color: Colors.white)),
-              padding: EdgeInsets.only(left: 16.0, right: 16.0),
               onPressed: () => _submit(),
             ),
           ],

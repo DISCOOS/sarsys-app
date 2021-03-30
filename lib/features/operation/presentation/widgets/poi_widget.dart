@@ -134,7 +134,7 @@ class POIWidget extends StatelessWidget {
   Widget _buildEditAction(BuildContext context) {
     return Tooltip(
       message: "Endre posisjon",
-      child: FlatButton(
+      child: TextButton(
         child: Text(
           "ENDRE",
           textAlign: TextAlign.center,
