@@ -54,7 +54,7 @@ class MeasureLayer extends MapPlugin {
     final measures = options.tool.target.toList()..add(map.center);
 
     return Stack(
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.none,
       children: [
         _buildCross(origin),
         _buildTrack(context, size, options, map, measures),

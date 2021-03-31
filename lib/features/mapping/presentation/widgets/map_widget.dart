@@ -557,7 +557,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     _update();
     return Stack(
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.none,
       children: [
         _buildMap(),
         if (widget.withControls) _buildControls(),
