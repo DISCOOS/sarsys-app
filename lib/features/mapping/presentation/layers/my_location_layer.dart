@@ -182,7 +182,7 @@ class MyLocationLayer extends MapPlugin {
       width: pixelRadius,
       height: pixelRadius,
       child: Stack(
-        clipBehavior: Clip.hardEdge,
+        clipBehavior: Clip.none,
         children: [
           Positioned(
             left: 0.0,
