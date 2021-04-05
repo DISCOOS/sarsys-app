@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:SarSys/features/mapping/presentation/painters.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/proj4d.dart';

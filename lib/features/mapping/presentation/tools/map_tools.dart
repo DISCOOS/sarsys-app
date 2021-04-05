@@ -5,7 +5,7 @@ import 'package:SarSys/features/mapping/presentation/layers/scalebar.dart';
 import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 typedef MatchCallback = Future Function(MapTool tool, Iterable matches);
 

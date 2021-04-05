@@ -4,7 +4,7 @@ import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';

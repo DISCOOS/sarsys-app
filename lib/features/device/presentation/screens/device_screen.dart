@@ -19,7 +19,7 @@ import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class DeviceScreen extends Screen<_DeviceScreenState> {
   static const ROUTE = 'device';

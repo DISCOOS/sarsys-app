@@ -1,7 +1,7 @@
 import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:equatable/equatable.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:SarSys/core/extensions.dart';
 

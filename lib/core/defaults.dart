@@ -1,6 +1,6 @@
 import 'package:SarSys/core/domain/models/BaseMap.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class Defaults {
   static const String baseWsUrl = 'wss://sarsys.app';

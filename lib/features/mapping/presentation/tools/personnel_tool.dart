@@ -12,7 +12,7 @@ import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/extensions.dart';
 

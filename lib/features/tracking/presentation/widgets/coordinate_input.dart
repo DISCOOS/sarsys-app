@@ -4,7 +4,7 @@ import 'package:SarSys/core/utils/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class CoordinateInput extends StatefulWidget {
   final int zone;
