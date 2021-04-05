@@ -10,7 +10,7 @@ import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'AggregateRef.dart';

@@ -15,7 +15,7 @@ version: 0.1.1+86
 
 environment:
   sdk: ">=2.9.0 <3.0.0"
-  flutter: ">=2.0.0"
+  flutter: ">=2.0.4"
 
 dependencies:
   flutter:
@@ -69,19 +69,19 @@ dependencies:
   data_connection_checker: ^0.3.4
   xml: ^4.5.1
   pin_code_fields: ^2.4.0
-  local_auth: ^1.1.0
+  local_auth: ^1.1.2
   hive: ^1.4.4+1
   hive_flutter: ^0.3.0+2
   flutter_udid: ^1.0.1
   simple_gravatar: ^1.0.5
   json_patch: ^2.0.0
-  cached_network_image: ^2.3.3
+  cached_network_image: ^2.5.1
   flutter_cache_manager: ^2.1.2
   flutter_phoenix: ^1.0.0
   chopper: ^3.0.2
   debounce_throttle: ^2.0.0
   grouped_list: ^4.0.0
-  flutter_background_geolocation: 2.0.0
+  flutter_background_geolocation: ^2.0.1
   percent_indicator: ^3.0.1
   timer_builder: ^2.0.0
   keyboard_avoider: ^0.1.2

@@ -7,7 +7,7 @@ import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/core/utils/data.dart' as utils;
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:flutter/foundation.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'dart:async';
 
 import 'package:permission_handler/permission_handler.dart';

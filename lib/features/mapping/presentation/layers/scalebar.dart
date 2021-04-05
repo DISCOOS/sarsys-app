@@ -4,7 +4,7 @@ import 'package:SarSys/core/proj4d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class ScalebarOption extends LayerOptions {
   static const SCALES = const [

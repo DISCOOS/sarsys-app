@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart' hide Path;
+import 'package:latlong2/latlong.dart' hide Path;
 
 import 'dart:io';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
@@ -17,7 +17,7 @@ import 'package:SarSys/core/permission_controller.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/core/defaults.dart';
 import 'package:catcher/catcher.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef TrackingCallback = void Function(bool isLocated, bool isLocked);

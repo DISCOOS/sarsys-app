@@ -1,6 +1,6 @@
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'map_tools.dart';
 

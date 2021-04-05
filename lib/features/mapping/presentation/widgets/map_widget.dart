@@ -12,7 +12,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:wakelock/wakelock.dart';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';

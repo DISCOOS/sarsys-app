@@ -10,7 +10,7 @@ import 'package:SarSys/core/presentation/widgets/selector_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class POITool extends MapTool with MapSelectable<POI> {
   final OperationBloc bloc;

@@ -11,7 +11,7 @@ import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class UnitTool extends MapTool with MapSelectable<Unit> {
   final User user;

@@ -7,7 +7,7 @@ import 'package:SarSys/features/operation/presentation/widgets/poi_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class PositionTool extends MapTool {
   final VoidCallback onHide;
