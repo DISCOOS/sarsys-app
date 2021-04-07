@@ -1,3 +1,5 @@
+// @dart=2.11
+
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/presentation/widgets/fatal_error_app.dart';
