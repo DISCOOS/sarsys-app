@@ -16,12 +16,6 @@ class TrackingSourceModel extends TrackingSource {
           type: type,
         );
 
-  @override
-  List<Object> get props => [
-        uuid,
-        type,
-      ];
-
   /// Factory constructor for creating a new `SourceModel` instance
   factory TrackingSourceModel.fromJson(Map<String, dynamic> json) => _$TrackingSourceModelFromJson(json);
 

@@ -24,16 +24,6 @@ class OrganisationModel extends Organisation {
           active: active,
         );
 
-  @override
-  List<Object> get props => [
-        uuid,
-        name,
-        prefix,
-        fleetMap,
-        divisions,
-        active,
-      ];
-
   /// Clone with [FleetMap] for this organisation
   OrganisationModel cloneWith(FleetMap fleetMap) => OrganisationModel(
         uuid: uuid,

@@ -606,8 +606,6 @@ class PositionableSource<T extends Aggregate> extends TrackingSourceModel
         );
 
   /// Should probably add some properties here
-  @override
-  List<Object> get props => [];
 
   /// Create positionable source
   static PositionableSource from<T extends Aggregate>(

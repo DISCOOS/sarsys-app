@@ -44,18 +44,6 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
         );
 
   @override
-  List<Object> get props => [
-        uuid,
-        unit,
-        person,
-        status,
-        tracking,
-        function,
-        operation,
-        affiliation,
-      ];
-
-  @override
   final PersonModel person;
 
   @override

@@ -18,12 +18,6 @@ class PositionListModel extends PositionList {
           features: features,
         );
 
-  @override
-  List<Object> get props => [
-        id,
-        features,
-      ];
-
   /// Factory constructor for creating a new `TrackModel`  instance
   factory PositionListModel.fromJson(Map<String, dynamic> json) => _$PositionListModelFromJson(json);
 

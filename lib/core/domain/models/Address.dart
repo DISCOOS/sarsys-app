@@ -20,13 +20,6 @@ class Address extends ValueObject<Map<String, dynamic>> {
           countryCode,
         ]);
 
-  @override
-  List<Object> get props => [
-        lines,
-        postalCode,
-        countryCode,
-      ];
-
   /// Factory constructor for creating a new `Address` instance
   factory Address.fromJson(Map<String, dynamic> json) => _$AddressFromJson(json);
 
