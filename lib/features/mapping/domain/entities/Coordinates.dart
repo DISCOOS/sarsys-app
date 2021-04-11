@@ -13,13 +13,6 @@ class Coordinates extends ValueObject<List<double>> {
   final double lon;
   final double alt;
 
-  @override
-  List<Object> get props => [
-        lat,
-        lon,
-        alt,
-      ];
-
   bool get isNotEmpty => !isEmpty;
   bool get isEmpty => _isEmpty(lat) || _isEmpty(lon);
 

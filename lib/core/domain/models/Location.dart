@@ -23,13 +23,6 @@ class Location extends ValueObject<Map<String, dynamic>> {
           description,
         ]);
 
-  @override
-  List<Object> get props => [
-        point,
-        address,
-        description,
-      ];
-
   /// Factory constructor for creating a new `Location` instance
   factory Location.fromJson(Map<String, dynamic> json) => _$LocationFromJson(json);
 

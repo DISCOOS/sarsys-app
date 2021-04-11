@@ -51,20 +51,6 @@ class BaseMap extends ValueObject<Map<String, dynamic>> {
           /*bounds, //LatLngBounds are not comparable, exclude to ensure similarity in BaseMapService */
         ]);
 
-  @override
-  List<Object> get props => [
-        name,
-        description,
-        url,
-        maxZoom,
-        minZoom,
-        attribution,
-        offline,
-        tms,
-        previewFile,
-        subdomains,
-      ];
-
   /// Factory constructor for creating a new `BaseMap` instance
   factory BaseMap.fromJson(Map<String, dynamic> json) => _$BaseMapFromJson(json);
 

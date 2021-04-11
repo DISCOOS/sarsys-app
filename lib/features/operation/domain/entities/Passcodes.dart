@@ -19,12 +19,6 @@ class Passcodes extends ValueObject<Map<String, dynamic>> {
           personnel,
         ]);
 
-  @override
-  List<Object> get props => [
-        commander,
-        personnel,
-      ];
-
   /// Factory constructor for random generated alpha-numeric command and personnel passcodes
   factory Passcodes.random(int length) {
     return Passcodes(

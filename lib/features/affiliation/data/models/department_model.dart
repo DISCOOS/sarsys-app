@@ -22,15 +22,6 @@ class DepartmentModel extends Department {
           active: active,
         );
 
-  @override
-  List<Object> get props => [
-        uuid,
-        name,
-        suffix,
-        division,
-        active,
-      ];
-
   /// Factory constructor for creating a new `DepartmentModel` instance
   factory DepartmentModel.fromJson(Map<String, dynamic> json) => _$DepartmentModelFromJson(json);
 

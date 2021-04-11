@@ -46,24 +46,6 @@ class OperationModel extends Operation implements JsonObject<Map<String, dynamic
           justification: justification,
         );
 
-  @override
-  List<Object> get props => [
-        ipp,
-        uuid,
-        name,
-        type,
-        author,
-        status,
-        meetup,
-        incident,
-        passcodes,
-        reference,
-        commander,
-        resolution,
-        talkgroups,
-        justification,
-      ];
-
   /// Factory constructor for creating a new `OperationModel` instance
   factory OperationModel.fromJson(Map<String, dynamic> json) => _$OperationModelFromJson(json);
 
