@@ -246,6 +246,7 @@ class MapSearchDelegate extends SearchDelegate<GeocodeResult> {
     _recent.value = recent.map((suggestion) => suggestion as String).toSet();
     _debouncer = Debouncer<String>(
       const Duration(milliseconds: 100),
+      initialValue: '',
       onChanged: (query) async {
         if (_results != null && _results.isCompleted != true) {
           _results.complete(engine.search(query));
@@ -512,9 +513,9 @@ class MapSearchEngine {
       _localGeocoderService.search(query),
     ];
 
-    final results = await Future.wait(futures).catchError(
-      (error, stackTrace) => print(error),
-    );
+    final results = await Future.wait(futures).catchError((error, stackTrace) {
+      print(error);
+    });
     return results.fold<List<GeocodeResult>>([], (fold, results) => fold..addAll(results));
   }
 
@@ -523,9 +524,9 @@ class MapSearchEngine {
       _addressGeocoderService.lookup(point),
       _localGeocoderService.lookup(point),
     ];
-    final results = await Future.wait(futures).catchError(
-      (error, stackTrace) => print(error),
-    );
+    final results = await Future.wait(futures).catchError((error, stackTrace) {
+      print(error);
+    });
     return results == null ? [] : results.fold<List<GeocodeResult>>([], (fold, results) => fold..addAll(results));
   }
 }

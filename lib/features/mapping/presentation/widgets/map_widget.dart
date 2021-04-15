@@ -576,7 +576,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         center: _center,
         minZoom: _minZoom(),
         maxZoom: _maxZoom(),
-        interactive: widget.interactive,
+        interactiveFlags: widget.interactive ? InteractiveFlag.none : InteractiveFlag.all,
         /* Ensure _center is inside given bounds
         nePanBoundary: _currentBaseMap.bounds?.northEast,
         swPanBoundary: _currentBaseMap.bounds?.southWest,

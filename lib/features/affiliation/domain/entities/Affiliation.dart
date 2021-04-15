@@ -10,7 +10,7 @@ import 'Organisation.dart';
 import 'Person.dart';
 
 mixin Affiliate {
-  AggregateRef<Affiliation> affiliation;
+  AggregateRef<Affiliation> get affiliation;
 }
 
 abstract class Affiliation extends Aggregate<Map<String, dynamic>> {

@@ -619,5 +619,5 @@ class PositionableSource<T extends Aggregate> extends TrackingSourceModel
       );
 
   @override
-  Position position;
+  final Position position;
 }

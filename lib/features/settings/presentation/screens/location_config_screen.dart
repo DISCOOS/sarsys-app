@@ -3,7 +3,6 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/settings/presentation/screens/debug_location_screen.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

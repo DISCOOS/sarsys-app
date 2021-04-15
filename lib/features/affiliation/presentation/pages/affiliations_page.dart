@@ -114,7 +114,9 @@ class AffiliationsPageState extends State<AffiliationsPage> {
       ? snapshot.error
       : widget.query == null
           ? "Last ned eller opprett mannskap"
-          : widget.request?.isCompleted == false ? "Søker..." : "Ingen nye mannskap lastet ned";
+          : widget.request?.isCompleted == false
+              ? "Søker..."
+              : "Ingen nye mannskap lastet ned";
 
   List<Affiliation> _filteredAffiliation(AffiliationBloc bloc) {
     final affiliations = context
@@ -411,6 +413,7 @@ class AffiliationSearch extends SearchDelegate<Affiliation> {
     // Limit the amount of searches made against the backend
     _debouncer = Debouncer<String>(
       const Duration(milliseconds: 250),
+      initialValue: '',
       onChanged: (query) {
         if (_bloc != null) {
           if (_request?.isCompleted != false) {
