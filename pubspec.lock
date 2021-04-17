@@ -1222,13 +1222,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.2.1"
-  simple_gravatar:
-    dependency: "direct main"
-    description:
-      name: simple_gravatar
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.5"
   simple_observable:
     dependency: transitive
     description:

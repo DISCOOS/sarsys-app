@@ -435,7 +435,7 @@ class ProjMath {
 
   static List<double> enfn(double es) {
     double t;
-    List<double> en = List(5);
+    List<double> en = List.filled(5, 0);
     en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));
     en[1] = es * (C22 - es * (C04 + es * (C06 + es * C08)));
     en[2] = (t = es * es) * (C44 - es * (C46 + es * C48));
@@ -1214,7 +1214,7 @@ class CoordinateFormat {
     var zone = -1, lat, lon;
     var isSouth = false;
     var isDefault = false;
-    var matches = List<Match>();
+    var matches = <Match>[];
     var ordinals = HashMap<String, Match>();
 
     coordinate = coordinate.trim();

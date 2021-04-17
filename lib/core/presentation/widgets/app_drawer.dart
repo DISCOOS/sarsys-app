@@ -1,8 +1,8 @@
+import 'package:SarSys/core/data/gravatar.dart';
 import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:simple_gravatar/simple_gravatar.dart';
 
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';

@@ -14,7 +14,7 @@ description: SarSys
 version: 0.1.1+86
 
 environment:
-  sdk: ">=2.9.0 <3.0.0"
+  sdk: ">=2.11.0 <3.0.0"
   flutter: ">=2.0.4"
 
 dependencies:
@@ -73,7 +73,6 @@ dependencies:
   hive: ^1.4.4+1
   hive_flutter: ^0.3.0+2
   flutter_udid: ^1.0.1
-  simple_gravatar: ^1.0.5
   json_patch: ^2.0.0
   cached_network_image: ^2.4.1
   flutter_cache_manager: ^2.1.2

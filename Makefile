@@ -19,14 +19,12 @@ storePassword = "$$(grep "storePassword" android/key.properties | cut -d'=' -f2)
 ios_certificate = "XKXT735ZZ4"
 
 .PHONY: \
-	doctor toolchain configure test build install clean \
-	models \
+	doctor toolchain configure test build install clean models \
 	android-configure android-build android-install android-build-without-tests \
 	android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
 .SILENT: \
-	doctor toolchain configure test build install clean \
-	models \
+	doctor toolchain configure test build install clean models \
 	android-configure android-build android-install android-build-without-tests \
 	android-release-internal android-clean \
 	ios-configure ios-build ios-release-beta ios-clean
