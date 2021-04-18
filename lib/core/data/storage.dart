@@ -62,7 +62,7 @@ class Storage {
         key: CURRENT_USER_ID_KEY,
       );
 
-  static String userKey(User user, String suffix) => '${user.userId}_$suffix';
+  static String userKey(User user, String suffix) => user == null ? suffix : '${user.userId}_$suffix';
 
   static Future<String> readUserValue(
     User user, {
