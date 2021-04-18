@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -83,7 +85,7 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
     super.dispose();
   }
 
-  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   @override
   List<Widget> buildAppBarActions() {

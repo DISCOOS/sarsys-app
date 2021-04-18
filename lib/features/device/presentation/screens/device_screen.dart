@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
@@ -76,7 +76,7 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   }
 
   bool get isSelected => context.bloc<OperationBloc>().isSelected;
-  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   @override
   List<Widget> buildAppBarActions() {

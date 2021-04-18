@@ -117,22 +117,36 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   /// Check if user has roles
   bool isAuthor(Operation data) => user?.isAuthor(data) == true;
 
-  /// Check if current user is authorized to access given [Incident]
-  bool isAuthorized(Operation data) {
-    return isAuthenticated && (_authorized.containsKey(data.uuid) || user.isAuthor(data));
+  /// Check if current [user] is authorized access to given [operation]
+  bool isAuthorized(Operation operation) {
+    return isAuthenticated && (_authorized.containsKey(operation.uuid) || user.isAuthor(operation));
   }
 
-  /// Check if current user is authorized to access given [Operation]
-  UserAuthorized getAuthorization(Operation data) {
+  /// Check if current [user] is authorized access to given [operation] with given [role]
+  bool isAuthorizedAs(Operation operation, UserRole role) {
+    return getAuthorization(operation)?.isAuthorizedAs(role) == true;
+  }
+
+  /// Get current [user] authorization for given [operation]
+  UserAuthorized getAuthorization(Operation operation) {
     if (isAuthenticated) {
-      if (_authorized.containsKey(data.uuid)) return _authorized[data.uuid];
-      if (user?.userId == data.author.userId) return UserAuthorized(user, data, true, true);
+      if (_authorized.containsKey(operation.uuid)) {
+        return _authorized[operation.uuid];
+      }
+      if (user?.userId == operation.author.userId) {
+        return UserAuthorized(
+          user,
+          operation: operation,
+          withCommandCode: true,
+          withPersonnelCode: true,
+        );
+      }
     }
     return null;
   }
 
   /// Stream of authorization state changes
-  Stream<bool> authorized(Incident incident) => map(
+  Stream<bool> onAuthorized(Incident incident) => map(
         (state) => state is UserAuthorized && state.operation == incident,
       );
 
@@ -318,14 +332,30 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   UserState _authorize(AuthorizeUser command) {
-    bool isCommander = user.isCommander && (command.data.passcodes.commander == command.passcode);
-    bool isPersonnel = user.isPersonnel && (command.data.passcodes.personnel == command.passcode);
-    if (isCommander || isPersonnel) {
-      var state = UserAuthorized(user, command.data, isCommander, isPersonnel);
-      _authorized.putIfAbsent(command.data.uuid, () => state);
-      return toOK(command, state, result: true);
+    bool withCommandCode = command.data.passcodes.commander == command.passcode;
+    bool withPersonnelCode = command.data.passcodes.personnel == command.passcode;
+    if (withCommandCode || withPersonnelCode) {
+      final state = UserAuthorized(
+        user,
+        operation: command.data,
+        withCommandCode: withCommandCode,
+        withPersonnelCode: withPersonnelCode,
+      );
+      _authorized.putIfAbsent(
+        command.data.uuid,
+        () => state,
+      );
+      return toOK(
+        command,
+        state,
+        result: true,
+      );
     }
-    return toOK(command, UserForbidden("Wrong passcode: ${command.passcode}"), result: false);
+    return toOK(
+      command,
+      UserForbidden("Wrong passcode: ${command.passcode}"),
+      result: false,
+    );
   }
 
   UserState _toEvent(UserCommand command, Object result) {
@@ -608,17 +638,44 @@ class UserAuthenticated extends UserState<User> {
 }
 
 class UserAuthorized extends UserState<User> {
-  final Operation operation;
-  final bool command;
-  final bool personnel;
   UserAuthorized(
-    User user,
+    User user, {
     this.operation,
-    this.command,
-    this.personnel,
-  ) : super(user, props: [operation, command, personnel]);
-  @override
-  String toString() => '$runtimeType {user: $data, command: $command, personnel: $personnel}';
+    this.withCommandCode,
+    this.withPersonnelCode,
+  }) : super(user, props: [operation, withCommandCode, withPersonnelCode]);
+
+  final Operation operation;
+  final bool withCommandCode;
+  final bool withPersonnelCode;
+
+  bool get isAuthor => operation.author.userId == data.userId;
+
+  /// Check [User] [data] is authorized access to given [operation] with given [role]
+  ///
+  /// If [isAuthor] user is authorized for all roles.
+  ///
+  bool isAuthorizedAs(UserRole role) {
+    if (isAuthor) {
+      return true;
+    }
+    switch (role) {
+      case UserRole.commander:
+        return withCommandCode;
+      case UserRole.planning_chief:
+        return withCommandCode;
+      case UserRole.operations_chief:
+        return withCommandCode;
+      case UserRole.unit_leader:
+        return withCommandCode;
+      case UserRole.personnel:
+        return withCommandCode || withPersonnelCode;
+      default:
+        return false;
+    }
+  }
+
+  String toString() => '$runtimeType {user: $data, command: $withCommandCode, personnel: $withPersonnelCode}';
 }
 
 class AuthTokenExpired extends UserState<AuthToken> {

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:async/async.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -179,7 +181,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     final tracking = context.bloc<TrackingBloc>().trackings[personnel.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
-      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+      child: widget.withActions && isCommander
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -272,7 +274,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
               child: Icon(_selected.contains(personnel.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
             ),
-          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+          if (widget.withActions && isCommander)
             RotatedBox(
               quarterTurns: 1,
               child: Icon(
@@ -285,6 +287,8 @@ class PersonnelsPageState extends State<PersonnelsPage> {
 //      ),
     );
   }
+
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   Affiliation _toAffiliation(Personnel personnel) => affiliationBloc.repo[personnel?.affiliation?.uuid];
 

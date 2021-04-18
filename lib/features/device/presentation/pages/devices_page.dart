@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -135,8 +136,6 @@ class DevicesPageState extends State<DevicesPage> {
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
 
-    final isSelected = context.bloc<OperationBloc>().isSelected;
-    final isCommander = context.bloc<UserBloc>().user.isCommander;
     final isThisApp = context.bloc<DeviceBloc>().isThisApp(device);
     return GestureDetector(
       child: widget.withActions && (isCommander || isThisApp)
@@ -272,7 +271,7 @@ class DevicesPageState extends State<DevicesPage> {
   }
 
   bool get isSelected => context.bloc<OperationBloc>().isSelected;
-  bool get isCommander => context.bloc<UserBloc>().user?.isCommander == true;
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   String _toUsage(
     Map<String, Unit> units,

@@ -1,3 +1,4 @@
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -124,7 +125,7 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  bool get isCommander => context.bloc<UserBloc>()?.user?.isCommander == true;
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
     final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
@@ -304,6 +305,11 @@ class _OperationPageState extends State<OperationPage> {
   }
 
   Widget _buildPasscodes(Operation operation) {
+    final personnel = _buildValueTile(
+      "${operation.passcodes?.personnel}",
+      label: "Kode mannskap",
+      useCodeStyle: true,
+    );
     return isCommander
         ? Row(
             children: <Widget>[
@@ -315,11 +321,11 @@ class _OperationPageState extends State<OperationPage> {
               SizedBox(width: OperationPage.SPACING),
               Expanded(
                 flex: 2,
-                child: _buildValueTile("${operation.passcodes?.personnel}", label: "Kode mannskap", useCodeStyle: true),
+                child: personnel,
               ),
             ],
           )
-        : _buildValueTile("${operation.passcodes?.personnel}", label: "Kode mannskap", useCodeStyle: true);
+        : personnel;
   }
 
   Widget _buildValueTile(

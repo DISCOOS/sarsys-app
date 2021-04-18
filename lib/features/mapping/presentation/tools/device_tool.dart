@@ -93,9 +93,9 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
               device: device,
               tracking: tracking,
               onMessage: onMessage,
-              withActions: user?.isCommander == true,
-              onCompleted: (_) => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),
+              onCompleted: (_) => Navigator.pop(context),
+              withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
             ),
           ),
         );

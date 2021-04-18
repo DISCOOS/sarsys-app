@@ -9,6 +9,7 @@ import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:SarSys/features/operation/domain/repositories/operation_repository.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:bloc/bloc.dart';
@@ -115,6 +116,17 @@ class OperationBloc
 
   /// Get operation uuids
   List<String> get ouuids => repo.keys;
+
+  /// Check if current [user] is authorized access to [operation] with given [role].
+  ///
+  /// If [operation] is not given, [selected] is used instead.
+  ///
+  bool isAuthorizedAs(UserRole role, {Operation operation}) => (operation ?? selected) == null
+      ? false
+      : userBloc.isAuthorizedAs(
+          operation ?? selected,
+          role,
+        );
 
   /// Stream of switched between given operations
   Stream<Operation> get onSwitched => where(

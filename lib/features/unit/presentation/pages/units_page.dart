@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -131,7 +133,7 @@ class UnitsPageState extends State<UnitsPage> {
     var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
-      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+      child: widget.withActions && isCommander
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -188,7 +190,7 @@ class UnitsPageState extends State<UnitsPage> {
               ),
             ),
           ),
-          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+          if (widget.withActions && isCommander)
             RotatedBox(
               quarterTurns: 1,
               child: Icon(
@@ -200,6 +202,8 @@ class UnitsPageState extends State<UnitsPage> {
       ),
     );
   }
+
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   _onTap(Unit unit) {
     if (widget.onSelection == null) {

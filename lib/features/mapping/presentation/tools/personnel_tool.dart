@@ -1,3 +1,4 @@
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
@@ -98,13 +99,13 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
               withMap: false,
               tracking: tracking,
               personnel: personnel,
-              devices: bloc.devices(personnel.tracking.uuid),
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
               onMessage: onMessage,
-              withActions: user.isCommander == true,
               onDeleted: () => Navigator.pop(context),
               onCompleted: (_) => Navigator.pop(context),
               onGoto: (point) => _goto(context, point),
+              devices: bloc.devices(personnel.tracking.uuid),
+              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
+              withActions: context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander),
             ),
           ),
         );

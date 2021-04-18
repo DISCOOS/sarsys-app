@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/icons.dart';
@@ -187,7 +189,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
   Widget _buildAffiliation(AffiliationBloc bloc, Affiliation affiliation) {
     final person = bloc.persons[affiliation.person?.uuid];
     return GestureDetector(
-      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+      child: widget.withActions && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -244,7 +246,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
                 padding: EdgeInsets.only(left: 16.0, right: (widget.withActions ? 0.0 : 16.0)),
                 child: Icon(_selected.contains(affiliation.uuid) ? Icons.check_box : Icons.check_box_outline_blank),
               ),
-            if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+            if (widget.withActions && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander))
               RotatedBox(
                 quarterTurns: 1,
                 child: Icon(

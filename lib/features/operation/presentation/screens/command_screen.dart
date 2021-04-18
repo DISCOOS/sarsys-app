@@ -1,5 +1,5 @@
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
-import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
@@ -106,7 +106,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
       notchMargin: 8.0,
       elevation: 16.0,
       child: FractionallySizedBox(
-        widthFactor: isCommander(context) ? 0.80 : 1.0,
+        widthFactor: isCommander ? 0.80 : 1.0,
         alignment: Alignment.bottomLeft,
         child: BottomNavigationBar(
           currentIndex: routeData,
@@ -132,7 +132,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
     );
   }
 
-  bool isCommander(BuildContext context) => context.bloc<UserBloc>()?.user?.isCommander == true;
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   _toTitle(Operation operation, {ifEmpty: "Aksjon"}) {
     switch (routeData) {
@@ -148,7 +148,8 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         return StreamBuilder<PersonnelState>(
             stream: context.bloc<PersonnelBloc>(),
             builder: (context, snapshot) {
-              return Text("Mannskap (" + "${snapshot.hasData ? context.bloc<PersonnelBloc>().count(exclude: []) : "-"})");
+              return Text(
+                  "Mannskap (" + "${snapshot.hasData ? context.bloc<PersonnelBloc>().count(exclude: []) : "-"})");
             });
       case CommandScreen.TAB_DEVICES:
         return StreamBuilder<DeviceState>(
@@ -212,7 +213,7 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
   }
 
   StatelessWidget _buildFAB() {
-    if (isCommander(context)) {
+    if (isCommander) {
       switch (routeData) {
         case CommandScreen.TAB_MISSIONS:
           return FloatingActionButton(
@@ -236,12 +237,13 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
             backgroundColor: Colors.grey,
           );
       }
+      return FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: null,
+        disabledElevation: 0,
+        backgroundColor: Colors.grey,
+      );
     }
-    return FloatingActionButton(
-      child: Icon(Icons.add),
-      onPressed: null,
-      disabledElevation: 0,
-      backgroundColor: Colors.grey,
-    );
+    return null;
   }
 }

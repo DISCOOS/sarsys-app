@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -57,7 +58,7 @@ class OperationsScreenState extends ScreenState<OperationsScreen, void> {
 
   @override
   FloatingActionButton buildFAB(BuildContext context) {
-    return context.bloc<UserBloc>()?.user?.isCommander == true
+    return context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
         ? FloatingActionButton(
             onPressed: () => _create(context),
             tooltip: 'Ny aksjon',

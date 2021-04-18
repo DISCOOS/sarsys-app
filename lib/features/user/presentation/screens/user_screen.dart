@@ -179,7 +179,7 @@ class _UserScreenState extends RouteWriter<UserScreen, int> {
       case UserScreen.TAB_OPERATION:
         final selected = context.bloc<OperationBloc>().selected;
         return [
-          if (selected != null && context.bloc<UserBloc>()?.user?.isCommander == true)
+          if (selected != null && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander))
             OperationActionGroup(
               onMessage: _showMessage,
               type: ActionGroupType.popupMenuButton,

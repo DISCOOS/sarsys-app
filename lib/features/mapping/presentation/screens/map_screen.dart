@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -70,7 +71,7 @@ class MapScreenState extends RouteWriter<MapScreen, String> {
       key: _scaffoldKey,
       drawer: AppDrawer(),
       extendBody: true,
-      floatingActionButton: _showFAB && context.bloc<UserBloc>()?.user?.isCommander == true
+      floatingActionButton: _showFAB && context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander)
           ? FloatingActionButton(
               onPressed: () {
                 _showCreateItemSheet(context);

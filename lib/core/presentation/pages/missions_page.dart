@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
@@ -90,7 +92,9 @@ class MissionsPageState extends State<MissionsPage> {
                         viewportConstraints,
                         message: snapshot.hasError
                             ? snapshot.error
-                            : widget.query == null ? "Legg til oppdrag" : "Ingen oppdrag funnet",
+                            : widget.query == null
+                                ? "Legg til oppdrag"
+                                : "Ingen oppdrag funnet",
                       )
                     : _buildList(units);
               },
@@ -139,7 +143,7 @@ class MissionsPageState extends State<MissionsPage> {
     var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;
     return GestureDetector(
-      child: widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true
+      child: widget.withActions && isCommander
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
@@ -190,7 +194,7 @@ class MissionsPageState extends State<MissionsPage> {
               color: toPositionStatusColor(tracking?.position),
             ),
           ),
-          if (widget.withActions && context.bloc<UserBloc>()?.user?.isCommander == true)
+          if (widget.withActions && isCommander)
             RotatedBox(
               quarterTurns: 1,
               child: Icon(
@@ -202,6 +206,8 @@ class MissionsPageState extends State<MissionsPage> {
       ),
     );
   }
+
+  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
 
   _onTap(Unit unit) {
     if (widget.onSelection == null) {
