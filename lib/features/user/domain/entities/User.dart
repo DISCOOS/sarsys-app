@@ -20,8 +20,9 @@ class User extends Equatable {
   final String uname;
   final String email;
   final String phone;
-  final String division;
-  final String department;
+  final String org;
+  final String div;
+  final String dep;
   final Security security;
 
   @JsonKey(
@@ -34,7 +35,7 @@ class User extends Equatable {
   )
   final List<String> passcodes;
 
-  bool get isAffiliated => division != null || department != null;
+  bool get isAffiliated => org != null || div != null || dep != null;
 
   User({
     @required this.userId,
@@ -44,8 +45,9 @@ class User extends Equatable {
     this.phone,
     this.email,
     this.security,
-    this.division,
-    this.department,
+    this.org,
+    this.div,
+    this.dep,
     this.roles = const [],
     this.passcodes = const [],
   });
@@ -58,8 +60,9 @@ class User extends Equatable {
         uname,
         email,
         phone,
-        division,
-        department,
+        org,
+        div,
+        dep,
         roles,
         passcodes,
       ];
@@ -93,6 +96,9 @@ class User extends Equatable {
     String idToken,
     Security security,
     List<String> passcodes,
+    String org,
+    String div,
+    String dep,
   }) {
     final json = _fromJWT(accessToken);
     final jwt = JwtClaim.fromMap(json);
@@ -108,8 +114,9 @@ class User extends Equatable {
       lname: jwt['family_name'],
       email: jwt['email'],
       phone: json['phone'],
-      division: json['division'],
-      department: json['department'],
+      org: json['organisation'] ?? org,
+      div: json['division'] ?? div,
+      dep: json['department'] ?? dep,
       roles: roles,
       security: security,
       passcodes: passcodes,
@@ -118,10 +125,11 @@ class User extends Equatable {
       final idJson = _fromJWT(idToken);
       final idJwt = JwtClaim.fromMap(idJson);
       final affiliation = Map.from(idJwt['affiliation'] ?? {});
-      user = user.cloneWith(
+      return user.copyWith(
         phone: idJwt['phone'] ?? idJwt['phone_number'],
-        division: affiliation['division'],
-        department: affiliation['department'],
+        org: affiliation['organisation'],
+        div: affiliation['division'],
+        dep: affiliation['department'],
       );
     }
     return user;
@@ -168,15 +176,16 @@ class User extends Equatable {
     );
   }
 
-  User cloneWith({
+  User copyWith({
     String userId,
     String fname,
     String lname,
     String uname,
     String email,
     String phone,
-    String division,
-    String department,
+    String org,
+    String div,
+    String dep,
     Security security,
     List<UserRole> roles,
     List<String> passcodes,
@@ -188,8 +197,9 @@ class User extends Equatable {
         uname: uname ?? this.uname,
         email: email ?? this.email,
         phone: phone ?? this.phone,
-        division: division ?? this.division,
-        department: department ?? this.department,
+        org: org ?? this.org,
+        div: div ?? this.div,
+        dep: dep ?? this.dep,
         security: security ?? this.security,
         roles: List.from(
           roles ?? this.roles ?? [],

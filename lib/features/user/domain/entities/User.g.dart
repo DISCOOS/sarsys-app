@@ -19,14 +19,10 @@ User _$UserFromJson(Map json) {
         : Security.fromJson((json['security'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
-    division: json['division'] as String,
-    department: json['department'] as String,
-    roles: (json['roles'] as List)
-            ?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))
-            ?.toList() ??
-        [],
-    passcodes:
-        (json['passcodes'] as List)?.map((e) => e as String)?.toList() ?? [],
+    div: json['division'] as String,
+    dep: json['department'] as String,
+    roles: (json['roles'] as List)?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))?.toList() ?? [],
+    passcodes: (json['passcodes'] as List)?.map((e) => e as String)?.toList() ?? [],
   );
 }
 
@@ -45,11 +41,10 @@ Map<String, dynamic> _$UserToJson(User instance) {
   writeNotNull('uname', instance.uname);
   writeNotNull('email', instance.email);
   writeNotNull('phone', instance.phone);
-  writeNotNull('division', instance.division);
-  writeNotNull('department', instance.department);
+  writeNotNull('division', instance.div);
+  writeNotNull('department', instance.dep);
   writeNotNull('security', instance.security?.toJson());
-  writeNotNull(
-      'roles', instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList());
+  writeNotNull('roles', instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList());
   writeNotNull('passcodes', instance.passcodes);
   return val;
 }
@@ -64,9 +59,7 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
+  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '

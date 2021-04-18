@@ -330,7 +330,7 @@ class UserRepository implements Repository<String, User> {
         );
       }
       await _putUser(
-        user.cloneWith(security: next),
+        user.copyWith(security: next),
       );
       return next;
     }
@@ -374,7 +374,7 @@ class UserRepository implements Repository<String, User> {
             trusted: security.trusted,
             heartbeat: DateTime.now(),
           );
-          await _putUser(user.cloneWith(
+          await _putUser(user.copyWith(
             security: security,
           ));
           return security;

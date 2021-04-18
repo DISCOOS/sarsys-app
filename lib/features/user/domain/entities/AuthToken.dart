@@ -51,11 +51,17 @@ class AuthToken extends Equatable {
   User toUser({
     Security security,
     List<String> passcodes,
+    String org,
+    String div,
+    String dep,
   }) =>
       User.fromTokens(
         accessToken,
         idToken: idToken,
         security: security,
         passcodes: passcodes,
+        org: org,
+        div: div,
+        dep: dep,
       );
 }

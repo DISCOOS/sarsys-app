@@ -231,7 +231,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   Future<UserState> _secure(SecureUser command) async {
     try {
-      var response = await repo.secure(
+      final response = await repo.secure(
         command.data,
         trusted: trustUser(),
         locked: command.locked,
@@ -288,7 +288,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   Future<UserState> _authenticate(LoginUser command) async {
     try {
-      var response = await repo.login(
+      final response = await repo.login(
         username: command.data,
         password: command.password,
         userId: command.userId,
@@ -301,7 +301,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   Future<UserState> _logout(LogoutUser command) async {
-    var user = await repo.logout(
+    final user = await repo.logout(
       delete: command.data,
     );
     _authorized.clear();
@@ -314,7 +314,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   Future<UserState> _unload(UnloadUsers command) async {
     await repo.logout();
-    var users = await repo.clear();
+    final users = await repo.clear();
     _authorized.clear();
     return toOK(
       command,
