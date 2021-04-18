@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/department_model.dart';
 import 'package:SarSys/features/affiliation/data/models/division_model.dart';
@@ -245,7 +247,9 @@ class AffiliationFormState extends State<AffiliationForm> {
 
   String _update(String attribute, String value) {
     if (_formKey.currentState != null) {
-      _formKey.currentState.value[attribute] = value;
+      scheduleMicrotask(() {
+        _formKey.currentState.setInternalFieldValue(attribute, value);
+      });
     }
     return value;
   }

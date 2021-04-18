@@ -450,8 +450,8 @@ Future _authenticate(
   );
   expect(harness.userBloc.isAuthenticated, isTrue, reason: "SHOULD be authenticated");
   expect(harness.user.userId, equals(harness.userId));
-  expect(harness.user.division, equals(harness.division));
-  expect(harness.user.department, equals(harness.department));
+  expect(harness.user.div, equals(harness.division));
+  expect(harness.user.dep, equals(harness.department));
 
   if (!exists) {
     // Wait until user is onboarded remotely

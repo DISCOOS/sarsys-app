@@ -260,12 +260,18 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
   }) {
+    // Prepare
     final _userId = userId ?? users.userId;
     final person = findUserPerson(userId: _userId);
+    final org = findUserOrganisation(userId: _userId);
+    final div = findUserDivision(userId: _userId, org: org);
+    final dep = findUserDepartment(userId: _userId, div: div);
+    final isUserAffiliated = org != null || div != null || dep != null;
+
     if (person != null) {
       final affiliations = repo.findPerson(person.uuid);
       // Try to match active affiliation
-      final candidates = affiliations.isNotEmpty
+      final candidates = affiliations.length == 1
           ? [Pair<Affiliation, int>.of(affiliations.first, 0)]
           : affiliations.fold(
               <Pair<Affiliation, int>>[],
@@ -288,15 +294,24 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
             );
       if (candidates.isNotEmpty) {
         // Choose affiliation with highest rank
-        return sortList<Pair<Affiliation, int>>(
+        final sorted = sortList<Pair<Affiliation, int>>(
           candidates,
-          (a, b) => a.right - b.right,
-        ).firstOrNull?.left;
+          (a, b) => b.right - a.right,
+        );
+
+        final affiliation = sorted.first.left;
+
+        // Only reuse if user has an existing affiliation
+        // with an organisation or user is not affiliated with
+        // any known organisation. Otherwise, create a new
+        // affiliation
+        if (affiliation.isOrganized || !isUserAffiliated) {
+          return affiliation;
+        }
       }
     }
-    final org = findUserOrganisation(userId: userId);
-    final div = findUserDivision(userId: userId);
-    final dep = findUserDepartment(userId: userId);
+
+    // Create new affiliation
     final affiliation = AffiliationModel(
       uuid: Uuid().v4(),
       person: person,
@@ -336,35 +351,58 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
                 )
               : null));
 
-  /// Get [Organisation] from User
+  /// Get [Organisation] from [userId]
   Organisation findUserOrganisation({String userId}) {
+    final user = users.repo[userId] ?? users.user;
+    if (user != null) {
+      final name = user.org?.toLowerCase();
+      final found = orgs.values
+          .where(
+            (org) => org.name.toLowerCase() == name,
+          )
+          ?.firstOrNull;
+      if (found != null) {
+        return found;
+      }
+    }
     final div = findUserDivision(userId: userId);
-    return orgs[div?.organisation?.uuid];
+    if (div != null) {
+      return orgs[div.organisation?.uuid];
+    }
+    final dep = findUserDepartment(userId: userId);
+    if (dep != null) {
+      return orgs[divs[dep.division?.uuid]?.organisation?.uuid];
+    }
+    return null;
   }
 
   /// Get Division from User
-  Division findUserDivision({String userId}) {
+  Division findUserDivision({String userId, Organisation org}) {
     final user = users.repo[userId] ?? users.user;
     if (user != null) {
-      final name = user.division?.toLowerCase();
+      final name = user.div?.toLowerCase();
+      final duuids = org?.divisions ?? <String>[];
       return divs.values
-          .where(
-            (division) => division.name.toLowerCase() == name,
-          )
+          .where((division) => duuids.isEmpty || duuids.contains(division.uuid))
+          .where((division) => division.name.toLowerCase() == name)
           ?.firstOrNull;
+    }
+    final dep = findUserDepartment(userId: userId);
+    if (dep != null) {
+      return divs[dep.division?.uuid];
     }
     return null;
   }
 
   /// Get Department id from User
-  Department findUserDepartment({String userId}) {
+  Department findUserDepartment({String userId, Division div}) {
     final user = users.repo[userId] ?? users.user;
     if (user != null) {
-      final name = (user ?? users.user).department?.toLowerCase();
+      final name = (user ?? users.user).dep?.toLowerCase();
+      final duuids = div?.departments ?? <String>[];
       return deps.values
-          .where(
-            (department) => department.name.toLowerCase() == name,
-          )
+          .where((department) => duuids.isEmpty || duuids.contains(department.uuid))
+          .where((department) => department.name.toLowerCase() == name)
           ?.firstOrNull;
     }
     return null;
@@ -521,7 +559,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Check if [Affiliation.uuid] is [Affiliation.temporary]
   bool isTemporary(String uuid) {
     final affiliation = repo[uuid];
-    return affiliation?.isUnorganized == true || persons[affiliation?.person?.uuid]?.temporary == true;
+    return affiliation?.isUnorganized == true;
   }
 
   /// Create affiliation for temporary
@@ -728,14 +766,24 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
   Stream<AffiliationState> _onboard(OnboardUser command) async* {
     _assertOnboarding(command);
-    var person = persons.findUser(command.data);
+    final userId = command.data;
+    var affiliation = command.affiliation;
+
+    // Check if person should be created or updated
+    var person = persons.findUser(userId);
     if (person == null) {
       person = persons.apply(PersonModel.fromUser(
-        users.repo[command.data],
-        temporary: command.affiliation.isUnorganized,
+        users.repo[userId],
+        temporary: affiliation.isUnorganized,
       ));
+    } else if (person.temporary && affiliation.isOrganized) {
+      person = persons.apply(
+        person.copyWith(temporary: false),
+      );
     }
-    final affiliation = repo.apply(command.affiliation.copyWith(
+
+    // Ensure person is applied to affiliation
+    affiliation = repo.apply(affiliation.copyWith(
       person: person,
     ));
 
@@ -743,7 +791,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       command,
       UserOnboarded(
         person: person,
-        userId: command.data,
+        userId: userId,
         affiliation: affiliation,
       ),
       result: affiliation,
@@ -937,20 +985,20 @@ class SearchAffiliations extends AffiliationCommand<String, List<Affiliation>> {
 }
 
 class OnboardUser extends AffiliationCommand<String, Affiliation> {
-  final Affiliation affiliation;
   OnboardUser(String userId, this.affiliation) : super(userId, props: [affiliation]);
+  final Affiliation affiliation;
 
   @override
   String toString() => '$runtimeType {userId: $data, affiliation: $affiliation}';
 }
 
 class CreateTemporaryAffiliation extends AffiliationCommand<Personnel, Affiliation> {
-  final Affiliation affiliation;
   CreateTemporaryAffiliation(Personnel personnel, this.affiliation)
       : super(
           personnel,
           props: [affiliation],
         );
+  final Affiliation affiliation;
 
   @override
   String toString() => '$runtimeType {personnel: $data, affiliation: $affiliation}';

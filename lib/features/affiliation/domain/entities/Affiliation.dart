@@ -56,6 +56,9 @@ abstract class Affiliation extends Aggregate<Map<String, dynamic>> {
   /// Check if person
   bool get isAffiliate => person?.uuid != null;
 
+  /// Check if person is organized
+  bool get isOrganized => !isUnorganized;
+
   /// Check if person is unorganized
   bool get isUnorganized => (isEmpty || isAffiliate) && !(isOrg || isDiv || isDep);
 

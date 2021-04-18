@@ -49,8 +49,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         _token.userId,
         user.roles.first,
         email: user.email,
-        division: user.division,
-        department: user.department,
+        division: user.div,
+        department: user.dep,
         maxAge: Duration.zero,
       );
     }
@@ -117,8 +117,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         token.toUser().roles.first,
         maxAge: _maxAge,
         email: user.email,
-        division: user.division,
-        department: user.department,
+        division: user.div,
+        department: user.dep,
       );
       return ServiceResponse.ok(body: _token);
     });
@@ -171,8 +171,8 @@ class UserServiceMock extends Mock implements UserCredentialsService {
         user.roles.first,
         maxAge: _maxAge,
         email: user.email,
-        division: user.division,
-        department: user.department,
+        division: user.div,
+        department: user.dep,
       );
       return ServiceResponse.ok(body: _token);
     });
