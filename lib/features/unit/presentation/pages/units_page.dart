@@ -79,7 +79,6 @@ class UnitsPageState extends State<UnitsPage> {
             context.bloc<UnitBloc>().load();
           },
           child: Container(
-//            color: Color.fromRGBO(168, 168, 168, 0.6),
             child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
@@ -94,7 +93,13 @@ class UnitsPageState extends State<UnitsPage> {
                                 ? "Legg til enhet"
                                 : "Ingen enheter funnet",
                       )
-                    : _buildList(units);
+                    : ListView.builder(
+                        itemCount: units.length,
+                        itemBuilder: (context, index) {
+                          return _buildUnit(units, index);
+                        },
+                        padding: EdgeInsets.only(top: 8.0, bottom: 36.0),
+                      );
               },
             ),
           ),
@@ -121,21 +126,7 @@ class UnitsPageState extends State<UnitsPage> {
 
   String _prepare(Unit unit) => "${unit.searchable}".toLowerCase();
 
-  ListView _buildList(List units) {
-    return ListView.builder(
-      itemCount: units.length + 1,
-      itemBuilder: (context, index) {
-        return _buildUnit(units, index);
-      },
-    );
-  }
-
   Widget _buildUnit(List<Unit> units, int index) {
-    if (index == units.length) {
-      return Center(
-        child: Text("Antall enheter: $index"),
-      );
-    }
     var unit = units[index];
     var tracking = unit.tracking == null ? null : context.bloc<TrackingBloc>().trackings[unit.tracking.uuid];
     var status = tracking?.status ?? TrackingStatus.none;

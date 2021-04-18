@@ -1,4 +1,5 @@
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
+import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
@@ -60,7 +61,9 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
           title: "Velg enhetens posisjon",
         ),
       );
-      if (next == null) return dartz.Left(false);
+      if (next == null) {
+        return dartz.Left(false);
+      }
     }
     var result = await showDialog<UnitParams>(
       context: params.overlay.context,
@@ -68,9 +71,12 @@ class CreateUnit extends UseCase<bool, Unit, UnitParams> {
         position: next,
         devices: params.devices,
         personnels: params.personnels,
+        operation: params.context.bloc<OperationBloc>().selected,
       ),
     );
-    if (result == null) return dartz.Left(false);
+    if (result == null) {
+      return dartz.Left(false);
+    }
 
     // This will create a new unit.
     //

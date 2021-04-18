@@ -568,7 +568,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   Widget _buildMap() {
     _fitToBoundsOnce();
-    return FlutterMap(
+    final map = FlutterMap(
       key: _mapKey,
       mapController: _mapController,
       options: MapOptions(
@@ -576,11 +576,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         center: _center,
         minZoom: _minZoom(),
         maxZoom: _maxZoom(),
-        interactiveFlags: widget.interactive ? InteractiveFlag.none : InteractiveFlag.all,
-        /* Ensure _center is inside given bounds
+        interactiveFlags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
+        // Ensure _center is inside given bounds
         nePanBoundary: _currentBaseMap.bounds?.northEast,
         swPanBoundary: _currentBaseMap.bounds?.southWest,
-        */
         onTap: (point) => _onTap(point),
         onPositionChanged: _onPositionChanged,
         onLongPress: (point) => _onLongPress(point),
@@ -597,6 +596,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
       ),
       layers: _setLayerOptions(),
     );
+    return widget.interactive ? map : AbsorbPointer(child: map);
   }
 
   /// Get actual key to FlutterMap

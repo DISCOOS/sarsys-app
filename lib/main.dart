@@ -84,9 +84,9 @@ void runAppWithCatcher(Widget app, AppController controller) {
 
   _catcher = Catcher(
     rootWidget: app,
+    navigatorKey: NavigationService.navigatorKey,
     debugConfig: _toCatcherDebugConfig(sentryDns),
     releaseConfig: _toCatcherReleaseConfig(sentryDns),
-    navigatorKey: NavigationService.navigatorKey,
   );
 }
 

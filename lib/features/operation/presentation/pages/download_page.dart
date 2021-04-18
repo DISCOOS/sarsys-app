@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:SarSys/core/size_config.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -77,75 +78,73 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
-      fontSize: SizeConfig.safeBlockVertical * 4.0,
+      fontSize: SizeConfig.labelFontSize * 1.8,
     );
     final statementStyle = Theme.of(context).textTheme.subtitle2.copyWith(
-          fontSize: SizeConfig.safeBlockVertical * 2.5,
+          fontSize: SizeConfig.labelFontSize * 1.2,
         );
     _animController.repeat();
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(0.0),
-        child: Stack(
-          alignment: AlignmentDirectional.bottomCenter,
-          children: <Widget>[
-            Align(
-              alignment: Alignment.topCenter,
-              child: _buildTitle(context),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <Widget>[
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      height: 300,
-                      child: _buildRipple(
-                        _buildIcon('download.png'),
-                      ),
-                    )
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(top: SizeConfig.safeBlockVertical),
-                      child: Center(
-                        child: Text(
-                          "Vent litt",
-                          style: rationaleStyle,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Center(
-                        child: StreamBuilder<DownloadProgress>(
-                            stream: widget.onProgress,
-                            initialData: DownloadProgress.zero,
-                            builder: (context, snapshot) {
-                              final state = snapshot.hasData ? snapshot.data : DownloadProgress.zero;
-                              return Text(
-                                'Laster ned aksjonen (${(state.fraction * 100).toStringAsFixed(0)} %)',
-                                style: statementStyle,
-                                textAlign: TextAlign.center,
-                              );
-                            }),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+    final iconSize = SizeConfig.blockSizeVertical * 20;
+    return Stack(
+      alignment: Alignment.center,
+      children: <Widget>[
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: _buildTitle(context),
+          ),
         ),
-      ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.only(
+                  top: SizeConfig.safeBlockVertical * 10,
+                ),
+                child: SizedBox(
+                  height: iconSize + 24,
+                  child: _buildRipple(
+                    _buildIcon(
+                      'download.png',
+                      iconSize,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: SizeConfig.safeBlockVertical * 5,
+                ),
+                child: Center(
+                  child: Text(
+                    "Vent litt",
+                    style: rationaleStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: StreamBuilder<DownloadProgress>(
+                      stream: widget.onProgress,
+                      initialData: DownloadProgress.zero,
+                      builder: (context, snapshot) {
+                        final state = snapshot.hasData ? snapshot.data : DownloadProgress.zero;
+                        return Text(
+                          'Laster ned aksjonen (${(state.fraction * 100).toStringAsFixed(0)} %)',
+                          style: statementStyle,
+                          textAlign: TextAlign.center,
+                        );
+                      }),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -156,7 +155,7 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
       color: primaryColor,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.1,
-      fontSize: SizeConfig.safeBlockVertical * 8,
+      fontSize: SizeConfig.labelFontSize * 2.8,
     );
     return Padding(
       padding: const EdgeInsets.only(top: 32.0),
@@ -171,8 +170,7 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
   Widget _buildRipple(Widget icon) => AnimatedBuilder(
         animation: CurvedAnimation(
           parent: _animController,
-          curve: Curves.elasticOut,
-          reverseCurve: Curves.elasticIn,
+          curve: Curves.elasticInOut,
         ),
         builder: (context, child) {
           return Stack(
@@ -196,10 +194,10 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
         ),
       );
 
-  Image _buildIcon(String asset) => Image.asset(
+  Image _buildIcon(String asset, double size) => Image.asset(
         'assets/images/$asset',
-        height: _iconHeight,
-        width: _iconWidth,
+        height: size,
+        width: size,
         alignment: Alignment.center,
       );
 

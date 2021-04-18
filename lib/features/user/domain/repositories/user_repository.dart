@@ -123,8 +123,8 @@ class UserRepository implements Repository<String, User> {
   /// Load current [user]
   Future<User> load({
     String userId,
-    bool validate = true,
     bool refresh = true,
+    bool validate = true,
   }) async {
     await _checkState(open: true);
 
@@ -132,13 +132,15 @@ class UserRepository implements Repository<String, User> {
     if (containsKey(actualId)) {
       final actualToken = await _getToken(
         userId: actualId,
-        validate: validate,
         refresh: refresh,
+        validate: validate,
       );
+
       await _putToken(
         actualToken,
         security: user?.security,
       );
+
       actualId = _userId;
     }
     return get(actualId);
@@ -238,7 +240,9 @@ class UserRepository implements Repository<String, User> {
         response: response,
       );
     }
-    throw AuthTokenNotFoundException('${actualId ?? 'unknown'}');
+    throw UserServiceException(
+      'Token ${actualId ?? 'unknown'} not found',
+    );
   }
 
   /// Logout user
@@ -277,7 +281,9 @@ class UserRepository implements Repository<String, User> {
         response: response,
       );
     }
-    throw AuthTokenNotFoundException(userId ?? _userId ?? 'unknown');
+    throw UserServiceException(
+      'User ${_userId ?? 'unknown'} not found',
+    );
   }
 
   /// Clear all users
@@ -389,14 +395,13 @@ class UserRepository implements Repository<String, User> {
     final actualId = userId ?? _userId;
     final actualToken = tokens[actualId];
     if (actualToken != null) {
-      // ignore: invalid_use_of_protected_member
       bool isValid = actualToken.isValid;
       if (isValid || !validate) {
         return actualToken;
       }
-      // Refresh token?
+      // Attempt to refresh token?
       if (refresh) {
-        await _validateAndRefresh(
+        _validateAndRefresh(
           actualToken,
           lock: false,
         );
@@ -407,7 +412,9 @@ class UserRepository implements Repository<String, User> {
         return token;
       }
     }
-    throw AuthTokenNotFoundException(actualId);
+    throw UserServiceException(
+      'Token ${actualId ?? 'unknown'} not found',
+    );
   }
 
   Future<ServiceResponse<User>> _validateAndRefresh(
@@ -423,7 +430,7 @@ class UserRepository implements Repository<String, User> {
     // the app unusable during a network partition
     // ignore: invalid_use_of_protected_member
     if (isOnline && (force || token.isExpired)) {
-      return await _refresh(token, lock: lock);
+      return _refresh(token, lock: lock);
     }
     return ServiceResponse.ok<User>(
       body: _users.get(token.userId),
@@ -544,12 +551,12 @@ class UserServiceException extends RepositoryException {
   }
 }
 
-class AuthTokenNotFoundException implements Exception {
-  AuthTokenNotFoundException(this.userId);
-  final String userId;
-
-  @override
-  String toString() {
-    return 'AuthToken for User $userId not found';
-  }
-}
+// class AuthTokenNotFoundException implements Exception {
+//   AuthTokenNotFoundException(this.userId);
+//   final String userId;
+//
+//   @override
+//   String toString() {
+//     return 'AuthToken for User $userId not found';
+//   }
+// }

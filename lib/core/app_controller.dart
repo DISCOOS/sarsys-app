@@ -417,10 +417,11 @@ class AppController {
     final apiServices = repoServices.whereType<JsonService>().toList();
 
     final api = Api(
-      httpClient: client,
-      baseRestUrl: baseRestUrl,
       users: userRepo,
+      httpClient: client,
       services: apiServices,
+      baseRestUrl: baseRestUrl,
+      manager: TransactionManager(),
     );
 
     return controller._set(

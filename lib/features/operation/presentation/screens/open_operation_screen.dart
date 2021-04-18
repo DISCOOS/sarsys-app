@@ -17,13 +17,13 @@ typedef OpenCallback = Future<Personnel> Function(Operation operation, StreamSin
 
 class OpenOperationScreen extends StatefulWidget {
   static const String ROUTE = 'open_operation';
-  static const int PASSCODE = 0;
-  static const int DOWNLOAD = 1;
+  static const int PASSCODE = 1;
+  static const int DOWNLOAD = 2;
 
   OpenOperationScreen(
       {Key key,
-      @required this.operation,
       @required this.onCancel,
+      @required this.operation,
       @required this.onDownload,
       @required this.onAuthorize,
       @required this.requirePasscode})
@@ -46,6 +46,8 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
 
   int _index = 0;
 
+  final ValueNotifier _onVerify = ValueNotifier<bool>(true);
+
   Stream<DownloadProgress> get onProgress => _progressController.stream;
   StreamController<DownloadProgress> _progressController = StreamController.broadcast();
 
@@ -54,40 +56,53 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-    if (widget.requirePasscode == 1) _onOpen();
+    if (widget.requirePasscode == 1) {
+      _onDownload();
+    }
     return SteppedScreen(
       views: views,
       index: max(widget.requirePasscode, _index),
       onNext: _onNext,
+      canScroll: false,
       withProgress: false,
       onCancel: _onCancel,
+      withBackAction: false,
       hasBack: (_) => false,
-      onComplete: _onComplete,
-      canScroll: false,
       enableAutoScroll: true,
+      onComplete: _onComplete,
       isComplete: (_) => false,
-      hasNext: (index) => isAuthorized || OpenOperationScreen.PASSCODE == _index,
+      hasNext: (index) => isAuthorized,
     );
   }
 
   void _onNext(int step) async {
-    // 'Next' on bottom bar was pressed?
-    if (step == OpenOperationScreen.DOWNLOAD && step > _index && isAuthorized) {
-      _onOpen();
-      _index = step;
-    } else
-      _deferNext(0);
+    if (step > _index) {
+      switch (step) {
+        case OpenOperationScreen.DOWNLOAD:
+          if (isAuthorized) {
+            _onDownload();
+          } else {
+            _onVerify.value = true;
+          }
+          break;
+        default:
+          _deferNext(OpenOperationScreen.PASSCODE);
+      }
+    }
   }
 
-  void _onOpen() async {
+  void _onDownload() async {
+    _index = OpenOperationScreen.DOWNLOAD;
     final personnel = await widget.onDownload(
       widget.operation,
       _progressController.sink,
     );
-    _onComplete(
-      OpenOperationScreen.DOWNLOAD,
-      personnel: personnel,
-    );
+    if (mounted) {
+      _onComplete(
+        _index,
+        personnel: personnel,
+      );
+    }
   }
 
   @override
@@ -95,11 +110,10 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     super.didChangeDependencies();
     views = [
       PasscodePage(
+        onVerify: _onVerify,
         operation: widget.operation,
+        onComplete: _onPasscodeChange,
         onAuthorize: widget.onAuthorize,
-        onComplete: (result) => _onPasscode(
-          result,
-        ),
       ),
       DownloadPage(
         onProgress: _progressController.stream,
@@ -107,9 +121,9 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     ];
   }
 
-  void _onPasscode(bool result) {
-    if (result) {
-      _onOpen();
+  void _onPasscodeChange(bool validated) {
+    if (validated) {
+      _onDownload();
       _deferNext(
         OpenOperationScreen.DOWNLOAD,
       );
@@ -120,11 +134,12 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     }
   }
 
-  Future<dynamic> _deferNext(int step) {
-    return Future.delayed(Duration(milliseconds: 500), () {
+  void _deferNext(int step) {
+    Future.delayed(Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
           _index = step;
+          _onVerify.value = true;
         });
       }
     });
@@ -135,6 +150,7 @@ class _OpenOperationScreenState extends State<OpenOperationScreen> {
     if (_progressController.hasListener) {
       _progressController.close();
     }
+    _onVerify.dispose();
     super.dispose();
   }
 

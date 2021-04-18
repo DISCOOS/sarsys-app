@@ -33,11 +33,9 @@ class AuthToken extends Equatable {
   final DateTime accessTokenExpiration;
 
   /// Check if token is valid
-  @protected
   bool get isValid => !isExpired;
 
   /// Check if token is expired
-  @protected
   bool get isExpired => accessTokenExpiration.isBefore(DateTime.now());
 
   /// Factory constructor for creating a new `AuthToken` instance

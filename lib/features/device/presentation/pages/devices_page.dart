@@ -93,10 +93,11 @@ class DevicesPageState extends State<DevicesPage> {
                         message: snapshot.hasError ? snapshot.error : "Ingen apparater innen rekkevidde",
                       )
                     : ListView.builder(
-                        itemCount: devices.length + 1,
+                        itemCount: devices.length,
                         itemBuilder: (context, index) {
                           return _buildDevice(devices, index, units, personnel, tracked);
                         },
+                        padding: EdgeInsets.only(top: 8.0, bottom: 36.0),
                       );
               }),
         ),
@@ -131,11 +132,6 @@ class DevicesPageState extends State<DevicesPage> {
     Map<String, Personnel> personnel,
     Map<String, Set<Tracking>> tracked,
   ) {
-    if (index == devices.length) {
-      return Center(
-        child: Text("Antall apparater: $index"),
-      );
-    }
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
 
@@ -233,7 +229,7 @@ class DevicesPageState extends State<DevicesPage> {
               alignment: Alignment.centerLeft,
               child: Chip(
                 label: Text(
-                  [device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' '),
+                  device.number ?? device.alias,
                 ),
                 labelPadding: EdgeInsets.only(right: 4.0),
                 backgroundColor: Colors.grey[100],
@@ -246,7 +242,6 @@ class DevicesPageState extends State<DevicesPage> {
             ),
           ),
           Container(
-            width: 100,
             child: Align(
               alignment: Alignment.centerLeft,
               child: Chip(

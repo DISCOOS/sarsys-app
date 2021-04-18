@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -12,10 +14,12 @@ import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
+import 'package:random_string/random_string.dart';
 
 class Api {
   Api({
     @required this.users,
+    @required this.manager,
     @required this.httpClient,
     @required this.baseRestUrl,
     @required Iterable<JsonService> services,
@@ -37,7 +41,10 @@ class Api {
             ),
           ),
           interceptors: [
+            GzipInterceptor(),
             BearerTokenInterceptor(users),
+            TransactionRequestInterceptor(manager),
+            TransactionResponseInterceptor(manager),
             if (kDebugMode && Defaults.debugPrintHttp) HttpLoggingInterceptor(),
           ],
         );
@@ -45,6 +52,7 @@ class Api {
   final String baseRestUrl;
   final UserRepository users;
   final http.Client httpClient;
+  final TransactionManager manager;
   final ChopperClient chopperClient;
 
   static ServiceResponse<T> from<S, T>(
@@ -159,18 +167,82 @@ class BearerTokenInterceptor implements RequestInterceptor {
   FutureOr<Request> onRequest(Request request) async {
     if (users.isAuthenticated) {
       if (users.isTokenExpired) {
-        await users.refresh();
+        try {
+          await users.refresh();
+        } on Exception catch (e) {
+          debugPrint('Failed to refresh token: $e');
+          return request;
+        }
       }
       return applyHeader(
-        applyHeader(
-          request,
-          'Content-Encoding',
-          'gzip',
-        ),
+        request,
         'Authorization',
         'Bearer ${users.token.accessToken}',
       );
     }
     return request;
+  }
+}
+
+class GzipInterceptor implements RequestInterceptor {
+  GzipInterceptor();
+
+  @override
+  FutureOr<Request> onRequest(Request request) async {
+    return applyHeader(
+      request,
+      'Content-Encoding',
+      'gzip',
+    );
+  }
+}
+
+class TransactionManager {
+  String id;
+  String instance;
+  String begin() {
+    return id ??= randomAlphaNumeric(8);
+  }
+
+  Response complete(Response response) {
+    if (instance != response.headers['x-pod-name']) {
+      instance = response.headers['x-pod-name'];
+      debugPrint('Transaction instance changed to $instance');
+    }
+    if (id != response.headers['x-transaction-id']) {
+      id = response.headers['x-transaction-id'];
+      debugPrint('Transaction id changed to $id');
+    }
+    return response;
+  }
+}
+
+class TransactionRequestInterceptor implements RequestInterceptor {
+  TransactionRequestInterceptor(this.manager);
+  final TransactionManager manager;
+
+  @override
+  FutureOr<Request> onRequest(Request request) async {
+    return applyHeader(
+      request,
+      'x-transaction-id',
+      manager.begin(),
+    );
+  }
+}
+
+class TransactionResponseInterceptor implements ResponseInterceptor {
+  TransactionResponseInterceptor(this.manager);
+  final TransactionManager manager;
+
+  @override
+  FutureOr<Response> onResponse(Response response) {
+    if (response.statusCode == 401) {
+      // Prompt user to login
+      NavigationService().pushReplacementNamed(
+        LoginScreen.ROUTE,
+      );
+    }
+    return manager.complete(response);
   }
 }

@@ -168,8 +168,8 @@ class OperationServiceMock extends Mock implements OperationService {
     });
 
     when(mock.getList()).thenAnswer((_) async {
-      final authorized = await users.load();
-      if (authorized == null) {
+      final user = await users.load();
+      if (user == null) {
         return ServiceResponse.unauthorized();
       }
       if (_operationRepo.isEmpty) {
@@ -184,8 +184,8 @@ class OperationServiceMock extends Mock implements OperationService {
       );
     });
     when(mock.create(any)).thenAnswer((_) async {
-      final authorized = await users.load();
-      if (authorized == null) {
+      final user = await users.load();
+      if (user == null) {
         return ServiceResponse.unauthorized();
       }
       final state = _.positionalArguments[0] as StorageState<Operation>;

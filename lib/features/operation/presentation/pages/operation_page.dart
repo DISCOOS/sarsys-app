@@ -136,6 +136,7 @@ class _OperationPageState extends State<OperationPage> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(OperationPage.CORNER),
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             child: MapWidget(
               operation: operation,
               center: meetup ?? ipp,

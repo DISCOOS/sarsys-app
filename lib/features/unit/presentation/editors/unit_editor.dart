@@ -14,6 +14,7 @@ import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
@@ -26,6 +27,7 @@ import 'package:SarSys/features/tracking/presentation/widgets/position_field.dar
 class UnitEditor extends StatefulWidget {
   final Unit unit;
   final Position position;
+  final Operation operation;
   final Iterable<Device> devices;
   final Iterable<String> personnels;
 
@@ -35,6 +37,7 @@ class UnitEditor extends StatefulWidget {
     Key key,
     this.unit,
     this.position,
+    this.operation,
     this.type = UnitType.team,
     this.devices = const [],
     this.personnels = const [],
@@ -717,9 +720,12 @@ class _UnitEditorState extends State<UnitEditor> {
   Unit _createdUnit() => UnitModel.fromJson(_toJson()).copyWith(
         uuid: Uuid().v4(),
         tracking: TrackingUtils.newRef(),
+        operation: widget.operation.toRef(),
       );
 
-  Unit _updatedUnit() => widget.unit.mergeWith(_toJson());
+  Unit _updatedUnit() => widget.unit.mergeWith(_toJson()).copyWith(
+        operation: widget.operation.toRef(),
+      );
 
   Map<String, dynamic> _toJson() => _formKey.currentState.value;
 }

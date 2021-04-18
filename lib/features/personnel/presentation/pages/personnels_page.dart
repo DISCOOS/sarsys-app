@@ -140,10 +140,11 @@ class PersonnelsPageState extends State<PersonnelsPage> {
   Widget _buildList(List personnels) {
     return widget.withGrouped
         ? GroupedListView<Personnel, AffiliationGroupEntry>(
-            physics: AlwaysScrollableScrollPhysics(),
             sort: true,
+            physics: AlwaysScrollableScrollPhysics(),
             elements: personnels,
             order: GroupedListOrder.ASC,
+            padding: EdgeInsets.only(bottom: 36.0),
             useStickyGroupSeparators: false,
             itemBuilder: (context, personnel) {
               return _buildPersonnel(personnel);
@@ -165,8 +166,8 @@ class PersonnelsPageState extends State<PersonnelsPage> {
             groupSeparatorBuilder: (group) => AffiliationGroupDelimiter(group),
           )
         : ListView.builder(
-            itemCount: personnels.length,
             itemExtent: 72.0,
+            itemCount: personnels.length,
             itemBuilder: (context, index) {
               return _buildPersonnel(personnels[index]);
             },
@@ -218,11 +219,6 @@ class PersonnelsPageState extends State<PersonnelsPage> {
               child: Chip(
                 label: Text(personnel.name),
                 backgroundColor: Colors.grey[100],
-//              avatar: AffiliationAvatar(
-//                size: 6.0,
-//                maxRadius: 10.0,
-//                affiliation: _toAffiliation(personnel),
-//              ),
               ),
             ),
           ),
@@ -249,23 +245,24 @@ class PersonnelsPageState extends State<PersonnelsPage> {
                         content: TemporaryPersonnelDescription(),
                       )),
             ),
-//            Spacer(),
           if (widget.withStatus)
-            Container(
-              width: 100,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Chip(
-                  label: Text(
-                    _toUsage(unit, personnel, tracking),
-                    textAlign: TextAlign.end,
-                  ),
-                  labelPadding: EdgeInsets.only(right: 4.0),
-                  backgroundColor: Colors.grey[100],
-                  avatar: Icon(
-                    Icons.my_location,
-                    size: 16.0,
-                    color: toPositionStatusColor(tracking?.position),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Container(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Chip(
+                    label: Text(
+                      _toUsage(unit, personnel, tracking),
+                      textAlign: TextAlign.end,
+                    ),
+                    labelPadding: EdgeInsets.only(right: 4.0),
+                    backgroundColor: Colors.grey[100],
+                    avatar: Icon(
+                      Icons.my_location,
+                      size: 16.0,
+                      color: toPositionStatusColor(tracking?.position),
+                    ),
                   ),
                 ),
               ),

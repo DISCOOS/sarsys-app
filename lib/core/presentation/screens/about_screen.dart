@@ -1,4 +1,7 @@
+import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
+import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
@@ -200,7 +203,15 @@ class _AboutScreenState extends State<AboutScreen> {
     if (answer) {
       channel.close();
       if (context.bloc<UserBloc>().repo.isTokenExpired) {
-        await context.bloc<UserBloc>().repo.refresh();
+        try {
+          await context.bloc<UserBloc>().repo.refresh();
+        } on UserServiceException catch (e) {
+          debugPrint('Failed to refresh token: $e');
+          // Prompt user to login
+          NavigationService().pushReplacementNamed(
+            LoginScreen.ROUTE,
+          );
+        }
       }
       if (!channel.isOpen) {
         channel.open(

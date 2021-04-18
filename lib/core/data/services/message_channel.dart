@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
@@ -15,6 +16,8 @@ import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 
 import 'package:SarSys/core/extensions.dart';
+
+import 'navigation_service.dart';
 
 class MessageChannel extends Service {
   MessageChannel(UserRepository users) : _users = users;
@@ -249,6 +252,7 @@ class MessageChannel extends Service {
       debugPrint('Closed message channel');
       _check();
     }
+    _timer?.cancel();
   }
 
   void _assertState() {
@@ -278,16 +282,27 @@ class MessageChannel extends Service {
   }
 
   void _check() async {
-    if (!isClosedByApp && _users.hasToken && _users.isOnline && _isClosed) {
-      if (isTokenExpired) {
-        await _users.refresh();
+    try {
+      if (!isClosedByApp && _users.hasToken && _users.isOnline && _isClosed) {
+        if (isTokenExpired) {
+          await _users.refresh();
+        }
+        if (isTokenValid) {
+          open(
+            url: _url,
+            appId: _appId,
+          );
+        }
       }
-      if (isTokenValid) {
-        open(
-          url: _url,
-          appId: _appId,
-        );
-      }
+    } on UserServiceException {
+      _close(
+        reason: "Unable to refresh token",
+        code: MessageChannel.closedByApp,
+      );
+      // Prompt user to login
+      NavigationService().pushReplacementNamed(
+        LoginScreen.ROUTE,
+      );
     }
   }
 }

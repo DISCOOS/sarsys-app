@@ -83,7 +83,6 @@ dependencies:
   flutter_background_geolocation: ^2.0.2
   percent_indicator: ^3.0.1
   timer_builder: ^2.0.0
-  keyboard_avoider: ^0.1.2
 
   # Mocking support
   uuid: ^2.2.2

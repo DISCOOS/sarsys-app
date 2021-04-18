@@ -1,8 +1,8 @@
 import 'dart:math';
 
+import 'package:SarSys/core/presentation/keyboard_avoider.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:flutter/material.dart';
-import 'package:keyboard_avoider/keyboard_avoider.dart';
 
 /// Stepped Screen implementing the Self-Select model in Material Design, see
 /// https://material.io/design/communication/onboarding.html#self-select-model
@@ -179,9 +179,9 @@ class _SteppedScreenState extends State<SteppedScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  child: Text(index == widget.views.length - 1
-                      ? (widget.isComplete(index) ? widget.completeActionText : widget.cancelActionText)
-                      : widget.nextActionText),
+                  child: Text(_hasNext(index)
+                      ? widget.nextActionText
+                      : (widget.isComplete(index) ? widget.completeActionText : widget.cancelActionText)),
                   onPressed: () async {
                     if (_hasNext(index)) {
                       controller.animateToPage(

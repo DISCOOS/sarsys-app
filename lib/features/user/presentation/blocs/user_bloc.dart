@@ -93,10 +93,16 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   /// User is in a untrusted domain
   bool get isUntrusted => security?.trusted == false;
 
-  /// User is authenticated
+  /// User is authenticated (token can be expired)
   bool get isAuthenticated => repo.isAuthenticated;
 
-  /// User identity is ready to be accessed. If false, login should be enforced
+  /// User token is valid
+  bool get isTokenValid => repo.isTokenValid;
+
+  /// User token is expired
+  bool get isTokenExpired => repo.isTokenExpired;
+
+  /// User identity is ready to be accessed (token can be expired)
   bool get isReady => isSecured && isUnlocked && isAuthenticated && !isPending;
 
   /// User identity is being authenticated
@@ -344,7 +350,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
       return toOK(
         command,
-        UserAuthenticated(user),
+        isTokenExpired ? AuthTokenExpired(token) : UserAuthenticated(user),
         result: _toAuthResult(command),
       );
     } else if (result is Security) {
@@ -550,6 +556,7 @@ abstract class UserState<T> extends BlocEvent<T> {
   bool isAuthenticating() => this is UserAuthenticating;
   bool isPending() => isUnlocking() || isAuthenticating();
   bool isAuthenticated() => this is UserAuthenticated;
+  bool isTokenExpired() => this is AuthTokenRefreshed;
   bool isTokenRefreshed() => this is AuthTokenRefreshed;
   bool isAuthorized() => this is UserAuthorized;
   bool isUnauthorized() => this is UserUnauthorized;
@@ -614,8 +621,14 @@ class UserAuthorized extends UserState<User> {
   String toString() => '$runtimeType {user: $data, command: $command, personnel: $personnel}';
 }
 
+class AuthTokenExpired extends UserState<AuthToken> {
+  AuthTokenExpired(AuthToken token) : super(token);
+  @override
+  String toString() => '$runtimeType {userId: ${data.userId}}';
+}
+
 class AuthTokenRefreshed extends UserState<AuthToken> {
-  AuthTokenRefreshed(AuthToken user) : super(user);
+  AuthTokenRefreshed(AuthToken token) : super(token);
   @override
   String toString() => '$runtimeType {userId: ${data.userId}}';
 }

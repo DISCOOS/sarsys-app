@@ -197,7 +197,7 @@ class _AppDrawerState extends State<AppDrawer> {
         ? ['Ingen aksjon valgt']
         : [
             '${selected.name ?? translateOperationType(selected.type)}',
-            '${selected.reference ?? '<ingen referanse>'}',
+            '${selected.reference ?? ''}',
           ];
 
     return ListTile(
