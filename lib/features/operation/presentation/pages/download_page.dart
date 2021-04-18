@@ -201,6 +201,5 @@ class _DownloadPageState extends State<DownloadPage> with TickerProviderStateMix
         alignment: Alignment.center,
       );
 
-  double get _iconHeight => SizeConfig.blockSizeVertical * 30 * (SizeConfig.isPortrait ? 1 : 2.5);
   double get _iconWidth => SizeConfig.blockSizeHorizontal * 60 * (SizeConfig.isPortrait ? 1 : 2.5);
 }

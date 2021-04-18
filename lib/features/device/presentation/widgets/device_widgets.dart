@@ -49,18 +49,19 @@ class DeviceTile extends StatelessWidget {
 }
 
 class DeviceChip extends StatelessWidget {
-  final Device device;
-  final ChipsInputState state;
-
   const DeviceChip({
     Key key,
     @required this.device,
     this.state,
   }) : super(key: key);
 
+  final Device device;
+  final ChipsInputState state;
+
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
+    final name = device.number ?? device.alias;
     return InputChip(
       key: ObjectKey(device),
       labelPadding: EdgeInsets.only(left: 4.0),
@@ -77,7 +78,7 @@ class DeviceChip extends StatelessWidget {
             backgroundColor: toPositionStatusColor(device.position),
           ),
           SizedBox(width: 6.0),
-          Text(device.number, style: style),
+          if (name != null) Text(name, style: style),
         ],
       ),
       onDeleted: () => state.deleteChip(device),

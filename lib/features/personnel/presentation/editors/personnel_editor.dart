@@ -266,7 +266,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Text _buildReadOnlyText(BuildContext context, String text) {
     return Text(
-      text,
+      text ?? '-',
       style: Theme.of(context).textTheme.subtitle2,
     );
   }

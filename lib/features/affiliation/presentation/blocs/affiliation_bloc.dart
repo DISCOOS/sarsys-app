@@ -314,7 +314,6 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     // Create new affiliation
     final affiliation = AffiliationModel(
       uuid: Uuid().v4(),
-      person: person,
       type: defaultType,
       org: org?.toRef(),
       div: div?.toRef(),
@@ -450,7 +449,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// Get function from device number
   OperationalFunction findFunction(String number) {
     final org = findOrganisation(number);
-    return AffiliationUtils.findFunction(org.fleetMap, number);
+    return org == null ? null : AffiliationUtils.findFunction(org.fleetMap, number);
   }
 
   /// Get [AffiliationQuery] object from current state
@@ -540,14 +539,14 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }) async {
     await _assertState('onboard');
     await onLoadedAsync();
-    final affiliation = findUserAffiliation(userId: userId);
+    final _userId = userId ?? users.user.userId;
+    final affiliation = findUserAffiliation(userId: _userId);
     if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
         OnboardUser(
-          userId ?? users.user.userId,
+          _userId,
           affiliation.copyWith(
             status: status,
-            uuid: Uuid().v4(),
             type: affiliation.isUnorganized ? AffiliationType.volunteer : type,
           ),
         ),

@@ -724,7 +724,7 @@ class _UnitEditorState extends State<UnitEditor> {
       );
 
   Unit _updatedUnit() => widget.unit.mergeWith(_toJson()).copyWith(
-        operation: widget.operation.toRef(),
+        operation: widget.operation?.toRef() ?? widget.unit.operation,
       );
 
   Map<String, dynamic> _toJson() => _formKey.currentState.value;
