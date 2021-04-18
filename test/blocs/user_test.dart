@@ -75,12 +75,20 @@ void main() async {
     test('and USER token is INVALID, token SHOULD be refreshed', () async {
       // Arrange
       harness.connectivity.cellular();
-      harness.userService.setCredentials(maxAge: Duration.zero);
+      harness.userService.setCredentials(
+        username: BlocTestHarness.UNTRUSTED,
+        maxAge: Duration.zero,
+      );
+      harness.userService.invalidateToken();
       await harness.userBloc.login(
+        userId: BlocTestHarness.USER_ID,
         username: BlocTestHarness.UNTRUSTED,
         password: BlocTestHarness.PASSWORD,
       );
       await expectThroughLater(harness.configBloc, emits(isA<AppConfigLoaded>()));
+
+      final events = <UserState>[];
+      harness.userBloc.listen((e) => events.add(e));
 
       // Act
       await harness.userBloc.login(
@@ -92,9 +100,7 @@ void main() async {
       verify(harness.userService.refresh(any));
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expectThroughInOrder(harness.userBloc, [
-        isA<UserAuthenticating>(),
         isA<AuthTokenRefreshed>(),
-        isA<UserAuthenticated>(),
       ]);
     });
 

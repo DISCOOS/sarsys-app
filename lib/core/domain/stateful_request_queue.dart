@@ -549,7 +549,6 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
       toNextTimeout(_retries++, const Duration(seconds: 10)),
       () {
         if (_shouldSchedulePush()) {
-          debugPrint('_retryPop($_retries)');
           pop();
         }
       },
