@@ -1,3 +1,4 @@
+import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
 import 'package:SarSys/core/size_config.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
@@ -112,62 +113,60 @@ class UserStatusPageState extends State<UserStatusPage> {
       );
 
   Widget _buildProfile(BuildContext context) {
-    return StreamBuilder<ActivityProfile>(
-        stream: context.bloc<ActivityBloc>().onChanged,
-        initialData: context.bloc<ActivityBloc>().profile,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return CircularProgressIndicator();
-          }
-          var status;
-          final service = LocationService();
-          switch (snapshot.data) {
-            case ActivityProfile.PRIVATE:
-              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
-                _buildMapAction(context, service),
-                _buildJoinAction(context),
-              ]);
-              break;
-            case ActivityProfile.ALERTED:
-              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
-                _buildMapAction(context, service),
-                _buildEnrouteAction(context),
-              ]);
-              break;
-            case ActivityProfile.ENROUTE:
-              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
-                _buildMapAction(context, service),
-                _buildCheckInAction(context),
-              ]);
-              break;
-            case ActivityProfile.ONSCENE:
-              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
-                _buildMapAction(context, service),
-                _buildCheckOutAction(context),
-              ]);
-              break;
-            case ActivityProfile.LEAVING:
-              status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
-                _buildMapAction(context, service),
-                _buildRetireAction(context),
-              ]);
-              break;
-            default:
-              status = Text(
-                'profile: ${context.bloc<ActivityBloc>().profile}',
-              );
-          }
+    final service = LocationService();
+    return StreamBuilderWidget<ActivityProfile>(
+      stream: context.bloc<ActivityBloc>().onChanged,
+      initialData: context.bloc<ActivityBloc>().profile,
+      builder: (context, profile) {
+        var status;
+        switch (profile) {
+          case ActivityProfile.PRIVATE:
+            status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+              _buildMapAction(context, service),
+              _buildJoinAction(context),
+            ]);
+            break;
+          case ActivityProfile.ALERTED:
+            status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+              _buildMapAction(context, service),
+              _buildEnrouteAction(context),
+            ]);
+            break;
+          case ActivityProfile.ENROUTE:
+            status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+              _buildMapAction(context, service),
+              _buildCheckInAction(context),
+            ]);
+            break;
+          case ActivityProfile.ONSCENE:
+            status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+              _buildMapAction(context, service),
+              _buildCheckOutAction(context),
+            ]);
+            break;
+          case ActivityProfile.LEAVING:
+            status = _buildStatus(context, child: _buildCoordinateWidget(service, context), buttons: [
+              _buildMapAction(context, service),
+              _buildRetireAction(context),
+            ]);
+            break;
+          default:
+            status = Text(
+              'profile: ${context.bloc<ActivityBloc>().profile}',
+            );
+        }
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(14.0),
-                child: status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
-              ),
-              if (context.bloc<ActivityBloc>().isTrackable) _buildLocationBuffer(),
-            ],
-          );
-        });
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(14.0),
+              child: status ?? Text('profile: ${context.bloc<ActivityBloc>().profile}'),
+            ),
+            if (context.bloc<ActivityBloc>().isTrackable) _buildLocationBuffer(),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildCoordinateWidget(LocationService service, BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:SarSys/core/data/services/navigation_service.dart';
+import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
@@ -73,9 +74,10 @@ class _AboutScreenState extends State<AboutScreen> {
           subtitle: Text(Defaults.baseRestUrl),
         ),
         GestureDetector(
-          child: StreamBuilder(
+          child: StreamBuilderWidget(
+              initialData: channel.state,
               stream: channel.onChanged,
-              builder: (context, snapshot) {
+              builder: (context, _) {
                 return _buildChannelStatusTile(channel, context);
               }),
           onTap: () async {
@@ -117,10 +119,10 @@ class _AboutScreenState extends State<AboutScreen> {
                   )
                 ],
               ),
-              body: StreamBuilder<MessageChannelState>(
+              body: StreamBuilderWidget<MessageChannelState>(
                   stream: channel.onChanged,
                   initialData: channel.state,
-                  builder: (context, snapshot) {
+                  builder: (context, _) {
                     return Column(
                       mainAxisSize: MainAxisSize.max,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
