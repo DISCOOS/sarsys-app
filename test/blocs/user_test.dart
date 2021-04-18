@@ -93,8 +93,8 @@ void main() async {
       expect(harness.userBloc.user, isNotNull, reason: "SHOULD HAVE User");
       expectThroughInOrder(harness.userBloc, [
         isA<UserAuthenticating>(),
-        isA<UserAuthenticated>(),
         isA<AuthTokenRefreshed>(),
+        isA<UserAuthenticated>(),
       ]);
     });
 
