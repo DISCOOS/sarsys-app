@@ -26,7 +26,7 @@ class OperationPage extends StatefulWidget {
   static const CORNER = 4.0;
   static const SPACING = 8.0;
   static const ELEVATION = 4.0;
-  static const PADDING = EdgeInsets.fromLTRB(12.0, 16.0, 0, 16.0);
+  static const PADDING = EdgeInsets.fromLTRB(16.0, 16.0, 0, 16.0);
 
   final ActionCallback onMessage;
 
@@ -309,22 +309,47 @@ class _OperationPageState extends State<OperationPage> {
       label: "Kode mannskap",
       useCodeStyle: true,
     );
-    return isCommander
-        ? Row(
-            children: <Widget>[
-              Expanded(
-                flex: 2,
-                child: _buildValueTile("${operation.passcodes?.commander}",
-                    label: "Kode aksjonsledelse", useCodeStyle: true),
-              ),
-              SizedBox(width: OperationPage.SPACING),
-              Expanded(
-                flex: 2,
-                child: personnel,
-              ),
-            ],
-          )
-        : personnel;
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 2,
+          child: isCommander
+              ? _buildValueTile(
+                  "${operation.passcodes?.commander}",
+                  label: "Kode aksjonsledelse",
+                  useCodeStyle: true,
+                )
+              : Material(
+                  child: Container(
+                    height: OperationPage.HEIGHT * 1.2,
+                    padding: EdgeInsets.fromLTRB(16.0, 16.0, 0, 8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Kode aksjonsledelse", style: labelStyle),
+                        Spacer(),
+                        ElevatedButton(
+                          onPressed: () {},
+                          child: Text('Oppgi'),
+                        )
+                      ],
+                    ),
+                  ),
+                  elevation: OperationPage.ELEVATION,
+                  borderRadius: BorderRadius.circular(OperationPage.CORNER),
+                ),
+        ),
+        SizedBox(width: OperationPage.SPACING),
+        Expanded(
+          flex: 2,
+          child: Container(
+            height: OperationPage.HEIGHT * 1.20,
+            child: personnel,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildValueTile(
@@ -340,7 +365,8 @@ class _OperationPageState extends State<OperationPage> {
   }) {
     Widget tile = GestureDetector(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (label != null && label.isNotEmpty) Text(label, style: labelStyle),
@@ -404,7 +430,7 @@ class _OperationPageState extends State<OperationPage> {
       );
 
       action = Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Expanded(child: tile),

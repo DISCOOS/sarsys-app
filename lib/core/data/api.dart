@@ -197,6 +197,10 @@ class GzipInterceptor implements RequestInterceptor {
   }
 }
 
+const String X_POD_NAME = 'x-pod-name';
+const String X_CORRELATION_ID = 'x-correlation-id';
+const String X_TRANSACTION_ID = 'x-transaction-id';
+
 class TransactionManager {
   String id;
   String instance;
@@ -205,12 +209,12 @@ class TransactionManager {
   }
 
   Response complete(Response response) {
-    if (instance != response.headers['x-pod-name']) {
-      instance = response.headers['x-pod-name'];
+    if (instance != response.headers[X_POD_NAME]) {
+      instance = response.headers[X_POD_NAME];
       debugPrint('Transaction instance changed to $instance');
     }
-    if (id != response.headers['x-transaction-id']) {
-      id = response.headers['x-transaction-id'];
+    if (id != response.headers[X_TRANSACTION_ID]) {
+      final id = response.headers[X_TRANSACTION_ID];
       debugPrint('Transaction id changed to $id');
     }
     return response;
@@ -225,8 +229,9 @@ class TransactionRequestInterceptor implements RequestInterceptor {
   FutureOr<Request> onRequest(Request request) async {
     return applyHeader(
       request,
-      'x-transaction-id',
-      manager.begin(),
+      'Cookie',
+      '$X_TRANSACTION_ID=${manager.begin()}',
+      override: true,
     );
   }
 }
