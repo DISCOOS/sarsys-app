@@ -381,6 +381,7 @@ class UnlockScreenState extends State<UnlockScreen> with TickerProviderStateMixi
             FilteringTextInputFormatter.allow(RegExp('[0-9]')),
           ],
           textInputAction: TextInputAction.send,
+          keyboardType: TextInputType.number,
           animationType: AnimationType.fade,
           autoDismissKeyboard: false,
           autoDisposeControllers: false,

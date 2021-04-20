@@ -323,6 +323,7 @@ class ChangePinScreenState extends State<ChangePinScreen> with TickerProviderSta
             FilteringTextInputFormatter.allow(RegExp('[0-9]')),
           ],
           textInputAction: TextInputAction.send,
+          keyboardType: TextInputType.number,
           animationType: AnimationType.fade,
           autoDismissKeyboard: false,
           animationDuration: Duration(milliseconds: 300),
