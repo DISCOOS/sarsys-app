@@ -11,15 +11,17 @@ typedef PasscodeCallback = Future<bool> Function(Operation operation, String pas
 class PasscodePage extends StatefulWidget {
   PasscodePage({
     Key key,
-    @required this.onVerify,
     @required this.operation,
     @required this.onComplete,
     @required this.onAuthorize,
+    this.requireCommand = false,
+    this.onVerify,
   }) : super(key: key) {
     assert(operation != null, 'Operation is required');
   }
 
   final Operation operation;
+  final bool requireCommand;
   final ValueNotifier<bool> onVerify;
   final PasscodeCallback onAuthorize;
   final ValueChanged<bool> onComplete;
@@ -33,14 +35,15 @@ class _PasscodePageState extends State<PasscodePage> {
   final FocusNode _focusNode = FocusNode();
 
   String _passcode = '';
+  bool _verifying = false;
 
   @override
   void didUpdateWidget(PasscodePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.onVerify != oldWidget.onVerify) {
-      oldWidget.onVerify.removeListener(_verifyPassCode);
+      oldWidget.onVerify?.removeListener(_verifyPassCode);
     }
-    widget.onVerify.addListener(_verifyPassCode);
+    widget.onVerify?.addListener(_verifyPassCode);
   }
 
   @override
@@ -62,7 +65,10 @@ class _PasscodePageState extends State<PasscodePage> {
               icon: Icon(Icons.close),
               onPressed: () => widget.onComplete(false),
             ),
-            title: Text('Oppgi tilgangskode', style: Theme.of(context).textTheme.headline6),
+            title: Text(
+              'Oppgi tilgangskode',
+              style: Theme.of(context).textTheme.headline6,
+            ),
             subtitle: Text(
               "${[translateOperationType(widget.operation.type), widget.operation.name].join(' ').trim()}",
               style: Theme.of(context).textTheme.subtitle1,
@@ -74,9 +80,13 @@ class _PasscodePageState extends State<PasscodePage> {
             stream: context.bloc<UserBloc>(),
             initialData: context.bloc<UserBloc>().state,
             builder: (context, snapshot) {
-              var forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
+              final forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
+              final authorization = context.bloc<UserBloc>().getAuthorization(widget.operation);
+              final command = _verifying && !authorization.withCommandCode && widget.requireCommand;
               return _buildPasscodeInput(
-                forbidden: forbidden,
+                errorText: forbidden || command
+                    ? (command ? 'Du må oppgi tilgangskode for aksjonsledelse' : 'Feil tilgangskode, forsøk igjen')
+                    : null,
               );
             },
           ),
@@ -86,7 +96,9 @@ class _PasscodePageState extends State<PasscodePage> {
     );
   }
 
-  Widget _buildPasscodeInput({@required bool forbidden}) {
+  Widget _buildPasscodeInput({
+    String errorText = null,
+  }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.0),
       child: TextFormField(
@@ -101,7 +113,7 @@ class _PasscodePageState extends State<PasscodePage> {
             Icons.lock,
             color: Colors.grey,
           ),
-          errorText: forbidden ? 'Feil tilgangskode, forsøk igjen' : null,
+          errorText: errorText,
         ),
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.done,
@@ -127,12 +139,15 @@ class _PasscodePageState extends State<PasscodePage> {
   Widget _buildPasscodeDescription() {
     return Padding(
       padding: EdgeInsets.all(24.0),
-      child: PasscodeDescription(), // your column
+      child: PasscodeDescription(
+        requireCommand: widget.requireCommand,
+      ), // your column
     );
   }
 
   void _verifyPassCode() async {
-    if (widget.onVerify.value && _validateAndSave()) {
+    if ((widget.onVerify == null || widget.onVerify.value) && _validateAndSave()) {
+      _verifying = true;
       if (await widget.onAuthorize(widget.operation, _passcode)) {
         widget.onComplete(true);
         return;

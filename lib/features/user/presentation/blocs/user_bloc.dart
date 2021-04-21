@@ -34,7 +34,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   final UserRepository repo;
   final AppConfigBloc configBloc;
-  final LinkedHashMap<String, UserAuthorized> _authorized = LinkedHashMap();
+  final _authorized = <String, UserAuthorized>{};
 
   @override
   UserUnset get initialState => UserUnset();
@@ -142,7 +142,12 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         );
       }
     }
-    return null;
+    return UserAuthorized(
+      user,
+      operation: operation,
+      withCommandCode: false,
+      withPersonnelCode: false,
+    );
   }
 
   /// Stream of authorization state changes
@@ -341,10 +346,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         withCommandCode: withCommandCode,
         withPersonnelCode: withPersonnelCode,
       );
-      _authorized.putIfAbsent(
-        command.data.uuid,
-        () => state,
-      );
+      _authorized[command.data.uuid] = state;
       return toOK(
         command,
         state,
