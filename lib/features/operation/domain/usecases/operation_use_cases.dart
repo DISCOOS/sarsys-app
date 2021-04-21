@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
+import 'package:SarSys/core/presentation/keyboard_avoider.dart';
+import 'package:SarSys/core/presentation/screens/screen.dart';
+import 'package:SarSys/features/operation/presentation/pages/passcode_page.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
@@ -154,6 +157,46 @@ class JoinOperation extends UseCase<bool, Personnel, OperationParams> {
     if (personnel != null) {
       params.pushReplacementNamed(UserScreen.ROUTE_OPERATION);
       return dartz.right(personnel);
+    }
+    return dartz.Left(false);
+  }
+}
+
+Future<dartz.Either<bool, bool>> escalateToCommand() => EscalateToCommand()(
+      OperationParams(),
+    );
+
+class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
+  @override
+  Future<dartz.Either<bool, bool>> execute(params) async {
+    assert(params.data == null, "Operation should not be given");
+
+    final operation = params.bloc.selected;
+    final leave = await showDialog<bool>(
+      context: params.overlay.context,
+      builder: (context) => Scaffold(
+        body: KeyboardAvoider(
+          child: PasscodePage(
+            requireCommand: true,
+            operation: operation,
+            onComplete: (result) => Navigator.pop(context, result),
+            onAuthorize: (operation, passcode) async {
+              final authorized = await params.bloc.userBloc.authorize(
+                operation,
+                passcode,
+              );
+              if (authorized) {
+                return params.bloc.userBloc.getAuthorization(operation).withCommandCode;
+              }
+              return authorized;
+            },
+          ),
+        ),
+      ),
+    );
+
+    if (leave) {
+      return dartz.Right(leave);
     }
     return dartz.Left(false);
   }

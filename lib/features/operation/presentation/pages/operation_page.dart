@@ -330,7 +330,13 @@ class _OperationPageState extends State<OperationPage> {
                         Text("Kode aksjonsledelse", style: labelStyle),
                         Spacer(),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () async {
+                            final result = await escalateToCommand();
+                            result.any((r) {
+                              setState(() {});
+                              return r;
+                            });
+                          },
                           child: Text('Oppgi'),
                         )
                       ],
@@ -344,7 +350,7 @@ class _OperationPageState extends State<OperationPage> {
         Expanded(
           flex: 2,
           child: Container(
-            height: OperationPage.HEIGHT * 1.20,
+            height: OperationPage.HEIGHT * (isCommander ? 1.0 : 1.20),
             child: personnel,
           ),
         ),

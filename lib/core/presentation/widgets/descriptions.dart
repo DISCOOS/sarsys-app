@@ -36,8 +36,8 @@ class SecurityModePersonalDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "I personlig bruksmodus er det mulig å logge inn med private "
-                  "Gmail-kontoer fra Google${untrusted ? ', slik du er nå' : ''}. ",
+              text: 'I personlig bruksmodus er det mulig å logge inn med private '
+                  'Gmail-kontoer fra Google${untrusted ? ', slik du er nå' : ''}. ',
             ),
           ),
         ),
@@ -45,10 +45,10 @@ class SecurityModePersonalDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Siden identiteten til Google-brukere "
-                  "ikke lar seg bekrefte på en sikker måte, "
-                  "får ikke disse brukerne lov til dele data "
-                  "med andre brukere. ",
+              text: 'Siden identiteten til Google-brukere '
+                  'ikke lar seg bekrefte på en sikker måte, '
+                  'får ikke disse brukerne lov til dele data '
+                  'med andre brukere. ',
             ),
           ),
         ),
@@ -56,9 +56,9 @@ class SecurityModePersonalDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "For å sikre forsvarlig behandling av persondata "
-                  "i tråd personvern-lovgivingen i Norge er denne "
-                  "begrensningen lagt inn.",
+              text: 'For å sikre forsvarlig behandling av persondata '
+                  'i tråd personvern-lovgivingen i Norge er denne '
+                  'begrensningen lagt inn.',
             ),
           ),
         ),
@@ -95,9 +95,9 @@ class SecurityModeSharedDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "I delt bruksmodus kan forskjellige brukere "
-                  "dele samme enhet, for eksempel et nettbrett som "
-                  "deles ut på en aksjon.",
+              text: 'I delt bruksmodus kan forskjellige brukere '
+                  'dele samme enhet, for eksempel et nettbrett som '
+                  'deles ut på en aksjon.',
             ),
           ),
         ),
@@ -105,8 +105,8 @@ class SecurityModeSharedDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Brukere og pinkoder slettes ikke ved utlogging. "
-                  "Nye brukere kan enkelt legges til ved innlogging.",
+              text: 'Brukere og pinkoder slettes ikke ved utlogging. '
+                  'Nye brukere kan enkelt legges til ved innlogging.',
             ),
           ),
         ),
@@ -114,9 +114,9 @@ class SecurityModeSharedDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "For å sikre forsvarlig behandling av persondata "
-                  "i tråd personvern-lovgivingen i Norge er kan ikke "
-                  "private Gmail-kontoer benyttes i denne modusen.",
+              text: 'For å sikre forsvarlig behandling av persondata '
+                  'i tråd personvern-lovgivingen i Norge er kan ikke '
+                  'private Gmail-kontoer benyttes i denne modusen.',
             ),
           ),
         ),
@@ -141,7 +141,7 @@ class UserRolesDescription extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
-              TextSpan(text: "Roller tildeles av din organisasjon."),
+              TextSpan(text: 'Roller tildeles av din organisasjon.'),
             ),
           ),
           Padding(
@@ -160,8 +160,8 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                text: "Aksjoner krever en kode for å kunne åpnes. "
-                    "Denne koden sendes ut med varslingen eller oppgis på annet vis.",
+                text: 'Aksjoner krever en kode for å kunne åpnes. '
+                    'Denne koden sendes ut med varslingen eller oppgis på annet vis.',
               ),
             ),
           ),
@@ -169,8 +169,8 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                  text: "Aksjoner du selv har opprettet kan åpnes av deg uten kode. "
-                      "Koden for hver aksjon finnes på ",
+                  text: 'Aksjoner du selv har opprettet kan åpnes av deg uten kode. '
+                      'Koden for hver aksjon finnes på ',
                   children: [
                     context.bloc<OperationBloc>().isSelected
                         ? TextSpan(text: 'aksjonens side.')
@@ -201,7 +201,7 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                text: "Alle som inngår i aksjonsledelse skal ha denne rollen.",
+                text: 'Alle som inngår i aksjonsledelse skal ha denne rollen.',
               ),
             ),
           ),
@@ -209,7 +209,7 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                text: "Du kan opprette aksjoner og gi andre tilgang ved å dele tilgangkoder.",
+                text: 'Du kan opprette aksjoner og gi andre tilgang ved å dele tilgangkoder.',
               ),
             ),
           ),
@@ -217,8 +217,8 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                text: "Du kan administrere aksjoner opprettet av andre ved å oppgi "
-                    "tilgangskoden for aksjonleder.",
+                text: 'Du kan administrere aksjoner opprettet av andre ved å oppgi '
+                    'tilgangskoden for aksjonleder.',
               ),
             ),
           ),
@@ -238,8 +238,8 @@ class UserRolesDescription extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
               TextSpan(
-                text: "Du kan administrere laget du er tildelt. "
-                    "For å delta på aksjoner må du oppgi tilgangskoden for mannskap.",
+                text: 'Du kan administrere laget du er tildelt. '
+                    'For å delta på aksjoner må du oppgi tilgangskoden for mannskap.',
               ),
             ),
           ),
@@ -258,7 +258,7 @@ class UserRolesDescription extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
-              TextSpan(text: "Du kan delta på aksjoner med tilgangskoden for mannskap."),
+              TextSpan(text: 'Du kan delta på aksjoner med tilgangskoden for mannskap.'),
             ),
           ),
           Padding(
@@ -276,7 +276,7 @@ class UserRolesDescription extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text.rich(
-              TextSpan(text: "Du kan ikke delta på aksjoner."),
+              TextSpan(text: 'Du kan ikke delta på aksjoner.'),
             ),
           ),
         ],
@@ -316,7 +316,7 @@ class ManagedProfileDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Tilhørighet og persondata er styrt av ${affiliation ?? 'din organisasjon'}.",
+              text: 'Tilhørighet og persondata er styrt av ${affiliation ?? 'din organisasjon'}.',
             ),
           ),
         ),
@@ -341,10 +341,10 @@ class TemporaryPersonnelDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Mannskap opprettet som midlertidig person for "
-                  "denne aksjonen. Vil gi duplikater hvis personen "
-                  "logger på med en bruker i SARSys eller blir medlem "
-                  "av en organisasjon",
+              text: 'Mannskap opprettet som midlertidig person for '
+                  'denne aksjonen. Vil gi duplikater hvis personen '
+                  'logger på med en bruker i SARSys eller blir medlem '
+                  'av en organisasjon',
             ),
           ),
         ),
@@ -356,7 +356,10 @@ class TemporaryPersonnelDescription extends StatelessWidget {
 class PasscodeDescription extends StatelessWidget {
   const PasscodeDescription({
     Key key,
+    this.requireCommand = false,
   }) : super(key: key);
+
+  final bool requireCommand;
 
   @override
   Widget build(BuildContext context) {
@@ -366,12 +369,14 @@ class PasscodeDescription extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: Text.rich(
             TextSpan(
-              text: "Tilgangskoden gir deg tilgangsnivå som mannskap eller "
-                  "aksjonsledelse.",
+              text: requireCommand
+                  ? 'Tilgangskoden gir deg tilgangsnivå som aksjonsledelse.'
+                  : 'Tilgangskoden gir deg tilgangsnivå som mannskap eller '
+                      'aksjonsledelse.',
               // TODO: Implement functionality that allows the user to enter new access code, add text in message like:
-              //  Dersom du ønsker å bytte tilgangsnivå "
-              //                   "etter å deltatt på aksjonen gjør du det ved å "
-              //                   "legge inn ny kode under dine innstillinger?...",
+              //  Dersom du ønsker å bytte tilgangsnivå '
+              //                   'etter å deltatt på aksjonen gjør du det ved å '
+              //                   'legge inn ny kode under dine innstillinger?...',
             ),
           ),
         ),
