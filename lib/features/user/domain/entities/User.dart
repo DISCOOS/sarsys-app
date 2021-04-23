@@ -73,14 +73,16 @@ class User extends Equatable {
 
   bool get hasRoles => roles.isNotEmpty;
   // TODO: Implement admin role
+
   bool get isAdmin => false;
+  bool get isUntrusted => !isTrusted;
+  bool get isTrusted => security?.trusted ?? false;
   bool get isCommander => roles.contains(UserRole.commander);
+  bool get isPersonnel => roles.contains(UserRole.personnel);
+  bool get isUnitLeader => roles.contains(UserRole.unit_leader);
   bool get isPlanningChief => roles.contains(UserRole.planning_chief);
   bool get isOperationsChief => roles.contains(UserRole.operations_chief);
-  bool get isUnitLeader => roles.contains(UserRole.unit_leader);
-  bool get isPersonnel => roles.contains(UserRole.personnel);
-  bool get isTrusted => security?.trusted ?? false;
-  bool get isUntrusted => !isTrusted;
+  bool get isLeader => isCommander || isUnitLeader || isPlanningChief || isOperationsChief;
 
   bool isAuthor(Operation operation) => operation.author.userId == userId;
 

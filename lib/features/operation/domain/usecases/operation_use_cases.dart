@@ -321,32 +321,22 @@ Future _onLoadedAsync<B extends BaseBloc<dynamic, dynamic, dynamic>>(OperationPa
 }
 
 Future<Personnel> _mobilize(OperationParams params) async {
-  final user = params.bloc.userBloc.user;
-  var personnel = await _findPersonnel(
-    params,
-    wait: true,
+  final personnels = params.context.bloc<PersonnelBloc>();
+  var personnel = personnels.findMobilizedUserOrReuse();
+  personnel ??= await personnels.mobilizeUser();
+  assert(
+    personnel != null,
+    'User ${params.bloc.userBloc.user} not mobilized',
   );
-  assert(personnel != null, 'User $user not mobilized');
-  return personnel;
-}
-
-FutureOr<Personnel> _findPersonnel(OperationParams params, {bool wait = false}) async {
-  // Look for existing personnel
-  final bloc = params.context.bloc<PersonnelBloc>();
-  final personnel = bloc.findMobilizedUserOrReuse();
-  // Wait for personnel to be created
-  if (wait && personnel == null) {
-    return bloc.mobilizeUser();
-  }
   return personnel;
 }
 
 // TODO: Move to new use-case RetireUser in PersonnelBloc
 Future<Personnel> _retire(OperationParams params) async {
-  var personnel = await _findPersonnel(params);
+  final personnels = params.context.bloc<PersonnelBloc>();
+  var personnel = personnels.findMobilizedUserOrReuse();
   if (personnel != null) {
-    final bloc = params.context.bloc<PersonnelBloc>();
-    personnel = await bloc.update(
+    personnel = await personnels.update(
       personnel.copyWith(
         status: PersonnelStatus.retired,
       ),

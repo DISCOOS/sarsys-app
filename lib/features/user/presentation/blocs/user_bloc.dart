@@ -651,7 +651,13 @@ class UserAuthorized extends UserState<User> {
   final bool withCommandCode;
   final bool withPersonnelCode;
 
-  bool get isAuthor => operation.author.userId == data.userId;
+  bool get isCommander => data?.isCommander == true;
+  bool get isPersonnel => data?.isPersonnel == true;
+  bool get isUnitLeader => data?.isUnitLeader == true;
+  bool get isPlanningChief => data?.isPlanningChief == true;
+  bool get isOperationsChief => data?.isOperationsChief == true;
+  bool get isAuthor => data != null && operation?.author?.userId == data.userId;
+  bool get isLeader => isCommander || isUnitLeader || isPlanningChief || isOperationsChief;
 
   /// Check [User] [data] is authorized access to given [operation] with given [role]
   ///
@@ -663,13 +669,13 @@ class UserAuthorized extends UserState<User> {
     }
     switch (role) {
       case UserRole.commander:
-        return withCommandCode;
+        return isCommander && withCommandCode;
       case UserRole.planning_chief:
-        return withCommandCode;
+        return isPlanningChief && withCommandCode;
       case UserRole.operations_chief:
-        return withCommandCode;
+        return isOperationsChief && withCommandCode;
       case UserRole.unit_leader:
-        return withCommandCode;
+        return isUnitLeader && withCommandCode;
       case UserRole.personnel:
         return withCommandCode || withPersonnelCode;
       default:

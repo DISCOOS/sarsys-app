@@ -371,15 +371,44 @@ class PasscodeDescription extends StatelessWidget {
             TextSpan(
               text: requireCommand
                   ? 'Tilgangskoden gir deg tilgangsnivå som aksjonsledelse.'
-                  : 'Tilgangskoden gir deg tilgangsnivå som mannskap eller '
-                      'aksjonsledelse.',
-              // TODO: Implement functionality that allows the user to enter new access code, add text in message like:
-              //  Dersom du ønsker å bytte tilgangsnivå '
-              //                   'etter å deltatt på aksjonen gjør du det ved å '
-              //                   'legge inn ny kode under dine innstillinger?...',
+                  : 'Tilgangskoden gir deg tilgangsnivå som mannskap eller aksjonsledelse.',
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class NotLeaderPasscodeDescription extends StatelessWidget {
+  const NotLeaderPasscodeDescription({
+    Key key,
+    @required this.user,
+  }) : super(key: key);
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Text.rich(
+            TextSpan(
+              text: 'Din bruker er ikke gitt en rolle som leder. '
+                  'Følgende roller er tildelt:',
+            ),
+          ),
+        ),
+        for (var role in user.roles.map(translateUserRole))
+          Text.rich(
+            TextSpan(
+              text: '* $role',
+            ),
+          ),
       ],
     );
   }

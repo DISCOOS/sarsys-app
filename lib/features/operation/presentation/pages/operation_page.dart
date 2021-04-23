@@ -1,3 +1,4 @@
+import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -124,7 +125,8 @@ class _OperationPageState extends State<OperationPage> {
     );
   }
 
-  bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
+  User get user => context.bloc<OperationBloc>().userBloc.user;
+  bool isAuthor(Operation operation) => context.bloc<OperationBloc>().userBloc.isAuthor(operation);
 
   Widget _buildMapTile(BuildContext context, Operation operation) {
     final ipp = operation.ipp != null ? toLatLng(operation.ipp.point) : null;
@@ -309,6 +311,7 @@ class _OperationPageState extends State<OperationPage> {
       label: "Kode mannskap",
       useCodeStyle: true,
     );
+    bool isCommander = user.isCommander || isAuthor(operation);
     return Row(
       children: <Widget>[
         Expanded(
@@ -316,45 +319,87 @@ class _OperationPageState extends State<OperationPage> {
           child: isCommander
               ? _buildValueTile(
                   "${operation.passcodes?.commander}",
-                  label: "Kode aksjonsledelse",
                   useCodeStyle: true,
+                  label: "Kode aksjonsledelse",
                 )
-              : Material(
-                  child: Container(
-                    height: OperationPage.HEIGHT * 1.2,
-                    padding: EdgeInsets.fromLTRB(16.0, 16.0, 0, 8.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Kode aksjonsledelse", style: labelStyle),
-                        Spacer(),
-                        ElevatedButton(
-                          onPressed: () async {
-                            final result = await escalateToCommand();
-                            result.any((r) {
-                              setState(() {});
-                              return r;
-                            });
-                          },
-                          child: Text('Oppgi'),
-                        )
-                      ],
-                    ),
-                  ),
-                  elevation: OperationPage.ELEVATION,
-                  borderRadius: BorderRadius.circular(OperationPage.CORNER),
-                ),
+              : user.isLeader
+                  ? _buildEscalateButton()
+                  : _buildNotLeaderNotice(),
         ),
         SizedBox(width: OperationPage.SPACING),
         Expanded(
           flex: 2,
           child: Container(
-            height: OperationPage.HEIGHT * (isCommander ? 1.0 : 1.20),
+            height: OperationPage.HEIGHT * (isCommander || !user.isLeader ? 1.0 : 1.2),
             child: personnel,
           ),
         ),
       ],
+    );
+  }
+
+  Material _buildEscalateButton() {
+    return Material(
+      child: Container(
+        height: OperationPage.HEIGHT * 1.2,
+        padding: EdgeInsets.fromLTRB(16.0, 16.0, 0, 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Kode aksjonsledelse", style: labelStyle),
+            Spacer(),
+            ElevatedButton(
+              onPressed: () async {
+                final result = await escalateToCommand();
+                result.any((r) {
+                  setState(() {});
+                  return r;
+                });
+              },
+              child: Text('Oppgi'),
+            )
+          ],
+        ),
+      ),
+      elevation: OperationPage.ELEVATION,
+      borderRadius: BorderRadius.circular(OperationPage.CORNER),
+    );
+  }
+
+  Widget _buildNotLeaderNotice() {
+    return GestureDetector(
+      child: Material(
+        child: Container(
+          height: OperationPage.HEIGHT,
+          padding: OperationPage.PADDING,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Kode aksjonsledelse", style: labelStyle),
+              Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: Text('Kun for ledere', style: valueStyle)),
+                  Icon(Icons.warning, color: Colors.orange),
+                  SizedBox(width: 16.0),
+                ],
+              ),
+            ],
+          ),
+        ),
+        elevation: OperationPage.ELEVATION,
+        borderRadius: BorderRadius.circular(OperationPage.CORNER),
+      ),
+      onTap: () => alert(
+        context,
+        title: 'Kun for ledere',
+        content: NotLeaderPasscodeDescription(
+          user: user,
+        ),
+      ),
     );
   }
 
@@ -364,6 +409,7 @@ class _OperationPageState extends State<OperationPage> {
     String subtitle,
     String unit,
     IconData icon,
+    double height,
     GestureTapCallback onIconTap,
     GestureTapCallback onValueTap,
     GestureTapCallback onValueLongPress,
@@ -455,7 +501,7 @@ class _OperationPageState extends State<OperationPage> {
 
     return Material(
       child: Container(
-        height: OperationPage.HEIGHT * (emptyAsNull(subtitle) == null ? 1.0 : 1.25),
+        height: height ?? (OperationPage.HEIGHT * (emptyAsNull(subtitle) == null ? 1.0 : 1.25)),
         padding: OperationPage.PADDING,
         child: tile,
       ),
