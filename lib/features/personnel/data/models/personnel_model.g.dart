@@ -9,14 +9,13 @@ part of 'personnel_model.dart';
 PersonnelModel _$PersonnelModelFromJson(Map json) {
   return PersonnelModel(
     uuid: json['uuid'] as String,
-    person: json['person'] == null
+    affiliation: json['affiliation'] == null
         ? null
-        : PersonModel.fromJson((json['person'] as Map)?.map(
+        : AffiliationModel.fromJson((json['affiliation'] as Map)?.map(
             (k, e) => MapEntry(k as String, e),
           )),
     tracking: toTrackingRef(json['tracking']),
     operation: toOperationRef(json['operation']),
-    affiliation: toAffiliationRef(json['affiliation']),
     status: _$enumDecodeNullable(_$PersonnelStatusEnumMap, json['status']),
     unit: toUnitRef(json['unit']),
     function: _$enumDecodeNullable(
@@ -36,11 +35,10 @@ Map<String, dynamic> _$PersonnelModelToJson(PersonnelModel instance) {
   writeNotNull('uuid', instance.uuid);
   writeNotNull('status', _$PersonnelStatusEnumMap[instance.status]);
   writeNotNull('function', _$OperationalFunctionTypeEnumMap[instance.function]);
-  writeNotNull('person', instance.person?.toJson());
+  writeNotNull('affiliation', instance.affiliation?.toJson());
   writeNotNull('unit', instance.unit?.toJson());
   writeNotNull('operation', instance.operation?.toJson());
   writeNotNull('tracking', instance.tracking?.toJson());
-  writeNotNull('affiliation', instance.affiliation?.toJson());
   return val;
 }
 

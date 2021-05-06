@@ -13,7 +13,6 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   Personnel({
     @required String uuid,
     this.unit,
-    this.person,
     this.status,
     this.function,
     this.operation,
@@ -21,7 +20,6 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     AggregateRef<Tracking> tracking,
   }) : super(uuid, tracking, fields: [
           unit,
-          person,
           status,
           function,
           affiliation,
@@ -32,13 +30,13 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
   String get phone => person?.phone;
   String get email => person?.email;
   String get userId => person?.userId;
+  Person get person => affiliation.person;
 
-  final Person person;
   final PersonnelStatus status;
+  final Affiliation affiliation;
   final AggregateRef<Unit> unit;
   final OperationalFunctionType function;
   final AggregateRef<Operation> operation;
-  final AggregateRef<Affiliation> affiliation;
 
   String get name => emptyAsNull("${fname ?? ''} ${lname ?? ''}".trim()) ?? 'Mannskap';
   String get formal => "${fname?.substring(0, 1)?.toUpperCase() ?? ''}. ${lname ?? ''}";
@@ -66,12 +64,13 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
     String phone,
     String email,
     String userId,
+    bool temporary,
     PersonnelStatus status,
     AggregateRef<Unit> unit,
+    Affiliation affiliation,
     OperationalFunctionType function,
     AggregateRef<Tracking> tracking,
     AggregateRef<Operation> operation,
-    AggregateRef<Affiliation> affiliation,
   });
 
   Personnel withPerson(Person person, {bool keep = true});

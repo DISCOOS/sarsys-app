@@ -146,29 +146,14 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
   void _processPersonChanges(StorageTransition<Person> event) {
     try {
-      if (PersonRepository.isDuplicateUser(event)) {
-        // Find current person usages and replace then with existing user
-        final duplicate = event.from.value.uuid;
-        final existing = PersonModel.fromJson(event.conflict.base);
-        repo.findPerson(duplicate).map((affiliation) => affiliation.withPerson(existing)).forEach(
-              update,
-            );
-        // Remove duplicate person and patch existing with local state
-        persons.delete(duplicate);
-        persons.replace(
-          existing,
+      // Synchronize affiliates with person
+      final person = event.to.value;
+      repo.findPerson(person.uuid).forEach((affiliate) {
+        repo.replace(
+          affiliate.withPerson(person, keep: false),
           isRemote: event.isRemote,
         );
-      } else {
-        // Synchronize affiliates with person
-        final person = event.to.value;
-        repo.findPerson(person.uuid).forEach((affiliate) {
-          repo.replace(
-            affiliate.withPerson(person, keep: false),
-            isRemote: event.isRemote,
-          );
-        });
-      }
+      });
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
         this,
@@ -312,6 +297,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     }
 
     // Create new affiliation
+    final isUnorganized = org == null && div == null && dep == null;
     final affiliation = AffiliationModel(
       uuid: Uuid().v4(),
       type: defaultType,
@@ -319,7 +305,13 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       div: div?.toRef(),
       dep: dep?.toRef(),
       status: defaultStatus,
+      person: person ??
+          PersonModel.fromUser(
+            users.repo[_userId],
+            temporary: isUnorganized,
+          ),
     );
+
     return ensure || !affiliation.isEmpty ? affiliation : null;
   }
 
@@ -331,24 +323,20 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     bool ensure = true,
     AffiliationType defaultType = AffiliationType.volunteer,
     AffiliationStandbyStatus defaultStatus = AffiliationStandbyStatus.available,
-  }) =>
-      repo[personnel?.affiliation?.uuid] ??
-      (personnel.userId != null
-          ? findUserAffiliation(
-              ensure: ensure,
-              userId: personnel.userId,
-              defaultType: defaultType,
-              defaultStatus: defaultStatus,
-            )?.copyWith(
-              uuid: AffiliationUtils.assertRef(personnel),
-            )
-          : (ensure
-              ? AffiliationModel(
-                  type: defaultType,
-                  status: defaultStatus,
-                  uuid: AffiliationUtils.assertRef(personnel),
-                )
-              : null));
+  }) {
+    final affiliation = repo[personnel?.affiliation?.uuid];
+    if (affiliation == null) {
+      return findUserAffiliation(
+        ensure: ensure,
+        userId: personnel.userId,
+        defaultType: defaultType,
+        defaultStatus: defaultStatus,
+      )?.copyWith(
+        uuid: AffiliationUtils.assertRef(personnel),
+      );
+    }
+    return affiliation;
+  }
 
   /// Get [Organisation] from [userId]
   Organisation findUserOrganisation({String userId}) {
@@ -567,22 +555,18 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   /// given [personnel] have no affiliation
   /// already. Otherwise, existing affiliation
   /// is returned.
-  Future<Affiliation> temporary(
-    Personnel personnel,
+  Future<Affiliation> create(
     Affiliation affiliation,
   ) async {
-    await _assertState('temporary');
-    final current = findPersonnelAffiliation(personnel);
-    if (!repo.containsKey(current.uuid)) {
-      AffiliationUtils.assertRef(personnel);
+    await _assertState('create');
+    if (!repo.containsKey(affiliation.uuid)) {
       return dispatch(
-        _assertTemporary(CreateTemporaryAffiliation(
-          personnel,
+        _assertData(CreateAffiliation(
           affiliation,
         )),
       );
     }
-    return current;
+    return repo[affiliation.uuid];
   }
 
   Future<Affiliation> update(Affiliation affiliation) async {
@@ -607,8 +591,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       yield* _search(command);
     } else if (command is OnboardUser) {
       yield* _onboard(command);
-    } else if (command is CreateTemporaryAffiliation) {
-      yield* _temporary(command);
+    } else if (command is CreateAffiliation) {
+      yield* _create(command);
     } else if (command is UpdateAffiliation) {
       yield* _update(command);
     } else if (command is UnloadAffiliations) {
@@ -768,18 +752,8 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     final userId = command.data;
     var affiliation = command.affiliation;
 
-    // Check if person should be created or updated
-    var person = persons.findUser(userId);
-    if (person == null) {
-      person = persons.apply(PersonModel.fromUser(
-        users.repo[userId],
-        temporary: affiliation.isUnorganized,
-      ));
-    } else if (person.temporary && affiliation.isOrganized) {
-      person = persons.apply(
-        person.copyWith(temporary: false),
-      );
-    }
+    // Find user
+    final person = _ensurePerson(userId, affiliation);
 
     // Ensure person is applied to affiliation
     affiliation = repo.apply(affiliation.copyWith(
@@ -799,10 +773,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
     // Notify when all states are remote
     onComplete(
-      [
-        persons.onRemote(person.uuid),
-        repo.onRemote(affiliation.uuid),
-      ],
+      [repo.onRemote(affiliation.uuid)],
       toState: (_) => UserOnboarded(
         isRemote: true,
         person: person,
@@ -818,25 +789,30 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     );
   }
 
-  Stream<AffiliationState> _temporary(CreateTemporaryAffiliation command) async* {
-    _assertTemporary(command);
-    var person = persons.findUser(command.data.userId);
-    if (person == null) {
-      person = persons.apply(PersonModel.fromPersonnel(
-        command.data,
-        temporary: true,
-      ));
-    }
-    final affiliation = repo.apply(command.affiliation.copyWith(
+  Person _ensurePerson(String userId, Affiliation affiliation) {
+    return persons.findUser(userId) ??
+        affiliation.person ??
+        PersonModel.fromUser(
+          users.repo[userId],
+          temporary: affiliation.isUnorganized,
+        );
+  }
+
+  Stream<AffiliationState> _create(CreateAffiliation command) async* {
+    _assertData(command);
+    final person = _ensurePerson(
+      command.person.userId,
+      command.data,
+    );
+    final affiliation = repo.apply(command.data.copyWith(
       person: person,
-      type: command.affiliation.type ?? AffiliationType.volunteer,
-      status: command.affiliation.status ?? AffiliationStandbyStatus.available,
+      type: command.data.type ?? AffiliationType.volunteer,
+      status: command.data.status ?? AffiliationStandbyStatus.available,
     ));
     final created = toOK(
       command,
-      PersonnelAffiliated(
-        personnel: command.data,
-        affiliation: affiliation,
+      AffiliationCreated(
+        affiliation,
       ),
       result: affiliation,
     );
@@ -844,14 +820,10 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
     // Notify when all states are remote
     onComplete(
-      [
-        persons.onRemote(person.uuid),
-        repo.onRemote(affiliation.uuid),
-      ],
-      toState: (_) => PersonnelAffiliated(
+      [repo.onRemote(affiliation.uuid)],
+      toState: (_) => AffiliationCreated(
+        affiliation,
         isRemote: true,
-        personnel: command.data,
-        affiliation: affiliation,
       ),
       toCommand: (state) => _StateChange(state),
       toError: (error, stackTrace) => toError(
@@ -915,22 +887,20 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         stackTrace: stackTrace ?? StackTrace.current,
       );
 
-  void _assertOnboarding(OnboardUser command) {
+  Affiliation _assertOnboarding(OnboardUser command) {
     final current = findUserAffiliation(userId: command.data);
     if (repo.containsKey(current.uuid)) {
       throw ArgumentError("User ${command.data} already onboarded");
     } else if (command.affiliation.uuid == null) {
       throw ArgumentError("Affiliation has no uuid");
     }
+    return current;
   }
 
-  CreateTemporaryAffiliation _assertTemporary(CreateTemporaryAffiliation command) {
-    if (command.affiliation.uuid == null) {
+  CreateAffiliation _assertData(CreateAffiliation command) {
+    if (command.data.uuid == null) {
       throw ArgumentError("Temporary affiliation has no uuid");
-    } else if (command.data.affiliation?.uuid != command.affiliation.uuid) {
-      throw ArgumentError("Temporary affiliation uuids does not match");
     }
-    AffiliationUtils.assertRef(command.data);
     return command;
   }
 
@@ -991,16 +961,16 @@ class OnboardUser extends AffiliationCommand<String, Affiliation> {
   String toString() => '$runtimeType {userId: $data, affiliation: $affiliation}';
 }
 
-class CreateTemporaryAffiliation extends AffiliationCommand<Personnel, Affiliation> {
-  CreateTemporaryAffiliation(Personnel personnel, this.affiliation)
+class CreateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
+  CreateAffiliation(Affiliation affiliation)
       : super(
-          personnel,
-          props: [affiliation],
+          affiliation,
         );
-  final Affiliation affiliation;
+
+  Person get person => data.person;
 
   @override
-  String toString() => '$runtimeType {personnel: $data, affiliation: $affiliation}';
+  String toString() => '$runtimeType {affiliation: $data}';
 }
 
 class UpdateAffiliation extends AffiliationCommand<Affiliation, Affiliation> {
@@ -1045,7 +1015,7 @@ abstract class AffiliationState<T> extends PushableBlocEvent<T> {
   bool isLoaded() => this is AffiliationsLoaded;
   bool isFetched() => this is AffiliationsFetched;
   bool isOnboarded() => this is UserOnboarded;
-  bool isAffiliated() => this is PersonnelAffiliated;
+  bool isAffiliated() => this is AffiliationCreated;
   bool isUnloaded() => this is AffiliationsUnloaded;
   bool isError() => this is AffiliationBlocError;
 }
@@ -1120,18 +1090,17 @@ class UserOnboarded extends AffiliationState<Affiliation> {
       '}';
 }
 
-class PersonnelAffiliated extends AffiliationState<Affiliation> {
-  PersonnelAffiliated({
-    this.personnel,
+class AffiliationCreated extends AffiliationState<Affiliation> {
+  AffiliationCreated(
+    Affiliation affiliation, {
     bool isRemote = false,
-    Affiliation affiliation,
   }) : super(affiliation, isRemote: isRemote);
 
-  final Personnel personnel;
+  Person get person => data.person;
 
   @override
   String toString() => '$runtimeType {'
-      'personnel: $personnel, '
+      'person: $person, '
       'isRemote: $isRemote, '
       'affiliation: $data'
       '}';

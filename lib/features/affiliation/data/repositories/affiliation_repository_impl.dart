@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
@@ -32,6 +35,50 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
           service: service,
           connectivity: connectivity,
           dependencies: [persons, orgs, divs, deps],
+          // Keep person in sync with local copy
+          onGet: (StorageState<Affiliation> state) {
+            final value = state.value;
+            final puuid = value.person.uuid;
+            return state.replace(state.value.withPerson(persons.get(
+              puuid,
+            )));
+          },
+          onPut: (StorageState<Affiliation> state, bool isDeleted) {
+            if (!isDeleted) {
+              final affiliation = state.value;
+              if (affiliation.isAffiliate) {
+                final person = state.value.person;
+                if (persons.containsKey(person.uuid)) {
+                  // Patch locally only
+                  persons.patch(
+                    state.isRemote
+                        ? person
+                        : person.copyWith(
+                            // Ensure temporary person if unorganized
+                            temporary: affiliation.isUnorganized,
+                          ),
+                    isRemote: state.isRemote,
+                    // TODO: Use actual version of person
+                    // Until then, local version can diverge from remote
+                    // version: person.version
+                  );
+                } else {
+                  // Person is created during onboard,
+                  // persist a-priori to keep state
+                  // consistent locally
+                  persons.put(
+                    StorageState.created(
+                      person,
+                      // TODO: Use actual version of person
+                      // Until then, local version can diverge from remote
+                      StateVersion.first,
+                      isRemote: state.isRemote,
+                    ),
+                  );
+                }
+              }
+            }
+          },
         );
 
   /// [Organisation] repository
@@ -57,7 +104,16 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
   }
 
   /// Create [Affiliation] from json
+  @override
   Affiliation fromJson(Map<String, dynamic> json) => AffiliationModel.fromJson(json);
+
+  /// Find [Affiliation]s for affiliate with given [Person.uuid]
+  @override
+  Iterable<Affiliation> findPerson(String puuid) => find(where: (affiliation) => affiliation.person?.uuid == puuid);
+
+  /// Find [Affiliation]s matching given query
+  @override
+  Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => isReady ? values.where(where) : [];
 
   @override
   Future<List<Affiliation>> load({
@@ -199,16 +255,10 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
   }
 
   @override
-  Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) => _fetch(
-        (previous ?? values).map((a) => a.uuid).toList(),
-        replace: true,
-      );
-
-  @override
   Future<StorageState<Affiliation>> onCreate(StorageState<Affiliation> state) async {
-    var response = await service.create(state);
+    final response = await service.create(state);
     if (response.isOK) {
-      return state;
+      return response.body;
     }
     throw AffiliationServiceException(
       'Failed to create Affiliation ${state.value}',
@@ -245,9 +295,68 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
     );
   }
 
-  /// Find [Affiliation]s for affiliate with given [Person.uuid]
-  Iterable<Affiliation> findPerson(String puuid) => find(where: (affiliation) => affiliation.person?.uuid == puuid);
+  @override
+  Future<Iterable<Affiliation>> onReset({Iterable<Affiliation> previous}) => _fetch(
+        (previous ?? values).map((a) => a.uuid).toList(),
+        replace: true,
+      );
 
-  /// Find [Affiliation]s matching given query
-  Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => isReady ? values.where(where) : [];
+  @override
+  Future<StorageState<Affiliation>> onResolve(StorageState<Affiliation> state, ServiceResponse response) {
+    return MergeAffiliationStrategy(this)(
+      state,
+      response.conflict,
+    );
+  }
+}
+
+class MergeAffiliationStrategy extends StatefulMergeStrategy<String, Affiliation, AffiliationService> {
+  MergeAffiliationStrategy(AffiliationRepository repository) : super(repository);
+
+  @override
+  AffiliationRepository get repository => super.repository;
+  PersonRepository get persons => repository.persons;
+
+  @override
+  Future<StorageState<Affiliation>> onExists(ConflictModel conflict, StorageState<Affiliation> state) async {
+    switch (conflict.code) {
+      case 'duplicate_user_id':
+      case 'duplicate_affiliations':
+        var value = state.value;
+
+        if (conflict.mine.isNotEmpty) {
+          // Duplicates was found, reuse first duplicate
+          value = AffiliationModel.fromJson(
+            conflict.mine.first,
+          );
+
+          // Delete duplicate
+          repository.remove(state.value);
+
+          // Patch with existing state
+          repository.patch(
+            value,
+            isRemote: true,
+          );
+        }
+
+        if (conflict.isCode('duplicate_user_id')) {
+          // Replace duplicate person with existing person
+          repository.apply(
+            state.value.copyWith(
+              person: PersonModel.fromJson(conflict.base),
+            ),
+          );
+          // Delete duplicate person
+          persons.remove(
+            state.value.person,
+          );
+        }
+
+        return repository.getState(
+          repository.toKey(value),
+        );
+    }
+    return super.onExists(conflict, state);
+  }
 }

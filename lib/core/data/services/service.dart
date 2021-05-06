@@ -207,15 +207,21 @@ class ServiceResponse<D> extends Equatable {
         reasonPhrase,
       ];
 
-  ServiceResponse<D> copyWith<D>({D body, int code, String message}) {
+  ServiceResponse<D> copyWith<D>({
+    D body,
+    Object error,
+    int statusCode,
+    String reasonPhrase,
+    ConflictModel conflict,
+  }) {
     return ServiceResponse<D>(
       page: page,
-      error: error,
-      body: body ?? body,
-      conflict: conflict,
       stackTrace: stackTrace,
-      statusCode: code ?? code,
-      reasonPhrase: message ?? message,
+      body: body ?? this.body,
+      error: error ?? this.error,
+      conflict: conflict ?? this.conflict,
+      statusCode: statusCode ?? statusCode,
+      reasonPhrase: reasonPhrase ?? reasonPhrase,
     );
   }
 

@@ -648,7 +648,10 @@ class BlocTestHarness implements BlocDelegate {
     assert(_withUnitBloc, 'PersonnelBloc requires UnitBloc');
     assert(_withOperationBloc, 'PersonnelBloc requires OperationBloc');
     assert(_withAffiliationBloc, 'PersonnelBloc requires AffiliationBloc');
-    _personnelService = PersonnelServiceMock.build(count);
+    _personnelService = PersonnelServiceMock.build(
+      count,
+      _affiliationService,
+    );
     _personnelBloc = PersonnelBloc(
       PersonnelRepositoryImpl(
         _personnelService,

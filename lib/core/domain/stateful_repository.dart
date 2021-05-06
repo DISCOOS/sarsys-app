@@ -33,8 +33,14 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     @required this.service,
     @required this.connectivity,
     this.dependencies = const [],
-  }) {
-    _requestQueue = StatefulRequestQueue(this, connectivity);
+    StorageState<V> Function(StorageState<V> state) onGet,
+    void Function(StorageState<V> state, bool isDeleted) onPut,
+  })  : _onGet = onGet,
+        _onPut = onPut {
+    _requestQueue = StatefulRequestQueue(
+      this,
+      connectivity,
+    );
   }
 
   /// Default timeout on requests that
@@ -44,6 +50,8 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   final S service;
   final ConnectivityService connectivity;
   final Iterable<StatefulRepository> dependencies;
+  final StorageState<V> Function(StorageState<V> state) _onGet;
+  final void Function(StorageState<V> state, bool isDeleted) _onPut;
   final StreamController<bool> _onReady = StreamController.broadcast();
   final StreamController<StorageTransition<V>> _onTransition = StreamController.broadcast();
 
@@ -100,7 +108,17 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   V get(K key) => getState(key)?.value;
 
   /// Get state from [key]
-  StorageState<V> getState(K key) => isReady && _isNotNull(key) && containsKey(key) ? _box?.get(key) : null;
+  StorageState<V> getState(K key) {
+    var state;
+    if (isReady && _isNotNull(key) && containsKey(key)) {
+      state = _box?.get(key);
+      if (_onGet != null) {
+        state = _onGet(state);
+      }
+    }
+    return state;
+  }
+
   bool _isNotNull(K key) => key != null;
 
   /// Get backlog of states pending push to a backend API
@@ -125,13 +143,13 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   Iterable<K> get keys => List.unmodifiable(isReady ? _box?.keys : []);
 
   /// Get all values as unmodifiable list
-  Iterable<V> get values => List.unmodifiable(isReady ? states.values.map((state) => state.value) : <V>[]);
+  Iterable<V> get values => List.unmodifiable(keys.map((key) => getState(key).value));
 
   /// Check if key exists
   bool containsKey(K key) => isReady ? _box.keys.contains(key) : false;
 
   /// Check if value exists
-  bool containsValue(V value) => isReady ? _box.values.any((state) => state.value == value) : false;
+  bool containsValue(V value) => isReady ? _box.keys.any((key) => getState(toKey(value)).value == value) : false;
 
   /// Get key [K] from value [V]
   K toKey(V value);
@@ -237,18 +255,19 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     K key, {
     bool fail = false,
     bool require = true,
+    bool waitForOnline = false,
     Duration waitFor = timeLimit,
   }) async {
     final current = getState(key);
-    if (current?.isRemote == true || !require && current == null) {
+    if (current?.isRemote == true || !require && current == null || isOffline && !waitForOnline) {
       return Future.value(current);
     }
     try {
       final transition = await onChanged
-          .where((transition) => transition.isRemote || transition.isError)
+          .where((transition) => transition.isRemote || transition.isError || transition.isDeleted)
           .where((transition) => toKey(transition.to.value) == key)
           .firstWhere(
-            (transition) => transition.isError || transition.to != null,
+            (transition) => transition.isError || transition.to != null || transition.isDeleted,
             orElse: () => null,
           )
           .timeout(waitFor);
@@ -322,13 +341,19 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
   /// Patch [value] with existing in repository
   /// and replace current state. This method
   /// does not push changes to [service].
-  StorageState<V> patch(V value, {bool isRemote = false}) {
+  StorageState<V> patch(
+    V value, {
+    bool isRemote = false,
+    StateVersion version,
+  }) {
     checkState();
-    StorageState next = _toState(
+    var next = _toState(
       value,
       replace: false,
+      version: version,
       isRemote: isRemote,
     );
+    // If state was deleted, null is returned
     return put(_patch(next)) ? next : null;
   }
 
@@ -336,6 +361,8 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     V value, {
     @required bool replace,
     @required bool isRemote,
+    Object error,
+    StateVersion version,
   }) {
     final key = toKey(value);
     final state = getState(key);
@@ -343,14 +370,16 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     final next = containsKey(key)
         ? state.apply(
             value,
+            error: error,
             replace: replace,
+            version: version,
             isRemote: isRemote,
           )
         : state;
     return next ??
         StorageState.created(
           value,
-          StateVersion.first,
+          version ?? StateVersion.first,
         );
   }
 
@@ -406,7 +435,11 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     assert(key != null, "Key can not be null");
     if (!isStateEqual(state)) {
       final current = getState(key);
-      if (shouldDelete(next: state, current: current)) {
+      final delete = shouldDelete(
+        next: state,
+        current: current,
+      );
+      if (delete) {
         _onWrite(
           _box.delete(key),
         );
@@ -417,6 +450,9 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
         _onWrite(
           _box.put(key, state),
         );
+      }
+      if (_onPut != null) {
+        _onPut(state, delete);
       }
       if (!_isDisposed) {
         _onTransition.add(StorageTransition<V>(
@@ -473,6 +509,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     final current = getState(toKey(state.value));
     return current != null &&
         current.value == state.value &&
+        current.error == state.error &&
         current.status == state.status &&
         current.isRemote == state.isRemote;
   }
@@ -483,7 +520,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
     Completer<V> onResult,
   }) {
     checkState();
-    StorageState next = _toState(
+    StorageState<V> next = _toState(
       value,
       replace: false,
       isRemote: false,

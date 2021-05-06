@@ -21,21 +21,18 @@ part 'personnel_model.g.dart';
 class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic>> {
   PersonnelModel({
     @required String uuid,
-    @required this.person,
+    @required this.affiliation,
     @required AggregateRef<Tracking> tracking,
     @required AggregateRef<Operation> operation,
-    @required AggregateRef<Affiliation> affiliation,
     PersonnelStatus status,
     AggregateRef<Unit> unit,
     OperationalFunctionType function,
   })  : unit = unit?.cast<UnitModel>(),
         tracking = tracking?.cast<TrackingModel>(),
         operation = operation?.cast<OperationModel>(),
-        affiliation = affiliation?.cast<AffiliationModel>(),
         super(
           uuid: uuid,
           unit: unit,
-          person: person,
           status: status,
           tracking: tracking,
           function: function,
@@ -44,7 +41,10 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
         );
 
   @override
-  final PersonModel person;
+  PersonModel get person => affiliation.person;
+
+  @override
+  final AffiliationModel affiliation;
 
   @override
   @JsonKey(fromJson: toUnitRef)
@@ -57,10 +57,6 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
   @override
   @JsonKey(fromJson: toTrackingRef)
   final AggregateRef<TrackingModel> tracking;
-
-  @override
-  @JsonKey(fromJson: toAffiliationRef)
-  final AggregateRef<AffiliationModel> affiliation;
 
   /// Factory constructor for creating a new `Personnel` instance from json data
   factory PersonnelModel.fromJson(Map<String, dynamic> json) => _$PersonnelModelFromJson(json);
@@ -94,50 +90,56 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
     String phone,
     String email,
     String userId,
+    bool temporary,
     PersonnelStatus status,
+    Affiliation affiliation,
     AggregateRef<Unit> unit,
     AggregateRef<Tracking> tracking,
     OperationalFunctionType function,
     AggregateRef<Operation> operation,
-    AggregateRef<Affiliation> affiliation,
   }) {
+    final _affiliation = (affiliation ?? this.affiliation);
+    final _person = _affiliation.person;
     return PersonnelModel(
       uuid: uuid ?? this.uuid,
-      person: _copyPerson(
-        person?.uuid,
-        fname,
-        lname,
-        phone,
-        email,
-        userId,
-        person?.temporary,
-      ),
       status: status ?? this.status,
       function: function ?? this.function,
       unit: unit?.cast<UnitModel>() ?? this.unit,
+      affiliation: _affiliation.copyWith(
+        person: _copyPerson(
+          fname: fname,
+          lname: lname,
+          phone: phone,
+          email: email,
+          userId: userId,
+          person: _person,
+          temporary: temporary,
+        ),
+      ),
       tracking: tracking?.cast<TrackingModel>() ?? this.tracking,
       operation: operation?.cast<OperationModel>() ?? this.operation,
-      affiliation: affiliation?.cast<AffiliationModel>() ?? this.affiliation,
     );
   }
 
-  Person _copyPerson(
+  Person _copyPerson({
     String uuid,
     String fname,
     String lname,
     String phone,
     String email,
     String userId,
+    Person person,
     bool temporary,
-  ) {
-    return (person ?? PersonModel(uuid: uuid)).copyWith(
-      uuid: uuid ?? person?.uuid,
-      fname: fname ?? this.fname,
-      lname: lname ?? this.lname,
-      phone: phone ?? this.phone,
-      email: email ?? this.email,
-      userId: userId ?? this.userId,
-      temporary: temporary ?? this.person?.temporary,
+  }) {
+    final _person = person ?? this.person;
+    return person?.copyWith(
+      uuid: uuid ?? _person?.uuid,
+      fname: fname ?? _person?.fname,
+      lname: lname ?? _person?.lname,
+      phone: phone ?? _person?.phone,
+      email: email ?? _person?.email,
+      userId: userId ?? _person?.userId,
+      temporary: temporary ?? _person?.temporary,
     );
   }
 
@@ -150,20 +152,15 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
       function: function,
       tracking: tracking,
       operation: operation,
-      affiliation: affiliation,
-      person: person != null
-          ? _copyPerson(
-              person.uuid,
-              person.fname,
-              person.lname,
-              person.phone,
-              person.email,
-              person.userId,
-              person.temporary,
-            )
-          : keep
-              ? this.person
-              : null,
+      affiliation: affiliation.copyWith(
+        person: person != null
+            ? _copyPerson(
+                person: person,
+              )
+            : keep
+                ? this.person
+                : null,
+      ),
     );
   }
 }

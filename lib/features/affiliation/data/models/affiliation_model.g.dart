@@ -37,7 +37,7 @@ Map<String, dynamic> _$AffiliationModelToJson(AffiliationModel instance) {
   writeNotNull('type', _$AffiliationTypeEnumMap[instance.type]);
   writeNotNull('status', _$AffiliationStandbyStatusEnumMap[instance.status]);
   writeNotNull('active', instance.active);
-  writeNotNull('person', AffiliationModel.fromPersonRef(instance.person));
+  writeNotNull('person', instance.person?.toJson());
   writeNotNull('org', instance.org?.toJson());
   writeNotNull('div', instance.div?.toJson());
   writeNotNull('dep', instance.dep?.toJson());

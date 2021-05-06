@@ -282,6 +282,7 @@ class StorageState<T> {
         isRemote: isRemote,
         status: StorageStatus.created,
       );
+
   factory StorageState.updated(
     T value,
     StateVersion version, {
@@ -297,6 +298,7 @@ class StorageState<T> {
         isRemote: isRemote,
         status: StorageStatus.updated,
       );
+
   factory StorageState.deleted(
     T value,
     StateVersion version, {
@@ -327,12 +329,12 @@ class StorageState<T> {
   ConflictModel get conflict => isConflict ? error as ConflictModel : null;
 
   StorageState<T> failed(Object error) => StorageState<T>(
+        error: error,
         value: value,
         status: status,
         version: version,
         previous: previous,
         isRemote: _isRemote,
-        error: error,
       );
 
   StorageState<T> remote(
@@ -370,10 +372,11 @@ class StorageState<T> {
       return StorageState(
         value: value,
         status: next,
-        error: error ?? this.error,
+        error: error,
         isRemote: isRemote ?? _isRemote,
         previous: previous ?? this.value,
-        version: version ?? (isRemote ? this.version : this.version + 1),
+        // Only increment if state is remote, or if remote is forced
+        version: version ?? (isRemote || !_isRemote ? this.version : this.version + 1),
       );
     }
     return this.replace(

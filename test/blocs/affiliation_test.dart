@@ -13,6 +13,7 @@ import 'package:SarSys/features/affiliation/domain/entities/Organisation.dart';
 import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 
+import '../mock/affiliation_service_mock.dart';
 import 'harness.dart';
 
 const UNTRUSTED = 'username';
@@ -213,6 +214,133 @@ void main() async {
         emits(isA<AffiliationsLoaded>()),
       );
     });
+
+    test('SHOULD update person on load', () async {
+      // Arrange
+      final fname = "fupdated";
+      final lname = "lupdated";
+      await _authenticate(harness);
+      await harness.affiliationBloc.load();
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+      final person = harness.affiliationBloc.persons.values.first;
+      expect(harness.affiliationBloc.repo.values.first.person, person, reason: "SHOULD be equal");
+
+      // Act
+      final updated = await harness.personService.put(
+        person.copyWith(fname: fname, lname: lname),
+        storage: false,
+      );
+      await harness.affiliationBloc.load();
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+
+      expect(harness.affiliationBloc.persons.values.first, updated, reason: "SHOULD be equal");
+      expect(harness.affiliationBloc.repo.values.first.person, updated, reason: "SHOULD be equal");
+    });
+
+    test('SHOULD replace person on conflict', () async {
+      // Arrange - person in backend only
+      harness.connectivity.cellular();
+      await _authenticate(harness);
+      await harness.affiliationBloc.load();
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      final existing = await harness.personService.add(userId: "existing", storage: false);
+      expect(harness.affiliationBloc.persons.length, 1, reason: "SHOULD contain 1 person");
+      expect(harness.affiliationBloc.repo.length, 1, reason: "SHOULD contain 1 affiliation");
+
+      // Act - attempt to onboard new person with 'user_id' user id
+      final auuid = Uuid().v4();
+      final affiliation = AffiliationBuilder.create(
+        uuid: auuid,
+        userId: "existing",
+      );
+      await harness.affiliationBloc.create(affiliation);
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationCreated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert
+      expect(harness.affiliationBloc.persons.length, 2, reason: "SHOULD contain 2 persons");
+      expect(harness.affiliationBloc.repo.length, 2, reason: "SHOULD contain 2 affiliations");
+
+      expect(
+        harness.affiliationBloc.persons.find(where: (p) => p.userId == existing.userId).firstOrNull,
+        equals(existing),
+        reason: "SHOULD be equal",
+      );
+      expect(
+        harness.affiliationBloc.repo.find(where: (a) => a.person.userId == existing.userId).firstOrNull?.person,
+        equals(existing),
+        reason: "SHOULD be equal",
+      );
+    });
+
+    test('SHOULD replace affiliation on conflict', () async {
+      // Arrange - person in backend only
+      harness.connectivity.cellular();
+      await _authenticate(harness);
+      final existing = await _seed(harness, offline: false);
+      await harness.affiliationBloc.load();
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationsLoaded>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+      expect(harness.affiliationBloc.persons.length, 2, reason: "SHOULD contain 2 persons");
+      expect(harness.affiliationBloc.repo.length, 2, reason: "SHOULD contain 2 affiliations");
+
+      // Act - attempt to add another affiliation
+      final duplicate = existing.copyWith(uuid: Uuid().v4());
+      await harness.affiliationBloc.create(duplicate);
+      await expectThroughLater(
+        harness.affiliationBloc,
+        emits(isA<AffiliationCreated>().having(
+          (event) => event.isRemote,
+          'Should be remote',
+          isTrue,
+        )),
+      );
+
+      // Assert
+      expect(harness.affiliationBloc.persons.length, 2, reason: "SHOULD contain 2 persons");
+      expect(harness.affiliationBloc.repo.length, 2, reason: "SHOULD contain 2 affiliations");
+      expect(
+        harness.affiliationBloc.repo[existing.uuid],
+        equals(existing),
+        reason: "SHOULD contain existing affiliation",
+      );
+      expect(
+        harness.affiliationBloc.repo.containsKey(duplicate.uuid),
+        isFalse,
+        reason: "SHOULD not contain duplicate affiliation",
+      );
+    });
   });
 
   group('WHEN AffiliationBloc is OFFLINE', () {
@@ -310,61 +438,6 @@ void main() async {
       // Arrange
       await _authenticate(harness);
       await _seed(harness, offline: false);
-
-      // final cipher = await Storage.hiveCipher<Person>();
-      // // final key = [
-      // //   102,
-      // //   94,
-      // //   218,
-      // //   252,
-      // //   17,
-      // //   99,
-      // //   161,
-      // //   87,
-      // //   71,
-      // //   167,
-      // //   147,
-      // //   71,
-      // //   33,
-      // //   138,
-      // //   158,
-      // //   196,
-      // //   154,
-      // //   124,
-      // //   92,
-      // //   180,
-      // //   168,
-      // //   200,
-      // //   42,
-      // //   176,
-      // //   98,
-      // //   149,
-      // //   68,
-      // //   40,
-      // //   22,
-      // //   123,
-      // //   113,
-      // //   132,
-      // // ];
-      // print(cipher);
-      //
-      // final box1 = await Hive.openBox<StorageState<Person>>(
-      //   StatefulRepository.toBoxName(
-      //     runtimeType: PersonRepositoryImpl,
-      //   ),
-      //   encryptionCipher: cipher,
-      // );
-      // print(box1.values);
-      // await box1.close();
-      //
-      // final box2 = await Hive.openBox<StorageState<Person>>(
-      //   StatefulRepository.toBoxName(
-      //     runtimeType: PersonRepositoryImpl,
-      //   ),
-      //   encryptionCipher: cipher,
-      // );
-      // print(box2.values);
-
       await harness.affiliationBloc.load();
 
       await expectThroughLater(
@@ -396,7 +469,7 @@ void main() async {
   });
 }
 
-Future _seed(
+Future<Affiliation> _seed(
   BlocTestHarness harness, {
   @required bool offline,
 }) async {
@@ -424,7 +497,7 @@ Future _seed(
     userId: Uuid().v4(),
     storage: !offline,
   );
-  await harness.affiliationService.add(
+  return await harness.affiliationService.add(
     puuid: p2.uuid,
     storage: !offline,
     orguuid: org2.uuid,

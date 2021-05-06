@@ -37,12 +37,7 @@ class AffiliationModel extends Affiliation {
         );
 
   @override
-  @JsonKey(
-    // Person is read only with 'expand=person'
-    toJson: fromPersonRef,
-  )
   final PersonModel person;
-  static dynamic fromPersonRef(Person person) => person.toRef().toJson();
 
   @override
   @JsonKey(fromJson: toOrgRef)
@@ -101,3 +96,5 @@ class AffiliationModel extends Affiliation {
   @override
   AggregateRef<AffiliationModel> toRef() => uuid != null ? AggregateRef.fromType<AffiliationModel>(uuid) : null;
 }
+
+enum AffiliationConflictCode { duplicate_affiliations }

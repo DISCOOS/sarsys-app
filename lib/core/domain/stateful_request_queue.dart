@@ -364,14 +364,18 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
     if (state?.isLocal == true) {
       if (_shouldSchedulePush()) {
         // Replace current if not executed yet
-        _pushQueue.add(StreamRequest<K, V>(
+        _pushQueue.only(StreamRequest<K, V>(
           key: key,
           fail: false,
           onResult: onResult,
           fallback: () {
-            return Future.value(state.value);
+            return Future.value(
+              state.value,
+            );
           },
-          execute: () => _repo.isReady ? _executePush(key) : state.value,
+          execute: () {
+            return _repo.isReady ? _executePush(key) : state.value;
+          },
         ));
         return state?.value;
       }
@@ -407,7 +411,7 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
             final state = _repo.getState(key);
             final refs = _repo.toRefs(state.value);
             final error = RepositoryDependencyException(
-              refs,
+              refs.toList(),
               state: state,
               stackTrace: StackTrace.current,
             );
@@ -433,7 +437,9 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
     }
   }
 
-  bool _shouldSchedulePush() => connectivity.isOnline && !_repo.inTransaction;
+  bool _shouldSchedulePush() {
+    return connectivity.isOnline && !_repo.inTransaction;
+  }
 
   /// Push state to remote
   FutureOr<StorageState<V>> _push(StorageState<V> state) async {
@@ -442,28 +448,17 @@ class StatefulRequestQueue<K, V extends JsonObject, S extends StatefulServiceDel
         switch (state.status) {
           case StorageStatus.created:
             return await _repo.onCreate(state);
-          // await _repo.onCreate(state)
-          // return StorageState.created(
-          //   await _repo.onCreate(state),
-          //   isRemote: true,
-          // );
           case StorageStatus.updated:
             return await _repo.onUpdate(state);
-          // return StorageState.updated(
-          //   isRemote: true,
-          // );
           case StorageStatus.deleted:
             return await _repo.onDelete(state);
-          // return StorageState.deleted(
-          //   isRemote: true,
-          // );
         }
         throw RepositoryException('Unable to process $state');
       } on ServiceException catch (e) {
         if (e.is409) {
-          return _repo.onResolve(state, e.response);
+          return await _repo.onResolve(state, e.response);
         } else if (e.is404) {
-          return _repo.onNotFound(state, e.response);
+          return await _repo.onNotFound(state, e.response);
         }
         rethrow;
       }

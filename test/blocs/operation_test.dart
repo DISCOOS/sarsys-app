@@ -443,7 +443,6 @@ void main() async {
       verifyNoMoreInteractions(harness.operationService);
       expect(harness.operationsBloc.isUnselected, isTrue, reason: "SHOULD be unset");
       expect(harness.operationsBloc.repo.length, 1, reason: "SHOULD contain one operation");
-      expect(harness.operationsBloc, emits(isA<OperationsUnloaded>()));
     });
   });
 }

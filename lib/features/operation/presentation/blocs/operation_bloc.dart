@@ -363,7 +363,10 @@ class OperationBloc
 
     // Notify when all states are remote
     onComplete(
-      [repo.onRemote(operation.uuid)],
+      [
+        repo.onRemote(operation.uuid),
+        incidents.onRemote(operation.incident.uuid),
+      ],
       toState: (_) => OperationCreated(
         operation,
         isRemote: true,

@@ -12,6 +12,8 @@ import 'package:mockito/mockito.dart';
 import 'package:faker/faker.dart' as random;
 import 'package:uuid/uuid.dart';
 
+import 'affiliation_service_mock.dart';
+
 class PersonnelBuilder {
   static Personnel create({
     String uuid,
@@ -46,14 +48,15 @@ class PersonnelBuilder {
   }) =>
       json.decode('{'
           '"uuid": "$uuid",'
+          '"status": "${enumName(status)}",'
+          '"affiliation": {'
+          '"uuid": "${auuid ?? Uuid().v4()}",'
           '"person": {'
           '"uuid": "${puuid ?? Uuid().v4()}", '
           '"fname": "${random.faker.person.firstName()}",'
           '"lname": "${random.faker.person.lastName()}",'
           '"userId": "$userId"'
-          '},'
-          '"status": "${enumName(status)}",'
-          '"affiliation": {"uuid": "${auuid ?? Uuid().v4()}"},'
+          '}},'
           '"function": "${enumName(OperationalFunctionType.personnel)}",'
           '"operation": {"uuid": "${ouuid ?? Uuid().v4()}", "type": "Operation"},'
           '"tracking": {"uuid": "${tuuid ?? Uuid().v4()}", "type": "Personnel"}'
@@ -103,7 +106,11 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         .toList();
   }
 
-  factory PersonnelServiceMock.build(final int count, {List<String> ouuids = const []}) {
+  factory PersonnelServiceMock.build(
+    final int count,
+    AffiliationServiceMock affiliations, {
+    List<String> ouuids = const [],
+  }) {
     final PersonnelServiceMock mock = PersonnelServiceMock();
     final personnelsRepo = mock.personnelsRepo;
 
@@ -150,7 +157,7 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
     });
 
     when(mock.create(any)).thenAnswer((_) async {
-      final state = _.positionalArguments[0] as StorageState<Personnel>;
+      var state = _.positionalArguments[0] as StorageState<Personnel>;
       final ouuid = state.value.operation.uuid;
       if (!state.version.isFirst) {
         return ServiceResponse.badRequest(
@@ -158,6 +165,28 @@ class PersonnelServiceMock extends Mock implements PersonnelService {
         );
       }
       final personnel = state.value;
+      final affiliation = personnel.affiliation;
+      if (affiliation.isAffiliate) {
+        final remote = affiliations.affiliationRepo[affiliation.uuid] ??
+            StorageState.created(
+              affiliation,
+              StateVersion.first,
+            );
+        final response = await affiliations.create(remote.replace(
+          affiliation,
+        ));
+        if (response.statusCode >= 400) {
+          return response.copyWith(
+            error: response.error,
+            conflict: response.conflict,
+            statusCode: response.statusCode,
+            reasonPhrase: response.reasonPhrase,
+          );
+        }
+        state = state.replace(state.value.copyWith(
+          affiliation: remote.value,
+        ));
+      }
       final personnelRepo = personnelsRepo.putIfAbsent(ouuid, () => {});
       final String puuid = personnel.uuid;
       personnelRepo[puuid] = state.remote(

@@ -605,14 +605,6 @@ Future _testShouldReloadWhenOperationIsSwitched(BlocTestHarness harness, {@requi
       !offline,
     )),
   );
-  await expectThroughLater(
-    harness.unitBloc,
-    emits(isA<UnitCreated>().having(
-      (event) => event.isRemote,
-      'Should be ${offline ? 'local' : 'remote'}',
-      !offline,
-    )),
-  );
   expect(harness.unitBloc.repo.length, 1, reason: "SHOULD contain one unit");
 
   // Act

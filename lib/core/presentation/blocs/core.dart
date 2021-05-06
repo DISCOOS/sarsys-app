@@ -135,12 +135,11 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   void _processEventQueue() {
     if (_isOpen) {
       try {
-        while (_eventQueue.isNotEmpty) {
-          final pair = _eventQueue.first;
+        while (_eventQueue.isNotEmpty && _dispatchQueue.isEmpty) {
+          final pair = _eventQueue.removeFirst();
           _toHandlers(pair.right).forEach((handler) {
             handler(pair.left, pair.right);
           });
-          _eventQueue.removeFirst();
         }
       } catch (error, stackTrace) {
         BlocSupervisor.delegate.onError(
@@ -150,8 +149,6 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
         );
       }
     }
-    _eventQueue.clear();
-    _dispatchQueue.clear();
   }
 
   /// Get all handlers for given event
@@ -326,6 +323,8 @@ abstract class BaseBloc<C extends BlocCommand, S extends BlocEvent, Error extend
   @mustCallSuper
   Future<void> close() async {
     _processEventQueue();
+    _eventQueue.clear();
+    _dispatchQueue.clear();
     _subscriptions.forEach(
       (subscription) => subscription.cancel(),
     );

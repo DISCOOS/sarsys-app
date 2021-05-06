@@ -349,7 +349,6 @@ void main() async {
 
       // Assert
       expect(harness.deviceBloc.repo.length, 1, reason: "SHOULD contain one device");
-      expectThroughInOrder(harness.deviceBloc, [isA<DevicesUnloaded>(), isA<DevicesLoaded>()]);
     });
 
     test('SHOULD unload when user is logged out', () async {

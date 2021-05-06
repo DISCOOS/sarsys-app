@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:mockito/mockito.dart';
@@ -7,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
+import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/repositories/affiliation_repository_impl.dart';
 import 'package:SarSys/features/affiliation/data/services/affiliation_service.dart';
@@ -22,6 +25,7 @@ class AffiliationBuilder {
   static Affiliation create({
     String uuid,
     String puuid,
+    String userId,
     String orguuid,
     String divuuid,
     String depuuid,
@@ -34,6 +38,7 @@ class AffiliationBuilder {
         uuid: uuid ?? Uuid().v4(),
         type: type,
         puuid: puuid,
+        userId: userId,
         status: status,
         orguuid: orguuid,
         divuuid: divuuid,
@@ -48,6 +53,7 @@ class AffiliationBuilder {
     @required AffiliationType type,
     @required AffiliationStandbyStatus status,
     String puuid,
+    String userId,
     String orguuid,
     String divuuid,
     String depuuid,
@@ -55,7 +61,7 @@ class AffiliationBuilder {
   }) {
     return json.decode('{'
         '"uuid": "$uuid",'
-        '"person": {"uuid": "$puuid"},'
+        '"person": {"uuid": "$puuid", "userId": "$userId"},'
         '"org": {"uuid": "$orguuid"},'
         '"div": {"uuid": "$divuuid"},'
         '"dep": {"uuid": "$depuuid"},'
@@ -156,6 +162,48 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
         );
       }
       final affiliation = _toAffiliation(state);
+      final puuid = affiliation.person.uuid;
+      // Onboard person?
+      if (affiliation.isAffiliate) {
+        if (persons.personRepo.containsKey(puuid)) {
+          await persons.update(
+            persons.personRepo[puuid].apply(
+              affiliation.person,
+              replace: true,
+              isRemote: false,
+            ),
+          );
+        }
+        final existing = _findDuplicateUsers(persons, affiliation.person);
+        final duplicates = _findDuplicateAffiliations(persons, affiliationRepo.values, affiliation, puuid);
+        if (existing.isNotEmpty) {
+          return ServiceResponse.asConflict(
+            conflict: ConflictModel(
+              type: ConflictType.exists,
+              base: existing.first.value.toJson(),
+              mine: duplicates,
+              yours: [affiliation.toJson()],
+              code: enumName(PersonConflictCode.duplicate_user_id),
+              error: 'Person ${affiliation.person.uuid} have duplicate userId',
+            ),
+          );
+        }
+        if (duplicates.isNotEmpty) {
+          return ServiceResponse.asConflict(
+            conflict: ConflictModel(
+              type: ConflictType.exists,
+              mine: duplicates,
+              yours: [affiliation.toJson()],
+              code: enumName(AffiliationConflictCode.duplicate_affiliations),
+              error: 'Person ${affiliation.person.uuid} have duplicate affiliations',
+            ),
+          );
+        }
+        await persons.create(StorageState<Person>.created(
+          affiliation.person,
+          StateVersion.first,
+        ));
+      }
       affiliationRepo[affiliation.uuid] = state.remote(
         affiliation,
         version: state.version,
@@ -206,23 +254,76 @@ class AffiliationServiceMock extends Mock implements AffiliationService {
     return mock;
   }
 
+  static List<StorageState<Person>> _findDuplicateUsers(PersonServiceMock persons, Person person) {
+    return persons.personRepo.values
+        .where((s) => person.uuid != s.value.uuid && person.userId == s.value.userId)
+        .toList();
+  }
+
+  static List<Map<String, dynamic>> _findDuplicateAffiliations(
+    PersonServiceMock persons,
+    Iterable<StorageState<Affiliation>> affiliations,
+    Affiliation affiliation,
+    String puuid,
+  ) {
+    // Ensure we are updated with remote streams
+    final auuid = affiliation.uuid;
+
+    // Ensure person
+    final person = persons.personRepo[puuid];
+    final userId = person?.value?.userId ?? affiliation.person.userId;
+    final orguuid = affiliation.org?.uuid;
+    final divuuid = affiliation.div?.uuid;
+    final depuuid = affiliation.dep?.uuid;
+
+    // Look for duplicate affiliation, checking for
+    // 1. Volunteer affiliations without any organisations
+    // 2. Identical affiliation with org, div and dep
+    return affiliations
+        .where((s) => !s.isDeleted)
+        .where((s) {
+          final a = s.value;
+          // Different affiliation and same person?
+          if (a.uuid != auuid) {
+            final existing = persons.personRepo[a.person.uuid];
+            if (existing != null) {
+              if (isSamePerson(existing.value, puuid, userId)) {
+                final testOrg = a.org?.uuid;
+                final testDiv = a.div?.uuid;
+                final testDep = a.dep?.uuid;
+
+                // Is unorganized?
+                if (testOrg == null && testDiv == null && testDep == null) {
+                  return true;
+                }
+
+                // Already affiliated?
+                return testOrg == orguuid && testDiv == divuuid && testDep == depuuid;
+              }
+            }
+          }
+          return false;
+        })
+        .map((a) => a.value.toJson())
+        .toList();
+  }
+
+  static bool isSamePerson(Person person, String puuid, String userId) =>
+      puuid != null && person.uuid == puuid || userId != null && person.userId == userId;
+
   static StorageState<Affiliation> _withPerson(
       Map<String, StorageState<Affiliation>> affiliationRepo, uuid, PersonServiceMock persons) {
     final state = affiliationRepo[uuid];
     final affiliation = state.value;
     final next = affiliation.person?.uuid == null ? null : persons.personRepo[affiliation.person.uuid];
-    return state.replace(affiliation.copyWith(person: next.value));
+    return state.replace(affiliation.copyWith(person: next?.value));
   }
 
   static Affiliation _toAffiliation(StorageState<Affiliation> state) {
     final affiliation = state.value;
     final json = affiliation.toJson();
     assert(
-      json.mapAt<String, dynamic>('person').length == 1,
-      "Aggregate reference 'person' contains more then one value",
-    );
-    assert(
-      json.mapAt<String, dynamic>('person').keys.first == 'uuid',
+      json.hasPath('person/uuid'),
       "Aggregate reference 'person' does not contain value 'uuid'",
     );
     return affiliation;

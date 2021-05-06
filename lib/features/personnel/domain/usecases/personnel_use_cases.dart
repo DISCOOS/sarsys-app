@@ -65,14 +65,13 @@ class CreatePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
 
     // Will create affiliation if not exists
     final affiliation = params.affiliation ??
-        await params.context.bloc<AffiliationBloc>().temporary(
+        params.context.bloc<AffiliationBloc>().findPersonnelAffiliation(
               result.data,
-              result.affiliation,
             );
 
     // Will create personnel and tracking
     final personnel = await params.bloc.create(result.data.copyWith(
-      affiliation: affiliation.toRef(),
+      affiliation: affiliation,
     ));
 
     // TODO: Move to use case replaceTracking
@@ -122,10 +121,11 @@ class MobilizePersonnel extends UseCase<bool, Personnel, PersonnelParams> {
         final person = params.context.bloc<AffiliationBloc>().persons[affiliation.person.uuid];
         return dartz.right(await params.bloc.create(PersonnelModel(
           uuid: Uuid().v4(),
-          person: person,
+          affiliation: affiliation.copyWith(
+            person: person,
+          ),
           status: PersonnelStatus.alerted,
           tracking: TrackingUtils.newRef(),
-          affiliation: affiliation.toRef(),
           operation: params.operationBloc.selected.toRef(),
         )));
       }

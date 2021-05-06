@@ -169,9 +169,11 @@ class PersonServiceMock extends Mock implements PersonService {
         state.value,
         version: state.version,
       );
-      return ServiceResponse.ok(
-        body: personRepo[uuid],
-      );
+      return existing == null
+          ? ServiceResponse.created()
+          : ServiceResponse.ok(
+              body: personRepo[uuid],
+            );
     });
     when(mock.update(any)).thenAnswer((_) async {
       await _doThrottle();

@@ -53,8 +53,10 @@ abstract class PersonnelServiceImpl extends StatefulService<Personnel, Personnel
       : super(
           decoder: (json) => PersonnelModel.fromJson(json),
           reducer: (value) => JsonUtils.toJson<PersonnelModel>(value, remove: const [
-            'person',
+            'unit',
+            'messages',
             'operation',
+            'transitions',
           ]),
         );
   static PersonnelServiceImpl newInstance([ChopperClient client]) => _$PersonnelServiceImpl(client);

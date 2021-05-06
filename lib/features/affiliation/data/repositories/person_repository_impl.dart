@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:SarSys/core/data/models/conflict_model.dart';
-import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -151,26 +149,5 @@ class PersonRepositoryImpl extends StatefulRepository<String, Person, PersonServ
       response: response,
       stackTrace: StackTrace.current,
     );
-  }
-
-  @override
-  Future<StorageState<Person>> onResolve(StorageState<Person> state, ServiceResponse response) {
-    return MergePersonStrategy(this)(
-      state,
-      response.conflict,
-    );
-  }
-}
-
-class MergePersonStrategy extends StatefulMergeStrategy<String, Person, PersonService> {
-  MergePersonStrategy(PersonRepository repository) : super(repository);
-
-  @override
-  Future<StorageState<Person>> onExists(ConflictModel conflict, StorageState<Person> state) async {
-    if (state.isCreated && conflict.isCode(PersonConflictCode.duplicate_user_id)) {
-      // Notify change listeners that given person already exists
-      return state.failed(conflict);
-    }
-    return super.onExists(conflict, state);
   }
 }

@@ -658,7 +658,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Personnel _createPersonnel(Affiliation affiliation) => PersonnelModel.fromJson(_formKey.currentState.value).copyWith(
         uuid: Uuid().v4(),
-        affiliation: affiliation.toRef(),
+        affiliation: affiliation,
         fname: _formKey.currentState.value['fname'],
         lname: _formKey.currentState.value['lname'],
         phone: _formKey.currentState.value['phone'],
@@ -668,7 +668,7 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
 
   Personnel _updatePersonnel(Affiliation affiliation) =>
       widget.personnel.mergeWith(_formKey.currentState.value).copyWith(
-            affiliation: affiliation?.toRef(),
+            affiliation: affiliation,
             fname: _formKey.currentState.value['fname'],
             lname: _formKey.currentState.value['lname'],
             phone: _formKey.currentState.value['phone'],

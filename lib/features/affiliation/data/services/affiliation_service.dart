@@ -32,9 +32,7 @@ abstract class AffiliationServiceImpl extends StatefulService<Affiliation, Affil
   static AffiliationServiceImpl newInstance([ChopperClient client]) => _$AffiliationServiceImpl(client);
 
   @override
-  Future<Response<String>> onCreate(StorageState<Affiliation> state) => create(
-        state.value,
-      );
+  Future<Response<String>> onCreate(StorageState<Affiliation> state) => create(state.value);
 
   @Post()
   Future<Response<String>> create(

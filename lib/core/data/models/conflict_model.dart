@@ -31,8 +31,14 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
   final String code;
   final String error;
   final ConflictType type;
+
+  /// Remote state
   final Map<String, dynamic> base;
+
+  /// Remote conflicts
   final List<Map<String, dynamic>> mine;
+
+  /// Local conflicts
   final List<Map<String, dynamic>> yours;
 
   /// Factory constructor for creating a new `ConflictModel` instance

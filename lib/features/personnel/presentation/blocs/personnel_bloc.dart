@@ -9,9 +9,6 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
-import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
-import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/data/models/personnel_model.dart';
@@ -38,7 +35,12 @@ class PersonnelBloc
   ///
   /// Default constructor
   ///
-  PersonnelBloc(this.repo, this.affiliationBloc, this.operationBloc, BlocEventBus bus) : super(bus: bus) {
+  PersonnelBloc(
+    this.repo,
+    this.affiliationBloc,
+    this.operationBloc,
+    BlocEventBus bus,
+  ) : super(bus: bus) {
     assert(repo != null, "repo can not be null");
     assert(service != null, "service can not be null");
     assert(operationBloc != null, "operationBloc can not be null");
@@ -53,11 +55,6 @@ class PersonnelBloc
     // Update from messages pushed from backend
     registerStreamSubscription(service.messages.listen(
       _processPersonnelMessage,
-    ));
-
-    registerStreamSubscription(affiliationBloc.persons.onChanged.listen(
-      // Handle
-      _processPersonConflicts,
     ));
   }
 
@@ -87,26 +84,6 @@ class PersonnelBloc
   void _processPersonnelMessage(PersonnelMessage event) {
     try {
       add(_InternalMessage(event));
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
-    }
-  }
-
-  void _processPersonConflicts(StorageTransition<Person> event) {
-    try {
-      if (PersonRepository.isDuplicateUser(event)) {
-        // Find current person usages and replace them with existing user
-        final duplicate = event.from.value.uuid;
-        final existing = PersonModel.fromJson(event.conflict.base);
-        find(
-          where: (personnel) => personnel.person?.uuid == duplicate,
-        ).map((personnel) => personnel.withPerson(existing)).forEach(update);
-      }
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
         this,
@@ -303,15 +280,7 @@ class PersonnelBloc
     return dispatch<Personnel>(
       CreatePersonnel(
         ouuid,
-        personnel.copyWith(
-          // Personnels should contain a tracking reference when
-          // they are created. [TrackingBloc] will use this
-          // reference to create a [Tracking] instance which the
-          // backend will create apriori using the same uuid.
-          // This allows for offline creation of tracking objects
-          // in apps resulting in a better user experience
-          tracking: TrackingUtils.ensureRef(personnel),
-        ),
+        personnel,
       ),
     );
   }
@@ -346,13 +315,7 @@ class PersonnelBloc
     } else if (command is MobilizeUser) {
       yield* _mobilize(command);
     } else if (command is CreatePersonnel) {
-      yield* _create(
-        command,
-        (Personnel personnel, bool isRemote) => PersonnelCreated(
-          personnel,
-          isRemote: isRemote,
-        ),
-      );
+      yield* _create(command);
     } else if (command is UpdatePersonnel) {
       yield* _update(command);
     } else if (command is DeletePersonnel) {
@@ -423,18 +386,19 @@ class PersonnelBloc
         final affiliation = affiliationBloc.findUserAffiliation();
         found = PersonnelModel(
           uuid: Uuid().v4(),
-          person: PersonModel(
-            uuid: affiliation.person?.uuid,
-            userId: user.userId,
-            fname: user.fname,
-            lname: user.lname,
-            phone: user.phone,
-            email: user.email,
-            temporary: affiliation.isUnorganized,
+          affiliation: affiliation.copyWith(
+            person: PersonModel(
+              uuid: affiliation.person?.uuid,
+              userId: user.userId,
+              fname: user.fname,
+              lname: user.lname,
+              phone: user.phone,
+              email: user.email,
+              temporary: affiliation.isUnorganized,
+            ),
           ),
           status: PersonnelStatus.alerted,
           tracking: TrackingUtils.newRef(),
-          affiliation: affiliation.toRef(),
           operation: AggregateRef.fromType(ouuid),
         );
         yield* _create(
@@ -443,7 +407,7 @@ class PersonnelBloc
             found,
             callback: command.callback,
           ),
-          (Personnel personnel, bool isRemote) => UserMobilized(
+          toState: (Personnel personnel, bool isRemote) => UserMobilized(
             user,
             personnel,
             isRemote: isRemote,
@@ -471,16 +435,22 @@ class PersonnelBloc
   }
 
   Stream<PersonnelState> _create(
-    CreatePersonnel command,
+    CreatePersonnel command, {
     PersonnelState Function(Personnel personnel, bool isRemote) toState,
-  ) async* {
+  }) async* {
+    // Prepare
     _assertData(command.data);
-    Affiliation affiliation = await _ensureAffiliation(command.data);
-    final person = affiliationBloc.persons[affiliation.person.uuid];
+    toState ??= (Personnel personnel, bool isRemote) => PersonnelCreated(
+          personnel,
+          isRemote: isRemote,
+        );
+
+    // Apply
     final personnel = repo.apply(
-      // Update with current person
-      command.data.withPerson(person),
+      _ensureAffiliation(command.data),
     );
+
+    // Notify local change
     yield toOK(
       command,
       toState(personnel, false),
@@ -489,10 +459,7 @@ class PersonnelBloc
 
     // Notify when all states are remote
     onComplete(
-      [
-        affiliationBloc.repo.onRemote(affiliation.uuid),
-        repo.onRemote(personnel.uuid),
-      ],
+      [repo.onRemote(personnel.uuid)],
       toState: (results) {
         final state = results.whereType<StorageState<Personnel>>().first;
         return toState(
@@ -509,31 +476,26 @@ class PersonnelBloc
     );
   }
 
-  Future<Affiliation> _ensureAffiliation(Personnel personnel) async {
-    final auuid = _assertData(personnel);
-    if (!affiliationBloc.repo.containsKey(auuid)) {
-      var affiliation = affiliationBloc.findPersonnelAffiliation(personnel);
-      if (!affiliation.isAffiliate) {
-        affiliation = await affiliationBloc.temporary(
-          personnel,
-          affiliation.copyWith(
-            person: personnel.person,
-          ),
-        );
-      }
-      return affiliation;
+  Personnel _ensureAffiliation(Personnel personnel) {
+    if (personnel.affiliation.isAffiliate != true) {
+      final auuid = personnel.affiliation.uuid;
+      final affiliation = affiliationBloc.repo[auuid] ??
+          affiliationBloc.findPersonnelAffiliation(
+            personnel,
+          );
+      return personnel.copyWith(
+        affiliation: affiliation,
+      );
     }
-    return affiliationBloc.repo[auuid];
+    return personnel;
   }
 
   Stream<PersonnelState> _update(UpdatePersonnel command) async* {
     _assertData(command.data);
     final previous = repo[command.data.uuid];
-    Affiliation affiliation = await _ensureAffiliation(command.data);
-    final person = affiliationBloc.persons[affiliation.person.uuid];
     final personnel = repo.apply(
       // Update with current person
-      command.data.withPerson(person),
+      _ensureAffiliation(command.data),
     );
     yield toOK(
       command,

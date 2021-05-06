@@ -1,5 +1,12 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
+import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
+import 'package:SarSys/features/affiliation/data/models/person_model.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/repositories/person_repository.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -24,6 +31,26 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
           service: service,
           connectivity: connectivity,
           dependencies: [units, affiliations],
+          // Keep person in sync with local copy
+          onGet: (StorageState<Personnel> state) {
+            final value = state.value;
+            final auuid = value.affiliation.uuid;
+            return state.replace(state.value.copyWith(
+                affiliation: affiliations.get(
+              auuid,
+            )));
+          },
+          onPut: (StorageState<Personnel> state, bool isDeleted) {
+            if (!isDeleted) {
+              final affiliation = state.value.affiliation;
+              if (affiliation.isAffiliate) {
+                affiliations.replace(
+                  affiliation,
+                  isRemote: state.isRemote,
+                );
+              }
+            }
+          },
         );
 
   /// Get [Operation.uuid]
@@ -116,7 +143,7 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
   @override
   Future<StorageState<Personnel>> onCreate(StorageState<Personnel> state) async {
     assert(state.value.operation.uuid == _ouuid);
-    var response = await service.create(state);
+    final response = await service.create(state);
     if (response.isOK) {
       return response.body;
     }
@@ -151,5 +178,66 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
       response: response,
       stackTrace: StackTrace.current,
     );
+  }
+
+  @override
+  Future<StorageState<Personnel>> onResolve(StorageState<Personnel> state, ServiceResponse response) {
+    return MergePersonnelStrategy(this)(
+      state,
+      response.conflict,
+    );
+  }
+}
+
+class MergePersonnelStrategy extends StatefulMergeStrategy<String, Personnel, PersonnelService> {
+  MergePersonnelStrategy(PersonnelRepository repository) : super(repository);
+
+  @override
+  PersonnelRepository get repository => super.repository;
+  PersonRepository get persons => affiliations.persons;
+  AffiliationRepository get affiliations => repository.affiliations;
+
+  @override
+  Future<StorageState<Personnel>> onExists(ConflictModel conflict, StorageState<Personnel> state) async {
+    switch (conflict.code) {
+      case 'duplicate_user_id':
+      case 'duplicate_affiliations':
+        if (conflict.mine.isNotEmpty) {
+          // Duplicates was found, reuse first duplicate
+          final existing = AffiliationModel.fromJson(
+            conflict.mine.first,
+          );
+
+          repository.apply(
+            state.value.copyWith(
+              affiliation: existing,
+            ),
+          );
+
+          // Delete duplicate affiliation
+          affiliations.remove(
+            state.value.affiliation,
+          );
+        }
+
+        if (conflict.isCode('duplicate_user_id')) {
+          // Replace duplicate person with existing person
+          repository.apply(
+            state.value.withPerson(
+              PersonModel.fromJson(conflict.base),
+            ),
+          );
+
+          // Delete duplicate person
+          persons.remove(
+            state.value.person,
+          );
+        }
+
+        return repository.getState(
+          repository.toKey(state.value),
+        );
+    }
+    return super.onExists(conflict, state);
   }
 }
