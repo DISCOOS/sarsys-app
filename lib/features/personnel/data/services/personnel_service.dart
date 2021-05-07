@@ -54,6 +54,7 @@ abstract class PersonnelServiceImpl extends StatefulService<Personnel, Personnel
           decoder: (json) => PersonnelModel.fromJson(json),
           reducer: (value) => JsonUtils.toJson<PersonnelModel>(value, remove: const [
             'unit',
+            'tracking',
             'messages',
             'operation',
             'transitions',
