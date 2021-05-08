@@ -17,9 +17,15 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
     OrganisationService service, {
     @required ConnectivityService connectivity,
   }) : super(
-          service: service,
-          connectivity: connectivity,
-        );
+            service: service,
+            connectivity: connectivity,
+            onGet: (StorageState<Organisation> state) {
+              return state.replace(
+                state.value.copyWith(
+                  fleetMap: FleetMapService().fetchFleetMap(state.value.prefix),
+                ),
+              );
+            });
 
   /// Get [Operation.uuid] from [value]
   @override
@@ -94,8 +100,8 @@ class OrganisationRepositoryImpl extends StatefulRepository<String, Organisation
     );
   }
 
-  Future<StorageState<Organisation>> _withFleetMap(StorageState<Organisation> state) async {
-    final fleetMap = await FleetMapService().fetchFleetMap(
+  StorageState<Organisation> _withFleetMap(StorageState<Organisation> state) {
+    final fleetMap = FleetMapService().fetchFleetMap(
       state.value.prefix,
     );
     return fleetMap == null

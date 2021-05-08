@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:async' show Future;
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:SarSys/core/extensions.dart';
@@ -10,7 +11,7 @@ import 'package:SarSys/features/affiliation/domain/entities/OperationalFunction.
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroupCatalog.dart';
 import 'package:SarSys/features/affiliation/domain/entities/TalkGroup.dart';
 
-class FleetMapService {
+class FleetMapService extends Service {
   static const ASSET = "assets/config/fleet_map.json";
 
   static final _singleton = FleetMapService._internal();
@@ -33,8 +34,8 @@ class FleetMapService {
     }
   }
 
-  Future<FleetMap> _loadOrg(String prefix) async {
-    await init();
+  FleetMap _loadOrg(String prefix) {
+    assert(_assets != null, 'Not initialized');
     final org = (_assets["organisations"] as List).firstWhere(
       (org) => (org as Map<String, dynamic>).elementAt('prefix') == prefix,
       orElse: () => null,
@@ -48,17 +49,16 @@ class FleetMapService {
     return _fleetMaps[prefix];
   }
 
-  Future<FleetMap> fetchFleetMap(String prefix) async {
-    final map = _fleetMaps;
-    if (!map.containsKey(prefix)) {
-      await _loadOrg(prefix);
+  FleetMap fetchFleetMap(String prefix) {
+    if (!_fleetMaps.containsKey(prefix)) {
+      _loadOrg(prefix);
     }
     return _fleetMaps[prefix];
   }
 
-  Future<List<TalkGroup>> fetchTalkGroups(String prefix, String catalog) async {
+  List<TalkGroup> fetchTalkGroups(String prefix, String catalog) {
     if (!_fleetMaps.containsKey(prefix)) {
-      await _loadOrg(prefix);
+      _loadOrg(prefix);
     }
     final org = _fleetMaps[prefix];
     return org?.catalogs
@@ -69,17 +69,17 @@ class FleetMapService {
         ?.groups;
   }
 
-  Future<List<TalkGroupCatalog>> fetchTalkGroupCatalogs(String prefix) async {
+  List<TalkGroupCatalog> fetchTalkGroupCatalogs(String prefix) {
     if (!_fleetMaps.containsKey(prefix)) {
-      await _loadOrg(prefix);
+      _loadOrg(prefix);
     }
     final org = _fleetMaps[prefix];
     return org?.catalogs?.toList();
   }
 
-  Future<List<OperationalFunction>> fetchFunctions(String prefix) async {
+  List<OperationalFunction> fetchFunctions(String prefix) {
     if (!_fleetMaps.containsKey(prefix)) {
-      await _loadOrg(prefix);
+      _loadOrg(prefix);
     }
     final org = _fleetMaps[prefix];
     return org?.functions?.toList();

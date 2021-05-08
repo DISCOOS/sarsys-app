@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -238,6 +239,7 @@ class AppController {
     // --------------
     // Build services
     // --------------
+    final fleetMapService = FleetMapService()..init();
 
     final configService = AppConfigService();
     final connectivityService = ConnectivityService();
@@ -431,6 +433,7 @@ class AppController {
       services: [
         ...repoServices,
         // Singletons
+        fleetMapService,
         BaseMapService(),
         NavigationService(),
         ConnectivityService(),

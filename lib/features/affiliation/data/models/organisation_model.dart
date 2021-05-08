@@ -42,4 +42,16 @@ class OrganisationModel extends Organisation {
 
   @override
   AggregateRef<Organisation> toRef() => uuid != null ? AggregateRef.fromType<OrganisationModel>(uuid) : null;
+
+  @override
+  Organisation copyWith({FleetMap fleetMap}) {
+    return OrganisationModel(
+      uuid: uuid,
+      name: name,
+      prefix: prefix,
+      active: active,
+      divisions: divisions,
+      fleetMap: fleetMap ?? this.fleetMap,
+    );
+  }
 }

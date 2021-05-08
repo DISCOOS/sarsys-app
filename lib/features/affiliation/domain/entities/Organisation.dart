@@ -38,4 +38,7 @@ abstract class Organisation extends Aggregate<Map<String, dynamic>> {
 
   /// Get [Organisation] reference
   AggregateRef<Organisation> toRef();
+
+  /// Copy organisation with [fleetMap]
+  Organisation copyWith({FleetMap fleetMap});
 }
