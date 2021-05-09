@@ -169,7 +169,8 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   /// Find device for this app
   Device get app {
-    return repo[userBloc.config.udid];
+    final uuid = userBloc.config?.udid;
+    return uuid != null ? repo[uuid] : null;
   }
 
   @override

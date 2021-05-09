@@ -1,4 +1,5 @@
 import 'package:SarSys/core/callbacks.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';
 import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -97,7 +98,7 @@ class UnitWidget extends StatelessWidget {
           _buildContactInfo(context),
           _buildPersonnelInfo(context),
           _buildDivider(Orientation.portrait),
-          _buildLocationInfo(context, theme),
+          _buildLocationInfo(),
           _buildDivider(Orientation.portrait),
           _buildTrackingInfo(context),
           _buildEffortInfo(context)
@@ -127,7 +128,7 @@ class UnitWidget extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildLocationInfo(context, theme),
+                _buildLocationInfo(),
                 _buildTrackingInfo(context),
                 _buildEffortInfo(context),
               ],
@@ -194,63 +195,17 @@ class UnitWidget extends StatelessWidget {
     );
   }
 
-  Row _buildLocationInfo(BuildContext context, TextTheme theme) => Row(
-        children: <Widget>[
-          Expanded(
-            flex: 4,
-            child: Column(
-              children: <Widget>[
-                buildCopyableLocation(
-                  context,
-                  label: "UTM",
-                  icon: Icons.my_location,
-                  tracking: tracking,
-                  formatter: (point) => toUTM(
-                    tracking?.position?.geometry,
-                    prefix: "",
-                    empty: "Ingen",
-                  ),
-                ),
-                buildCopyableLocation(
-                  context,
-                  label: "Desimalgrader (DD)",
-                  icon: Icons.my_location,
-                  tracking: tracking,
-                  formatter: (point) => toDD(
-                    tracking?.position?.geometry,
-                    prefix: "",
-                    empty: "Ingen",
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (tracking?.position != null)
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.navigation, color: Colors.black45),
-                    onPressed: tracking?.position == null
-                        ? null
-                        : () {
-                            navigateToLatLng(
-                              context,
-                              toLatLng(
-                                tracking?.position?.geometry,
-                              ),
-                            );
-                            _onComplete();
-                          },
-                  ),
-                  Text("Naviger", style: theme.caption),
-                ],
-              ),
-            ),
-        ],
-      );
+  Widget _buildLocationInfo() {
+    final p = tracking?.position;
+    return CoordinateWidget(
+      onGoto: onGoto,
+      accuracy: p.acc,
+      onMessage: onMessage,
+      timestamp: p.timestamp,
+      point: tracking?.position?.geometry,
+      onComplete: () => _onComplete(unit),
+    );
+  }
 
   Widget buildCopyableLocation(
     BuildContext context, {

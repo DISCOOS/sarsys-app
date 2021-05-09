@@ -41,7 +41,7 @@ class CoordinateWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: hasAction && hasAccuracy ? CrossAxisAlignment.center : CrossAxisAlignment.start,
             children: <Widget>[
-              Expanded(
+              Flexible(
                 flex: 3,
                 child: _buildCoordinates(context),
               ),
@@ -51,11 +51,11 @@ class CoordinateWidget extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.only(top: !hasAction ? (isDense ? 8.0 : 14.0) : 0.0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.max,
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
                       Column(
-                        mainAxisSize: MainAxisSize.max,
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (hasAccuracy) _buildAccuracy(context),
@@ -64,11 +64,16 @@ class CoordinateWidget extends StatelessWidget {
                         ],
                       ),
                       if (hasAccuracy) SizedBox(height: isDense ? 8.0 : 16.0),
-                      if (hasAction) _buildNavigateAction(context),
                     ],
                   ),
                 ),
-              )
+              ),
+              if (hasAction)
+                Flexible(
+                  flex: 1,
+                  fit: FlexFit.tight,
+                  child: _buildNavigateAction(context),
+                ),
             ],
           )
         : _buildCoordinates(context);
