@@ -25,8 +25,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _bloc = context.bloc<AppConfigBloc>();
-    _ttl.text = "${_bloc.config.mapCacheTTL}";
-    _capacity.text = "${_bloc.config.mapCacheCapacity}";
+    _ttl.text = '${_bloc.config.mapCacheTTL}';
+    _capacity.text = '${_bloc.config.mapCacheCapacity}';
   }
 
   @override
@@ -42,7 +42,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
       backgroundColor: Colors.white,
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Kartoppsett"),
+        title: Text('Kartoppsett'),
         automaticallyImplyLeading: true,
         centerTitle: false,
         leading: IconButton(
@@ -76,8 +76,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           Expanded(
             flex: 4,
             child: ListTile(
-              title: Text("Maksimal lagringstid for kartfliser"),
-              subtitle: Text("Angi mellom 0 til 999 dager"),
+              title: Text('Maksimal lagringstid for kartfliser'),
+              subtitle: Text('Angi mellom 0 til 999 dager'),
             ),
           ),
           Flexible(
@@ -89,7 +89,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: InputDecoration(filled: true, counterText: ""),
+              decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
                 _bloc.updateWith(mapCacheTTL: int.parse(value ?? 0));
               },
@@ -111,8 +111,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           Expanded(
             flex: 4,
             child: ListTile(
-              title: Text("Maksimalt antall kartfliser lagret"),
-              subtitle: Text("Angi mellom 0 til 99999 fliser"),
+              title: Text('Maksimalt antall kartfliser lagret'),
+              subtitle: Text('Angi mellom 0 til 99999 fliser'),
             ),
           ),
           Flexible(
@@ -124,7 +124,7 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              decoration: InputDecoration(filled: true, counterText: ""),
+              decoration: InputDecoration(filled: true, counterText: ''),
               onChanged: (value) {
                 _bloc.updateWith(mapCacheCapacity: int.parse(value ?? 0));
               },
@@ -146,20 +146,26 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
             final files = root.listSync(recursive: true);
             final size = files.fold(0, (sum, file) => sum + file.statSync().size);
             return ListTile(
-              title: Text("Slett kartbuffer"),
-              subtitle: Text("Inneholder totalt ${files.length} kartfliser (${filesize(size)})"),
+              title: Text('Slett kartbuffer'),
+              subtitle: Text('Inneholder totalt ${files.length} kartfliser (${filesize(size)})'),
               trailing: Icon(Icons.delete),
               onTap: () async {
                 if (await prompt(
                   context,
-                  "Slette kart-fliser",
-                  "Dette vil slette alle kartfliser lastet ned lokalt. Vil du fortsette?",
+                  'Slette kart-fliser',
+                  'Dette vil slette alle kartfliser lastet ned lokalt. Vil du fortsette?',
                 )) {
                   imageCache.clear();
                   await cache.emptyCache();
                   setState(() {});
                 }
               },
+            );
+          }
+          if (snapshot.hasError) {
+            return ListTile(
+              title: Text('Kartbuffer ikke funnet'),
+              subtitle: Text('${snapshot.error}'),
             );
           }
           return Container();
@@ -177,8 +183,8 @@ class _MapConfigScreenState extends State<MapConfigScreen> {
           Expanded(
             flex: 3,
             child: ListTile(
-              title: Text("Hold skjermen påslått"),
-              subtitle: Text("Når kartet vises vil skjermen forbli påslått"),
+              title: Text('Hold skjermen påslått'),
+              subtitle: Text('Når kartet vises vil skjermen forbli påslått'),
             ),
           ),
           Flexible(
