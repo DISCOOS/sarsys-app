@@ -108,7 +108,7 @@ class _TetraConfigScreenState extends State<TetraConfigScreen> {
       hintText: 'Velg talegrupper',
       selectorLabel: 'Lytt til',
       selectorTitle: 'Velg talegrupper',
-      builder: (context, tg) => Text(tg.name),
+      builder: (context, tg) => Chip(label: Text(tg.name)),
       categories: catalogs.map(
         (c) => DropdownMenuItem<String>(
           value: c.name,

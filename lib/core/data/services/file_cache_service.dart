@@ -63,7 +63,11 @@ class FileCacheService extends CacheManager implements Service {
         );
 
   Future<String> getFilePath() async {
-    Directory directory = await getApplicationSupportDirectory();
-    return p.join(directory.path, key);
+    Directory root = await getApplicationSupportDirectory();
+    final cache = Directory(p.join(root.path, key));
+    if (!cache.existsSync()) {
+      cache.createSync(recursive: true);
+    }
+    return cache.path;
   }
 }
