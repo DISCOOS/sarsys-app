@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-typedef SelectedCallback<T> = void Function(BuildContext context, T item);
-typedef ItemWidgetBuilder<T> = Widget Function(BuildContext context, T item);
+import 'package:SarSys/core/callbacks.dart';
 
-class SelectorWidget<T> extends StatelessWidget {
+class ListSelectorWidget<T> extends StatelessWidget {
   final Size size;
   final String title;
   final IconData icon;
@@ -12,7 +11,7 @@ class SelectorWidget<T> extends StatelessWidget {
   final SelectedCallback<T> onSelected;
   final ItemWidgetBuilder<T> itemBuilder;
 
-  const SelectorWidget({
+  const ListSelectorWidget({
     Key key,
     @required this.style,
     @required this.size,
@@ -52,23 +51,6 @@ class SelectorWidget<T> extends StatelessWidget {
                   onSelected(context, item);
                 },
               )),
-//        SizedBox(
-//          height: min(size.height - 150, 380),
-//          width: MediaQuery.of(context).size.width - 96,
-//          child: ListView.builder(
-//            itemCount: items.length,
-//            itemBuilder: (BuildContext context, int index) {
-//              return ListTile(
-//                leading: Icon(icon),
-//                title: itemBuilder(context, items[index]),
-//                onTap: () {
-//                  Navigator.of(context).pop();
-//                  onSelected(context, items[index]);
-//                },
-//              );
-//            },
-//          ),
-//        ),
         ],
       ),
     );

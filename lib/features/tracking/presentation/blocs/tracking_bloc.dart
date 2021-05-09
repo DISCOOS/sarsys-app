@@ -458,7 +458,7 @@ class TrackingBloc
     final queryUnits = units.devices();
     final queryPersonnels = personnels.devices();
     return deviceBloc.repo.values.where(
-      (device) => !queryUnits.containsKey(device.uuid) || queryPersonnels.containsKey(device.uuid),
+      (device) => !(queryUnits.containsKey(device.uuid) || queryPersonnels.containsKey(device.uuid)),
     );
   }
 

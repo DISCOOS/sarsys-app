@@ -1,3 +1,4 @@
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,8 +17,9 @@ import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 import 'package:SarSys/features/unit/domain/usecases/unit_use_cases.dart';
-import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/features/mapping/domain/entities/Position.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
@@ -29,7 +31,7 @@ class UnitEditor extends StatefulWidget {
   final Position position;
   final Operation operation;
   final Iterable<Device> devices;
-  final Iterable<String> personnels;
+  final Iterable<Personnel> personnels;
 
   final UnitType type;
 
@@ -60,18 +62,21 @@ class _UnitEditorState extends State<UnitEditor> {
   final TextEditingController _phoneController = TextEditingController();
 
   List<Device> _devices;
-  List<String> _personnels;
+  List<Personnel> _personnels;
 
   String _editedName;
 
-  bool get hasAvailablePersonnel => context
-      .bloc<UnitBloc>()
-      .findAvailablePersonnel(
-        context.bloc<PersonnelBloc>().repo,
-      )
-      .isNotEmpty;
+  bool get hasAvailablePersonnel =>
+      context
+          .bloc<UnitBloc>()
+          .findAvailablePersonnel(
+            context.bloc<PersonnelBloc>().repo,
+          )
+          .isNotEmpty ||
+      _getActualPersonnels().isNotEmpty;
 
-  bool get hasAvailableDevices => context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty;
+  bool get hasAvailableDevices =>
+      context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
 
   @override
   void initState() {
@@ -96,7 +101,7 @@ class _UnitEditorState extends State<UnitEditor> {
 
   void _set() {
     _devices ??= _getActualDevices();
-    _personnels ??= _getActualPersonnel(init: true);
+    _personnels ??= _getActualPersonnels(init: true);
   }
 
   void _init() async {
@@ -422,162 +427,144 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   Widget _buildDeviceListField() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-      child: hasAvailableDevices
-          ? FormBuilderChipsInput(
-              name: 'devices',
-              maxChips: 5,
-              initialValue: _getActualDevices(),
-              onChanged: (devices) => _devices = List.from(devices),
-              decoration: InputDecoration(
-                labelText: "Apparater",
-                hintText: "Søk etter apparater",
-                helperText: "Spor blir kun lagret i aksjonen",
-                filled: true,
-                contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
-              ),
-              findSuggestions: _findDevices,
-              chipBuilder: (context, state, device) => DeviceChip(
-                device: device,
-                state: state,
-              ),
-              suggestionBuilder: (context, state, device) => DeviceTile(
-                device: device,
-                state: state,
-              ),
-              valueTransformer: (values) => values.map((device) => device).toList(),
-              // BUG: These are required, no default values are given.
-              obscureText: false,
-              textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-              inputType: TextInputType.text,
-              keyboardAppearance: Brightness.dark,
-              inputAction: TextInputAction.done,
-              autocorrect: true,
-              textCapitalization: TextCapitalization.sentences,
-            )
-          : buildReadOnlyField(
-              context,
-              'devices',
-              "Apparater",
-              "Ingen tilgjengelig",
-              _getActualPersonnel(),
-            ),
+    final enabled = hasAvailableDevices;
+    final types = List.from(DeviceType.values)
+      ..sort(
+        (a, b) => enumName(a).compareTo(enumName(b)),
+      );
+    return buildChipsField<Device>(
+      name: 'devices',
+      enabled: enabled,
+      labelText: 'Apparater',
+      selectorLabel: 'Apparater',
+      hintText: 'Søk etter apparater',
+      selectorTitle: 'Velg apparater',
+      emptyText: 'Fant ingen apparater',
+      helperText: enabled ? 'Spor blir kun lagret i aksjonen' : 'Ingen tilgjengelige',
+      builder: (context, device) => DeviceChip(device: device),
+      categories: [
+        DropdownMenuItem<String>(
+          value: 'alle',
+          child: Text('Alle'),
+        ),
+        ...types.map(
+          (type) => DropdownMenuItem<String>(
+            value: enumName(type),
+            child: Text(translateDeviceType(type).capitalize()),
+          ),
+        ),
+      ],
+      category: 'alle',
+      options: _findDevices,
+      items: () => _getLocalDevices(),
+      onChanged: (devices) => _devices
+        ..clear()
+        ..addAll(devices),
     );
   }
 
-  List<Device> _findDevices(String query) {
-    if (query.length != 0) {
-      var actual = _getActualDevices().map((device) => device.uuid);
-      var local = _getLocalDevices().map((device) => device.uuid);
-      var pattern = query.toLowerCase();
-      return context
-          .bloc<TrackingBloc>()
-          .findAvailableDevices()
-          .where((device) =>
-              // Add locally removed devices
-              _canAddDevice(
-                actual,
-                device,
-                local,
-              ))
-          .where((device) => _deviceMatch(device, pattern))
-          .take(5)
-          .toList(growable: false);
-    }
-    return const <Device>[];
+  List<Device> _findDevices(String type, String query) {
+    var actual = _getActualDevices().map((device) => device.uuid);
+    return context
+        .bloc<DeviceBloc>()
+        .values
+        .where((device) => _canAddDevice(actual, device))
+        .where((device) => _deviceMatch(device, type, query))
+        .take(5)
+        .toList(growable: false);
   }
 
-  bool _deviceMatch(Device device, String pattern) => [
-        device.number,
-        device.alias,
-        device.type,
-      ].join().toLowerCase().contains(pattern);
+  bool _deviceMatch(Device device, String type, String query) {
+    final test = [device.number, device.alias, device.name].join();
+    return test.toLowerCase().contains(query ?? '') &&
+        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type?.toLowerCase()));
+  }
 
-  bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
-    return !(actual.contains(device.uuid) || local.contains(device.uuid));
+  bool _canAddDevice(Iterable<String> actual, Device match) {
+    if (actual.contains(match.uuid)) {
+      return true;
+    }
+    final bloc = context.bloc<TrackingBloc>();
+    if (widget.unit?.tracking?.uuid != null) {
+      // Was device tracked by this unit earlier?
+      final trackings = bloc.find(match).map((t) => t.uuid);
+      if (trackings.contains(widget.unit.tracking.uuid)) {
+        return true;
+      }
+    }
+    return !bloc.has(match);
   }
 
   Widget _buildPersonnelListField() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-      child: hasAvailablePersonnel
-          ? FormBuilderChipsInput(
-              name: 'personnels',
-              maxChips: 15,
-              initialValue: _personnels,
-              onChanged: (personnels) {
-                _personnels = List<String>.from(personnels);
-              },
-              decoration: InputDecoration(
-                labelText: "Mannskap",
-                hintText: "Søk etter mannskap",
-                helperText: "Spor blir kun lagret i aksjonen",
-                filled: true,
-                alignLabelWithHint: true,
-                hintMaxLines: 3,
-                contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
-              ),
-              findSuggestions: _findPersonnels,
-              suggestionBuilder: (context, state, puuid) => PersonnelTile(
-                personnel: context.bloc<PersonnelBloc>().repo[puuid],
-                state: state,
-              ),
-              chipBuilder: (context, state, puuid) => PersonnelChip(
-                personnel: context.bloc<PersonnelBloc>().repo[puuid],
-                state: state,
-              ),
-              // BUG: These are required, no default values are given.
-              obscureText: false,
-              inputType: TextInputType.text,
-              keyboardAppearance: Brightness.dark,
-              inputAction: TextInputAction.done,
-              autocorrect: true,
-              textCapitalization: TextCapitalization.sentences,
-              textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-            )
-          : buildReadOnlyField(
-              context,
-              'personnels',
-              "Mannskap",
-              "Ingen tilgjengelig",
-              _getActualPersonnel(),
-            ),
+    final enabled = hasAvailableDevices;
+    final statuses = List.from(PersonnelStatus.values)
+      ..sort(
+        (a, b) => enumName(a).compareTo(enumName(b)),
+      );
+    return buildChipsField<Personnel>(
+      name: 'personnels',
+      enabled: enabled,
+      labelText: 'Mannskap',
+      selectorLabel: 'Mannskap',
+      hintText: 'Søk etter mannskap',
+      selectorTitle: 'Velg mannskap',
+      emptyText: 'Fant ingen mannskap',
+      helperText: enabled ? 'Spor blir kun lagret i aksjonen' : 'Ingen tilgjengelige',
+      builder: (context, personnel) => PersonnelChip(personnel: personnel),
+      categories: [
+        DropdownMenuItem<String>(
+          value: 'alle',
+          child: Text('Alle'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'tilgjengelig',
+          child: Text('Tilgjengelig'),
+        ),
+        ...statuses.map(
+          (type) => DropdownMenuItem<String>(
+            value: enumName(type),
+            child: Text(translatePersonnelStatus(type).capitalize()),
+          ),
+        ),
+      ],
+      category: 'tilgjengelig',
+      options: _findPersonnels,
+      items: () => _getLocalPersonnel(),
     );
   }
 
-  List<String> _findPersonnels(String query) {
-    if (query.length != 0) {
-      final local = _getLocalPersonnel();
-      final actual = _getActualPersonnel();
-      final pattern = query.toLowerCase();
-      final found = context
-          .bloc<UnitBloc>()
-          .findAvailablePersonnel(context.bloc<PersonnelBloc>().repo)
-          .where((personnel) => _canAddPersonnel(
-                actual,
-                personnel,
-                local,
-              ))
-          .where((personnel) => _personnelMatch(personnel, pattern))
-          .take(5)
-          .map((personnel) => personnel.uuid)
-          .toList(growable: false);
-      return found;
-    }
-    return const <String>[];
+  List<Personnel> _findPersonnels(String status, String query) {
+    var actual = _getActualPersonnels().map((personnel) => personnel.uuid);
+    return context
+        .bloc<PersonnelBloc>()
+        .values
+        .where((personnel) => _canAddPersonnel(actual, personnel))
+        .where((personnel) => _personnelMatch(personnel, status, query))
+        .take(5)
+        .toList(growable: false);
   }
 
-  bool _personnelMatch(Personnel personnel, String lowercaseQuery) =>
-      personnel.name.toLowerCase().contains(lowercaseQuery) ||
-      translatePersonnelStatus(personnel.status).toLowerCase().contains(lowercaseQuery);
+  bool _personnelMatch(Personnel personnel, String status, String query) {
+    final test = personnel.searchable;
+    return test.toLowerCase().contains(query ?? '') &&
+        (status?.toLowerCase() == 'alle' ||
+            status?.toLowerCase() == 'tilgjengelig' && personnel.isAvailable ||
+            enumName(personnel.status).contains(status?.toLowerCase()));
+  }
 
-  bool _canAddPersonnel(
-    Iterable<String> actual,
-    Personnel personnel,
-    Iterable<String> local,
-  ) {
-    return !(actual.contains(personnel.uuid) || local.contains(personnel.uuid));
+  bool _canAddPersonnel(Iterable<String> actual, Personnel match) {
+    if (actual.contains(match.uuid)) {
+      return true;
+    }
+    final bloc = context.bloc<TrackingBloc>();
+    if (widget.unit?.tracking?.uuid != null) {
+      // Was personnel tracked by this unit earlier?
+      final trackings = bloc.find(match).map((t) => t.uuid);
+      if (trackings.contains(widget.unit.tracking.uuid)) {
+        return true;
+      }
+    }
+    return !bloc.has(match);
   }
 
   Widget _buildPositionField() {
@@ -608,7 +595,12 @@ class _UnitEditorState extends State<UnitEditor> {
 
   String get tuuid => widget?.unit?.tracking?.uuid;
 
-  List<Device> _getLocalDevices() => List.from(_devices ?? <Device>[]);
+  List<Device> _getLocalDevices() =>
+      _formKey.currentState == null || _formKey.currentState.fields['devices'].value == null
+          ? _getActualDevices()
+          : List<Device>.from(
+              _formKey.currentState.fields['devices'].value ?? <Device>[],
+            );
 
   List<Device> _getActualDevices() {
     return (widget?.unit?.tracking != null ? context.bloc<TrackingBloc>().devices(tuuid,
@@ -618,13 +610,19 @@ class _UnitEditorState extends State<UnitEditor> {
       ..addAll(widget.devices ?? []);
   }
 
-  List<String> _getLocalPersonnel() => List.from(_personnels ?? <String>[]);
-
-  List<String> _getActualPersonnel({bool init = false}) {
-    final personnels = List<String>.from(widget?.unit?.personnels ?? <String>[]);
-    if (init) {
-      personnels.addAll(widget.personnels ?? <String>[]);
+  List<Personnel> _getLocalPersonnel() {
+    if (_formKey.currentState == null || _formKey.currentState.fields['personnels'].value == null) {
+      return _getActualPersonnels();
     }
+    return _formKey.currentState.fields['personnels'].value ?? <Personnel>[];
+  }
+
+  List<Personnel> _getActualPersonnels({bool init = false}) {
+    final puuids = List<String>.from(widget?.unit?.personnels ?? <String>[]);
+    if (init) {
+      puuids.addAll(widget.personnels?.map((p) => p.uuid) ?? <String>[]);
+    }
+    final personnels = context.bloc<PersonnelBloc>().values.where((p) => puuids.contains(p.uuid)).toList();
     return personnels;
   }
 
@@ -727,5 +725,9 @@ class _UnitEditorState extends State<UnitEditor> {
         operation: widget.operation?.toRef() ?? widget.unit.operation,
       );
 
-  Map<String, dynamic> _toJson() => _formKey.currentState.value;
+  Map<String, dynamic> _toJson() {
+    final json = Map<String, dynamic>.from(_formKey.currentState.value);
+    json['personnels'] = (json['personnels'] as List<Personnel>).map((p) => p.uuid).toList();
+    return json;
+  }
 }

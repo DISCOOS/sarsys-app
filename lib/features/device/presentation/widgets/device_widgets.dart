@@ -1,3 +1,4 @@
+import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
@@ -18,17 +19,14 @@ import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DeviceTile extends StatelessWidget {
   final Device device;
-  final ChipsInputState state;
   const DeviceTile({
     Key key,
     @required this.device,
-    this.state,
   }) : super(key: key);
 
   @override
@@ -43,7 +41,6 @@ class DeviceTile extends StatelessWidget {
         backgroundColor: toPositionStatusColor(device.position),
       ),
       title: Text([device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' ')),
-      onTap: () => state.selectSuggestion(device),
     );
   }
 }
@@ -52,19 +49,17 @@ class DeviceChip extends StatelessWidget {
   const DeviceChip({
     Key key,
     @required this.device,
-    this.state,
   }) : super(key: key);
 
   final Device device;
-  final ChipsInputState state;
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
-    final name = device.number ?? device.alias;
-    return InputChip(
+    final name = [device.alias, device.number].where((e) => e != null).join(' ');
+    return Chip(
       key: ObjectKey(device),
-      labelPadding: EdgeInsets.only(left: 4.0),
+      labelPadding: EdgeInsets.symmetric(horizontal: 4.0),
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -81,7 +76,6 @@ class DeviceChip extends StatelessWidget {
           if (name != null) Text(name, style: style),
         ],
       ),
-      onDeleted: () => state.deleteChip(device),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }

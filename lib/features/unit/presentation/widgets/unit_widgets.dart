@@ -1,3 +1,4 @@
+import 'package:SarSys/core/callbacks.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -373,7 +374,7 @@ class UnitWidget extends StatelessWidget {
       );
 
   String _toDeviceNumbers() {
-    final numbers = devices?.map((device) => device.number);
+    final numbers = devices?.map((device) => device.number ?? device.alias);
     return numbers?.isNotEmpty == true ? numbers.join(', ') : 'Ingen';
   }
 

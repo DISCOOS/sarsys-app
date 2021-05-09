@@ -705,6 +705,7 @@ class BlocTestHarness implements BlocDelegate {
     _trackingBloc = TrackingBloc(
       TrackingRepositoryImpl(
         _trackingService,
+        tracks: null,
         connectivity: _connectivity,
       ),
       operationBloc: _operationsBloc,

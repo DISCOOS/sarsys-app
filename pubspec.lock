@@ -469,7 +469,7 @@ packages:
     source: hosted
     version: "2.1.2"
   flutter_chips_input:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: flutter_chips_input
       url: "https://pub.dartlang.org"

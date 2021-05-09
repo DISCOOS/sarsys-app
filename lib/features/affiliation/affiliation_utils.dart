@@ -1,9 +1,10 @@
-import 'package:SarSys/features/affiliation/domain/entities/OperationalFunction.dart';
-import 'package:SarSys/features/affiliation/domain/entities/TalkGroupCatalog.dart';
-import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/extensions.dart';
-import 'package:uuid/uuid.dart';
+import 'package:SarSys/core/domain/models/AggregateRef.dart';
+import 'package:SarSys/features/affiliation/domain/entities/OperationalFunction.dart';
+import 'package:SarSys/features/affiliation/domain/entities/TalkGroupCatalog.dart';
 
 import 'domain/entities/Affiliation.dart';
 import 'domain/entities/FleetMap.dart';

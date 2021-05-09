@@ -1,4 +1,9 @@
-import 'dart:async';
+import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
@@ -15,16 +20,10 @@ import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/usecases/personnel_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/features/affiliation/presentation/widgets/affiliation.dart';
 import 'package:SarSys/core/presentation/widgets/descriptions.dart';
-import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:uuid/uuid.dart';
 
 class PersonnelEditor extends StatefulWidget {
   const PersonnelEditor({
@@ -43,13 +42,30 @@ class PersonnelEditor extends StatefulWidget {
 
   @override
   _PersonnelEditorState createState() => _PersonnelEditorState();
+
+  static String findPersonnelPhone(BuildContext context, Personnel personnel) {
+    var phone = personnel?.phone;
+    if (personnel != null && phone == null) {
+      if (personnel?.tracking != null) {
+        final devices = context.bloc<TrackingBloc>().devices(
+          personnel?.tracking?.uuid,
+          // Include closed tracks
+          exclude: [],
+        ).toList();
+        final userId = personnel?.person?.userId;
+        final apps = devices.where((d) => d.type == DeviceType.app).where((a) => a.number != null);
+        phone = apps.firstWhere((a) => a.networkId == userId, orElse: () => apps.first).number;
+      }
+    }
+    return phone;
+  }
 }
 
 class _PersonnelEditorState extends State<PersonnelEditor> {
   static const SPACING = 16.0;
 
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormBuilderState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _affiliationKey = GlobalKey<AffiliationFormState>();
 
   final TextEditingController _fnameController = TextEditingController();
@@ -504,76 +520,73 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   String _defaultPhone() {
-    return widget?.personnel?.phone;
+    return PersonnelEditor.findPersonnelPhone(context, widget?.personnel);
   }
 
   Widget _buildDeviceListField() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-      child: FormBuilderChipsInput(
-        name: 'devices',
-        maxChips: 5,
-        initialValue: _getActualDevices(),
-        onChanged: (devices) => _devices = List.from(devices),
-        decoration: InputDecoration(
-          labelText: "Apparater",
-          hintText: "Søk etter apparater",
-          helperText: "Spor blir kun lagret i aksjonen",
-          filled: true,
-          contentPadding: EdgeInsets.fromLTRB(12.0, 8.0, 8.0, 16.0),
+    final enabled = hasAvailableDevices;
+    final types = List.from(DeviceType.values)
+      ..sort(
+        (a, b) => enumName(a).compareTo(enumName(b)),
+      );
+    return buildChipsField<Device>(
+      name: 'devices',
+      enabled: enabled,
+      labelText: 'Apparater',
+      selectorLabel: 'Apparater',
+      hintText: 'Søk etter apparater',
+      emptyText: 'Fant ingen apparater',
+      selectorTitle: 'Velg apparater',
+      helperText: enabled ? 'Ingen tilgjengelige' : 'Spor blir kun lagret i aksjonen',
+      builder: (context, device) => DeviceChip(device: device),
+      categories: [
+        DropdownMenuItem<String>(
+          value: 'alle',
+          child: Text('Alle'),
         ),
-        findSuggestions: _findDevices,
-        chipBuilder: (context, state, device) => DeviceChip(
-          device: device,
-          state: state,
+        ...types.map(
+          (type) => DropdownMenuItem<String>(
+            value: enumName(type),
+            child: Text(translateDeviceType(type).capitalize()),
+          ),
         ),
-        suggestionBuilder: (context, state, device) => DeviceTile(
-          device: device,
-          state: state,
-        ),
-        valueTransformer: (values) => values.map((device) => device).toList(),
-        // BUG: These are required, no default values are given.
-        obscureText: false,
-        autocorrect: true,
-        inputType: TextInputType.text,
-        inputAction: TextInputAction.done,
-        keyboardAppearance: Brightness.dark,
-        textCapitalization: TextCapitalization.sentences,
-        textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-      ),
+      ],
+      category: 'Alle',
+      options: _findDevices,
+      items: () => _getLocalDevices(),
     );
   }
 
-  FutureOr<List<Device>> _findDevices(String query) async {
-    if (query.length != 0) {
-      var actual = _getActualDevices().map((device) => device.uuid);
-      var local = _getLocalDevices().map((device) => device.uuid);
-      var pattern = query.toLowerCase();
-      return context
-          .bloc<DeviceBloc>()
-          .values
-          .where((device) =>
-              // Add locally removed devices
-              _canAddDevice(
-                actual,
-                device,
-                local,
-              ))
-          .where((device) => _deviceMatch(device, pattern))
-          .take(5)
-          .toList(growable: false);
-    }
-    return const <Device>[];
+  List<Device> _findDevices(String type, String query) {
+    var actual = _getActualDevices().map((device) => device.uuid);
+    return context
+        .bloc<DeviceBloc>()
+        .values
+        .where((device) => _canAddDevice(actual, device))
+        .where((device) => _deviceMatch(device, type, query))
+        .take(5)
+        .toList(growable: false);
   }
 
-  bool _deviceMatch(Device device, String pattern) => [
-        device.number,
-        device.alias,
-        device.type,
-      ].join().toLowerCase().contains(pattern);
+  bool _deviceMatch(Device device, String type, String query) {
+    final test = device.searchable;
+    return test.toLowerCase().contains(query ?? '') &&
+        (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type?.toLowerCase()));
+  }
 
-  bool _canAddDevice(Iterable<String> actual, Device device, Iterable<String> local) {
-    return actual.contains(device.uuid) && !local.contains(device.uuid) || !context.bloc<TrackingBloc>().has(device);
+  bool _canAddDevice(Iterable<String> actual, Device match) {
+    if (actual.contains(match.uuid)) {
+      return true;
+    }
+    final bloc = context.bloc<TrackingBloc>();
+    if (widget.personnel?.tracking?.uuid != null) {
+      // Was device tracked by this personnel earlier?
+      final trackings = bloc.find(match).map((t) => t.uuid);
+      if (trackings.contains(widget.personnel.tracking.uuid)) {
+        return true;
+      }
+    }
+    return !bloc.has(match);
   }
 
   Widget _buildPointField() {
@@ -600,7 +613,15 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
     return tracking?.position;
   }
 
-  List<Device> _getLocalDevices() => List.from(_formKey.currentState.value['devices'] ?? <Device>[]);
+  bool get hasAvailableDevices =>
+      context.bloc<TrackingBloc>().findAvailablePersonnel().isNotEmpty || _getActualDevices().isNotEmpty;
+
+  List<Device> _getLocalDevices() =>
+      _formKey.currentState == null || _formKey.currentState.fields['devices'].value == null
+          ? _getActualDevices()
+          : List<Device>.from(
+              _formKey.currentState.fields['devices'].value ?? <Device>[],
+            );
 
   List<Device> _getActualDevices() {
     return (widget?.personnel?.tracking != null

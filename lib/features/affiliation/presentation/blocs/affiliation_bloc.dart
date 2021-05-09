@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
@@ -83,11 +82,6 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
       // Load and unload repos as needed
       _processUserState,
     ));
-
-    registerStreamSubscription(persons.onChanged.listen(
-      // Handle
-      _processPersonChanges,
-    ));
   }
 
   /// All repositories
@@ -134,26 +128,6 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           dispatch(UnloadAffiliations());
         }
       }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
-    }
-  }
-
-  void _processPersonChanges(StorageTransition<Person> event) {
-    try {
-      // Synchronize affiliates with person
-      final person = event.to.value;
-      repo.findPerson(person.uuid).forEach((affiliate) {
-        repo.replace(
-          affiliate.withPerson(person, keep: false),
-          isRemote: event.isRemote,
-        );
-      });
     } catch (error, stackTrace) {
       BlocSupervisor.delegate.onError(
         this,
@@ -218,6 +192,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     Affiliation affiliation, {
     String empty = 'Ingen',
     bool short = false,
+    bool reverse = false,
   }) {
     final names = [
       orgs[affiliation?.org?.uuid]?.name,
@@ -228,7 +203,7 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         ? empty
         : short
             ? names.last
-            : names.join(', ');
+            : (reverse ? names : names.reversed).join(', ');
   }
 
   /// Get [Person] from given [userId].

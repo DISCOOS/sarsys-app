@@ -1,6 +1,8 @@
+import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
+import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -18,7 +20,6 @@ import 'package:SarSys/core/presentation/widgets/descriptions.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/tracking_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -84,7 +85,7 @@ class PersonnelWidget extends StatelessWidget {
           Divider(),
           Padding(
             padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-            child: Text("Handlinger", textAlign: TextAlign.left, style: theme.caption),
+            child: Text('Handlinger', textAlign: TextAlign.left, style: theme.caption),
           ),
           PersonnelActionGroup(
             unit: unit,
@@ -125,7 +126,7 @@ class PersonnelWidget extends StatelessWidget {
                   ),
                   onTap: () => alert(
                         context,
-                        title: "Mannskap opprettet manuelt",
+                        title: 'Mannskap opprettet manuelt',
                         content: TemporaryPersonnelDescription(),
                       )),
             ],
@@ -206,7 +207,7 @@ class PersonnelWidget extends StatelessWidget {
   Widget _buildMap(BuildContext context) {
     final center = tracking?.position?.toLatLng();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
       child: Material(
         elevation: ELEVATION,
         borderRadius: BorderRadius.circular(CORNER),
@@ -382,11 +383,11 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   Widget _buildEditButton(BuildContext context) => Tooltip(
-        message: "Endre mannskap",
+        message: 'Endre mannskap',
         child: TextButton.icon(
           icon: Icon(Icons.edit),
           label: Text(
-            "ENDRE",
+            'ENDRE',
             textAlign: TextAlign.center,
           ),
           onPressed: _onEdit,
@@ -398,7 +399,7 @@ class PersonnelActionGroup extends StatelessWidget {
     if (result.isRight()) {
       final actual = result.toIterable().first;
       if (actual != personnel) {
-        _onMessage("${actual.name} er oppdatert");
+        _onMessage('${actual.name} er oppdatert');
         _onChanged(actual);
       }
       _onCompleted();
@@ -406,7 +407,7 @@ class PersonnelActionGroup extends StatelessWidget {
   }
 
   Widget _buildAddToUnitAction(BuildContext context) => Tooltip(
-        message: "Knytt mannskap til enhet",
+        message: 'Knytt mannskap til enhet',
         child: TextButton.icon(
           icon: Icon(Icons.people),
           label: Text(
@@ -418,16 +419,16 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onAddToUnit() async {
-    final result = await addToUnit(personnels: [personnel.uuid], unit: unit);
+    final result = await addToUnit(personnels: [personnel], unit: unit);
     if (result.isRight()) {
       var actual = result.toIterable().first;
-      _onMessage("${personnel.name} er tilknyttet ${actual.name}");
+      _onMessage('${personnel.name} er tilknyttet ${actual.name}');
       _onChanged(personnel);
     }
   }
 
   Widget _buildRemoveFromUnitAction(BuildContext context) => Tooltip(
-        message: "Fjern mannskap fra enhet",
+        message: 'Fjern mannskap fra enhet',
         child: TextButton.icon(
           icon: Icon(Icons.people),
           label: Text(
@@ -439,9 +440,9 @@ class PersonnelActionGroup extends StatelessWidget {
       );
 
   void _onRemoveFromUnit() async {
-    final result = await removeFromUnit(unit, personnels: [personnel.uuid]);
+    final result = await removeFromUnit(unit, personnels: [personnel]);
     if (result.isRight()) {
-      _onMessage("${personnel.name} er fjernet fra ${unit.name}");
+      _onMessage('${personnel.name} er fjernet fra ${unit.name}');
       _onChanged(personnel);
     }
   }
@@ -450,14 +451,14 @@ class PersonnelActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     final color = toPersonnelStatusColor(PersonnelStatus.alerted);
     return Tooltip(
-      message: "Registrer som mobilisert",
+      message: 'Registrer som mobilisert',
       child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
         ),
         label: Text(
-          "MOBILISERT",
+          'MOBILISERT',
           textAlign: TextAlign.center,
           style: button.copyWith(
             color: color,
@@ -474,14 +475,14 @@ class PersonnelActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     final color = toPersonnelStatusColor(PersonnelStatus.onscene);
     return Tooltip(
-      message: "Registrer som ankommet",
+      message: 'Registrer som ankommet',
       child: TextButton.icon(
         icon: Icon(
           Icons.check,
           color: color,
         ),
         label: Text(
-          "ANKOMMET",
+          'ANKOMMET',
           textAlign: TextAlign.center,
           style: button.copyWith(
             color: color,
@@ -500,7 +501,7 @@ class PersonnelActionGroup extends StatelessWidget {
         final result = await mobilizePersonnel(personnel: personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
-          _onMessage("${actual.name} er registert mobilisert");
+          _onMessage('${actual.name} er registert mobilisert');
           _onChanged(actual);
           _onCompleted();
         }
@@ -509,7 +510,7 @@ class PersonnelActionGroup extends StatelessWidget {
         final result = await mobilizePersonnel(personnel: personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
-          _onMessage("${actual.name} er registert på vei");
+          _onMessage('${actual.name} er registert på vei');
           _onChanged(actual);
           _onCompleted();
         }
@@ -518,7 +519,7 @@ class PersonnelActionGroup extends StatelessWidget {
         final result = await checkInPersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
-          _onMessage("${actual.name} er registert ankommet");
+          _onMessage('${actual.name} er registert ankommet');
           _onChanged(actual);
           _onCompleted();
         }
@@ -527,7 +528,7 @@ class PersonnelActionGroup extends StatelessWidget {
         final result = await retirePersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
-          _onMessage("${actual.name} er dimmitert");
+          _onMessage('${actual.name} er dimmitert');
           _onChanged(actual);
           _onCompleted();
         }
@@ -536,7 +537,7 @@ class PersonnelActionGroup extends StatelessWidget {
         final result = await retirePersonnel(personnel);
         if (result.isRight()) {
           final actual = result.toIterable().first;
-          _onMessage("${actual.name} er dimmitert");
+          _onMessage('${actual.name} er dimmitert');
           _onChanged(actual);
           _onCompleted();
         }
@@ -548,14 +549,14 @@ class PersonnelActionGroup extends StatelessWidget {
     final button = Theme.of(context).textTheme.button;
     final color = toPersonnelStatusColor(PersonnelStatus.retired);
     return Tooltip(
-      message: "Dimitter og avslutt sporing",
+      message: 'Dimitter og avslutt sporing',
       child: TextButton.icon(
         icon: Icon(
           Icons.archive,
           color: color,
         ),
         label: Text(
-          "DIMITTERT",
+          'DIMITTERT',
           textAlign: TextAlign.center,
           style: button.copyWith(color: color),
         ),
@@ -569,7 +570,7 @@ class PersonnelActionGroup extends StatelessWidget {
   Widget _buildDeleteAction(BuildContext context) {
     final button = Theme.of(context).textTheme.button;
     return Tooltip(
-      message: "Slett mannskap",
+      message: 'Slett mannskap',
       child: TextButton.icon(
         icon: Icon(
           Icons.delete,
@@ -588,7 +589,7 @@ class PersonnelActionGroup extends StatelessWidget {
   void _onDelete() async {
     final result = await deletePersonnel(personnel);
     if (result.isRight()) {
-      _onMessage("${personnel.name} er slettet");
+      _onMessage('${personnel.name} er slettet');
       _onDeleted();
       _onCompleted();
     }
@@ -630,7 +631,7 @@ class PersonnelNameView extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Fornavn",
+            label: 'Fornavn',
             icon: Icon(Icons.person),
             value: personnel.fname,
             onMessage: onMessage,
@@ -640,7 +641,7 @@ class PersonnelNameView extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Etternavn",
+            label: 'Etternavn',
             icon: Icon(Icons.person_outline),
             value: personnel.lname,
             onMessage: onMessage,
@@ -666,13 +667,19 @@ class PersonnelContactView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final units = context.bloc<UnitBloc>().findUnitsWithPersonnel(personnel.uuid);
+    final units = context.bloc<UnitBloc>().findUnitsWithPersonnel(
+          personnel.uuid,
+        );
+    final phone = PersonnelEditor.findPersonnelPhone(
+      context,
+      personnel,
+    );
     return Row(
       children: <Widget>[
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Enhet",
+            label: 'Enhet',
             icon: Icon(Icons.supervised_user_circle),
             value: units.isNotEmpty ? units.map((unit) => unit.name).join(', ') : 'Ingen',
             onMessage: onMessage,
@@ -682,14 +689,14 @@ class PersonnelContactView extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Mobil",
+            label: 'Mobil',
             icon: Icon(Icons.phone),
-            value: personnel.phone ?? "Ukjent",
+            value: phone ?? 'Ukjent',
             onMessage: onMessage,
             onComplete: onComplete,
             onTap: () {
-              final number = personnel.phone ?? '';
-              if (number.isNotEmpty) launch("tel:$number");
+              final number = phone ?? '';
+              if (number.isNotEmpty) launch('tel:$number');
             },
           ),
         ),
@@ -717,7 +724,7 @@ class PersonnelOperationalView extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Funksjon",
+            label: 'Funksjon',
             icon: Icon(Icons.functions),
             value: translateOperationalFunction(personnel.function),
             onMessage: onMessage,
@@ -727,7 +734,7 @@ class PersonnelOperationalView extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Status",
+            label: 'Status',
             icon: Icon(MdiIcons.accountQuestionOutline),
             value: translatePersonnelStatus(personnel.status),
             onMessage: onMessage,
@@ -741,12 +748,10 @@ class PersonnelOperationalView extends StatelessWidget {
 
 class PersonnelTile extends StatelessWidget {
   final Personnel personnel;
-  final ChipsInputState state;
 
   const PersonnelTile({
     Key key,
     @required this.personnel,
-    this.state,
   }) : super(key: key);
 
   @override
@@ -758,25 +763,22 @@ class PersonnelTile extends StatelessWidget {
         size: 10.0,
       ),
       title: Text(personnel.name),
-      onTap: state != null ? () => state.selectSuggestion(personnel.uuid) : null,
     );
   }
 }
 
 class PersonnelChip extends StatelessWidget {
   final Personnel personnel;
-  final ChipsInputState state;
 
   const PersonnelChip({
     Key key,
     @required this.personnel,
-    this.state,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
-    return InputChip(
+    return Chip(
       key: ObjectKey(personnel),
       labelPadding: EdgeInsets.only(left: 4.0),
       label: Row(
@@ -788,10 +790,16 @@ class PersonnelChip extends StatelessWidget {
             maxRadius: 10.0,
           ),
           SizedBox(width: 6.0),
-          Text(personnel.formal, style: style),
+          Text(
+            personnel.formal,
+            style: personnel.isUnavailable
+                ? style.copyWith(
+                    decoration: TextDecoration.lineThrough,
+                  )
+                : style,
+          ),
         ],
       ),
-      onDeleted: () => state.deleteChip(personnel.uuid),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }

@@ -1,3 +1,13 @@
+extension StringX on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
+  }
+
+  String capitalizeAll() {
+    return "${this.split(' ').map((s) => s.capitalize()).join(' ')}";
+  }
+}
+
 extension MapX on Map {
   /// Check if map contains data at given path
   bool hasPath(String ref) => elementAt(ref) != null;

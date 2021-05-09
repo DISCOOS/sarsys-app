@@ -1,12 +1,12 @@
+import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/layers/poi_layer.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
 import 'package:SarSys/features/operation/domain/usecases/poi_use_cases.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/operation/presentation/widgets/poi_widget.dart';
-import 'package:SarSys/core/presentation/widgets/selector_widget.dart';
+import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -57,7 +57,7 @@ class POITool extends MapTool with MapSelectable<POI> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorWidget<POI>(
+            child: ListSelectorWidget<POI>(
               size: size,
               style: style,
               icon: Icons.group,

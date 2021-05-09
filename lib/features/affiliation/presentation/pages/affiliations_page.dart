@@ -155,11 +155,14 @@ class AffiliationsPageState extends State<AffiliationsPage> {
             sort: true,
             floatingHeader: true,
             elements: affiliations,
+            order: GroupedListOrder.DESC,
             useStickyGroupSeparators: true,
             physics: AlwaysScrollableScrollPhysics(),
-            order: GroupedListOrder.DESC,
             itemBuilder: (context, affiliation) {
-              return _buildAffiliation(bloc, affiliation);
+              return Container(
+                height: 56.0,
+                child: _buildAffiliation(bloc, affiliation),
+              );
             },
             groupBy: (affiliation) {
               final org = affiliationBloc.orgs[affiliation.org?.uuid];
@@ -177,8 +180,8 @@ class AffiliationsPageState extends State<AffiliationsPage> {
             ),
           )
         : ListView.builder(
-            itemCount: affiliations.length + 1,
             itemExtent: 72.0,
+            itemCount: affiliations.length + 1,
             physics: AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               return _buildAffiliation(bloc, affiliations[index]);

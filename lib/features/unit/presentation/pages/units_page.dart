@@ -96,6 +96,7 @@ class UnitsPageState extends State<UnitsPage> {
                                 : "Ingen enheter funnet",
                       )
                     : ListView.builder(
+                        itemExtent: 56.0,
                         itemCount: units.length,
                         itemBuilder: (context, index) {
                           return _buildUnit(units, index);

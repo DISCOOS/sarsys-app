@@ -29,10 +29,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-typedef MessageCallback = void Function(String message);
-typedef PromptCallback = Future<bool> Function(String title, String message);
-typedef ActionCallback<T> = void Function(String message, {String action, VoidCallback onPressed, T data});
-typedef AsyncActionCallback<T> = Future Function(String message, {String action, VoidCallback onPressed, T data});
+import 'package:SarSys/core/callbacks.dart';
 
 const FIT_BOUNDS_OPTIONS = const FitBoundsOptions(
   zoom: Defaults.zoom,
@@ -207,6 +204,140 @@ Widget buildDropdown<T>({
             padding: EdgeInsets.symmetric(vertical: 4.0),
             child: items.firstWhere((item) => item.value == selected, orElse: () => null)?.child,
           ),
+  );
+}
+
+Widget buildChipsField<T>({
+  @required String name,
+  @required String selectorTitle,
+  @required String selectorLabel,
+  @required ItemWidgetBuilder<T> builder,
+  @required ValueGetter<Iterable<T>> items,
+  @required Iterable<T> Function(String category, String query) options,
+  String hintText,
+  String category,
+  String labelText,
+  String helperText,
+  String emptyText,
+  bool enabled = true,
+  ValueChanged<Iterable<T>> onChanged,
+  Iterable<DropdownMenuItem<String>> categories = const [],
+}) {
+  var query;
+  return FormBuilderField<Iterable<T>>(
+    name: name,
+    initialValue: items(),
+    builder: (FormFieldState<Iterable<T>> field) {
+      return Builder(
+        builder: (context) {
+          final hintStyle = Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey);
+          final chips = items().map((item) => builder(context, item)).toList();
+          return GestureDetector(
+            child: InputDecorator(
+              child: Wrap(
+                spacing: 4.0,
+                runSpacing: -4.0,
+                clipBehavior: Clip.antiAlias,
+                children: chips.isEmpty ? [Text(hintText, style: hintStyle)] : chips,
+              ),
+              decoration: InputDecoration(
+                filled: true,
+                enabled: enabled,
+                hintText: hintText,
+                labelText: labelText,
+                helperText: chips.isEmpty ? emptyText : helperText,
+                suffix: Icon(
+                  Icons.edit,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+              ),
+            ),
+            onTap: () async {
+              await showDialog(
+                context: context,
+                builder: (_) {
+                  return Scaffold(
+                    appBar: AppBar(
+                      title: Text(selectorTitle),
+                    ),
+                    body: StatefulBuilder(builder: (context, setState) {
+                      final found = options(category, query)
+                          .map((item) => FormBuilderFieldOption<T>(
+                                value: item,
+                                child: builder(context, item),
+                              ))
+                          .toList();
+                      return Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            children: [
+                              if (categories != null)
+                                DropdownButton<String>(
+                                  isExpanded: true,
+                                  items: categories.toList(),
+                                  onChanged: (value) => setState(
+                                    () => category = value,
+                                  ),
+                                  value: category ?? categories.first.value,
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: FormBuilderTextField(
+                                  name: 'query',
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    hintText: hintText,
+                                    hintStyle: hintStyle,
+                                  ),
+                                  initialValue: query,
+                                  onChanged: (value) {
+                                    setState(
+                                      () => query = value,
+                                    );
+                                  },
+                                ),
+                              ),
+                              FormBuilderFilterChip<T>(
+                                name: 'selectables',
+                                spacing: 4.0,
+                                initialValue: items(),
+                                selectedColor: Colors.green.shade200,
+                                checkmarkColor: Colors.green.shade900,
+                                padding: const EdgeInsets.all(0),
+                                labelPadding: const EdgeInsets.all(0),
+                                options: found,
+                                decoration: InputDecoration(
+                                  filled: false,
+                                  isDense: true,
+                                  hintText: hintText,
+                                  hintStyle: hintStyle,
+                                  helperText: found.isEmpty ? emptyText : helperText,
+                                  labelText: selectorLabel,
+                                ),
+                                onChanged: (items) {
+                                  field.didChange(items);
+                                  if (onChanged != null) {
+                                    onChanged(items);
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    },
   );
 }
 
@@ -449,7 +580,7 @@ Future<bool> navigateToLatLng(BuildContext context, LatLng point) async {
       var current = service.current;
       if (current != null) {
         success = await launch(
-          "http://maps.apple.com/maps?"
+          "https://maps.apple.com/maps?"
           "saddr=${current.lat},${current.lon}&"
           "daddr=${point.latitude},${point.longitude}",
         );

@@ -141,7 +141,8 @@ var _catcherIgnorerExceptions = [
   // Silence connection errors
   "ClientException",
   "SocketException",
-  // Silence flutter_cache_manager exceptions
+  // Silence CacheManager exceptions
+  'Failed to download file from',
   "Could not instantiate image codec",
   "Couldn't download or retrieve file",
   "HttpException: Invalid statusCode: 500, uri = https://opencache.statkart.no",

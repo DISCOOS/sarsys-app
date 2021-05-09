@@ -11,7 +11,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
-import 'package:SarSys/core/utils/ui.dart';
+
+import 'callbacks.dart';
 
 class PermissionController {
   PermissionController({

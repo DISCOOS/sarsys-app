@@ -53,7 +53,7 @@ class PositionField extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: field.value == null
-                ? Text(hintText, style: Theme.of(context).textTheme.caption.copyWith(fontSize: 16))
+                ? Text(hintText, style: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey))
                 : Text(
                     toUTM(field.value?.geometry),
                     style: Theme.of(context).textTheme.subtitle2.copyWith(fontSize: 16),

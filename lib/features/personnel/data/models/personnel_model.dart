@@ -41,7 +41,7 @@ class PersonnelModel extends Personnel implements JsonObject<Map<String, dynamic
         );
 
   @override
-  PersonModel get person => affiliation.person;
+  PersonModel get person => affiliation?.person;
 
   @override
   final AffiliationModel affiliation;

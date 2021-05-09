@@ -54,6 +54,9 @@ abstract class Personnel extends Trackable<Map<String, dynamic>> with Affiliate 
       .map((prop) => prop is OperationalFunctionType ? translateOperationalFunction(prop) : prop)
       .join(' ');
 
+  bool get isAvailable => !isUnavailable;
+  bool get isUnavailable => const [PersonnelStatus.leaving, PersonnelStatus.retired].contains(status);
+
   /// Clone with json
   Personnel mergeWith(Map<String, dynamic> json);
 

@@ -143,13 +143,16 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     return widget.withGrouped
         ? GroupedListView<Personnel, AffiliationGroupEntry>(
             sort: true,
-            physics: AlwaysScrollableScrollPhysics(),
+            shrinkWrap: false,
             elements: personnels,
             order: GroupedListOrder.ASC,
-            padding: EdgeInsets.only(bottom: 36.0),
             useStickyGroupSeparators: false,
+            physics: AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, personnel) {
-              return _buildPersonnel(personnel);
+              return Container(
+                height: 56.0,
+                child: _buildPersonnel(personnel),
+              );
             },
             groupBy: (personnel) {
               final affiliation = _toAffiliation(personnel);
@@ -183,8 +186,8 @@ class PersonnelsPageState extends State<PersonnelsPage> {
     return GestureDetector(
       child: widget.withActions && isCommander
           ? Slidable(
-              actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
+              actionPane: SlidableScrollActionPane(),
               child: _buildPersonnelTile(unit, personnel, status, tracking),
               secondaryActions: <Widget>[
                 _buildEditAction(context, personnel),
@@ -332,7 +335,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
           caption: 'KNYTT',
           color: Theme.of(context).buttonColor,
           icon: Icons.people,
-          onTap: () async => await addToUnit(personnels: [personnel.uuid]),
+          onTap: () async => await addToUnit(personnels: [personnel]),
         ),
       );
 
@@ -344,7 +347,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
           icon: Icons.people,
           onTap: () async {
             if (unit != null) {
-              await removeFromUnit(unit, personnels: [personnel.uuid]);
+              await removeFromUnit(unit, personnels: [personnel]);
             }
           },
         ),
@@ -358,7 +361,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
           caption: 'OPPRETT',
           color: Theme.of(context).buttonColor,
           icon: Icons.group_add,
-          onTap: () async => await createUnit(personnels: [personnel.uuid]),
+          onTap: () async => await createUnit(personnels: [personnel]),
         ),
       );
 

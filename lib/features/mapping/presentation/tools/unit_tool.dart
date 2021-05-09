@@ -1,3 +1,4 @@
+import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
@@ -5,8 +6,7 @@ import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/core/utils/ui.dart';
-import 'package:SarSys/core/presentation/widgets/selector_widget.dart';
+import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +64,7 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           return Dialog(
             elevation: 0,
             backgroundColor: Colors.white,
-            child: SelectorWidget<Unit>(
+            child: ListSelectorWidget<Unit>(
               size: size,
               style: style,
               icon: Icons.group,
