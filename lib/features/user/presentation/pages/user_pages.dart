@@ -473,7 +473,7 @@ class UserUnitPageState extends State<UserUnitPage> {
   }
 
   Widget _build(BuildContext context) {
-    final tracking = context.bloc<TrackingBloc>().find(_unit).firstOrNull;
+    final tracking = context.bloc<TrackingBloc>().trackings[_unit.tracking.uuid];
     return UnitWidget(
       unit: _unit,
       withMap: true,
