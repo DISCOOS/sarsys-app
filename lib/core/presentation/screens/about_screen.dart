@@ -1,5 +1,6 @@
 import 'package:SarSys/core/data/services/navigation_service.dart';
 import 'package:SarSys/core/presentation/widgets/stream_widget.dart';
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
@@ -51,43 +52,77 @@ class _AboutScreenState extends State<AboutScreen> {
 
   _buildPacketInfo(BuildContext context, PackageInfo data) {
     final channel = context.service<MessageChannel>();
-    return ListView(
-      children: <Widget>[
-        ListTile(
-          title: Text("Navn"),
-          subtitle: Text(data.appName),
-        ),
-        ListTile(
-          title: Text("Versjon"),
-          subtitle: Text(data.version),
-        ),
-        ListTile(
-          title: Text("Pakkenavn"),
-          subtitle: Text(data.packageName),
-        ),
-        ListTile(
-          title: Text("Byggnummer"),
-          subtitle: Text(data.buildNumber),
-        ),
-        ListTile(
-          title: Text("REST API"),
-          subtitle: Text(Defaults.baseRestUrl),
-        ),
-        GestureDetector(
-          child: StreamBuilderWidget(
-              initialData: channel.state,
-              stream: channel.onChanged,
-              builder: (context, _) {
-                return _buildChannelStatusTile(channel, context);
-              }),
-          onTap: () async {
-            await _showChannelStatistics(context, channel);
-            setState(() {});
-          },
-          onLongPress: () => _openChannel(context, channel, setState),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ListView(
+        children: <Widget>[
+          ListTile(
+            title: Text("App-id"),
+            subtitle: buildCopyableText(
+              isDense: true,
+              context: context,
+              onMessage: showMessage,
+              value: context.bloc<DeviceBloc>().app?.uuid ?? 'Ikke funnet',
+            ),
+          ),
+          ListTile(
+            title: Text("Navn"),
+            subtitle: Text(data.appName),
+          ),
+          ListTile(
+            title: Text("Versjon"),
+            subtitle: Text(data.version),
+          ),
+          ListTile(
+            title: Text("Pakkenavn"),
+            subtitle: Text(data.packageName),
+          ),
+          ListTile(
+            title: Text("Byggnummer"),
+            subtitle: Text(data.buildNumber),
+          ),
+          ListTile(
+            title: Text("REST API"),
+            subtitle: Text(Defaults.baseRestUrl),
+          ),
+          GestureDetector(
+            child: StreamBuilderWidget(
+                initialData: channel.state,
+                stream: channel.onChanged,
+                builder: (context, _) {
+                  return _buildChannelStatusTile(channel, context);
+                }),
+            onTap: () async {
+              await _showChannelStatistics(context, channel);
+              setState(() {});
+            },
+            onLongPress: () => _openChannel(context, channel, setState),
+          ),
+        ],
+      ),
     );
+  }
+
+  void showMessage(
+    String message, {
+    String action = "OK",
+    VoidCallback onPressed,
+    dynamic data,
+  }) {
+    final snackbar = SnackBar(
+      duration: Duration(seconds: 2),
+      content: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(message),
+      ),
+      action: SnackBarAction(
+          label: action,
+          onPressed: () {
+            if (onPressed != null) onPressed();
+            ScaffoldMessenger.of(context)..hideCurrentSnackBar(reason: SnackBarClosedReason.action);
+          }),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }
 
   ListTile _buildChannelStatusTile(MessageChannel channel, BuildContext context) => ListTile(

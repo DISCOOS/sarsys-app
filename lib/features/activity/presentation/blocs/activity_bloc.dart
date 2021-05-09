@@ -71,7 +71,7 @@ class ActivityBloc extends BaseBloc<ActivityCommand, ActivityState, ActivityBloc
 
   void _processDevice(BaseBloc bloc, DeviceState state) async {
     if (state.isLoaded()) {
-      final found = (bloc as DeviceBloc).findThisApp();
+      final found = (bloc as DeviceBloc).app;
       if (found != _device) {
         dispatch(
           ConfigureLocationService(options, await isManual, _device = found),

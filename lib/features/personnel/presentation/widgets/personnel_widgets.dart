@@ -780,7 +780,7 @@ class PersonnelChip extends StatelessWidget {
     final style = Theme.of(context).textTheme.caption;
     return Chip(
       key: ObjectKey(personnel),
-      labelPadding: EdgeInsets.only(left: 4.0),
+      labelPadding: EdgeInsets.symmetric(horizontal: 4.0),
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[

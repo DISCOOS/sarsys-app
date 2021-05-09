@@ -1,4 +1,5 @@
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/editors/personnel_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,6 +48,34 @@ class UnitEditor extends StatefulWidget {
 
   @override
   _UnitEditorState createState() => _UnitEditorState();
+
+  static String findUnitPhone(BuildContext context, Unit unit) {
+    var phone = unit?.phone;
+    if (unit != null && phone == null) {
+      if (unit?.tracking != null) {
+        final devices = context.bloc<TrackingBloc>().devices(
+          unit?.tracking?.uuid,
+          // Include closed tracks
+          exclude: [],
+        ).toList();
+        final apps = <Device>[];
+        apps.addAll(devices.where((a) => a.number != null));
+        if (apps.isEmpty) {
+          // Search for personnel number
+          final bloc = context.bloc<PersonnelBloc>();
+          for (var puuid in unit.personnels) {
+            phone = PersonnelEditor.findPersonnelPhone(context, bloc.repo.get(puuid));
+            if (phone != null) {
+              return phone;
+            }
+          }
+        } else {
+          phone = apps.first.number;
+        }
+      }
+    }
+    return phone;
+  }
 }
 
 class _UnitEditorState extends State<UnitEditor> {
@@ -622,7 +651,8 @@ class _UnitEditorState extends State<UnitEditor> {
     if (init) {
       puuids.addAll(widget.personnels?.map((p) => p.uuid) ?? <String>[]);
     }
-    final personnels = context.bloc<PersonnelBloc>().values.where((p) => puuids.contains(p.uuid)).toList();
+    final personnels =
+        context.bloc<PersonnelBloc>().values.where((p) => p.isAvailable).where((p) => puuids.contains(p.uuid)).toList();
     return personnels;
   }
 
@@ -680,7 +710,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   String _defaultPhone() {
-    return widget?.unit?.phone;
+    return UnitEditor.findUnitPhone(context, widget.unit);
   }
 
   void _submit() async {

@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
-import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -75,13 +74,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         final device = transition.to.value;
         if (device != null) {
           final next = transition.to;
-          if (_shouldSetName(device, next.status)) {
-            dispatch(UpdateDevice(device.copyWith(
-              number: userBloc.user.phone,
-              alias: userBloc.user.shortName,
-              networkId: userBloc.user.userId,
-            )));
-          } else if (next.isRemote) {
+          if (next.isRemote) {
             dispatch(
               // Catch up with remote state
               _DeviceMessage(
@@ -107,7 +100,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
 
   void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
     if (event is ActivityProfileChanged) {
-      final device = findThisApp();
+      final device = app;
       if (device != null && device.trackable != event.data.isTrackable) {
         dispatch(
           UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
@@ -150,8 +143,11 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   bool isThisApp(Device device) => userBloc.configBloc.config.udid == device.uuid;
 
   /// Check if device name should be updated
-  bool _shouldSetName(Device device, StorageStatus status) =>
-      userBloc.isAuthenticated && device.name == null && isThisApp(device) && status != StorageStatus.deleted;
+  bool _shouldSetUser(Device device, StorageStatus status) =>
+      userBloc.isAuthenticated &&
+      isThisApp(device) &&
+      status != StorageStatus.deleted &&
+      (device.name == null || device.networkId != userBloc.userId);
 
   /// Get [OperationBloc]
   final UserBloc userBloc;
@@ -172,9 +168,8 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
   DeviceService get service => repo.service;
 
   /// Find device for this app
-  Device findThisApp() {
-    final udid = userBloc.config?.udid;
-    return repo.find(where: (device) => device.uuid == udid).firstOrNull;
+  Device get app {
+    return repo[userBloc.config.udid];
   }
 
   @override
@@ -306,6 +301,17 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       DevicesLoaded(repo.keys),
       result: devices,
     );
+
+    // Update device for this app?
+    if (app != null) {
+      if (_shouldSetUser(app, repo.getState(app.uuid).status)) {
+        dispatch(UpdateDevice(app.copyWith(
+          number: userBloc.user.phone,
+          alias: userBloc.user.shortName,
+          networkId: userBloc.user.userId,
+        )));
+      }
+    }
 
     // Notify when all states are remote
     onComplete(

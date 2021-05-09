@@ -1,4 +1,5 @@
 import 'package:SarSys/core/callbacks.dart';
+import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -297,36 +298,39 @@ class UnitWidget extends StatelessWidget {
     if (onGoto != null && location != null) onGoto(location);
   }
 
-  Row _buildContactInfo(BuildContext context) => Row(
-        children: <Widget>[
-          Expanded(
+  Row _buildContactInfo(BuildContext context) {
+    final phone = UnitEditor.findUnitPhone(context, unit);
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Kallesignal",
+            icon: Icon(Icons.headset_mic),
+            value: unit.callsign,
+            onMessage: onMessage,
+            onComplete: _onComplete,
+          ),
+        ),
+        Expanded(
+          child: GestureDetector(
             child: buildCopyableText(
               context: context,
-              label: "Kallesignal",
-              icon: Icon(Icons.headset_mic),
-              value: unit.callsign,
+              label: "Mobil",
+              icon: Icon(Icons.phone),
+              value: phone ?? "Ukjent",
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
+            onTap: () {
+              final number = phone ?? '';
+              if (number.isNotEmpty) launch("tel:$number");
+            },
           ),
-          Expanded(
-            child: GestureDetector(
-              child: buildCopyableText(
-                context: context,
-                label: "Mobil",
-                icon: Icon(Icons.phone),
-                value: unit.phone ?? "Ukjent",
-                onMessage: onMessage,
-                onComplete: _onComplete,
-              ),
-              onTap: () {
-                final number = unit?.phone ?? '';
-                if (number.isNotEmpty) launch("tel:$number");
-              },
-            ),
-          ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 
   Row _buildPersonnelInfo(BuildContext context) => Row(
         children: <Widget>[
@@ -344,7 +348,11 @@ class UnitWidget extends StatelessWidget {
       );
 
   String _toPersonnel(PersonnelRepository repo) {
-    final personnel = unit?.personnels?.map((puuid) => repo[puuid]?.formal ?? 'Mannskap')?.join(', ');
+    final personnel = unit?.personnels
+        ?.map((puuid) => repo[puuid])
+        ?.where((p) => p.isAvailable)
+        ?.map((p) => p?.formal ?? 'Mannskap')
+        ?.join(', ');
     return personnel?.isEmpty == true ? 'Ingen' : personnel;
   }
 

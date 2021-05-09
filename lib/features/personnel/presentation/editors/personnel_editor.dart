@@ -53,8 +53,8 @@ class PersonnelEditor extends StatefulWidget {
           exclude: [],
         ).toList();
         final userId = personnel?.person?.userId;
-        final apps = devices.where((d) => d.type == DeviceType.app).where((a) => a.number != null);
-        phone = apps.firstWhere((a) => a.networkId == userId, orElse: () => apps.first).number;
+        final apps = devices.where((d) => d.type == DeviceType.app).where((a) => a.number != null).toList();
+        phone = apps.firstWhere((a) => a.networkId == userId, orElse: () => apps.isEmpty ? null : apps.first)?.number;
       }
     }
     return phone;

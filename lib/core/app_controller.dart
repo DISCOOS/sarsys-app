@@ -687,7 +687,7 @@ class AppController {
         options: bloc<ActivityBloc>().profile.options,
       ).configure(
         token: bloc<UserBloc>().repo.token,
-        duuid: bloc<DeviceBloc>().findThisApp()?.uuid,
+        duuid: bloc<DeviceBloc>().app?.uuid,
         debug: bloc<AppConfigBloc>().config?.locationDebug,
       );
     }
