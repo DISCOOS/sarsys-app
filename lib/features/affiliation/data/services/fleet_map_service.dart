@@ -36,7 +36,7 @@ class FleetMapService extends Service {
 
   FleetMap _loadOrg(String prefix) {
     assert(_assets != null, 'Not initialized');
-    final org = (_assets["organisations"] as List).firstWhere(
+    final org = (_assets["organisations"] as List)?.firstWhere(
       (org) => (org as Map<String, dynamic>).elementAt('prefix') == prefix,
       orElse: () => null,
     );
