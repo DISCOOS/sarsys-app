@@ -5,6 +5,7 @@ import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart
 import 'package:SarSys/core/app_controller.dart';
 import 'package:SarSys/core/presentation/screens/about_screen.dart';
 import 'package:SarSys/core/utils/ui.dart';
+import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -148,7 +149,7 @@ class SettingsScreenState extends State<SettingsScreen> {
       trailing: Icon(Icons.keyboard_arrow_right),
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
-          return AffiliationConfigScreen();
+          return AffiliationConfigScreen(organisation: context.bloc<UserBloc>().user?.org);
         }));
       },
     );

@@ -62,7 +62,9 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_onMoved != null) _onMoved.cancel();
-    _onMoved = context.bloc<DeviceBloc>().onMoved(_device).listen(_onMove);
+    if (isCommander || isSelected) {
+      _onMoved = context.bloc<DeviceBloc>().onMoved(_device).listen(_onMove);
+    }
   }
 
   @override

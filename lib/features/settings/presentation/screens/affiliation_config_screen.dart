@@ -8,6 +8,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AffiliationConfigScreen extends StatefulWidget {
+  const AffiliationConfigScreen({
+    @required this.organisation,
+    Key key,
+  }) : super(key: key);
+  final String organisation;
+
   @override
   _AffiliationConfigScreenState createState() => _AffiliationConfigScreenState();
 }
@@ -15,6 +21,8 @@ class AffiliationConfigScreen extends StatefulWidget {
 class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _affiliationKey = GlobalKey<AffiliationFormState>();
+
+  String get organisation => widget.organisation ?? 'organisasjon';
 
   @override //new
   Widget build(BuildContext context) {
@@ -58,9 +66,9 @@ class _AffiliationConfigScreenState extends State<AffiliationConfigScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Din tilhørighet er styrt din organisasjon. '
+                        'Din tilhørighet er styrt av $organisation. '
                         'Du kan derfor ikke endre denne manuelt. '
-                        'Ta kontakt med din organisasjon hvis den er feil.',
+                        'Ta kontakt med $organisation hvis den er feil.',
                         style: TextStyle(color: Theme.of(context).textTheme.caption.color),
                       ),
                     ),
