@@ -45,7 +45,6 @@ class MessageChannel extends Service {
     closeApiUnreachable: 'closeApiUnreachable',
   };
 
-  Timer _timer;
   IOWebSocketChannel _channel;
   List<StreamSubscription> _subscriptions = [];
   MessageChannelState _stats = MessageChannelState();
@@ -204,22 +203,25 @@ class MessageChannel extends Service {
       },
       pingInterval: Duration(seconds: 60),
     );
-    _subscriptions.add(_channel.stream.listen(
+    _subscribeToMessages();
+    _subscribeToConnectivityChanges();
+    _stats = _stats.update(opened: true);
+    _statsController.add(_stats);
+    debugPrint('Opened message channel');
+  }
+
+  void _subscribeToMessages() {
+    return _subscriptions.add(_channel.stream.listen(
       _onData,
       onDone: _onDone,
       onError: _onError,
     ));
-    _subscriptions.add(_users.connectivity.changes.listen(
+  }
+
+  void _subscribeToConnectivityChanges() {
+    return _subscriptions.add(_users.connectivity.changes.listen(
       _onConnectivityChange,
     ));
-    _stats = _stats.update(opened: true);
-    _statsController.add(_stats);
-    _timer?.cancel();
-    _timer = Timer.periodic(
-      Duration(seconds: 1),
-      (_) => _check(),
-    );
-    debugPrint('Opened message channel');
   }
 
   int _lastCode;
@@ -252,7 +254,6 @@ class MessageChannel extends Service {
       debugPrint('Closed message channel');
       _check();
     }
-    _timer?.cancel();
   }
 
   void _assertState() {
@@ -266,16 +267,17 @@ class MessageChannel extends Service {
       code: closedByApp,
       reason: "Disposed",
     );
-    _timer?.cancel();
     _statsController.close();
   }
 
   void _onConnectivityChange(ConnectivityStatus status) {
     if (status == ConnectivityStatus.offline) {
-      _close(
-        reason: "App is offline",
-        code: MessageChannel.closeAppIsOffline,
-      );
+      if (isOpen) {
+        _close(
+          reason: "App is offline",
+          code: MessageChannel.closeAppIsOffline,
+        );
+      }
     } else {
       _check();
     }
@@ -283,15 +285,20 @@ class MessageChannel extends Service {
 
   void _check() async {
     try {
-      if (!isClosedByApp && _users.hasToken && _users.isOnline && _isClosed) {
-        if (isTokenExpired) {
-          await _users.refresh();
+      if (!isClosedByApp && _users.hasToken && _isClosed) {
+        if (_users.isOnline) {
+          if (isTokenExpired) {
+            await _users.refresh();
+          }
+          if (isTokenValid) {
+            open(
+              url: _url,
+              appId: _appId,
+            );
+          }
         }
-        if (isTokenValid) {
-          open(
-            url: _url,
-            appId: _appId,
-          );
+        if (_subscriptions.isEmpty) {
+          _subscribeToConnectivityChanges();
         }
       }
     } on UserServiceException {
