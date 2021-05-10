@@ -167,7 +167,7 @@ class AffiliationsPageState extends State<AffiliationsPage> {
             groupBy: (affiliation) {
               final org = affiliationBloc.orgs[affiliation.org?.uuid];
               return AffiliationGroupEntry(
-                prefix: org.prefix ?? '0',
+                prefix: org?.prefix ?? '0',
                 name: affiliationBloc.toName(
                   affiliation,
                   empty: 'Uorganisert',

@@ -262,9 +262,9 @@ class PersonnelWidget extends StatelessWidget {
     final p = tracking?.position;
     return CoordinateWidget(
       onGoto: onGoto,
-      accuracy: p.acc,
+      accuracy: p?.acc,
       onMessage: onMessage,
-      timestamp: p.timestamp,
+      timestamp: p?.timestamp,
       point: tracking?.position?.geometry,
       onComplete: () => _onComplete(personnel),
     );
