@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
@@ -264,7 +265,6 @@ class _OperationEditorState extends State<OperationEditor> {
         children: <Widget>[
           _buildTGField(),
           SizedBox(height: 16.0),
-          _buildTgCatalogField(),
           _buildRememberTalkGroupsField(),
         ],
       ),
@@ -662,99 +662,55 @@ class _OperationEditorState extends State<OperationEditor> {
       );
 
   Widget _buildTGField() {
-    final style = Theme.of(context).textTheme.caption;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-        child: Center(
-          child: FormBuilderChipsInput<TalkGroup>(
-            name: 'talkgroups',
-            maxChips: 5,
-            initialValue: widget?.operation?.talkgroups ??
-                FleetMapTalkGroupConverter.toList(
-                  context.bloc<AppConfigBloc>().config.talkGroups,
-                ),
-            decoration: InputDecoration(
-              labelText: "Talegrupper",
-              hintText: "Søk etter talegrupper",
-              filled: true,
-              contentPadding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 16.0),
-            ),
-            findSuggestions: (String query) async {
-              if (query.length != 0) {
-                var lowercaseQuery = query.toLowerCase();
-                final org = context.bloc<AffiliationBloc>().findUserOrganisation();
-                final tgCatalog = org != null
-                    ? AffiliationUtils.findCatalog(
-                        org.fleetMap,
-                        _formKey.currentState.fields["tgCatalog"].value,
-                      )
-                    : null;
-                return (tgCatalog?.groups ?? [])
-                    .where((tg) =>
-                        tg.name.toLowerCase().contains(lowercaseQuery) ||
-                        tg.type.toString().toLowerCase().contains(lowercaseQuery))
-                    .take(5)
-                    .toList(growable: false);
-              } else {
-                return const <TalkGroup>[];
-              }
-            },
-            chipBuilder: (context, state, tg) {
-              return InputChip(
-                key: ObjectKey(tg),
-                label: Text(tg.name, style: style),
-                onDeleted: () => state.deleteChip(tg),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              );
-            },
-            suggestionBuilder: (context, state, tg) {
-              return ListTile(
-                key: ObjectKey(tg),
-                leading: CircleAvatar(
-                  child: Text(enumName(tg.type).substring(0, 1)),
-                ),
-                title: Text(tg.name),
-                onTap: () => state.selectSuggestion(tg),
-              );
-            },
-            valueTransformer: (values) => values.map((tg) => tg.toJson()).toList(),
-            validator: FormBuilderValidators.required(context, errorText: 'Talegruppe(r) må oppgis'),
-            // BUG: These are required, no default values are given.
-            obscureText: false,
-            inputType: TextInputType.text,
-            keyboardAppearance: Brightness.dark,
-            inputAction: TextInputAction.done,
-            autocorrect: true,
-            textCapitalization: TextCapitalization.sentences,
-            textStyle: TextStyle(height: 1.8, fontSize: 16.0),
-          ),
+    final config = context.bloc<AppConfigBloc>().config;
+    final catalogs = widget?.operation?.talkgroups ??
+        FleetMapTalkGroupConverter.toList(
+          config.talkGroups,
+        );
+    return buildChipsField<TalkGroup>(
+      name: 'talkgroups',
+      labelText: 'Lytt til',
+      hintText: 'Velg talegrupper',
+      selectorLabel: 'Lytt til',
+      selectorTitle: 'Velg talegrupper',
+      emptyText: 'Ingen talegrupper tilgjengelig',
+      builder: (context, tg) => Chip(label: Text(tg.name)),
+      categories: catalogs.map(
+        (c) => DropdownMenuItem<String>(
+          value: c.name,
+          child: Text(c.name),
         ),
       ),
+      category: config.talkGroupCatalog,
+      items: () =>
+          widget?.operation?.talkgroups ??
+          FleetMapTalkGroupConverter.toList(
+            config.talkGroups,
+          ),
+      options: (String category, String query) {
+        final fleetMap = getFleetMap();
+        if (fleetMap != null) {
+          if (query?.isNotEmpty == true) {
+            return AffiliationUtils.findTalkGroups(
+              AffiliationUtils.findCatalog(fleetMap, category),
+              query,
+            );
+          }
+          return getTgGroups(
+            category ?? _formKey.currentState.fields["tgCatalog"].value ?? config.talkGroupCatalog,
+          );
+        }
+        return <TalkGroup>[];
+      },
     );
   }
 
-  Widget _buildTgCatalogField() {
-    return ValueListenableBuilder(
-      valueListenable: _tgCatalog,
-      builder: (BuildContext context, List catalogs, Widget child) {
-        return catalogs.isEmpty
-            ? buildReadOnlyField<String>(
-                context,
-                'tgCatalog',
-                'Nødnett',
-                'Ingen fleetmap',
-                '',
-              )
-            : buildDropDownField(
-                name: 'tgCatalog',
-                label: 'Nødnett',
-                initialValue: context.bloc<AppConfigBloc>().config.talkGroupCatalog ?? Defaults.talkGroupCatalog,
-                items: catalogs.map((name) => DropdownMenuItem(value: name, child: Text("$name"))).toList(),
-                validator: FormBuilderValidators.required(context, errorText: 'Talegruppe må velges'),
-              );
-      },
-    );
+  FleetMap getFleetMap() {
+    return context.bloc<AffiliationBloc>().findUserOrganisation()?.fleetMap;
+  }
+
+  List<TalkGroup> getTgGroups(String catalog) {
+    return getFleetMap()?.catalogs?.firstWhere((c) => c.name == catalog, orElse: () => null)?.groups ?? <TalkGroup>[];
   }
 
   Widget _buildRememberTalkGroupsField() {
@@ -1003,9 +959,7 @@ class _OperationEditorState extends State<OperationEditor> {
     // Ensure EntityObject contract is fulfilled
     json.addAll({
       'talkgroups': List.from(json['talkgroups'] ?? [])
-          .map(
-            (tg) => Map.from(tg)..addAll({'id': '${id++}'}),
-          )
+          .map((tg) => Map.from((tg as TalkGroup).toJson())..addAll({'id': '${id++}'}))
           .toList()
     });
 
@@ -1041,11 +995,10 @@ class _OperationEditorState extends State<OperationEditor> {
       if (_rememberTalkGroups) {
         final list = _formKey.currentState.value['talkgroups'] ?? <String>[];
         final talkGroups = List<String>.from(
-          list.map((tg) => TalkGroup.fromJson(tg)).map((tg) => tg.name),
+          list.map((tg) => tg.name),
         );
         await context.bloc<AppConfigBloc>().updateWith(
               talkGroups: talkGroups,
-              talkGroupCatalog: _formKey.currentState.value['tgCatalog'],
             );
       }
 

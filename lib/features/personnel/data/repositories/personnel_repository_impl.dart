@@ -33,15 +33,18 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
           dependencies: [units, affiliations],
           // Keep person in sync with local copy
           onGet: (StorageState<Personnel> state) {
-            final value = state.value;
-            final auuid = value.affiliation.uuid;
-            return state.replace(state.value.copyWith(
-                affiliation: affiliations.get(
-              auuid,
-            )));
+            if (affiliations.isReady) {
+              final value = state.value;
+              final auuid = value.affiliation.uuid;
+              return state.replace(state.value.copyWith(
+                  affiliation: affiliations.get(
+                auuid,
+              )));
+            }
+            return state;
           },
           onPut: (StorageState<Personnel> state, bool isDeleted) {
-            if (!isDeleted) {
+            if (!isDeleted && affiliations.isReady) {
               final affiliation = state.value.affiliation;
               if (affiliation.isAffiliate) {
                 affiliations.replace(

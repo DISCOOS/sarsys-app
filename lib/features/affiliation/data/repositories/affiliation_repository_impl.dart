@@ -44,7 +44,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
             )));
           },
           onPut: (StorageState<Affiliation> state, bool isDeleted) {
-            if (!isDeleted) {
+            if (!isDeleted && persons.isReady) {
               final affiliation = state.value;
               if (affiliation.isAffiliate) {
                 final person = state.value.person;
