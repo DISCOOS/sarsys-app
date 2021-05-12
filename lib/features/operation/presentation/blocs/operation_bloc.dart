@@ -121,12 +121,10 @@ class OperationBloc
   ///
   /// If [operation] is not given, [selected] is used instead.
   ///
-  bool isAuthorizedAs(UserRole role, {Operation operation}) => (operation ?? selected) == null
-      ? false
-      : userBloc.isAuthorizedAs(
-          operation ?? selected,
-          role,
-        );
+  bool isAuthorizedAs(UserRole role, {Operation operation}) => userBloc.isAuthorizedAs(
+        operation ?? selected,
+        role,
+      );
 
   /// Stream of switched between given operations
   Stream<Operation> get onSwitched => where(

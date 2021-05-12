@@ -123,12 +123,14 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Check if current [user] is authorized access to given [operation] with given [role]
   bool isAuthorizedAs(Operation operation, UserRole role) {
-    return getAuthorization(operation)?.isAuthorizedAs(role) == true;
+    final authorization = getAuthorization(operation);
+    if (authorization == null) {}
+    return authorization.isAuthorizedAs(role) == true;
   }
 
   /// Get current [user] authorization for given [operation]
   UserAuthorized getAuthorization(Operation operation) {
-    if (isAuthenticated) {
+    if (isAuthenticated && operation != null) {
       if (_authorized.containsKey(operation.uuid)) {
         return _authorized[operation.uuid];
       }
@@ -650,6 +652,7 @@ class UserAuthorized extends UserState<User> {
   final bool withCommandCode;
   final bool withPersonnelCode;
 
+  bool get isMobilized => operation != null;
   bool get isCommander => data?.isCommander == true;
   bool get isPersonnel => data?.isPersonnel == true;
   bool get isUnitLeader => data?.isUnitLeader == true;
@@ -666,17 +669,19 @@ class UserAuthorized extends UserState<User> {
     if (isAuthor) {
       return true;
     }
+    final available = !isMobilized;
+
     switch (role) {
       case UserRole.commander:
-        return isCommander && withCommandCode;
+        return isCommander && (available || withCommandCode);
       case UserRole.planning_chief:
-        return isPlanningChief && withCommandCode;
+        return isPlanningChief && (available || withCommandCode);
       case UserRole.operations_chief:
-        return isOperationsChief && withCommandCode;
+        return isOperationsChief && (available || withCommandCode);
       case UserRole.unit_leader:
-        return isUnitLeader && withCommandCode;
+        return isUnitLeader && (available || withCommandCode);
       case UserRole.personnel:
-        return withCommandCode || withPersonnelCode;
+        return available || withCommandCode || withPersonnelCode;
       default:
         return false;
     }
