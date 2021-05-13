@@ -281,46 +281,54 @@ class RepositoryTile<T extends Aggregate> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      child: StreamBuilder<Object>(
-          stream: repo.onChanged,
-          builder: (context, snapshot) {
-            var local = 0;
-            var remote = 0;
-            if (snapshot.hasData) {
-              repo.states.values.forEach((state) {
-                if (state.isLocal) {
-                  local++;
-                } else {
-                  remote++;
-                }
-              });
-            }
-            return _buildRepoActions(context,
-                child: ListTile(
-                  key: PageStorageKey<StatefulRepository>(repo),
-                  leading: const Icon(Icons.storage),
-                  title: SelectableText(title),
-                  subtitle: repo.isEmpty
-                      ? SelectableText('Ingen elementer')
-                      : SelectableText(
-                          "Totalt ${repo.length} ($remote publisert, $local venter, ${repo.errors.length} feil)",
-                        ),
-                ));
-          }),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (context) => Scaffold(
-            appBar: AppBar(
-              title: Text("${typeOf<T>()}"),
+    return StreamBuilder<Object>(
+        stream: repo.onChanged,
+        builder: (context, snapshot) {
+          var local = 0;
+          var remote = 0;
+          if (snapshot.hasData) {
+            repo.states.values.forEach((state) {
+              if (state.isLocal) {
+                local++;
+              } else {
+                remote++;
+              }
+            });
+          }
+          return _buildRepoActions(
+            context,
+            child: ListTile(
+              key: PageStorageKey<StatefulRepository>(repo),
+              leading: const Icon(Icons.storage),
+              title: SelectableText(
+                title,
+                onTap: () => onTap(context),
+              ),
+              subtitle: repo.isEmpty
+                  ? SelectableText('No data')
+                  : SelectableText(
+                      'Totals ${repo.length} '
+                      '($remote published, $local waiting, ${repo.errors.length} errors)',
+                    ),
+              onTap: () => onTap(context),
             ),
-            body: RepositoryPage<T>(
-              repository: repo,
-              subject: subject,
-              content: content,
-            ),
+          );
+        });
+  }
+
+  Future onTap(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text("${typeOf<T>()}"),
+          ),
+          body: RepositoryPage<T>(
+            repository: repo,
+            subject: subject,
+            content: content,
           ),
         ),
       ),

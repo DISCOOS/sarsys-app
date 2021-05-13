@@ -301,7 +301,7 @@ packages:
       name: cupertino_icons
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.3"
   dart_style:
     dependency: transitive
     description:
@@ -446,7 +446,7 @@ packages:
       name: flutter_background_geolocation
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.2"
+    version: "2.0.5"
   flutter_bloc:
     dependency: "direct main"
     description:
@@ -495,7 +495,7 @@ packages:
       name: flutter_datetime_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.5.0"
+    version: "1.5.1"
   flutter_email_sender:
     dependency: "direct main"
     description:
@@ -562,7 +562,7 @@ packages:
     description:
       path: "."
       ref: master
-      resolved-ref: "7f1273f29c805fd39bb6fd614a6f0eaf234335a0"
+      resolved-ref: "38d9047ac6daff0948f70cffe1bba5132da0d170"
       url: "git://github.com/fleaflet/flutter_map"
     source: git
     version: "0.12.0"
@@ -586,7 +586,7 @@ packages:
       name: flutter_secure_storage
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.1.0"
+    version: "4.2.0"
   flutter_slidable:
     dependency: "direct main"
     description:
@@ -757,7 +757,7 @@ packages:
       name: intro_views_flutter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.0"
+    version: "3.1.0"
   io:
     dependency: transitive
     description:
@@ -799,7 +799,7 @@ packages:
       name: json_patch
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.0+1"
+    version: "2.1.1"
   json_serializable:
     dependency: "direct dev"
     description:
@@ -827,7 +827,7 @@ packages:
       name: local_auth
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.1.4"
+    version: "1.1.5"
   logging:
     dependency: transitive
     description:
@@ -1016,7 +1016,7 @@ packages:
       name: pin_code_fields
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "7.0.0"
+    version: "7.1.0"
   platform:
     dependency: transitive
     description:
@@ -1052,6 +1052,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  pretty_json:
+    dependency: "direct main"
+    description:
+      name: pretty_json
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.0"
   process:
     dependency: transitive
     description:
@@ -1462,7 +1469,7 @@ packages:
       name: wakelock
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.0+2"
+    version: "0.5.1+1"
   wakelock_macos:
     dependency: transitive
     description:

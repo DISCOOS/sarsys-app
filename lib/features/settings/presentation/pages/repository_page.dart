@@ -1,5 +1,6 @@
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/features/settings/presentation/pages/storage_state_page.dart';
 import 'package:flutter/material.dart';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -59,13 +60,35 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SelectableText('Key $key'),
+          SelectableText(
+            'Key $key',
+            onTap: () => onTap(context, state, key),
+          ),
           if (widget.content != null) SelectableText('${widget.content(state)}'),
           SelectableText('Status ${enumName(state.status)}, '
               'last change was ${state.isLocal ? 'local' : 'remote'},'),
           SelectableText('Version ${state.version}'),
           if (state.isError) SelectableText('Last error: ${state.error}'),
         ],
+      ),
+      onTap: () => onTap(context, state, key),
+    );
+  }
+
+  Future onTap(BuildContext context, StorageState<T> state, String key) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text("${typeOf<T>()} ...${key.substring(key.length - 7)}"),
+          ),
+          body: StorageStatePage<T>(
+            state: state,
+            repository: widget.repository,
+          ),
+        ),
       ),
     );
   }
