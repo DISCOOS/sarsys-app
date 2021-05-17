@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -33,7 +34,7 @@ class StorageStatePage<T> extends StatelessWidget {
                 if (state.hasPrevious) Divider(),
                 if (state.hasPrevious) _buildValue(context, 'Difference', '${prettyJson(toDiff())}'),
                 if (state.isError) Divider(),
-                if (state.isError) _buildValue(context, 'Error', '${state.error}'),
+                if (state.isError) _buildValue(context, 'Error', '${toError()}'),
                 if (state.isConflict) Divider(),
                 if (state.isConflict) _buildValue(context, 'Conflict', '${prettyJson(state.conflict.toJson())}'),
                 Divider(),
@@ -55,6 +56,17 @@ class StorageStatePage<T> extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String toError() {
+    final error = state.error;
+    if (error is ServiceException) {
+      return prettyJson(error.toJson());
+    }
+    if (error is Map) {
+      return prettyJson(error);
+    }
+    return '$error';
   }
 
   RichText _buildValue(BuildContext context, String label, String value) {

@@ -179,7 +179,25 @@ class _DebugDataScreenState extends State<DebugDataScreen> {
     return RepositoryTile<Tracking>(
       title: "Sporinger",
       repo: context.bloc<TrackingBloc>().repo,
-      subject: (StorageState<Tracking> state) => '${enumName(state?.value?.status)}',
+      subject: (StorageState<Tracking> state) {
+        final units = context.bloc<UnitBloc>().repo.find(
+              where: (u) => u.tracking?.uuid == state.value.uuid,
+            );
+        if (units.isNotEmpty) {
+          return 'Unit: ${units.first.name} '
+              '(${translateUnitStatus(units.first.status)})';
+        }
+        final personnels = context.bloc<PersonnelBloc>().repo.find(
+              where: (p) => p.tracking?.uuid == state.value.uuid,
+            );
+        if (personnels.isNotEmpty) {
+          return 'Mannskap: ${personnels.first.person.name} '
+              '(${translatePersonnelStatus(personnels.first.status)})';
+        }
+
+        return 'Tracking is ${enumName(state?.value?.status)}';
+      },
+      content: (StorageState<Tracking> state) => '${toUTM(state?.value?.position?.geometry, empty: 'Ingen posisjon')}',
       onReset: () => setState(() {}),
       onCommit: () => setState(() {}),
     );

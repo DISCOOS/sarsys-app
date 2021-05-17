@@ -1,3 +1,4 @@
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/settings/presentation/pages/storage_state_page.dart';
@@ -64,15 +65,34 @@ class RepositoryPageState<T extends Aggregate> extends State<RepositoryPage<T>> 
             'Key $key',
             onTap: () => onTap(context, state, key),
           ),
-          if (widget.content != null) SelectableText('${widget.content(state)}'),
-          SelectableText('Status ${enumName(state.status)}, '
-              'last change was ${state.isLocal ? 'local' : 'remote'},'),
+          if (widget.content != null)
+            SelectableText(
+              '${widget.content(state)}',
+              onTap: () => onTap(context, state, key),
+            ),
+          SelectableText(
+            'Status ${enumName(state.status)}, '
+            'last change was ${state.isLocal ? 'local' : 'remote'},',
+            onTap: () => onTap(context, state, key),
+          ),
           SelectableText('Version ${state.version}'),
-          if (state.isError) SelectableText('Last error: ${state.error}'),
+          if (state.isError)
+            SelectableText(
+              'Last error: ${toErrorString(state)}',
+              onTap: () => onTap(context, state, key),
+            ),
         ],
       ),
       onTap: () => onTap(context, state, key),
     );
+  }
+
+  String toErrorString(StorageState state) {
+    final error = state.error;
+    if (error is ServiceException) {
+      return '${error.response.statusCode} ${error.response.error}';
+    }
+    return '${state.error.toString().substring(0, 100)}...';
   }
 
   Future onTap(BuildContext context, StorageState<T> state, String key) {
