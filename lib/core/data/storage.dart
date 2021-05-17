@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:SarSys/core/data/services/service.dart';
 import 'package:catcher/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -588,9 +589,23 @@ class StorageStateJsonAdapter<T> extends TypeAdapter<StorageState<T>> {
       'previous': previous,
       'version': state.version.value,
       'status': enumName(state.status),
-      'error': state.isError ? '${state.error}' : null,
+      'error': toError(state),
       'remote': state?._isRemote != null ? state._isRemote : null,
     });
+  }
+
+  dynamic toError(StorageState state) {
+    if (!state.isError) {
+      return null;
+    }
+    final object = state.error;
+    if (object is ServiceException) {
+      return object.response.error;
+    }
+    if (object is Map) {
+      return object['error'];
+    }
+    return '$object';
   }
 }
 

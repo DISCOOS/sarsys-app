@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -540,7 +541,7 @@ class TrackingBloc
     List<Device> devices,
     List<Personnel> personnels,
   }) {
-    final tracking = _assertExists(tuuid);
+    final tracking = _ensureExists(tuuid);
     final sources = _toSources(
       devices,
       personnels,
@@ -577,7 +578,7 @@ class TrackingBloc
     List<Device> devices,
     List<String> personnels,
   }) {
-    final tracking = _assertExists(tuuid);
+    final tracking = _ensureExists(tuuid);
     final sources = _toSources(
       devices,
       personnelBloc.from(personnels ?? <String>[]),
@@ -612,7 +613,7 @@ class TrackingBloc
     List<Device> devices,
     List<Personnel> personnels,
   }) {
-    final tracking = _assertExists(tuuid);
+    final tracking = _ensureExists(tuuid);
     final sources = _toSources(
       devices,
       personnels,
@@ -645,7 +646,7 @@ class TrackingBloc
     Position position,
     TrackingStatus status,
   }) {
-    final tracking = _assertExists(tuuid);
+    final tracking = _ensureExists(tuuid);
     return dispatch<Tracking>(
       UpdateTracking(
         TrackingUtils.calculate(
@@ -856,10 +857,19 @@ class TrackingBloc
     }
   }
 
-  Tracking _assertExists(String tuuid) {
+  Tracking _ensureExists(String tuuid) {
     final tracking = repo[tuuid];
     if (tracking == null) {
-      throw TrackingNotFoundException(tuuid, state);
+      final state = StorageState.created(
+        TrackingModel(
+          uuid: tuuid,
+          status: TrackingStatus.none,
+        ),
+        StateVersion.first,
+        isRemote: false,
+      );
+      repo.put(state);
+      return state.value;
     }
     return tracking;
   }

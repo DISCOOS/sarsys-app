@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/tracking/domain/entities/PositionList.dart';
@@ -269,4 +272,35 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
 
   @override
   Future<StorageState<Tracking>> onDelete(StorageState<Tracking> state) => Future.value(state);
+
+  @override
+  Future<StorageState<Tracking>> onResolve(StorageState<Tracking> state, ServiceResponse response) {
+    return MergeTrackingStrategy(this)(
+      state,
+      response.conflict,
+    );
+  }
+}
+
+class MergeTrackingStrategy extends StatefulMergeStrategy<String, Tracking, TrackingService> {
+  MergeTrackingStrategy(TrackingRepository repository) : super(repository);
+
+  @override
+  TrackingRepository get repository => super.repository;
+
+  @override
+  Future<StorageState<Tracking>> onExists(ConflictModel conflict, StorageState<Tracking> state) async {
+    // Always use remote
+    return repository.replace(
+      TrackingModel.fromJson(conflict.base),
+    );
+  }
+
+  @override
+  Future<StorageState<Tracking>> onMerge(ConflictModel conflict, StorageState<Tracking> state) async {
+    // Always use remote
+    return repository.replace(
+      TrackingModel.fromJson(conflict.base),
+    );
+  }
 }

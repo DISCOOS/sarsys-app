@@ -519,19 +519,17 @@ class TrackingUtils {
     }
     final tracks = tracking.tracks;
     // Aggregate lat, lon, acc and latest timestamp in tracks
-    var sum = tracks.fold<List<num>>(
+    final sum = tracks
+        .where((t) => t.positions?.isNotEmpty == true && t.positions.last != null)
+        .map((t) => t.positions.last)
+        .fold<List<num>>(
       [0.0, 0.0, 0.0, 0.0],
-      (sum, track) => track.positions?.isNotEmpty != true
-          ? sum
-          : [
-              track.positions.last.lat + sum[0],
-              track.positions.last.lon + sum[1],
-              (track.positions.last.acc ?? 0.0) + sum[2],
-              max(
-                sum[3],
-                track.positions.last.timestamp.millisecondsSinceEpoch,
-              ),
-            ],
+      (sum, p) => [
+        p.lat + sum[0],
+        p.lon + sum[1],
+        (p.acc ?? 0.0) + sum[2],
+        max(sum[3], p.timestamp.millisecondsSinceEpoch),
+      ],
     );
     final count = tracks.length;
     return Position(

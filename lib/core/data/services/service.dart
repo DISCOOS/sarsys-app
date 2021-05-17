@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
 import 'package:equatable/equatable.dart';
@@ -384,6 +385,17 @@ class ServiceException implements Exception {
   String toString() {
     return '$runtimeType: $error, response: $response, stackTrace: $stackTrace';
   }
+
+  Map<String, dynamic> toJson() => {
+        'error': error,
+        'stackTrace': stackTrace.toString(),
+        'response': {
+          'reasonText': response.error,
+          'statusCode': response.statusCode,
+          if (response.conflict != null) 'conflict': response.conflict.toJson(),
+          if (response.stackTrace != null) 'stackTrace': response.stackTrace.toString(),
+        }
+      };
 }
 
 class PagedList<D> {

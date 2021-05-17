@@ -3,7 +3,6 @@ import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
-import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
@@ -16,12 +15,9 @@ part 'tracking_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
     with StatefulUpdate, StatefulGetFromId, StatefulGetListFromId {
-  TrackingService(
-    this.sources,
-  ) : delegate = TrackingServiceImpl.newInstance();
+  TrackingService() : delegate = TrackingServiceImpl.newInstance();
 
   final TrackingServiceImpl delegate;
-  final TrackingSourceService sources;
 
   final StreamController<TrackingMessage> _controller = StreamController.broadcast();
 
@@ -40,7 +36,6 @@ abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingMod
           decoder: (json) => TrackingModel.fromJson(json),
           reducer: (value) => JsonUtils.toJson<TrackingModel>(value, retain: const [
             'uuid',
-            'status',
             'sources',
           ]),
         );

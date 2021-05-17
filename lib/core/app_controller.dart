@@ -14,7 +14,6 @@ import 'package:SarSys/core/presentation/screens/splash_screen.dart';
 import 'package:SarSys/features/tracking/data/repositories/position_list_repository_impl.dart';
 import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/settings/presentation/screens/first_setup_screen.dart';
-import 'package:SarSys/features/tracking/data/services/tracking_source_service.dart';
 import 'package:SarSys/features/tracking/data/services/position_list_service.dart';
 import 'package:SarSys/features/tracking/domain/repositories/position_list_repository.dart';
 import 'package:SarSys/features/user/presentation/screens/change_pin_screen.dart';
@@ -369,7 +368,7 @@ class AppController {
     );
 
     // Configure Tracking services and repos
-    final TrackingService trackingService = TrackingService(TrackingSourceService());
+    final TrackingService trackingService = TrackingService();
     final PositionListService positionListService = PositionListService();
     final PositionListRepository trackRepo = PositionListRepositoryImpl(
       positionListService,

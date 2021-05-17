@@ -29,7 +29,6 @@ import 'package:SarSys/core/domain/models/converters.dart';
 import 'package:SarSys/features/mapping/data/services/geocode_services.dart';
 import 'package:SarSys/features/mapping/data/services/location_service.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:SarSys/core/defaults.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/position_field.dart';
 import 'package:flutter/material.dart';
