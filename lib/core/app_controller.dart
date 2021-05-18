@@ -5,6 +5,7 @@ import 'package:SarSys/core/data/models/subscription_model.dart';
 import 'package:SarSys/core/data/models/subscription_type_model.dart';
 import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
@@ -344,7 +345,7 @@ class AppController {
     );
 
     // Configure Personnel service
-    final PersonnelService personnelService = PersonnelService();
+    final PersonnelService personnelService = PersonnelService(channel);
 
     // ignore: close_sinks
     final PersonnelBloc personnelBloc = PersonnelBloc(
@@ -373,7 +374,7 @@ class AppController {
     );
 
     // Configure Tracking services and repos
-    final TrackingService trackingService = TrackingService();
+    final TrackingService trackingService = TrackingService(channel);
     final PositionListService positionListService = PositionListService();
     final PositionListRepository trackRepo = PositionListRepositoryImpl(
       positionListService,
@@ -689,6 +690,11 @@ class AppController {
           // Subscribe to Device changes
           SubscriptionTypeModel(
             name: '${typeOf<Device>()}',
+            changedState: true,
+          ),
+          // Subscribe to Personnel changes
+          SubscriptionTypeModel(
+            name: '${typeOf<Personnel>()}',
             changedState: true,
           ),
           // Only subscribe to

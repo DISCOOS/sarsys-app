@@ -560,13 +560,20 @@ class PersonnelBloc
 
   Future<PersonnelState> _process(_InternalMessage event) async {
     switch (event.data.type) {
-      case PersonnelMessageType.PersonnelChanged:
+      case PersonnelMessageType.PersonnelInformationUpdated:
         if (repo.containsKey(event.data.uuid)) {
           final current = repo[event.data.uuid];
           final next = PersonnelModel.fromJson(event.data.state);
           repo.patch(next);
           return PersonnelUpdated(next, current);
         }
+        break;
+
+      case PersonnelMessageType.PersonnelCreated:
+        // TODO: Handle this case.
+        break;
+      case PersonnelMessageType.PersonnelDeleted:
+        // TODO: Handle this case.
         break;
     }
     return PersonnelBlocError("Personnel message not recognized: $event");

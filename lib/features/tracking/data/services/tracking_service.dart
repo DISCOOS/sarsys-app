@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/extensions.dart';
@@ -12,19 +13,38 @@ import 'package:flutter/foundation.dart';
 
 part 'tracking_service.chopper.dart';
 
-/// Service for consuming the trackings endpoint
+/// Service for consuming trackings endpoint
 ///
 /// Delegates to a ChopperService implementation
 class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
     with StatefulUpdate, StatefulGetFromId, StatefulGetListFromId {
-  TrackingService() : delegate = TrackingServiceImpl.newInstance();
+  TrackingService(
+    this.channel,
+  ) : delegate = TrackingServiceImpl.newInstance() {
+    // Listen for Device messages
+    channel.subscribe('TrackingCreated', _onMessage);
+    channel.subscribe('TrackingDeleted', _onMessage);
+    channel.subscribe('TrackingPositionChanged', _onMessage);
+    channel.subscribe('TrackingInformationUpdated', _onMessage);
+  }
 
+  final MessageChannel channel;
   final TrackingServiceImpl delegate;
 
   final StreamController<TrackingMessage> _controller = StreamController.broadcast();
 
   /// Get stream of tracking messages
   Stream<TrackingMessage> get messages => _controller.stream;
+
+  void publish(TrackingMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      TrackingMessage(data: data),
+    );
+  }
 
   void dispose() {
     _controller.close();
@@ -114,8 +134,8 @@ class TrackingMessage {
   factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type) => TrackingMessage(data: {
         'type': enumName(type),
         'data': {
-          ...tracking.toJson(),
           'uuid': tracking.uuid,
+          'changed': tracking.toJson(),
         },
       });
 

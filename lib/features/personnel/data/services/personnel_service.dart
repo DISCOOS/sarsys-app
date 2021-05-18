@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
 
@@ -19,21 +20,44 @@ part 'personnel_service.chopper.dart';
 class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetListFromId {
   final PersonnelServiceImpl delegate;
-  PersonnelService() : delegate = PersonnelServiceImpl.newInstance();
+  PersonnelService(
+    this.channel,
+  ) : delegate = PersonnelServiceImpl.newInstance() {
+    // Listen for Device messages
+    channel.subscribe('PersonnelCreated', _onMessage);
+    channel.subscribe('PersonnelDeleted', _onMessage);
+    channel.subscribe('PersonnelInformationUpdated', _onMessage);
+  }
+
+  final MessageChannel channel;
 
   /// Get stream of personnel messages
   Stream<PersonnelMessage> get messages => _controller.stream;
   final StreamController<PersonnelMessage> _controller = StreamController.broadcast();
+
+  void publish(PersonnelMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      PersonnelMessage(data: data),
+    );
+  }
 
   void dispose() {
     _controller.close();
   }
 }
 
-enum PersonnelMessageType { PersonnelChanged }
+enum PersonnelMessageType {
+  PersonnelCreated,
+  PersonnelDeleted,
+  PersonnelInformationUpdated,
+}
 
 class PersonnelMessage {
-  PersonnelMessage(this.data);
+  PersonnelMessage({this.data});
 
   final Map<String, dynamic> data;
 
@@ -47,8 +71,8 @@ class PersonnelMessage {
     return PersonnelMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
 
-  Map<String, dynamic> get state => data.mapAt<String, dynamic>('changed');
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('patches');
+  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 
 @ChopperApi()
