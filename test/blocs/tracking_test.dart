@@ -1891,7 +1891,7 @@ Future<T> _shouldCloseTrackingAutomatically<T extends Trackable>(
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.updated);
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingInformationUpdated);
 
     // Assert REMOTELY
     await _assertTrackingState(
@@ -2004,7 +2004,7 @@ Future<StorageState<Tracking>> _shouldCreateTrackingAutomatically<T extends Trac
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.created);
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingCreated);
 
     // Assert
     return _assertTrackingState<TrackingCreated>(
@@ -2086,7 +2086,7 @@ Future _assertReopensClosedTrackingAutomatically<T extends Trackable>(
   if (harness.isOnline) {
     // Act - Simulate backend
     final tracking = harness.trackingBloc.repo[tuuid];
-    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.updated);
+    await _putRemoteAndNotify(harness, tracking, TrackingMessageType.TrackingInformationUpdated);
 
     // Assert REMOTELY
     await _assertTrackingState(
@@ -2130,7 +2130,10 @@ int _ensureTrackingCount(int count, BlocTestHarness harness) {
 
 Future _putRemoteAndNotify(BlocTestHarness harness, Tracking tracking, TrackingMessageType type) async {
   harness.trackingService.put(harness.trackingBloc.ouuid, tracking);
-  await _notify(harness, TrackingMessage(tracking.uuid, type, tracking.toJson()));
+  await _notify(
+    harness,
+    TrackingMessage.fromType(tracking, type),
+  );
 }
 
 Future _notify(BlocTestHarness harness, TrackingMessage message) async {

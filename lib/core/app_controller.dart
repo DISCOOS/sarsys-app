@@ -1,6 +1,11 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/subscription_event_model.dart';
+import 'package:SarSys/core/data/models/subscription_model.dart';
+import 'package:SarSys/core/data/models/subscription_type_model.dart';
 import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -679,6 +684,27 @@ class AppController {
     _channel.open(
       appId: bloc<AppConfigBloc>().config.udid,
       url: '${Defaults.baseWsUrl}/api/messages/connect',
+      config: SubscriptionModel(
+        types: [
+          // Subscribe to Device changes
+          SubscriptionTypeModel(
+            name: '${typeOf<Device>()}',
+            changedState: true,
+          ),
+          // Only subscribe to
+          // subset of tracking events
+          SubscriptionTypeModel(
+            name: '${typeOf<Tracking>()}',
+            changedState: true,
+            events: [
+              SubscriptionEventModel(name: 'TrackingCreated'),
+              SubscriptionEventModel.changed('TrackingStatusChanged'),
+              SubscriptionEventModel.patches('TrackingPositionChanged'),
+              SubscriptionEventModel.changed('TrackingInformationUpdated'),
+            ],
+          ),
+        ],
+      ),
     );
     // Ensure that token is updated
     if (!LocationService.exists || state.isTokenRefreshed()) {

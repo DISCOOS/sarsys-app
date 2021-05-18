@@ -35,13 +35,13 @@ extension MapX on Map {
   }
 
   /// Get [List] of type [T] at given path
-  List<T> listAt<T>(String path, {T defaultList}) {
+  List<T> listAt<T>(String path, {List<T> defaultList}) {
     final list = elementAt(path);
     return list == null ? defaultList : List<T>.from(list);
   }
 
   /// Get [Map] with keys of type [S] and values of type [T] at given path
-  Map<S, T> mapAt<S, T>(String path, {T defaultMap}) {
+  Map<S, T> mapAt<S, T>(String path, {Map<S, T> defaultMap}) {
     final map = elementAt(path);
     return map == null ? defaultMap : Map<S, T>.from(map);
   }

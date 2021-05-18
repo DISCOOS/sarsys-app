@@ -501,11 +501,7 @@ class TrackingServiceMock extends Mock implements TrackingService {
 
       // Notify listeners
       controller.add(
-        TrackingMessage(
-          next.uuid,
-          TrackingMessageType.updated,
-          next.toJson(),
-        ),
+        TrackingMessage.updated(next),
       );
     }
   }

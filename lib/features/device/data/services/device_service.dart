@@ -42,9 +42,9 @@ class DeviceService extends StatefulServiceDelegate<Device, DeviceModel>
   }
 
   void _onMessage(Map<String, dynamic> data) {
-    publish(DeviceMessage(
-      data: data.mapAt<String, dynamic>('data'),
-    ));
+    publish(
+      DeviceMessage(data: data),
+    );
   }
 
   void dispose() {
@@ -69,7 +69,10 @@ class DeviceMessage {
   });
 
   final Map<String, dynamic> data;
-  String get uuid => data.elementAt('uuid');
+
+  String get uuid => data.elementAt('data/uuid');
+  bool get isState => data.hasPath('data/changed');
+  bool get isPatches => data.hasPath('data/patches');
   StateVersion get version => StateVersion.fromJson(data);
 
   DeviceMessageType get type {
@@ -77,7 +80,8 @@ class DeviceMessage {
     return DeviceMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
 
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('patches');
+  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 
 @ChopperApi(baseUrl: '/devices')

@@ -53,10 +53,10 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
       exclude?.isNotEmpty == false
           ? length
           : values
-          .where(
-            (device) => !exclude.contains(device.status),
-      )
-          .length;
+              .where(
+                (device) => !exclude.contains(device.status),
+              )
+              .length;
 
   Iterable<Device> _load({Completer<Iterable<Device>> onRemote}) {
     return requestQueue.load(
@@ -118,25 +118,53 @@ class DeviceRepositoryImpl extends StatefulRepository<String, Device, DeviceServ
         // Merge with local changes?
         if (containsKey(message.uuid)) {
           final previous = getState(message.uuid);
-          final next = DeviceModel.fromJson(JsonPatch.apply(
-            previous.value.toJson(),
-            message.patches,
-            strict: false,
-          ));
-          state = previous.isRemote
-              ? StorageState.updated(
-                  next,
-                  message.version,
-                  isRemote: true,
-                )
-              : previous.replace(
-                  next,
-                  isRemote: false,
-                );
-          put(state);
+          // TODO: Peek to see if conflict will occur and handle it
+          // Only apply if not modified locally
+          if (previous.isRemote) {
+            // TODO: Make this a generic reusable solution in StatefulRepository
+            if (message.version == previous.version + 1) {
+              final next = DeviceModel.fromJson(message.isState
+                  ? message.state
+                  : JsonPatch.apply(
+                      previous.value.toJson(),
+                      message.patches,
+                      strict: false,
+                    ));
+              state = previous.isRemote
+                  ? StorageState.updated(
+                      next,
+                      message.version,
+                      isRemote: true,
+                    )
+                  : previous.replace(
+                      next,
+                      isRemote: false,
+                    );
+              put(state);
+            } else if (message.version > previous.version + 1) {
+              state = StorageState.updated(
+                DeviceModel.fromJson(message.isState
+                    ? message.state
+                    : JsonPatch.apply(
+                        previous.value.toJson(),
+                        message.patches,
+                        strict: false,
+                      )),
+                message.version,
+                isRemote: true,
+              );
+              put(state);
+            }
+          }
         } else if (message.type == 'DeviceCreated') {
           final next = DeviceModel.fromJson(
-            JsonPatch.apply({}, message.patches, strict: false),
+            message.isState
+                ? message.state
+                : JsonPatch.apply(
+                    {},
+                    message.patches,
+                    strict: false,
+                  ),
           );
           state = StorageState.created(
             next,

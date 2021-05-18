@@ -679,33 +679,21 @@ class TrackingBloc
     );
   }
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.updated]
+  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingInformationUpdated]
   _HandleMessage _toInternalCreate(Tracking tracking) => _HandleMessage(
-        TrackingMessage(
-          tracking.uuid,
-          TrackingMessageType.created,
-          tracking.toJson(),
-        ),
+        TrackingMessage.created(tracking),
         internal: true,
       );
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.updated]
+  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingInformationUpdated]
   _HandleMessage _toInternalChange(Tracking tracking) => _HandleMessage(
-        TrackingMessage(
-          tracking.uuid,
-          TrackingMessageType.updated,
-          tracking.toJson(),
-        ),
+        TrackingMessage.updated(tracking),
         internal: true,
       );
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.deleted].
+  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingDeleted].
   _HandleMessage _toInternalDelete(Tracking tracking) => _HandleMessage(
-        TrackingMessage(
-          tracking.uuid,
-          TrackingMessageType.deleted,
-          tracking.toJson(),
-        ),
+        TrackingMessage.deleted(tracking),
         internal: true,
       );
 
@@ -827,18 +815,18 @@ class TrackingBloc
     if (isReady) {
       final remote = !event.internal;
       switch (event.data.type) {
-        case TrackingMessageType.created:
-        case TrackingMessageType.updated:
-          final value = TrackingModel.fromJson(event.data.json);
+        case TrackingMessageType.TrackingCreated:
+        case TrackingMessageType.TrackingInformationUpdated:
+          final value = TrackingModel.fromJson(event.data.data);
           final next = repo.patch(value, isRemote: remote).value;
-          yield event.data.type == TrackingMessageType.created
+          yield event.data.type == TrackingMessageType.TrackingCreated
               ? TrackingCreated(next)
               : TrackingUpdated(
                   next,
                   value,
                 );
           break;
-        case TrackingMessageType.deleted:
+        case TrackingMessageType.TrackingDeleted:
           final tracking = repo[event.data.uuid];
           if (tracking != null) {
             final next = TrackingUtils.close(tracking);

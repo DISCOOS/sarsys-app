@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:SarSys/core/data/api.dart';
-import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
 import 'package:equatable/equatable.dart';

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/domain/models/core.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
@@ -80,38 +82,53 @@ abstract class TrackingServiceImpl extends StatefulService<Tracking, TrackingMod
   });
 }
 
-enum TrackingMessageType { created, updated, deleted }
+enum TrackingMessageType {
+  TrackingCreated,
+  TrackingDeleted,
+  TrackingStatusChanged,
+  TrackingInformationUpdated,
+}
 
 class TrackingMessage {
-  final String uuid;
-  final TrackingMessageType type;
-  final Map<String, dynamic> json;
-  TrackingMessage(this.uuid, this.type, this.json);
+  TrackingMessage({
+    @required this.data,
+  });
 
-  factory TrackingMessage.from(
-    Tracking tracking, {
-    @required TrackingMessageType type,
-  }) =>
-      TrackingMessage(
-        tracking.uuid,
-        type,
-        tracking.toJson(),
+  final Map<String, dynamic> data;
+
+  factory TrackingMessage.created(Tracking tracking) => TrackingMessage.fromType(
+        tracking,
+        TrackingMessageType.TrackingCreated,
       );
 
-  factory TrackingMessage.created(Tracking tracking) => TrackingMessage(
-        tracking.uuid,
-        TrackingMessageType.created,
-        tracking.toJson(),
+  factory TrackingMessage.updated(Tracking tracking) => TrackingMessage.fromType(
+        tracking,
+        TrackingMessageType.TrackingInformationUpdated,
       );
 
-  factory TrackingMessage.updated(Tracking tracking) => TrackingMessage(
-        tracking.uuid,
-        TrackingMessageType.updated,
-        tracking.toJson(),
+  factory TrackingMessage.deleted(Tracking tracking) => TrackingMessage.fromType(
+        tracking,
+        TrackingMessageType.TrackingDeleted,
       );
-  factory TrackingMessage.deleted(Tracking tracking) => TrackingMessage(
-        tracking.uuid,
-        TrackingMessageType.deleted,
-        tracking.toJson(),
-      );
+
+  factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type) => TrackingMessage(data: {
+        'type': enumName(type),
+        'data': {
+          ...tracking.toJson(),
+          'uuid': tracking.uuid,
+        },
+      });
+
+  String get uuid => data.elementAt('data/uuid');
+  bool get isState => data.hasPath('data/changed');
+  bool get isPatches => data.hasPath('data/patches');
+  StateVersion get version => StateVersion.fromJson(data);
+
+  TrackingMessageType get type {
+    final type = data.elementAt('type');
+    return TrackingMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
+
+  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
+  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }

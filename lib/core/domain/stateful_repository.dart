@@ -511,6 +511,7 @@ abstract class StatefulRepository<K, V extends JsonObject, S extends StatefulSer
         current.value == state.value &&
         current.error == state.error &&
         current.status == state.status &&
+        current.version == state.version &&
         current.isRemote == state.isRemote;
   }
 

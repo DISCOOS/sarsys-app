@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:SarSys/core/data/models/subscription_model.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
@@ -58,6 +60,9 @@ class MessageChannel extends Service {
   String get appId => _appId;
   String _appId;
 
+  SubscriptionModel get config => _config;
+  SubscriptionModel _config;
+
   /// Get current [AuthToken]
   AuthToken get token => _users.token;
 
@@ -86,7 +91,7 @@ class MessageChannel extends Service {
   ValueChanged<Map<String, dynamic>> subscribe(String type, ValueChanged<Map<String, dynamic>> handler) {
     _assertState();
     _routes.update(
-      '$type',
+      type,
       (handlers) => handlers..add(handler),
       ifAbsent: () => {handler},
     );
@@ -98,7 +103,7 @@ class MessageChannel extends Service {
     _assertState();
     for (var type in types) {
       _routes.update(
-        '$type',
+        type,
         (handlers) => handlers..add(handler),
         ifAbsent: () => {handler},
       );
@@ -126,26 +131,60 @@ class MessageChannel extends Service {
     }
   }
 
-  void _onData(dynamic event) {
+  void _onMessage(dynamic message) {
     try {
-      final data = json.decode(event);
+      final data = json.decode(message);
       if (data is Map) {
-        final type = data.elementAt<String>('type');
-        _toHandlers(type).forEach((handler) {
-          try {
-            handler(data);
-          } catch (e, stackTrace) {
-            Catcher.reportCheckedError(e, stackTrace);
-          }
-        });
-        _stats = _stats.update(inbound: 1);
-        _statsController.add(_stats);
+        final type = data.elementAt<String>('type').toLowerCase();
+        debugPrint('MessageChannel >> received $data');
+        switch (type) {
+          case 'changes':
+            _onChanges(data);
+            break;
+          case 'status':
+            // TODO: Handle status / ack
+            debugPrint('MessageChannel >> Status OK');
+            break;
+          case 'error':
+            // TODO: Handle error / ack
+            debugPrint(
+              'MessageChannel >> Error: ${data.elementAt('data/code')} ${data.elementAt('data/reason')}',
+            );
+            break;
+          default:
+            Catcher.reportCheckedError(
+              'Unknown message type: $message',
+              StackTrace.current,
+            );
+            break;
+        }
+      } else {
+        Catcher.reportCheckedError(
+          'Unknown message format: $message',
+          StackTrace.current,
+        );
       }
+      _stats = _stats.update(inbound: 1);
+      _statsController.add(_stats);
     } catch (e, stackTrace) {
       Catcher.reportCheckedError(
-        'Failed to decode message: $event, error: $e',
+        'Failed to decode message: $message, error: $e',
         stackTrace,
       );
+    }
+  }
+
+  void _onChanges(Map changes) {
+    try {
+      for (var state in changes.listAt<Map>('entries', defaultList: <Map>[])) {
+        final type = state.elementAt('event/type');
+        final event = state.mapAt<String, dynamic>('event');
+        _toHandlers(type).forEach((handler) {
+          handler(event);
+        });
+      }
+    } catch (e, stackTrace) {
+      Catcher.reportCheckedError(e, stackTrace);
     }
   }
 
@@ -164,8 +203,8 @@ class MessageChannel extends Service {
         code: MessageChannel.closeApiUnreachable,
       );
     } else {
-      debugPrint('$error');
-      debugPrint(stackTrace.toString());
+      debugPrint('MessageChannel >> Error: $error');
+      debugPrint('MessageChannel >> Stacktrace: $stackTrace');
       _close(
         reason: _channel.closeReason ?? '$error',
         code: _channel.closeCode ?? WebSocketStatus.abnormalClosure,
@@ -174,7 +213,7 @@ class MessageChannel extends Service {
   }
 
   void _onDone() async {
-    print('MessageChannel::done');
+    debugPrint('MessageChannel >> Subscription is DONE');
     if (!_isClosed) {
       _close(
         reason: _channel.closeReason ?? 'Done event received',
@@ -186,15 +225,19 @@ class MessageChannel extends Service {
   void open({
     @required String url,
     @required String appId,
+    SubscriptionModel config,
   }) {
     _assertState();
     _close(
       reason: 'App re-opened',
       code: closeAppReopening,
     );
+
     _url = url;
     _appId = appId;
     _isClosed = false;
+    _config = config ?? _config;
+
     _channel = IOWebSocketChannel.connect(
       url,
       headers: {
@@ -203,16 +246,50 @@ class MessageChannel extends Service {
       },
       pingInterval: Duration(seconds: 60),
     );
+
     _subscribeToMessages();
     _subscribeToConnectivityChanges();
+
     _stats = _stats.update(opened: true);
     _statsController.add(_stats);
-    debugPrint('Opened message channel');
+
+    debugPrint('MessageChannel >> Opened message channel');
+
+    _sendConfig(_config);
+  }
+
+  bool configure(SubscriptionModel config) {
+    final changed = config != null && _config != config;
+    if (changed) {
+      _config = config;
+      _sendConfig(config);
+    }
+    return changed;
+  }
+
+  void _sendConfig(SubscriptionModel config) {
+    try {
+      _channel.sink.add(
+        json.encode({
+          'uuid': Uuid().v4(),
+          'type': 'Subscribe',
+          'data': config.toJson(),
+        }),
+      );
+      debugPrint(
+        'MessageChannel >> Sent subscription config $config',
+      );
+    } catch (e, stackTrace) {
+      Catcher.reportCheckedError(
+        'MessageChannel >> Sending config $config failed with $e',
+        stackTrace,
+      );
+    }
   }
 
   void _subscribeToMessages() {
     return _subscriptions.add(_channel.stream.listen(
-      _onData,
+      _onMessage,
       onDone: _onDone,
       onError: _onError,
     ));
@@ -251,7 +328,7 @@ class MessageChannel extends Service {
         reason: emptyAsNull(reason) ?? 'None',
       );
       _statsController.add(_stats);
-      debugPrint('Closed message channel');
+      debugPrint('MessageChannel >> Closed message channel');
       _check();
     }
   }
@@ -294,6 +371,7 @@ class MessageChannel extends Service {
             open(
               url: _url,
               appId: _appId,
+              config: _config,
             );
           }
         }
