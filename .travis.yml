@@ -14,7 +14,7 @@ before_script:
   - ./flutter/bin/flutter pub upgrade
   - ./flutter/bin/flutter doctor
 script:
-  - ./flutter/bin/flutter test -j 1
+  - ./flutter/bin/flutter test -j 1 --no-sound-null-safety
 cache:
   directories:
     - $HOME/.pub-cache
