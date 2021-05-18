@@ -15,7 +15,7 @@ version: 0.1.1+86
 
 environment:
   sdk: ">=2.11.0 <3.0.0"
-  flutter: ">=2.0.5"
+  flutter: ">=2.2.0"
 
 dependencies:
   flutter:
@@ -94,9 +94,12 @@ dependencies:
   cupertino_icons: ^1.0.2
 
 dependency_overrides:
+
   intl: ^0.17.0
-  country_pickers: 2.0.0
   sentry_flutter: 4.0.6
+  country_pickers: 2.0.0
+  test_api: ^0.2.19-nullsafety
+
 #  flutter_map:
 #    # Use local branch of flutter_map
 #    path: ../flutter_map
