@@ -11,7 +11,7 @@ addons:
       - fonts-droid-fallback
 before_script:
   - git clone https://github.com/flutter/flutter.git -b stable
-  - ./flutter/bin/flutter pub upgrade
+  - ./flutter/bin/flutter pub get
   - ./flutter/bin/flutter doctor
 script:
   - ./flutter/bin/flutter test -j 1 --no-sound-null-safety
