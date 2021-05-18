@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/message_model.dart';
 import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:chopper/chopper.dart';
@@ -41,7 +42,7 @@ class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel
 
   void _onMessage(Map<String, dynamic> data) {
     publish(
-      PersonnelMessage(data: data),
+      PersonnelMessage(data),
     );
   }
 
@@ -56,23 +57,13 @@ enum PersonnelMessageType {
   PersonnelInformationUpdated,
 }
 
-class PersonnelMessage {
-  PersonnelMessage({this.data});
-
-  final Map<String, dynamic> data;
-
-  String get uuid => data.elementAt('data/uuid');
-  bool get isState => data.hasPath('data/changed');
-  bool get isPatches => data.hasPath('data/patches');
-  StateVersion get version => StateVersion.fromJson(data);
+class PersonnelMessage extends MessageModel {
+  PersonnelMessage(Map<String, dynamic> data) : super(data);
 
   PersonnelMessageType get type {
     final type = data.elementAt('type');
     return PersonnelMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
-
-  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 
 @ChopperApi()

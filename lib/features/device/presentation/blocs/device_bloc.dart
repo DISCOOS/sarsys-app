@@ -118,7 +118,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       final current = repo[device.uuid];
       final next = device.copyWith(position: p);
       final patches = JsonUtils.diff(current, next);
-      service.publish(DeviceMessage(data: {
+      service.publish(DeviceMessage({
         'type': 'DevicePositionChanged',
         'data': {
           'uuid': device.uuid,

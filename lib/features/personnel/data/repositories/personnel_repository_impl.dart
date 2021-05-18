@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:SarSys/features/affiliation/data/models/affiliation_model.dart';
 import 'package:SarSys/features/affiliation/data/models/person_model.dart';
@@ -21,6 +22,7 @@ import 'package:SarSys/core/data/services/connectivity_service.dart';
 import 'package:SarSys/core/utils/data.dart';
 
 class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, PersonnelService>
+    with StatefulCatchup<Personnel, PersonnelService>
     implements PersonnelRepository {
   PersonnelRepositoryImpl(
     PersonnelService service, {
@@ -54,7 +56,11 @@ class PersonnelRepositoryImpl extends StatefulRepository<String, Personnel, Pers
               }
             }
           },
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:SarSys/core/data/models/message_model.dart';
 import 'package:SarSys/core/data/services/message_channel.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
@@ -9,7 +10,6 @@ import 'package:SarSys/features/tracking/data/models/tracking_model.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/core/data/services/service.dart';
 import 'package:chopper/chopper.dart';
-import 'package:flutter/foundation.dart';
 
 part 'tracking_service.chopper.dart';
 
@@ -42,7 +42,7 @@ class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
 
   void _onMessage(Map<String, dynamic> data) {
     publish(
-      TrackingMessage(data: data),
+      TrackingMessage(data),
     );
   }
 
@@ -109,12 +109,8 @@ enum TrackingMessageType {
   TrackingInformationUpdated,
 }
 
-class TrackingMessage {
-  TrackingMessage({
-    @required this.data,
-  });
-
-  final Map<String, dynamic> data;
+class TrackingMessage extends MessageModel {
+  TrackingMessage(Map<String, dynamic> data) : super(data);
 
   factory TrackingMessage.created(Tracking tracking) => TrackingMessage.fromType(
         tracking,
@@ -131,7 +127,7 @@ class TrackingMessage {
         TrackingMessageType.TrackingDeleted,
       );
 
-  factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type) => TrackingMessage(data: {
+  factory TrackingMessage.fromType(Tracking tracking, TrackingMessageType type) => TrackingMessage({
         'type': enumName(type),
         'data': {
           'uuid': tracking.uuid,
@@ -139,16 +135,8 @@ class TrackingMessage {
         },
       });
 
-  String get uuid => data.elementAt('data/uuid');
-  bool get isState => data.hasPath('data/changed');
-  bool get isPatches => data.hasPath('data/patches');
-  StateVersion get version => StateVersion.fromJson(data);
-
   TrackingMessageType get type {
     final type = data.elementAt('type');
     return TrackingMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
-
-  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }

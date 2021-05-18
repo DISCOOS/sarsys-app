@@ -24,6 +24,7 @@ ConflictModel _$ConflictModelFromJson(Map json) {
             ))
         ?.toList(),
     error: json['error'] as String,
+    paths: (json['paths'] as List)?.map((e) => e as String)?.toList(),
   );
 }
 
@@ -42,6 +43,7 @@ Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) {
   writeNotNull('base', instance.base);
   writeNotNull('mine', instance.mine);
   writeNotNull('yours', instance.yours);
+  writeNotNull('paths', instance.paths);
   return val;
 }
 
@@ -55,9 +57,7 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
+  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '

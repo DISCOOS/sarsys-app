@@ -331,7 +331,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         );
         controller.add(
           DeviceMessage(
-            data: device.toJson(),
+            device.toJson(),
           ),
         );
       }

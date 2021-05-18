@@ -20,6 +20,7 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
     this.mine,
     this.yours,
     this.error,
+    this.paths,
   }) : super([
           type,
           base,
@@ -31,6 +32,9 @@ class ConflictModel extends JsonObject<Map<String, dynamic>> {
   final String code;
   final String error;
   final ConflictType type;
+
+  /// Paths with conflicts
+  final List<String> paths;
 
   /// Remote state
   final Map<String, dynamic> base;

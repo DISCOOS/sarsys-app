@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:SarSys/core/data/models/message_model.dart';
 import 'package:SarSys/core/utils/data.dart';
-import 'package:meta/meta.dart';
 import 'package:chopper/chopper.dart';
 
 import 'package:SarSys/core/data/services/stateful_service.dart';
@@ -43,7 +43,7 @@ class DeviceService extends StatefulServiceDelegate<Device, DeviceModel>
 
   void _onMessage(Map<String, dynamic> data) {
     publish(
-      DeviceMessage(data: data),
+      DeviceMessage(data),
     );
   }
 
@@ -63,25 +63,13 @@ enum DeviceMessageType {
   DeviceInformationUpdated,
 }
 
-class DeviceMessage {
-  DeviceMessage({
-    @required this.data,
-  });
-
-  final Map<String, dynamic> data;
-
-  String get uuid => data.elementAt('data/uuid');
-  bool get isState => data.hasPath('data/changed');
-  bool get isPatches => data.hasPath('data/patches');
-  StateVersion get version => StateVersion.fromJson(data);
+class DeviceMessage extends MessageModel {
+  DeviceMessage(Map<String, dynamic> data) : super(data);
 
   DeviceMessageType get type {
     final type = data.elementAt('type');
     return DeviceMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
-
-  Map<String, dynamic> get state => data.mapAt<String, dynamic>('data/changed');
-  List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('data/patches');
 }
 
 @ChopperApi(baseUrl: '/devices')

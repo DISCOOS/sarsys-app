@@ -409,8 +409,11 @@ class MessageChannelState {
   final Map<int, Map<String, int>> _codes;
 
   int get opened => _opened;
+
   int get inboundCount => _inboundCount;
+
   Map<int, Map<String, int>> get codes => Map.unmodifiable(_codes);
+
   double get inboundRate => _inboundCount / min(DateTime.now().difference(_fromDate).inSeconds, 1);
 
   MessageChannelState update({

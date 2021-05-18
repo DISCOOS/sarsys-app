@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:SarSys/core/data/models/conflict_model.dart';
 import 'package:SarSys/core/data/services/service.dart';
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/core/domain/stateful_merge_strategy.dart';
 import 'package:flutter/foundation.dart';
 
@@ -20,6 +21,7 @@ import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 
 class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, TrackingService>
+    with StatefulCatchup<Tracking, TrackingService>
     implements TrackingRepository {
   TrackingRepositoryImpl(
     TrackingService service, {
@@ -30,7 +32,11 @@ class TrackingRepositoryImpl extends StatefulRepository<String, Tracking, Tracki
           service: service,
           dependencies: [tracks],
           connectivity: connectivity,
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Operation.uuid]
   @override

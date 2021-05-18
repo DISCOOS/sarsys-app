@@ -382,6 +382,7 @@ class StorageState<T> {
     }
     return this.replace(
       value,
+      version: version,
       isRemote: isRemote,
       previous: previous,
     );
@@ -421,12 +422,17 @@ class StorageState<T> {
     return next;
   }
 
-  StorageState<T> replace(T value, {bool isRemote, T previous}) {
+  StorageState<T> replace(
+    T value, {
+    T previous,
+    bool isRemote,
+    StateVersion version,
+  }) {
     switch (status) {
       case StorageStatus.created:
         return StorageState.created(
           value,
-          version,
+          version ?? this.version,
           error: error,
           isRemote: isRemote ?? _isRemote,
           previous: previous ?? this.value,
@@ -434,7 +440,7 @@ class StorageState<T> {
       case StorageStatus.updated:
         return StorageState.updated(
           value,
-          version,
+          version ?? this.version,
           error: error,
           isRemote: isRemote ?? _isRemote,
           previous: previous ?? this.value,
@@ -442,7 +448,7 @@ class StorageState<T> {
       case StorageStatus.deleted:
         return StorageState.deleted(
           value,
-          version,
+          version ?? this.version,
           error: error,
           isRemote: isRemote ?? _isRemote,
           previous: previous ?? this.value,

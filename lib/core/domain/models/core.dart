@@ -1,8 +1,11 @@
-import 'package:SarSys/core/data/api.dart';
-import 'package:SarSys/core/extensions.dart';
-import 'package:SarSys/core/data/services/service.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_patch/json_patch.dart';
+import 'package:collection/collection.dart';
+
+import 'package:SarSys/core/data/api.dart';
+import 'package:SarSys/core/data/models/conflict_model.dart';
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/services/service.dart';
 
 abstract class JsonObject<T> extends Equatable {
   JsonObject(List fields) : _props = [...fields];
@@ -119,6 +122,26 @@ class JsonUtils {
         },
       );
     return patches;
+  }
+
+  static ConflictModel check(List<Map<String, dynamic>> mine, List<Map<String, dynamic>> yours) {
+    // 1. Get local (mine) and remote (yours) patches
+    final yourPaths = yours.map((op) => op['path']);
+    final concurrent = mine.where((op) => yourPaths.contains(op['path']));
+
+    // 2. Check if any of mine and yours patches collide
+    final eq = const MapEquality().equals;
+    final conflicts = concurrent.where(
+      (op1) => yours.where((op2) => op2['path'] == op1['path'] && !eq(op1, op2)).isNotEmpty,
+    );
+
+    return conflicts.isNotEmpty
+        ? ConflictModel(
+            type: ConflictType.merge,
+            yours: yours,
+            mine: mine,
+          )
+        : null;
   }
 
   static Map<String, dynamic> patch(
