@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/presentation/blocs/core.dart';
 import 'package:SarSys/core/presentation/blocs/mixins.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
@@ -816,6 +817,7 @@ class TrackingBloc
       final remote = !event.internal;
       switch (event.data.type) {
         case TrackingMessageType.TrackingCreated:
+        case TrackingMessageType.TrackingStatusChanged:
         case TrackingMessageType.TrackingInformationUpdated:
           final value = TrackingModel.fromJson(event.data.state);
           final next = repo.patch(value, isRemote: remote).value;
@@ -836,7 +838,7 @@ class TrackingBloc
           break;
         default:
           throw TrackingBlocException(
-            "Tracking message not recognized",
+            "Tracking message ${enumName(event.data.type)} not recognized",
             state,
             command: event,
             stackTrace: StackTrace.current,
@@ -1053,7 +1055,12 @@ class TrackingBlocException implements Exception {
   final StackTrace stackTrace;
 
   @override
-  String toString() => '$runtimeType {error: $error, state: $state, command: $command, stackTrace: $stackTrace}';
+  String toString() => '$runtimeType {'
+      'error: $error, '
+      'state: ${state?.toString()?.substring(0, 50)}, '
+      'command: ${command?.toString()?.substring(0, 50)}, '
+      'stackTrace: $stackTrace'
+      '}';
 }
 
 /// -------------------------------------------------
