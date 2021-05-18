@@ -817,7 +817,7 @@ class TrackingBloc
       switch (event.data.type) {
         case TrackingMessageType.TrackingCreated:
         case TrackingMessageType.TrackingInformationUpdated:
-          final value = TrackingModel.fromJson(event.data.data);
+          final value = TrackingModel.fromJson(event.data.state);
           final next = repo.patch(value, isRemote: remote).value;
           yield event.data.type == TrackingMessageType.TrackingCreated
               ? TrackingCreated(next)

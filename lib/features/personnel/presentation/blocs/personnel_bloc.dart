@@ -563,7 +563,7 @@ class PersonnelBloc
       case PersonnelMessageType.PersonnelChanged:
         if (repo.containsKey(event.data.uuid)) {
           final current = repo[event.data.uuid];
-          final next = PersonnelModel.fromJson(event.data.data);
+          final next = PersonnelModel.fromJson(event.data.state);
           repo.patch(next);
           return PersonnelUpdated(next, current);
         }

@@ -36,7 +36,10 @@ class PersonnelMessage {
   PersonnelMessage(this.data);
 
   final Map<String, dynamic> data;
-  String get uuid => data.elementAt('uuid');
+
+  String get uuid => data.elementAt('data/uuid');
+  bool get isState => data.hasPath('data/changed');
+  bool get isPatches => data.hasPath('data/patches');
   StateVersion get version => StateVersion.fromJson(data);
 
   PersonnelMessageType get type {
@@ -44,6 +47,7 @@ class PersonnelMessage {
     return PersonnelMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
   }
 
+  Map<String, dynamic> get state => data.mapAt<String, dynamic>('changed');
   List<Map<String, dynamic>> get patches => data.listAt<Map<String, dynamic>>('patches');
 }
 
