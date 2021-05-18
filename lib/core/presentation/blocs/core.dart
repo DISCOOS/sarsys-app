@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:SarSys/core/data/services/stateful_service.dart';
-import 'package:SarSys/core/defaults.dart';
-import 'package:SarSys/core/domain/models/core.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
@@ -11,6 +8,10 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/data/services/stateful_service.dart';
+import 'package:SarSys/core/data/storage.dart';
+import 'package:SarSys/core/defaults.dart';
+import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/core/utils/data.dart';
 
 import 'mixins.dart';
@@ -338,6 +339,41 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
         S extends StatefulServiceDelegate<V, V>> extends BaseBloc<C, E, Error>
     with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
   StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
+
+  C Function(StorageTransition<V>) _builder;
+
+  void forwardStateChanges(C Function(StorageTransition<V>) builder) {
+    if (_builder != null) {
+      _builder = builder;
+      registerStreamSubscription(repo.onChanged.listen(
+        // Notify when device state has changed
+        _processStateChanged,
+      ));
+    }
+  }
+
+  void _processStateChanged(StorageTransition<V> transition) async {
+    try {
+      if (isOpen && !transition.isError) {
+        final device = transition.to.value;
+        if (device != null) {
+          final next = transition.to;
+          if (next.isRemote) {
+            dispatch(
+              _builder(transition),
+            );
+          }
+        }
+      }
+    } catch (error, stackTrace) {
+      BlocSupervisor.delegate.onError(
+        this,
+        error,
+        stackTrace,
+      );
+      onError(error, stackTrace);
+    }
+  }
 
   @override
   Future<void> close() async {

@@ -38,10 +38,10 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       _processUserState,
     ));
 
-    registerStreamSubscription(repo.onChanged.listen(
-      // Notify when repository state has changed
-      _processRepoState,
-    ));
+    // Notify when device state has changed
+    forwardStateChanges(
+      (t) => _NotifyDeviceStateChanged(t),
+    );
 
     // Toggle device trackability
     bus.subscribe<ActivityProfileChanged>(
@@ -68,34 +68,6 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     }
   }
 
-  void _processRepoState(StorageTransition<Device> transition) async {
-    try {
-      if (isOpen && !transition.isError) {
-        final device = transition.to.value;
-        if (device != null) {
-          final next = transition.to;
-          if (next.isRemote) {
-            dispatch(
-              // Catch up with remote state
-              _DeviceMessage(
-                device,
-                transition.from?.value,
-                transition.from?.isRemote ?? false,
-              ),
-            );
-          }
-        }
-      }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
-    }
-  }
-
   StreamSubscription _locationChanged;
 
   void _processActivityChange<T extends BlocEvent>(Bloc bloc, T event) {
@@ -105,26 +77,28 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         dispatch(
           UpdateDevice(device.copyWith(trackable: event.data.isTrackable)),
         );
-        _trackDevicePositionChanged(device);
+
+        // Forward device locations a-priori from backend
+        _trackDevicePositionChangedApriori();
       }
     }
   }
 
-  void _trackDevicePositionChanged(Device device) {
+  void _trackDevicePositionChangedApriori() {
     _locationChanged?.cancel();
     _locationChanged = LocationService().stream.listen((p) {
+      final current = app;
       // Update device position for this app
       // a-priori of message from backend
-      final current = repo[device.uuid];
-      final next = device.copyWith(position: p);
-      final patches = JsonUtils.diff(current, next);
-      service.publish(DeviceMessage({
-        'type': 'DevicePositionChanged',
-        'data': {
-          'uuid': device.uuid,
-          'patches': patches,
-        }
-      }));
+      if (LocationService().isSharing && current.trackable) {
+        final next = current.copyWith(position: p);
+        service.publish(
+          DeviceMessage.positionChanged(
+            next.uuid,
+            JsonUtils.diff(current, next),
+          ),
+        );
+      }
     });
   }
 
@@ -278,11 +252,11 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       yield* _update(command);
     } else if (command is DeleteDevice) {
       yield* _delete(command);
-    } else if (command is _DeviceMessage) {
-      yield await _process(command);
+    } else if (command is _NotifyDeviceStateChanged) {
+      yield await _notify(command);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -321,7 +295,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         repo.keys,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -346,7 +320,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         device,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -373,7 +347,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -398,7 +372,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         device,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -407,11 +381,11 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     );
   }
 
-  Future<DeviceState> _process(_DeviceMessage command) async {
-    _assertData(command.data);
-    final device = command.data;
+  Future<DeviceState> _notify(_NotifyDeviceStateChanged command) async {
+    _assertData(command.device);
+    final device = command.device;
 
-    if (command.previous == null) {
+    if (command.isCreated) {
       return toOK(
         command,
         DeviceCreated(
@@ -421,11 +395,25 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         result: device,
       );
     }
+
+    if (command.isUpdated) {
+      return toOK(
+        command,
+        DeviceUpdated(
+          device,
+          command.previous,
+          isRemote: command.isRemote,
+        ),
+        result: device,
+      );
+    }
+
+    assert(command.isDeleted);
+
     return toOK(
       command,
-      DeviceUpdated(
+      DeviceDeleted(
         device,
-        command.previous,
         isRemote: command.isRemote,
       ),
       result: device,
@@ -490,22 +478,26 @@ class UnloadDevices extends DeviceCommand<void, Iterable<Device>> {
   String toString() => '$runtimeType {}';
 }
 
-class _DeviceMessage extends DeviceCommand<Device, Device> {
-  _DeviceMessage(
-    Device device,
-    this.previous,
-    this.isRemote,
-  ) : super(device);
+class _NotifyDeviceStateChanged extends DeviceCommand<StorageTransition<Device>, Device> {
+  _NotifyDeviceStateChanged(
+    StorageTransition<Device> transition,
+  ) : super(transition);
 
-  final bool isRemote;
-  final Device previous;
+  Device get device => data.to.value;
+  Device get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  bool get isRemote => data.to?.isRemote == true;
 
   @override
   String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
-class _StateChange extends DeviceCommand<DeviceState, Device> {
-  _StateChange(
+class _NotifyBlocStateChange extends DeviceCommand<DeviceState, Device> {
+  _NotifyBlocStateChange(
     DeviceState state,
   ) : super(state);
 

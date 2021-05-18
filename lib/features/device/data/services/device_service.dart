@@ -66,6 +66,14 @@ enum DeviceMessageType {
 class DeviceMessage extends MessageModel {
   DeviceMessage(Map<String, dynamic> data) : super(data);
 
+  factory DeviceMessage.positionChanged(String uuid, List<Map<String, dynamic>> patches) => DeviceMessage({
+        'type': enumName(DeviceMessageType.DevicePositionChanged),
+        'data': {
+          'uuid': uuid,
+          'patches': patches,
+        }
+      });
+
   DeviceMessageType get type {
     final type = data.elementAt('type');
     return DeviceMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);

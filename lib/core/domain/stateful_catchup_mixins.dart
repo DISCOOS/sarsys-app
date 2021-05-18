@@ -26,8 +26,14 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
           final current = getState(
             message.uuid,
           );
+
+          // A-priori message?
+          if (message.isApriori) {
+            state = _onApriori(message, current);
+          }
+
           // Skip retrospective events
-          if (message.version >= current.version) {
+          else if (message.version >= current.version) {
             if (current.isRemote) {
               if (message.version == current.version + 1) {
                 // Trivial >> Just update local with remote state
@@ -64,7 +70,9 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
               state,
             );
           }
-          put(state);
+          if (state != null) {
+            put(state);
+          }
         }
       } on Exception catch (error, stackTrace) {
         if (state != null) {
@@ -76,7 +84,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
   }
 
   /// Get next state from state directly or by patching changed to previous
-  V _toNextState(MessageModel message, StorageState previous) => fromJson(message.isState
+  V _toNextState(MessageModel message, StorageState<V> previous) => fromJson(message.isState
       ? message.state
       : JsonUtils.apply(
           previous.value,
@@ -84,8 +92,13 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
           strict: false,
         ));
 
+  /// Replace state with a-priori data
+  StorageState<V> _onApriori(MessageModel message, StorageState<V> current) => current.replace(
+        _toNextState(message, current),
+      );
+
   /// Created new state not seen before
-  StorageState<V> _onRemoteCreate(MessageModel message, StorageState state) {
+  StorageState<V> _onRemoteCreate(MessageModel message, StorageState<V> state) {
     final next = fromJson(
       message.isState
           ? message.state
@@ -104,7 +117,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   StorageState<V> _onRemoteNextWhenUnmodified(
     MessageModel message,
-    StorageState current,
+    StorageState<V> current,
   ) {
     return StorageState.updated(
       _toNextState(
@@ -118,7 +131,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   StorageState<V> _onRemoteBeyondWhenUnmodified(
     MessageModel message,
-    StorageState current,
+    StorageState<V> current,
   ) {
     if (message.isState) {
       return StorageState.updated(
@@ -134,7 +147,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   StorageState<V> _onRemoteNextWhenModified(
     MessageModel message,
-    StorageState current,
+    StorageState<V> current,
   ) {
     // Use Last-Writer-Wins strategy >> local changes are overwritten on concurrent modification
     final next = _toNextState(
@@ -143,7 +156,11 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     );
 
     // Check merge resolution
-    final residue = _check(current, next, message);
+    final residue = _check(
+      message,
+      current,
+      next,
+    );
 
     return current.replace(
       next,
@@ -154,7 +171,7 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
 
   StorageState<V> _onRemoteBeyondWhenModified(
     MessageModel message,
-    StorageState current,
+    StorageState<V> current,
   ) {
     if (message.isState) {
       // With state we can do a forward merge
@@ -168,7 +185,11 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     return current;
   }
 
-  List<Map<String, dynamic>> _check(StorageState current, V next, MessageModel message) {
+  List<Map<String, dynamic>> _check(
+    MessageModel message,
+    StorageState<V> current,
+    V next,
+  ) {
     final base = current.previous;
     final mine = JsonUtils.diff(
       base,

@@ -193,7 +193,7 @@ class BackgroundGeolocationService implements LocationService {
         );
 
         // Prevents concurrent configure
-        _queue.add(StreamRequest<String, LocationOptions>(execute: () async {
+        _queue.only(StreamRequest<String, LocationOptions>(execute: () async {
           // Wait for previous to complete or check plugin
           _state = await bg.BackgroundGeolocation.state;
           if (isReady) {

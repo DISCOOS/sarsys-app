@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:uuid/uuid.dart';
 
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/AggregateRef.dart';
@@ -18,9 +20,6 @@ import 'package:SarSys/features/personnel/data/services/personnel_service.dart';
 import 'package:SarSys/core/domain/models/core.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
-import 'package:uuid/uuid.dart';
 
 typedef void PersonnelCallback(VoidCallback fn);
 
@@ -52,10 +51,10 @@ class PersonnelBloc
     subscribe<OperationUnselected>(_processOperationState);
     subscribe<OperationDeleted>(_processOperationState);
 
-    // Update from messages pushed from backend
-    registerStreamSubscription(service.messages.listen(
-      _processPersonnelMessage,
-    ));
+    // Notify when personnel state has changed
+    forwardStateChanges(
+      (t) => _NotifyPersonnelStateChanged(t),
+    );
   }
 
   /// Process [OperationState] events
@@ -74,23 +73,6 @@ class PersonnelBloc
       } else if (isReady && (unselected || state.shouldUnload(ouuid))) {
         await unload();
       }
-    }
-  }
-
-  /// Process [PersonnelMessage] events
-  ///
-  /// Schedules [_InternalMessage].
-  ///
-  void _processPersonnelMessage(PersonnelMessage event) {
-    try {
-      add(_InternalMessage(event));
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
     }
   }
 
@@ -322,9 +304,9 @@ class PersonnelBloc
       yield* _delete(command);
     } else if (command is UnloadPersonnels) {
       yield await _unload(command);
-    } else if (command is _InternalMessage) {
-      yield await _process(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyPersonnelStateChanged) {
+      yield await _notify(command);
+    } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -363,7 +345,7 @@ class PersonnelBloc
           isRemote: true,
         );
       },
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -467,7 +449,7 @@ class PersonnelBloc
           state.isRemote,
         );
       },
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -511,7 +493,7 @@ class PersonnelBloc
         previous,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -540,7 +522,7 @@ class PersonnelBloc
         personnel,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -558,25 +540,43 @@ class PersonnelBloc
     );
   }
 
-  Future<PersonnelState> _process(_InternalMessage event) async {
-    switch (event.data.type) {
-      case PersonnelMessageType.PersonnelInformationUpdated:
-        if (repo.containsKey(event.data.uuid)) {
-          final current = repo[event.data.uuid];
-          final next = PersonnelModel.fromJson(event.data.state);
-          repo.patch(next);
-          return PersonnelUpdated(next, current);
-        }
-        break;
+  Future<PersonnelState> _notify(_NotifyPersonnelStateChanged command) async {
+    _assertData(command.personnel);
+    final personnel = command.personnel;
 
-      case PersonnelMessageType.PersonnelCreated:
-        // TODO: Handle this case.
-        break;
-      case PersonnelMessageType.PersonnelDeleted:
-        // TODO: Handle this case.
-        break;
+    if (command.isCreated) {
+      return toOK(
+        command,
+        PersonnelCreated(
+          personnel,
+          isRemote: command.isRemote,
+        ),
+        result: personnel,
+      );
     }
-    return PersonnelBlocError("Personnel message not recognized: $event");
+
+    if (command.isUpdated) {
+      return toOK(
+        command,
+        PersonnelUpdated(
+          personnel,
+          command.previous,
+          isRemote: command.isRemote,
+        ),
+        result: personnel,
+      );
+    }
+
+    assert(command.isDeleted);
+
+    return toOK(
+      command,
+      PersonnelDeleted(
+        personnel,
+        isRemote: command.isRemote,
+      ),
+      result: personnel,
+    );
   }
 
   @override
@@ -647,11 +647,22 @@ class DeletePersonnel extends PersonnelCommand<Personnel, Personnel> {
   String toString() => '$runtimeType {personnel: $data}';
 }
 
-class _InternalMessage extends PersonnelCommand<PersonnelMessage, PersonnelMessage> {
-  _InternalMessage(PersonnelMessage data) : super(data);
+class _NotifyPersonnelStateChanged extends PersonnelCommand<StorageTransition<Personnel>, Personnel> {
+  _NotifyPersonnelStateChanged(
+    StorageTransition<Personnel> transition,
+  ) : super(transition);
+
+  Personnel get personnel => data.to.value;
+  Personnel get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  bool get isRemote => data.to?.isRemote == true;
 
   @override
-  String toString() => '$runtimeType {message: $data}';
+  String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
 class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
@@ -661,8 +672,8 @@ class UnloadPersonnels extends PersonnelCommand<String, List<Personnel>> {
   String toString() => '$runtimeType {ouuid: $data}';
 }
 
-class _StateChange extends PersonnelCommand<PersonnelState, Personnel> {
-  _StateChange(
+class _NotifyBlocStateChange extends PersonnelCommand<PersonnelState, Personnel> {
+  _NotifyBlocStateChange(
     PersonnelState state,
   ) : super(state);
 

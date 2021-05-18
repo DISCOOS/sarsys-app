@@ -494,6 +494,7 @@ class StorageTransition<T> {
   bool get isChanged => to?.isChanged ?? false;
   bool get isDeleted => to?.isDeleted ?? false;
   bool get isConflict => to?.isConflict ?? false;
+  bool get isCreated => from == null && to != null;
   bool get hasPrevious => to?.hasPrevious ?? false;
 
   ConflictModel get conflict => isConflict ? to.error as ConflictModel : null;

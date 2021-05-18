@@ -50,6 +50,11 @@ class TrackingBloc
     subscribe<OperationUnselected>(_processOperationState);
     subscribe<OperationDeleted>(_processOperationState);
 
+    // Notify when tracking state has changed
+    forwardStateChanges(
+      (t) => _NotifyTrackingStateChanged(t),
+    );
+
     registerStreamSubscription(
       // Updates tracking for unit
       // apriori to changes made in backend.
@@ -66,11 +71,6 @@ class TrackingBloc
       // Updates tracking for device
       // apriori to changes made in backend.
       deviceBloc.where((e) => e.isLocal).listen(_processDeviceState),
-    );
-
-    registerStreamSubscription(
-      // Update from messages pushed from backend
-      service.messages.listen(_processMessage),
     );
   }
 
@@ -185,7 +185,7 @@ class TrackingBloc
                 trackings.first,
                 [device.uuid],
               );
-        add(_toInternalChange(next));
+        add(_toAprioriChange(next));
       }
     }
   }
@@ -199,7 +199,7 @@ class TrackingBloc
           trackings.first,
           [device.uuid],
         );
-        add(_toInternalChange(next));
+        add(_toAprioriChange(next));
       }
     }
   }
@@ -258,7 +258,7 @@ class TrackingBloc
         ],
       );
       // TODO: Backend will perform this apriori
-      add(_toInternalCreate(
+      add(_toAprioriCreate(
         tracking,
       ));
     }
@@ -274,12 +274,12 @@ class TrackingBloc
           state.isRetired(),
         );
         // TODO: Backend will perform this apriori
-        add(_toInternalChange(
+        add(_toAprioriChange(
           next,
         ));
       } else if (!state.isRetired()) {
         // TODO: Backend will perform this apriori
-        add(_toInternalCreate(
+        add(_toAprioriCreate(
           tracking,
         ));
       }
@@ -291,7 +291,7 @@ class TrackingBloc
     final tracking = repo[unit.tracking?.uuid];
     if (tracking != null) {
       // TODO: Backend will perform this apriori
-      add(_toInternalDelete(
+      add(_toAprioriDelete(
         tracking,
       ));
     }
@@ -346,7 +346,7 @@ class TrackingBloc
       final personnel = state.data;
       final tracking = TrackingUtils.create(personnel);
       // Backend will perform this apriori
-      add(_toInternalCreate(
+      add(_toAprioriCreate(
         tracking,
       ));
     }
@@ -362,7 +362,7 @@ class TrackingBloc
           state.isRetired(),
         );
         // Backend will perform this apriori
-        add(_toInternalChange(
+        add(_toAprioriChange(
           next,
         ));
       }
@@ -375,31 +375,10 @@ class TrackingBloc
       final tracking = repo[personnel.tracking?.uuid];
       if (tracking != null) {
         // Backend will perform this apriori
-        add(_toInternalDelete(
+        add(_toAprioriDelete(
           tracking,
         ));
       }
-    }
-  }
-
-  /// Dispatches [TrackingMessage]s from
-  /// [TrackingService] as an internal [_HandleMessage]
-  /// command processed by method [_process]
-  void _processMessage(TrackingMessage event) {
-    try {
-      if (repo.containsKey(event.uuid)) {
-        add(_HandleMessage(
-          event,
-          internal: false,
-        ));
-      }
-    } catch (error, stackTrace) {
-      BlocSupervisor.delegate.onError(
-        this,
-        error,
-        stackTrace,
-      );
-      onError(error, stackTrace);
     }
   }
 
@@ -680,22 +659,19 @@ class TrackingBloc
     );
   }
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingInformationUpdated]
-  _HandleMessage _toInternalCreate(Tracking tracking) => _HandleMessage(
+  /// Create [_NotifyTrackingStateChanged] for processing [TrackingMessageType.TrackingInformationUpdated]
+  _HandleMessage _toAprioriCreate(Tracking tracking) => _HandleMessage(
         TrackingMessage.created(tracking),
-        internal: true,
       );
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingInformationUpdated]
-  _HandleMessage _toInternalChange(Tracking tracking) => _HandleMessage(
+  /// Create [_NotifyTrackingStateChanged] for processing [TrackingMessageType.TrackingInformationUpdated]
+  _HandleMessage _toAprioriChange(Tracking tracking) => _HandleMessage(
         TrackingMessage.updated(tracking),
-        internal: true,
       );
 
-  /// Create [_HandleMessage] for processing [TrackingMessageType.TrackingDeleted].
-  _HandleMessage _toInternalDelete(Tracking tracking) => _HandleMessage(
+  /// Create [_NotifyTrackingStateChanged] for processing [TrackingMessageType.TrackingDeleted].
+  _HandleMessage _toAprioriDelete(Tracking tracking) => _HandleMessage(
         TrackingMessage.deleted(tracking),
-        internal: true,
       );
 
   @override
@@ -708,9 +684,11 @@ class TrackingBloc
       yield* _delete(command);
     } else if (command is UnloadTrackings) {
       yield await _unload(command);
+    } else if (command is _NotifyTrackingStateChanged) {
+      yield* _notify(command);
     } else if (command is _HandleMessage) {
       yield* _process(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -738,7 +716,7 @@ class TrackingBloc
         repo.keys,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -766,7 +744,7 @@ class TrackingBloc
         tracking,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -794,7 +772,7 @@ class TrackingBloc
         tracking,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -812,15 +790,50 @@ class TrackingBloc
     );
   }
 
+  Stream<TrackingState> _notify(_NotifyTrackingStateChanged command) async* {
+    final tracking = command.tracking;
+
+    if (command.isCreated) {
+      yield toOK(
+        command,
+        TrackingCreated(
+          tracking,
+          isRemote: command.isRemote,
+        ),
+        result: tracking,
+      );
+    } else if (command.isUpdated) {
+      yield toOK(
+        command,
+        TrackingUpdated(
+          tracking,
+          command.previous,
+          isRemote: command.isRemote,
+        ),
+        result: tracking,
+      );
+    } else {
+      assert(command.isDeleted);
+
+      yield toOK(
+        command,
+        TrackingDeleted(
+          tracking,
+          isRemote: command.isRemote,
+        ),
+        result: tracking,
+      );
+    }
+  }
+
   Stream<TrackingState> _process(_HandleMessage event) async* {
     if (isReady) {
-      final remote = !event.internal;
       switch (event.data.type) {
         case TrackingMessageType.TrackingCreated:
         case TrackingMessageType.TrackingStatusChanged:
         case TrackingMessageType.TrackingInformationUpdated:
           final value = TrackingModel.fromJson(event.data.state);
-          final next = repo.patch(value, isRemote: remote).value;
+          final next = repo.patch(value, isRemote: false).value;
           yield event.data.type == TrackingMessageType.TrackingCreated
               ? TrackingCreated(next)
               : TrackingUpdated(
@@ -832,13 +845,13 @@ class TrackingBloc
           final tracking = repo[event.data.uuid];
           if (tracking != null) {
             final next = TrackingUtils.close(tracking);
-            repo.remove(next, isRemote: remote);
+            repo.remove(next, isRemote: false);
             yield TrackingDeleted(next);
           }
           break;
         default:
           throw TrackingBlocException(
-            "Tracking message ${enumName(event.data.type)} not recognized",
+            "Tracking message '${enumName(event.data.type)}' not recognized",
             state,
             command: event,
             stackTrace: StackTrace.current,
@@ -917,20 +930,37 @@ class UnloadTrackings extends TrackingCommand<String, List<Tracking>> {
 /// Command for processing a [TrackingMessage]. Each [TrackingMessage]
 /// is committed to [repo] directly without any side effects
 class _HandleMessage extends TrackingCommand<TrackingMessage, void> {
-  final bool internal;
-  _HandleMessage(TrackingMessage data, {@required this.internal}) : super(data);
+  _HandleMessage(TrackingMessage data) : super(data);
 
   @override
-  String toString() => '$runtimeType {message: $data, local: $internal}';
+  String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
-class _StateChange extends TrackingCommand<TrackingState, Tracking> {
-  _StateChange(
+class _NotifyBlocStateChange extends TrackingCommand<TrackingState, Tracking> {
+  _NotifyBlocStateChange(
     TrackingState state,
   ) : super(state);
 
   @override
   String toString() => '$runtimeType {state: $data}';
+}
+
+class _NotifyTrackingStateChanged extends TrackingCommand<StorageTransition<Tracking>, Tracking> {
+  _NotifyTrackingStateChanged(
+    StorageTransition<Tracking> transition,
+  ) : super(transition);
+
+  Tracking get tracking => data.to.value;
+  Tracking get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  bool get isRemote => data.to?.isRemote == true;
+
+  @override
+  String toString() => '$runtimeType {previous: $data, next: $data}';
 }
 
 /// ---------------------
