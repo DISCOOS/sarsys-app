@@ -219,7 +219,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
   ValueNotifier<MapControlState> _isMeasuring = ValueNotifier(MapControlState());
 
   Set<String> _useLayers;
-  List<LayerOptions> _layerOptions = [];
+  List<LayerOptions> _fixedLayerOptions = [];
+  List<LayerOptions> _rotatedLayerOptions = [];
 
   // Prevent location updates after dispose
   bool _disposed = false;
@@ -484,7 +485,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         permissionController: _ensurePermissionController(),
       );
       _scheduleInitLocation((_) {
-        _setLayerOptions();
+        _setRotatedLayerOptions();
         _subscriptions.add(
           _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
             final following = _readState(STATE_FOLLOWING, defaultValue: false);
@@ -492,7 +493,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               _locationController.goto(locked: true);
               _updateLocationToolState(force: true);
             }
-            _setLayerOptions();
+            _setRotatedLayerOptions();
           }),
         );
       });
@@ -547,7 +548,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     final current = widget.withControlsLocateMe ? _locationController.current : null;
     if (widget.withControlsLocateMe && _center == null && current == null) {
       _scheduleInitLocation((location) {
-        _setLayerOptions();
+        _setRotatedLayerOptions();
         setState(() => _center = location);
       });
     }
@@ -595,7 +596,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
           MeasureLayer(),
         ],
       ),
-      layers: _setLayerOptions(),
+      layers: _setRotatedLayerOptions(),
+      nonRotatedLayers: _setFixedLayerOptions(),
     );
     return widget.interactive ? map : AbsorbPointer(child: map);
   }
@@ -644,9 +646,8 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     }
   }
 
-  List<LayerOptions> _setLayerOptions() {
-    final tool = _mapToolController?.of<MeasureTool>();
-    _layerOptions
+  List<LayerOptions> _setRotatedLayerOptions() {
+    _rotatedLayerOptions
       ..clear()
       ..addAll([
         _buildBaseMapLayer(),
@@ -654,6 +655,16 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (_useLayers.contains(LAYER_PERSONNEL)) _buildPersonnelOptions(),
         if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
         if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
+      ]);
+    setState(() => {});
+    return _rotatedLayerOptions;
+  }
+
+  List<LayerOptions> _setFixedLayerOptions() {
+    final tool = _mapToolController?.of<MeasureTool>();
+    _fixedLayerOptions
+      ..clear()
+      ..addAll([
         if (_searchMatch != null) _buildMatchOptions(_searchMatch),
         if (widget.withControlsLocateMe && _locationController?.isReady == true)
           _locationController.build(
@@ -663,8 +674,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (widget.withScaleBar && _useLayers.contains(LAYER_SCALE)) _buildScaleBarOptions(),
         if (tool != null && tool.active()) MeasureLayerOptions(tool),
       ]);
-    setState(() => {});
-    return _layerOptions;
+    return _fixedLayerOptions;
   }
 
   TileLayerOptions _buildBaseMapLayer() => TileLayerOptions(
@@ -925,7 +935,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _onSearchMatch(LatLng point) {
     _searchMatch = point;
-    _setLayerOptions();
+    _setRotatedLayerOptions();
     _locationController?.stop();
     _mapController.animatedMove(point, _zoom, this);
   }
@@ -986,7 +996,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     _setBaseMap(_writeState(STATE_BASE_MAP, map));
-    _setLayerOptions();
+    _setRotatedLayerOptions();
     Navigator.pop(context);
   }
 
