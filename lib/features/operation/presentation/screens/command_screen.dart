@@ -1,3 +1,4 @@
+import 'package:SarSys/features/device/domain/usecases/device_use_cases.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -218,19 +219,19 @@ class _CommandScreenState extends RouteWriter<CommandScreen, int> {
         case CommandScreen.TAB_MISSIONS:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createUnit(),
+            onPressed: () => createUnit(),
           );
         case CommandScreen.TAB_UNITS:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await createUnit(),
+            onPressed: () => createUnit(),
           );
         case CommandScreen.TAB_PERSONNEL:
           return FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () async => await mobilizePersonnel(),
+            onPressed: () => mobilizePersonnel(),
           );
-        case CommandScreen.TAB_PERSONNEL:
+        case CommandScreen.TAB_DEVICES:
           return FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: null,

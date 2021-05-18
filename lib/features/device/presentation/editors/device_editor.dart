@@ -263,7 +263,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         ),
       );
 
-  String _defaultFunction() => context.bloc<AffiliationBloc>().findFunction(widget?.device?.number)?.name;
+  String _defaultFunction() => context.bloc<AffiliationBloc>().findFunction(widget?.device?.number)?.name ?? '';
 
   FormBuilderTextField _buildAliasField() {
     var originalValue = widget.device?.alias;
@@ -321,7 +321,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
     _editedName = alias ?? number ?? _defaultName();
     _editedAffiliation = affiliations.findEntityName(number, empty: '-') ?? _editedAffiliation;
     _editedOrgAlias = affiliations.findOrganisation(number)?.fleetMap?.alias ?? _editedOrgAlias;
-    _editedFunction = affiliations.findFunction(number) ?? _editedFunction;
+    _editedFunction = affiliations.findFunction(number)?.name ?? _editedFunction;
     if (update) setState(() {});
   }
 
@@ -356,7 +356,7 @@ class _DeviceEditorState extends State<DeviceEditor> {
         labelText: "Siste posisjon",
         hintText: 'Ingen posisjon',
         errorText: 'Posisjon må oppgis',
-        enabled: false,
+        enabled: true,
       );
 
   DeviceType _getActualType(DeviceType defaultValue) {

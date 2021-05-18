@@ -86,8 +86,6 @@ abstract class DeviceServiceImpl extends StatefulService<Device, DeviceModel> {
       : super(
           decoder: (json) => DeviceModel.fromJson(json),
           reducer: (value) => JsonUtils.toJson<DeviceModel>(value, remove: const [
-            'type',
-            'manual',
             'position',
             'messages',
             'transitions',
