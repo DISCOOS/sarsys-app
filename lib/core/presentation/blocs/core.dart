@@ -342,13 +342,17 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
 
   C Function(StorageTransition<V>) _builder;
 
-  void forwardStateChanges(C Function(StorageTransition<V>) builder) {
+  void forwardStateChanges(
+    C Function(StorageTransition<V>) builder, {
+    bool remote = true,
+    bool local = false,
+  }) {
     if (_builder == null) {
       _builder = builder;
-      registerStreamSubscription(repo.onChanged.listen(
-        // Notify when device state has changed
-        _processStateChanged,
-      ));
+      registerStreamSubscription(repo.onChanged.where((e) => e.isRemote && local || e.isLocal && local).listen(
+            // Notify when device state has changed
+            _processStateChanged,
+          ));
     }
   }
 
