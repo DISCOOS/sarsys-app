@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:chopper/chopper.dart';
 
+import 'package:SarSys/core/data/models/message_model.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
+import 'package:SarSys/core/utils/data.dart';
+import 'package:SarSys/core/extensions.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -16,9 +20,77 @@ part 'unit_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class UnitService extends StatefulServiceDelegate<Unit, UnitModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetListFromId {
+  UnitService(
+    this.channel,
+  ) : delegate = UnitServiceImpl.newInstance() {
+    // Listen for Unit messages
+    UnitMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
+  }
+
+  final MessageChannel channel;
   final UnitServiceImpl delegate;
 
-  UnitService() : delegate = UnitServiceImpl.newInstance();
+  /// Get stream of device messages
+  Stream<UnitMessage> get messages => _controller.stream;
+  final StreamController<UnitMessage> _controller = StreamController.broadcast();
+
+  void publish(UnitMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      UnitMessage(data),
+    );
+  }
+
+  void dispose() {
+    _controller.close();
+    UnitMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
+  }
+}
+
+enum UnitMessageType {
+  UnitCreated,
+  UnitDeleted,
+  UnitPositionChanged,
+  UnitInformationUpdated,
+}
+
+class UnitMessage extends MessageModel {
+  UnitMessage(Map<String, dynamic> data) : super(data);
+
+  factory UnitMessage.created(Unit tracking) => UnitMessage.fromType(
+        tracking,
+        UnitMessageType.UnitCreated,
+      );
+
+  factory UnitMessage.updated(Unit tracking) => UnitMessage.fromType(
+        tracking,
+        UnitMessageType.UnitInformationUpdated,
+      );
+
+  factory UnitMessage.deleted(Unit tracking) => UnitMessage.fromType(
+        tracking,
+        UnitMessageType.UnitDeleted,
+      );
+
+  factory UnitMessage.fromType(Unit tracking, UnitMessageType type) => UnitMessage({
+        'type': enumName(type),
+        'data': {
+          'uuid': tracking.uuid,
+          'changed': tracking.toJson(),
+        },
+      });
+
+  UnitMessageType get type {
+    final type = data.elementAt('type');
+    return UnitMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
 }
 
 @ChopperApi()

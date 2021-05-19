@@ -22,10 +22,9 @@ class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
     this.channel,
   ) : delegate = TrackingServiceImpl.newInstance() {
     // Listen for Device messages
-    channel.subscribe('TrackingCreated', _onMessage);
-    channel.subscribe('TrackingDeleted', _onMessage);
-    channel.subscribe('TrackingPositionChanged', _onMessage);
-    channel.subscribe('TrackingInformationUpdated', _onMessage);
+    TrackingMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
   }
 
   final MessageChannel channel;
@@ -48,6 +47,9 @@ class TrackingService extends StatefulServiceDelegate<Tracking, TrackingModel>
 
   void dispose() {
     _controller.close();
+    TrackingMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
   }
 }
 

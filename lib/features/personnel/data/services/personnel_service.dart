@@ -25,9 +25,9 @@ class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel
     this.channel,
   ) : delegate = PersonnelServiceImpl.newInstance() {
     // Listen for Device messages
-    channel.subscribe('PersonnelCreated', _onMessage);
-    channel.subscribe('PersonnelDeleted', _onMessage);
-    channel.subscribe('PersonnelInformationUpdated', _onMessage);
+    PersonnelMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
   }
 
   final MessageChannel channel;
@@ -48,6 +48,9 @@ class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel
 
   void dispose() {
     _controller.close();
+    PersonnelMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
   }
 }
 

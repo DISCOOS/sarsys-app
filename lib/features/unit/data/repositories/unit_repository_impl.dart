@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:SarSys/features/unit/data/models/unit_model.dart';
@@ -13,14 +14,20 @@ import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/unit/data/services/unit_service.dart';
 
-class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService> implements UnitRepository {
+class UnitRepositoryImpl extends StatefulRepository<String, Unit, UnitService>
+    with StatefulCatchup<Unit, UnitService>
+    implements UnitRepository {
   UnitRepositoryImpl(
     UnitService service, {
     @required ConnectivityService connectivity,
   }) : super(
           service: service,
           connectivity: connectivity,
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Operation.uuid]
   String get ouuid => _ouuid;

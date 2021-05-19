@@ -24,10 +24,9 @@ class DeviceService extends StatefulServiceDelegate<Device, DeviceModel>
     this.channel,
   ) : delegate = DeviceServiceImpl.newInstance() {
     // Listen for Device messages
-    channel.subscribe('DeviceCreated', _onMessage);
-    channel.subscribe('DeviceDeleted', _onMessage);
-    channel.subscribe('DevicePositionChanged', _onMessage);
-    channel.subscribe('DeviceInformationUpdated', _onMessage);
+    DeviceMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
   }
 
   final MessageChannel channel;
@@ -49,10 +48,9 @@ class DeviceService extends StatefulServiceDelegate<Device, DeviceModel>
 
   void dispose() {
     _controller.close();
-    channel.unsubscribe('DeviceCreated', _onMessage);
-    channel.unsubscribe('DeviceDeleted', _onMessage);
-    channel.unsubscribe('DevicePositionChanged', _onMessage);
-    channel.unsubscribe('DeviceInformationUpdated', _onMessage);
+    DeviceMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
   }
 }
 

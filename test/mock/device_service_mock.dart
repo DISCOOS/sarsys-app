@@ -158,10 +158,12 @@ class DeviceServiceMock extends Mock implements DeviceService {
 
     // Mock websocket stream
     when(mock.messages).thenAnswer((_) => controller.stream);
+
     // Mock all service methods
     when(mock.getList()).thenAnswer((_) async {
       return ServiceResponse.ok(body: devicesRepo.values.toList());
     });
+
     when(mock.create(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Device>;
       if (!state.version.isFirst) {
@@ -196,6 +198,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         body: devicesRepo[device.uuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Device>;
       final uuid = next.value.uuid;
@@ -220,6 +223,7 @@ class DeviceServiceMock extends Mock implements DeviceService {
         message: "Device $uuid not found",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       var state = _.positionalArguments[0] as StorageState<Device>;
       final uuid = state.value.uuid;

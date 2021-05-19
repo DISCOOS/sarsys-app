@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:SarSys/core/data/storage.dart';
@@ -103,6 +104,7 @@ class UnitServiceMock extends Mock implements UnitService {
   static UnitService build(final int count, {List<String> ouuids = const []}) {
     final UnitServiceMock mock = UnitServiceMock();
     final unitsRepo = mock.unitsRepo;
+    final StreamController<UnitMessage> controller = StreamController.broadcast();
 
     // Only generate units for automatically generated ouuids
     ouuids.forEach((ouuid) {
@@ -131,6 +133,9 @@ class UnitServiceMock extends Mock implements UnitService {
       }
     });
 
+    // Mock websocket stream
+    when(mock.messages).thenAnswer((_) => controller.stream);
+
     when(mock.getListFromId(any)).thenAnswer((_) async {
       final String ouuid = _.positionalArguments[0];
       var units = unitsRepo[ouuid];
@@ -141,6 +146,7 @@ class UnitServiceMock extends Mock implements UnitService {
         body: units.values.toList(growable: false),
       );
     });
+
     when(mock.create(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Unit>;
       final ouuid = state.value.operation.uuid;
@@ -162,6 +168,7 @@ class UnitServiceMock extends Mock implements UnitService {
         body: unitRepo[puuid],
       );
     });
+
     when(mock.update(any)).thenAnswer((_) async {
       final next = _.positionalArguments[0] as StorageState<Unit>;
       final unit = next.value;
@@ -189,6 +196,7 @@ class UnitServiceMock extends Mock implements UnitService {
         message: "Unit not found: $puuid",
       );
     });
+
     when(mock.delete(any)).thenAnswer((_) async {
       final state = _.positionalArguments[0] as StorageState<Unit>;
       final unit = state.value;

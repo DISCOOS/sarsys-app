@@ -659,7 +659,7 @@ class TrackingBloc
     );
   }
 
-  /// Create [_NotifyTrackingStateChanged] for processing [TrackingMessageType.TrackingInformationUpdated]
+  /// Create [_NotifyTrackingStateChanged] for processing [TrackingMessageType.TrackingCreated]
   _HandleMessage _toAprioriCreate(Tracking tracking) => _HandleMessage(
         TrackingMessage.created(tracking),
       );
@@ -826,37 +826,40 @@ class TrackingBloc
     }
   }
 
-  Stream<TrackingState> _process(_HandleMessage event) async* {
-    if (isReady) {
-      switch (event.data.type) {
-        case TrackingMessageType.TrackingCreated:
-        case TrackingMessageType.TrackingStatusChanged:
-        case TrackingMessageType.TrackingInformationUpdated:
-          final value = TrackingModel.fromJson(event.data.state);
-          final next = repo.patch(value, isRemote: false).value;
-          yield event.data.type == TrackingMessageType.TrackingCreated
-              ? TrackingCreated(next)
-              : TrackingUpdated(
-                  next,
-                  value,
-                );
-          break;
-        case TrackingMessageType.TrackingDeleted:
-          final tracking = repo[event.data.uuid];
-          if (tracking != null) {
-            final next = TrackingUtils.close(tracking);
-            repo.remove(next, isRemote: false);
-            yield TrackingDeleted(next);
-          }
-          break;
-        default:
-          throw TrackingBlocException(
-            "Tracking message '${enumName(event.data.type)}' not recognized",
-            state,
-            command: event,
-            stackTrace: StackTrace.current,
-          );
-      }
+  Stream<TrackingState> _process(_HandleMessage command) async* {
+    if (!isReady) {
+      yield state;
+      return;
+    }
+
+    switch (command.data.type) {
+      case TrackingMessageType.TrackingCreated:
+      case TrackingMessageType.TrackingStatusChanged:
+      case TrackingMessageType.TrackingInformationUpdated:
+        final value = TrackingModel.fromJson(command.data.state);
+        final next = repo.patch(value, isRemote: false).value;
+        yield command.data.type == TrackingMessageType.TrackingCreated
+            ? TrackingCreated(next)
+            : TrackingUpdated(
+                next,
+                value,
+              );
+        break;
+      case TrackingMessageType.TrackingDeleted:
+        final tracking = repo[command.data.uuid];
+        if (tracking != null) {
+          final next = TrackingUtils.close(tracking);
+          repo.remove(next, isRemote: false);
+          yield TrackingDeleted(next);
+        }
+        break;
+      default:
+        throw TrackingBlocException(
+          "Tracking message '${enumName(command.data.type)}' not recognized",
+          state,
+          command: command,
+          stackTrace: StackTrace.current,
+        );
     }
   }
 

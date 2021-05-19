@@ -7,6 +7,7 @@ import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart
 import 'package:SarSys/features/device/domain/entities/Device.dart';
 import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -332,7 +333,7 @@ class AppController {
     );
 
     // Configure Unit service
-    final UnitService unitService = UnitService();
+    final UnitService unitService = UnitService(channel);
 
     // ignore: close_sinks
     final UnitBloc unitBloc = UnitBloc(
@@ -687,22 +688,24 @@ class AppController {
       url: '${Defaults.baseWsUrl}/api/messages/connect',
       config: SubscriptionModel(
         types: [
-          // Subscribe to Device changes
           SubscriptionTypeModel(
             name: '${typeOf<Device>()}',
             changedState: true,
           ),
-          // Subscribe to Personnel changes
           SubscriptionTypeModel(
             name: '${typeOf<Personnel>()}',
             changedState: true,
           ),
-          // Only subscribe to
-          // subset of tracking events
+          SubscriptionTypeModel(
+            name: '${typeOf<Unit>()}',
+            changedState: true,
+          ),
           SubscriptionTypeModel(
             name: '${typeOf<Tracking>()}',
             changedState: true,
             events: [
+              // Only subscribe to
+              // subset of tracking events
               SubscriptionEventModel(name: 'TrackingCreated'),
               SubscriptionEventModel.changed('TrackingStatusChanged'),
               SubscriptionEventModel.patches('TrackingPositionChanged'),

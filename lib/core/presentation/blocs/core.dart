@@ -349,7 +349,11 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
   }) {
     if (_builder == null) {
       _builder = builder;
-      registerStreamSubscription(repo.onChanged.where((e) => e.isRemote && local || e.isLocal && local).listen(
+      registerStreamSubscription(repo.onChanged
+          .where(
+            (e) => e.isRemote && remote || e.isLocal && local,
+          )
+          .listen(
             // Notify when device state has changed
             _processStateChanged,
           ));
