@@ -213,7 +213,7 @@ class AffiliationRepositoryImpl extends StatefulRepository<String, Affiliation, 
               isRemote: true,
             );
           });
-          return response.body.map((s) => s.value);
+          return response.body.map((s) => s.value).toList();
         }
         throw AffiliationServiceException(
           'Failed to search for affiliation matching $filter',

@@ -144,6 +144,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
         ? GroupedListView<Personnel, AffiliationGroupEntry>(
             sort: true,
             shrinkWrap: false,
+            cacheExtent: 150.0,
             elements: personnels,
             order: GroupedListOrder.ASC,
             useStickyGroupSeparators: false,
@@ -172,6 +173,7 @@ class PersonnelsPageState extends State<PersonnelsPage> {
           )
         : ListView.builder(
             itemExtent: 72.0,
+            cacheExtent: 150.0,
             itemCount: personnels.length,
             itemBuilder: (context, index) {
               return _buildPersonnel(personnels[index]);
