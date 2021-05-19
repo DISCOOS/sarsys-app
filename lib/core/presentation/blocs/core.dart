@@ -343,7 +343,7 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
   C Function(StorageTransition<V>) _builder;
 
   void forwardStateChanges(C Function(StorageTransition<V>) builder) {
-    if (_builder != null) {
+    if (_builder == null) {
       _builder = builder;
       registerStreamSubscription(repo.onChanged.listen(
         // Notify when device state has changed
