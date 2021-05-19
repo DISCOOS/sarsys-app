@@ -1,3 +1,10 @@
+import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
@@ -10,10 +17,6 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
 
 class DeviceTool extends MapTool with MapSelectable<Device> {
   final User user;
@@ -75,9 +78,6 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
   }
 
   void _showInfo(BuildContext context, Device device) async {
-    final unit = bloc.units.find(device);
-    final personnel = bloc.personnels.find(device);
-    final tracking = _ensureTracking(unit, personnel);
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -86,16 +86,28 @@ class DeviceTool extends MapTool with MapSelectable<Device> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
-            child: DeviceWidget(
-              withMap: false,
-              unit: unit,
-              personnel: personnel,
-              device: device,
-              tracking: tracking,
-              onMessage: onMessage,
-              onGoto: (point) => _goto(context, point),
-              onCompleted: (_) => Navigator.pop(context),
-              withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
+            child: StreamBuilder<Device>(
+              initialData: device,
+              stream: context.bloc<DeviceBloc>().onChanged(device),
+              builder: (context, snapshot) {
+                if (snapshot.data is Device) {
+                  device = snapshot.data;
+                }
+                final unit = bloc.units.find(device);
+                final personnel = bloc.personnels.find(device);
+                final tracking = _ensureTracking(unit, personnel);
+                return DeviceWidget(
+                  withMap: false,
+                  unit: unit,
+                  device: device,
+                  tracking: tracking,
+                  personnel: personnel,
+                  onMessage: onMessage,
+                  onGoto: (point) => _goto(context, point),
+                  onCompleted: (_) => Navigator.pop(context),
+                  withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
+                );
+              },
             ),
           ),
         );

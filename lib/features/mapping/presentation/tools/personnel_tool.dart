@@ -1,5 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:SarSys/core/extensions.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/personnel/presentation/blocs/personnel_bloc.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
@@ -10,12 +17,6 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
 import 'package:SarSys/features/personnel/presentation/widgets/personnel_widgets.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:SarSys/core/extensions.dart';
 
 class PersonnelTool extends MapTool with MapSelectable<Personnel> {
   final User user;
@@ -90,22 +91,31 @@ class PersonnelTool extends MapTool with MapSelectable<Personnel> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        final tracking = bloc.trackings[personnel.tracking.uuid];
         return Dialog(
           elevation: 0,
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
-            child: PersonnelWidget(
-              withMap: false,
-              tracking: tracking,
-              personnel: personnel,
-              onMessage: onMessage,
-              onDeleted: () => Navigator.pop(context),
-              onCompleted: (_) => Navigator.pop(context),
-              onGoto: (point) => _goto(context, point),
-              devices: bloc.devices(personnel.tracking.uuid),
-              unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
-              withActions: context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander),
+            child: StreamBuilder<Personnel>(
+              initialData: personnel,
+              stream: context.bloc<PersonnelBloc>().onChanged(personnel),
+              builder: (context, snapshot) {
+                if (snapshot.data is Personnel) {
+                  personnel = snapshot.data;
+                }
+                final tracking = bloc.trackings[personnel.tracking.uuid];
+                return PersonnelWidget(
+                  withMap: false,
+                  tracking: tracking,
+                  personnel: personnel,
+                  onMessage: onMessage,
+                  onDeleted: () => Navigator.pop(context),
+                  onCompleted: (_) => Navigator.pop(context),
+                  onGoto: (point) => _goto(context, point),
+                  devices: bloc.devices(personnel.tracking.uuid),
+                  unit: context.bloc<UnitBloc>().repo.findPersonnel(personnel.uuid).firstOrNull,
+                  withActions: context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander),
+                );
+              },
             ),
           ),
         );

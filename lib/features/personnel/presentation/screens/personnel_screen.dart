@@ -116,7 +116,12 @@ class _PersonnelScreenState extends ScreenState<PersonnelScreen, String> with Ti
             initialData: _personnel,
             stream: _group.stream,
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return Center(child: Text("Ingen data"));
+              if (!snapshot.hasData) {
+                return Center(child: Text("Ingen data"));
+              }
+              if (snapshot.data is Personnel) {
+                _personnel = snapshot.data;
+              }
               return _build(context);
             },
           ),

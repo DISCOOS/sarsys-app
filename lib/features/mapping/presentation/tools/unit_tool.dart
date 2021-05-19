@@ -1,3 +1,9 @@
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:latlong2/latlong.dart';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:SarSys/core/callbacks.dart';
 import 'package:SarSys/features/tracking/presentation/blocs/tracking_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/tools/map_tools.dart';
@@ -8,10 +14,6 @@ import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/presentation/widgets/list_selector_widget.dart';
 import 'package:SarSys/features/unit/presentation/widgets/unit_widgets.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong2/latlong.dart';
 
 class UnitTool extends MapTool with MapSelectable<Unit> {
   final User user;
@@ -89,15 +91,24 @@ class UnitTool extends MapTool with MapSelectable<Unit> {
           elevation: 0,
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
-            child: UnitWidget(
-              unit: unit,
-              withMap: false,
-              tracking: tracking,
-              onMessage: onMessage,
-              withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
-              onGoto: (point) => _goto(context, point),
-              devices: bloc.devices(unit.tracking.uuid),
-              onCompleted: (_) => Navigator.pop(context),
+            child: StreamBuilder<Unit>(
+              initialData: unit,
+              stream: context.bloc<UnitBloc>().onChanged(unit.uuid),
+              builder: (context, snapshot) {
+                if (snapshot.data is Unit) {
+                  unit = snapshot.data;
+                }
+                return UnitWidget(
+                  unit: unit,
+                  withMap: false,
+                  tracking: tracking,
+                  onMessage: onMessage,
+                  withActions: bloc.operationBloc.isAuthorizedAs(UserRole.commander),
+                  onGoto: (point) => _goto(context, point),
+                  devices: bloc.devices(unit.tracking.uuid),
+                  onCompleted: (_) => Navigator.pop(context),
+                );
+              },
             ),
           ),
         );

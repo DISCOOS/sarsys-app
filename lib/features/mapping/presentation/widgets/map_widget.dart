@@ -485,7 +485,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         permissionController: _ensurePermissionController(),
       );
       _scheduleInitLocation((_) {
-        _setRotatedLayerOptions();
+        _refreshOptions();
         _subscriptions.add(
           _locationController.service.onEvent.where((event) => event is ConfigureEvent).listen((event) {
             final following = _readState(STATE_FOLLOWING, defaultValue: false);
@@ -493,7 +493,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               _locationController.goto(locked: true);
               _updateLocationToolState(force: true);
             }
-            _setRotatedLayerOptions();
+            _refreshOptions();
           }),
         );
       });
@@ -548,7 +548,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     final current = widget.withControlsLocateMe ? _locationController.current : null;
     if (widget.withControlsLocateMe && _center == null && current == null) {
       _scheduleInitLocation((location) {
-        _setRotatedLayerOptions();
+        _refreshOptions();
         setState(() => _center = location);
       });
     }
@@ -578,7 +578,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         center: _center,
         minZoom: _minZoom(),
         maxZoom: _maxZoom(),
-        interactiveFlags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
+        interactiveFlags: widget.interactive ? InteractiveFlag.all - InteractiveFlag.rotate : InteractiveFlag.none,
         // Ensure _center is inside given bounds
         nePanBoundary: _currentBaseMap.bounds?.northEast,
         swPanBoundary: _currentBaseMap.bounds?.southWest,
@@ -646,6 +646,10 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     }
   }
 
+  void _refreshOptions() {
+    setState(() => {});
+  }
+
   List<LayerOptions> _setRotatedLayerOptions() {
     _rotatedLayerOptions
       ..clear()
@@ -656,7 +660,6 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
         if (_useLayers.contains(LAYER_UNIT)) _buildUnitOptions(),
         if (_useLayers.contains(LAYER_POI) && widget.operation != null) _buildPoiOptions(),
       ]);
-    setState(() => {});
     return _rotatedLayerOptions;
   }
 
@@ -935,7 +938,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
 
   void _onSearchMatch(LatLng point) {
     _searchMatch = point;
-    _setRotatedLayerOptions();
+    _refreshOptions();
     _locationController?.stop();
     _mapController.animatedMove(point, _zoom, this);
   }
@@ -996,7 +999,7 @@ class MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     }
 
     _setBaseMap(_writeState(STATE_BASE_MAP, map));
-    _setRotatedLayerOptions();
+    _refreshOptions();
     Navigator.pop(context);
   }
 

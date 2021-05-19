@@ -18,14 +18,14 @@ class CoordinateLayerOptions extends LayerOptions {
 class CoordinateLayer extends MapPlugin {
   @override
   Widget createLayer(LayerOptions options, MapState map, Stream<Null> stream) {
-    final Point center = toPoint(map.center);
     final params = options as CoordinateLayerOptions;
-    var origin = map.project(map.center);
-    origin = origin.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
 
     return StreamBuilder<Object>(
         stream: stream,
         builder: (context, snapshot) {
+          final Point center = toPoint(map.center);
+          var origin = map.project(map.center);
+          origin = origin.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
           return Stack(
             children: <Widget>[
               Positioned(

@@ -207,7 +207,7 @@ class PersonnelWidget extends StatelessWidget {
   Widget _buildMap(BuildContext context) {
     final center = tracking?.position?.toLatLng();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      padding: const EdgeInsets.all(8.0).copyWith(top: 0.0),
       child: Material(
         elevation: ELEVATION,
         borderRadius: BorderRadius.circular(CORNER),
