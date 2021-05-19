@@ -197,10 +197,9 @@ mixin StatefulCatchup<V extends JsonObject, S extends StatefulServiceDelegate<V,
     );
     final yours = message.isPatches
         ? message.patches
-        : JsonUtils.apply(
+        : JsonUtils.diff(
             base,
-            message.patches,
-            strict: false,
+            next,
           );
     final conflict = JsonUtils.check(mine, yours);
     if (conflict != null) {
