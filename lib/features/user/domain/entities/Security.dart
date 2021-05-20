@@ -9,35 +9,36 @@ class Security extends Equatable {
   Security({
     this.pin,
     this.type,
+    this.mode,
     this.locked,
     this.trusted,
-    this.mode,
     DateTime heartbeat,
-  })  : heartbeat = heartbeat ?? DateTime.now();
+  }) : heartbeat = heartbeat ?? DateTime.now();
 
   @override
   List<Object> get props => [
-    pin,
-    type,
-    locked,
-    trusted,
-    heartbeat,
-  ];
+        pin,
+        type,
+        locked,
+        trusted,
+        heartbeat,
+      ];
 
   final String pin;
-  final SecurityType type;
 
-  @JsonKey(defaultValue: true)
-  final bool locked;
   final bool trusted;
+  final SecurityType type;
   final DateTime heartbeat;
   final SecurityMode mode;
 
+  @JsonKey(defaultValue: true)
+  final bool locked;
+
   factory Security.fromPin(
     String pin, {
-    SecurityMode mode = SecurityMode.personal,
     bool locked = false,
     bool trusted = false,
+    SecurityMode mode = SecurityMode.personal,
   }) =>
       Security(
         pin: pin,

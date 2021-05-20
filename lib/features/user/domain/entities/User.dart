@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:equatable/equatable.dart';
 import 'package:jaguar_jwt/jaguar_jwt.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -14,6 +15,21 @@ part 'User.g.dart';
 
 @JsonSerializable()
 class User extends Equatable {
+  User({
+    @required this.userId,
+    this.fname,
+    this.lname,
+    this.uname,
+    this.phone,
+    this.email,
+    this.security,
+    this.org,
+    this.div,
+    this.dep,
+    this.roles = const [],
+    this.passcodes = const [],
+  });
+
   final String userId;
   final String fname;
   final String lname;
@@ -33,24 +49,9 @@ class User extends Equatable {
   @JsonKey(
     defaultValue: <String>[],
   )
-  final List<String> passcodes;
+  final List<Passcodes> passcodes;
 
   bool get isAffiliated => org != null || div != null || dep != null;
-
-  User({
-    @required this.userId,
-    this.fname,
-    this.lname,
-    this.uname,
-    this.phone,
-    this.email,
-    this.security,
-    this.org,
-    this.div,
-    this.dep,
-    this.roles = const [],
-    this.passcodes = const [],
-  });
 
   @override
   List<Object> get props => [
@@ -72,8 +73,8 @@ class User extends Equatable {
   String get initials => '${fname.substring(0, 1)}${lname.substring(0, 1)}'.toUpperCase();
 
   bool get hasRoles => roles.isNotEmpty;
-  // TODO: Implement admin role
 
+  // TODO: Implement admin role
   bool get isAdmin => false;
   bool get isUntrusted => !isTrusted;
   bool get isTrusted => security?.trusted ?? false;
@@ -86,6 +87,11 @@ class User extends Equatable {
 
   bool isAuthor(Operation operation) => operation.author.userId == userId;
 
+  User authorize(Passcodes codes) => copyWith(
+        passcodes: passcodes.contains(codes) ? passcodes : List<Passcodes>.from(passcodes)
+          ..add(codes),
+      );
+
   /// Factory constructor for creating a new `User` instance
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
@@ -95,12 +101,12 @@ class User extends Equatable {
   /// Create user from token
   factory User.fromTokens(
     String accessToken, {
-    String idToken,
-    Security security,
-    List<String> passcodes,
     String org,
     String div,
     String dep,
+    String idToken,
+    Security security,
+    List<Passcodes> passcodes,
   }) {
     final json = _fromJWT(accessToken);
     final jwt = JwtClaim.fromMap(json);
@@ -190,7 +196,7 @@ class User extends Equatable {
     String dep,
     Security security,
     List<UserRole> roles,
-    List<String> passcodes,
+    List<Passcodes> passcodes,
   }) =>
       User(
         userId: userId ?? this.userId,

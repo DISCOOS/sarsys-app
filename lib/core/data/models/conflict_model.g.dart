@@ -40,10 +40,10 @@ Map<String, dynamic> _$ConflictModelToJson(ConflictModel instance) {
   writeNotNull('code', instance.code);
   writeNotNull('error', instance.error);
   writeNotNull('type', _$ConflictTypeEnumMap[instance.type]);
+  writeNotNull('paths', instance.paths);
   writeNotNull('base', instance.base);
   writeNotNull('mine', instance.mine);
   writeNotNull('yours', instance.yours);
-  writeNotNull('paths', instance.paths);
   return val;
 }
 
@@ -57,7 +57,9 @@ T _$enumDecode<T>(
         '${enumValues.values.join(', ')}');
   }
 
-  final value = enumValues.entries.singleWhere((e) => e.value == source, orElse: () => null)?.key;
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '

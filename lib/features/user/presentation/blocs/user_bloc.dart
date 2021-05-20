@@ -15,7 +15,6 @@ import 'package:equatable/equatable.dart';
 import 'package:SarSys/features/settings/domain/entities/AppConfig.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
-import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/user/data/services/user_service.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -118,19 +117,29 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Check if current [user] is authorized access to given [operation]
   bool isAuthorized(Operation operation) {
-    return isAuthenticated && (_authorized.containsKey(operation.uuid) || user.isAuthor(operation));
+    return isAuthenticated && (getAuthorization(operation).isAuthorized() || user.isAuthor(operation));
   }
 
   /// Check if current [user] is authorized access to given [operation] with given [role]
   bool isAuthorizedAs(Operation operation, UserRole role) {
-    final authorization = getAuthorization(operation);
-    if (authorization == null) {}
-    return authorization.isAuthorizedAs(role) == true;
+    return getAuthorization(operation)?.isAuthorizedAs(role) == true;
   }
 
   /// Get current [user] authorization for given [operation]
   UserAuthorized getAuthorization(Operation operation) {
     if (isAuthenticated && operation != null) {
+      // Look for passcode?
+      if (!_authorized.containsKey(operation.uuid) && user.passcodes?.isNotEmpty == true) {
+        final withCommanderCode = user.passcodes.any((p) => operation.passcodes.commander == p.commander);
+        final withPersonnelCode = user.passcodes.any((p) => operation.passcodes.personnel == p.personnel);
+        if (withPersonnelCode || withCommanderCode) {
+          _authorized[operation.uuid] = UserAuthorized(
+            user,
+            withPersonnelCode: withPersonnelCode,
+            withCommanderCode: withCommanderCode,
+          );
+        }
+      }
       if (_authorized.containsKey(operation.uuid)) {
         return _authorized[operation.uuid];
       }
@@ -138,7 +147,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
         return UserAuthorized(
           user,
           operation: operation,
-          withCommandCode: true,
+          withCommanderCode: true,
           withPersonnelCode: true,
         );
       }
@@ -146,15 +155,10 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     return UserAuthorized(
       user,
       operation: operation,
-      withCommandCode: false,
+      withCommanderCode: false,
       withPersonnelCode: false,
     );
   }
-
-  /// Stream of authorization state changes
-  Stream<bool> onAuthorized(Incident incident) => map(
-        (state) => state is UserAuthorized && state.operation == incident,
-      );
 
   /// Secure user access with given settings
   Future<Security> secure(String pin, {bool locked}) async {
@@ -173,7 +177,9 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   /// Load current user from secure storage
   Future<User> load() async {
-    return dispatch<User>(LoadUser(userId: userId ?? repo.userId));
+    return dispatch<User>(
+      LoadUser(userId: userId ?? repo.userId),
+    );
   }
 
   /// Authenticate user
@@ -205,7 +211,9 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
   }
 
   Future<bool> authorize(Operation data, String passcode) {
-    return dispatch<bool>(_assertAuthenticated<User>(AuthorizeUser(data, passcode)));
+    return dispatch<bool>(_assertAuthenticated<User>(
+      AuthorizeUser(data, passcode),
+    ));
   }
 
   @override
@@ -227,7 +235,7 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     } else if (command is UnloadUsers) {
       yield await _unload(command);
     } else if (command is AuthorizeUser) {
-      yield _authorize(command);
+      yield await _authorize(command);
     } else if (command is _NotifyAuthTokenRefreshed) {
       yield _notify(command);
     } else {
@@ -283,9 +291,12 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
 
   Future<UserState> _load(LoadUser command) async {
     try {
+      final user = await repo.load(
+        userId: command.data,
+      );
       return _toEvent(
         command,
-        await repo.load(userId: command.data),
+        user,
       );
     } on Exception catch (e) {
       return _toEvent(command, e);
@@ -337,17 +348,21 @@ class UserBloc extends BaseBloc<UserCommand, UserState, UserBlocError>
     );
   }
 
-  UserState _authorize(AuthorizeUser command) {
-    bool withCommandCode = command.data.passcodes.commander == command.passcode;
+  Future<UserState> _authorize(AuthorizeUser command) async {
+    bool withCommanderCode = command.data.passcodes.commander == command.passcode;
     bool withPersonnelCode = command.data.passcodes.personnel == command.passcode;
-    if (withCommandCode || withPersonnelCode) {
+    if (withCommanderCode || withPersonnelCode) {
+      await repo.authorize(
+        command.data.passcodes,
+      );
       final state = UserAuthorized(
         user,
         operation: command.data,
-        withCommandCode: withCommandCode,
+        withCommanderCode: withCommanderCode,
         withPersonnelCode: withPersonnelCode,
       );
       _authorized[command.data.uuid] = state;
+
       return toOK(
         command,
         state,
@@ -644,13 +659,20 @@ class UserAuthorized extends UserState<User> {
   UserAuthorized(
     User user, {
     this.operation,
-    this.withCommandCode,
+    this.withCommanderCode,
     this.withPersonnelCode,
-  }) : super(user, props: [operation, withCommandCode, withPersonnelCode]);
+  }) : super(user, props: [
+          operation,
+          withCommanderCode,
+          withPersonnelCode,
+        ]);
 
   final Operation operation;
-  final bool withCommandCode;
+  final bool withCommanderCode;
   final bool withPersonnelCode;
+
+  @override
+  bool isAuthorized() => withPersonnelCode == true || withCommanderCode == true;
 
   bool get isMobilized => operation != null;
   bool get isCommander => data?.isCommander == true;
@@ -673,21 +695,21 @@ class UserAuthorized extends UserState<User> {
 
     switch (role) {
       case UserRole.commander:
-        return isCommander && (available || withCommandCode);
+        return isCommander && (available || withCommanderCode);
       case UserRole.planning_chief:
-        return isPlanningChief && (available || withCommandCode);
+        return isPlanningChief && (available || withCommanderCode);
       case UserRole.operations_chief:
-        return isOperationsChief && (available || withCommandCode);
+        return isOperationsChief && (available || withCommanderCode);
       case UserRole.unit_leader:
-        return isUnitLeader && (available || withCommandCode);
+        return isUnitLeader && (available || withCommanderCode);
       case UserRole.personnel:
-        return available || withCommandCode || withPersonnelCode;
+        return available || withCommanderCode || withPersonnelCode;
       default:
         return false;
     }
   }
 
-  String toString() => '$runtimeType {user: $data, command: $withCommandCode, personnel: $withPersonnelCode}';
+  String toString() => '$runtimeType {user: $data, command: $withCommanderCode, personnel: $withPersonnelCode}';
 }
 
 class AuthTokenExpired extends UserState<AuthToken> {

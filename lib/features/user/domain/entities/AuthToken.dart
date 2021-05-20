@@ -1,3 +1,4 @@
+import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -49,11 +50,11 @@ class AuthToken extends Equatable {
 
   /// Get Token as User
   User toUser({
-    Security security,
-    List<String> passcodes,
     String org,
     String div,
     String dep,
+    Security security,
+    List<Passcodes> passcodes,
   }) =>
       User.fromTokens(
         accessToken,

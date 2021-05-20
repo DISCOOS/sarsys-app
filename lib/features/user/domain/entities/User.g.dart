@@ -26,8 +26,14 @@ User _$UserFromJson(Map json) {
             ?.map((e) => _$enumDecodeNullable(_$UserRoleEnumMap, e))
             ?.toList() ??
         [],
-    passcodes:
-        (json['passcodes'] as List)?.map((e) => e as String)?.toList() ?? [],
+    passcodes: (json['passcodes'] as List)
+            ?.map((e) => e == null
+                ? null
+                : Passcodes.fromJson((e as Map)?.map(
+                    (k, e) => MapEntry(k as String, e),
+                  )))
+            ?.toList() ??
+        [],
   );
 }
 
@@ -52,7 +58,8 @@ Map<String, dynamic> _$UserToJson(User instance) {
   writeNotNull('security', instance.security?.toJson());
   writeNotNull(
       'roles', instance.roles?.map((e) => _$UserRoleEnumMap[e])?.toList());
-  writeNotNull('passcodes', instance.passcodes);
+  writeNotNull(
+      'passcodes', instance.passcodes?.map((e) => e?.toJson())?.toList());
   return val;
 }
 

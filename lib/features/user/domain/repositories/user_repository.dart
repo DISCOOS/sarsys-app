@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:SarSys/core/domain/repository.dart';
+import 'package:SarSys/features/operation/domain/entities/Passcodes.dart';
 import 'package:SarSys/features/user/domain/entities/AuthToken.dart';
 import 'package:SarSys/features/user/domain/entities/Security.dart';
 import 'package:SarSys/features/user/domain/repositories/auth_token_repository.dart';
@@ -337,6 +338,26 @@ class UserRepository implements Repository<String, User> {
     throw UserNotFoundException(actualId);
   }
 
+  /// Authorize [user] access with given passcodes
+  Future<User> authorize(
+    Passcodes passcodes, {
+    String userId,
+    bool locked = true,
+  }) async {
+    await _checkState();
+
+    final actualId = userId ?? _userId;
+    final user = _users.get(actualId);
+    if (user != null) {
+      return _putUser(
+        user.authorize(
+          passcodes,
+        ),
+      );
+    }
+    throw UserNotFoundException(actualId);
+  }
+
   /// Lock [user] access
   Future<Security> lock({String userId}) async {
     await _checkState();
@@ -478,7 +499,14 @@ class UserRepository implements Repository<String, User> {
 
   Future<AuthToken> _putToken(AuthToken token, {Security security}) async {
     await tokens.put(token);
-    await _putUser(token.toUser(security: security));
+    final next = token.toUser(
+      security: security,
+    );
+    final current = _users.get(next.userId);
+    await _putUser(token.toUser(
+      security: security,
+      passcodes: current?.passcodes ?? const <Passcodes>[],
+    ));
     return token;
   }
 

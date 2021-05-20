@@ -10,9 +10,9 @@ Security _$SecurityFromJson(Map json) {
   return Security(
     pin: json['pin'] as String,
     type: _$enumDecodeNullable(_$SecurityTypeEnumMap, json['type']),
+    mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
     locked: json['locked'] as bool ?? true,
     trusted: json['trusted'] as bool,
-    mode: _$enumDecodeNullable(_$SecurityModeEnumMap, json['mode']),
     heartbeat: json['heartbeat'] == null
         ? null
         : DateTime.parse(json['heartbeat'] as String),
@@ -29,11 +29,11 @@ Map<String, dynamic> _$SecurityToJson(Security instance) {
   }
 
   writeNotNull('pin', instance.pin);
-  writeNotNull('type', _$SecurityTypeEnumMap[instance.type]);
-  writeNotNull('locked', instance.locked);
   writeNotNull('trusted', instance.trusted);
+  writeNotNull('type', _$SecurityTypeEnumMap[instance.type]);
   writeNotNull('heartbeat', instance.heartbeat?.toIso8601String());
   writeNotNull('mode', _$SecurityModeEnumMap[instance.mode]);
+  writeNotNull('locked', instance.locked);
   return val;
 }
 
