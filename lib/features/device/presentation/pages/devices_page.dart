@@ -1,11 +1,12 @@
 import 'dart:convert';
 
-import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
+import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
@@ -79,7 +80,6 @@ class DevicesPageState extends State<DevicesPage> {
           context.bloc<DeviceBloc>().load();
         },
         child: Container(
-//          color: Color.fromRGBO(168, 168, 168, 0.6),
           child: StreamBuilder(
               stream: _group.stream,
               builder: (context, snapshot) {
@@ -96,7 +96,10 @@ class DevicesPageState extends State<DevicesPage> {
                     : ListView.builder(
                         itemCount: devices.length,
                         itemBuilder: (context, index) {
-                          return _buildDevice(devices, index, units, personnel, tracked);
+                          return Container(
+                            height: 56.0,
+                            child: _buildDevice(devices, index, units, personnel, tracked),
+                          );
                         },
                         padding: EdgeInsets.only(top: 8.0, bottom: 36.0),
                       );
@@ -135,14 +138,18 @@ class DevicesPageState extends State<DevicesPage> {
   ) {
     final device = devices[index];
     final status = _toTrackingStatus(tracked, device);
-
     final isThisApp = context.bloc<DeviceBloc>().isThisApp(device);
     return GestureDetector(
       child: widget.withActions && (isCommander || isThisApp)
           ? Slidable(
               actionPane: SlidableScrollActionPane(),
               actionExtentRatio: 0.2,
-              child: _buildDeviceTile(device, status, units, personnel),
+              child: DeviceTile(
+                units: units,
+                device: device,
+                status: status,
+                personnel: personnel,
+              ),
               secondaryActions: <Widget>[
                 _buildEditAction(device),
                 if (isSelected && status != TrackingStatus.none)
@@ -153,8 +160,17 @@ class DevicesPageState extends State<DevicesPage> {
                 ]
               ],
             )
-          : _buildDeviceTile(device, status, units, personnel),
-      onTap: () => Navigator.pushNamed(context, DeviceScreen.ROUTE, arguments: device),
+          : DeviceTile(
+              units: units,
+              device: device,
+              status: status,
+              personnel: personnel,
+            ),
+      onTap: () => Navigator.pushNamed(
+        context,
+        DeviceScreen.ROUTE,
+        arguments: device,
+      ),
     );
   }
 
@@ -162,8 +178,8 @@ class DevicesPageState extends State<DevicesPage> {
         message: "Knytt til enhet",
         child: IconSlideAction(
           caption: 'KNYTT',
-          color: Theme.of(context).buttonColor,
           icon: Icons.people,
+          color: Theme.of(context).buttonColor,
           onTap: () async => await addToUnit(devices: [device]),
         ),
       );
@@ -172,16 +188,16 @@ class DevicesPageState extends State<DevicesPage> {
         message: "Knytt til mannskap",
         child: IconSlideAction(
           caption: 'KNYTT',
-          color: Theme.of(context).buttonColor,
           icon: Icons.person,
+          color: Theme.of(context).buttonColor,
           onTap: () async => await addToPersonnel([device]),
         ),
       );
 
   IconSlideAction _buildEditAction(Device device) => IconSlideAction(
         caption: 'ENDRE',
-        color: Theme.of(context).buttonColor,
         icon: Icons.more_horiz,
+        color: Theme.of(context).buttonColor,
         onTap: () async => await editDevice(device),
       );
 
@@ -205,82 +221,8 @@ class DevicesPageState extends State<DevicesPage> {
         },
       );
 
-  Widget _buildDeviceTile(
-    Device device,
-    TrackingStatus status,
-    Map<String, Unit> units,
-    Map<String, Personnel> personnel,
-  ) {
-    return Container(
-      key: ObjectKey(device.uuid),
-      color: Colors.white,
-      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-      child: Row(
-        children: <Widget>[
-          CircleAvatar(
-            backgroundColor: toPositionStatusColor(device.position),
-            child: Icon(toDeviceIconData(device.type)),
-            foregroundColor: Colors.white,
-          ),
-          SizedBox(width: 16.0),
-          Flexible(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Chip(
-                label: Text(
-                  device.number ?? device.alias,
-                ),
-                labelPadding: EdgeInsets.only(right: 4.0),
-                backgroundColor: Colors.grey[100],
-                avatar: Icon(
-                  toDialerIconData(device.type),
-                  size: 16.0,
-                  color: Colors.black38,
-                ),
-              ),
-            ),
-          ),
-          Container(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Chip(
-                label: Text(_toUsage(units, personnel, device)),
-                labelPadding: EdgeInsets.only(right: 4.0),
-                backgroundColor: Colors.grey[100],
-                avatar: isSelected || isCommander
-                    ? Icon(
-                        Icons.my_location,
-                        size: 16.0,
-                        color: toPositionStatusColor(device?.position),
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          if (widget.withActions && isCommander)
-            RotatedBox(
-              quarterTurns: 1,
-              child: Icon(
-                Icons.drag_handle,
-                color: Colors.grey.withOpacity(0.2),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   bool get isSelected => context.bloc<OperationBloc>().isSelected;
   bool get isCommander => context.bloc<OperationBloc>().isAuthorizedAs(UserRole.commander);
-
-  String _toUsage(
-    Map<String, Unit> units,
-    Map<String, Personnel> personnel,
-    Device device,
-  ) {
-    final name = units[device.uuid]?.name ?? personnel[device.uuid]?.formal ?? '';
-    return "$name ${formatSince(device?.position?.timestamp, defaultValue: "ingen")}";
-  }
 
   TrackingStatus _toTrackingStatus(Map<String, Set<Tracking>> tracked, Device device) {
     return tracked[device.uuid]

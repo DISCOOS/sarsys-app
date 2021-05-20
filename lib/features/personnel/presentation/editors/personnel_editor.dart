@@ -1,3 +1,5 @@
+import 'package:SarSys/features/affiliation/affiliation_utils.dart';
+import 'package:SarSys/features/affiliation/domain/entities/FleetMap.dart';
 import 'package:SarSys/features/device/presentation/widgets/device_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -74,8 +76,9 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   final TextEditingController _lnameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
-  ValueNotifier<String> _editedName = ValueNotifier(null);
   List<Device> _devices;
+  FleetMap fleetMap;
+  ValueNotifier<String> _editedName = ValueNotifier(null);
 
   bool get managed => widget.personnel?.userId != null;
 
@@ -105,6 +108,10 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _devices ??= _getActualDevices();
+    fleetMap = null;
+    if (widget.affiliation != null) {
+      fleetMap = context.bloc<AffiliationBloc>().orgs[widget.affiliation?.org?.uuid]?.fleetMap;
+    }
   }
 
   void _initFNameController() {
@@ -571,7 +578,8 @@ class _PersonnelEditorState extends State<PersonnelEditor> {
   }
 
   bool _deviceMatch(Device device, String type, String query) {
-    final test = device.searchable;
+    final function = fleetMap != null ? AffiliationUtils.findFunction(fleetMap, device.number ?? '') : '';
+    final test = '${device.searchable}$function';
     return test.toLowerCase().contains(query ?? '') &&
         (type?.toLowerCase() == 'alle' || enumName(device.type).contains(type?.toLowerCase()));
   }

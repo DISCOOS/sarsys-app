@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
 import 'package:SarSys/core/domain/models/core.dart';
@@ -121,7 +123,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       userBloc.isAuthenticated &&
       isThisApp(device) &&
       status != StorageStatus.deleted &&
-      (device.name == null || device.networkId != userBloc.userId);
+      (device.name == null || device.alias == null || device.networkId != userBloc.userId);
 
   /// Get [OperationBloc]
   final UserBloc userBloc;
@@ -280,11 +282,15 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     // Update device for this app?
     if (app != null) {
       if (_shouldSetUser(app, repo.getState(app.uuid).status)) {
-        dispatch(UpdateDevice(app.copyWith(
+        final device = app.copyWith(
+          network: 'sarsys',
           number: userBloc.user.phone,
-          alias: userBloc.user.shortName,
           networkId: userBloc.user.userId,
-        )));
+          alias: await getDeviceModelName(),
+        );
+        dispatch(
+          UpdateDevice(device),
+        );
       }
     }
 
@@ -302,6 +308,18 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
         stackTrace: stackTrace,
       ),
     );
+  }
+
+  Future<String> getDeviceModelName() async {
+    if (Platform.isAndroid) {
+      final info = await DeviceInfoPlugin().androidInfo;
+      return info.model;
+    }
+    if (Platform.isIOS) {
+      final info = await DeviceInfoPlugin().iosInfo;
+      return info.model;
+    }
+    return Platform.operatingSystem;
   }
 
   Stream<DeviceState> _create(CreateDevice command) async* {

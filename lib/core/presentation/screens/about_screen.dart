@@ -4,6 +4,7 @@ import 'package:SarSys/features/device/presentation/blocs/device_bloc.dart';
 import 'package:SarSys/features/settings/presentation/blocs/app_config_bloc.dart';
 import 'package:SarSys/features/user/domain/repositories/user_repository.dart';
 import 'package:SarSys/features/user/presentation/screens/login_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:package_info/package_info.dart';
@@ -52,17 +53,28 @@ class _AboutScreenState extends State<AboutScreen> {
 
   _buildPacketInfo(BuildContext context, PackageInfo data) {
     final channel = context.service<MessageChannel>();
+    final auuid = context.bloc<DeviceBloc>().app?.uuid;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ListView(
         children: <Widget>[
           ListTile(
-            title: Text("App-id"),
+            title: Text("App-id (full)"),
             subtitle: buildCopyableText(
               isDense: true,
               context: context,
               onMessage: showMessage,
-              value: context.bloc<DeviceBloc>().app?.uuid ?? 'Ikke funnet',
+              value: auuid ?? 'Ikke funnet',
+              text: auuid == null ? Text('Ikke funnet') : Text(auuid),
+            ),
+          ),
+          ListTile(
+            title: Text("App-id (kort)"),
+            subtitle: buildCopyableText(
+              isDense: true,
+              context: context,
+              onMessage: showMessage,
+              value: auuid?.substring(auuid.length - 5) ?? 'Ikke funnet',
             ),
           ),
           ListTile(

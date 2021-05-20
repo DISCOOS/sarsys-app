@@ -594,6 +594,7 @@ Widget buildCopyableText({
   BuildContext context,
   String label,
   Icon icon,
+  Widget text,
   String value,
   Icon action,
   int hintMaxLines = 3,
@@ -622,7 +623,7 @@ Widget buildCopyableText({
                 : null,
             border: InputBorder.none,
           ),
-          child: selectable ? SelectableText(value) : Text(value),
+          child: text ?? (selectable ? SelectableText(value) : Text(value)),
         ),
         onTap: onTap,
         onLongPress: () {

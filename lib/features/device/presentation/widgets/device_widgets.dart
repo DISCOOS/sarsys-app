@@ -1,7 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
 import 'package:SarSys/core/callbacks.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Affiliation.dart';
+import 'package:SarSys/features/affiliation/domain/entities/Person.dart';
 import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/mapping/presentation/widgets/map_widget.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
+import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';
 import 'package:SarSys/features/user/presentation/blocs/user_bloc.dart';
 import 'package:SarSys/icons.dart';
 import 'package:SarSys/features/device/domain/entities/Device.dart';
@@ -18,29 +26,75 @@ import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/features/tracking/utils/tracking.dart';
 import 'package:SarSys/core/utils/ui.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
-import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DeviceTile extends StatelessWidget {
-  final Device device;
   const DeviceTile({
     Key key,
     @required this.device,
+    this.status,
+    this.units,
+    this.personnel,
   }) : super(key: key);
+  final Device device;
+  final TrackingStatus status;
+  final Map<String, Unit> units;
+  final Map<String, Personnel> personnel;
 
   @override
   Widget build(BuildContext context) {
+    final person = context.bloc<AffiliationBloc>().persons.findUser(
+          device.networkId,
+        );
+    String title = _toDeviceTitle(
+      context,
+      person,
+      device,
+    );
+
     return ListTile(
       key: ObjectKey(device),
       leading: CircleAvatar(
-        child: Icon(
-          toDeviceIconData(device.type),
-          color: Colors.white,
+        backgroundColor: toPositionStatusColor(
+          device.position,
         ),
-        backgroundColor: toPositionStatusColor(device.position),
+        child: Icon(toDeviceIconData(
+          device.type,
+        )),
+        foregroundColor: Colors.white,
       ),
-      title: Text([device.number, device.alias].where((value) => emptyAsNull(value) != null).join(' ')),
+      title: Row(
+        children: <Widget>[
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                label: Text(title),
+                labelPadding: EdgeInsets.only(right: 4.0),
+                backgroundColor: Colors.grey[100],
+                avatar: Icon(
+                  toDialerIconData(device.type),
+                  size: 16.0,
+                  color: Colors.black38,
+                ),
+              ),
+            ),
+          ),
+          Container(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                  label: Text(_toUsage(units, personnel, device)),
+                  labelPadding: EdgeInsets.only(right: 4.0),
+                  backgroundColor: Colors.grey[100],
+                  avatar: Icon(
+                    Icons.my_location,
+                    size: 16.0,
+                    color: toPositionStatusColor(device?.position),
+                  )),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -56,7 +110,14 @@ class DeviceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.caption;
-    final name = [device.alias, device.number].where((e) => e != null).join(' ');
+    final person = context.bloc<AffiliationBloc>().persons.findUser(
+          device.networkId,
+        );
+    final name = _toDeviceTitle(
+      context,
+      person,
+      device,
+    );
     return Chip(
       key: ObjectKey(device),
       labelPadding: EdgeInsets.symmetric(horizontal: 4.0),
@@ -87,8 +148,10 @@ class DeviceWidget extends StatelessWidget {
     @required this.unit,
     @required this.device,
     @required this.tracking,
-    @required this.personnel,
     @required this.onMessage,
+    this.person,
+    this.personnel,
+    this.organisation,
     this.onGoto,
     this.onChanged,
     this.onCompleted,
@@ -97,7 +160,6 @@ class DeviceWidget extends StatelessWidget {
     this.withHeader = true,
     this.withActions = true,
     this.withActivity = true,
-    this.organisation,
     MapWidgetController controller,
   })  : this.controller = controller ?? MapWidgetController(),
         super(key: key);
@@ -105,6 +167,7 @@ class DeviceWidget extends StatelessWidget {
   final Unit unit;
   final bool withMap;
   final Device device;
+  final Person person;
   final bool withHeader;
   final bool withActions;
   final bool withActivity;
@@ -203,20 +266,35 @@ class DeviceWidget extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildData(BuildContext context, TextTheme theme) => [
-        _buildTypeAndStatusInfo(context),
-        if (organisation != null && DeviceType.tetra == device.type) _buildTetraInfo(context),
-        _buildDivider(Orientation.portrait),
-        if (organisation != null && DeviceType.tetra == device.type) ...[
-          _buildAffiliationInfo(context),
-          _buildDivider(Orientation.portrait),
-        ],
-        _buildLocationInfo(context, theme),
-        _buildDivider(Orientation.portrait),
-        _buildTrackingInfo(context),
-        _buildDivider(Orientation.portrait),
-        _buildEffortInfo(context)
-      ];
+  List<Widget> _buildData(BuildContext context, TextTheme theme) {
+    final bloc = context.bloc<AffiliationBloc>();
+    final entity = _getEntity(bloc, person, device);
+    final org = organisation ?? bloc.orgs[entity?.org?.uuid];
+
+    return [
+      _buildTypeAndStatusInfo(context),
+      _buildAliasAndNumberInfo(context),
+      _buildUsageAndFunction(context),
+      _buildDivider(Orientation.portrait),
+      if (person?.name != null)
+        _buildAffiliationInfo(
+          context,
+          bloc.toName(entity, empty: 'Uorganisert'),
+          SarSysIcons.of(org?.prefix),
+        ),
+      _buildOwnerInfo(
+        context,
+        person?.name ?? bloc.toName(entity),
+        person?.name == null ? SarSysIcons.of(org?.prefix) : Icon(Icons.person),
+      ),
+      _buildDivider(Orientation.portrait),
+      _buildLocationInfo(context, theme),
+      _buildDivider(Orientation.portrait),
+      _buildTrackingInfo(context),
+      _buildDivider(Orientation.portrait),
+      _buildEffortInfo(context)
+    ];
+  }
 
   Widget _buildDivider(Orientation orientation) => Orientation.portrait == orientation
       ? Divider(indent: 16.0, endIndent: 16.0)
@@ -278,69 +356,16 @@ class DeviceWidget extends StatelessWidget {
 
   Widget _buildLocationInfo(BuildContext context, TextTheme theme) => Column(
         children: [
-          Row(
-            children: <Widget>[
-              Expanded(
-                flex: 4,
-                child: Column(
-                  children: <Widget>[
-                    buildCopyableLocation(
-                      context,
-                      label: "UTM",
-                      icon: Icons.my_location,
-                      point: device.position?.geometry,
-                      formatter: (point) => toUTM(
-                        device.position?.geometry,
-                        prefix: "",
-                        empty: "Ingen",
-                      ),
-                    ),
-                    buildCopyableLocation(
-                      context,
-                      label: "Desimalgrader (DD)",
-                      icon: Icons.my_location,
-                      point: device.position?.geometry,
-                      formatter: (point) => toDD(
-                        device.position?.geometry,
-                        prefix: "",
-                        empty: "Ingen",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (device.position != null)
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.navigation, color: Colors.black45),
-                        onPressed: device.position == null
-                            ? null
-                            : () {
-                                navigateToLatLng(
-                                  context,
-                                  toLatLng(device.position.geometry),
-                                );
-                                _onComplete(device);
-                              },
-                      ),
-                      Text("Naviger", style: theme.caption),
-                    ],
-                  ),
-                ),
-            ],
+          CoordinateWidget(
+            point: device.position?.geometry,
+            timestamp: device.position?.timestamp,
+            accuracy: device.position?.acc,
+            onGoto: (point) => navigateToLatLng(context, toLatLng(point)),
+            onMessage: onMessage,
+            withIcons: true,
+            withNavigation: true,
+            onComplete: () => _onComplete(device),
           ),
-          if (withActivity) _buildDivider(Orientation.portrait),
-          if (withActivity)
-            buildCopyableText(
-              context: context,
-              label: "Aktivitet",
-              icon: Icon(Icons.local_activity),
-              value: translateActivityType(device.position?.activity?.type),
-            ),
         ],
       );
 
@@ -390,14 +415,45 @@ class DeviceWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildTetraInfo(BuildContext context) => Row(
+  Row _buildAliasAndNumberInfo(BuildContext context) => Row(
         children: <Widget>[
           Expanded(
             child: buildCopyableText(
               context: context,
-              label: "Number",
-              icon: Icon(Icons.looks_one),
-              value: device.number ?? 'Ingen',
+              label: "Alias",
+              icon: Icon(Icons.info),
+              value: device.alias ?? '-',
+              onMessage: onMessage,
+              onComplete: _onComplete,
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              child: buildCopyableText(
+                context: context,
+                label: "Nummer",
+                icon: Icon(Icons.phone),
+                value: device.number ?? "Ukjent",
+                onMessage: onMessage,
+                onComplete: _onComplete,
+              ),
+              onTap: () {
+                final number = device.number ?? '';
+                if (number.isNotEmpty) launch("tel:$number");
+              },
+            ),
+          ),
+        ],
+      );
+
+  Widget _buildUsageAndFunction(BuildContext context) => Row(
+        children: <Widget>[
+          Expanded(
+            child: buildCopyableText(
+              context: context,
+              label: "Benyttes av",
+              icon: Icon(Icons.link),
+              value: unit?.name ?? personnel?.formal ?? "Ingen",
               onMessage: onMessage,
               onComplete: _onComplete,
             ),
@@ -415,20 +471,39 @@ class DeviceWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildAffiliationInfo(BuildContext context) => Row(
-        children: <Widget>[
-          Expanded(
-            child: buildCopyableText(
-              context: context,
-              label: "Tilhørighet",
-              icon: SarSysIcons.of(organisation.prefix),
-              value: context.bloc<AffiliationBloc>().findEntityName(device.number),
-              onMessage: onMessage,
-              onComplete: _onComplete,
-            ),
+  Widget _buildOwnerInfo(BuildContext context, String name, Icon icon) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Eier",
+            onMessage: onMessage,
+            onComplete: _onComplete,
+            icon: icon,
+            value: name,
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAffiliationInfo(BuildContext context, String name, Icon icon) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: buildCopyableText(
+            context: context,
+            label: "Tilhørighet",
+            onMessage: onMessage,
+            onComplete: _onComplete,
+            icon: icon,
+            value: name,
+          ),
+        ),
+      ],
+    );
+  }
 
   Row _buildTrackingInfo(BuildContext context) {
     final track = _toTrack(tracking);
@@ -437,11 +512,9 @@ class DeviceWidget extends StatelessWidget {
         Expanded(
           child: buildCopyableText(
             context: context,
-            label: "Knyttet til",
-            icon: Icon(Icons.link),
-            value: unit?.name ?? personnel?.formal ?? "Ingen",
-            onMessage: onMessage,
-            onComplete: _onComplete,
+            label: "Aktivitet",
+            icon: Icon(Icons.local_activity),
+            value: translateActivityType(device.position?.activity?.type),
           ),
         ),
         Expanded(
@@ -710,4 +783,35 @@ class DeviceActionGroup extends StatelessWidget {
   void _onDeleted() {
     if (onDeleted != null) onDeleted();
   }
+}
+
+Affiliation _getEntity(AffiliationBloc bloc, Person person, Device device) {
+  return person == null
+      ? bloc.findEntity(device.number)
+      : bloc.findAffiliates(person).firstWhere(
+            (a) => a.isOrganized,
+            orElse: () => bloc.findEntity(device.number),
+          );
+}
+
+String _toDeviceTitle(BuildContext context, Person person, Device device) {
+  final bloc = context.bloc<AffiliationBloc>();
+  final entity = _getEntity(bloc, person, device);
+  final name = person?.fname ?? device.alias ?? bloc.orgs[entity?.org?.uuid]?.fleetMap?.alias;
+  final alias = device.type != DeviceType.app
+      ? device.alias ?? device.number
+      : device.uuid.substring(
+          device.uuid.length - 5,
+        );
+  final title = '${[name, alias].where((e) => e != null).toSet().join(' | ')}';
+  return title;
+}
+
+String _toUsage(
+  Map<String, Unit> units,
+  Map<String, Personnel> personnel,
+  Device device,
+) {
+  final name = units[device.uuid]?.name ?? personnel[device.uuid]?.formal ?? '';
+  return "$name ${formatSince(device?.position?.timestamp, defaultValue: "ingen")}";
 }

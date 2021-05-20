@@ -1,10 +1,9 @@
 import 'dart:async';
 
+import 'package:SarSys/features/affiliation/presentation/blocs/affiliation_bloc.dart';
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
 import 'package:SarSys/features/mapping/domain/entities/Point.dart';
-import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/presentation/widgets/action_group.dart';
 import 'package:async/async.dart';
 
@@ -116,29 +115,34 @@ class _DeviceScreenState extends ScreenState<DeviceScreen, String> with TickerPr
                 _device = snapshot.data;
               }
               final unit = context.bloc<TrackingBloc>().units.find(_device);
-              final personnel = context.bloc<TrackingBloc>().personnels.find(_device);
-              return _build(unit, personnel, context);
+              final personnel = context.bloc<TrackingBloc>().personnels.find(
+                    _device,
+                  );
+              final person = personnel?.person ??
+                  context.bloc<AffiliationBloc>().persons.findUser(
+                        _device.networkId,
+                      );
+              return DeviceWidget(
+                unit: unit,
+                person: person,
+                device: _device,
+                withHeader: false,
+                withActions: false,
+                personnel: personnel,
+                onMessage: showMessage,
+                controller: _controller,
+                withMap: isCommander || isSelected,
+                onDeleted: () => Navigator.pop(context),
+                onGoto: (point) => jumpToPoint(context, center: point),
+                onChanged: (device) => setState(() => _device = device),
+                tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
+              );
             },
           ),
         ],
       ),
     );
   }
-
-  DeviceWidget _build(Unit unit, Personnel personnel, BuildContext context) => DeviceWidget(
-        unit: unit,
-        device: _device,
-        withHeader: false,
-        withActions: false,
-        personnel: personnel,
-        onMessage: showMessage,
-        controller: _controller,
-        withMap: isCommander || isSelected,
-        onDeleted: () => Navigator.pop(context),
-        onGoto: (point) => jumpToPoint(context, center: point),
-        onChanged: (device) => setState(() => _device = device),
-        tracking: context.bloc<TrackingBloc>().trackings[unit?.tracking?.uuid],
-      );
 
   LatLng toCenter(Point location) {
     return location != null ? toLatLng(location) : null;

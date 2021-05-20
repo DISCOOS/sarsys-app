@@ -159,11 +159,11 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
     return "${affiliation?.searchable ?? ''}";
   }
 
-  /// Find [Affiliation]s matching given  query
+  /// Find [Affiliation]s matching given query
   Iterable<Affiliation> find({bool where(Affiliation affiliation)}) => repo.find(where: where);
 
   /// Find [Affiliation]s matching given  query
-  Iterable<Affiliation> findPerson(String puuid) => repo.findPerson(puuid);
+  Iterable<Affiliation> findAffiliates(Person person) => repo.findPerson(person.uuid);
 
   /// Get entity as [Affiliation] from device number
   Affiliation findEntity(String number) {
@@ -315,7 +315,24 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
 
   /// Get [Organisation] from [userId]
   Organisation findUserOrganisation({String userId}) {
-    final user = users.repo[userId] ?? users.user;
+    List<Affiliation> affiliates;
+    var user = users.repo[userId];
+    if (user == null) {
+      final person = persons.findUser(userId);
+      if (person != null) {
+        affiliates = findAffiliates(person).toList();
+        final ouuids = affiliates
+            .where(
+              (a) => a.org?.uuid != null,
+            )
+            .map((a) => a.org.uuid)
+            .toList();
+        if (ouuids.isNotEmpty) {
+          return orgs[ouuids.first];
+        }
+      }
+      user = users.repo.user;
+    }
     if (user != null) {
       final name = user.org?.toLowerCase();
       final found = orgs.values
@@ -327,11 +344,17 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
         return found;
       }
     }
-    final div = findUserDivision(userId: userId);
+    final div = findUserDivision(
+      userId: userId,
+      affiliates: affiliates,
+    );
     if (div != null) {
       return orgs[div.organisation?.uuid];
     }
-    final dep = findUserDepartment(userId: userId);
+    final dep = findUserDepartment(
+      userId: userId,
+      affiliates: affiliates,
+    );
     if (dep != null) {
       return orgs[divs[dep.division?.uuid]?.organisation?.uuid];
     }
@@ -339,8 +362,27 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Division from User
-  Division findUserDivision({String userId, Organisation org}) {
-    final user = users.repo[userId] ?? users.user;
+  Division findUserDivision({
+    String userId,
+    Organisation org,
+    List<Affiliation> affiliates,
+  }) {
+    var user = users.repo[userId];
+    if (user == null) {
+      final person = persons.findUser(userId);
+      if (person != null) {
+        affiliates = affiliates ?? findAffiliates(person).toList();
+        final duuids = affiliates
+            .where(
+              (a) => a.div?.uuid != null && (org == null || org.uuid == a.org?.uuid),
+            )
+            .map((a) => a.div.uuid);
+        if (duuids.isNotEmpty) {
+          return divs[duuids.first];
+        }
+      }
+      user = users.repo.user;
+    }
     if (user != null) {
       final name = user.div?.toLowerCase();
       final duuids = org?.divisions ?? <String>[];
@@ -349,7 +391,10 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
           .where((division) => division.name.toLowerCase() == name)
           ?.firstOrNull;
     }
-    final dep = findUserDepartment(userId: userId);
+    final dep = findUserDepartment(
+      userId: userId,
+      affiliates: affiliates,
+    );
     if (dep != null) {
       return divs[dep.division?.uuid];
     }
@@ -357,8 +402,27 @@ class AffiliationBloc extends StatefulBloc<AffiliationCommand, AffiliationState,
   }
 
   /// Get Department id from User
-  Department findUserDepartment({String userId, Division div}) {
-    final user = users.repo[userId] ?? users.user;
+  Department findUserDepartment({
+    String userId,
+    Division div,
+    List<Affiliation> affiliates,
+  }) {
+    var user = users.repo[userId];
+    if (user == null) {
+      final person = persons.findUser(userId);
+      if (person != null) {
+        affiliates = affiliates ?? findAffiliates(person).toList();
+        final duuids = affiliates
+            .where(
+              (a) => a.dep?.uuid != null && (div == null || div.uuid == a.div?.uuid),
+            )
+            .map((a) => a.dep.uuid);
+        if (duuids.isNotEmpty) {
+          return deps[duuids.first];
+        }
+      }
+      user = users.repo.user;
+    }
     if (user != null) {
       final name = (user ?? users.user).dep?.toLowerCase();
       final duuids = div?.departments ?? <String>[];
