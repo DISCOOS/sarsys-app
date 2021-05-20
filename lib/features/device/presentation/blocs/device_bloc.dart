@@ -254,10 +254,10 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
       yield* _update(command);
     } else if (command is DeleteDevice) {
       yield* _delete(command);
-    } else if (command is _NotifyDeviceStateChanged) {
-      yield await _notify(command);
     } else if (command is UnloadDevices) {
       yield await _unload(command);
+    } else if (command is _NotifyDeviceStateChanged) {
+      yield await _notify(command);
     } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {

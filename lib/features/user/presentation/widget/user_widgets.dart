@@ -195,11 +195,11 @@ class UserActionGroup extends StatelessWidget {
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
     return <ActionMenuItem>[
       ActionMenuItem(
-        child: IgnorePointer(child: _buildEditButton(context)),
+        child: _buildEditButton(context),
         onPressed: _onEdit,
       ),
       ActionMenuItem(
-        child: IgnorePointer(child: _buildDeleteButton(context)),
+        child: _buildDeleteButton(context),
         onPressed: _onEdit,
       ),
     ];

@@ -82,7 +82,7 @@ class _PasscodePageState extends State<PasscodePage> {
             builder: (context, snapshot) {
               final forbidden = _passcode.length > 0 && snapshot.hasData && snapshot.data.isError();
               final authorization = context.bloc<UserBloc>().getAuthorization(widget.operation);
-              final command = _verifying && !authorization.withCommandCode && widget.requireCommand;
+              final command = _verifying && !authorization.withCommanderCode && widget.requireCommand;
               return _buildPasscodeInput(
                 errorText: forbidden || command
                     ? (command ? 'Du må oppgi tilgangskode for aksjonsledelse' : 'Feil tilgangskode, forsøk igjen')

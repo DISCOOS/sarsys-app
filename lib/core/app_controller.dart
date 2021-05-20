@@ -1,13 +1,5 @@
 import 'dart:async';
 
-import 'package:SarSys/core/data/models/subscription_event_model.dart';
-import 'package:SarSys/core/data/models/subscription_model.dart';
-import 'package:SarSys/core/data/models/subscription_type_model.dart';
-import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
-import 'package:SarSys/features/device/domain/entities/Device.dart';
-import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
-import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
-import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -15,6 +7,16 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:http/http.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:SarSys/core/data/models/subscription_event_model.dart';
+import 'package:SarSys/core/data/models/subscription_model.dart';
+import 'package:SarSys/core/data/models/subscription_type_model.dart';
+import 'package:SarSys/features/affiliation/data/services/fleet_map_service.dart';
+import 'package:SarSys/features/device/domain/entities/Device.dart';
+import 'package:SarSys/features/operation/domain/entities/Incident.dart';
+import 'package:SarSys/features/operation/domain/entities/Operation.dart';
+import 'package:SarSys/features/personnel/domain/entities/Personnel.dart';
+import 'package:SarSys/features/tracking/domain/entities/Tracking.dart';
+import 'package:SarSys/features/unit/domain/entities/Unit.dart';
 import 'package:SarSys/core/data/streams.dart';
 import 'package:SarSys/core/presentation/screens/onboarding_screen.dart';
 import 'package:SarSys/core/presentation/screens/splash_screen.dart';
@@ -316,7 +318,7 @@ class AppController {
 
     // Configure Operation
     final IncidentService incidentService = IncidentService();
-    final OperationService operationService = OperationService();
+    final OperationService operationService = OperationService(channel);
 
     // ignore: close_sinks
     final OperationBloc operationBloc = OperationBloc(
@@ -688,6 +690,14 @@ class AppController {
       url: '${Defaults.baseWsUrl}/api/messages/connect',
       config: SubscriptionModel(
         types: [
+          SubscriptionTypeModel(
+            name: '${typeOf<Incident>()}',
+            changedState: true,
+          ),
+          SubscriptionTypeModel(
+            name: '${typeOf<Operation>()}',
+            changedState: true,
+          ),
           SubscriptionTypeModel(
             name: '${typeOf<Device>()}',
             changedState: true,

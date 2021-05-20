@@ -37,6 +37,11 @@ class OperationBloc
       // Load and unload operations as needed
       _processUserState,
     ));
+
+    // Notify when Operation state has changed
+    forwardStateChanges(
+      (t) => _NotifyOperationStateChanged(t),
+    );
   }
 
   /// Key suffix for storing
@@ -138,12 +143,13 @@ class OperationBloc
 
   bool _isOn(Operation operation, OperationState state) => (operation == null || state.data.uuid == operation.uuid);
 
-  void _assertUuid(Operation data) {
+  String _assertUuid(Operation data) {
     if (data?.uuid == null) {
       throw ArgumentError(
         "Operation have no uuid",
       );
     }
+    return data?.uuid;
   }
 
   void _assertData(CreateOperation command) {
@@ -254,7 +260,9 @@ class OperationBloc
       yield* _unload(command);
     } else if (command is UnselectOperation) {
       yield await _unselect(command);
-    } else if (command is _StateChange) {
+    } else if (command is _NotifyOperationStateChanged) {
+      yield await _notify(command);
+    } else if (command is _NotifyBlocStateChange) {
       yield command.data;
     } else {
       yield toUnsupported(command);
@@ -315,7 +323,7 @@ class OperationBloc
         isRemote: true,
         incidents: incidents.keys,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -369,7 +377,7 @@ class OperationBloc
         operation,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -379,8 +387,9 @@ class OperationBloc
   }
 
   Stream<OperationState> _update(UpdateOperation command) async* {
-    _assertUuid(command.data);
+    final uuid = _assertUuid(command.data);
     // Execute command
+    final previous = repo.get(uuid);
     final operation = repo.apply(command.data);
     if (command.incident != null) {
       incidents.apply(command.incident);
@@ -394,6 +403,7 @@ class OperationBloc
       command,
       OperationUpdated(
         operation,
+        previous,
         incident: command.incident,
         selected: command.selected,
       ),
@@ -420,9 +430,10 @@ class OperationBloc
       ],
       toState: (_) => OperationUpdated(
         operation,
+        previous,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -459,7 +470,7 @@ class OperationBloc
         operation,
         isRemote: true,
       ),
-      toCommand: (state) => _StateChange(state),
+      toCommand: (state) => _NotifyBlocStateChange(state),
       toError: (error, stackTrace) => toError(
         command,
         error,
@@ -566,6 +577,44 @@ class OperationBloc
     return unselected;
   }
 
+  Future<OperationState> _notify(_NotifyOperationStateChanged command) async {
+    final operation = command.operation;
+
+    if (command.isCreated) {
+      return toOK(
+        command,
+        OperationCreated(
+          operation,
+          isRemote: command.isRemote,
+        ),
+        result: operation,
+      );
+    }
+
+    if (command.isUpdated) {
+      return toOK(
+        command,
+        OperationUpdated(
+          operation,
+          command.previous,
+          isRemote: command.isRemote,
+        ),
+        result: operation,
+      );
+    }
+
+    assert(command.isDeleted);
+
+    return toOK(
+      command,
+      OperationDeleted(
+        operation,
+        isRemote: command.isRemote,
+      ),
+      result: operation,
+    );
+  }
+
   @override
   OperationBlocError createError(Object error, {StackTrace stackTrace}) => OperationBlocError(
         error,
@@ -646,8 +695,26 @@ class UnloadOperations extends OperationCommand<void, List<Operation>> {
   String toString() => '$runtimeType {}';
 }
 
-class _StateChange extends OperationCommand<OperationState, Operation> {
-  _StateChange(
+class _NotifyOperationStateChanged extends OperationCommand<StorageTransition<Operation>, Operation> {
+  _NotifyOperationStateChanged(
+    StorageTransition<Operation> transition,
+  ) : super(transition);
+
+  Operation get operation => data.to.value;
+  Operation get previous => data.from?.value;
+
+  bool get isCreated => data.isCreated;
+  bool get isUpdated => data.isChanged;
+  bool get isDeleted => data.isDeleted;
+
+  bool get isRemote => data.to?.isRemote == true;
+
+  @override
+  String toString() => '$runtimeType {previous: $data, next: $data}';
+}
+
+class _NotifyBlocStateChange extends OperationCommand<OperationState, Operation> {
+  _NotifyBlocStateChange(
     OperationState state,
   ) : super(state);
 
@@ -766,12 +833,18 @@ class OperationCreated extends OperationState<Operation> {
 class OperationUpdated extends OperationState<Operation> {
   final bool selected;
   final Incident incident;
+  final Operation previous;
   OperationUpdated(
-    Operation data, {
+    Operation next,
+    this.previous, {
     this.incident,
     this.selected = true,
     bool isRemote = false,
-  }) : super(data, isRemote: isRemote, props: [incident, selected]);
+  }) : super(next, isRemote: isRemote, props: [
+          incident,
+          selected,
+          previous,
+        ]);
 
   @override
   String toString() => '$runtimeType {'
@@ -779,6 +852,7 @@ class OperationUpdated extends OperationState<Operation> {
       'selected: $selected, '
       'incident: $incident, '
       'isRemote: $isRemote'
+      'previous: $previous'
       '}';
 }
 

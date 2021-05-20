@@ -398,13 +398,13 @@ class UnitActionGroup extends StatelessWidget {
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
     return <ActionMenuItem>[
       ActionMenuItem(
-        child: IgnorePointer(child: _buildEditButton(context)),
+        child: _buildEditButton(context),
         onPressed: _onEdit,
       ),
       _buildTransitionActionItem(context),
       if (context.bloc<UserBloc>().user.isAdmin)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildDeleteAction(context)),
+          child: _buildDeleteAction(context),
           onPressed: _onDelete,
         ),
     ];
@@ -414,18 +414,14 @@ class UnitActionGroup extends StatelessWidget {
     switch (unit.status) {
       case UnitStatus.retired:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildMobilizeAction(context),
-          ),
+          child: _buildMobilizeAction(context),
           onPressed: () => _onTransition(
             UnitStatus.mobilized,
           ),
         );
       case UnitStatus.mobilized:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildDeployedAction(context),
-          ),
+          child: _buildDeployedAction(context),
           onPressed: () => _onTransition(
             UnitStatus.deployed,
           ),
@@ -433,9 +429,7 @@ class UnitActionGroup extends StatelessWidget {
       case UnitStatus.deployed:
       default:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildRetireAction(context),
-          ),
+          child: _buildRetireAction(context),
           onPressed: () => _onTransition(
             UnitStatus.retired,
           ),

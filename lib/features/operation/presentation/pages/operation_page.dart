@@ -539,15 +539,15 @@ class OperationActionGroup extends StatelessWidget {
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
     return <ActionMenuItem>[
       ActionMenuItem(
-        child: IgnorePointer(child: _buildEditButton(context)),
+        child: _buildEditButton(context),
         onPressed: _onEdit,
       ),
       ActionMenuItem(
-        child: IgnorePointer(child: _buildCompleteAction(context)),
+        child: _buildCompleteAction(context),
         onPressed: () => _onResolved(context),
       ),
       ActionMenuItem(
-        child: IgnorePointer(child: _buildCancelAction(context)),
+        child: _buildCancelAction(context),
         onPressed: () => _onCancel(context),
       ),
     ];

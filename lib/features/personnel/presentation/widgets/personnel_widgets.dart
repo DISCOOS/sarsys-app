@@ -332,23 +332,23 @@ class PersonnelActionGroup extends StatelessWidget {
   List<ActionMenuItem> _buildActionItems(BuildContext context) {
     return <ActionMenuItem>[
       ActionMenuItem(
-        child: IgnorePointer(child: _buildEditButton(context)),
+        child: _buildEditButton(context),
         onPressed: _onEdit,
       ),
       _buildTransitionActionItem(context),
       if (unit != null)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildRemoveFromUnitAction(context)),
+          child: _buildRemoveFromUnitAction(context),
           onPressed: _onRemoveFromUnit,
         )
       else
         ActionMenuItem(
-          child: IgnorePointer(child: _buildAddToUnitAction(context)),
+          child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
       if (context.bloc<UserBloc>().user.isAdmin)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildDeleteAction(context)),
+          child: _buildDeleteAction(context),
           onPressed: _onDelete,
         ),
     ];
@@ -358,18 +358,14 @@ class PersonnelActionGroup extends StatelessWidget {
     switch (personnel.status) {
       case PersonnelStatus.retired:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildMobilizeAction(context),
-          ),
+          child: _buildMobilizeAction(context),
           onPressed: () => _onTransition(
             PersonnelStatus.alerted,
           ),
         );
       case PersonnelStatus.alerted:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildOnSceneAction(context),
-          ),
+          child: _buildOnSceneAction(context),
           onPressed: () => _onTransition(
             PersonnelStatus.onscene,
           ),
@@ -377,9 +373,7 @@ class PersonnelActionGroup extends StatelessWidget {
       case PersonnelStatus.onscene:
       default:
         return ActionMenuItem(
-          child: IgnorePointer(
-            child: _buildRetireAction(context),
-          ),
+          child: _buildRetireAction(context),
           onPressed: () => _onTransition(
             PersonnelStatus.retired,
           ),

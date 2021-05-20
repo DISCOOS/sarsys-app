@@ -185,7 +185,7 @@ class EscalateToCommand extends UseCase<bool, bool, OperationParams> {
                 passcode,
               );
               if (authorized) {
-                return params.bloc.userBloc.getAuthorization(operation).withCommandCode;
+                return params.bloc.userBloc.getAuthorization(operation).withCommanderCode;
               }
               return authorized;
             },

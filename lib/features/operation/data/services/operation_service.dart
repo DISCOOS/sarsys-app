@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:chopper/chopper.dart';
 
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/data/models/message_model.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -16,9 +20,62 @@ part 'operation_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class OperationService extends StatefulServiceDelegate<Operation, OperationModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList {
+  OperationService(
+    this.channel,
+  ) : delegate = OperationServiceImpl.newInstance() {
+    // Listen for Operation messages
+    OperationMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
+  }
+
+  final MessageChannel channel;
   final OperationServiceImpl delegate;
 
-  OperationService() : delegate = OperationServiceImpl.newInstance();
+  /// Get stream of device messages
+  Stream<OperationMessage> get messages => _controller.stream;
+  final StreamController<OperationMessage> _controller = StreamController.broadcast();
+
+  void publish(OperationMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      OperationMessage(data),
+    );
+  }
+
+  void dispose() {
+    _controller.close();
+    OperationMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
+  }
+}
+
+enum OperationMessageType {
+  OperationCreated,
+  OperationDeleted,
+  OperationPositionChanged,
+  OperationInformationUpdated,
+}
+
+class OperationMessage extends MessageModel {
+  OperationMessage(Map<String, dynamic> data) : super(data);
+
+  factory OperationMessage.positionChanged(String uuid, List<Map<String, dynamic>> patches) => OperationMessage({
+        'type': enumName(OperationMessageType.OperationPositionChanged),
+        'data': {
+          'uuid': uuid,
+          'patches': patches,
+        }
+      });
+
+  OperationMessageType get type {
+    final type = data.elementAt('type');
+    return OperationMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
 }
 
 @ChopperApi()

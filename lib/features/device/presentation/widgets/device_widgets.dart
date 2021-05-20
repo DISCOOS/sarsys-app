@@ -609,27 +609,27 @@ class DeviceActionGroup extends StatelessWidget {
 
     return <ActionMenuItem>[
       ActionMenuItem(
-        child: IgnorePointer(child: _buildEditButton(context)),
+        child: _buildEditButton(context),
         onPressed: _onEdit,
       ),
       if (unit != null)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildRemoveFromUnitAction(context)),
+          child: _buildRemoveFromUnitAction(context),
           onPressed: _onRemoveFromUnit,
         )
       else if (personnel != null)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildRemoveFromPersonnelAction(context)),
+          child: _buildRemoveFromPersonnelAction(context),
           onPressed: _onRemoveFromPersonnel,
         )
       else if (isSelected)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildAddToUnitAction(context)),
+          child: _buildAddToUnitAction(context),
           onPressed: _onAddToUnit,
         ),
       if (device.manual == true && context.bloc<UserBloc>().user.isAdmin)
         ActionMenuItem(
-          child: IgnorePointer(child: _buildDeleteAction(context)),
+          child: _buildDeleteAction(context),
           onPressed: _onDelete,
         ),
     ];

@@ -67,7 +67,7 @@ class ActionGroupBuilder extends StatelessWidget {
         return actions.map((ActionMenuItem item) {
           return PopupMenuItem<ActionMenuItem>(
             value: item,
-            child: item.child,
+            child: IgnorePointer(child: item.child),
           );
         }).toList();
       },
