@@ -683,7 +683,7 @@ class _UnitEditorState extends State<UnitEditor> {
   }
 
   UnitType _actualType(UnitType defaultValue) {
-    final values = _formKey?.currentState?.value;
+    final values = _toJson();
     return values?.containsKey('type') == true
         ? UnitModel.fromJson(values).type ?? widget?.unit?.type ?? defaultValue
         : widget?.unit?.type ?? defaultValue;
@@ -756,8 +756,10 @@ class _UnitEditorState extends State<UnitEditor> {
       );
 
   Map<String, dynamic> _toJson() {
-    final json = Map<String, dynamic>.from(_formKey.currentState.value);
-    json['personnels'] = (json['personnels'] as List<Personnel>).map((p) => p.uuid).toList();
+    final json = Map<String, dynamic>.from(
+      _formKey.currentState?.value ?? {},
+    );
+    json['personnels'] = (json['personnels'] as List<Personnel>)?.map((p) => p.uuid)?.toList();
     return json;
   }
 }

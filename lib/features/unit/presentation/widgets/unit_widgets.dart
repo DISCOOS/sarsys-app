@@ -1,4 +1,5 @@
 import 'package:SarSys/core/callbacks.dart';
+import 'package:SarSys/features/mapping/presentation/screens/map_screen.dart';
 import 'package:SarSys/features/tracking/presentation/widgets/coordinate_widget.dart';
 import 'package:SarSys/features/unit/presentation/editors/unit_editor.dart';
 import 'package:flutter/material.dart';
@@ -187,7 +188,9 @@ class UnitWidget extends StatelessWidget {
                 ],
                 mapController: controller,
               ),
-              onTap: center != null ? () => jumpToLatLng(context, center: center) : null,
+              onTap: () => center == null
+                  ? Navigator.pushReplacementNamed(context, MapScreen.ROUTE)
+                  : jumpToLatLng(context, center: center),
             ),
           ),
         ),

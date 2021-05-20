@@ -187,7 +187,7 @@ String toCallsign(UnitType type, String prefix, int number) {
   // TODO: Use number plan in fleet map (units use range 21 - 89, except all 'x0' numbers)
   final digits = base + (number % 10 == 0 ? ++number : number);
   final suffix = "${_callsignFormat.format(digits)}";
-  return "$prefix ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
+  return "${prefix ?? enumName(type)} ${suffix.substring(0, 1)}-${suffix.substring(1, 2)}";
 }
 
 class Pair<L, R> {
