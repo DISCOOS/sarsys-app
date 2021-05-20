@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/features/operation/data/models/operation_model.dart';
 import 'package:flutter/foundation.dart';
 
@@ -12,6 +13,7 @@ import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
 
 class OperationRepositoryImpl extends StatefulRepository<String, Operation, OperationService>
+    with StatefulCatchup<Operation, OperationService>
     implements OperationRepository {
   OperationRepositoryImpl(
     OperationService service, {
@@ -21,7 +23,11 @@ class OperationRepositoryImpl extends StatefulRepository<String, Operation, Oper
           service: service,
           dependencies: [incidents],
           connectivity: connectivity,
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Incident] repository
   @override

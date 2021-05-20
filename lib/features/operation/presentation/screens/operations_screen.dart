@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:SarSys/core/presentation/blocs/core.dart';
+import 'package:SarSys/features/unit/presentation/blocs/unit_bloc.dart';
 import 'package:SarSys/features/user/domain/entities/User.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:async/async.dart';
 
 import 'package:SarSys/features/operation/presentation/blocs/operation_bloc.dart';
 import 'package:SarSys/features/operation/domain/entities/Operation.dart';
@@ -133,6 +136,25 @@ class OperationsPage extends StatefulWidget {
 }
 
 class _OperationsPageState extends State<OperationsPage> {
+  StreamGroup<dynamic> _group;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _group?.close();
+    _group = StreamGroup<BlocEvent>.broadcast()
+      ..add(context.bloc<UserBloc>())
+      ..add(context.bloc<UnitBloc>())
+      ..add(context.bloc<OperationBloc>())
+      ..add(context.bloc<PersonnelBloc>());
+  }
+
+  @override
+  void dispose() {
+    _group?.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints viewportConstraints) {
@@ -142,7 +164,7 @@ class _OperationsPageState extends State<OperationsPage> {
           setState(() {});
         },
         child: StreamBuilder(
-          stream: context.bloc<OperationBloc>(),
+          stream: _group.stream,
           builder: (context, snapshot) {
             if (snapshot.hasData == false) return Container();
             var cards = _toCards(snapshot);
