@@ -55,9 +55,14 @@ class PersonnelService extends StatefulServiceDelegate<Personnel, PersonnelModel
 }
 
 enum PersonnelMessageType {
-  PersonnelCreated,
+  PersonnelMobilized,
+  PersonnelDeployed,
+  PersonnelRetired,
   PersonnelDeleted,
   PersonnelInformationUpdated,
+  PersonnelMessageAdded,
+  PersonnelMessageUpdated,
+  PersonnelMessageRemoved,
 }
 
 class PersonnelMessage extends MessageModel {

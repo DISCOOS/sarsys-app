@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:catcher/core/catcher.dart';
 import 'package:equatable/equatable.dart';
@@ -340,27 +341,33 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
     with ReadyAwareBloc<K, V>, ConnectionAwareBloc<K, V, S> {
   StatefulBloc({@required BlocEventBus bus}) : super(bus: bus);
 
-  C Function(StorageTransition<V>) _builder;
-
-  void forwardStateChanges(
-    C Function(StorageTransition<V>) builder, {
+  void forward<T extends JsonObject>(
+    C Function(StorageTransition<T>) builder, {
     bool remote = true,
     bool local = false,
+    StatefulRepository repo,
   }) {
-    if (_builder == null) {
-      _builder = builder;
-      registerStreamSubscription(repo.onChanged
-          .where(
-            (e) => e.isRemote && remote || e.isLocal && local,
-          )
-          .listen(
-            // Notify when device state has changed
-            _processStateChanged,
-          ));
-    }
+    final match = repos.firstWhere(
+      (repo) => repo.aggregateType == typeOf<T>(),
+      orElse: () => typeOf<T>() == JsonObject ? this.repo : null,
+    );
+    assert(match != null);
+    registerStreamSubscription(match.onChanged
+        .where(
+          (e) => e.isRemote && remote || e.isLocal && local,
+        )
+        .listen(
+          (t) => _processStateChanged<T>(
+            t as StorageTransition<T>,
+            builder,
+          ),
+        ));
   }
 
-  void _processStateChanged(StorageTransition<V> transition) async {
+  void _processStateChanged<T extends JsonObject>(
+    StorageTransition<T> transition,
+    C Function(StorageTransition<T>) builder,
+  ) async {
     try {
       if (isOpen && !transition.isError) {
         final device = transition.to.value;
@@ -368,7 +375,7 @@ abstract class StatefulBloc<C extends BlocCommand, E extends BlocEvent, Error ex
           final next = transition.to;
           if (next.isRemote) {
             dispatch(
-              _builder(transition),
+              builder(transition),
             );
           }
         }

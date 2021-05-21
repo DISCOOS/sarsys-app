@@ -59,6 +59,9 @@ enum DeviceMessageType {
   DeviceDeleted,
   DevicePositionChanged,
   DeviceInformationUpdated,
+  DeviceMessageAdded,
+  DeviceMessageUpdated,
+  DeviceMessageRemoved,
 }
 
 class DeviceMessage extends MessageModel {

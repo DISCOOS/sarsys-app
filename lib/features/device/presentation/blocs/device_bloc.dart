@@ -41,7 +41,7 @@ class DeviceBloc extends StatefulBloc<DeviceCommand, DeviceState, DeviceBlocErro
     ));
 
     // Notify when device state has changed
-    forwardStateChanges(
+    forward(
       (t) => _NotifyDeviceStateChanged(t),
     );
 

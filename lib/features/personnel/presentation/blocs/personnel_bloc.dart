@@ -52,7 +52,7 @@ class PersonnelBloc
     subscribe<OperationDeleted>(_processOperationState);
 
     // Notify when personnel state has changed
-    forwardStateChanges(
+    forward(
       (t) => _NotifyPersonnelStateChanged(t),
     );
   }

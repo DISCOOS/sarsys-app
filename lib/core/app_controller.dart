@@ -317,7 +317,7 @@ class AppController {
     );
 
     // Configure Operation
-    final IncidentService incidentService = IncidentService();
+    final IncidentService incidentService = IncidentService(channel);
     final OperationService operationService = OperationService(channel);
 
     // ignore: close_sinks

@@ -51,7 +51,7 @@ class TrackingBloc
     subscribe<OperationDeleted>(_processOperationState);
 
     // Notify when tracking state has changed
-    forwardStateChanges(
+    forward(
       (t) => _NotifyTrackingStateChanged(t),
     );
 

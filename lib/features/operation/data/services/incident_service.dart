@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:chopper/chopper.dart';
 
+import 'package:SarSys/core/data/models/message_model.dart';
+import 'package:SarSys/core/data/services/message_channel.dart';
+import 'package:SarSys/core/extensions.dart';
+import 'package:SarSys/core/utils/data.dart';
 import 'package:SarSys/core/data/services/stateful_service.dart';
 import 'package:SarSys/core/data/storage.dart';
 import 'package:SarSys/core/domain/models/core.dart';
@@ -16,8 +20,66 @@ part 'incident_service.chopper.dart';
 /// Delegates to a ChopperService implementation
 class IncidentService extends StatefulServiceDelegate<Incident, IncidentModel>
     with StatefulCreate, StatefulUpdate, StatefulDelete, StatefulGetList {
-  IncidentService() : delegate = IncidentServiceImpl.newInstance();
+  IncidentService(
+    this.channel,
+  ) : delegate = IncidentServiceImpl.newInstance() {
+    // Listen for Incident messages
+    IncidentMessageType.values.forEach(
+      (type) => channel.subscribe(enumName(type), _onMessage),
+    );
+  }
+
+  final MessageChannel channel;
   final IncidentServiceImpl delegate;
+
+  /// Get stream of device messages
+  Stream<IncidentMessage> get messages => _controller.stream;
+  final StreamController<IncidentMessage> _controller = StreamController.broadcast();
+
+  void publish(IncidentMessage message) {
+    _controller.add(message);
+  }
+
+  void _onMessage(Map<String, dynamic> data) {
+    publish(
+      IncidentMessage(data),
+    );
+  }
+
+  void dispose() {
+    _controller.close();
+    IncidentMessageType.values.forEach(
+      (type) => channel.unsubscribe(enumName(type), _onMessage),
+    );
+  }
+}
+
+enum IncidentMessageType {
+  IncidentCreated,
+  IncidentDeleted,
+  IncidentInformationUpdated,
+  OperationAddedToIncident,
+  OperationRemovedFromIncident,
+  SubjectAddedToIncident,
+  SubjectRemovedFromIncident,
+  IncidentRespondedTo,
+  IncidentCancelled,
+  IncidentResolved,
+  AddIncidentClue,
+  UpdateIncidentClue,
+  RemoveIncidentClue,
+  AddIncidentMessage,
+  UpdateIncidentMessage,
+  RemoveIncidentMessage,
+}
+
+class IncidentMessage extends MessageModel {
+  IncidentMessage(Map<String, dynamic> data) : super(data);
+
+  IncidentMessageType get type {
+    final type = data.elementAt('type');
+    return IncidentMessageType.values.singleWhere((e) => enumName(e) == type, orElse: () => null);
+  }
 }
 
 @ChopperApi(baseUrl: '/incidents')

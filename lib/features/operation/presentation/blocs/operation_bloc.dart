@@ -38,9 +38,14 @@ class OperationBloc
       _processUserState,
     ));
 
+    // Notify when Incident state has changed
+    forward<Incident>(
+      (t) => _NotifyRepositoryStateChanged<Incident>(t),
+    );
+
     // Notify when Operation state has changed
-    forwardStateChanges(
-      (t) => _NotifyOperationStateChanged(t),
+    forward<Operation>(
+      (t) => _NotifyRepositoryStateChanged<Operation>(t),
     );
   }
 
@@ -260,7 +265,7 @@ class OperationBloc
       yield* _unload(command);
     } else if (command is UnselectOperation) {
       yield await _unselect(command);
-    } else if (command is _NotifyOperationStateChanged) {
+    } else if (command is _NotifyRepositoryStateChanged) {
       yield await _notify(command);
     } else if (command is _NotifyBlocStateChange) {
       yield command.data;
@@ -577,17 +582,37 @@ class OperationBloc
     return unselected;
   }
 
-  Future<OperationState> _notify(_NotifyOperationStateChanged command) async {
-    final operation = command.operation;
+  OperationState _notify(_NotifyRepositoryStateChanged command) {
+    final state = command.state;
 
+    switch (command.type) {
+      case Operation:
+        return _notifyOperationChanged(command, state);
+    }
+
+    return toOK(
+      command,
+      OperationIncidentUpdated(
+        command.state as Incident,
+        command.previous as Incident,
+        selected,
+        isRemote: command.isRemote,
+      ),
+      result: state,
+    );
+  }
+
+  OperationState _notifyOperationChanged(_NotifyRepositoryStateChanged command, state) {
     if (command.isCreated) {
       return toOK(
         command,
         OperationCreated(
-          operation,
+          state,
+          selected: selected != null,
           isRemote: command.isRemote,
+          incident: incidents[selected.incident.uuid],
         ),
-        result: operation,
+        result: state,
       );
     }
 
@@ -595,11 +620,13 @@ class OperationBloc
       return toOK(
         command,
         OperationUpdated(
-          operation,
+          state,
           command.previous,
+          selected: selected != null,
           isRemote: command.isRemote,
+          incident: incidents[selected.incident.uuid],
         ),
-        result: operation,
+        result: state,
       );
     }
 
@@ -608,10 +635,10 @@ class OperationBloc
     return toOK(
       command,
       OperationDeleted(
-        operation,
+        state,
         isRemote: command.isRemote,
       ),
-      result: operation,
+      result: state,
     );
   }
 
@@ -695,13 +722,15 @@ class UnloadOperations extends OperationCommand<void, List<Operation>> {
   String toString() => '$runtimeType {}';
 }
 
-class _NotifyOperationStateChanged extends OperationCommand<StorageTransition<Operation>, Operation> {
-  _NotifyOperationStateChanged(
-    StorageTransition<Operation> transition,
+class _NotifyRepositoryStateChanged<T> extends OperationCommand<StorageTransition<T>, T> {
+  _NotifyRepositoryStateChanged(
+    StorageTransition<T> transition,
   ) : super(transition);
 
-  Operation get operation => data.to.value;
-  Operation get previous => data.from?.value;
+  Type get type => typeOf<T>();
+
+  T get state => data.to.value;
+  T get previous => data.from?.value;
 
   bool get isCreated => data.isCreated;
   bool get isUpdated => data.isChanged;
@@ -827,6 +856,28 @@ class OperationCreated extends OperationState<Operation> {
       'selected: $selected, '
       'units: $units, '
       'isRemote: $isRemote'
+      '}';
+}
+
+class OperationIncidentUpdated extends OperationState<Incident> {
+  final Incident previous;
+  final Operation operation;
+  OperationIncidentUpdated(
+    Incident next,
+    this.previous,
+    this.operation, {
+    bool isRemote = false,
+  }) : super(next, isRemote: isRemote, props: [
+          operation,
+          previous,
+        ]);
+
+  @override
+  String toString() => '$runtimeType {'
+      'operation: $operation, '
+      'incident: $data, '
+      'isRemote: $isRemote'
+      'previous: $previous'
       '}';
 }
 

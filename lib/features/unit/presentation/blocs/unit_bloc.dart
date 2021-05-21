@@ -55,7 +55,7 @@ class UnitBloc extends StatefulBloc<UnitCommand, UnitState, UnitBlocError, Strin
     subscribe<PersonnelDeleted>(_processPersonnelDeleted);
 
     // Notify when device state has changed
-    forwardStateChanges(
+    forward(
       (t) => _NotifyUnitStateChanged(t),
     );
   }

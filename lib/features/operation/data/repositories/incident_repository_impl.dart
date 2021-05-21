@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:SarSys/core/domain/stateful_catchup_mixins.dart';
 import 'package:SarSys/features/operation/data/models/incident_model.dart';
 import 'package:SarSys/features/operation/domain/repositories/incident_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import 'package:SarSys/core/domain/stateful_repository.dart';
 import 'package:SarSys/features/operation/domain/entities/Incident.dart';
 
 class IncidentRepositoryImpl extends StatefulRepository<String, Incident, IncidentService>
+    with StatefulCatchup<Incident, IncidentService>
     implements IncidentRepository {
   IncidentRepositoryImpl(
     IncidentService service, {
@@ -18,7 +20,11 @@ class IncidentRepositoryImpl extends StatefulRepository<String, Incident, Incide
   }) : super(
           service: service,
           connectivity: connectivity,
-        );
+        ) {
+    // Handle messages
+    // pushed from backend.
+    catchupTo(service.messages);
+  }
 
   /// Get [Operation.uuid] from [value]
   @override

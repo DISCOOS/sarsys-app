@@ -56,9 +56,17 @@ class UnitService extends StatefulServiceDelegate<Unit, UnitModel>
 
 enum UnitMessageType {
   UnitCreated,
+  UnitMobilized,
+  UnitDeployed,
+  UnitRetired,
   UnitDeleted,
   UnitPositionChanged,
   UnitInformationUpdated,
+  PersonnelAddedToUnit,
+  PersonnelRemovedFromUnit,
+  UnitMessageAdded,
+  UnitMessageUpdated,
+  UnitMessageRemoved,
 }
 
 class UnitMessage extends MessageModel {
